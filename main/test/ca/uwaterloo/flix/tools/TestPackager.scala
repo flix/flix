@@ -4,21 +4,26 @@ import java.nio.file.Files
 
 import ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
 
 class TestPackager extends FunSuite {
 
-  val Opts: Options = Options.Default
+  private implicit val _ = TerminalContext.NoTerminal
+
+  private val ProjectPrefix: String = "flix-project-"
+
+  private val DefaultOptions: Options = Options.Default
 
   test("init") {
-    val p = Files.createTempDirectory("flix-project-")
-    tools.Packager.init(p, Opts)
+    val p = Files.createTempDirectory(ProjectPrefix)
+    tools.Packager.init(p, DefaultOptions)
   }
 
   test("build") {
-    val p = Files.createTempDirectory("flix-project-")
-    tools.Packager.init(p, Opts)
-    tools.Packager.build(p, Opts)
+    val p = Files.createTempDirectory(ProjectPrefix)
+    tools.Packager.init(p, DefaultOptions)
+    tools.Packager.build(p, DefaultOptions)
   }
 
   //  ignore("build-jar") {
@@ -29,21 +34,27 @@ class TestPackager extends FunSuite {
   //  }
 
   test("build-pkg") {
-    val p = Files.createTempDirectory("flix-project-")
-    tools.Packager.init(p, Opts)
-    tools.Packager.buildPkg(p, Opts)
+    val p = Files.createTempDirectory(ProjectPrefix)
+    tools.Packager.init(p, DefaultOptions)
+    tools.Packager.buildPkg(p, DefaultOptions)
+  }
+
+  test("benchmark") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    tools.Packager.init(p, DefaultOptions)
+    tools.Packager.benchmark(p, DefaultOptions)
   }
 
   test("run") {
-    val p = Files.createTempDirectory("flix-project-")
-    tools.Packager.init(p, Opts)
-    tools.Packager.run(p, Opts)
+    val p = Files.createTempDirectory(ProjectPrefix)
+    tools.Packager.init(p, DefaultOptions)
+    tools.Packager.run(p, DefaultOptions)
   }
 
   test("test") {
-    val p = Files.createTempDirectory("flix-project-")
-    tools.Packager.init(p, Opts)
-    tools.Packager.test(p, Opts)
+    val p = Files.createTempDirectory(ProjectPrefix)
+    tools.Packager.init(p, DefaultOptions)
+    tools.Packager.test(p, DefaultOptions)
   }
 
 }

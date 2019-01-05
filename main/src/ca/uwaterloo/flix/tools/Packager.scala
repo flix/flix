@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.tools
 
+import java.io.PrintWriter
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
@@ -22,7 +23,7 @@ object Packager {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options): Unit = {
+  def init(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
     //
     // Check that the current working directory is usable.
     //
@@ -108,7 +109,7 @@ object Packager {
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options): Option[CompilationResult] = {
+  def build(p: Path, o: Options)(implicit tc: TerminalContext): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -143,7 +144,7 @@ object Packager {
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path, o: Options): Unit = {
+  def buildJar(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -181,7 +182,7 @@ object Packager {
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path, o: Options): Unit = {
+  def buildPkg(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -222,7 +223,7 @@ object Packager {
   /**
     * Runs the main function in flix package for the given project path `p`.
     */
-  def run(p: Path, o: Options): Unit = {
+  def run(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
     build(p, o) match {
       case None => // nop
       case Some(compilationResult) =>
@@ -232,13 +233,23 @@ object Packager {
   }
 
   /**
-    * Runs all tests in the flix package for the given project path `p`.
+    * Runs all benchmarks in the flix package for the given project path `p`.
     */
-  def test(p: Path, o: Options): Unit = {
+  def benchmark(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
     build(p, o) match {
       case None => // nop
       case Some(compilationResult) =>
-        implicit val _ = TerminalContext.AnsiTerminal
+        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))
+    }
+  }
+
+  /**
+    * Runs all tests in the flix package for the given project path `p`.
+    */
+  def test(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
+    build(p, o) match {
+      case None => // nop
+      case Some(compilationResult) =>
         val results = Tester.test(compilationResult)
         Console.println(results.output.fmt)
     }

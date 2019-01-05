@@ -21,7 +21,7 @@ import java.nio.file.Paths
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
+import ca.uwaterloo.flix.tools.{Benchmarker, Packager, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -49,6 +49,9 @@ object Main {
       rpcServer.start()
       rpcServer.await()
     }
+
+    // the default color context.
+    implicit val _ = TerminalContext.AnsiTerminal
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
@@ -79,27 +82,31 @@ object Main {
         // nop, continue
 
         case Command.Init =>
-          tools.Packager.init(cwd, options)
+          Packager.init(cwd, options)
           System.exit(0)
 
         case Command.Build =>
-          tools.Packager.build(cwd, options)
+          Packager.build(cwd, options)
           System.exit(0)
 
         case Command.BuildJar =>
-          tools.Packager.buildJar(cwd, options)
+          Packager.buildJar(cwd, options)
           System.exit(0)
 
         case Command.BuildPkg =>
-          tools.Packager.buildPkg(cwd, options)
+          Packager.buildPkg(cwd, options)
           System.exit(0)
 
         case Command.Run =>
-          tools.Packager.run(cwd, options)
+          Packager.run(cwd, options)
+          System.exit(0)
+
+        case Command.Benchmark =>
+          Packager.benchmark(cwd, options)
           System.exit(0)
 
         case Command.Test =>
-          tools.Packager.test(cwd, options)
+          Packager.test(cwd, options)
           System.exit(0)
       }
     } catch {
@@ -122,9 +129,6 @@ object Main {
     for (file <- cmdOpts.files) {
       flix.addPath(file.toPath)
     }
-
-    // the default color context.
-    implicit val _ = TerminalContext.AnsiTerminal
 
     // compute the least model.
     try {
@@ -202,6 +206,8 @@ object Main {
 
     case object Run extends Command
 
+    case object Benchmark extends Command
+
     case object Test extends Command
 
   }
@@ -227,6 +233,8 @@ object Main {
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  build a fpkg-file for the current project.")
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  run main for the current project.")
+
+      cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  run benchmarks for the current project.")
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  run tests for the current project.")
 
