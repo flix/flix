@@ -1,20 +1,21 @@
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.tools
 
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-
-import scala.collection.mutable
-import ca.uwaterloo.flix.runtime.{CompilationResult, Tester}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.{InternalCompilerException, Options, StreamOps, Validation}
+
+import scala.collection.mutable
 
 /**
   * An interface to manage flix packages.
   */
-object Package {
+object Packager {
 
   /**
     * Initializes a new flix project at the given path `p`.

@@ -1,23 +1,24 @@
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.tools
 
 import java.nio.file.Files
 
+import ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
-class TestPackage extends FunSuite {
+class TestPackager extends FunSuite {
 
   val Opts: Options = Options.Default
 
   test("init") {
     val p = Files.createTempDirectory("flix-project-")
-    Package.init(p, Opts)
+    tools.Packager.init(p, Opts)
   }
 
   test("build") {
     val p = Files.createTempDirectory("flix-project-")
-    Package.init(p, Opts)
-    Package.build(p, Opts)
+    tools.Packager.init(p, Opts)
+    tools.Packager.build(p, Opts)
   }
 
   //  ignore("build-jar") {
@@ -29,20 +30,20 @@ class TestPackage extends FunSuite {
 
   test("build-pkg") {
     val p = Files.createTempDirectory("flix-project-")
-    Package.init(p, Opts)
-    Package.buildPkg(p, Opts)
+    tools.Packager.init(p, Opts)
+    tools.Packager.buildPkg(p, Opts)
   }
 
   test("run") {
     val p = Files.createTempDirectory("flix-project-")
-    Package.init(p, Opts)
-    Package.run(p, Opts)
+    tools.Packager.init(p, Opts)
+    tools.Packager.run(p, Opts)
   }
 
   test("test") {
     val p = Files.createTempDirectory("flix-project-")
-    Package.init(p, Opts)
-    Package.test(p, Opts)
+    tools.Packager.init(p, Opts)
+    tools.Packager.test(p, Opts)
   }
 
 }

@@ -2,8 +2,6 @@ package ca.uwaterloo.flix.api
 
 import org.scalatest.Suites
 
-class ApiSuite extends Suites(
-  new TestPackage
-) {
+class ApiSuite extends Suites() {
   /* left empty */
 }
