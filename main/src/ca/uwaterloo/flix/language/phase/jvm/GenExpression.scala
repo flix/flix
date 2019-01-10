@@ -19,13 +19,12 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Verbosity}
-import ca.uwaterloo.flix.language.ast.{Type => FlixType}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Verbosity}
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
@@ -522,7 +521,7 @@ object GenExpression {
       // We push the 'length' of the array on top of stack
       compileInt(visitor, elms.length, isLong = false)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
+      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(tpe))
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
@@ -546,7 +545,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
+      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(tpe))
       // Evaluating the value of the 'default element'
       compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'length' of the array
@@ -614,7 +613,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(base.tpe))
+      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(base.tpe))
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to array
@@ -626,7 +625,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(base.tpe))
+      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(base.tpe))
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'startIndex'
@@ -898,7 +897,7 @@ object GenExpression {
         // The SelectChoice is on top again. We now get the element of the channel
         visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
         // Jvm Type of the elementType
-        val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getChannelInnerType(rule.chan.tpe))
+        val jvmType = JvmOps.getErasedJvmType(MonoType.getChannelInnerMonoType(rule.chan.tpe))
         // Unbox if needed for primitives
         AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
         // Store instruction for `jvmType`
@@ -1090,7 +1089,7 @@ object GenExpression {
   /*
    * Pushes a dummy value of type `jvmType` to the top of the stack
    */
-  private def pushDummyValue(visitor: MethodVisitor, tpe: ca.uwaterloo.flix.language.ast.Type)(implicit root: Root, flix: Flix): Unit = {
+  private def pushDummyValue(visitor: MethodVisitor, tpe: MonoType)(implicit root: Root, flix: Flix): Unit = {
     val erasedType = JvmOps.getErasedJvmType(tpe)
     erasedType match {
       case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $erasedType")
@@ -1902,7 +1901,7 @@ object GenExpression {
   /**
     * Emits code to allocate a new variable term for the given captured variable symbol `sym`.
     */
-  private def newVarTermFromCapturedVar(sym: Symbol.VarSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newVarTermFromCapturedVar(sym: Symbol.VarSym, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Read the value of the local variable and put it on the stack.
     readVar(sym, tpe, mv)
 
@@ -2049,7 +2048,7 @@ object GenExpression {
   /**
     * Generates code to read the given variable symbol and put it on top of the stack.
     */
-  private def readVar(sym: Symbol.VarSym, tpe: FlixType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def readVar(sym: Symbol.VarSym, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     val jvmType = JvmOps.getErasedJvmType(tpe)
     val iLOAD = AsmOps.getLoadInstruction(jvmType)
     mv.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!

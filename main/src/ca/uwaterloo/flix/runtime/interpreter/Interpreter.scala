@@ -279,7 +279,7 @@ object Interpreter {
         r => (r.sym, eval(r.chan, env0, henv0, lenv0, root).asInstanceOf[Channel], r.exp)
       }
       // Create an array of Channels used to call select in Channel.java
-      val channelsArray = rs.map { r => r._2}.toArray[Channel]
+      val channelsArray = rs.map { r => r._2 }.toArray[Channel]
       // Check if there is a default case
       val hasDefault = default.isDefined
       // Call select which returns a selectChoice with the given branchNumber
@@ -944,7 +944,7 @@ object Interpreter {
   /**
     * Returns the lattice operations associated with the given type `tpe`.
     */
-  private def getLatticeOps(tpe: Type)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
+  private def getLatticeOps(tpe: MonoType)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
     val lattice = root.latticeComponents(tpe)
 
     LatticeOps.of(
@@ -969,8 +969,8 @@ object Interpreter {
   /**
     * Returns the given value `v` of the given type `tpe` wrapped in a proxy object.
     */
-  private def wrapValueInProxyObject(v: AnyRef, tpe: Type)(implicit root: FinalAst.Root, f: Flix): ProxyObject = {
-    if (tpe == Type.Unit) {
+  private def wrapValueInProxyObject(v: AnyRef, tpe: MonoType)(implicit root: FinalAst.Root, f: Flix): ProxyObject = {
+    if (tpe == MonoType.Unit) {
       return ProxyObject.of(flix.runtime.value.Unit.getInstance(), null, null, null)
     }
 
@@ -1210,14 +1210,14 @@ object Interpreter {
     case Value.Arr(elms, tpe) =>
       // TODO: Should cases for all primitive types be added?
       tpe match {
-        case Type.Str =>
+        case MonoType.Str =>
           // Convert an object array to a string array.
           val result = new Array[String](elms.length)
           for (i <- elms.indices) {
             result(i) = toJava(elms(i)).asInstanceOf[String]
           }
           result
-        case Type.Int32 =>
+        case MonoType.Int32 =>
           // Convert an object array to an int array.
           val result = new Array[Int](elms.length)
           for (i <- elms.indices) {
@@ -1226,7 +1226,7 @@ object Interpreter {
           result
         case _ if tpe.isTuple =>
           elms
-        case _ => throw InternalRuntimeException(s"Unable to construct array of type: '${tpe.show}'.")
+        case _ => throw InternalRuntimeException(s"Unable to construct array of type: '$tpe'.")
       }
     case _ => ref
   }

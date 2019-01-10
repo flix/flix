@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
@@ -529,7 +529,7 @@ object AsmOps {
   /**
     * Emits code to construct a new proxy object for the value on top of the stack of the given type `tpe`.
     */
-  def newProxyObject(tpe: Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def newProxyObject(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Construct the equal function object.
     root.specialOps(SpecialOperator.Equality).get(tpe) match {
       case None => mv.visitInsn(ACONST_NULL)
@@ -555,9 +555,9 @@ object AsmOps {
   /**
     * Emits code to construct a new proxy array for the array value on top of the stack of the given type `tpe`.
     */
-  def newProxyArray(tpe: Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def newProxyArray(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // The type of the elements of the array.
-    val elementType = Type.getArrayInnerType(tpe)
+    val elementType = MonoType.getArrayInnerMonoType(tpe)
 
     // The type of the elements of the array, as a JVM type.
     val jvmElementType = JvmOps.getErasedJvmType(elementType)

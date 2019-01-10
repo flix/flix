@@ -20,7 +20,7 @@ import java.lang.reflect.InvocationTargetException
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, MonoType}
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException}
 import flix.runtime.ProxyObject
@@ -70,17 +70,17 @@ object Linker {
       }
 
       // Retrieve the value type.
-      val resultType = defn.tpe.typeArguments.last
+      val resultMonoType = defn.tpe.typeArguments.last
 
       // Check whether the value is an array.
       // NB: This is a hack to get functional predicates to work.
-      if (resultType.typeConstructor != Type.Array) {
+      if (resultMonoType.typeConstructor != MonoType.Array) {
         // Case 1: Non-array value.
 
         // Retrieve operations.
-        val eq = getEqOp(resultType, root)
-        val hash = getHashOp(resultType, root)
-        val toString = getToStrOp(resultType, root)
+        val eq = getEqOp(resultMonoType, root)
+        val hash = getHashOp(resultMonoType, root)
+        val toString = getToStrOp(resultMonoType, root)
 
         // Create the proxy object.
         ProxyObject.of(result, eq, hash, toString)
@@ -88,7 +88,7 @@ object Linker {
         // Case 2: Array value.
 
         // Retrieve the wrapped array.
-        val wrappedArray = getWrappedArray(result, resultType, root)
+        val wrappedArray = getWrappedArray(result, resultMonoType, root)
 
         // Construct the wrapped array object.
         ProxyObject.of(wrappedArray, null, null, null)
@@ -114,10 +114,10 @@ object Linker {
         val result = defn.method.invoke(null, as: _*)
 
         // Eq, Hash, and toString
-        val resultType = defn.tpe.typeArguments.last
-        val eq = getEqOp(resultType, root)
-        val hash = getHashOp(resultType, root)
-        val toString = getToStrOp(resultType, root)
+        val resultMonoType = defn.tpe.typeArguments.last
+        val eq = getEqOp(resultMonoType, root)
+        val hash = getHashOp(resultMonoType, root)
+        val toString = getToStrOp(resultMonoType, root)
 
         // Create the proxy object.
         ProxyObject.of(result, eq, hash, toString)
@@ -131,7 +131,7 @@ object Linker {
   /**
     * Returns the given array `result` with all its values wrapped in proxy object.
     */
-  private def getWrappedArray(result: AnyRef, tpe: Type, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
+  private def getWrappedArray(result: AnyRef, tpe: MonoType, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
     // Wrap the array values in proxy objects.
     result match {
       case a: Array[Char] => a map (v => ProxyObject.of(Char.box(v), null, null, null))
@@ -147,10 +147,10 @@ object Linker {
       case a: Array[AnyRef] => a map {
         case v =>
           // The type of the array elements.
-          val elmType = tpe.typeArguments.head
+          val elmMonoType = tpe.typeArguments.head
 
           // Construct the wrapped element.
-          ProxyObject.of(v, getEqOp(elmType, root), getHashOp(elmType, root), getToStrOp(elmType, root))
+          ProxyObject.of(v, getEqOp(elmMonoType, root), getHashOp(elmMonoType, root), getToStrOp(elmMonoType, root))
       }
     }
   }
@@ -158,7 +158,7 @@ object Linker {
   /**
     * Returns a Java function that computes equality of two raw Flix values.
     */
-  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
+  private def getEqOp(tpe: MonoType, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
     val x = a(0)
     val y = a(1)
     val sym = root.specialOps(SpecialOperator.Equality)(tpe)
@@ -168,7 +168,7 @@ object Linker {
   /**
     * Returns a Java function that computes the hashCode of a raw Flix value.
     */
-  private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
+  private def getHashOp(tpe: MonoType, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
     val x = a(0)
     val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
     link(sym, root).invoke(Array(x))
@@ -177,7 +177,7 @@ object Linker {
   /**
     * Returns a Java function that computes the string representation of a raw Flix value.
     */
-  private def getToStrOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
+  private def getToStrOp(tpe: MonoType, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
     val x = a(0)
     val sym = root.specialOps(SpecialOperator.ToString)(tpe)
     link(sym, root).invoke(Array(x))

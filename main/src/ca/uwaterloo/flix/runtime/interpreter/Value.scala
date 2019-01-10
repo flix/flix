@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 sealed trait Value
@@ -106,7 +106,7 @@ object Value {
 
   case class RecordExtension(base: AnyRef, field: String, value: AnyRef) extends Value
 
-  case class Arr(elms: Array[AnyRef], tpe: Type) {
+  case class Arr(elms: Array[AnyRef], tpe: MonoType) {
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Arr does not support `equals`.")
 
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Arr does not support `hashCode`.")

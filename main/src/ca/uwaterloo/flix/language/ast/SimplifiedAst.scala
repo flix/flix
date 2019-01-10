@@ -222,7 +222,7 @@ object SimplifiedAst {
       def tpe: Type = Type.Bool
     }
 
-    case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression // TODO: Why does this have an effect?
 
     case class NativeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -230,7 +230,7 @@ object SimplifiedAst {
 
     case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewChannel(tpe: Type, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class NewChannel(tpe: Type, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression // TODO: Whats up wit the order...
 
     case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -258,7 +258,7 @@ object SimplifiedAst {
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression // TODO: Why does this have an effect?
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

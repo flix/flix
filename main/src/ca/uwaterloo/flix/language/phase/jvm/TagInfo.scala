@@ -16,14 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 
 /**
   * Meta information about a tag.
   */
 // TODO: Magnus: What components are needed here?
 // TODO: Magnus: Check the equality method.
-case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: Type) {
+case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[MonoType], enumType: MonoType, tagType: MonoType) {
   /**
     * Returns the hash code of `this` tag info.
     */

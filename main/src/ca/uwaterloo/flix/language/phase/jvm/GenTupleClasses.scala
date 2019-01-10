@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -30,7 +30,7 @@ object GenTupleClasses {
   /**
     * Returns the set of tuple classes for the given set of types `ts`.
     */
-  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe) if tpe.typeConstructor.isTuple =>
         // Case 1: The type constructor is a tuple.

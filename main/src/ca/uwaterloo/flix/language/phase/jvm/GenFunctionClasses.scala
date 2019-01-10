@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 
@@ -179,7 +179,7 @@ object GenFunctionClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // The JVM result type
     val jvmResultType = JvmOps.getErasedJvmType(resultType)
 
@@ -228,7 +228,7 @@ object GenFunctionClasses {
   /**
     * Emits code for a functional that fully evaluates the current function, including tail calls.
     */
-  private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+  private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Object), null, null)
 

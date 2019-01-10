@@ -75,7 +75,7 @@ object SymbolicEvaluator {
     *
     * A function from a (symbol, type)-pair to a a list of symbolic values.
     */
-  type Enumerator = (Symbol.VarSym, Type) => List[SymVal]
+  type Enumerator = (Symbol.VarSym, MonoType) => List[SymVal]
 
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
@@ -221,11 +221,11 @@ object SymbolicEvaluator {
 
               // Symbolic Semantics.
               case SymVal.AtomicVar(id, tpe) => List(
-                (SmtExpr.Var(id, Type.Bool) :: pc, qua, SymVal.False),
-                (SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, qua, SymVal.True)
+                (SmtExpr.Var(id, MonoType.Bool) :: pc, qua, SymVal.False),
+                (SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)) :: pc, qua, SymVal.True)
               )
 
-              case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+              case _ => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
             }
 
             /**
@@ -250,7 +250,7 @@ object SymbolicEvaluator {
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(zeroOf(exp.tpe), SmtExpr.Var(id, exp.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, tpe))
 
-              case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+              case _ => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
             }
 
             /**
@@ -268,18 +268,18 @@ object SymbolicEvaluator {
               case SymVal.AtomicVar(id, tpe) =>
                 // NB: Must subtract one from the result of SmtExpr.BitwiseNegate since Z3 performs two's complement and adds one.
                 val one = tpe match {
-                  case Type.Int8 => SmtExpr.Int8(1)
-                  case Type.Int16 => SmtExpr.Int16(1)
-                  case Type.Int32 => SmtExpr.Int32(1)
-                  case Type.Int64 => SmtExpr.Int64(1)
-                  case Type.BigInt => SmtExpr.BigInt(BigInteger.ONE)
-                  case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+                  case MonoType.Int8 => SmtExpr.Int8(1)
+                  case MonoType.Int16 => SmtExpr.Int16(1)
+                  case MonoType.Int32 => SmtExpr.Int32(1)
+                  case MonoType.Int64 => SmtExpr.Int64(1)
+                  case MonoType.BigInt => SmtExpr.BigInt(BigInteger.ONE)
+                  case _ => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
                 }
                 val newVar = Symbol.freshVarSym()
                 val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, exp0.tpe), SmtExpr.Minus(SmtExpr.BitwiseNegate(SmtExpr.Var(id, exp.tpe)), one)) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, tpe))
 
-              case _ => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+              case _ => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
             }
 
           }
@@ -391,7 +391,7 @@ object SymbolicEvaluator {
               case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc, qua, SymVal.Int16(Math.pow(i1, i2).toShort))
               case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc, qua, SymVal.Int32(Math.pow(i1, i2).toInt))
               case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc, qua, SymVal.Int64(Math.pow(i1, i2).toLong))
-              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"Type Error: BigInt does not support Exponentiate.")
+              case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => throw InternalCompilerException(s"MonoType Error: BigInt does not support Exponentiate.")
 
               // Symbolic semantics.
               case _ =>
@@ -414,7 +414,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = Symbol.freshVarSym()
-                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.Less(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
 
@@ -432,7 +432,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = Symbol.freshVarSym()
-                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.LessEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
 
@@ -450,7 +450,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = Symbol.freshVarSym()
-                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.Greater(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
 
@@ -468,7 +468,7 @@ object SymbolicEvaluator {
               // Symbolic semantics.
               case _ =>
                 val newVar = Symbol.freshVarSym()
-                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, Type.Bool), SmtExpr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
+                val newPC = SmtExpr.Equal(SmtExpr.Var(newVar, MonoType.Bool), SmtExpr.GreaterEqual(toIntExpr(v1, exp1.tpe), toIntExpr(v2, exp2.tpe))) :: pc
                 lift(newPC, qua, SymVal.AtomicVar(newVar, exp0.tpe))
             }
 
@@ -483,7 +483,7 @@ object SymbolicEvaluator {
             case BinaryOperator.NotEqual => eq(pc, qua, v1, v2).flatMap {
               case (pc1, qua1, SymVal.True) => lift(pc1, qua1, SymVal.False)
               case (pc1, qua1, SymVal.False) => lift(pc1, qua1, SymVal.True)
-              case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value:'$v'.")
+              case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value:'$v'.")
             }
 
             /**
@@ -498,23 +498,23 @@ object SymbolicEvaluator {
 
               // Symbolic semantics.
               case (SymVal.True, SymVal.AtomicVar(id, _)) => List(
-                (SmtExpr.Var(id, Type.Bool) :: pc, qua, SymVal.True),
-                (SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, qua, SymVal.False)
+                (SmtExpr.Var(id, MonoType.Bool) :: pc, qua, SymVal.True),
+                (SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)) :: pc, qua, SymVal.False)
               )
               case (SymVal.AtomicVar(id, _), SymVal.True) => List(
-                (SmtExpr.Var(id, Type.Bool) :: pc, qua, SymVal.True),
-                (SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, qua, SymVal.False)
+                (SmtExpr.Var(id, MonoType.Bool) :: pc, qua, SymVal.True),
+                (SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)) :: pc, qua, SymVal.False)
               )
 
               case (SymVal.False, SymVal.AtomicVar(id, _)) => lift(pc, qua, SymVal.False)
               case (SymVal.AtomicVar(id, _), SymVal.False) => lift(pc, qua, SymVal.False)
 
               case (SymVal.AtomicVar(id1, _), SymVal.AtomicVar(id2, _)) => List(
-                (SmtExpr.LogicalAnd(SmtExpr.Var(id1, Type.Bool), SmtExpr.Var(id2, Type.Bool)) :: pc, qua, SymVal.True),
-                (SmtExpr.Not(SmtExpr.LogicalAnd(SmtExpr.Var(id1, Type.Bool), SmtExpr.Var(id2, Type.Bool))) :: pc, qua, SymVal.False)
+                (SmtExpr.LogicalAnd(SmtExpr.Var(id1, MonoType.Bool), SmtExpr.Var(id2, MonoType.Bool)) :: pc, qua, SymVal.True),
+                (SmtExpr.Not(SmtExpr.LogicalAnd(SmtExpr.Var(id1, MonoType.Bool), SmtExpr.Var(id2, MonoType.Bool))) :: pc, qua, SymVal.False)
               )
 
-              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 && $v2'.")
+              case _ => throw InternalCompilerException(s"MonoType Error: Unexpected expression: '$v1 && $v2'.")
             }
 
             /**
@@ -532,20 +532,20 @@ object SymbolicEvaluator {
               case (SymVal.AtomicVar(id, _), SymVal.True) => lift(pc, qua, SymVal.True)
 
               case (SymVal.False, SymVal.AtomicVar(id, _)) => List(
-                (SmtExpr.Var(id, Type.Bool) :: pc, qua, SymVal.True),
-                (SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, qua, SymVal.False)
+                (SmtExpr.Var(id, MonoType.Bool) :: pc, qua, SymVal.True),
+                (SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)) :: pc, qua, SymVal.False)
               )
               case (SymVal.AtomicVar(id, _), SymVal.False) => List(
-                (SmtExpr.Var(id, Type.Bool) :: pc, qua, SymVal.True),
-                (SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, qua, SymVal.False)
+                (SmtExpr.Var(id, MonoType.Bool) :: pc, qua, SymVal.True),
+                (SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)) :: pc, qua, SymVal.False)
               )
 
               case (SymVal.AtomicVar(id1, _), SymVal.AtomicVar(id2, _)) => List(
-                (SmtExpr.LogicalOr(SmtExpr.Var(id1, Type.Bool), SmtExpr.Var(id2, Type.Bool)) :: pc, qua, SymVal.True),
-                (SmtExpr.Not(SmtExpr.LogicalOr(SmtExpr.Var(id1, Type.Bool), SmtExpr.Var(id2, Type.Bool))) :: pc, qua, SymVal.False)
+                (SmtExpr.LogicalOr(SmtExpr.Var(id1, MonoType.Bool), SmtExpr.Var(id2, MonoType.Bool)) :: pc, qua, SymVal.True),
+                (SmtExpr.Not(SmtExpr.LogicalOr(SmtExpr.Var(id1, MonoType.Bool), SmtExpr.Var(id2, MonoType.Bool))) :: pc, qua, SymVal.False)
               )
 
-              case _ => throw InternalCompilerException(s"Type Error: Unexpected expression: '$v1 || $v2'.")
+              case _ => throw InternalCompilerException(s"MonoType Error: Unexpected expression: '$v1 || $v2'.")
             }
 
             /**
@@ -650,10 +650,10 @@ object SymbolicEvaluator {
             case SymVal.False => eval(pc, exp3, env0, lenv0, qua)
             case SymVal.AtomicVar(id, _) =>
               // Evaluate both branches under different path constraints.
-              val consequent = eval(SmtExpr.Var(id, Type.Bool) :: pc, exp2, env0, lenv0, qua)
-              val alternative = eval(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, exp3, env0, lenv0, qua)
+              val consequent = eval(SmtExpr.Var(id, MonoType.Bool) :: pc, exp2, env0, lenv0, qua)
+              val alternative = eval(SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)) :: pc, exp3, env0, lenv0, qua)
               consequent ++ alternative
-            case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+            case v => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
           }
         }
 
@@ -715,7 +715,7 @@ object SymbolicEvaluator {
               lift(pc, qua, SymVal.True)
             else
               lift(pc, qua, SymVal.False)
-          case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+          case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
         }
 
       /**
@@ -732,7 +732,7 @@ object SymbolicEvaluator {
       case Expression.Untag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, lenv0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(_, v)) => lift(pc, qua, v)
-          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+          case v => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
         }
 
       /**
@@ -769,7 +769,7 @@ object SymbolicEvaluator {
       case Expression.Index(base, offset, _, _) =>
         eval(pc0, base, env0, lenv0, qua0) flatMap {
           case (pc, qua, SymVal.Tuple(elms)) => lift(pc, qua, elms(offset))
-          case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+          case v => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
         }
 
       /**
@@ -977,12 +977,12 @@ object SymbolicEvaluator {
       case (SymVal.Int8(i1), SymVal.Int8(i2)) => lift(pc0, qua0, toBool(i1 == i2))
       // Symbolic semantics.  
       case (SymVal.AtomicVar(id, _), SymVal.Int8(i2)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int8), SmtExpr.Int8(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int8), SmtExpr.Int8(i2)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int8), SmtExpr.Int8(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, MonoType.Int8), SmtExpr.Int8(i2)) :: pc0, qua0, SymVal.False)
       )
       case (SymVal.Int8(i2), SymVal.AtomicVar(id, _)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int8), SmtExpr.Int8(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Int8(i2), SmtExpr.Var(id, Type.Int8)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int8), SmtExpr.Int8(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int8(i2), SmtExpr.Var(id, MonoType.Int8)) :: pc0, qua0, SymVal.False)
       )
 
       /**
@@ -992,12 +992,12 @@ object SymbolicEvaluator {
       case (SymVal.Int16(i1), SymVal.Int16(i2)) => lift(pc0, qua0, toBool(i1 == i2))
       // Symbolic semantics.
       case (SymVal.AtomicVar(id, _), SymVal.Int16(i2)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int16), SmtExpr.Int16(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int16), SmtExpr.Int16(i2)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int16), SmtExpr.Int16(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, MonoType.Int16), SmtExpr.Int16(i2)) :: pc0, qua0, SymVal.False)
       )
       case (SymVal.Int16(i2), SymVal.AtomicVar(id, _)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int16), SmtExpr.Int16(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Int16(i2), SmtExpr.Var(id, Type.Int16)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int16), SmtExpr.Int16(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int16(i2), SmtExpr.Var(id, MonoType.Int16)) :: pc0, qua0, SymVal.False)
       )
 
       /**
@@ -1007,12 +1007,12 @@ object SymbolicEvaluator {
       case (SymVal.Int32(i1), SymVal.Int32(i2)) => lift(pc0, qua0, toBool(i1 == i2))
       // Symbolic semantics.
       case (SymVal.AtomicVar(id, _), SymVal.Int32(i2)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int32), SmtExpr.Int32(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int32), SmtExpr.Int32(i2)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int32), SmtExpr.Int32(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, MonoType.Int32), SmtExpr.Int32(i2)) :: pc0, qua0, SymVal.False)
       )
       case (SymVal.Int32(i2), SymVal.AtomicVar(id, _)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int32), SmtExpr.Int32(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Int32(i2), SmtExpr.Var(id, Type.Int32)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int32), SmtExpr.Int32(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int32(i2), SmtExpr.Var(id, MonoType.Int32)) :: pc0, qua0, SymVal.False)
       )
 
       /**
@@ -1022,12 +1022,12 @@ object SymbolicEvaluator {
       case (SymVal.Int64(i1), SymVal.Int64(i2)) => lift(pc0, qua0, toBool(i1 == i2))
       // Symbolic semantics.
       case (SymVal.AtomicVar(id, _), SymVal.Int64(i2)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int64), SmtExpr.Int64(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.Int64), SmtExpr.Int64(i2)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int64), SmtExpr.Int64(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, MonoType.Int64), SmtExpr.Int64(i2)) :: pc0, qua0, SymVal.False)
       )
       case (SymVal.Int64(i2), SymVal.AtomicVar(id, _)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.Int64), SmtExpr.Int64(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Int64(i2), SmtExpr.Var(id, Type.Int64)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.Int64), SmtExpr.Int64(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Int64(i2), SmtExpr.Var(id, MonoType.Int64)) :: pc0, qua0, SymVal.False)
       )
 
       /**
@@ -1037,12 +1037,12 @@ object SymbolicEvaluator {
       case (SymVal.BigInt(i1), SymVal.BigInt(i2)) => lift(pc0, qua0, toBool(i1 == i2))
       // Symbolic semantics.
       case (SymVal.AtomicVar(id, _), SymVal.BigInt(i2)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.BigInt), SmtExpr.BigInt(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.Var(id, Type.BigInt), SmtExpr.BigInt(i2)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.BigInt), SmtExpr.BigInt(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.Var(id, MonoType.BigInt), SmtExpr.BigInt(i2)) :: pc0, qua0, SymVal.False)
       )
       case (SymVal.BigInt(i2), SymVal.AtomicVar(id, _)) => List(
-        (SmtExpr.Equal(SmtExpr.Var(id, Type.BigInt), SmtExpr.BigInt(i2)) :: pc0, qua0, SymVal.True),
-        (SmtExpr.NotEqual(SmtExpr.BigInt(i2), SmtExpr.Var(id, Type.BigInt)) :: pc0, qua0, SymVal.False)
+        (SmtExpr.Equal(SmtExpr.Var(id, MonoType.BigInt), SmtExpr.BigInt(i2)) :: pc0, qua0, SymVal.True),
+        (SmtExpr.NotEqual(SmtExpr.BigInt(i2), SmtExpr.Var(id, MonoType.BigInt)) :: pc0, qua0, SymVal.False)
       )
 
       /**
@@ -1070,7 +1070,7 @@ object SymbolicEvaluator {
             case (pc1, qua1, SymVal.AtomicVar(id, tpe)) => visit(SmtExpr.Var(id, tpe) :: pc1, qua1, es)
             case (pc1, qua1, SymVal.True) => visit(pc1, qua1, es)
             case (pc1, qua1, SymVal.False) => lift(pc1, qua1, SymVal.False)
-            case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value '$v'.")
+            case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value '$v'.")
           }
         }
 
@@ -1132,7 +1132,7 @@ object SymbolicEvaluator {
               }
               eval(pc1, defn.exp, newEnv, Map.empty, qua1)
           }
-        case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value: '$v'.")
       }
     }
 
@@ -1166,25 +1166,25 @@ object SymbolicEvaluator {
   /**
     * Converts the given value `v` to an expression.
     */
-  def toIntExpr(v: SymVal, tpe: Type): SmtExpr = (v, tpe) match {
+  def toIntExpr(v: SymVal, tpe: MonoType): SmtExpr = (v, tpe) match {
     case (SymVal.AtomicVar(id, _), _) => SmtExpr.Var(id, tpe)
-    case (SymVal.Int8(i), Type.Int8) => SmtExpr.Int8(i)
-    case (SymVal.Int16(i), Type.Int16) => SmtExpr.Int16(i)
-    case (SymVal.Int32(i), Type.Int32) => SmtExpr.Int32(i)
-    case (SymVal.Int64(i), Type.Int64) => SmtExpr.Int64(i)
-    case (SymVal.BigInt(i), Type.BigInt) => SmtExpr.BigInt(i)
+    case (SymVal.Int8(i), MonoType.Int8) => SmtExpr.Int8(i)
+    case (SymVal.Int16(i), MonoType.Int16) => SmtExpr.Int16(i)
+    case (SymVal.Int32(i), MonoType.Int32) => SmtExpr.Int32(i)
+    case (SymVal.Int64(i), MonoType.Int64) => SmtExpr.Int64(i)
+    case (SymVal.BigInt(i), MonoType.BigInt) => SmtExpr.BigInt(i)
     case _ => throw InternalCompilerException(s"Unexpected value: '$v' of type '$tpe'.")
   }
 
   /**
     * Returns the zero number corresponding to the given type `tpe`.
     */
-  private def zeroOf(tpe: Type): SmtExpr = tpe match {
-    case Type.Int8 => SmtExpr.Int8(0)
-    case Type.Int16 => SmtExpr.Int16(0)
-    case Type.Int32 => SmtExpr.Int32(0)
-    case Type.Int64 => SmtExpr.Int64(0)
-    case Type.BigInt => SmtExpr.BigInt(java.math.BigInteger.ZERO)
+  private def zeroOf(tpe: MonoType): SmtExpr = tpe match {
+    case MonoType.Int8 => SmtExpr.Int8(0)
+    case MonoType.Int16 => SmtExpr.Int16(0)
+    case MonoType.Int32 => SmtExpr.Int32(0)
+    case MonoType.Int64 => SmtExpr.Int64(0)
+    case MonoType.BigInt => SmtExpr.BigInt(java.math.BigInteger.ZERO)
     case _ => throw InternalCompilerException(s"Unexpected non-numeric type '$tpe'.")
   }
 

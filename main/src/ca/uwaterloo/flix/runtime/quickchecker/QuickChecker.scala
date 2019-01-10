@@ -21,7 +21,7 @@ import java.math.BigInteger
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.{FinalAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{FinalAst, Symbol, MonoType}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
@@ -264,7 +264,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
     * Randomly generates a list of symbolic values for the given type.
     */
-  private def enumerate(limit: Int, root: Root, genSym: GenSym, random: Random)(sym: Symbol.VarSym, tpe: Type): List[SymVal] = {
+  private def enumerate(limit: Int, root: Root, genSym: GenSym, random: Random)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
     val arb = new ArbSymVal(tpe, root).gen
     (1 to limit).toList.map(_ => arb.mk(random))
   }
@@ -298,36 +298,36 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
     * An arbitrary for symbolic values based on the given type `tpe`.
     */
-  class ArbSymVal(tpe: Type, root: Root) extends Arbitrary[SymVal] {
+  class ArbSymVal(tpe: MonoType, root: Root) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = {
       val base = tpe.typeConstructor
       val args = tpe.typeArguments
 
       base match {
-        case Type.Unit => ArbUnit.gen
-        case Type.Bool => ArbBool.gen
-        case Type.Char => ArbChar.gen
-        case Type.Float32 => ArbFloat32.gen
-        case Type.Float64 => ArbFloat64.gen
-        case Type.Int8 => ArbInt8.gen
-        case Type.Int16 => ArbInt16.gen
-        case Type.Int32 => ArbInt32.gen
-        case Type.Int64 => ArbInt64.gen
-        case Type.BigInt => ArbBigInt.gen
-        case Type.Str => ArbStr.gen
+        case MonoType.Unit => ArbUnit.gen
+        case MonoType.Bool => ArbBool.gen
+        case MonoType.Char => ArbChar.gen
+        case MonoType.Float32 => ArbFloat32.gen
+        case MonoType.Float64 => ArbFloat64.gen
+        case MonoType.Int8 => ArbInt8.gen
+        case MonoType.Int16 => ArbInt16.gen
+        case MonoType.Int32 => ArbInt32.gen
+        case MonoType.Int64 => ArbInt64.gen
+        case MonoType.BigInt => ArbBigInt.gen
+        case MonoType.Str => ArbStr.gen
 
-        case Type.Enum(sym, _) =>
+        case MonoType.Enum(sym, _) =>
           val decl = root.enums(sym)
           val elms = decl.cases.map {
             case (tag, caze) =>
-              val innerType = caze.tpe // TODO: Assumes that the enum is non-polymorphic.
+              val innerMonoType = caze.tpe // TODO: Assumes that the enum is non-polymorphic.
               new Generator[SymVal] {
-                def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType, root).gen.mk(r))
+                def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerMonoType, root).gen.mk(r))
               }
           }
           oneOf(elms.toArray: _*)
 
-        case Type.Tuple(l) => (r: Random) => {
+        case MonoType.Tuple(l) => (r: Random) => {
           val vals = args.map(t => new ArbSymVal(t, root).gen.mk(r))
           SymVal.Tuple(vals)
         }

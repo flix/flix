@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.evaluator
 
-import ca.uwaterloo.flix.language.ast.FinalAst.Expression
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 import com.microsoft.z3.Model
 
 /**
@@ -33,7 +32,7 @@ object SymVal {
     * @param sym the identifier.
     * @param tpe the type of the variable.
     */
-  case class AtomicVar(sym: Symbol.VarSym, tpe: Type) extends SymVal
+  case class AtomicVar(sym: Symbol.VarSym, tpe: MonoType) extends SymVal
 
   /**
     * The `Unit` value.
