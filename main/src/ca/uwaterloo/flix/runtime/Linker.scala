@@ -70,17 +70,17 @@ object Linker {
       }
 
       // Retrieve the value type.
-      val resultMonoType = defn.tpe.typeArguments.last
+      val resultType = defn.tpe.typeArguments.last
 
       // Check whether the value is an array.
       // NB: This is a hack to get functional predicates to work.
-      if (resultMonoType.typeConstructor != MonoType.Array) {
+      if (!resultType.isInstanceOf[MonoType.Array]) {
         // Case 1: Non-array value.
 
         // Retrieve operations.
-        val eq = getEqOp(resultMonoType, root)
-        val hash = getHashOp(resultMonoType, root)
-        val toString = getToStrOp(resultMonoType, root)
+        val eq = getEqOp(resultType, root)
+        val hash = getHashOp(resultType, root)
+        val toString = getToStrOp(resultType, root)
 
         // Create the proxy object.
         ProxyObject.of(result, eq, hash, toString)
@@ -88,7 +88,7 @@ object Linker {
         // Case 2: Array value.
 
         // Retrieve the wrapped array.
-        val wrappedArray = getWrappedArray(result, resultMonoType, root)
+        val wrappedArray = getWrappedArray(result, resultType, root)
 
         // Construct the wrapped array object.
         ProxyObject.of(wrappedArray, null, null, null)

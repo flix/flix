@@ -521,7 +521,7 @@ object GenExpression {
       // We push the 'length' of the array on top of stack
       compileInt(visitor, elms.length, isLong = false)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(tpe))
+      val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
       // Instantiating a new array of type jvmType
       if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
@@ -545,7 +545,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(tpe))
+      val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
       // Evaluating the value of the 'default element'
       compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'length' of the array
@@ -613,7 +613,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(base.tpe))
+      val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to array
@@ -625,7 +625,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(MonoType.getArrayInnerMonoType(base.tpe))
+      val jvmType = JvmOps.getErasedJvmType(base.tpe.asInstanceOf[MonoType.Array].tpe)
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'startIndex'

@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.InternalCompilerException
-
 /**
   * Representation of mono types.
   */
@@ -9,6 +7,7 @@ sealed trait MonoType {
 
   @deprecated("will be removed", "0.5")
   def typeConstructor: MonoType = this match {
+    case MonoType.Array(_) => this
     case MonoType.Enum(_, _) => this
     case MonoType.Channel(_) => this
     case MonoType.Ref(_) => this
@@ -18,17 +17,12 @@ sealed trait MonoType {
 
   @deprecated("will be removed", "0.5")
   def typeArguments: List[MonoType] = this match {
+    case MonoType.Array(tpe) => List(tpe)
     case MonoType.Channel(tpe) => List(tpe)
     case MonoType.Enum(_, targs) => targs
     case MonoType.Ref(tpe) => List(tpe)
     case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
-  }
-
-  @deprecated("will be removed", "0.5")
-  def isArray: Boolean = typeConstructor match {
-    case MonoType.Array => true
-    case _ => false
   }
 
   @deprecated("will be removed", "0.5")
@@ -79,6 +73,8 @@ object MonoType {
 
   // TODO: Order like in type.
 
+  case class Array(tpe: MonoType) extends MonoType
+
   case class Channel(tpe: MonoType) extends MonoType
 
   case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType // TODO: We want elms here?
@@ -97,13 +93,6 @@ object MonoType {
 
   case class Native(clazz: Class[_]) extends MonoType
 
-
-  /**
-    * A type constructor that represent arrays.
-    */
-  case object Array extends MonoType {
-    def kind: Kind = Kind.Star
-  }
 
   /**
     * A type expression that represents functions.
@@ -139,14 +128,6 @@ object MonoType {
       * Returns the hash code of `this` type variable.
       */
     override def hashCode(): Int = id
-  }
-
-  @deprecated("will be removed", "0.5")
-  def getArrayInnerMonoType(tpe: MonoType): MonoType = {
-    tpe match {
-      case MonoType.Apply(MonoType.Array, t) => t
-      case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
-    }
   }
 
   @deprecated("will be removed", "0.5")

@@ -212,10 +212,9 @@ object GenFunctionClasses {
     mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)Ljava/lang/Object;", false)
 
     // Construct a proxy object.
-    if (resultType.isArray) {
-      AsmOps.newProxyArray(resultType, mv)
-    } else {
-      AsmOps.newProxyObject(resultType, mv)
+    resultType match {
+      case arrayType: MonoType.Array => AsmOps.newProxyArray(arrayType, mv)
+      case nonArrayType => AsmOps.newProxyObject(resultType, mv)
     }
 
     // Return the proxy object.

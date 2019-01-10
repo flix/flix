@@ -555,9 +555,9 @@ object AsmOps {
   /**
     * Emits code to construct a new proxy array for the array value on top of the stack of the given type `tpe`.
     */
-  def newProxyArray(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def newProxyArray(tpe: MonoType.Array, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // The type of the elements of the array.
-    val elementType = MonoType.getArrayInnerMonoType(tpe)
+    val elementType = tpe.tpe
 
     // The type of the elements of the array, as a JVM type.
     val jvmElementType = JvmOps.getErasedJvmType(elementType)

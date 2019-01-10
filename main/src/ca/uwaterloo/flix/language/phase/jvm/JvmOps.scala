@@ -69,7 +69,7 @@ object JvmOps {
       case MonoType.Ref(_) => getCellClassType(tpe)
       case MonoType.Arrow(l) => getFunctionInterfaceType(tpe)
       case MonoType.Tuple(l) => getTupleInterfaceType(tpe)
-      case MonoType.Array => JvmType.Object
+      case MonoType.Array(tpe) => JvmType.Object
       case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
       case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
       case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
@@ -694,7 +694,7 @@ object JvmOps {
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
     case MonoType.Channel(elm) => Type.Apply(Type.Channel, hackMonoType2Type(elm))
-    case MonoType.Array => Type.Array
+    case MonoType.Array(elm) => Type.Apply(Type.Array, hackMonoType2Type(elm))
     case MonoType.Native(clazz) => Type.Native(clazz)
     case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
     case MonoType.Arrow(length) => Type.Arrow(length)

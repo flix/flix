@@ -606,7 +606,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Str => MonoType.Str
 
     case Type.Channel => ??? // cannot happen...
-    case Type.Array => MonoType.Array
+    case Type.Array => ??? // cannot happen...
     case Type.Native(clazz) => MonoType.Native(clazz)
     case Type.Ref => ??? // cannot happen...
     case Type.Arrow(length) => MonoType.Arrow(length)
@@ -630,8 +630,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       t0.typeConstructor match {
         case Type.Enum(sym, _) =>
           MonoType.Enum(sym, t0.typeArguments.map(visitType))
-        case Type.Vector =>
-          MonoType.Apply(MonoType.Array, visitType(t0.typeArguments.head))
+        case Type.Array => MonoType.Array(visitType(t0.typeArguments.head))
+        case Type.Vector => MonoType.Array(visitType(t0.typeArguments.head))
         case _ => t0 match {
           case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
           case _ => ??? // TODO
