@@ -592,7 +592,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
   // TODO: Should be private
   def visitType(t0: Type): MonoType = t0 match {
-    case Type.Var(id, kind) => MonoType.Var(id, kind)
+
     case Type.Unit => MonoType.Unit
     case Type.Bool => MonoType.Bool
     case Type.Char => MonoType.Char
@@ -604,9 +604,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Int64 => MonoType.Int64
     case Type.BigInt => MonoType.BigInt
     case Type.Str => MonoType.Str
+
     case Type.Channel => ??? // cannot happen...
     case Type.Array => MonoType.Array
-    case Type.Vector => MonoType.Vector
     case Type.Native(clazz) => MonoType.Native(clazz)
     case Type.Ref => ??? // cannot happen...
     case Type.Arrow(length) => MonoType.Arrow(length)
@@ -621,11 +621,22 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Tuple(length) => MonoType.Tuple(length)
     case Type.RecordEmpty => MonoType.RecordEmpty
     case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
-    case Type.Zero => MonoType.Zero
-    case Type.Succ(len, t) => MonoType.Succ(len, visitType(t))
     case Type.Apply(Type.Channel, tpe2) => MonoType.Channel(visitType(tpe2))
     case Type.Apply(Type.Ref, tpe2) => MonoType.Ref(visitType(tpe2))
-    case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
+
+    case Type.Var(id, kind) => MonoType.Var(id, kind)
+
+    case _ =>
+
+      t0.typeConstructor match {
+        case Type.Vector =>
+          MonoType.Apply(MonoType.Array, visitType(t0.typeArguments.head))
+        case _ => t0 match {
+          case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
+          case _ => ??? // TODO
+        }
+      }
+
   }
 
   // TODO: Deprecated

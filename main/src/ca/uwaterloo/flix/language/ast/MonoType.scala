@@ -99,13 +99,6 @@ object MonoType {
     def kind: Kind = Kind.Star
   }
 
-  /**
-    * A type constructor that represent vectors.
-    */
-  case object Vector extends MonoType {
-    def kind: Kind = Kind.Star
-  }
-
 
   /**
     * A type constructor that represent native objects.
@@ -161,20 +154,6 @@ object MonoType {
   }
 
   /**
-    * A type constructor that represents zero.
-    */
-  case object Zero extends MonoType {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represents the successor of a type.
-    */
-  case class Succ(len: Int, t: MonoType) extends MonoType {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type expression that a type application tpe1[tpe2].
     */
   case class Apply(tpe1: MonoType, tpe2: MonoType) extends MonoType
@@ -182,23 +161,6 @@ object MonoType {
 
   @deprecated("will be removed", "0.5")
   case class Var(id: Int, kind: Kind) extends MonoType {
-    /**
-      * The optional textual name of `this` type variable.
-      */
-    private var text: Option[String] = None
-
-    /**
-      * Optionally returns the textual name of `this` type variable.
-      */
-    def getText: Option[String] = text
-
-    /**
-      * Sets the textual name of `this` type variable.
-      */
-    def setText(s: String): Unit = {
-      text = Some(s)
-    }
-
     /**
       * Returns `true` if `this` type variable is equal to `o`.
       */
@@ -217,7 +179,6 @@ object MonoType {
   def getArrayInnerMonoType(tpe: MonoType): MonoType = {
     tpe match {
       case MonoType.Apply(MonoType.Array, t) => t
-      case MonoType.Apply(MonoType.Apply(MonoType.Vector, t), _) => t
       case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
     }
   }

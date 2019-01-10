@@ -70,7 +70,6 @@ object JvmOps {
       case MonoType.Arrow(l) => getFunctionInterfaceType(tpe)
       case MonoType.Tuple(l) => getTupleInterfaceType(tpe)
       case MonoType.Array => JvmType.Object
-      case MonoType.Vector => JvmType.Object
       case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
       case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
       case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
@@ -707,7 +706,6 @@ object JvmOps {
     case MonoType.Str => Type.Str
     case MonoType.Channel(elm) => Type.Apply(Type.Channel, hackMonoType2Type(elm))
     case MonoType.Array => Type.Array
-    case MonoType.Vector => Type.Vector
     case MonoType.Native(clazz) => Type.Native(clazz)
     case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
     case MonoType.Arrow(length) => Type.Arrow(length)
@@ -722,8 +720,6 @@ object JvmOps {
     case MonoType.Tuple(length) => Type.Tuple(0) // hack
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
-    case MonoType.Zero => Type.Zero
-    case MonoType.Succ(len, t) => Type.Succ(len, hackMonoType2Type(t))
     case MonoType.Apply(tpe1, tpe2) => Type.Apply(hackMonoType2Type(tpe1), hackMonoType2Type(tpe2))
   }
 
