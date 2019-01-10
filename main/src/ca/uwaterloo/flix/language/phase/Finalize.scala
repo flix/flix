@@ -376,7 +376,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.Universal(p, e, loc)
 
-      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe0, eff, loc) =>
+      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe0, loc) =>
         val e = visit(exp)
         val rs = rules map {
           case SimplifiedAst.CatchRule(sym, clazz, body) =>
@@ -400,10 +400,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val tpe = visitType(tpe0)
         FinalAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NewChannel(tpe0, exp, loc) =>
+      case SimplifiedAst.Expression.NewChannel(exp, tpe0, loc) =>
         val e = visit(exp)
         val tpe = visitType(tpe0)
-        FinalAst.Expression.NewChannel(tpe, e, loc)
+        FinalAst.Expression.NewChannel(e, tpe, loc)
 
       case SimplifiedAst.Expression.GetChannel(exp, tpe0, loc) =>
         val e = visit(exp)
@@ -478,7 +478,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val tpe = visitType(tpe0)
         FinalAst.Expression.UserError(tpe, loc)
 
-      case SimplifiedAst.Expression.HoleError(sym, tpe0, eff, loc) =>
+      case SimplifiedAst.Expression.HoleError(sym, tpe0, loc) =>
         val tpe = visitType(tpe0)
         FinalAst.Expression.HoleError(sym, tpe, loc)
 

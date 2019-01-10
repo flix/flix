@@ -808,7 +808,7 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
-    case Expression.NewChannel(tpe, exp, loc) =>
+    case Expression.NewChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)

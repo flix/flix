@@ -366,7 +366,7 @@ object PrettyPrinter {
           vt.text("). ")
           visitExp(exp)
 
-        case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        case Expression.TryCatch(exp, rules, tpe, loc) =>
           vt << "try {" << Indent << NewLine
           visitExp(exp)
           vt << Dedent << NewLine
@@ -399,7 +399,7 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NewChannel(tpe, exp, loc) =>
+        case Expression.NewChannel(exp, tpe, loc) =>
           vt.text("Channel")
           vt.text(" ")
           visitExp(exp)
@@ -473,7 +473,7 @@ object PrettyPrinter {
           visitExp(exp2)
 
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
-        case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")
+        case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
         case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
       }

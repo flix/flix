@@ -283,9 +283,9 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
 
-      case Expression.NewChannel(tpe, exp, eff, loc) =>
+      case Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.NewChannel(tpe, e, eff, loc)
+        Expression.NewChannel(e, tpe, eff, loc)
 
       case Expression.GetChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)

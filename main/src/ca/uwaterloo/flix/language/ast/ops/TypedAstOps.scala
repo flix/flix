@@ -193,14 +193,14 @@ object TypedAstOps {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
-      case Expression.NewChannel(tpe, exp, eff, loc) => visitExp(exp, env0)
+      case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
 
       case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
 
       case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
-        val rs = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]){
+        val rs = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
         }
 

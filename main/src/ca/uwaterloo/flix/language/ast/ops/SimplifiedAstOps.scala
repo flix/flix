@@ -392,7 +392,7 @@ object SimplifiedAstOps {
       //
       // Try Catch
       //
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (CatchRule(sym, clazz, body) <- rules) {
           checkExp(body, env0 + sym, ienv0)
@@ -426,7 +426,7 @@ object SimplifiedAstOps {
       //
       // New Channel.
       //
-      case Expression.NewChannel(tpe, exp, loc) =>
+      case Expression.NewChannel(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
@@ -525,7 +525,7 @@ object SimplifiedAstOps {
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => checkType(tpe)
-      case Expression.HoleError(sym, tpe, eff, loc) => checkType(tpe)
+      case Expression.HoleError(sym, tpe, loc) => checkType(tpe)
       case Expression.MatchError(tpe, loc) => checkType(tpe)
       case Expression.SwitchError(tpe, loc) => checkType(tpe)
     }

@@ -268,14 +268,14 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Universal(params, e, loc) =>
       Expression.Universal(params, visitExp(e), loc)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case CatchRule(sym, clazz, body) =>
           val b = visitExp(body)
           CatchRule(sym, clazz, b)
       }
-      Expression.TryCatch(e, rs, tpe, eff, loc)
+      Expression.TryCatch(e, rs, tpe, loc)
 
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
       val as = args map visitExp
@@ -287,9 +287,9 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
-    case Expression.NewChannel(tpe, exp, loc) =>
+    case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.NewChannel(tpe, e, loc)
+      Expression.NewChannel(e, tpe, loc)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -355,7 +355,7 @@ object ClosureConv extends Phase[Root, Root] {
       Expression.FixpointEntails(e1, e2, tpe, loc)
 
     case Expression.UserError(tpe, loc) => exp0
-    case Expression.HoleError(sym, tpe, eff, loc) => exp0
+    case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
     case Expression.SwitchError(tpe, loc) => exp0
 
@@ -505,16 +505,16 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Universal(fparam, exp, loc) =>
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
+    case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
     case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
-    case Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
+    case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
     case Expression.SelectChannel(rules, default, tpe, loc) =>
-      val rs = mutable.LinkedHashSet.empty ++ rules.flatMap{
+      val rs = mutable.LinkedHashSet.empty ++ rules.flatMap {
         case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
       }
 
@@ -536,7 +536,7 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.HoleError(sym, tpe, eff, loc) => mutable.LinkedHashSet.empty
+    case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
 
@@ -799,14 +799,14 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Universal(fs, e, loc)
 
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
             val b = visitExp(body)
             CatchRule(sym, clazz, b)
         }
-        Expression.TryCatch(e, rs, tpe, eff, loc)
+        Expression.TryCatch(e, rs, tpe, loc)
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args map visitExp
@@ -818,9 +818,9 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewChannel(tpe, exp, loc) =>
+      case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.NewChannel(tpe, e, loc)
+        Expression.NewChannel(e, tpe, loc)
 
       case Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -890,7 +890,7 @@ object ClosureConv extends Phase[Root, Root] {
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
-      case Expression.HoleError(sym, tpe, eff, loc) => e
+      case Expression.HoleError(sym, tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e
 

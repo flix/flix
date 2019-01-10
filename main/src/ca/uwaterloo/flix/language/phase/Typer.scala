@@ -1136,7 +1136,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
        * New Channel expression.
        */
-        case ResolvedAst.Expression.NewChannel(tpe, exp, loc) =>
+        case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
           //
           //  exp: Int
           //  --------------------
@@ -1204,7 +1204,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             rule match {
               case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
                 channelType <- visitExp(chan)
-                _ <- unifyM (channelType, Type.mkChannel(Type.freshTypeVar()), loc)
+                _ <- unifyM(channelType, Type.mkChannel(Type.freshTypeVar()), loc)
               } yield liftM(Type.Unit)
             }
           }
@@ -1738,11 +1738,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Empty, loc)
 
         /*
-       * New Channel expression.
-       */
-        case ResolvedAst.Expression.NewChannel(tpe, exp, loc) =>
+         * New Channel expression.
+         */
+        case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.NewChannel(Type.mkChannel(tpe), e, Eff.Empty, loc)
+          TypedAst.Expression.NewChannel(e, Type.mkChannel(tpe), Eff.Empty, loc)
 
         /*
          * Get Channel expression.

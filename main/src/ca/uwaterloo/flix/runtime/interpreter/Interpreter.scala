@@ -259,7 +259,7 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
-    case Expression.NewChannel(tpe, exp, loc) =>
+    case Expression.NewChannel(exp, tpe, loc) =>
       val size = cast2int32(eval(exp, env0, henv0, lenv0, root))
       new Channel(size)
 

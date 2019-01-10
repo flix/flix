@@ -132,12 +132,12 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HandleWith(exp, bindings, tpe, loc) => visitExp(exp) ++ visitExps(bindings.map(_.exp))
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
         visitExp(exp) ++ visitExps(rules.map(_.exp))
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
-      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp)
+      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.SelectChannel(rules, default, tpe, loc) =>
@@ -154,7 +154,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.UserError(tpe, loc) => Set.empty
-      case Expression.HoleError(sym, tpe, eff, loc) => Set.empty
+      case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
 
