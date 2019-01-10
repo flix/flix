@@ -64,7 +64,7 @@ object JvmOps {
       case MonoType.Int64 => JvmType.PrimLong
       case MonoType.BigInt => JvmType.BigInteger
       case MonoType.Str => JvmType.String
-      case MonoType.Channel => JvmType.Object
+      case MonoType.Channel(_) => JvmType.Object
       case MonoType.Native(clazz) => JvmType.Object
       case MonoType.Ref => getCellClassType(tpe)
       case MonoType.Arrow(l) => getFunctionInterfaceType(tpe)
@@ -711,7 +711,7 @@ object JvmOps {
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.BigInt
     case MonoType.Str => Type.Str
-    case MonoType.Channel => Type.Channel
+    case MonoType.Channel(elm) => Type.Apply(Type.Channel, hackMonoType2Type(elm))
     case MonoType.Array => Type.Array
     case MonoType.Vector => Type.Vector
     case MonoType.Native(clazz) => Type.Native(clazz)

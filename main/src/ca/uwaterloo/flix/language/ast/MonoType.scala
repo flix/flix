@@ -9,12 +9,14 @@ sealed trait MonoType {
 
   @deprecated("will be removed", "0.5")
   def typeConstructor: MonoType = this match {
+    case MonoType.Channel(_) => this
     case MonoType.Apply(t1, _) => t1.typeConstructor
     case _ => this
   }
 
   @deprecated("will be removed", "0.5")
   def typeArguments: List[MonoType] = this match {
+    case MonoType.Channel(tpe) => List(tpe)
     case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
   }
@@ -75,12 +77,7 @@ object MonoType {
 
   case object Str extends MonoType
 
-
-
-
-  case object Channel extends MonoType
-
-
+  case class Channel(tpe: MonoType) extends MonoType
 
   /**
     * A type constructor that represent arrays.
@@ -225,15 +222,6 @@ object MonoType {
       * Returns the hash code of `this` type variable.
       */
     override def hashCode(): Int = id
-  }
-
-
-  @deprecated("will be removed", "0.5")
-  def getChannelInnerMonoType(tpe: MonoType): MonoType = {
-    tpe match {
-      case MonoType.Apply(MonoType.Channel, t) => t
-      case _ => throw InternalCompilerException(s"Excepted channel type. Actual type: '$tpe' ")
-    }
   }
 
   @deprecated("will be removed", "0.5")

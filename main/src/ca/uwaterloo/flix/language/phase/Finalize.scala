@@ -604,7 +604,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Int64 => MonoType.Int64
     case Type.BigInt => MonoType.BigInt
     case Type.Str => MonoType.Str
-    case Type.Channel => MonoType.Channel
+    case Type.Channel => ??? // cannot happen...
     case Type.Array => MonoType.Array
     case Type.Vector => MonoType.Vector
     case Type.Native(clazz) => MonoType.Native(clazz)
@@ -623,6 +623,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
     case Type.Zero => MonoType.Zero
     case Type.Succ(len, t) => MonoType.Succ(len, visitType(t))
+    case Type.Apply(Type.Channel, tpe2) => MonoType.Channel(visitType(tpe2))
     case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
   }
 

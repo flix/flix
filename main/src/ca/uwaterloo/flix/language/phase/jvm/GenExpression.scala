@@ -897,7 +897,8 @@ object GenExpression {
         // The SelectChoice is on top again. We now get the element of the channel
         visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
         // Jvm Type of the elementType
-        val jvmType = JvmOps.getErasedJvmType(MonoType.getChannelInnerMonoType(rule.chan.tpe))
+        val channelType = rule.chan.tpe.asInstanceOf[MonoType.Channel].tpe
+        val jvmType = JvmOps.getErasedJvmType(channelType)
         // Unbox if needed for primitives
         AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
         // Store instruction for `jvmType`
