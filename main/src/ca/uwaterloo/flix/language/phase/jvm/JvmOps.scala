@@ -226,22 +226,18 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an enum type.
     */
-  def getEnumInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an enum type.
-    if (!tpe.typeConstructor.isEnum)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getEnumInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Enum(sym, elms) =>
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Retrieve the enum symbol.
-    val sym = tpe.typeConstructor.asInstanceOf[MonoType.Enum].sym
+      // The JVM name is of the form Option$ or Option$Int
+      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
+      // The enum resides in its namespace package.
+      JvmType.Reference(JvmName(sym.namespace, name))
 
-    // The JVM name is of the form Option$ or Option$Int
-    val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
-
-    // The enum resides in its namespace package.
-    JvmType.Reference(JvmName(sym.namespace, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -665,30 +661,23 @@ object JvmOps {
   /**
     * Returns the set of tags associated with the given type.
     */
-  def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = {
-    implicit val genSym: GenSym = flix.genSym
+  def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
+    case enumType@MonoType.Enum(sym, args) =>
+      implicit val genSym: GenSym = flix.genSym
 
-    // Return the empty set if the type is not an enum.
-    if (!tpe.isEnum) {
-      return Set.empty
-    }
+      // Retrieve the enum.
+      val enum = root.enums(enumType.sym)
 
-    // Retrieve the enum symbol and type arguments.
-    val enumType = tpe.typeConstructor.asInstanceOf[MonoType.Enum]
-    val args = tpe.typeArguments
+      // Compute the tag info.
+      enum.cases.foldLeft(Set.empty[TagInfo]) {
+        case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
+          // TODO: Magnus: It would be nice if this information could be stored somewhere...
+          val subst = Unification.unify(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
+          val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
-    // Retrieve the enum.
-    val enum = root.enums(enumType.sym)
-
-    // Compute the tag info.
-    enum.cases.foldLeft(Set.empty[TagInfo]) {
-      case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
-        // TODO: Magnus: It would be nice if this information could be stored somewhere...
-        val subst = Unification.unify(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
-        val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
-
-        sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
-    }
+          sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
+      }
+    case _ => Set.empty
   }
 
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
@@ -709,7 +698,7 @@ object JvmOps {
     case MonoType.Native(clazz) => Type.Native(clazz)
     case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
     case MonoType.Arrow(length) => Type.Arrow(length)
-    case MonoType.Enum(sym, kind) => Type.Enum(sym, Kind.Star)
+    case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
     case MonoType.Relation(sym, attr, kind) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Schema(m0) =>
@@ -729,13 +718,11 @@ object JvmOps {
     * Returns the tag info for the given `tpe` and `tag`
     */
   // TODO: Magnus: Should use getTags and then just find the correct tag.
-  def getTagInfo(tpe: MonoType, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
-    // Throw an exception if `tpe` is not an enum type
-    if (!tpe.isEnum)
-      throw InternalCompilerException(s"Unexpected type: $tpe")
-
-    val tags = getTagsOf(tpe)
-    tags.find(_.tag == tag).get
+  def getTagInfo(tpe: MonoType, tag: String)(implicit root: Root, flix: Flix): TagInfo = tpe match {
+    case enumType@MonoType.Enum(sym, _) =>
+      val tags = getTagsOf(tpe)
+      tags.find(_.tag == tag).get
+    case _ => throw InternalCompilerException(s"Unexpected type: $tpe")
   }
 
   /**

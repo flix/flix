@@ -610,7 +610,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Native(clazz) => MonoType.Native(clazz)
     case Type.Ref => ??? // cannot happen...
     case Type.Arrow(length) => MonoType.Arrow(length)
-    case Type.Enum(sym, kind) => MonoType.Enum(sym, kind)
     case Type.Relation(sym, attr, kind) => MonoType.Relation(sym, attr map visitType, kind)
     case Type.Lattice(sym, attr, kind) => MonoType.Lattice(sym, attr map visitType, kind)
     case Type.Schema(m0) =>
@@ -629,6 +628,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case _ =>
 
       t0.typeConstructor match {
+        case Type.Enum(sym, _) =>
+          MonoType.Enum(sym, t0.typeArguments.map(visitType))
         case Type.Vector =>
           MonoType.Apply(MonoType.Array, visitType(t0.typeArguments.head))
         case _ => t0 match {

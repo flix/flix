@@ -31,7 +31,7 @@ object GenEnumInterfaces {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) if tpe.typeConstructor.isEnum =>
+      case (macc, tpe@MonoType.Enum(sym, _)) =>
         // Case 1: The type constructor is an enum.
         // Construct enum interface.
         val jvmType = JvmOps.getEnumInterfaceType(tpe)

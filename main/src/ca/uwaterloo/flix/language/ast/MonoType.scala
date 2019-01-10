@@ -9,6 +9,7 @@ sealed trait MonoType {
 
   @deprecated("will be removed", "0.5")
   def typeConstructor: MonoType = this match {
+    case MonoType.Enum(_, _) => this
     case MonoType.Channel(_) => this
     case MonoType.Ref(_) => this
     case MonoType.Apply(t1, _) => t1.typeConstructor
@@ -18,6 +19,7 @@ sealed trait MonoType {
   @deprecated("will be removed", "0.5")
   def typeArguments: List[MonoType] = this match {
     case MonoType.Channel(tpe) => List(tpe)
+    case MonoType.Enum(_, targs) => targs
     case MonoType.Ref(tpe) => List(tpe)
     case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
@@ -32,12 +34,6 @@ sealed trait MonoType {
   @deprecated("will be removed", "0.5")
   def isArrow: Boolean = typeConstructor match {
     case MonoType.Arrow(l) => true
-    case _ => false
-  }
-
-  @deprecated("will be removed", "0.5")
-  def isEnum: Boolean = typeConstructor match {
-    case MonoType.Enum(sym, kind) => true
     case _ => false
   }
 
@@ -85,25 +81,27 @@ object MonoType {
 
   case class Channel(tpe: MonoType) extends MonoType
 
+  case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType // TODO: We want elms here?
+
   case class Ref(tpe: MonoType) extends MonoType
 
+  case object RecordEmpty extends MonoType
+
+  case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
   case class Relation(sym: Symbol.RelSym, attr: List[MonoType], kind: Kind) extends MonoType
 
   case class Lattice(sym: Symbol.LatSym, attr: List[MonoType], kind: Kind) extends MonoType
 
+  case class Schema(m: Map[Symbol.PredSym, MonoType]) extends MonoType
+
+  case class Native(clazz: Class[_]) extends MonoType
+
+
   /**
     * A type constructor that represent arrays.
     */
   case object Array extends MonoType {
-    def kind: Kind = Kind.Star
-  }
-
-
-  /**
-    * A type constructor that represent native objects.
-    */
-  case class Native(clazz: Class[_]) extends MonoType {
     def kind: Kind = Kind.Star
   }
 
@@ -115,42 +113,10 @@ object MonoType {
   }
 
   /**
-    * A type constructor that represents enums.
-    *
-    * @param sym  the symbol of the enum.
-    * @param kind the kind of the enum.
-    */
-  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends MonoType
-
-
-  /**
-    * A type constructor that represents a schema.
-    *
-    * @param m the types of the predicate symbols in the system.
-    */
-  case class Schema(m: Map[Symbol.PredSym, MonoType]) extends MonoType {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type constructor that represents tuples of the given `length`.
     */
   case class Tuple(length: Int) extends MonoType {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  /**
-    * A type constructor that represents the empty record type.
-    */
-  case object RecordEmpty extends MonoType {
-    def kind: Kind = ??? // TODO
-  }
-
-  /**
-    * A type constructor that represents a record extension type.
-    */
-  case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType {
-    def kind: Kind = ??? // TODO
   }
 
   /**
