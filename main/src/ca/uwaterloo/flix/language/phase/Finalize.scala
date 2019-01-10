@@ -608,7 +608,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Array => MonoType.Array
     case Type.Vector => MonoType.Vector
     case Type.Native(clazz) => MonoType.Native(clazz)
-    case Type.Ref => MonoType.Ref
+    case Type.Ref => ??? // cannot happen...
     case Type.Arrow(length) => MonoType.Arrow(length)
     case Type.Enum(sym, kind) => MonoType.Enum(sym, kind)
     case Type.Relation(sym, attr, kind) => MonoType.Relation(sym, attr map visitType, kind)
@@ -624,6 +624,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Zero => MonoType.Zero
     case Type.Succ(len, t) => MonoType.Succ(len, visitType(t))
     case Type.Apply(Type.Channel, tpe2) => MonoType.Channel(visitType(tpe2))
+    case Type.Apply(Type.Ref, tpe2) => MonoType.Ref(visitType(tpe2))
     case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
   }
 

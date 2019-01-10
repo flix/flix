@@ -10,6 +10,7 @@ sealed trait MonoType {
   @deprecated("will be removed", "0.5")
   def typeConstructor: MonoType = this match {
     case MonoType.Channel(_) => this
+    case MonoType.Ref(_) => this
     case MonoType.Apply(t1, _) => t1.typeConstructor
     case _ => this
   }
@@ -17,6 +18,7 @@ sealed trait MonoType {
   @deprecated("will be removed", "0.5")
   def typeArguments: List[MonoType] = this match {
     case MonoType.Channel(tpe) => List(tpe)
+    case MonoType.Ref(tpe) => List(tpe)
     case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
   }
@@ -45,15 +47,13 @@ sealed trait MonoType {
     case _ => false
   }
 
-  @deprecated("will be removed", "0.5")
-  def isRef: Boolean = typeConstructor match {
-    case MonoType.Ref => true
-    case _ => false
-  }
-
 }
 
 object MonoType {
+
+  ///
+  /// Primitive Types.
+  ///
 
   case object Unit extends MonoType
 
@@ -77,7 +77,20 @@ object MonoType {
 
   case object Str extends MonoType
 
+  ///
+  /// Compound Types.
+  ///
+
+  // TODO: Order like in type.
+
   case class Channel(tpe: MonoType) extends MonoType
+
+  case class Ref(tpe: MonoType) extends MonoType
+
+
+  case class Relation(sym: Symbol.RelSym, attr: List[MonoType], kind: Kind) extends MonoType
+
+  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType], kind: Kind) extends MonoType
 
   /**
     * A type constructor that represent arrays.
@@ -102,13 +115,6 @@ object MonoType {
   }
 
   /**
-    * A type constructor that represents references.
-    */
-  case object Ref extends MonoType {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type expression that represents functions.
     */
   case class Arrow(length: Int) extends MonoType {
@@ -123,23 +129,6 @@ object MonoType {
     */
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends MonoType
 
-  /**
-    * A type constructor that represents a relation with attributes of the given types.
-    *
-    * @param sym  the symbol of the relation.
-    * @param attr the attribute types of the relation.
-    * @param kind the kind of the relation.
-    */
-  case class Relation(sym: Symbol.RelSym, attr: List[MonoType], kind: Kind) extends MonoType
-
-  /**
-    * A type constructor that represents a lattice with attributes of the given types.
-    *
-    * @param sym  the symbol of the lattice.
-    * @param attr the attribute types of the relation.
-    * @param kind the kind of the lattice.
-    */
-  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType], kind: Kind) extends MonoType
 
   /**
     * A type constructor that represents a schema.

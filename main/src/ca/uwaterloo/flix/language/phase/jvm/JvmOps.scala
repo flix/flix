@@ -66,7 +66,7 @@ object JvmOps {
       case MonoType.Str => JvmType.String
       case MonoType.Channel(_) => JvmType.Object
       case MonoType.Native(clazz) => JvmType.Object
-      case MonoType.Ref => getCellClassType(tpe)
+      case MonoType.Ref(_) => getCellClassType(tpe)
       case MonoType.Arrow(l) => getFunctionInterfaceType(tpe)
       case MonoType.Tuple(l) => getTupleInterfaceType(tpe)
       case MonoType.Array => JvmType.Object
@@ -348,23 +348,17 @@ object JvmOps {
     *
     * NB: The type must be a reference type.
     */
-  def getCellClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isRef)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getCellClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Ref(elmType) =>
+      // Compute the stringified erased type of the argument.
+      val arg = stringify(getErasedJvmType(elmType))
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+      val name = "Cell" + "$" + arg
 
-    // Compute the stringified erased type of the argument.
-    val arg = stringify(getErasedJvmType(tpe.typeArguments.head))
-
-    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-    val name = "Cell" + "$" + arg
-
-    // The type resides in the ca.uwaterloo.flix.api.cell package.
-    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+      // The type resides in the ca.uwaterloo.flix.api.cell package.
+      JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -715,7 +709,7 @@ object JvmOps {
     case MonoType.Array => Type.Array
     case MonoType.Vector => Type.Vector
     case MonoType.Native(clazz) => Type.Native(clazz)
-    case MonoType.Ref => Type.Ref
+    case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
     case MonoType.Arrow(length) => Type.Arrow(length)
     case MonoType.Enum(sym, kind) => Type.Enum(sym, Kind.Star)
     case MonoType.Relation(sym, attr, kind) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
