@@ -673,7 +673,7 @@ object GenExpression {
       // Evaluate the underlying expression
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // Erased type of the value of the reference
-      val valueErasedType = JvmOps.getErasedJvmType(tpe.typeArguments.head)
+      val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
       // Constructor descriptor
       val constructorDescriptor = AsmOps.getMethodDescriptor(List(valueErasedType), JvmType.Void)
       // Call the constructor
