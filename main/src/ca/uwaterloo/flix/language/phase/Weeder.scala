@@ -613,45 +613,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val lambdaBody = WeededAst.Expression.RecordSelect(varExp, label, loc)
       WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
 
-    case ParsedAst.Expression.RecordExtend(_, fields, rest, _) =>
-      val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordField(sp1, label, exp, sp2) =>
+    case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
+      // We translate the sequence of record operations into a nested tree using a fold right.
+      foldRight(ops)(visitExp(rest)) {
+        case (ParsedAst.RecordOp.Extend(sp1, label, exp, sp2), acc) =>
           mapN(visitExp(exp)) {
-            case e => (label, e, mkSL(sp1, sp2))
+            case e => WeededAst.Expression.RecordExtend(label, e, acc, mkSL(sp1, sp2))
           }
-      }
 
-      mapN(fieldsVal, visitExp(rest)) {
-        case (fs, r) =>
-          // Rewrite into a sequence of nested record extensions.
-          fs.foldLeft(r) {
-            case (acc, (label, value, loc)) => WeededAst.Expression.RecordExtend(label, value, acc, loc)
-          }
-      }
+        case (ParsedAst.RecordOp.Restrict(sp1, label, sp2), acc) =>
+          WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Expression.RecordRestrict(sp1, labels, rest, sp2) =>
-      val sp1 = leftMostSourcePosition(rest)
-      mapN(visitExp(rest)) {
-        case r => labels.foldLeft(r) {
-          case (acc, label) => WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2))
-        }
-      }
-
-    case ParsedAst.Expression.RecordUpdate(_, fields, rest, _) =>
-      val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordField(sp1, label, value, sp2) =>
-          mapN(visitExp(value)) {
-            case v => (label, v, mkSL(sp1, sp2))
-          }
-      }
-
-      mapN(fieldsVal, visitExp(rest)) {
-        case (fs, r) =>
-          // Rewrite into a sequence of pairwise nested restrictions and extensions.
-          fs.foldLeft(r) {
-            case (acc, (label, value, loc)) =>
-              val inner = WeededAst.Expression.RecordRestrict(label, acc, loc)
-              WeededAst.Expression.RecordExtend(label, value, inner, loc)
+        case (ParsedAst.RecordOp.Update(sp1, label, exp, sp2), acc) =>
+          mapN(visitExp(exp)) {
+            case e =>
+              // An update is a restrict followed by an extension.
+              val inner = WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2))
+              WeededAst.Expression.RecordExtend(label, e, inner, mkSL(sp1, sp2))
           }
       }
 
@@ -1816,11 +1794,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
-    case ParsedAst.Expression.RecordExtend(sp1, _, _, _) => sp1
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
-    case ParsedAst.Expression.RecordRestrict(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.RecordUpdate(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.RecordOperation(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)

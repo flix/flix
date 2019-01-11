@@ -144,10 +144,18 @@ class TestValidation extends FunSuite {
 
   test("traverse03") {
     val result = traverse(List(1, 2, 3)) {
-      case x =>  if (x % 2 == 1) Success(x) else Failure(Stream(x))
+      case x => if (x % 2 == 1) Success(x) else Failure(Stream(x))
     }
 
     assertResult(Failure(Stream(2)))(result)
+  }
+
+  test("foldRight01") {
+    val result = foldRight(List(1, 1, 1))(Success(10)) {
+      case (x, acc) => (acc - x).toSuccess
+    }
+
+    assertResult(Success(7))(result)
   }
 
 }
