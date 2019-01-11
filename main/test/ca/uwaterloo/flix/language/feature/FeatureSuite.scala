@@ -49,13 +49,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Bool", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Bool.flix"),
   new FlixTest("Test.Expression.Char", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Char.flix"),
 
-  new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Record.Restrict", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Record.Update", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Record.Select", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")(compiled = false), // TODO
-
   new FlixTest("Test.Expression.Float", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float.flix"),
   new FlixTest("Test.Expression.Float32", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float32.flix"),
   new FlixTest("Test.Expression.Float64", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float64.flix"),
@@ -69,7 +62,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Tuple", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Tuple.flix"),
   new FlixTest("Test.Expression.Str", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Str.flix"),
   new FlixTest("Test.Expression.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Def.flix"),
-  new FlixTest("TestReferences", "main/test/ca/uwaterloo/flix/language/feature/TestReferences.flix"),
+
   //new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"), // TODO
   new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix"),
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix"),
@@ -110,6 +103,24 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.VectorSliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoIndexes.flix"),
   new FlixTest("Test.Expression.VectorSliceNoEnd", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoEnd.flix"),
   new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix"),
+
+  //
+  // Records.
+  //
+  new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Select", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Restrict", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Update", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")(compiled = false), // TODO
+
+  //
+  // References.
+  //
+  new FlixTest("Test.Expression.Reference.Assign", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Assign.flix"),
+  new FlixTest("Test.Expression.Reference.Ref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Ref.flix"),
+  new FlixTest("Test.Expression.Reference.Deref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Deref.flix"),
+  new FlixTest("Test.Expression.Reference.Precedence", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Precedence.flix"),
 
   //
   // Constraints.

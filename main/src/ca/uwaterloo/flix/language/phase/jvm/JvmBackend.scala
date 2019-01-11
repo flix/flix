@@ -143,9 +143,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     val tupleClasses = GenTupleClasses.gen(types)
 
     //
-    // Generate cell classes.
+    // Generate references classes.
     //
-    val cellClasses = GenCellClasses.gen()
+    val refClasses = GenRefClasses.gen()
 
     //
     // Collect all the classes and interfaces together.
@@ -162,7 +162,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       tagClasses,
       tupleInterfaces,
       tupleClasses,
-      cellClasses
+      refClasses
     ).reduce(_ ++ _)
 
     //
