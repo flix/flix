@@ -1,23 +1,149 @@
 @test
-def testAssign01(): Bool =
-    let l = ref 42;
-    let _ = l := 84;
-    84 `assertEq!` deref l
+def testAssignUnit01(): Bool =
+    let l = ref ();
+    l := ();
+    () `assertEq!` deref l
 
 @test
-def testAssign02(): Bool =
-    let l = ref (1, 2, 3);
-    let _ = l := (3, 2, 1);
-    (3, 2, 1) `assertEq!` deref l
+def testAssignBool01(): Bool =
+    let l = ref true;
+    l := false;
+    false `assertEq!` deref l
 
 @test
-def testAssign03(): Bool =
+def testAssignBool02(): Bool =
+    let l = ref false;
+    l := true;
+    true `assertEq!` deref l
+
+@test
+def testAssignChar01(): Bool =
+    let l = ref 'a';
+    l := 'b';
+    'b' `assertEq!` deref l
+
+@test
+def testAssignFloat3201(): Bool =
+    let l = ref 123.456f32;
+    l := 456.123f32;
+    456.123f32 `assertEq!` deref l
+
+@test
+def testAssignFloat6401(): Bool =
+    let l = ref 123.456f64;
+    l := 456.123f64;
+    456.123f64 `assertEq!` deref l
+
+@test
+def testAssignInt801(): Bool =
+    let l = ref 123i8;
+    l := 111i8;
+    111i8 `assertEq!` deref l
+
+@test
+def testAssignInt1601(): Bool =
+    let l = ref 123i16;
+    l := 456i16;
+    456i16 `assertEq!` deref l
+
+@test
+def testAssignInt3201(): Bool =
+    let l = ref 123i32;
+    l := 456i32;
+    456i32 `assertEq!` deref l
+
+@test
+def testAssignInt6401(): Bool =
+    let l = ref 123i64;
+    l := 456i64;
+    456i64 `assertEq!` deref l
+
+@test
+def testAssignBigInt01(): Bool =
+    let l = ref 111111111ii;
+    l := 999999999ii;
+    999999999ii `assertEq!` deref l
+
+@test
+def testAssignStr01(): Bool =
+    let l = ref "hello";
+    l := "hello world";
+    "hello world" `assertEq!` deref l
+
+@test
+def testAssignOption01(): Bool =
     let l = ref None : Option[Int];
-    let _ = l := Some(42);
-    Some(42) `assertEq!` deref l
+    l := Some(123);
+    Some(123) `assertEq!` deref l
 
 @test
-def testAssign04(): Bool =
-    let l = ref Some(42);
-    let _ = l := None : Option[Int];
+def testAssignOption02(): Bool =
+    let l = ref Some(123);
+    l := None;
     None `assertEq!` deref l
+
+@test
+def testAssignResult01(): Bool =
+    let l = ref Ok(123);
+    l := Err(456);
+    Err(456) `assertEq!` deref l
+
+@test
+def testAssignResult02(): Bool =
+    let l = ref Err(123);
+    l := Ok(456);
+    Ok(456) `assertEq!` deref l
+
+@test
+def testAssignAssign01(): Bool =
+    let l = ref 1;
+    l := 2;
+    l := 3;
+    3 `assertEq!` deref l
+
+@test
+def testAssignAssign02(): Bool =
+    let l = ref 1;
+    l := 2;
+    l := 3;
+    l := 4;
+    4 `assertEq!` deref l
+
+@test
+def testAssignAssign03(): Bool =
+    let l = ref 1;
+    l := 2;
+    l := 3;
+    l := 4;
+    l := 5;
+    5 `assertEq!` deref l
+
+@test
+def testAssignAssign04(): Bool =
+    let l = ref 1;
+    l := deref l + 1;
+    2 `assertEq!` deref l
+
+@test
+def testAssignAssign05(): Bool =
+    let l = ref 1;
+    l := deref l + 1;
+    l := deref l + 1;
+    3 `assertEq!` deref l
+
+@test
+def testAssignAssign06(): Bool =
+    let l = ref 1;
+    l := deref l + 1;
+    l := deref l + 1;
+    l := deref l + 1;
+    4 `assertEq!` deref l
+
+@test
+def testAssignAssign07(): Bool =
+    let l = ref 1;
+    l := deref l + 1;
+    l := deref l + 1;
+    l := deref l + 1;
+    l := deref l + 1;
+    5 `assertEq!` deref l
