@@ -16,22 +16,21 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
+import ca.uwaterloo.flix.runtime.interpreter.Interpreter
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Evaluation, Validation}
+import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 object JvmBackend extends Phase[Root, CompilationResult] {
-
-  // TODO: Ramin/Magnus: Can and should we make he backend completely independent from flix.api?
-  // Then we would need to generate CellX, Unit, and a collection of exceptions.
 
   /**
     * The directory where to place the generated class files.
@@ -46,13 +45,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     // Immediately return if in interpreted mode.
     //
     if (flix.options.evaluation == Evaluation.Interpreted) {
-      val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-        case (macc, (sym, defn)) =>
-          // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
-          val args: Array[AnyRef] = Array(null)
-          macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
-      }
-      return new CompilationResult(root, defs).toSuccess
+      return new CompilationResult(root, getInterpretedDefs(root)).toSuccess
     }
 
     //
@@ -183,19 +176,90 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     Bootstrap.bootstrap(allClasses)
 
     //
-    // Construct a map from symbols to actual JVM code.
-    //
-    val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-      case (macc, (sym, defn)) =>
-        // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
-        val args: Array[AnyRef] = Array(null)
-        macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
-    }
-
-    //
     // Return the compilation result.
     //
-    new CompilationResult(root, defs).toSuccess
+    new CompilationResult(root, getCompiledDefs(root)).toSuccess
+  }
+
+  /**
+    * Returns a map from definition symbols to executable functions (backed by the interpreter).
+    */
+  private def getInterpretedDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
+    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+      case (macc, (sym, defn)) =>
+        val args: Array[AnyRef] = Array(null)
+        macc + (sym -> (() => Interpreter.link(sym, root).apply(args)))
+    }
+
+  /**
+    * Returns a map from definition symbols to executable functions (backed by JVM backend).
+    */
+  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => ProxyObject] =
+    root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+      case (macc, (sym, defn)) =>
+        val args: Array[AnyRef] = Array(null)
+        macc + (sym -> (() => link(sym, root).apply(args)))
+    }
+
+  /**
+    * Returns a function object for the given definition symbol `sym`.
+    */
+  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] =
+    (args: Array[AnyRef]) => {
+      ///
+      /// Retrieve the definition and its type.
+      ///
+      val defn = root.defs(sym)
+      val MonoType.Arrow(targs, tresult) = defn.tpe
+
+      ///
+      /// Construct the arguments array.
+      ///
+      val argsArray = if (args.isEmpty) Array(null) else args
+      if (argsArray.length != defn.method.getParameterCount) {
+        throw InternalRuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${argsArray.length} for method ${defn.method.getName}.")
+      }
+
+      ///
+      /// Perform the method call using reflection.
+      ///
+      try {
+        // Call the method passing the arguments.
+        val result = defn.method.invoke(null, argsArray: _*)
+
+        // Construct a fresh proxy object.
+        newProxyObj(result, tresult, root)
+      } catch {
+        case e: InvocationTargetException =>
+          // Rethrow the underlying exception.
+          throw e.getTargetException
+      }
+    }
+
+  /**
+    * Returns a proxy object that wraps the given result value.
+    */
+  private def newProxyObj(result: AnyRef, resultType: MonoType, root: Root)(implicit flix: Flix): ProxyObject = {
+    // Lookup the Equality method.
+    val eq = root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty).get(resultType) match {
+      case None => null
+      case Some(defn) => link(defn, root)
+    }
+
+    // Lookup the HashCode method.
+    val hash = root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty).get(resultType) match {
+      case None => null
+      case Some(defn) => link(defn, root)
+    }
+
+    // Lookup the ToString method.
+    val toString = root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty).get(resultType) match {
+      case None => null
+      case Some(defn) => link(defn, root)
+    }
+
+    // Create the proxy object.
+    ProxyObject.of(result, eq, hash, toString)
   }
 
 }
