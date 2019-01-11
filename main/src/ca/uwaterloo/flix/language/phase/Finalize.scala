@@ -591,56 +591,63 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     FinalAst.Property(p0.law, p0.defn, visitExp(p0.exp, m))
 
   // TODO: Should be private
-  def visitType(t0: Type): MonoType = t0 match {
+  def visitType(t0: Type): MonoType = {
+    val base = t0.typeConstructor
+    val args = t0.typeArguments.map(visitType)
 
-    case Type.Unit => MonoType.Unit
-    case Type.Bool => MonoType.Bool
-    case Type.Char => MonoType.Char
-    case Type.Float32 => MonoType.Float32
-    case Type.Float64 => MonoType.Float64
-    case Type.Int8 => MonoType.Int8
-    case Type.Int16 => MonoType.Int16
-    case Type.Int32 => MonoType.Int32
-    case Type.Int64 => MonoType.Int64
-    case Type.BigInt => MonoType.BigInt
-    case Type.Str => MonoType.Str
+    base match {
+      // Primitive Types.
+      case Type.Unit => MonoType.Unit
+      case Type.Bool => MonoType.Bool
+      case Type.Char => MonoType.Char
+      case Type.Float32 => MonoType.Float32
+      case Type.Float64 => MonoType.Float64
+      case Type.Int8 => MonoType.Int8
+      case Type.Int16 => MonoType.Int16
+      case Type.Int32 => MonoType.Int32
+      case Type.Int64 => MonoType.Int64
+      case Type.BigInt => MonoType.BigInt
+      case Type.Str => MonoType.Str
 
-    case Type.Channel => ??? // cannot happen...
-    case Type.Array => ??? // cannot happen...
-    case Type.Native(clazz) => MonoType.Native(clazz)
-    case Type.Ref => ??? // cannot happen...
-    case Type.Arrow(length) => ??? // cannot happen...
-    case Type.Relation(sym, attr, kind) => MonoType.Relation(sym, attr map visitType)
-    case Type.Lattice(sym, attr, kind) => MonoType.Lattice(sym, attr map visitType)
-    case Type.Schema(m0) =>
-      val m = m0.foldLeft(Map.empty[Symbol.PredSym, MonoType]) {
-        case (macc, (sym, t)) => macc + (sym -> visitType(t))
-      }
-      MonoType.Schema(m)
-    case Type.Tuple(length) => MonoType.Tuple(Nil) // TODO: Seems very suspicious
-    case Type.RecordEmpty => MonoType.RecordEmpty()
-    case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
-    case Type.Apply(Type.Channel, tpe2) => MonoType.Channel(visitType(tpe2))
-    case Type.Apply(Type.Ref, tpe2) => MonoType.Ref(visitType(tpe2))
+      // Compound Types.
+      case Type.Array => MonoType.Array(args.head)
 
-    case Type.Var(id, kind) => MonoType.Var(id)
+      case Type.Vector => MonoType.Array(args.head)
 
-    case _ =>
+      case Type.Channel => MonoType.Channel(args.head)
 
-      t0.typeConstructor match {
-        case Type.Enum(sym, _) =>
-          MonoType.Enum(sym, t0.typeArguments.map(visitType))
-        case Type.Tuple(_) => MonoType.Tuple(t0.typeArguments.map(visitType))
-        case Type.Array => MonoType.Array(visitType(t0.typeArguments.head))
-        case Type.Vector => MonoType.Array(visitType(t0.typeArguments.head))
-        case Type.Arrow(l) =>
-          val targs = t0.typeArguments
-          MonoType.Arrow(targs.init.map(visitType), visitType(targs.last))
-        case _ => t0 match {
-          case _ => ??? // TODO
+      case Type.Ref => MonoType.Ref(args.head)
+
+      case Type.Tuple(l) => MonoType.Tuple(args)
+
+      case Type.Enum(sym, _) => MonoType.Enum(sym, args)
+
+      case Type.Arrow(l) => MonoType.Arrow(args.init, args.last)
+
+      case Type.RecordEmpty => MonoType.RecordEmpty()
+
+      case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
+
+      case Type.Relation(sym, attr, _) => MonoType.Relation(sym, attr map visitType)
+
+      case Type.Lattice(sym, attr, _) => MonoType.Lattice(sym, attr map visitType)
+
+      case Type.Schema(m0) =>
+        val m = m0.foldLeft(Map.empty[Symbol.PredSym, MonoType]) {
+          case (macc, (sym, t)) => macc + (sym -> visitType(t))
         }
-      }
+        MonoType.Schema(m)
 
+      case Type.Native(clazz) => MonoType.Native(clazz)
+
+      case Type.Zero => MonoType.Unit
+
+      case Type.Succ(l, t) => MonoType.Unit
+
+      case Type.Var(id, kind) => MonoType.Var(id) // TODO: Should never happen.
+
+      case Type.Apply(_, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+    }
   }
 
   // TODO: Deprecated
