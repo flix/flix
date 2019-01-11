@@ -70,7 +70,8 @@ object Main {
       quickchecker = cmdOpts.quickchecker,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
-      writeClassFiles = !cmdOpts.interactive
+      writeClassFiles = !cmdOpts.interactive,
+      xnostratifier = cmdOpts.xnostratifier
     )
 
     // check if command was passed.
@@ -184,6 +185,7 @@ object Main {
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -306,6 +308,10 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xno-stratifier
+      opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
+        text("[experimental] disables computation of stratification.")
 
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).

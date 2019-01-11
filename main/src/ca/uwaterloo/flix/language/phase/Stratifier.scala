@@ -49,6 +49,11 @@ object Stratifier extends Phase[Root, Root] {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
+
+    // Check if computation of stratification is disabled.
+    if (flix.options.xnostratifier)
+      return root.toSuccess
+
     // Run the control-flow analysis.
     implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.runAnalysis(root)
 

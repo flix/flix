@@ -38,7 +38,8 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
     verifier = false,
-    writeClassFiles = true
+    writeClassFiles = true,
+    xnostratifier = false
   )
 
   /**
@@ -65,6 +66,7 @@ object Options {
   * @param verbosity       selects the level of verbosity.
   * @param verifier        enables the verifier.
   * @param writeClassFiles enables output of class files.
+  * @param xnostratifier   disables computation of stratification.
   */
 case class Options(core: Boolean,
                    debug: Boolean,
@@ -81,7 +83,8 @@ case class Options(core: Boolean,
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean,
-                   writeClassFiles: Boolean)
+                   writeClassFiles: Boolean,
+                   xnostratifier: Boolean)
 
 /**
   * An option to control the evaluation strategy.

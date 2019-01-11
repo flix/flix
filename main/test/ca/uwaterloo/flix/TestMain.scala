@@ -144,6 +144,12 @@ class TestMain extends FunSuite {
     assert(opts.xinvariants)
   }
 
+  test("--Xno-stratifier") {
+    val args = Array("--Xno-stratifier", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnostratifier)
+  }
+
   test("--Xno-tailcalls") {
     val args = Array("--Xno-tailcalls", "p.flix")
     val opts = Main.parseCmdOpts(args).get
