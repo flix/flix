@@ -1,23 +1,11 @@
 package ca.uwaterloo.flix.language.ast
 
 /**
-  * Representation of mono types.
+  * Representation of monomorphed types.
+  *
+  * A mono type is a simplified representation without any type variables.
   */
-sealed trait MonoType {
-
-  @deprecated("will be removed", "0.5")
-  def typeArguments: List[MonoType] = this match {
-    case MonoType.Array(tpe) => List(tpe)
-    case MonoType.Channel(tpe) => List(tpe)
-    case MonoType.Enum(_, targs) => targs
-    case MonoType.Arrow(targs, tresult) => targs ::: tresult :: Nil
-    case MonoType.Tuple(elms) => elms
-    case MonoType.Ref(tpe) => List(tpe)
-    case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
-    case _ => Nil
-  }
-
-}
+sealed trait MonoType
 
 object MonoType {
 

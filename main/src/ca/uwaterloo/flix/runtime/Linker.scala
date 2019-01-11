@@ -69,18 +69,17 @@ object Linker {
         return result.asInstanceOf[ProxyObject]
       }
 
-      // Retrieve the value type.
-      val resultType = defn.tpe.typeArguments.last
+      val MonoType.Arrow(targs, tresult) = defn.tpe
 
       // Check whether the value is an array.
       // NB: This is a hack to get functional predicates to work.
-      if (!resultType.isInstanceOf[MonoType.Array]) {
+      if (!tresult.isInstanceOf[MonoType.Array]) {
         // Case 1: Non-array value.
 
         // Retrieve operations.
-        val eq = getEqOp(resultType, root)
-        val hash = getHashOp(resultType, root)
-        val toString = getToStrOp(resultType, root)
+        val eq = getEqOp(tresult, root)
+        val hash = getHashOp(tresult, root)
+        val toString = getToStrOp(tresult, root)
 
         // Create the proxy object.
         ProxyObject.of(result, eq, hash, toString)
@@ -88,7 +87,7 @@ object Linker {
         // Case 2: Array value.
 
         // Retrieve the wrapped array.
-        val wrappedArray = getWrappedArray(result, resultType, root)
+        val wrappedArray = getWrappedArray(result, tresult, root)
 
         // Construct the wrapped array object.
         ProxyObject.of(wrappedArray, null, null, null)
@@ -113,11 +112,12 @@ object Linker {
 
         val result = defn.method.invoke(null, as: _*)
 
+        val MonoType.Arrow(targs, tresult) = defn.tpe
+
         // Eq, Hash, and toString
-        val resultMonoType = defn.tpe.typeArguments.last
-        val eq = getEqOp(resultMonoType, root)
-        val hash = getHashOp(resultMonoType, root)
-        val toString = getToStrOp(resultMonoType, root)
+        val eq = getEqOp(tresult, root)
+        val hash = getHashOp(tresult, root)
+        val toString = getToStrOp(tresult, root)
 
         // Create the proxy object.
         ProxyObject.of(result, eq, hash, toString)
@@ -147,10 +147,10 @@ object Linker {
       case a: Array[AnyRef] => a map {
         case v =>
           // The type of the array elements.
-          val elmMonoType = tpe.typeArguments.head
+          val elmType = tpe.asInstanceOf[MonoType.Array].tpe
 
           // Construct the wrapped element.
-          ProxyObject.of(v, getEqOp(elmMonoType, root), getHashOp(elmMonoType, root), getToStrOp(elmMonoType, root))
+          ProxyObject.of(v, getEqOp(elmType, root), getHashOp(elmType, root), getToStrOp(elmType, root))
       }
     }
   }
