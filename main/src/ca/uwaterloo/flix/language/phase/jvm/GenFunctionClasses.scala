@@ -60,7 +60,7 @@ object GenFunctionClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Args of the function
-    val args = defn.tpe.typeArguments
+    val MonoType.Arrow(targs, tresult) = defn.tpe
 
     // The super interface.
     val superInterface = Array(functionInterface.name.toInternalName)
@@ -70,7 +70,7 @@ object GenFunctionClasses {
       JvmName.Object.toInternalName, superInterface)
 
     // Adding a setter and a field for each argument of the function
-    for ((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- targs.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedJvmType(arg)
 
@@ -82,8 +82,7 @@ object GenFunctionClasses {
     }
 
     // Jvm type of the result of the function
-    val resultType = args.last
-    val jvmResultType = JvmOps.getErasedJvmType(resultType)
+    val jvmResultType = JvmOps.getErasedJvmType(tresult)
 
     // Field for the result
     AsmOps.compileField(visitor, "result", jvmResultType, isStatic = false, isPrivate = true)
@@ -98,10 +97,10 @@ object GenFunctionClasses {
     compileInvokeMethod(visitor, classType, defn, jvmResultType)
 
     // Apply method of the class
-    compileApplyMethod(visitor, classType, defn, resultType)
+    compileApplyMethod(visitor, classType, defn, tresult)
 
     // Eval method of the class
-    compileEvalMethod(visitor, classType, defn, resultType)
+    compileEvalMethod(visitor, classType, defn, tresult)
 
     visitor.toByteArray
   }
