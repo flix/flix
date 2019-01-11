@@ -8,7 +8,7 @@ import org.objectweb.asm.Opcodes._
 /**
   * Generates bytecode for the cell classes.
   */
-object GenCellClasses {
+object GenRefClasses {
 
   /**
     * Returns the bytecode for the cell classes built-in to the Flix language.
@@ -20,16 +20,16 @@ object GenCellClasses {
       JvmType.PrimByte, JvmType.PrimShort, JvmType.PrimInt, JvmType.PrimLong, JvmType.Object)
 
     // Generating each cell class
-    types.map{ tpe =>
+    types.map { tpe =>
       val classType = JvmName.getCellClassType(tpe)
-      classType.name -> JvmClass(classType.name, genCellClass(classType, tpe))
+      classType.name -> JvmClass(classType.name, genRefClass(classType, tpe))
     }.toMap
   }
 
   /**
-    * Generating class `classType` with value of type `cellType`
+    * Generating class `classType` with value of type `tpe`
     */
-  def genCellClass(classType: JvmType.Reference, cellType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genRefClass(classType: JvmType.Reference, tpe: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
@@ -39,16 +39,16 @@ object GenCellClasses {
 
 
     // Generate the instance field
-    AsmOps.compileField(visitor, "value", cellType, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "value", tpe, isStatic = false, isPrivate = true)
 
     // Generate the constructor
-    genConstructor(classType, cellType, visitor)
+    genConstructor(classType, tpe, visitor)
 
     // Generate `getValue` method
-    genGetValue(classType, cellType, visitor)
+    genGetValue(classType, tpe, visitor)
 
     // Generate `setValue` method
-    genSetValue(classType, cellType, visitor)
+    genSetValue(classType, tpe, visitor)
 
     // Generate the `toString` method.
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
