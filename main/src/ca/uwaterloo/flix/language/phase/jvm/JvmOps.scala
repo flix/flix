@@ -53,6 +53,7 @@ object JvmOps {
 
     // Match on the type constructor.
     base match {
+      // Primitives
       case MonoType.Unit => JvmType.Unit
       case MonoType.Bool => JvmType.PrimBool
       case MonoType.Char => JvmType.PrimChar
@@ -64,6 +65,8 @@ object JvmOps {
       case MonoType.Int64 => JvmType.PrimLong
       case MonoType.BigInt => JvmType.BigInteger
       case MonoType.Str => JvmType.String
+
+      // Compound
       case MonoType.Channel(_) => JvmType.Object
       case MonoType.Native(clazz) => JvmType.Object
       case MonoType.Ref(_) => getCellClassType(tpe)
@@ -73,6 +76,7 @@ object JvmOps {
       case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
       case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
       case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
+
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }

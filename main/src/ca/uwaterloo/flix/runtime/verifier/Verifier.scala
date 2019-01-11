@@ -519,10 +519,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
      * Local visitor. Enumerates the symbolic values of a type.
      */
     def visit(tpe: MonoType): List[SymVal] = {
-      val base = tpe.typeConstructor
-      val args = tpe.typeArguments
-
-      base match {
+      tpe match {
         case MonoType.Unit => List(SymVal.Unit)
         case MonoType.Bool => List(SymVal.True, SymVal.False)
         case MonoType.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Char))
@@ -544,7 +541,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
             }
           }.toList
 
-        case MonoType.Tuple(l) =>
+        case MonoType.Tuple(elms) =>
           def visitn(xs: List[MonoType]): List[List[SymVal]] = xs match {
             case Nil => List(Nil)
             case t :: ts => visitn(ts) flatMap {
@@ -554,7 +551,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
             }
           }
 
-          visitn(args).map(es => SymVal.Tuple(es))
+          visitn(elms).map(es => SymVal.Tuple(es))
 
         case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       }

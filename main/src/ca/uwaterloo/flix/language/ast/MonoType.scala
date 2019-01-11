@@ -65,17 +65,17 @@ object MonoType {
 
   // TODO: Order like in type.
 
-  case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
-
   case class Array(tpe: MonoType) extends MonoType
 
   case class Channel(tpe: MonoType) extends MonoType
 
-  case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType // TODO: We want elms here?
-
   case class Ref(tpe: MonoType) extends MonoType
 
   case class Tuple(elms: List[MonoType]) extends MonoType
+
+  case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType // TODO: We want elms here?
+
+  case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
   case object RecordEmpty extends MonoType
 

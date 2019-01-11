@@ -300,10 +300,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
     */
   class ArbSymVal(tpe: MonoType, root: Root) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = {
-      val base = tpe.typeConstructor
-      val args = tpe.typeArguments
-
-      base match {
+      tpe match {
         case MonoType.Unit => ArbUnit.gen
         case MonoType.Bool => ArbBool.gen
         case MonoType.Char => ArbChar.gen
@@ -327,8 +324,8 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
           }
           oneOf(elms.toArray: _*)
 
-        case MonoType.Tuple(l) => (r: Random) => {
-          val vals = args.map(t => new ArbSymVal(t, root).gen.mk(r))
+        case MonoType.Tuple(elms) => (r: Random) => {
+          val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
           SymVal.Tuple(vals)
         }
 

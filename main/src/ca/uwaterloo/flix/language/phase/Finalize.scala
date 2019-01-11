@@ -645,11 +645,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   // TODO: Deprecated
-  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.FreeVar], tpe: MonoType): MonoType = {
-    val base = tpe.typeConstructor
-    val targs = tpe.typeArguments
-    val freeArgs = fvs.map(_.tpe)
-    MonoType.Arrow(freeArgs ::: targs.init, targs.last)
+  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[FinalAst.FreeVar], tpe: MonoType): MonoType = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      val freeArgs = fvs.map(_.tpe)
+      MonoType.Arrow(freeArgs ::: targs, tresult)
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   // TODO: Deprecated
