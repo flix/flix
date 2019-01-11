@@ -1224,7 +1224,7 @@ object Interpreter {
             result(i) = toJava(elms(i)).asInstanceOf[Int]
           }
           result
-        case _ if tpe.isTuple =>
+        case MonoType.Tuple(_) =>
           elms
         case _ => throw InternalRuntimeException(s"Unable to construct array of type: '$tpe'.")
       }

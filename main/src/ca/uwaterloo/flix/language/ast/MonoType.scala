@@ -10,6 +10,7 @@ sealed trait MonoType {
     case MonoType.Array(_) => this
     case MonoType.Enum(_, _) => this
     case MonoType.Channel(_) => this
+    case MonoType.Tuple(_) => this
     case MonoType.Ref(_) => this
     case MonoType.Apply(t1, _) => t1.typeConstructor
     case _ => this
@@ -20,6 +21,7 @@ sealed trait MonoType {
     case MonoType.Array(tpe) => List(tpe)
     case MonoType.Channel(tpe) => List(tpe)
     case MonoType.Enum(_, targs) => targs
+    case MonoType.Tuple(elms) => elms
     case MonoType.Ref(tpe) => List(tpe)
     case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
@@ -28,12 +30,6 @@ sealed trait MonoType {
   @deprecated("will be removed", "0.5")
   def isArrow: Boolean = typeConstructor match {
     case MonoType.Arrow(l) => true
-    case _ => false
-  }
-
-  @deprecated("will be removed", "0.5")
-  def isTuple: Boolean = typeConstructor match {
-    case MonoType.Tuple(l) => true
     case _ => false
   }
 
@@ -81,6 +77,8 @@ object MonoType {
 
   case class Ref(tpe: MonoType) extends MonoType
 
+  case class Tuple(elms: List[MonoType]) extends MonoType
+
   case object RecordEmpty extends MonoType
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
@@ -93,18 +91,10 @@ object MonoType {
 
   case class Native(clazz: Class[_]) extends MonoType
 
-
   /**
     * A type expression that represents functions.
     */
   case class Arrow(length: Int) extends MonoType {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  /**
-    * A type constructor that represents tuples of the given `length`.
-    */
-  case class Tuple(length: Int) extends MonoType {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 

@@ -617,7 +617,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         case (macc, (sym, t)) => macc + (sym -> visitType(t))
       }
       MonoType.Schema(m)
-    case Type.Tuple(length) => MonoType.Tuple(length)
+    case Type.Tuple(length) => MonoType.Tuple(Nil) // TODO: Seems very suspicious
     case Type.RecordEmpty => MonoType.RecordEmpty
     case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
     case Type.Apply(Type.Channel, tpe2) => MonoType.Channel(visitType(tpe2))
@@ -630,6 +630,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       t0.typeConstructor match {
         case Type.Enum(sym, _) =>
           MonoType.Enum(sym, t0.typeArguments.map(visitType))
+        case Type.Tuple(_) => MonoType.Tuple(t0.typeArguments.map(visitType))
         case Type.Array => MonoType.Array(visitType(t0.typeArguments.head))
         case Type.Vector => MonoType.Array(visitType(t0.typeArguments.head))
         case _ => t0 match {

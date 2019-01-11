@@ -68,7 +68,7 @@ object JvmOps {
       case MonoType.Native(clazz) => JvmType.Object
       case MonoType.Ref(_) => getCellClassType(tpe)
       case MonoType.Arrow(l) => getFunctionInterfaceType(tpe)
-      case MonoType.Tuple(l) => getTupleInterfaceType(tpe)
+      case MonoType.Tuple(l) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
       case MonoType.Array(tpe) => JvmType.Object
       case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
       case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
@@ -278,26 +278,19 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a tuple type.
     */
-  def getTupleInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isTuple)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getTupleInterfaceType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Tuple(elms) =>
+      // Compute the arity of the tuple.
+      val arity = elms.length
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Compute the arity of the tuple.
-    val arity = tpe.typeArguments.length
+      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+      val name = "ITuple" + arity + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
-
-    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-    val name = "ITuple" + arity + "$" + args.mkString("$")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -313,26 +306,19 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a tuple type.
     */
-  def getTupleClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isTuple)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getTupleClassType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Tuple(elms) =>
+      // Compute the arity of the tuple.
+      val arity = elms.length
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Compute the arity of the tuple.
-    val arity = tpe.typeArguments.length
+      // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
+      val name = "Tuple" + arity + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
-
-    // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
-    val name = "Tuple" + arity + "$" + args.mkString("$")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**

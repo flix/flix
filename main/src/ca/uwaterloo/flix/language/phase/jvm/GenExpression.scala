@@ -487,7 +487,7 @@ object GenExpression {
 
     case Expression.Index(base, offset, tpe, _) =>
       // We get the JvmType of the class for the tuple
-      val classType = JvmOps.getTupleInterfaceType(base.tpe)
+      val classType = JvmOps.getTupleInterfaceType(base.tpe.asInstanceOf[MonoType.Tuple])
       // evaluating the `base`
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Descriptor of the method
@@ -501,7 +501,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the JvmType of the class for the tuple
-      val classType = JvmOps.getTupleClassType(tpe)
+      val classType = JvmOps.getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
       // Instantiating a new object of tuple
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
       // Duplicating the class

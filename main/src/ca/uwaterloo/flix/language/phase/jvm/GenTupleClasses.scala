@@ -32,13 +32,13 @@ object GenTupleClasses {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) if tpe.typeConstructor.isTuple =>
+      case (macc, tpe@MonoType.Tuple(elms)) =>
         // Case 1: The type constructor is a tuple.
         // Construct tuple class.
         val interfaceType = JvmOps.getTupleInterfaceType(tpe)
         val jvmType = JvmOps.getTupleClassType(tpe)
         val jvmName = jvmType.name
-        val targs = tpe.typeArguments.map(JvmOps.getErasedJvmType)
+        val targs = elms.map(JvmOps.getErasedJvmType)
         val bytecode = genByteCode(jvmType, interfaceType, targs)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>
