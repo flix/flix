@@ -44,42 +44,34 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = {
-    // Retrieve the type constructor.
-    val base = tpe.typeConstructor
+  def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = tpe match {
+    // Primitives
+    case MonoType.Unit => JvmType.Unit
+    case MonoType.Bool => JvmType.PrimBool
+    case MonoType.Char => JvmType.PrimChar
+    case MonoType.Float32 => JvmType.PrimFloat
+    case MonoType.Float64 => JvmType.PrimDouble
+    case MonoType.Int8 => JvmType.PrimByte
+    case MonoType.Int16 => JvmType.PrimShort
+    case MonoType.Int32 => JvmType.PrimInt
+    case MonoType.Int64 => JvmType.PrimLong
+    case MonoType.BigInt => JvmType.BigInteger
+    case MonoType.Str => JvmType.String
 
-    // Retrieve the type arguments.
-    val args = tpe.typeArguments
+    // Compound
+    case MonoType.Array(_) => JvmType.Object
+    case MonoType.Channel(_) => JvmType.Object
+    case MonoType.Ref(_) => getCellClassType(tpe)
+    case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
+    case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
+    case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
+    case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+    case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
+    case MonoType.Native(clazz) => JvmType.Object
 
-    // Match on the type constructor.
-    base match {
-      // Primitives
-      case MonoType.Unit => JvmType.Unit
-      case MonoType.Bool => JvmType.PrimBool
-      case MonoType.Char => JvmType.PrimChar
-      case MonoType.Float32 => JvmType.PrimFloat
-      case MonoType.Float64 => JvmType.PrimDouble
-      case MonoType.Int8 => JvmType.PrimByte
-      case MonoType.Int16 => JvmType.PrimShort
-      case MonoType.Int32 => JvmType.PrimInt
-      case MonoType.Int64 => JvmType.PrimLong
-      case MonoType.BigInt => JvmType.BigInteger
-      case MonoType.Str => JvmType.String
-
-      // Compound
-      case MonoType.Channel(_) => JvmType.Object
-      case MonoType.Native(clazz) => JvmType.Object
-      case MonoType.Ref(_) => getCellClassType(tpe)
-      case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-      case MonoType.Tuple(l) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
-      case MonoType.Array(tpe) => JvmType.Object
-      case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
-      case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
-      case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
-
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-    }
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
+
 
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.

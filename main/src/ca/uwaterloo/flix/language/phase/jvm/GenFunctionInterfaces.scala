@@ -48,9 +48,7 @@ object GenFunctionInterfaces {
   }
 
   /**
-    * Optionally returns the function interface of the given type `tpe`.
-    *
-    * Returns `[[None]]` if the type is not a function type.
+    * Returns the function interface of the given type `tpe`.
     */
   private def genFunctionalInterface(tpe: MonoType)(implicit root: Root, flix: Flix): JvmClass = {
     // Compute the type constructor and type arguments.
