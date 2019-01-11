@@ -61,7 +61,7 @@ object JvmOps {
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Channel(_) => JvmType.Object
-    case MonoType.Ref(_) => getCellClassType(tpe)
+    case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
@@ -283,23 +283,23 @@ object JvmOps {
   }
 
   /**
-    * Returns cell class type for the given type `tpe`.
+    * Returns reference class type for the given type `tpe`.
     *
     * Ref[Bool]              =>    Ref$Bool
     * Ref[List[Int]          =>    Ref$Obj
     *
     * NB: The type must be a reference type.
     */
-  def getCellClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getRefClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Ref(elmType) =>
       // Compute the stringified erased type of the argument.
       val arg = stringify(getErasedJvmType(elmType))
 
       // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-      val name = "Cell" + "$" + arg
+      val name = "Ref" + "$" + arg
 
       // The type resides in the ca.uwaterloo.flix.api.cell package.
-      JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+      JvmType.Reference(JvmName(Nil, name))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 

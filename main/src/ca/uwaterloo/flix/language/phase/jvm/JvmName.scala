@@ -132,10 +132,10 @@ object JvmName {
     * Get the class type for the cell with subtype `subType`
     */
   def getCellClassType(subType: JvmType): JvmType.Reference = {
-    val name = "Cell" + "$" + JvmOps.stringify(subType)
+    val name = "Ref" + "$" + JvmOps.stringify(subType)
 
     // The type resides in the ca.uwaterloo.flix package.
-    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+    JvmType.Reference(JvmName(Nil, name))
   }
 
   object Runtime {

@@ -117,9 +117,9 @@ class FeatureSuite extends Suites(
   //
   // References.
   //
-  new FlixTest("Test.Expression.Assign", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Assign.flix"),
-  new FlixTest("Test.Expression.Ref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ref.flix"),
-  new FlixTest("Test.Expression.Deref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Deref.flix"),
+  new FlixTest("Test.Expression.Reference.Assign", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Assign.flix"),
+  new FlixTest("Test.Expression.Reference.Ref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Ref.flix"),
+  new FlixTest("Test.Expression.Reference.Deref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Deref.flix"),
 
   //
   // Constraints.

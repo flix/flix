@@ -675,7 +675,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // JvmType of the reference class
-      val classType = JvmOps.getCellClassType(tpe)
+      val classType = JvmOps.getRefClassType(tpe)
       // Create a new reference object
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
       // Duplicate it since one instance will get consumed by constructor
@@ -695,7 +695,7 @@ object GenExpression {
       // Evaluate the exp
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
-      val classType = JvmOps.getCellClassType(exp.tpe)
+      val classType = JvmOps.getRefClassType(exp.tpe)
       // Get descriptor of `getValue` method
       val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe))
       // Dereference the expression
@@ -711,7 +711,7 @@ object GenExpression {
       // Evaluating the value to be assigned to the reference
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       // JvmType of the reference class
-      val classType = JvmOps.getCellClassType(exp1.tpe)
+      val classType = JvmOps.getRefClassType(exp1.tpe)
       // Get descriptor of `setValue` method
       val methodDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(exp2.tpe)), JvmType.Void)
       // Invoke `setValue` method to set the value to the given number
