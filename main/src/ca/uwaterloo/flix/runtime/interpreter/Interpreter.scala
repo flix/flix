@@ -142,7 +142,7 @@ object Interpreter {
 
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
-      Value.Arr(es.toArray, tpe.typeArguments.head)
+      Value.Arr(es.toArray, tpe.asInstanceOf[MonoType.Array].tpe)
 
     case Expression.ArrayNew(elm, len, tpe, _) =>
       val e = eval(elm, env0, henv0, lenv0, root)
@@ -151,7 +151,7 @@ object Interpreter {
       for (i <- 0 until ln) {
         array(i) = e
       }
-      Value.Arr(array, tpe.typeArguments.head)
+      Value.Arr(array, tpe.asInstanceOf[MonoType.Array].tpe)
 
     case Expression.ArrayLoad(base, index, _, _) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
@@ -193,7 +193,7 @@ object Interpreter {
         for (i <- i1Casted until i2Casted) {
           resultArray(i - i1Casted) = array.elms(i)
         }
-        Value.Arr(resultArray, tpe.typeArguments.head)
+        Value.Arr(resultArray, tpe.asInstanceOf[MonoType.Array].tpe)
       }
 
     case Expression.Ref(exp, tpe, loc) =>
