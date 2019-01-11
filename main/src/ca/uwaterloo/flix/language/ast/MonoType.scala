@@ -6,18 +6,6 @@ package ca.uwaterloo.flix.language.ast
 sealed trait MonoType {
 
   @deprecated("will be removed", "0.5")
-  def typeConstructor: MonoType = this match {
-    case MonoType.Array(_) => this
-    case MonoType.Enum(_, _) => this
-    case MonoType.Channel(_) => this
-    case MonoType.Tuple(_) => this
-    case MonoType.Ref(_) => this
-    case MonoType.Arrow(_, _) => this
-    case MonoType.Apply(t1, _) => t1.typeConstructor
-    case _ => this
-  }
-
-  @deprecated("will be removed", "0.5")
   def typeArguments: List[MonoType] = this match {
     case MonoType.Array(tpe) => List(tpe)
     case MonoType.Channel(tpe) => List(tpe)
