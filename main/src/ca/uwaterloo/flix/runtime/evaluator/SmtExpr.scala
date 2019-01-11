@@ -16,14 +16,14 @@
 
 package ca.uwaterloo.flix.runtime.evaluator
 
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * SMT expressions.
   */
 sealed trait SmtExpr {
-  def tpe: Type
+  def tpe: MonoType
 }
 
 object SmtExpr {
@@ -31,41 +31,41 @@ object SmtExpr {
   /**
     * Variable.
     */
-  case class Var(sym: Symbol.VarSym, tpe: Type) extends SmtExpr
+  case class Var(sym: Symbol.VarSym, tpe: MonoType) extends SmtExpr
 
   /**
     * An Int8 constant.
     */
   case class Int8(lit: Byte) extends SmtExpr {
-    def tpe: Type = Type.Int8
+    def tpe: MonoType = MonoType.Int8
   }
 
   /**
     * An Int16 constant.
     */
   case class Int16(lit: Short) extends SmtExpr {
-    def tpe: Type = Type.Int16
+    def tpe: MonoType = MonoType.Int16
   }
 
   /**
     * An Int32 constant.
     */
   case class Int32(lit: Int) extends SmtExpr {
-    def tpe: Type = Type.Int32
+    def tpe: MonoType = MonoType.Int32
   }
 
   /**
     * Int64 constant.
     */
   case class Int64(lit: Long) extends SmtExpr {
-    def tpe: Type = Type.Int64
+    def tpe: MonoType = MonoType.Int64
   }
 
   /**
     * BigInt constant.
     */
   case class BigInt(lit: java.math.BigInteger) extends SmtExpr {
-    def tpe: Type = Type.BigInt
+    def tpe: MonoType = MonoType.BigInt
   }
 
   /**
@@ -74,7 +74,7 @@ object SmtExpr {
   case class Plus(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -83,7 +83,7 @@ object SmtExpr {
   case class Minus(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -92,7 +92,7 @@ object SmtExpr {
   case class Times(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -101,7 +101,7 @@ object SmtExpr {
   case class Divide(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -111,7 +111,7 @@ object SmtExpr {
   case class Modulo(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -120,7 +120,7 @@ object SmtExpr {
   case class Exponentiate(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -129,7 +129,7 @@ object SmtExpr {
   case class Less(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
@@ -138,7 +138,7 @@ object SmtExpr {
   case class LessEqual(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
@@ -147,7 +147,7 @@ object SmtExpr {
   case class Greater(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
@@ -156,7 +156,7 @@ object SmtExpr {
   case class GreaterEqual(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
@@ -165,7 +165,7 @@ object SmtExpr {
   case class Equal(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assert(e1.tpe == e2.tpe)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
@@ -174,52 +174,52 @@ object SmtExpr {
   case class NotEqual(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assert(e1.tpe == e2.tpe)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
     * Negation.
     */
   case class Not(e: SmtExpr) extends SmtExpr {
-    assert(e.tpe == Type.Bool)
+    assert(e.tpe == MonoType.Bool)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
     * Conjunction.
     */
   case class LogicalAnd(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
-    assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+    assert(e1.tpe == MonoType.Bool && e2.tpe == MonoType.Bool)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
     * Disjunction.
     */
   case class LogicalOr(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
-    assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+    assert(e1.tpe == MonoType.Bool && e2.tpe == MonoType.Bool)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
     * Implication.
     */
   case class Implication(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
-    assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+    assert(e1.tpe == MonoType.Bool && e2.tpe == MonoType.Bool)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
     * Bicondition.
     */
   case class Bicondition(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
-    assert(e1.tpe == Type.Bool && e2.tpe == Type.Bool)
+    assert(e1.tpe == MonoType.Bool && e2.tpe == MonoType.Bool)
 
-    def tpe: Type = Type.Bool
+    def tpe: MonoType = MonoType.Bool
   }
 
   /**
@@ -228,7 +228,7 @@ object SmtExpr {
   case class BitwiseNegate(e: SmtExpr) extends SmtExpr {
     assertNum(e.tpe)
 
-    def tpe: Type = e.tpe
+    def tpe: MonoType = e.tpe
   }
 
   /**
@@ -237,7 +237,7 @@ object SmtExpr {
   case class BitwiseAnd(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -246,7 +246,7 @@ object SmtExpr {
   case class BitwiseOr(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -255,7 +255,7 @@ object SmtExpr {
   case class BitwiseXor(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -264,7 +264,7 @@ object SmtExpr {
   case class BitwiseLeftShift(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
@@ -273,13 +273,13 @@ object SmtExpr {
   case class BitwiseRightShift(e1: SmtExpr, e2: SmtExpr) extends SmtExpr {
     assertNum(assertEq(e1.tpe, e2.tpe))
 
-    def tpe: Type = assertEq(e1.tpe, e2.tpe)
+    def tpe: MonoType = assertEq(e1.tpe, e2.tpe)
   }
 
   /**
     * Asserts that the two given types `tpe1` and `tpe2` are the same. Returns the type.
     */
-  private def assertEq(tpe1: Type, tpe2: Type): Type =
+  private def assertEq(tpe1: MonoType, tpe2: MonoType): MonoType =
     if (tpe1 == tpe2)
       tpe1
     else
@@ -288,14 +288,14 @@ object SmtExpr {
   /**
     * Asserts that the given type `type` is a numeric type, i.e. a float or an int.
     */
-  private def assertNum(tpe: Type): Unit = tpe match {
-    case Type.Float32 => // nop
-    case Type.Float64 => // nop
-    case Type.Int8 => // nop
-    case Type.Int16 => // nop
-    case Type.Int32 => // nop
-    case Type.Int64 => // nop
-    case Type.BigInt => // nop
+  private def assertNum(tpe: MonoType): Unit = tpe match {
+    case MonoType.Float32 => // nop
+    case MonoType.Float64 => // nop
+    case MonoType.Int8 => // nop
+    case MonoType.Int16 => // nop
+    case MonoType.Int32 => // nop
+    case MonoType.Int64 => // nop
+    case MonoType.BigInt => // nop
     case _ => throw InternalCompilerException(s"Unexpected non-numeric type: '$tpe'.")
   }
 

@@ -959,7 +959,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
     case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
       visitExp(exp) map {
-        case e => WeededAst.Expression.NewChannel(visitType(tpe), e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.NewChannel(e, visitType(tpe), mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>

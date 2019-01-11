@@ -223,7 +223,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
           case SymVal.AtomicVar(id, _) =>
             // Case 3.3: The property *does not* hold iff the atomic variable `id` is false and the path condition is satisfiable.
             queries += 1
-            assertUnsatisfiable(p, SmtExpr.LogicalAnd(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)), and(pc)), qua)
+            assertUnsatisfiable(p, SmtExpr.LogicalAnd(SmtExpr.Not(SmtExpr.Var(id, MonoType.Bool)), and(pc)), qua)
           case _ => throw InternalCompilerException(s"Unexpected value: '$v'.")
         }
       }
@@ -321,35 +321,35 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     case SmtExpr.Implication(e1, e2) => ctx.mkImplies(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.Bicondition(e1, e2) => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
     case SmtExpr.Less(e1, e2) => e1.tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case Type.BigInt => ctx.mkLt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 => ctx.mkBVSLT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case MonoType.BigInt => ctx.mkLt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case SmtExpr.LessEqual(e1, e2) => e1.tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case Type.BigInt => ctx.mkLe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 => ctx.mkBVSLE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case MonoType.BigInt => ctx.mkLe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case SmtExpr.Greater(e1, e2) => e1.tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case Type.BigInt => ctx.mkGt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 => ctx.mkBVSGT(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case MonoType.BigInt => ctx.mkGt(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case SmtExpr.GreaterEqual(e1, e2) => e1.tpe match {
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case Type.BigInt => ctx.mkGe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 => ctx.mkBVSGE(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case MonoType.BigInt => ctx.mkGe(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case SmtExpr.Equal(e1, e2) => e1.tpe match {
-      case Type.Bool => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
-      case Type.BigInt => ctx.mkEq(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
+      case MonoType.Bool => ctx.mkIff(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 => ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
+      case MonoType.BigInt => ctx.mkEq(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx))
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case SmtExpr.NotEqual(e1, e2) => e1.tpe match {
-      case Type.Bool => ctx.mkXor(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
-      case Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
-      case Type.BigInt => ctx.mkNot(ctx.mkEq(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx)))
+      case MonoType.Bool => ctx.mkXor(visitBoolExpr(e1, ctx), visitBoolExpr(e2, ctx))
+      case MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 => ctx.mkNot(ctx.mkEq(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx)))
+      case MonoType.BigInt => ctx.mkNot(ctx.mkEq(visitArithExpr(e1, ctx), visitArithExpr(e2, ctx)))
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
@@ -364,10 +364,10 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     case SmtExpr.Int32(i) => ctx.mkBV(i, 32)
     case SmtExpr.Int64(i) => ctx.mkBV(i, 64)
     case SmtExpr.Var(sym, tpe) => tpe match {
-      case Type.Int8 => ctx.mkBVConst(sym.toString, 8)
-      case Type.Int16 => ctx.mkBVConst(sym.toString, 16)
-      case Type.Int32 => ctx.mkBVConst(sym.toString, 32)
-      case Type.Int64 => ctx.mkBVConst(sym.toString, 64)
+      case MonoType.Int8 => ctx.mkBVConst(sym.toString, 8)
+      case MonoType.Int16 => ctx.mkBVConst(sym.toString, 16)
+      case MonoType.Int32 => ctx.mkBVConst(sym.toString, 32)
+      case MonoType.Int64 => ctx.mkBVConst(sym.toString, 64)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
     case SmtExpr.Plus(e1, e2) => ctx.mkBVAdd(visitBitVecExpr(e1, ctx), visitBitVecExpr(e2, ctx))
@@ -391,7 +391,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
   private def visitIntExpr(exp0: SmtExpr, ctx: Context): IntExpr = exp0 match {
     case SmtExpr.BigInt(i) => ctx.mkInt(i.longValueExact())
     case SmtExpr.Var(sym, tpe) => tpe match {
-      case Type.BigInt => ctx.mkIntConst(sym.toString)
+      case MonoType.BigInt => ctx.mkIntConst(sym.toString)
       case _ => throw InternalCompilerException(s"Unexpected non-int type: '$tpe'.")
     }
     case _ => throw InternalCompilerException(s"Unexpected SMT expression: '$exp0'.")
@@ -512,30 +512,27 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
     * Enumerates all possible symbolic values of the given type.
     */
-  private def enumerate(root: Root, genSym: GenSym)(sym: Symbol.VarSym, tpe: Type): List[SymVal] = {
+  private def enumerate(root: Root, genSym: GenSym)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
     implicit val _ = genSym
 
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
-    def visit(tpe: Type): List[SymVal] = {
-      val base = tpe.typeConstructor
-      val args = tpe.typeArguments
+    def visit(tpe: MonoType): List[SymVal] = {
+      tpe match {
+        case MonoType.Unit => List(SymVal.Unit)
+        case MonoType.Bool => List(SymVal.True, SymVal.False)
+        case MonoType.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Char))
+        case MonoType.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Float32))
+        case MonoType.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Float64))
+        case MonoType.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int8))
+        case MonoType.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int16))
+        case MonoType.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int32))
+        case MonoType.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int64))
+        case MonoType.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.BigInt))
+        case MonoType.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Str))
 
-      base match {
-        case Type.Unit => List(SymVal.Unit)
-        case Type.Bool => List(SymVal.True, SymVal.False)
-        case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Char))
-        case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float32))
-        case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float64))
-        case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int8))
-        case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int16))
-        case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int32))
-        case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
-        case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
-        case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
-
-        case Type.Enum(enumSym, _) =>
+        case MonoType.Enum(enumSym, _) =>
           val decl = root.enums(enumSym)
           decl.cases.flatMap {
             // TODO: Assumes non-polymorphic type.
@@ -544,8 +541,8 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
             }
           }.toList
 
-        case Type.Tuple(l) =>
-          def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
+        case MonoType.Tuple(elms) =>
+          def visitn(xs: List[MonoType]): List[List[SymVal]] = xs match {
             case Nil => List(Nil)
             case t :: ts => visitn(ts) flatMap {
               case ls => visit(t) map {
@@ -554,7 +551,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
             }
           }
 
-          visitn(args).map(es => SymVal.Tuple(es))
+          visitn(elms).map(es => SymVal.Tuple(es))
 
         case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       }

@@ -21,8 +21,8 @@ import java.nio.file.{Files, LinkOption, Path}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.phase.Unification
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
 object JvmOps {
@@ -44,44 +44,39 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
-    // Retrieve the type constructor.
-    val base = tpe.typeConstructor
+  def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = tpe match {
+    // Primitives
+    case MonoType.Unit => JvmType.Unit
+    case MonoType.Bool => JvmType.PrimBool
+    case MonoType.Char => JvmType.PrimChar
+    case MonoType.Float32 => JvmType.PrimFloat
+    case MonoType.Float64 => JvmType.PrimDouble
+    case MonoType.Int8 => JvmType.PrimByte
+    case MonoType.Int16 => JvmType.PrimShort
+    case MonoType.Int32 => JvmType.PrimInt
+    case MonoType.Int64 => JvmType.PrimLong
+    case MonoType.BigInt => JvmType.BigInteger
+    case MonoType.Str => JvmType.String
 
-    // Retrieve the type arguments.
-    val args = tpe.typeArguments
+    // Compound
+    case MonoType.Array(_) => JvmType.Object
+    case MonoType.Channel(_) => JvmType.Object
+    case MonoType.Ref(_) => getCellClassType(tpe)
+    case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
+    case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
+    case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
+    case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+    case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
+    case MonoType.Native(clazz) => JvmType.Object
 
-    // Match on the type constructor.
-    base match {
-      case Type.Unit => JvmType.Unit
-      case Type.Bool => JvmType.PrimBool
-      case Type.Char => JvmType.PrimChar
-      case Type.Float32 => JvmType.PrimFloat
-      case Type.Float64 => JvmType.PrimDouble
-      case Type.Int8 => JvmType.PrimByte
-      case Type.Int16 => JvmType.PrimShort
-      case Type.Int32 => JvmType.PrimInt
-      case Type.Int64 => JvmType.PrimLong
-      case Type.BigInt => JvmType.BigInteger
-      case Type.Str => JvmType.String
-      case Type.Channel => JvmType.Object
-      case Type.Native(clazz) => JvmType.Object
-      case Type.Ref => getCellClassType(tpe)
-      case Type.Arrow(l) => getFunctionInterfaceType(tpe)
-      case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Array => JvmType.Object
-      case Type.Vector => JvmType.Object
-      case Type.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
-      case Type.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
-      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-    }
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
+
 
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     */
-  def getErasedJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
+  def getErasedJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = {
     /**
       * Returns the erased JvmType of the given JvmType `tpe`.
       *
@@ -104,23 +99,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the erased result type of the given type `tpe`.
-    *
-    * NB: The given type `tpe` must be an arrow type.
-    */
-  def getErasedResultJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    getErasedJvmType(tpe.typeArguments.last)
-  }
-
-  /**
     * Returns the continuation interface type `Cont$X` for the given type `tpe`.
     *
     * Int -> Int          =>  Cont$Int
@@ -128,23 +106,18 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getContinuationInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // The return type is the last type argument.
+      val returnType = JvmOps.getErasedJvmType(tresult)
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // The JVM name is of the form Cont$ErasedType
+      val name = "Cont$" + stringify(returnType)
 
-    // The return type is the last type argument.
-    val returnType = getErasedResultJvmType(tpe)
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
 
-    // The JVM name is of the form Cont$ErasedType
-    val name = "Cont$" + stringify(returnType)
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -157,27 +130,22 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function interface.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Compute the arity of the function interface.
-    // We subtract one since the last argument is the return type.
-    val arity = tpe.typeArguments.length - 1
+      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+      val name = "Fn" + arity + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
 
-    // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-    val name = "Fn" + arity + "$" + args.mkString("$")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -187,33 +155,25 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Retrieve the arrow type of the closure.
-    val tpe = closure.tpe
+  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function interface.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
 
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // The JVM name is of the form Clo$sym.name
+      val name = "Clo" + "$" + mangle(closure.sym.name)
 
-    // Compute the arity of the function interface.
-    // We subtract one since the last argument is the return type.
-    val arity = tpe.typeArguments.length - 1
+      // The JVM package is the namespace of the symbol.
+      val pkg = closure.sym.namespace
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
+      // The result type.
+      JvmType.Reference(JvmName(pkg, name))
 
-    // The JVM name is of the form Clo$sym.name
-    val name = "Clo" + "$" + mangle(closure.sym.name)
-
-    // The JVM package is the namespace of the symbol.
-    val pkg = closure.sym.namespace
-
-    // The result type.
-    JvmType.Reference(JvmName(pkg, name))
+    case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -227,22 +187,18 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an enum type.
     */
-  def getEnumInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an enum type.
-    if (!tpe.typeConstructor.isEnum)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getEnumInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Enum(sym, elms) =>
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Retrieve the enum symbol.
-    val sym = tpe.typeConstructor.asInstanceOf[Type.Enum].sym
+      // The JVM name is of the form Option$ or Option$Int
+      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
+      // The enum resides in its namespace package.
+      JvmType.Reference(JvmName(sym.namespace, name))
 
-    // The JVM name is of the form Option$ or Option$Int
-    val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
-
-    // The enum resides in its namespace package.
-    JvmType.Reference(JvmName(sym.namespace, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -283,26 +239,19 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a tuple type.
     */
-  def getTupleInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isTuple)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getTupleInterfaceType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Tuple(elms) =>
+      // Compute the arity of the tuple.
+      val arity = elms.length
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Compute the arity of the tuple.
-    val arity = tpe.typeArguments.length
+      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+      val name = "ITuple" + arity + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
-
-    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-    val name = "ITuple" + arity + "$" + args.mkString("$")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -318,26 +267,19 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a tuple type.
     */
-  def getTupleClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isTuple)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getTupleClassType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Tuple(elms) =>
+      // Compute the arity of the tuple.
+      val arity = elms.length
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Compute the arity of the tuple.
-    val arity = tpe.typeArguments.length
+      // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
+      val name = "Tuple" + arity + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
-
-    // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
-    val name = "Tuple" + arity + "$" + args.mkString("$")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -348,23 +290,17 @@ object JvmOps {
     *
     * NB: The type must be a reference type.
     */
-  def getCellClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isRef)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getCellClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Ref(elmType) =>
+      // Compute the stringified erased type of the argument.
+      val arg = stringify(getErasedJvmType(elmType))
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+      val name = "Cell" + "$" + arg
 
-    // Compute the stringified erased type of the argument.
-    val arg = stringify(getErasedJvmType(tpe.typeArguments.head))
-
-    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-    val name = "Cell" + "$" + arg
-
-    // The type resides in the ca.uwaterloo.flix.api.cell package.
-    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+      // The type resides in the ca.uwaterloo.flix.api.cell package.
+      JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -602,7 +538,7 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp)
+      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp)
 
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
 
@@ -672,51 +608,76 @@ object JvmOps {
   /**
     * Returns the set of tags associated with the given type.
     */
-  def getTagsOf(tpe: Type)(implicit root: Root, flix: Flix): Set[TagInfo] = {
-    implicit val genSym: GenSym = flix.genSym
+  def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
+    case enumType@MonoType.Enum(sym, args) =>
+      implicit val genSym: GenSym = flix.genSym
 
-    // Return the empty set if the type is not an enum.
-    if (!tpe.isEnum) {
-      return Set.empty
-    }
+      // Retrieve the enum.
+      val enum = root.enums(enumType.sym)
 
-    // Retrieve the enum symbol and type arguments.
-    val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
-    val args = tpe.typeArguments
+      // Compute the tag info.
+      enum.cases.foldLeft(Set.empty[TagInfo]) {
+        case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
+          // TODO: Magnus: It would be nice if this information could be stored somewhere...
+          val subst = Unification.unify(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
+          val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
-    // Retrieve the enum.
-    val enum = root.enums(enumType.sym)
-
-    // Compute the tag info.
-    enum.cases.foldLeft(Set.empty[TagInfo]) {
-      case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
-        // TODO: Magnus: It would be nice if this information could be stored somewhere...
-        val subst = Unification.unify(enum.tpe, tpe).get
-        val tagType = subst(uninstantiatedTagType)
-
-        sacc + TagInfo(enumSym, tagName.name, args, tpe, tagType)
-    }
+          sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
+      }
+    case _ => Set.empty
   }
 
+  @deprecated("will be removed", "0.5")
+  private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
+    case MonoType.Var(id) => Type.Var(id, Kind.Star)
+    case MonoType.Unit => Type.Unit
+    case MonoType.Bool => Type.Bool
+    case MonoType.Char => Type.Char
+    case MonoType.Float32 => Type.Float32
+    case MonoType.Float64 => Type.Float64
+    case MonoType.Int8 => Type.Int8
+    case MonoType.Int16 => Type.Int16
+    case MonoType.Int32 => Type.Int32
+    case MonoType.Int64 => Type.Int64
+    case MonoType.BigInt => Type.BigInt
+    case MonoType.Str => Type.Str
+    case MonoType.Channel(elm) => Type.Apply(Type.Channel, hackMonoType2Type(elm))
+    case MonoType.Array(elm) => Type.Apply(Type.Array, hackMonoType2Type(elm))
+    case MonoType.Native(clazz) => Type.Native(clazz)
+    case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
+    case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
+    case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
+    case MonoType.Relation(sym, attr) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
+    case MonoType.Lattice(sym, attr) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
+    case MonoType.Schema(m0) =>
+      val m = m0.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+        case (macc, (sym, t)) => macc + (sym -> hackMonoType2Type(t))
+      }
+      Type.Schema(m)
+    case MonoType.Tuple(length) => Type.Tuple(0) // hack
+    case MonoType.RecordEmpty() => Type.RecordEmpty
+    case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
+  }
+
+  @deprecated("will be removed", "0.5")
+  private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   /**
     * Returns the tag info for the given `tpe` and `tag`
     */
   // TODO: Magnus: Should use getTags and then just find the correct tag.
-  def getTagInfo(tpe: Type, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
-    // Throw an exception if `tpe` is not an enum type
-    if (!tpe.isEnum)
-      throw InternalCompilerException(s"Unexpected type: $tpe")
-
-    val tags = getTagsOf(tpe)
-    tags.find(_.tag == tag).get
+  def getTagInfo(tpe: MonoType, tag: String)(implicit root: Root, flix: Flix): TagInfo = tpe match {
+    case enumType@MonoType.Enum(sym, _) =>
+      val tags = getTagsOf(tpe)
+      tags.find(_.tag == tag).get
+    case _ => throw InternalCompilerException(s"Unexpected type: $tpe")
   }
 
   /**
     * Returns true if the value of the given `tag` is the unit value.
     */
   def isUnitTag(tag: TagInfo): Boolean = {
-    tag.tagType == Type.Unit
+    tag.tagType == MonoType.Unit
   }
 
   /**
@@ -732,13 +693,13 @@ object JvmOps {
     * This include type components. For example, if the program contains
     * the type (Bool, (Char, Int)) this includes the type (Char, Int).
     */
-  def typesOf(root: Root)(implicit flix: Flix): Set[Type] = {
+  def typesOf(root: Root)(implicit flix: Flix): Set[MonoType] = {
     /**
       * Returns the set of types which occur in the given definition `defn0`.
       */
-    def visitDefn(defn: Def): Set[Type] = {
+    def visitDefn(defn: Def): Set[MonoType] = {
       // Compute the types in the formal parameters.
-      val formalParamTypes = defn.formals.foldLeft(Set.empty[Type]) {
+      val formalParamTypes = defn.formals.foldLeft(Set.empty[MonoType]) {
         case (sacc, FormalParam(sym, tpe)) => sacc + tpe
       }
 
@@ -752,19 +713,19 @@ object JvmOps {
     /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
-    def visitExp(exp0: Expression): Set[Type] = exp0 match {
-      case Expression.Unit => Set(Type.Unit)
-      case Expression.True => Set(Type.Bool)
-      case Expression.False => Set(Type.Bool)
-      case Expression.Char(lit) => Set(Type.Char)
-      case Expression.Float32(lit) => Set(Type.Float32)
-      case Expression.Float64(lit) => Set(Type.Float64)
-      case Expression.Int8(lit) => Set(Type.Int8)
-      case Expression.Int16(lit) => Set(Type.Int16)
-      case Expression.Int32(lit) => Set(Type.Int32)
-      case Expression.Int64(lit) => Set(Type.Int64)
-      case Expression.BigInt(lit) => Set(Type.BigInt)
-      case Expression.Str(lit) => Set(Type.Str)
+    def visitExp(exp0: Expression): Set[MonoType] = exp0 match {
+      case Expression.Unit => Set(MonoType.Unit)
+      case Expression.True => Set(MonoType.Bool)
+      case Expression.False => Set(MonoType.Bool)
+      case Expression.Char(lit) => Set(MonoType.Char)
+      case Expression.Float32(lit) => Set(MonoType.Float32)
+      case Expression.Float64(lit) => Set(MonoType.Float64)
+      case Expression.Int8(lit) => Set(MonoType.Int8)
+      case Expression.Int16(lit) => Set(MonoType.Int16)
+      case Expression.Int32(lit) => Set(MonoType.Int32)
+      case Expression.Int64(lit) => Set(MonoType.Int64)
+      case Expression.BigInt(lit) => Set(MonoType.BigInt)
+      case Expression.Str(lit) => Set(MonoType.Str)
       case Expression.Var(sym, tpe, loc) => Set(tpe)
 
       case Expression.Closure(sym, freeVars, fnType, tpe, loc) => Set(tpe)
@@ -870,14 +831,14 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp) + tpe
+      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
-        val rs = rules.foldLeft(Set(tpe))( (old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val rs = rules.foldLeft(Set(tpe))((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
@@ -905,19 +866,19 @@ object JvmOps {
       case Expression.SwitchError(tpe, loc) => Set(tpe)
     }
 
-    def visitConstraint(c0: Constraint): Set[Type] = c0 match {
+    def visitConstraint(c0: Constraint): Set[MonoType] = c0 match {
       case Constraint(cparams, head, body) =>
         visitHeadPred(head) ++ body.flatMap(visitBodyPred)
     }
 
-    def visitHeadPred(h0: Predicate.Head): Set[Type] = h0 match {
+    def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
       case Predicate.Head.True(loc) => Set.empty
       case Predicate.Head.False(loc) => Set.empty
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
     }
 
-    def visitBodyPred(b0: Predicate.Body): Set[Type] = b0 match {
+    def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
       case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitBodyTerm)
 
@@ -927,14 +888,14 @@ object JvmOps {
       case Predicate.Body.Functional(varSym, defSym, terms, loc) => Set.empty
     }
 
-    def visitHeadTerm(t0: Term.Head): Set[Type] = t0 match {
+    def visitHeadTerm(t0: Term.Head): Set[MonoType] = t0 match {
       case Term.Head.QuantVar(sym, tpe, loc) => Set(tpe)
       case Term.Head.CapturedVar(sym, tpe, loc) => Set(tpe)
       case Term.Head.Lit(sym, tpe, loc) => Set(tpe)
       case Term.Head.App(sym, args, tpe, loc) => Set(tpe)
     }
 
-    def visitBodyTerm(t0: Term.Body): Set[Type] = t0 match {
+    def visitBodyTerm(t0: Term.Body): Set[MonoType] = t0 match {
       case Term.Body.Wild(tpe, loc) => Set(tpe)
       case Term.Body.QuantVar(sym, tpe, loc) => Set(tpe)
       case Term.Body.CapturedVar(sym, tpe, loc) => Set(tpe)
@@ -944,7 +905,7 @@ object JvmOps {
     // TODO: Magnus: Look for types in other places.
 
     // Visit every definition.
-    val result = root.defs.foldLeft(Set.empty[Type]) {
+    val result = root.defs.foldLeft(Set.empty[MonoType]) {
       case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
 
@@ -957,31 +918,44 @@ object JvmOps {
     * For example, if the given type is `Option[(Bool, Char, Int)]`
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
     */
-  def nestedTypesOf(tpe: Type)(implicit root: Root, flix: Flix): Set[Type] = {
-    // Retrieve the type constructor.
-    val base = tpe.typeConstructor
-
-    // Retrieve the type arguments.
-    val args = tpe.typeArguments
-
+  def nestedTypesOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[MonoType] = {
     //
     // Check if the tag is an enum and if so, extract the types of its tags.
     // Usually this is not "necessary", but an enum might occur as a type,
     // but not have all its tags constructed as expressions.
     //
-    base match {
-      case Type.Enum(sym, _) =>
+    tpe match {
+      case MonoType.Unit => Set(tpe)
+      case MonoType.Bool => Set(tpe)
+      case MonoType.Char => Set(tpe)
+      case MonoType.Float32 => Set(tpe)
+      case MonoType.Float64 => Set(tpe)
+      case MonoType.Int8 => Set(tpe)
+      case MonoType.Int16 => Set(tpe)
+      case MonoType.Int32 => Set(tpe)
+      case MonoType.Int64 => Set(tpe)
+      case MonoType.BigInt => Set(tpe)
+      case MonoType.Str => Set(tpe)
+
+      case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Channel(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Enum(sym, args) =>
         // Case 1: The nested types are the type itself, its type arguments, and the types of the tags.
         val tagTypes = getTagsOf(tpe).map(_.tagType)
 
         args.foldLeft(Set(tpe) ++ tagTypes) {
           case (sacc, arg) => sacc ++ nestedTypesOf(arg)
         }
-      case _ =>
-        // Case 2: The nested types are the type itself and its type arguments.
-        args.foldLeft(Set(tpe)) {
-          case (sacc, arg) => sacc ++ nestedTypesOf(arg)
-        }
+      case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
+      case MonoType.RecordEmpty() => ???
+      case MonoType.RecordExtend(label, value, rest) => ???
+      case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Schema(m) => Set(tpe) // TODO: Incorrect, but will be rewritten.
+      case MonoType.Native(_) => Set(tpe)
+      case MonoType.Var(_) => Set.empty
     }
   }
 

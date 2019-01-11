@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -30,12 +30,12 @@ object GenFunctionInterfaces {
   /**
     * Returns the set of function interfaces for the given set of types `ts`.
     */
-  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a function interface for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) if tpe.isArrow =>
+      case (macc, tpe@MonoType.Arrow(targs, tresult)) =>
         // Case 1: The type constructor is an arrow type.
         // Construct the functional interface.
         val clazz = genFunctionalInterface(tpe)
@@ -48,54 +48,46 @@ object GenFunctionInterfaces {
   }
 
   /**
-    * Optionally returns the function interface of the given type `tpe`.
-    *
-    * Returns `[[None]]` if the type is not a function type.
+    * Returns the function interface of the given type `tpe`.
     */
-  private def genFunctionalInterface(tpe: Type)(implicit root: Root, flix: Flix): JvmClass = {
-    // Compute the type constructor and type arguments.
-    val base = tpe.typeConstructor
-    val args = tpe.typeArguments
+  private def genFunctionalInterface(tpe: MonoType)(implicit root: Root, flix: Flix): JvmClass = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // `JvmType` of the continuation interface for `tpe`
+      val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
 
-    // Immediately return None if the type is a non-function type.
-    if (!base.isArrow) {
-      throw InternalRuntimeException(s"Unexpected non-arrow type: '$tpe'.")
-    }
+      // `JvmType` of the java.util.functions.Function
+      val javaFunctionSuperInterface = JvmType.Function
 
-    // `JvmType` of the continuation interface for `tpe`
-    val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
+      // `JvmType` of the functional interface for `tpe`
+      val functionType = JvmOps.getFunctionInterfaceType(tpe)
 
-    // `JvmType` of the java.util.functions.Function
-    val javaFunctionSuperInterface = JvmType.Function
+      // Class visitor
+      val visitor = AsmOps.mkClassWriter()
 
-    // `JvmType` of the functional interface for `tpe`
-    val functionType = JvmOps.getFunctionInterfaceType(tpe)
+      // The super interface.
+      val superInterfaces = Array(continuationSuperInterface.name.toInternalName, javaFunctionSuperInterface.name.toInternalName)
 
-    // Class visitor
-    val visitor = AsmOps.mkClassWriter()
+      // Class visitor
+      visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
+        JvmName.Object.toInternalName, superInterfaces)
 
-    // The super interface.
-    val superInterfaces = Array(continuationSuperInterface.name.toInternalName, javaFunctionSuperInterface.name.toInternalName)
+      // Adding setters for each argument of the function
+      for ((arg, index) <- targs.zipWithIndex) {
+        // `JvmType` of `arg`
+        val argType = JvmOps.getErasedJvmType(arg)
 
-    // Class visitor
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
-      JvmName.Object.toInternalName, superInterfaces)
+        // `setArg$ind()` method
+        val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index",
+          AsmOps.getMethodDescriptor(List(argType), JvmType.Void), null, null)
+        setArgMethod.visitEnd()
+      }
 
-    // Adding setters for each argument of the function
-    for ((arg, index) <- args.init.zipWithIndex) {
-      // `JvmType` of `arg`
-      val argType = JvmOps.getErasedJvmType(arg)
+      visitor.visitEnd()
 
-      // `setArg$ind()` method
-      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index",
-        AsmOps.getMethodDescriptor(List(argType), JvmType.Void), null, null)
-      setArgMethod.visitEnd()
-    }
+      // `JvmClass` of the interface
+      JvmClass(functionType.name, visitor.toByteArray)
 
-    visitor.visitEnd()
-
-    // `JvmClass` of the interface
-    JvmClass(functionType.name, visitor.toByteArray)
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
 }

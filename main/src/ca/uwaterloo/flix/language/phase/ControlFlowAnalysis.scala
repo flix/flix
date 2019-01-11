@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
-import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, MonoType, Symbol}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -581,7 +581,7 @@ object ControlFlowAnalysis {
     /**
       * Approximation of tuples. Maintains labels and types..
       */
-    case class Record(m: Map[(String, Type), AbstractValue]) extends AbstractValue
+    case class Record(m: Map[(String, MonoType), AbstractValue]) extends AbstractValue
 
     /**
       * Represents a collection of tags where each tag is mapped to an abstract value.
@@ -713,7 +713,7 @@ object ControlFlowAnalysis {
     * Returns `true` if the given argument list `xs` has a single argument of type unit.
     */
   private def isSingleUnitArg(xs: List[FormalParam]): Boolean = xs match {
-    case FormalParam(sym, tpe) :: Nil => tpe == Type.Unit
+    case FormalParam(sym, tpe) :: Nil => tpe == MonoType.Unit
     case _ => false
   }
 

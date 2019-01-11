@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 
@@ -59,7 +60,7 @@ object GenClosureClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Args of the function
-    val args = closure.tpe.typeArguments
+    val MonoType.Arrow(targs, tresult) = closure.tpe
 
     // `JvmType` of the interface for `closure.tpe`
     val functionInterface = JvmOps.getFunctionInterfaceType(closure.tpe)
@@ -87,7 +88,7 @@ object GenClosureClasses {
     }
 
     // Adding a setter and a field for each argument of the function
-    for ((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- targs.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedJvmType(arg)
 
@@ -99,7 +100,7 @@ object GenClosureClasses {
     }
 
     // Jvm type of the result of the function
-    val resultType = JvmOps.getErasedJvmType(args.last)
+    val resultType = JvmOps.getErasedJvmType(tresult)
 
     // Field for the result
     AsmOps.compileField(visitor, "result", resultType, isStatic = false, isPrivate = true)

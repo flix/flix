@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 
@@ -89,10 +90,14 @@ object GenNamespaces {
     val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
     // Jvm type of method args
-    val args = defn.tpe.typeArguments.map(JvmOps.getErasedJvmType)
+    val MonoType.Arrow(targs, tresult) = defn.tpe
+
+    // Erased argument and result type.
+    val erasedArgs = targs map JvmOps.getErasedJvmType
+    val erasedResult = JvmOps.getErasedJvmType(tresult)
 
     // Length of args in local
-    val stackSize = args.init.map(AsmOps.getStackSize).sum
+    val stackSize = erasedArgs.map(AsmOps.getStackSize).sum
 
     // Address of continuation
     val contextAddr = stackSize
@@ -101,7 +106,7 @@ object GenNamespaces {
     val ifoAddr = stackSize + 1
 
     // Method header
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(args.init, args.last), null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
     method.visitCode()
 
     // Creating a context object
@@ -137,7 +142,7 @@ object GenNamespaces {
     var offset: Int = 0
 
     // Set arguments for the IFO
-    for ((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- erasedArgs.zipWithIndex) {
       // Duplicate the IFO reference
       method.visitVarInsn(ALOAD, ifoAddr)
 
@@ -159,7 +164,7 @@ object GenNamespaces {
     // Type of the function interface
     val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
     // Result type
-    val resultType = args.last
+    val resultType = erasedResult
     // Put the closure on `continuation` field of `Context`
     method.visitVarInsn(ALOAD, contextAddr)
     method.visitVarInsn(ALOAD, ifoAddr)
@@ -206,7 +211,7 @@ object GenNamespaces {
     method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
 
     // Return
-    method.visitInsn(AsmOps.getReturnInstruction(args.last))
+    method.visitInsn(AsmOps.getReturnInstruction(erasedResult))
 
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(65535, 65535)

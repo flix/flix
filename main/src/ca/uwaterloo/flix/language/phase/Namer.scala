@@ -813,9 +813,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.NewChannel(tpe, exp, loc) =>
+    case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.NewChannel(visitType(tpe, tenv0), e, loc)
+        case e => NamedAst.Expression.NewChannel(e, visitType(tpe, tenv0), loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>

@@ -180,7 +180,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
 
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1
         for (CatchRule(sym, clazz, body) <- rules) {
@@ -193,7 +193,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.NewChannel(tpe, exp, loc) =>
+      case Expression.NewChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
 
       case Expression.GetChannel(exp, tpe, loc) =>
@@ -257,7 +257,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(exp2, i1)
 
       case Expression.UserError(tpe, loc) => i0
-      case Expression.HoleError(sym, tpe, eff, loc) => i0
+      case Expression.HoleError(sym, tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0
 

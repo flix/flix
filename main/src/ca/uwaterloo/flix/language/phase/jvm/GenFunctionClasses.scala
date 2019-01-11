@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 
@@ -60,7 +60,7 @@ object GenFunctionClasses {
     val visitor = AsmOps.mkClassWriter()
 
     // Args of the function
-    val args = defn.tpe.typeArguments
+    val MonoType.Arrow(targs, tresult) = defn.tpe
 
     // The super interface.
     val superInterface = Array(functionInterface.name.toInternalName)
@@ -70,7 +70,7 @@ object GenFunctionClasses {
       JvmName.Object.toInternalName, superInterface)
 
     // Adding a setter and a field for each argument of the function
-    for ((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- targs.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedJvmType(arg)
 
@@ -82,8 +82,7 @@ object GenFunctionClasses {
     }
 
     // Jvm type of the result of the function
-    val resultType = args.last
-    val jvmResultType = JvmOps.getErasedJvmType(resultType)
+    val jvmResultType = JvmOps.getErasedJvmType(tresult)
 
     // Field for the result
     AsmOps.compileField(visitor, "result", jvmResultType, isStatic = false, isPrivate = true)
@@ -98,10 +97,10 @@ object GenFunctionClasses {
     compileInvokeMethod(visitor, classType, defn, jvmResultType)
 
     // Apply method of the class
-    compileApplyMethod(visitor, classType, defn, resultType)
+    compileApplyMethod(visitor, classType, defn, tresult)
 
     // Eval method of the class
-    compileEvalMethod(visitor, classType, defn, resultType)
+    compileEvalMethod(visitor, classType, defn, tresult)
 
     visitor.toByteArray
   }
@@ -179,7 +178,7 @@ object GenFunctionClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // The JVM result type
     val jvmResultType = JvmOps.getErasedJvmType(resultType)
 
@@ -212,10 +211,9 @@ object GenFunctionClasses {
     mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)Ljava/lang/Object;", false)
 
     // Construct a proxy object.
-    if (resultType.isArray) {
-      AsmOps.newProxyArray(resultType, mv)
-    } else {
-      AsmOps.newProxyObject(resultType, mv)
+    resultType match {
+      case arrayType: MonoType.Array => AsmOps.newProxyArray(arrayType, mv)
+      case nonArrayType => AsmOps.newProxyObject(resultType, mv)
     }
 
     // Return the proxy object.
@@ -228,7 +226,7 @@ object GenFunctionClasses {
   /**
     * Emits code for a functional that fully evaluates the current function, including tail calls.
     */
-  private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+  private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Object), null, null)
 

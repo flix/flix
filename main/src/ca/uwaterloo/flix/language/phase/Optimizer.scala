@@ -371,14 +371,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Try Catch Constructor.
       //
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp, env0)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
             val b = visitExp(body, env0)
             CatchRule(sym, clazz, b)
         }
-        Expression.TryCatch(e, rs, tpe, eff, loc)
+        Expression.TryCatch(e, rs, tpe, loc)
 
       //
       // Native Constructor.
@@ -403,9 +403,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // New Channel.
       //
-      case Expression.NewChannel(tpe, exp, loc) =>
+      case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.NewChannel(tpe, e, loc)
+        Expression.NewChannel(e, tpe, loc)
 
       //
       // Get Channel.
@@ -507,7 +507,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)
-      case Expression.HoleError(sym, tpe, eff, loc) => Expression.HoleError(sym, tpe, eff, loc)
+      case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
       case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
 

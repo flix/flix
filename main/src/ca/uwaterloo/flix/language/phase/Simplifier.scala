@@ -89,7 +89,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
       case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
       case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
-      case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc)
+      case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
       case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
@@ -500,7 +500,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val b = visitExp(body)
             SimplifiedAst.CatchRule(sym, clazz, b)
         }
-        SimplifiedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+        SimplifiedAst.Expression.TryCatch(e, rs, tpe, loc)
 
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val es = args.map(e => visitExp(e))
@@ -513,9 +513,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case TypedAst.Expression.NewChannel(tpe, exp, eff, loc) =>
+      case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(tpe, e, loc)
+        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
 
       case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -1203,14 +1203,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visitExp(exp), loc)
 
-      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
           case SimplifiedAst.CatchRule(sym, clazz, body) =>
             val b = visitExp(body)
             SimplifiedAst.CatchRule(sym, clazz, b)
         }
-        SimplifiedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+        SimplifiedAst.Expression.TryCatch(e, rs, tpe, loc)
 
       case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args map visitExp
@@ -1223,9 +1223,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NewChannel(tpe, exp, loc) =>
+      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.NewChannel(tpe, e, loc)
+        SimplifiedAst.Expression.NewChannel(e, tpe, loc)
 
       case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -1288,7 +1288,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
-      case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => e
+      case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 

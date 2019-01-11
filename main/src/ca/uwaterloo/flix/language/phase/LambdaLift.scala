@@ -282,14 +282,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Universal(params, exp, loc) =>
         Expression.Universal(params, visitExp(exp), loc)
 
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
             val b = visitExp(body)
             CatchRule(sym, clazz, b)
         }
-        Expression.TryCatch(e, rs, tpe, eff, loc)
+        Expression.TryCatch(e, rs, tpe, loc)
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args map visitExp
@@ -301,9 +301,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewChannel(tpe, exp, loc) =>
+      case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.NewChannel(tpe, e, loc)
+        Expression.NewChannel(e, tpe, loc)
 
       case Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -367,7 +367,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.UserError(tpe, loc) => e
 
-      case Expression.HoleError(sym, tpe, eff, loc) => e
+      case Expression.HoleError(sym, tpe, loc) => e
 
       case Expression.MatchError(tpe, loc) => e
 
