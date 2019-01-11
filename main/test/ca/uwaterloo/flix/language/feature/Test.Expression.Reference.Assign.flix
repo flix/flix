@@ -147,3 +147,30 @@ def testAssignAssign07(): Bool =
     l := deref l + 1;
     l := deref l + 1;
     5 `assertEq!` deref l
+
+@test
+def testRefRef01(): Bool =
+    let l = ref (ref 123);
+    (deref l) := 456;
+    456 `assertEq!` deref (deref l)
+
+@test
+def testRefRef02(): Bool =
+    let l = ref (ref (ref 123));
+    (deref (deref l)) := 456;
+    456 `assertEq!` deref (deref (deref l))
+
+@test
+def testAlias01(): Bool =
+    let l1 = ref (ref 123);
+    let l2 = ref 456;
+    l1 := l2;
+    456 `assertEq!` deref (deref l1)
+
+@test
+def testAlias02(): Bool =
+    let l1 = ref (ref 123);
+    let l2 = ref 456;
+    l1 := l2;
+    l2 := 789;
+    789 `assertEq!` deref (deref l1)
