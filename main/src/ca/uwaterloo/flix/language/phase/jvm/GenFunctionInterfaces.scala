@@ -35,7 +35,7 @@ object GenFunctionInterfaces {
     // Generate a function interface for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) if tpe.isArrow =>
+      case (macc, tpe@MonoType.Arrow(targs, tresult)) =>
         // Case 1: The type constructor is an arrow type.
         // Construct the functional interface.
         val clazz = genFunctionalInterface(tpe)
@@ -56,11 +56,6 @@ object GenFunctionInterfaces {
     // Compute the type constructor and type arguments.
     val base = tpe.typeConstructor
     val args = tpe.typeArguments
-
-    // Immediately return None if the type is a non-function type.
-    if (!base.isArrow) {
-      throw InternalRuntimeException(s"Unexpected non-arrow type: '$tpe'.")
-    }
 
     // `JvmType` of the continuation interface for `tpe`
     val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)

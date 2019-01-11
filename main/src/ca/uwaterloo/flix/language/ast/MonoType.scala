@@ -12,6 +12,7 @@ sealed trait MonoType {
     case MonoType.Channel(_) => this
     case MonoType.Tuple(_) => this
     case MonoType.Ref(_) => this
+    case MonoType.Arrow(_, _) => this
     case MonoType.Apply(t1, _) => t1.typeConstructor
     case _ => this
   }
@@ -21,16 +22,11 @@ sealed trait MonoType {
     case MonoType.Array(tpe) => List(tpe)
     case MonoType.Channel(tpe) => List(tpe)
     case MonoType.Enum(_, targs) => targs
+    case MonoType.Arrow(targs, tresult) => targs ::: tresult :: Nil
     case MonoType.Tuple(elms) => elms
     case MonoType.Ref(tpe) => List(tpe)
     case MonoType.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
-  }
-
-  @deprecated("will be removed", "0.5")
-  def isArrow: Boolean = typeConstructor match {
-    case MonoType.Arrow(l) => true
-    case _ => false
   }
 
 }
@@ -69,6 +65,8 @@ object MonoType {
 
   // TODO: Order like in type.
 
+  case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
+
   case class Array(tpe: MonoType) extends MonoType
 
   case class Channel(tpe: MonoType) extends MonoType
@@ -92,13 +90,6 @@ object MonoType {
   case class Native(clazz: Class[_]) extends MonoType
 
   /**
-    * A type expression that represents functions.
-    */
-  case class Arrow(length: Int) extends MonoType {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  /**
     * A type expression that a type application tpe1[tpe2].
     */
   case class Apply(tpe1: MonoType, tpe2: MonoType) extends MonoType
@@ -118,14 +109,6 @@ object MonoType {
       * Returns the hash code of `this` type variable.
       */
     override def hashCode(): Int = id
-  }
-
-  @deprecated("will be removed", "0.5")
-  def mkArrow(a: MonoType, b: MonoType): MonoType = MonoType.Apply(MonoType.Apply(MonoType.Arrow(2), a), b)
-
-  @deprecated("will be removed", "0.5")
-  def mkArrow(as: List[MonoType], b: MonoType): MonoType = {
-    as.foldRight(b)(mkArrow)
   }
 
 }

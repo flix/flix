@@ -67,7 +67,7 @@ object JvmOps {
       case MonoType.Channel(_) => JvmType.Object
       case MonoType.Native(clazz) => JvmType.Object
       case MonoType.Ref(_) => getCellClassType(tpe)
-      case MonoType.Arrow(l) => getFunctionInterfaceType(tpe)
+      case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
       case MonoType.Tuple(l) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
       case MonoType.Array(tpe) => JvmType.Object
       case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
@@ -103,23 +103,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the erased result type of the given type `tpe`.
-    *
-    * NB: The given type `tpe` must be an arrow type.
-    */
-  def getErasedResultJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = {
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    getErasedJvmType(tpe.typeArguments.last)
-  }
-
-  /**
     * Returns the continuation interface type `Cont$X` for the given type `tpe`.
     *
     * Int -> Int          =>  Cont$Int
@@ -127,23 +110,18 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getContinuationInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // The return type is the last type argument.
+      val returnType = JvmOps.getErasedJvmType(tresult)
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // The JVM name is of the form Cont$ErasedType
+      val name = "Cont$" + stringify(returnType)
 
-    // The return type is the last type argument.
-    val returnType = getErasedResultJvmType(tpe)
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
 
-    // The JVM name is of the form Cont$ErasedType
-    val name = "Cont$" + stringify(returnType)
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -156,27 +134,22 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  def getFunctionInterfaceType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function interface.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Compute the arity of the function interface.
-    // We subtract one since the last argument is the return type.
-    val arity = tpe.typeArguments.length - 1
+      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+      val name = "Fn" + arity + "$" + args.mkString("$")
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
 
-    // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-    val name = "Fn" + arity + "$" + args.mkString("$")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -186,33 +159,25 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Retrieve the arrow type of the closure.
-    val tpe = closure.tpe
+  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = closure.tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function interface.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
 
-    // Check that the given type is an arrow type.
-    if (!tpe.typeConstructor.isArrow)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // Check that the given type has at least one type argument.
-    if (tpe.typeArguments.isEmpty)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // The JVM name is of the form Clo$sym.name
+      val name = "Clo" + "$" + mangle(closure.sym.name)
 
-    // Compute the arity of the function interface.
-    // We subtract one since the last argument is the return type.
-    val arity = tpe.typeArguments.length - 1
+      // The JVM package is the namespace of the symbol.
+      val pkg = closure.sym.namespace
 
-    // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
+      // The result type.
+      JvmType.Reference(JvmName(pkg, name))
 
-    // The JVM name is of the form Clo$sym.name
-    val name = "Clo" + "$" + mangle(closure.sym.name)
-
-    // The JVM package is the namespace of the symbol.
-    val pkg = closure.sym.namespace
-
-    // The result type.
-    JvmType.Reference(JvmName(pkg, name))
+    case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**
@@ -666,6 +631,7 @@ object JvmOps {
     case _ => Set.empty
   }
 
+  @deprecated("will be removed", "0.5")
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
     case MonoType.Var(id, kind) => Type.Var(id, Kind.Star)
     case MonoType.Unit => Type.Unit
@@ -683,7 +649,7 @@ object JvmOps {
     case MonoType.Array(elm) => Type.Apply(Type.Array, hackMonoType2Type(elm))
     case MonoType.Native(clazz) => Type.Native(clazz)
     case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
-    case MonoType.Arrow(length) => Type.Arrow(length)
+    case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
     case MonoType.Relation(sym, attr, kind) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)

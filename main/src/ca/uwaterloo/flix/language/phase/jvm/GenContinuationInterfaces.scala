@@ -31,12 +31,12 @@ object GenContinuationInterfaces {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) if tpe.typeConstructor.isArrow =>
+      case (macc, tpe@MonoType.Arrow(targs, tresult)) =>
         // Case 1: The type constructor is an arrow.
         // Construct continuation interface.
         val jvmType = JvmOps.getContinuationInterfaceType(tpe)
         val jvmName = jvmType.name
-        val resultType = JvmOps.getErasedResultJvmType(tpe)
+        val resultType = JvmOps.getErasedJvmType(tresult)
         val bytecode = genByteCode(jvmType, resultType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>

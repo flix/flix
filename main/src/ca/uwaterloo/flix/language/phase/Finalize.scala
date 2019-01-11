@@ -609,7 +609,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Array => ??? // cannot happen...
     case Type.Native(clazz) => MonoType.Native(clazz)
     case Type.Ref => ??? // cannot happen...
-    case Type.Arrow(length) => MonoType.Arrow(length)
+    case Type.Arrow(length) => ??? // cannot happen...
     case Type.Relation(sym, attr, kind) => MonoType.Relation(sym, attr map visitType, kind)
     case Type.Lattice(sym, attr, kind) => MonoType.Lattice(sym, attr map visitType, kind)
     case Type.Schema(m0) =>
@@ -633,6 +633,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         case Type.Tuple(_) => MonoType.Tuple(t0.typeArguments.map(visitType))
         case Type.Array => MonoType.Array(visitType(t0.typeArguments.head))
         case Type.Vector => MonoType.Array(visitType(t0.typeArguments.head))
+        case Type.Arrow(l) =>
+          val targs = t0.typeArguments
+          MonoType.Arrow(targs.init.map(visitType), visitType(targs.last))
         case _ => t0 match {
           case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
           case _ => ??? // TODO
@@ -646,7 +649,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     val base = tpe.typeConstructor
     val targs = tpe.typeArguments
     val freeArgs = fvs.map(_.tpe)
-    MonoType.mkArrow(freeArgs ::: targs.init, targs.last)
+    MonoType.Arrow(freeArgs ::: targs.init, targs.last)
   }
 
   // TODO: Deprecated
@@ -662,7 +665,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     varX.setStackOffset(0)
     val fparam = FinalAst.FormalParam(varX, MonoType.Unit)
     val fs = List(fparam)
-    val tpe = MonoType.mkArrow(MonoType.Unit, visitType(exp0.tpe))
+    val tpe = MonoType.Arrow(MonoType.Unit :: Nil, visitType(exp0.tpe))
     val defn = FinalAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
     m += (sym -> defn)
     sym
