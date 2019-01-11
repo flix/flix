@@ -18,14 +18,11 @@ package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.{InvocationTargetException, Modifier}
 import java.util.function
-import java.util.concurrent.locks.{Condition, ReentrantLock}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
-import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.{Constraint => _, _}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
@@ -1010,9 +1007,9 @@ object Interpreter {
         // Case 1: Non-array value.
 
         // Retrieve operations.
-        val eq = link(root.specialOps(SpecialOperator.Equality)(tresult), root)
-        val hash = link(root.specialOps(SpecialOperator.HashCode)(tresult), root)
-        val toString = link(root.specialOps(SpecialOperator.ToString)(tresult), root)
+        val eq = link(root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty).getOrElse(tresult, null), root)
+        val hash = link(root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty).getOrElse(tresult, null), root)
+        val toString = link(root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty).getOrElse(tresult, null), root)
 
         // Create the proxy object.
         ProxyObject.of(result, eq, hash, toString)
@@ -1049,9 +1046,9 @@ object Interpreter {
           // The type of the array elements.
           val elmType = tpe.asInstanceOf[MonoType.Array].tpe
 
-          val eq = link(root.specialOps(SpecialOperator.Equality)(elmType), root)
-          val hash = link(root.specialOps(SpecialOperator.HashCode)(elmType), root)
-          val toString = link(root.specialOps(SpecialOperator.ToString)(elmType), root)
+          val eq = link(root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty).getOrElse(elmType, null), root)
+          val hash = link(root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty).getOrElse(elmType, null), root)
+          val toString = link(root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty).getOrElse(elmType, null), root)
 
           // Construct the wrapped element.
           ProxyObject.of(v, eq, hash, toString)

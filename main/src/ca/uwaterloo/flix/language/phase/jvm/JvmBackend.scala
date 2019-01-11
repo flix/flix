@@ -16,23 +16,21 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
-import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{Evaluation, Validation}
+import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 object JvmBackend extends Phase[Root, CompilationResult] {
-
-  // TODO: Ramin/Magnus: Can and should we make he backend completely independent from flix.api?
-  // Then we would need to generate CellX, Unit, and a collection of exceptions.
 
   /**
     * The directory where to place the generated class files.
@@ -49,7 +47,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     if (flix.options.evaluation == Evaluation.Interpreted) {
       val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
         case (macc, (sym, defn)) =>
-          // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
           val args: Array[AnyRef] = Array(null)
           macc + (sym -> (() => Interpreter.link(sym, root).apply(args)))
       }
@@ -190,7 +187,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       case (macc, (sym, defn)) =>
         // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
         val args: Array[AnyRef] = Array(null)
-        macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
+        macc + (sym -> (() => link(sym, root).apply(args)))
     }
 
     //
@@ -198,5 +195,65 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     new CompilationResult(root, defs).toSuccess
   }
+
+  /**
+    * Returns an invocation target for the given definition `defn` that is compiled.
+    */
+  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+    // Retrieve the definition.
+    val defn = root.defs(sym)
+
+    try {
+      // Java Reflective Call.
+      val as = if (args.isEmpty) Array(null) else args
+
+      // Check the number of arguments.
+      if (defn.method.getParameterCount != as.length) {
+        throw InternalRuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${as.length} for method ${defn.method.getName}.")
+      }
+
+      val result = defn.method.invoke(null, as: _*)
+
+      val MonoType.Arrow(targs, tresult) = defn.tpe
+
+      // Eq, Hash, and toString
+      val eq = getEqOp(tresult, root)
+      val hash = getHashOp(tresult, root)
+      val toString = getToStrOp(tresult, root)
+
+      // Create the proxy object.
+      ProxyObject.of(result, eq, hash, toString)
+    } catch {
+      case e: InvocationTargetException =>
+        // Rethrow the underlying exception.
+        throw e.getTargetException
+    }
+  }
+
+  /**
+    * Returns a Java function that computes equality of two raw Flix values.
+    */
+  private def getEqOp(tpe: MonoType, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
+    val x = a(0)
+    val y = a(1)
+    link(root.specialOps(SpecialOperator.Equality)(tpe), root).apply(Array(x, y))
+  }
+
+  /**
+    * Returns a Java function that computes the hashCode of a raw Flix value.
+    */
+  private def getHashOp(tpe: MonoType, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
+    val x = a(0)
+    link(root.specialOps(SpecialOperator.HashCode)(tpe), root).apply(Array(x))
+  }
+
+  /**
+    * Returns a Java function that computes the string representation of a raw Flix value.
+    */
+  private def getToStrOp(tpe: MonoType, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
+    val x = a(0)
+    link(root.specialOps(SpecialOperator.ToString)(tpe), root).apply(Array(x))
+  }
+
 
 }
