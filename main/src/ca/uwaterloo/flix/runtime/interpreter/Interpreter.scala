@@ -788,7 +788,7 @@ object Interpreter {
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {
         override def apply(as: Array[Object]): ProxyObject = {
-          val bool = Linker.link(sym, root).invoke(as).getValue.asInstanceOf[java.lang.Boolean]
+          val bool = link(sym, root).apply(as).getValue.asInstanceOf[java.lang.Boolean]
           ProxyObject.of(bool, null, null, null)
         }
       }
@@ -798,7 +798,7 @@ object Interpreter {
     case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       val s = VarSym.of(varSym.text, varSym.getStackOffset)
       val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
-        override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+        override def apply(as: Array[AnyRef]): Array[ProxyObject] = link(defSym, root).apply(as).getValue.asInstanceOf[Array[ProxyObject]]
       }
       val ts = terms.map(s => VarSym.of(s.text, s.getStackOffset))
       FunctionalPredicate.of(s, f, ts.toArray)
@@ -830,7 +830,7 @@ object Interpreter {
     //
     case FinalAst.Term.Head.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      LitTerm.of((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      LitTerm.of((_: AnyRef) => link(sym, root).apply(Array.emptyObjectArray))
 
     //
     // Applications.
@@ -838,7 +838,7 @@ object Interpreter {
     case FinalAst.Term.Head.App(sym, args, _, _) =>
       // Construct a function that when invoked applies the underlying function.
       val f = new java.util.function.Function[Array[AnyRef], ProxyObject] {
-        override def apply(args: Array[AnyRef]): ProxyObject = Linker.link(sym, root).invoke(args)
+        override def apply(args: Array[AnyRef]): ProxyObject = link(sym, root).apply(args)
       }
       val as = args.map(s => VarSym.of(s.text, s.getStackOffset))
       AppTerm.of(f, as.toArray)
@@ -875,7 +875,7 @@ object Interpreter {
     //
     case FinalAst.Term.Body.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      LitTerm.of((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      LitTerm.of((_: AnyRef) => link(sym, root).apply(Array.emptyObjectArray))
   }
 
   /**
@@ -948,21 +948,11 @@ object Interpreter {
     val lattice = root.latticeComponents(tpe)
 
     LatticeOps.of(
-      (args: Array[AnyRef]) => {
-        Linker.link(lattice.bot, root).invoke(Array.empty)
-      },
-      (args: Array[AnyRef]) => {
-        Linker.link(lattice.equ, root).invoke(args)
-      },
-      (args: Array[AnyRef]) => {
-        Linker.link(lattice.leq, root).invoke(args)
-      },
-      (args: Array[AnyRef]) => {
-        Linker.link(lattice.lub, root).invoke(args)
-      },
-      (args: Array[AnyRef]) => {
-        Linker.link(lattice.glb, root).invoke(args)
-      }
+      link(lattice.bot, root),
+      link(lattice.equ, root),
+      link(lattice.leq, root),
+      link(lattice.lub, root),
+      link(lattice.glb, root)
     )
   }
 
@@ -980,30 +970,93 @@ object Interpreter {
     val toStrSym = root.specialOps(SpecialOperator.ToString)(tpe)
 
     // Construct the operators.
-    val eqOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
-      override def apply(a: Array[AnyRef]): ProxyObject = {
-        val x = a(0)
-        val y = a(1)
-        Linker.link(eqSym, root).invoke(Array(x, y))
-      }
-    }
-
-    val hashOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
-      override def apply(a: Array[AnyRef]): ProxyObject = {
-        val x = a(0)
-        Linker.link(hashSym, root).invoke(Array(x))
-      }
-    }
-
-    val toStrOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
-      override def apply(a: Array[AnyRef]): ProxyObject = {
-        val x = a(0)
-        Linker.link(toStrSym, root).invoke(Array(x))
-      }
-    }
+    val eqOp = link(eqSym, root)
+    val hashOp = link(hashSym, root)
+    val toStrOp = link(toStrSym, root)
 
     // Return the proxy object.
     ProxyObject.of(v, eqOp, hashOp, toStrOp)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Invoke                                                                  //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Returns an invocation target for the Flix function corresponding to the given symbol `sym`.
+    */
+  def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+    // Lookup the definition symbol in the program.
+    val defn = root.defs(sym)
+
+    // Extend the environment with the values of the actual arguments.
+    val env0 = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
+      case (macc, (FormalParam(name, tpe), actual)) => macc + (name.toString -> Interpreter.fromJava(actual))
+    }
+    // The initial label environment is empty.
+    val lenv0 = Map.empty[Symbol.LabelSym, Expression]
+
+    // Evaluate the function body.
+    val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, Map.empty, root))
+
+    // Immediately return the result if it is already a proxy object.
+    if (result.isInstanceOf[ProxyObject]) {
+      result.asInstanceOf[ProxyObject]
+    } else {
+      val MonoType.Arrow(targs, tresult) = defn.tpe
+
+      // Check whether the value is an array.
+      // NB: This is a hack to get functional predicates to work.
+      if (!tresult.isInstanceOf[MonoType.Array]) {
+        // Case 1: Non-array value.
+
+        // Retrieve operations.
+        val eq = link(root.specialOps(SpecialOperator.Equality)(tresult), root)
+        val hash = link(root.specialOps(SpecialOperator.HashCode)(tresult), root)
+        val toString = link(root.specialOps(SpecialOperator.ToString)(tresult), root)
+
+        // Create the proxy object.
+        ProxyObject.of(result, eq, hash, toString)
+      } else {
+        // Case 2: Array value.
+
+        // Retrieve the wrapped array.
+        val wrappedArray = getWrappedArray(result, tresult, root)
+
+        // Construct the wrapped array object.
+        ProxyObject.of(wrappedArray, null, null, null)
+      }
+    }
+  }
+
+  /**
+    * Returns the given array `result` with all its values wrapped in proxy object.
+    */
+  private def getWrappedArray(result: AnyRef, tpe: MonoType, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
+    // Wrap the array values in proxy objects.
+    result match {
+      case a: Array[Char] => a map (v => ProxyObject.of(Char.box(v), null, null, null))
+
+      case a: Array[Byte] => a map (v => ProxyObject.of(Byte.box(v), null, null, null))
+      case a: Array[Short] => a map (v => ProxyObject.of(Short.box(v), null, null, null))
+      case a: Array[Int] => a map (v => ProxyObject.of(Int.box(v), null, null, null))
+      case a: Array[Long] => a map (v => ProxyObject.of(Long.box(v), null, null, null))
+
+      case a: Array[Float] => a map (v => ProxyObject.of(Float.box(v), null, null, null))
+      case a: Array[Double] => a map (v => ProxyObject.of(Double.box(v), null, null, null))
+
+      case a: Array[AnyRef] => a map {
+        case v =>
+          // The type of the array elements.
+          val elmType = tpe.asInstanceOf[MonoType.Array].tpe
+
+          val eq = link(root.specialOps(SpecialOperator.Equality)(elmType), root)
+          val hash = link(root.specialOps(SpecialOperator.HashCode)(elmType), root)
+          val toString = link(root.specialOps(SpecialOperator.ToString)(elmType), root)
+
+          // Construct the wrapped element.
+          ProxyObject.of(v, eq, hash, toString)
+      }
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

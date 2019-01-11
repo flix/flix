@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.Phase
+import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, Validation}
@@ -50,7 +51,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
         case (macc, (sym, defn)) =>
           // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
           val args: Array[AnyRef] = Array(null)
-          macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
+          macc + (sym -> (() => Interpreter.link(sym, root).apply(args)))
       }
       return new CompilationResult(root, defs).toSuccess
     }

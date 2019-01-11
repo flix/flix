@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.runtime
 
 import flix.runtime.ProxyObject
 
+@deprecated("will be removed", "0.5")
 @FunctionalInterface
 trait InvocationTarget {
 
