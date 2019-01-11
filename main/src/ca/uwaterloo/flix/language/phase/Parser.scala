@@ -459,7 +459,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Expressions {
     def Statement: Rule1[ParsedAst.Expression] = rule {
-      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
+      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.Statement)
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -736,8 +736,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "{" ~ optWS ~ Statement ~ optWS ~ "}"
     }
 
-    def RecordLiteral: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "%{" ~ optWS ~ zeroOrMore(RecordFieldLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
+    def RecordLiteral: Rule1[ParsedAst.Expression] = {
+      def FieldLit: Rule1[ParsedAst.RecordField] = rule {
+        SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
+      }
+
+      rule {
+        SP ~ "{" ~ optWS ~ zeroOrMore(FieldLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
+      }
     }
 
     def RecordExtend: Rule1[ParsedAst.Expression] = rule {
@@ -754,10 +760,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def RecordSelectLambda: Rule1[ParsedAst.Expression] = rule {
       SP ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelectLambda
-    }
-
-    def RecordFieldLit: Rule1[ParsedAst.RecordField] = rule {
-      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
     }
 
     def RecordFieldExtend: Rule1[ParsedAst.RecordField] = rule {
