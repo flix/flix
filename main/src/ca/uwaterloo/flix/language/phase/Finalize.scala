@@ -637,7 +637,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
           val targs = t0.typeArguments
           MonoType.Arrow(targs.init.map(visitType), visitType(targs.last))
         case _ => t0 match {
-          case Type.Apply(tpe1, tpe2) => MonoType.Apply(visitType(tpe1), visitType(tpe2))
           case _ => ??? // TODO
         }
       }

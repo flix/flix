@@ -340,6 +340,8 @@ object GenExpression {
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
       pushDummyValue(visitor, tpe)
 
+    case Expression.ApplyEffTail(sym, args, tpe, loc) => ??? // TODO
+
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
       for (arg <- actuals) {
@@ -514,6 +516,14 @@ object GenExpression {
       val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+
+    case Expression.RecordSelect(exp, label, tpe, loc) => ???
+
+    case Expression.RecordExtend(label, value, rest, tpe, loc) => ??? // TODO
+
+    case Expression.RecordRestrict(label, rest, tpe, loc) => ??? // TODO
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       // Adding source line number for debugging
@@ -709,6 +719,8 @@ object GenExpression {
       // Since the return type is unit, we put an instance of unit on top of the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+    case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
 
     case Expression.Existential(params, exp, loc) =>
       // TODO: Better exception.

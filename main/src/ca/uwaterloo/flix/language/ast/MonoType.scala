@@ -47,7 +47,7 @@ object MonoType {
 
   case class Tuple(elms: List[MonoType]) extends MonoType
 
-  case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType // TODO: We want elms here?
+  case class Enum(sym: Symbol.EnumSym, args: List[MonoType]) extends MonoType
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
@@ -63,11 +63,6 @@ object MonoType {
 
   case class Native(clazz: Class[_]) extends MonoType
 
-  /**
-    * A type expression that a type application tpe1[tpe2].
-    */
-  @deprecated("will be removed", "0.5")
-  case class Apply(tpe1: MonoType, tpe2: MonoType) extends MonoType
 
   @deprecated("will be removed", "0.5")
   case class Var(id: Int) extends MonoType

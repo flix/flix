@@ -657,9 +657,9 @@ object JvmOps {
     case MonoType.Tuple(length) => Type.Tuple(0) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
-    case MonoType.Apply(tpe1, tpe2) => Type.Apply(hackMonoType2Type(tpe1), hackMonoType2Type(tpe2))
   }
 
+  @deprecated("will be removed", "0.5")
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   /**
