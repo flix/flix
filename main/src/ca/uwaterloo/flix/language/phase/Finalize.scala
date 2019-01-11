@@ -610,20 +610,20 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case Type.Native(clazz) => MonoType.Native(clazz)
     case Type.Ref => ??? // cannot happen...
     case Type.Arrow(length) => ??? // cannot happen...
-    case Type.Relation(sym, attr, kind) => MonoType.Relation(sym, attr map visitType, kind)
-    case Type.Lattice(sym, attr, kind) => MonoType.Lattice(sym, attr map visitType, kind)
+    case Type.Relation(sym, attr, kind) => MonoType.Relation(sym, attr map visitType)
+    case Type.Lattice(sym, attr, kind) => MonoType.Lattice(sym, attr map visitType)
     case Type.Schema(m0) =>
       val m = m0.foldLeft(Map.empty[Symbol.PredSym, MonoType]) {
         case (macc, (sym, t)) => macc + (sym -> visitType(t))
       }
       MonoType.Schema(m)
     case Type.Tuple(length) => MonoType.Tuple(Nil) // TODO: Seems very suspicious
-    case Type.RecordEmpty => MonoType.RecordEmpty
+    case Type.RecordEmpty => MonoType.RecordEmpty()
     case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
     case Type.Apply(Type.Channel, tpe2) => MonoType.Channel(visitType(tpe2))
     case Type.Apply(Type.Ref, tpe2) => MonoType.Ref(visitType(tpe2))
 
-    case Type.Var(id, kind) => MonoType.Var(id, kind)
+    case Type.Var(id, kind) => MonoType.Var(id)
 
     case _ =>
 

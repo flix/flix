@@ -51,8 +51,6 @@ object MonoType {
   /// Compound Types.
   ///
 
-  // TODO: Order like in type.
-
   case class Array(tpe: MonoType) extends MonoType
 
   case class Channel(tpe: MonoType) extends MonoType
@@ -65,13 +63,13 @@ object MonoType {
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
-  case object RecordEmpty extends MonoType
+  case class RecordEmpty() extends MonoType
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
-  case class Relation(sym: Symbol.RelSym, attr: List[MonoType], kind: Kind) extends MonoType // TODO: Remove kind
+  case class Relation(sym: Symbol.RelSym, attr: List[MonoType]) extends MonoType
 
-  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType], kind: Kind) extends MonoType // TODO: Remove kind
+  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType]) extends MonoType
 
   case class Schema(m: Map[Symbol.PredSym, MonoType]) extends MonoType
 
@@ -80,23 +78,10 @@ object MonoType {
   /**
     * A type expression that a type application tpe1[tpe2].
     */
+  @deprecated("will be removed", "0.5")
   case class Apply(tpe1: MonoType, tpe2: MonoType) extends MonoType
 
-
   @deprecated("will be removed", "0.5")
-  case class Var(id: Int, kind: Kind) extends MonoType {
-    /**
-      * Returns `true` if `this` type variable is equal to `o`.
-      */
-    override def equals(o: scala.Any): Boolean = o match {
-      case that: Var => this.id == that.id
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of `this` type variable.
-      */
-    override def hashCode(): Int = id
-  }
+  case class Var(id: Int) extends MonoType
 
 }

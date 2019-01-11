@@ -66,7 +66,7 @@ object JvmOps {
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
-    case MonoType.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
+    case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) => JvmType.Object
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -629,7 +629,7 @@ object JvmOps {
 
   @deprecated("will be removed", "0.5")
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
-    case MonoType.Var(id, kind) => Type.Var(id, Kind.Star)
+    case MonoType.Var(id) => Type.Var(id, Kind.Star)
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
@@ -647,15 +647,15 @@ object JvmOps {
     case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
-    case MonoType.Relation(sym, attr, kind) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
-    case MonoType.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
+    case MonoType.Relation(sym, attr) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
+    case MonoType.Lattice(sym, attr) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Schema(m0) =>
       val m = m0.foldLeft(Map.empty[Symbol.PredSym, Type]) {
         case (macc, (sym, t)) => macc + (sym -> hackMonoType2Type(t))
       }
       Type.Schema(m)
     case MonoType.Tuple(length) => Type.Tuple(0) // hack
-    case MonoType.RecordEmpty => Type.RecordEmpty
+    case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.Apply(tpe1, tpe2) => Type.Apply(hackMonoType2Type(tpe1), hackMonoType2Type(tpe2))
   }
@@ -949,13 +949,13 @@ object JvmOps {
           case (sacc, arg) => sacc ++ nestedTypesOf(arg)
         }
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
-      case MonoType.RecordEmpty => ???
+      case MonoType.RecordEmpty() => ???
       case MonoType.RecordExtend(label, value, rest) => ???
-      case MonoType.Relation(sym, attr, kind) => attr.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Lattice(sym, attr, kind) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Schema(m) => Set(tpe) // TODO: Incorrect, but will be rewritten.
       case MonoType.Native(_) => Set(tpe)
-      case MonoType.Var(_, _) => Set.empty
+      case MonoType.Var(_) => Set.empty
     }
   }
 
