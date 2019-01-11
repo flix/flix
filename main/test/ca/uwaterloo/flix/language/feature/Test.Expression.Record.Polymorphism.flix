@@ -1,29 +1,38 @@
 @test
-def testRecordPolymorphism01[r](): { | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism01[r](): { | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism02[r](): { fstName: Str | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism02[r](): { fstName: Str | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism03[r](): { lstName: Str | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism03[r](): { lstName: Str | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism04[r](): { age: Int | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism04[r](): { age: Int | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism05[r](): { cowboy: Bool | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism05[r](): { cowboy: Bool | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism06[r](): { fstName: Str, lstName: Str | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism06[r](): { fstName: Str, lstName: Str | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism07[r](): { fstName: Str, age: Int | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism07[r](): { fstName: Str, age: Int | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism08[r](): { fstName: Str, cowboy: Bool | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism08[r](): { fstName: Str, cowboy: Bool | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
-def testRecordPolymorphism09[r](): { lstName: Str, fstName: Str | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+def testRecordPolymorphism09[r](): { lstName: Str, fstName: Str | r } =
+    %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
 def testRecordNonPolyExtend01(): Unit =
@@ -35,7 +44,8 @@ def testRecordNonPolyExtend01(): Unit =
     let p6 = withZ(p2, 84);
     ()
 
-def withZ(rec: { x: Int, y: Int }, z: Int): { x: Int, y: Int, z: Int } = %{ +z = z | rec }
+def withZ(rec: { x: Int, y: Int }, z: Int): { x: Int, y: Int, z: Int } =
+    { +z = z | rec }
 
 @test
 def testRecordNonPolyExtend02(): Unit =
@@ -47,7 +57,8 @@ def testRecordNonPolyExtend02(): Unit =
     let p6 = withAge(p2, 84);
     ()
 
-def withAge(rec: { fstName: Str, lstName: Str }, age: Int): { fstName: Str, lstName: Str, age: Int } = %{ +age = age | rec }
+def withAge(rec: { fstName: Str, lstName: Str }, age: Int): { fstName: Str, lstName: Str, age: Int } =
+    { +age = age | rec }
 
 @test
 def testRecordPolyExtend01(): Unit =
@@ -61,7 +72,8 @@ def testRecordPolyExtend01(): Unit =
     let p8 = withColor(p4, "Black");
     ()
 
-def withColor[r](rec: r, col: Str): { color: Str | r } = %{ +color = col | rec }
+def withColor[r](rec: r, col: Str): { color: Str | r } =
+    { +color = col | rec }
 
 @test
 def testRecordPolyExtend02(): Unit =
@@ -75,7 +87,8 @@ def testRecordPolyExtend02(): Unit =
     let p7 = withAgeAndSex(42, "f", p4);
     ()
 
-def withAgeAndSex[r](age: Int, sex: Str, rec: r): { age: Int, sex: Str | r } = %{ +age = age, +sex = sex | rec }
+def withAgeAndSex[r](age: Int, sex: Str, rec: r): { age: Int, sex: Str | r } =
+    { +age = age, +sex = sex | rec }
 
 @test
 def testRecordPolySelect01(): Bool =

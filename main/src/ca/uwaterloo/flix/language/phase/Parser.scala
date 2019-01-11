@@ -741,7 +741,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordExtend: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldExtend).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtend
+      SP ~ "{" ~ optWS ~ oneOrMore(RecordFieldExtend).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtend
     }
 
     def RecordRestrict: Rule1[ParsedAst.Expression] = rule {
