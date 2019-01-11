@@ -1,18 +1,18 @@
 @test
-def testRecordExtend01(): %{ fstName: Str } =
+def testRecordExtend01(): { fstName: Str } =
     let r0 = %{};
     let r1 = %{ +fstName = "Lucky" | r0 };
     r1
 
 @test
-def testRecordExtend02(): %{ fstName: Str, lstName: Str } =
+def testRecordExtend02(): { fstName: Str, lstName: Str } =
     let r0 = %{};
     let r1 = %{ +fstName = "Lucky" | r0 };
     let r2 = %{ +lstName = "Luke" | r1 };
     r2
 
 @test
-def testRecordExtend03(): %{ fstName: Str, lstName: Str, age: Int } =
+def testRecordExtend03(): { fstName: Str, lstName: Str, age: Int } =
     let r0 = %{};
     let r1 = %{ +fstName = "Lucky" | r0 };
     let r2 = %{ +lstName = "Luke" | r1 };
@@ -20,7 +20,7 @@ def testRecordExtend03(): %{ fstName: Str, lstName: Str, age: Int } =
     r3
 
 @test
-def testRecordExtend04(): %{ fstName: Str, lstName: Str, age: Int, cowboy: Bool } =
+def testRecordExtend04(): { fstName: Str, lstName: Str, age: Int, cowboy: Bool } =
     let r0 = %{};
     let r1 = %{ +fstName = "Lucky" | r0 };
     let r2 = %{ +lstName = "Luke" | r1 };
@@ -46,21 +46,21 @@ def testRecordForkExtend02(): Unit =
     ()
 
 @test
-def testRecordDuplicateExtend01(): %{ x: Bool, x: Int, x: Str } =
+def testRecordDuplicateExtend01(): { x: Bool, x: Int, x: Str } =
     let r0 = %{ +x = "ab" | %{} };
     let r1 = %{ +x = 1234 | r0 };
     let r2 = %{ +x = true | r1 };
         r2
 
 @test
-def testRecordDuplicateExtend02(): %{ x: Int, x: Int, x: Int } =
+def testRecordDuplicateExtend02(): { x: Int, x: Int, x: Int } =
     let r0 = %{ +x = 123 | %{} };
     let r1 = %{ +x = 456 | r0 };
     let r2 = %{ +x = 789 | r1 };
         r2
 
 @test
-def testRecordDuplicateExtend03(): %{ x: Int, y: Char, x: Int, y: Char, x: Int } =
+def testRecordDuplicateExtend03(): { x: Int, y: Char, x: Int, y: Char, x: Int } =
     let r0 = %{ +x = 123 | %{} };
     let r1 = %{ +y = 'a' | r0 };
     let r2 = %{ +x = 456 | r1 };
