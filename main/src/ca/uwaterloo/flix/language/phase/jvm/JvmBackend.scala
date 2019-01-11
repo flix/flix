@@ -206,29 +206,29 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     */
   private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] =
     (args: Array[AnyRef]) => {
-      // Retrieve the definition and its type.
+      ///
+      /// Retrieve the definition and its type.
+      ///
       val defn = root.defs(sym)
       val MonoType.Arrow(targs, tresult) = defn.tpe
 
+      ///
+      /// Construct the arguments array.
+      ///
+      val argsArray = if (args.isEmpty) Array(null) else args
+      if (argsArray.length != defn.method.getParameterCount) {
+        throw InternalRuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${argsArray.length} for method ${defn.method.getName}.")
+      }
+
+      ///
+      /// Perform the method call using reflection.
+      ///
       try {
-        // Java Reflective Call.
-        val as = if (args.isEmpty) Array(null) else args
+        // Call the method passing the arguments.
+        val result = defn.method.invoke(null, argsArray: _*)
 
-        // Check the number of arguments.
-        if (defn.method.getParameterCount != as.length) {
-          throw InternalRuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${as.length} for method ${defn.method.getName}.")
-        }
-
-        // Reflectively invoke the method.
-        val result = defn.method.invoke(null, as: _*)
-
-        // Eq, Hash, and toString
-        val eq = link(root.specialOps(SpecialOperator.Equality).getOrElse(tresult, null), root)
-        val hash = link(root.specialOps(SpecialOperator.HashCode).getOrElse(tresult, null), root)
-        val toString = link(root.specialOps(SpecialOperator.ToString).getOrElse(tresult, null), root)
-
-        // Create the proxy object.
-        ProxyObject.of(result, eq, hash, toString)
+        // Construct a fresh proxy object.
+        newProxyObj(result, tresult, root)
       } catch {
         case e: InvocationTargetException =>
           // Rethrow the underlying exception.
@@ -236,5 +236,30 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       }
     }
 
+  /**
+    * Returns a proxy object that wraps the given result value.
+    */
+  private def newProxyObj(result: AnyRef, resultType: MonoType, root: Root)(implicit flix: Flix): ProxyObject = {
+    // Lookup the Equality method.
+    val eq = root.specialOps.getOrElse(SpecialOperator.Equality, Map.empty).get(resultType) match {
+      case None => null
+      case Some(defn) => link(defn, root)
+    }
+
+    // Lookup the HashCode method.
+    val hash = root.specialOps.getOrElse(SpecialOperator.HashCode, Map.empty).get(resultType) match {
+      case None => null
+      case Some(defn) => link(defn, root)
+    }
+
+    // Lookup the ToString method.
+    val toString = root.specialOps.getOrElse(SpecialOperator.ToString, Map.empty).get(resultType) match {
+      case None => null
+      case Some(defn) => link(defn, root)
+    }
+
+    // Create the proxy object.
+    ProxyObject.of(result, eq, hash, toString)
+  }
 
 }
