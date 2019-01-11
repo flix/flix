@@ -569,11 +569,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ atomic("ref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Ref) | Deref
+      (SP ~ atomic("ref") ~ WS ~ Ref ~ SP ~> ParsedAst.Expression.Ref) | Deref
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
+      (SP ~ atomic("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {

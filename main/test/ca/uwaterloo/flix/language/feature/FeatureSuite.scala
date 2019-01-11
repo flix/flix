@@ -120,6 +120,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Reference.Assign", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Assign.flix"),
   new FlixTest("Test.Expression.Reference.Ref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Ref.flix"),
   new FlixTest("Test.Expression.Reference.Deref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Deref.flix"),
+  new FlixTest("Test.Expression.Reference.Precedence", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Precedence.flix"),
 
   //
   // Constraints.
