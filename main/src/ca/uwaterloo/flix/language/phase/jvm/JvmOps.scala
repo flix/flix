@@ -919,30 +919,43 @@ object JvmOps {
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
     */
   def nestedTypesOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[MonoType] = {
-    // Retrieve the type constructor.
-    val base = tpe.typeConstructor
-
-    // Retrieve the type arguments.
-    val args = tpe.typeArguments
-
     //
     // Check if the tag is an enum and if so, extract the types of its tags.
     // Usually this is not "necessary", but an enum might occur as a type,
     // but not have all its tags constructed as expressions.
     //
-    base match {
-      case MonoType.Enum(sym, _) =>
+    tpe match {
+      case MonoType.Unit => Set(tpe)
+      case MonoType.Bool => Set(tpe)
+      case MonoType.Char => Set(tpe)
+      case MonoType.Float32 => Set(tpe)
+      case MonoType.Float64 => Set(tpe)
+      case MonoType.Int8 => Set(tpe)
+      case MonoType.Int16 => Set(tpe)
+      case MonoType.Int32 => Set(tpe)
+      case MonoType.Int64 => Set(tpe)
+      case MonoType.BigInt => Set(tpe)
+      case MonoType.Str => Set(tpe)
+
+      case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Channel(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
+      case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Enum(sym, args) =>
         // Case 1: The nested types are the type itself, its type arguments, and the types of the tags.
         val tagTypes = getTagsOf(tpe).map(_.tagType)
 
         args.foldLeft(Set(tpe) ++ tagTypes) {
           case (sacc, arg) => sacc ++ nestedTypesOf(arg)
         }
-      case _ =>
-        // Case 2: The nested types are the type itself and its type arguments.
-        args.foldLeft(Set(tpe)) {
-          case (sacc, arg) => sacc ++ nestedTypesOf(arg)
-        }
+      case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
+      case MonoType.RecordEmpty => ???
+      case MonoType.RecordExtend(label, value, rest) => ???
+      case MonoType.Relation(sym, attr, kind) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Lattice(sym, attr, kind) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Schema(m) => Set(tpe) // TODO: Incorrect, but will be rewritten.
+      case MonoType.Native(_) => Set(tpe)
+      case MonoType.Var(_, _) => Set.empty
     }
   }
 

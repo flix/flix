@@ -81,9 +81,9 @@ object MonoType {
 
   case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
-  case class Relation(sym: Symbol.RelSym, attr: List[MonoType], kind: Kind) extends MonoType
+  case class Relation(sym: Symbol.RelSym, attr: List[MonoType], kind: Kind) extends MonoType // TODO: Remove kind
 
-  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType], kind: Kind) extends MonoType
+  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType], kind: Kind) extends MonoType // TODO: Remove kind
 
   case class Schema(m: Map[Symbol.PredSym, MonoType]) extends MonoType
 
