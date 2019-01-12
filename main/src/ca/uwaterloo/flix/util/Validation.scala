@@ -215,6 +215,17 @@ object Validation {
     }
 
   /**
+    * Folds Right over `xs` using the function `f` with the initial value `zero`.
+    */
+  def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
+    xs.foldRight(zero) {
+      case (a, acc) => acc flatMap {
+        case v => f(a, v)
+      }
+    }
+  }
+
+  /**
     * Adds an implicit `toSuccess` method.
     */
   implicit class ToSuccess[+T](val t: T) {
