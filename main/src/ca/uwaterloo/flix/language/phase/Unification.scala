@@ -227,9 +227,7 @@ object Unification {
         // Attempt to write the row to match.
         rewriteRow(row2, label1, fieldType1, row2) flatMap {
           case (subst1, restRow2) =>
-
             // TODO: Missing the safety/occurs check.
-
             unify(subst1(restRow1), subst1(restRow2)) flatMap {
               case subst2 => Result.Ok(subst2 @@ subst1)
             }

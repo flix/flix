@@ -319,7 +319,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         } yield tast
 
         case Expression.SelectChannel(rules, default, _, _, _) => for {
-          _ <- sequence(rules.map(r => {checkPats(r.chan, root); checkPats(r.exp, root)}))
+          _ <- sequence(rules.map(r => {
+            checkPats(r.chan, root); checkPats(r.exp, root)
+          }))
           _ <- default match {
             case Some(exp) => checkPats(exp, root)
             case None => None.toSuccess
@@ -731,6 +733,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Succ(n, t) => 2
       case Type.RecordEmpty => 0 // TODO: Correct?
       case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
+      case Type.SchemaEmpty => 0 // TODO: Correct?
+      case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Schema(m) => 0 // TODO: Correct
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0

@@ -56,6 +56,8 @@ sealed trait Type {
     case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
+    case Type.SchemaEmpty => Set.empty
+    case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _, _) => Set.empty
     case Type.Lattice(_, _, _) => Set.empty
@@ -220,6 +222,8 @@ sealed trait Type {
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
+    case Type.SchemaEmpty => "Schema { }"
+    case Type.SchemaExtend(sym, tpe, rest) => "Schema { " + sym + " : " + tpe + " | " + rest + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -442,6 +446,20 @@ object Type {
   }
 
   /**
+    * A type constructor that represents the empty schema type.
+    */
+  case object SchemaEmpty extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
+    * A type constructor that represents a schema extension type.
+    */
+  case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
     * A type constructor that represents zero.
     */
   case object Zero extends Type {
@@ -619,6 +637,8 @@ object Type {
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
+      case Type.SchemaEmpty => Type.SchemaEmpty
+      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
@@ -708,6 +728,17 @@ object Type {
           //
           case Type.RecordExtend(label, value, rest) =>
             "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
+
+          //
+          // SchemaEmpty.
+          //
+          case Type.SchemaEmpty => "Schema { }"
+
+          //
+          // SchemaExtend.
+          //
+          case Type.SchemaExtend(sym, t, rest) =>
+            "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
 
           //
           // Enum.
