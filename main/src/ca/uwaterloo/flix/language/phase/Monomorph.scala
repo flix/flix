@@ -109,11 +109,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Enum(sym, kind) => Type.Enum(sym, kind)
         case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
         case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
-        case Type.Schema(m) =>
-          val m2 = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-            case (macc, (predSym, predType)) => macc + (predSym -> visit(predType))
-          }
-          Type.Schema(m2)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }
 

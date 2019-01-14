@@ -78,8 +78,6 @@ object MonoType {
 
   case class Lattice(sym: Symbol.LatSym, attr: List[MonoType]) extends MonoType
 
-  case class Schema(m: Map[Symbol.PredSym, MonoType]) extends MonoType
-
   case class Native(clazz: Class[_]) extends MonoType
 
 

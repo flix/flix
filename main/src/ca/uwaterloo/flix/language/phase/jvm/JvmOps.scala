@@ -65,7 +65,6 @@ object JvmOps {
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
     case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) => JvmType.Object
 
@@ -649,11 +648,6 @@ object JvmOps {
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
     case MonoType.Relation(sym, attr) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Lattice(sym, attr) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
-    case MonoType.Schema(m0) =>
-      val m = m0.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-        case (macc, (sym, t)) => macc + (sym -> hackMonoType2Type(t))
-      }
-      Type.Schema(m)
     case MonoType.Tuple(length) => Type.Tuple(0) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
@@ -959,7 +953,6 @@ object JvmOps {
 
       case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Schema(m) => Set(tpe) // TODO: Incorrect, but will be rewritten.
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
     }

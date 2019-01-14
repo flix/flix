@@ -290,7 +290,9 @@ object WeededAst {
 
     case class RecordExtend(label: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Schema(predicates: List[(Name.QName, List[WeededAst.Type])], loc: SourceLocation) extends WeededAst.Type
+    case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
+
+    case class SchemaExtend(qname: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 

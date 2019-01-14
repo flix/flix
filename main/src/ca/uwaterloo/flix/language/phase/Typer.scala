@@ -1285,7 +1285,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, tpe1, tpe2, mkAnySchema(program), loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, /* TODO */ ???, loc)
           } yield resultType
 
         //
@@ -1297,7 +1297,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            resultType <- unifyM(tvar, inferredType, mkAnySchema(program), loc)
+            resultType <- unifyM(tvar, inferredType, /* TODO */ ???, loc)
           } yield resultType
 
         //
@@ -1309,7 +1309,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
+            expectedType <- unifyM(inferredType, /* TODO */ ???, loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
@@ -1322,7 +1322,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
+            expectedType <- unifyM(inferredType, /* TODO */ ???, loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
@@ -1336,7 +1336,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             _ <- visitExp(exp1)
             inferredType <- visitExp(exp2)
-            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
+            expectedType <- unifyM(inferredType, /* TODO */ ???, loc)
             resultType <- unifyM(tvar, inferredType, loc) // TODO: The result type should focus on what is projected.
           } yield resultType
 
@@ -1349,7 +1349,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            schemaType <- unifyM(tpe1, tpe2, mkAnySchema(program), loc)
+            schemaType <- unifyM(tpe1, tpe2, /* TODO */ ???, loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
@@ -2000,7 +2000,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           paramType <- Expressions.infer(exp, program)
           termTypes <- Terms.Head.infer(terms, program)
           predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
-        } yield mkSchema(sym, predicateType, program)
+        } yield /* TODO */ ???
 
     }
 
@@ -2023,7 +2023,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           paramType <- Expressions.infer(exp, program)
           termTypes <- Terms.Body.infer(terms, program)
           predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
-        } yield mkSchema(sym, predicateType, program)
+        } yield /* TODO */ ???
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
@@ -2031,13 +2031,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           argumentTypes <- seqM(terms.map(t => Expressions.infer(t, program)))
           unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
-        } yield mkAnySchema(program)
+        } yield /* TODO */ ???
 
       case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
         for {
           tpe <- Expressions.infer(term, program)
           ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
-        } yield mkAnySchema(program)
+        } yield /* TODO */ ???
     }
 
     /**
@@ -2164,31 +2164,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   def getFormalParams(fparams0: List[ResolvedAst.FormalParam], subst0: Unification.Substitution) = fparams0.map {
     case ResolvedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
-  }
-
-  /**
-    * Returns a schema where all predicates are free type variables.
-    */
-  private def mkAnySchema(program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
-    val m = program.allPredicateSymbols.foldLeft(Map.empty: Map[Symbol.PredSym, Type]) {
-      case (macc, predSym) => macc + (predSym -> Type.freshTypeVar())
-    }
-    Type.Schema(m)
-  }
-
-  /**
-    * Returns a schema where the type of `sym` is `tpe` and other predicates are free type variables.
-    */
-  private def mkSchema(sym: Symbol.PredSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
-    val z = Map(sym -> tpe): Map[Symbol.PredSym, Type]
-    val m = program.allPredicateSymbols.foldLeft(z) {
-      case (macc, predSym) =>
-        if (sym == predSym)
-          macc
-        else
-          macc + (predSym -> Type.freshTypeVar())
-    }
-    Type.Schema(m)
   }
 
 }

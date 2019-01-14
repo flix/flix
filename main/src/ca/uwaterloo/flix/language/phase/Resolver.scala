@@ -1335,20 +1335,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         r <- lookupType(rest, ns0, root)
       } yield Type.RecordExtend(label.name, v, r)
 
-    case NamedAst.Type.Schema(predicates, loc) =>
-      val predicatesVal = traverse(predicates) {
-        case (qname, typeArgs) =>
-          val predSymVal = lookupPredicateSymbol(qname, ns0, root)
-          val typeArgsVal = traverse(typeArgs)(lookupType(_, ns0, root))
+    case NamedAst.Type.SchemaEmpty(loc) =>
+      Type.RecordEmpty.toSuccess
 
-          mapN(predSymVal, typeArgsVal) {
-            case (sym, attr) => sym -> Type.mkRelationOrLattice(sym, attr)
-          }
-      }
-
-      predicatesVal map {
-        case m => Type.Schema(m.toMap)
-      }
+    case NamedAst.Type.SchemaExtend(name, tpe, rest, loc) =>
+      for {
+        s <- lookupPredicateSymbol(name, ns0, root)
+        t <- lookupType(tpe, ns0, root)
+        r <- lookupType(rest, ns0, root)
+      } yield Type.SchemaExtend(s, t, r)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 

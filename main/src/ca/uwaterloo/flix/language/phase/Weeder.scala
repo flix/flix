@@ -1472,10 +1472,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
-      val ps = predicates map {
-        case (qname, attr) => qname -> (attr map visitType).toList
-      }
-      WeededAst.Type.Schema(ps.toList, mkSL(sp1, sp2))
+      // TODO
+      ???
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 

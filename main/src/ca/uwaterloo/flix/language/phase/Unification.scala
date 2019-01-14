@@ -86,11 +86,6 @@ object Unification {
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map apply, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map apply, kind)
-      case Type.Schema(row) =>
-        val newRow = row.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-          case (macc, (s, t)) => macc + (s -> apply(t))
-        }
-        Type.Schema(newRow)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
 
@@ -258,17 +253,6 @@ object Unification {
       case (Type.Relation(sym1, attr1, kind1), Type.Relation(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
 
       case (Type.Lattice(sym1, attr1, kind1), Type.Lattice(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
-
-      case (Type.Schema(m1), Type.Schema(m2)) =>
-        // NB: The schemas "ought to" contain the same keys.
-        val keys = (m1.keySet ++ m2.keySet).toList
-
-        // Retrieve the types of each row (in the same order).
-        val types1 = keys.map(m1)
-        val types2 = keys.map(m2)
-
-        // And simply unify them.
-        unifyAll(types1, types2)
 
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {

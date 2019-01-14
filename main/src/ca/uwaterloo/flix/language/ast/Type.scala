@@ -61,7 +61,6 @@ sealed trait Type {
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _, _) => Set.empty
     case Type.Lattice(_, _, _) => Set.empty
-    case Type.Schema(m) => m.flatMap(_._2.typeVars).toSet
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -170,7 +169,8 @@ sealed trait Type {
     * Returns `true` if `this` type is a schema type.
     */
   def isSchema: Boolean = typeConstructor match {
-    case Type.Schema(_) => true
+    case Type.SchemaEmpty => true
+    case Type.SchemaExtend(_, _, _) => true
     case _ => false
   }
 
@@ -218,7 +218,6 @@ sealed trait Type {
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
-    case Type.Schema(m) => m.mkString(", ")
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
@@ -414,15 +413,6 @@ object Type {
     * @param kind the kind of the lattice.
     */
   case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
-
-  /**
-    * A type constructor that represents a schema.
-    *
-    * @param m the types of the predicate symbols in the system.
-    */
-  case class Schema(m: Map[Symbol.PredSym, Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
 
   /**
     * A type constructor that represents tuples of the given `length`.
@@ -645,11 +635,6 @@ object Type {
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
-      case Type.Schema(m) =>
-        val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-          case (macc, (s, t)) => macc + (s -> visit(t))
-        }
-        Type.Schema(newM)
     }
 
     visit(tpe)
@@ -757,14 +742,6 @@ object Type {
           //
           case Type.Lattice(sym, attr, _) =>
             sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
-
-          //
-          // Schema.
-          //
-          case Type.Schema(row) =>
-            "Schema {" + row.map {
-              case (s, t) => s.toString + ": " + visit(t, m)
-            }.mkString(", ") + "}"
 
           //
           // Application.

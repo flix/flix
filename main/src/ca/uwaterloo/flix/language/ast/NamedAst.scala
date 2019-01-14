@@ -298,7 +298,9 @@ object NamedAst {
 
     case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Schema(predicates: List[(Name.QName, List[NamedAst.Type])], loc: SourceLocation) extends NamedAst.Type
+    case class SchemaEmpty(loc: SourceLocation) extends NamedAst.Type
+
+    case class SchemaExtend(name: Name.QName, tpe: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
