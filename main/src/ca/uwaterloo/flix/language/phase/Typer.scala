@@ -61,8 +61,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def reassemble(c0: ResolvedAst.Constraint, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Constraint = c0 match {
       case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
         // Unification was successful. Reassemble the head and body predicates.
-        val head = Predicates.reassemble(head0, program, subst0)
-        val body = body0.map(b => Predicates.reassemble(b, program, subst0))
+        val head = reassembleHeadPredicate(head0, program, subst0)
+        val body = body0.map(b => reassembleBodyPredicate(b, program, subst0))
 
         // Reassemble the constraint parameters.
         val cparams = cparams0.map {
@@ -1270,22 +1270,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  A_0 :- A_1, ..., A_n : tpe
           //
           for {
-            headPredicateType <- Predicates.infer(head0, program)
-            bodyPredicateTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
+            headPredicateType <- inferHeadPredicate(head0, program)
+            bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, program)))
             unifiedBodyPredicateType <- unifyAllowEmptyM(bodyPredicateTypes, loc)
             resultType <- unifyM(tvar, headPredicateType, unifiedBodyPredicateType, loc)
           } yield resultType
 
         //
-        //  exp1 : tpe    exp2 : tpe    tpe == Schema {}
-        //  ---------------------------------------------------
-        //  union exp1 exp2 : tpe
+        //  exp1 : tpe    exp2 : tpe
+        //  ------------------------
+        //  exp1 <+> exp2 : tpe
         //
         case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, tpe1, tpe2, /* TODO */ ???, loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, loc)
           } yield resultType
 
         //
@@ -1341,15 +1341,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         //
-        //  exp1 : tpe    exp2 : tpe    tpe == Schema {}
-        //  --------------------------------------------
+        //  exp1 : tpe    exp2 : tpe
+        //  ------------------------
         //  exp1 |= exp2 : tpe
         //
         case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            schemaType <- unifyM(tpe1, tpe2, /* TODO */ ???, loc)
+            schemaType <- unifyM(tpe1, tpe2, loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
@@ -1956,168 +1956,133 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
   }
 
-  object Predicates {
+  /**
+    * Infers the type of the given head predicate.
+    */
+  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = head match {
+    //
+    //  --------
+    //  true : a
+    //
+    case ResolvedAst.Predicate.Head.True(loc) =>
+      Unification.liftM(Type.freshTypeVar())
 
-    /**
-      * Infers the type of the given head predicate.
-      */
-    // TODO: We might want to introduce some notion of predicate type?
-    def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = head match {
+    //
+    //  ---------
+    //  false : a
+    //
+    case ResolvedAst.Predicate.Head.False(loc) =>
+      Unification.liftM(Type.freshTypeVar())
+
+    case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
       //
-      // --------
-      // true : a
+      //  t_1 : tpe_1, ..., t_n: tpe_n
+      //  ------------------------------------------------------------
+      //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
-      case ResolvedAst.Predicate.Head.True(loc) =>
-        // TODO: Typing...
-        Unification.liftM(Type.freshTypeVar())
 
-      //
-      // -----------------
-      // false : Checkable
-      //
-      case ResolvedAst.Predicate.Head.False(loc) =>
-        // TODO: Typing...
-        Unification.liftM(Type.freshTypeVar())
+      // Lookup the type scheme.
+      val scheme = sym match {
+        case x: Symbol.RelSym => program.relations(x).sc
+        case x: Symbol.LatSym => program.lattices(x).sc
+      }
 
-      case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
-        //
-        // t_1 : tpe_1, ..., t_2: tpe_n,    rel P(tpe_1, ..., tpe_n)
-        // ---------------------------------------------------------:
-        // P(t_1, ..., t_n): Schema[... P(tpe_1, ..., tpe_n) ...]
-        //
+      // Instantiate the type scheme.
+      val declaredType = Scheme.instantiate(scheme)
 
-        // Lookup the type scheme.
-        val scheme = sym match {
-          case x: Symbol.RelSym => program.relations(x).sc
-          case x: Symbol.LatSym => program.lattices(x).sc
-        }
-
-        // Instantiate the type scheme.
-        val declaredType = Scheme.instantiate(scheme)
-
-        // Infer the types of the terms.
-        for {
-          paramType <- Expressions.infer(exp, program)
-          termTypes <- Terms.Head.infer(terms, program)
-          predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
-        } yield /* TODO */ ???
-
-    }
-
-    /**
-      * Infers the type of the given body predicate.
-      */
-    def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
-      case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
-        // Lookup the type scheme.
-        val scheme = sym match {
-          case x: Symbol.RelSym => program.relations(x).sc
-          case x: Symbol.LatSym => program.lattices(x).sc
-        }
-
-        // Instantiate the type scheme.
-        val declaredType = Scheme.instantiate(scheme)
-
-        // Infer the types of the terms.
-        for {
-          paramType <- Expressions.infer(exp, program)
-          termTypes <- Terms.Body.infer(terms, program)
-          predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
-        } yield /* TODO */ ???
-
-      case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.defs(sym)
-        val declaredType = Scheme.instantiate(defn.sc)
-        for {
-          argumentTypes <- seqM(terms.map(t => Expressions.infer(t, program)))
-          unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
-        } yield /* TODO */ ???
-
-      case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
-        for {
-          tpe <- Expressions.infer(term, program)
-          ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
-        } yield /* TODO */ ???
-    }
-
-    /**
-      * Applies the given substitution `subst0` to the given head predicate `head0`.
-      */
-    def reassemble(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-      case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
-
-      case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-
-      case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
-        val e = Expressions.reassemble(exp, program, subst0)
-        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        val pred = TypedAst.PredicateWithParam(sym, e)
-        TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
-    }
-
-    /**
-      * Applies the given substitution `subst0` to the given body predicate `body0`.
-      */
-    def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
-        val e = Expressions.reassemble(exp, program, subst0)
-        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        val pred = TypedAst.PredicateWithParam(sym, e)
-        TypedAst.Predicate.Body.Atom(pred, polarity, ts, subst0(tvar), loc)
-
-      case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.defs(sym)
-        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-
-      case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
-        val t = Expressions.reassemble(term, program, subst0)
-        TypedAst.Predicate.Body.Functional(sym, t, loc)
-    }
+      // Infer the types of the terms.
+      for {
+        paramType <- Expressions.infer(exp, program)
+        termTypes <- seqM(terms.map(Expressions.infer(_, program)))
+        predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
+      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
   }
 
-  object Terms {
-
-    object Head {
-      /**
-        * Infers the type of the given `terms`.
-        */
-      def infer(terms: List[ResolvedAst.Expression], program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] =
-        seqM(terms.map(t => Expressions.infer(t, program)))
-
-
-      /**
-        * Infers the type of the given `terms` and checks them against the types `ts`.
-        */
-      // TODO: Deprecated
-      def typecheck(terms: List[ResolvedAst.Expression], ts: List[Type], loc: SourceLocation, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-        for (
-          actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
-          unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
-        ) yield unifiedTypes
+  /**
+    * Infers the type of the given body predicate.
+    */
+  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
+    //
+    //  t_1 : tpe_1, ..., t_n: tpe_n
+    //  ------------------------------------------------------------
+    //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
+    //
+    case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
+      // Lookup the type scheme.
+      val scheme = sym match {
+        case x: Symbol.RelSym => program.relations(x).sc
+        case x: Symbol.LatSym => program.lattices(x).sc
       }
-    }
 
-    object Body {
-      /**
-        * Infers the type of the given `terms`.
-        */
-      def infer(terms: List[ResolvedAst.Pattern], program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] =
-        seqM(terms.map(t => Patterns.infer(t, program)))
+      // Instantiate the type scheme.
+      val declaredType = Scheme.instantiate(scheme)
 
-      /**
-        * Infers the type of the given `terms` and checks them against the types `ts`.
-        */
-      // TODO: Deprecated
-      def typecheck(terms: List[ResolvedAst.Pattern], ts: List[Type], loc: SourceLocation, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
-        for (
-          actualTypes <- seqM(terms.map(t => Patterns.infer(t, program)));
-          unifiedTypes <- Unification.unifyM(ts, actualTypes, loc)
-        ) yield unifiedTypes
-      }
-    }
+      // Infer the types of the terms.
+      for {
+        paramType <- Expressions.infer(exp, program)
+        termTypes <- seqM(terms.map(Patterns.infer(_, program)))
+        predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
+      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
+    //
+    //  e : Bool
+    //  -------------------
+    //  if e : a
+    //
+    case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
+      val defn = program.defs(sym)
+      val declaredType = Scheme.instantiate(defn.sc)
+      for {
+        argumentTypes <- seqM(terms.map(t => Expressions.infer(t, program)))
+        unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
+      } yield Type.freshTypeVar()
+
+    //
+    //  x: t    e: Array[t]
+    //  -------------------
+    //  x <- e : a
+    //
+    case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
+      for {
+        termType <- Expressions.infer(term, program)
+        arrayType <- unifyM(Type.mkArray(sym.tvar), termType, loc)
+      } yield Type.freshTypeVar()
+  }
+
+  /**
+    * Applies the given substitution `subst0` to the given head predicate `head0`.
+    */
+  private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
+    case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
+
+    case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
+
+    case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
+      val e = Expressions.reassemble(exp, program, subst0)
+      val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
+      val pred = TypedAst.PredicateWithParam(sym, e)
+      TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
+  }
+
+  /**
+    * Applies the given substitution `subst0` to the given body predicate `body0`.
+    */
+  private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
+    case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
+      val e = Expressions.reassemble(exp, program, subst0)
+      val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
+      val pred = TypedAst.PredicateWithParam(sym, e)
+      TypedAst.Predicate.Body.Atom(pred, polarity, ts, subst0(tvar), loc)
+
+    case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
+      val defn = program.defs(sym)
+      val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
+      TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
+
+    case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
+      val t = Expressions.reassemble(term, program, subst0)
+      TypedAst.Predicate.Body.Functional(sym, t, loc)
   }
 
   /**
