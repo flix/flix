@@ -79,6 +79,8 @@ object Unification {
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
+      case Type.SchemaEmpty => Type.SchemaEmpty
+      case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, apply(tpe), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
@@ -223,9 +225,21 @@ object Unification {
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
+      case (Type.SchemaEmpty, Type.SchemaEmpty) => Result.Ok(Substitution.empty)
+
       case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
         // Attempt to write the row to match.
         rewriteRow(row2, label1, fieldType1, row2) flatMap {
+          case (subst1, restRow2) =>
+            // TODO: Missing the safety/occurs check.
+            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
+        }
+
+      case (Type.SchemaExtend(sym, tpe, restRow1), row2) =>
+        // Attempt to write the row to match.
+        rewriteSchemaRow(row2, sym, tpe, row2) flatMap {
           case (subst1, restRow2) =>
             // TODO: Missing the safety/occurs check.
             unify(subst1(restRow1), subst1(restRow2)) flatMap {
@@ -310,6 +324,41 @@ object Unification {
       case Type.RecordEmpty =>
         // Case 3: The `label` does not exist in the record.
         Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
+
+      case _ =>
+        // Case 4: The type is not a row.
+        Err(UnificationError.NonRowType(row2))
+    }
+
+    /**
+      * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
+      */
+    // TODO: This is a copy of the above rewrite. It would be nice if it could be the same function, but the shape of labels is different.
+    def rewriteSchemaRow(row2: Type, label1: Symbol.PredSym, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
+      case Type.SchemaExtend(label2, fieldType2, restRow2) =>
+        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
+        if (label1 == label2) {
+          // Case 1.1: The labels match, their types must match.
+          for {
+            subst <- unify(fieldType1, fieldType2)
+          } yield (subst, restRow2)
+        } else {
+          // Case 1.2: The labels do not match, attempt to match with a label further down.
+          rewriteSchemaRow(restRow2, label1, fieldType1, originalType) map {
+            case (subst, rewrittenRow) => (subst, Type.SchemaExtend(label2, fieldType2, rewrittenRow))
+          }
+        }
+      case tvar: Type.Var =>
+        // Case 2: The row is a type variable.
+        // Introduce a fresh type variable to represent one more level of the row.
+        val restRow2 = Type.freshTypeVar()
+        val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
+        val subst = Unification.Substitution(Map(tvar -> type2))
+        Ok((subst, restRow2))
+
+      case Type.SchemaEmpty =>
+        // Case 3: The `label` does not exist in the record.
+        Err(UnificationError.UndefinedLabel(/* TODO */ ???, fieldType1, originalType))
 
       case _ =>
         // Case 4: The type is not a row.

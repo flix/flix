@@ -657,6 +657,8 @@ object JvmOps {
     case MonoType.Tuple(length) => Type.Tuple(0) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
+    case MonoType.SchemaEmpty() => Type.SchemaEmpty
+    case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
   @deprecated("will be removed", "0.5")
@@ -949,8 +951,12 @@ object JvmOps {
           case (sacc, arg) => sacc ++ nestedTypesOf(arg)
         }
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
+
       case MonoType.RecordEmpty() => ???
       case MonoType.RecordExtend(label, value, rest) => ???
+      case MonoType.SchemaEmpty() => ???
+      case MonoType.SchemaExtend(sym, t, rest) => ???
+
       case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Schema(m) => Set(tpe) // TODO: Incorrect, but will be rewritten.
