@@ -1473,7 +1473,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
       // TODO
-      ???
+      WeededAst.Type.Unit(mkSL(sp1, sp2))
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 

@@ -67,6 +67,8 @@ object JvmOps {
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) => JvmType.Object
+    case MonoType.SchemaEmpty() => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+    case MonoType.SchemaExtend(_, _, _) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
@@ -946,10 +948,11 @@ object JvmOps {
         }
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
 
-      case MonoType.RecordEmpty() => ???
-      case MonoType.RecordExtend(label, value, rest) => ???
-      case MonoType.SchemaEmpty() => ???
-      case MonoType.SchemaExtend(sym, t, rest) => ???
+      case MonoType.RecordEmpty() => Set(tpe)
+      case MonoType.RecordExtend(label, value, rest) => nestedTypesOf(value) ++ nestedTypesOf(rest) + value + rest
+
+      case MonoType.SchemaEmpty() => Set(tpe)
+      case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
       case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe

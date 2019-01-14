@@ -96,13 +96,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Tuple(l) => Type.Tuple(l)
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
-          case Type.Var(_, _) => Type.RecordExtend(label, apply(value), Type.RecordEmpty)
-          case _ => Type.RecordExtend(label, apply(value), apply(rest))
+          case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
+          case _ => Type.RecordExtend(label, visit(value), visit(rest))
         }
         case Type.SchemaEmpty => Type.SchemaEmpty
         case Type.SchemaExtend(sym, tt, rest) => rest match {
-          case Type.Var(_, _) => Type.SchemaExtend(sym, apply(tt), Type.RecordEmpty)
-          case _ => Type.SchemaExtend(sym, apply(tt), apply(rest))
+          case Type.Var(_, _) => Type.SchemaExtend(sym, visit(tt), Type.RecordEmpty)
+          case _ => Type.SchemaExtend(sym, visit(tt), visit(rest))
         }
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)

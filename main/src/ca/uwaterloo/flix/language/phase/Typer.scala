@@ -1276,80 +1276,71 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, headPredicateType, unifiedBodyPredicateType, loc)
           } yield resultType
 
-        //
-        //  exp1 : tpe    exp2 : tpe
-        //  ------------------------
-        //  exp1 <+> exp2 : tpe
-        //
         case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
+          //
+          //  exp1 : tpe    exp2 : tpe
+          //  ------------------------
+          //  exp1 <+> exp2 : tpe
+          //
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, mkAnySchemaType(), loc)
           } yield resultType
 
-        //
-        //  exp : Schema
-        //  -----------------------------
-        //  solve exp : Schema
-        //
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
-          // TODO: Checkable/Solvable
+          //
+          //  exp : tpe
+          //  ---------------
+          //  solve exp : tpe
+          //
           for {
             inferredType <- visitExp(exp)
-            resultType <- unifyM(tvar, inferredType, /* TODO */ ???, loc)
+            resultType <- unifyM(tvar, inferredType, mkAnySchemaType(), loc)
           } yield resultType
 
-        //
-        //  exp : Schema
-        //  ------------------------------
-        //  check exp : Bool
-        //
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
-          // TODO: Checkable/Solvable
+          //
+          //  exp : a
+          //  ----------------
+          //  check exp : Bool
+          //
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, /* TODO */ ???, loc)
+            schemaType <- unifyM(inferredType, mkAnySchemaType(), loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
-        //
-        //  exp : Schema
-        //  ------------------------------
-        //  delta exp : Str
-        //
         case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
-          // TODO: Checkable/Solvable
+          //
+          //  exp : Schema
+          //  ---------------
+          //  delta exp : Str
+          //
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, /* TODO */ ???, loc)
+            schemaType <- unifyM(inferredType, mkAnySchemaType(), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
-        //
-        //  exp : Schema
-        //  ------------------------------
-        //  delta exp : Str
-        //
+        // TODO: FixpointProject
         case ResolvedAst.Expression.FixpointProject(sym, exp1, exp2, tvar, loc) =>
-          // TODO: Checkable/Solvable
           for {
             _ <- visitExp(exp1)
             inferredType <- visitExp(exp2)
-            expectedType <- unifyM(inferredType, /* TODO */ ???, loc)
-            resultType <- unifyM(tvar, inferredType, loc) // TODO: The result type should focus on what is projected.
+            resultType <- unifyM(tvar, inferredType, mkAnySchemaType(), loc) // TODO: The result type should focus on what is projected.
           } yield resultType
 
-        //
-        //  exp1 : tpe    exp2 : tpe
-        //  ------------------------
-        //  exp1 |= exp2 : tpe
-        //
         case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+          //
+          //  exp1 : tpe    exp2 : tpe
+          //  ------------------------
+          //  exp1 |= exp2 : tpe
+          //
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            schemaType <- unifyM(tpe1, tpe2, loc)
+            schemaType <- unifyM(tpe1, tpe2, mkAnySchemaType(), loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
@@ -1965,14 +1956,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  true : a
     //
     case ResolvedAst.Predicate.Head.True(loc) =>
-      Unification.liftM(Type.freshTypeVar())
+      Unification.liftM(mkAnySchemaType())
 
     //
     //  ---------
     //  false : a
     //
     case ResolvedAst.Predicate.Head.False(loc) =>
-      Unification.liftM(Type.freshTypeVar())
+      Unification.liftM(mkAnySchemaType())
 
     case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
       //
@@ -2026,9 +2017,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
     //
-    //  e : Bool
-    //  -------------------
-    //  if e : a
+    //  exp : Bool
+    //  ----------
+    //  if exp : a
     //
     case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val defn = program.defs(sym)
@@ -2036,18 +2027,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         argumentTypes <- seqM(terms.map(t => Expressions.infer(t, program)))
         unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
-      } yield Type.freshTypeVar()
+      } yield mkAnySchemaType()
 
     //
-    //  x: t    e: Array[t]
-    //  -------------------
-    //  x <- e : a
+    //  x: t    exp: Array[t]
+    //  ---------------------
+    //  x <- exp : a
     //
     case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
       for {
         termType <- Expressions.infer(term, program)
         arrayType <- unifyM(Type.mkArray(sym.tvar), termType, loc)
-      } yield Type.freshTypeVar()
+      } yield mkAnySchemaType()
   }
 
   /**
@@ -2129,6 +2120,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   def getFormalParams(fparams0: List[ResolvedAst.FormalParam], subst0: Unification.Substitution) = fparams0.map {
     case ResolvedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
+  }
+
+  /**
+    * Returns an open schema type.
+    */
+  private def mkAnySchemaType()(implicit genSym: GenSym): Type = {
+    val sym = Symbol.mkRelSym("_$fake")
+    val tpe = Type.Bool
+    Type.SchemaExtend(sym, tpe, Type.freshTypeVar())
   }
 
 }
