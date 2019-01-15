@@ -1041,6 +1041,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
 
+      case WeededAst.Type.RelationOrLattice(name, terms, loc) => NamedAst.Type.RelationOrLattice(name, terms.map(visit(_, env0)), loc)
+
       case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
 
       case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
@@ -1050,10 +1052,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Type.SchemaEmpty(loc) => NamedAst.Type.SchemaEmpty(loc)
 
-      case WeededAst.Type.SchemaExtend(sym, tpe, rest, loc) =>
+      case WeededAst.Type.SchemaExtend(name, tpe, rest, loc) =>
         val t = visit(tpe, env0)
         val r = visit(rest, env0)
-        NamedAst.Type.RecordExtend(sym, t, r, loc)
+        NamedAst.Type.SchemaExtend(name, t, r, loc)
 
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
 

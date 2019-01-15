@@ -1326,6 +1326,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
       ) yield Type.mkTuple(elms)
 
+    case NamedAst.Type.RelationOrLattice(name, terms, loc) =>
+      for {
+        s <- lookupPredicateSymbol(name, ns0, root)
+        ts <- traverse(terms)(lookupType(_, ns0, root))
+      } yield s match {
+        case relSym: Symbol.RelSym => Type.Relation(relSym, ts, Kind.Star)
+        case latSym: Symbol.LatSym => Type.Lattice(latSym, ts, Kind.Star)
+      }
+
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
 

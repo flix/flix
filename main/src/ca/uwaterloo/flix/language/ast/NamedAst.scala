@@ -294,6 +294,8 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
+    case class RelationOrLattice(name: Name.QName, terms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
+
     case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
 
     case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type

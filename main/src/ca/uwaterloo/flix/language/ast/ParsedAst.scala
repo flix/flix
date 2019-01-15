@@ -1306,7 +1306,7 @@ object ParsedAst {
       * @param predicates the predicates in the schema.
       * @param sp2        the position of the last character in the type.
       */
-    case class Schema(sp1: SourcePosition, predicates: Seq[(Name.QName, Seq[ParsedAst.Type])], sp2: SourcePosition) extends ParsedAst.Type
+    case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.
@@ -1595,5 +1595,15 @@ object ParsedAst {
     * @param sp2   the position of the last character in the field.
     */
   case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+
+  /**
+    * Predicate Type.
+    *
+    * @param sp1   the position of the first character in the field.
+    * @param name  the qualified name of the predicate.
+    * @param terms the types of the predicate terms.
+    * @param sp2   the position of the last character in the field.
+    */
+  case class PredicateType(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Type], sp2: SourcePosition)
 
 }
