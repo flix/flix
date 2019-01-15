@@ -1345,7 +1345,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       } yield Type.RecordExtend(label.name, v, r)
 
     case NamedAst.Type.SchemaEmpty(loc) =>
-      Type.RecordEmpty.toSuccess
+      Type.SchemaEmpty.toSuccess
 
     case NamedAst.Type.SchemaExtend(name, tpe, rest, loc) =>
       for {

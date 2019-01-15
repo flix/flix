@@ -346,7 +346,7 @@ object Unification {
 
       case _ =>
         // Case 4: The type is not a row.
-        Err(UnificationError.NonRowType(row2))
+        Err(UnificationError.NonRowType(row2)) // TODO...
     }
 
     unifyTypes(tpe1, tpe2)

@@ -1285,7 +1285,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, tpe1, tpe2, mkAnySchemaType(), loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, loc)
           } yield resultType
 
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
