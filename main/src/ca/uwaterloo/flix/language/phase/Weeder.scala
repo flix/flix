@@ -1473,7 +1473,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
-      val init = WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+      val zero = WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+      val init = WeededAst.Type.SchemaExtend(
+        Name.mkQName("True", sp1, sp2),
+        WeededAst.Type.Ambiguous(Name.mkQName("Unit"), mkSL(sp1, sp2)),
+        zero,
+        mkSL(sp1, sp2))
+
       predicates.foldRight(init: WeededAst.Type) {
         case (ParsedAst.PredicateType(ssp1, name, terms, ssp2), acc) =>
           val predicateType = WeededAst.Type.RelationOrLattice(name, (terms map visitType).toList, mkSL(ssp1, ssp2))

@@ -2126,8 +2126,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns an open schema type.
     */
   private def mkAnySchemaType()(implicit genSym: GenSym): Type = {
-    val sym = Symbol.mkRelSym("_$fake")
-    val tpe = Type.Bool
+    val sym = Symbol.mkRelSym("True")
+    val tpe = Type.Unit
     Type.SchemaExtend(sym, tpe, Type.freshTypeVar())
   }
 
