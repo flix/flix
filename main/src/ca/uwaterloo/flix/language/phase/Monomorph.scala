@@ -101,7 +101,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         case Type.SchemaEmpty => Type.SchemaEmpty
         case Type.SchemaExtend(sym, tt, rest) => rest match {
-          case Type.Var(_, _) => Type.SchemaExtend(sym, visit(tt), Type.RecordEmpty)
+          case Type.Var(_, _) => Type.SchemaExtend(sym, visit(tt), Type.SchemaEmpty)
           case _ => Type.SchemaExtend(sym, visit(tt), visit(rest))
         }
         case Type.Zero => Type.Zero
