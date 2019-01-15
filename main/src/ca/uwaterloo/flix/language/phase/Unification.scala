@@ -141,16 +141,32 @@ object Unification {
       *
       * @param fieldName  the name of the missing field.
       * @param fieldType  the type of the missing field.
-      * @param recordType the record type the field is missing from.
+      * @param recordType the record type where the field is missing.
       */
     case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
 
     /**
-      * An unification error due to an unexpected non-row type.
+      * An unification error due the predicate `sym` of type `predType` missing from the type `schemaType`.
       *
-      * @param tpe the unexpected non-row type.
+      * @param predSym    the symbol of the missing predicate.
+      * @param predType   the type of the missing predicate.
+      * @param schemaType the schema type where the predicate is missing.
       */
-    case class NonRowType(tpe: Type) extends UnificationError
+    case class UndefinedPredicate(predSym: Symbol.PredSym, predType: Type, schemaType: Type) extends UnificationError
+
+    /**
+      * An unification error due to an unexpected non-record type.
+      *
+      * @param nonRecordType the unexpected non-record type.
+      */
+    case class NonRecordType(nonRecordType: Type) extends UnificationError
+
+    /**
+      * An unification error due to an unexpected non-schema type.
+      *
+      * @param nonSchemaType the unexpected non-schema type.
+      */
+    case class NonSchemaType(nonSchemaType: Type) extends UnificationError
 
   }
 
@@ -311,13 +327,13 @@ object Unification {
 
       case _ =>
         // Case 4: The type is not a row.
-        Err(UnificationError.NonRowType(row2))
+        Err(UnificationError.NonRecordType(row2))
     }
 
     /**
       * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
       */
-    // TODO: This is a copy of the above rewrite. It would be nice if it could be the same function, but the shape of labels is different.
+    // TODO: This is a copy of the above function. It would be nice if it could be the same function, but the shape of labels is different.
     def rewriteSchemaRow(row2: Type, label1: Symbol.PredSym, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
       case Type.SchemaExtend(label2, fieldType2, restRow2) =>
         // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
@@ -342,11 +358,11 @@ object Unification {
 
       case Type.SchemaEmpty =>
         // Case 3: The `label` does not exist in the record.
-        Err(UnificationError.UndefinedLabel(/* TODO */ ???, fieldType1, originalType))
+        Err(UnificationError.UndefinedPredicate(label1, fieldType1, originalType))
 
       case _ =>
         // Case 4: The type is not a row.
-        Err(UnificationError.NonRowType(row2)) // TODO...
+        Err(UnificationError.NonSchemaType(row2))
     }
 
     unifyTypes(tpe1, tpe2)
@@ -415,14 +431,24 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
+
         case Result.Err(UnificationError.Mismatch(baseType1, baseType2)) =>
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
+
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
-        case Result.Err(UnificationError.UndefinedLabel(label, field, tpe)) =>
-          Err(TypeError.UndefinedLabel(label, field, tpe, loc))
-        case Result.Err(UnificationError.NonRowType(tpe)) =>
-          Err(TypeError.NonRow(tpe, loc))
+
+        case Result.Err(UnificationError.UndefinedLabel(fieldName, fieldType, recordType)) =>
+          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, loc))
+
+        case Result.Err(UnificationError.NonRecordType(tpe)) =>
+          Err(TypeError.NonRecordType(tpe, loc))
+
+        case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
+          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, loc))
+
+        case Result.Err(UnificationError.NonSchemaType(tpe)) =>
+          Err(TypeError.NonSchemaType(tpe, loc))
       }
     }
     )
