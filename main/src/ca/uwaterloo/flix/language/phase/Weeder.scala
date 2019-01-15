@@ -1463,18 +1463,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      val zero = restOpt match {
+      val init = restOpt match {
         case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
         case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
       }
-      fields.foldRight(zero: WeededAst.Type) {
+      fields.foldRight(init: WeededAst.Type) {
         case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
           WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
       }
 
     case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
-      val zero = WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
-      predicates.foldRight(zero: WeededAst.Type) {
+      val init = WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+      predicates.foldRight(init: WeededAst.Type) {
         case (ParsedAst.PredicateType(ssp1, name, terms, ssp2), acc) =>
           val predicateType = WeededAst.Type.RelationOrLattice(name, (terms map visitType).toList, mkSL(ssp1, ssp2))
           WeededAst.Type.SchemaExtend(name, predicateType, acc, mkSL(ssp1, ssp2))
