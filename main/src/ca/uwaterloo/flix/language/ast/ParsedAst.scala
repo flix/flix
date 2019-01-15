@@ -1306,7 +1306,7 @@ object ParsedAst {
       * @param predicates the predicates in the schema.
       * @param sp2        the position of the last character in the type.
       */
-    case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], sp2: SourcePosition) extends ParsedAst.Type
+    case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], base: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.

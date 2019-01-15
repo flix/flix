@@ -1472,8 +1472,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
       }
 
-    case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
-      val zero = WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+    case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
+      val zero = restOpt match {
+        case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
+      }
+
       val init = WeededAst.Type.SchemaExtend(
         Name.mkQName("True", sp1, sp2),
         WeededAst.Type.Ambiguous(Name.mkQName("Unit"), mkSL(sp1, sp2)),
@@ -1861,7 +1865,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
-    case ParsedAst.Type.Schema(sp1, _, _) => sp1
+    case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
