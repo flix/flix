@@ -1335,15 +1335,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
       ) yield Type.mkTuple(elms)
 
-    case NamedAst.Type.RelationOrLattice(name, terms, loc) =>
-      for {
-        s <- lookupPredicateSymbol(name, ns0, root)
-        ts <- traverse(terms)(lookupType(_, ns0, root))
-      } yield s match {
-        case relSym: Symbol.RelSym => Type.Relation(relSym, ts, Kind.Star)
-        case latSym: Symbol.LatSym => Type.Lattice(latSym, ts, Kind.Star)
-      }
-
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
 
@@ -1356,12 +1347,28 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
 
-    case NamedAst.Type.SchemaExtend(name, tpe, rest, loc) =>
-      for {
-        s <- lookupPredicateSymbol(name, ns0, root)
-        t <- lookupType(tpe, ns0, root)
-        r <- lookupType(rest, ns0, root)
-      } yield Type.SchemaExtend(s, t, r)
+    case NamedAst.Type.Schema(ts, rest, loc) =>
+      // Translate the type into a schema row type.
+      val result = Validation.foldRight(ts)(lookupType(rest, ns0, root)) {
+        case (predType, acc) =>
+          // Lookup the type and check that is either a relation or lattice type.
+          flatMapN(lookupType(predType, ns0, root)) {
+            case t => t.typeConstructor match {
+              case Type.Relation(sym, _, _) => Type.SchemaExtend(sym, t, acc).toSuccess
+              case Type.Lattice(sym, _, _) => Type.SchemaExtend(sym, t, acc).toSuccess
+              case nonRelationOrLatticeType =>
+                ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
+            }
+          }
+      }
+
+      // Ensure that the result type has the True predicate.
+      mapN(result) {
+        case schema =>
+          val sym = Symbol.mkRelSym("True")
+          val tpe = Type.Unit
+          Type.SchemaExtend(sym, tpe, schema)
+      }
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 

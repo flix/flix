@@ -1041,8 +1041,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
 
-      case WeededAst.Type.RelationOrLattice(name, terms, loc) => NamedAst.Type.RelationOrLattice(name, terms.map(visit(_, env0)), loc)
-
       case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
 
       case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
@@ -1052,10 +1050,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Type.SchemaEmpty(loc) => NamedAst.Type.SchemaEmpty(loc)
 
-      case WeededAst.Type.SchemaExtend(name, tpe, rest, loc) =>
-        val t = visit(tpe, env0)
+      case WeededAst.Type.Schema(ps, rest, loc) =>
+        val ts = ps.map(visit(_, env0))
         val r = visit(rest, env0)
-        NamedAst.Type.SchemaExtend(name, t, r, loc)
+        NamedAst.Type.Schema(ts, r, loc)
 
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
 
@@ -1206,11 +1204,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
-    case WeededAst.Type.RelationOrLattice(name, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.SchemaExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
+    case WeededAst.Type.Schema(ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)

@@ -286,15 +286,13 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class RelationOrLattice(qname: Name.QName, terms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
-
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Type
 
     case class RecordExtend(label: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class SchemaExtend(qname: Name.QName, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Schema(ts: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 
