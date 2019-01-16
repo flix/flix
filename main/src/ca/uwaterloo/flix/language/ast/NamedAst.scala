@@ -300,7 +300,7 @@ object NamedAst {
 
     case class SchemaEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class Schema(ps: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Schema(ts: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 

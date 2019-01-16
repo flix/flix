@@ -1349,7 +1349,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case NamedAst.Type.Schema(ts, rest, loc) =>
       // Translate the type into a schema row type.
-      val result = Validation.foldRight(ts)(lookupType(rest, ns0, root)) {
+      val init = lookupType(rest, ns0, root)
+
+      // Fold over the predicate types and check that they are relations or lattices.
+      val result = Validation.foldRight(ts)(init) {
         case (predType, acc) =>
           // Lookup the type and check that is either a relation or lattice type.
           flatMapN(lookupType(predType, ns0, root)) {
