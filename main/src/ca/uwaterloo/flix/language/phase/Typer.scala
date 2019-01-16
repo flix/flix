@@ -1323,12 +1323,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
-        // TODO: FixpointProject
         case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+          //
+          //  exp1 : tpe    exp2 : Schema { P : a  | b }
+          //  -------------------------------------------
+          //  project P<exp1> exp2 : Schema { P : a | c }
+          //
+          val freshPredicateTypeVar = Type.freshTypeVar() // a
+          val freshRestSchemaTypeVar = Type.freshTypeVar() // b
+          val freshResultSchemaTypeVar = Type.freshTypeVar() // c
+
           for {
-            _ <- visitExp(pred.exp)
-            inferredType <- visitExp(pred.exp)
-            resultType <- unifyM(tvar, inferredType, mkAnySchemaType(), loc) // TODO: The result type should focus on what is projected.
+            parameterType <- visitExp(pred.exp)
+            inferredType <- visitExp(exp)
+            expectedType <- unifyM(inferredType, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+            resultType <- unifyM(tvar, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           } yield resultType
 
         case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
