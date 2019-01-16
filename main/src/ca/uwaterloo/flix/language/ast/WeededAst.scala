@@ -196,7 +196,7 @@ object WeededAst {
 
     case class FixpointDelta(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointProject(name: Name.QName, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -319,6 +319,8 @@ object WeededAst {
   case class HandlerBinding(qname: Name.QName, exp: WeededAst.Expression)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
+
+  case class PredicateWithParam(qname: Name.QName, exp: WeededAst.Expression)
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 

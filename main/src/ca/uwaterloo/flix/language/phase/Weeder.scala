@@ -1030,7 +1030,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
       mapN(paramExp, visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.FixpointProject(name, e1, e2, mkSL(sp1, sp2))
+        case (e1, e2) =>
+          val pred = WeededAst.PredicateWithParam(name, e1)
+          WeededAst.Expression.FixpointProject(pred, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>

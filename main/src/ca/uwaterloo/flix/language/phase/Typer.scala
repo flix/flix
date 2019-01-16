@@ -1324,10 +1324,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         // TODO: FixpointProject
-        case ResolvedAst.Expression.FixpointProject(sym, exp1, exp2, tvar, loc) =>
+        case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
-            _ <- visitExp(exp1)
-            inferredType <- visitExp(exp2)
+            _ <- visitExp(pred.exp)
+            inferredType <- visitExp(pred.exp)
             resultType <- unifyM(tvar, inferredType, mkAnySchemaType(), loc) // TODO: The result type should focus on what is projected.
           } yield resultType
 
@@ -1818,11 +1818,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * FixpointProject expression.
          */
-        case ResolvedAst.Expression.FixpointProject(sym, exp1, exp2, tvar, loc) =>
-          val e1 = reassemble(exp1, program, subst0)
-          val e2 = reassemble(exp2, program, subst0)
-          val pred = TypedAst.PredicateWithParam(sym, e1)
-          TypedAst.Expression.FixpointProject(pred, e2, subst0(tvar), Eff.Empty, loc)
+        case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
+          val p = visitPredicateWithParam(pred)
+          val e = reassemble(exp, program, subst0)
+          TypedAst.Expression.FixpointProject(p, e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ConstraintUnion expression.
@@ -1844,6 +1843,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         */
       def visitParam(param: ResolvedAst.FormalParam): TypedAst.FormalParam =
         TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.loc)
+
+      /**
+        * Applies the substitution to the predicate with parameter `pred`.
+        */
+      def visitPredicateWithParam(pred: ResolvedAst.PredicateWithParam): TypedAst.PredicateWithParam = pred match {
+        case ResolvedAst.PredicateWithParam(sym, exp) =>
+          val e = reassemble(exp, program, subst0)
+          TypedAst.PredicateWithParam(sym, e)
+      }
 
       visitExp(exp0, subst0)
     }

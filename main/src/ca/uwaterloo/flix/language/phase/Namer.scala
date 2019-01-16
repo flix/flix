@@ -885,9 +885,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointDelta(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointProject(name, exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointProject(name, e1, e2, Type.freshTypeVar(), loc)
+    case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
+      mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
+        case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
@@ -1070,6 +1070,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
+    * Performs naming on the given predicate with parameter `pred` under the given environment `env0` and type environment `tenv0`.
+    */
+  private def visitPredicateWithParam(pred: WeededAst.PredicateWithParam, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.PredicateWithParam, NameError] = pred match {
+    case WeededAst.PredicateWithParam(qname, exp) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.PredicateWithParam(qname, e)
+      }
+  }
+
+  /**
     * Returns the free variables in the given simple class atom `a`.
     */
   private def freeVars(a: WeededAst.SimpleClass): List[Name.Ident] = a.args
@@ -1161,7 +1171,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointDelta(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProject(name, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.UserError(loc) => Nil
   }
@@ -1205,6 +1215,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+  }
+
+  /**
+    * Returns the free variables in the given predicate with parameter `pred`.
+    */
+  private def freeVars(pred: WeededAst.PredicateWithParam): List[Name.Ident] = pred match {
+    case WeededAst.PredicateWithParam(qname, exp) => freeVars(exp)
   }
 
   /**

@@ -758,12 +758,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointDelta(e, tvar, loc)
 
-        case NamedAst.Expression.FixpointProject(name, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
-            sym <- lookupPredicateSymbol(name, ns0, prog0)
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(sym, e1, e2, tvar, loc)
+            p <- visitPredicateWithParam(pred, tenv0)
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointProject(p, e, tvar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
           for {
@@ -772,6 +771,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
+      }
+
+      /**
+        * Performs name resolution on the given predicate with parameter `pred`.
+        */
+      def visitPredicateWithParam(pred: NamedAst.PredicateWithParam, symToType: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.PredicateWithParam, ResolutionError] = pred match {
+        case NamedAst.PredicateWithParam(qname, exp) => for {
+          sym <- lookupPredicateSymbol(qname, ns0, prog0)
+          e <- visit(exp, tenv0)
+        } yield ResolvedAst.PredicateWithParam(sym, e)
       }
 
       visit(exp0, Map.empty)
