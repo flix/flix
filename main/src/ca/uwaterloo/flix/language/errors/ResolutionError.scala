@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.language.ast.Type._
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 /**
   * A common super-type for resolution errors.
@@ -250,6 +252,23 @@ object ResolutionError {
       vt << Code(loc, "inaccessible lattice.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Mark the lattice as public." << NewLine
+    }
+  }
+
+  /**
+    * Non Relation or Lattice Error.
+    *
+    * @param tpe the non-relation, non-lattice type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonRelationOrLattice(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Non-relation, non-lattice type '" << Red(tpe.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "non-relation, non-lattice type.") << NewLine
     }
   }
 

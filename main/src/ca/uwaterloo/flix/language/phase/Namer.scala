@@ -885,9 +885,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointDelta(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointProject(name, exp1, exp2, loc) =>
-      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointProject(name, e1, e2, Type.freshTypeVar(), loc)
+    case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
+      mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
+        case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
@@ -1023,11 +1023,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       */
     def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): NamedAst.Type = tpe0 match {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
+
       case WeededAst.Type.Var(ident, loc) => env0.get(ident.name) match {
         case None =>
           throw InternalCompilerException(s"Unknown type variable '${ident.name}' near: ${loc.format}")
         case Some(tvar) => NamedAst.Type.Var(tvar, loc)
       }
+
       case WeededAst.Type.Ambiguous(qname, loc) =>
         if (qname.isUnqualified)
           env0.get(qname.ident.name) match {
@@ -1036,24 +1038,43 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
         else
           NamedAst.Type.Ambiguous(qname, loc)
+
       case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
+
       case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
+
       case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
         val t = visit(value, env0)
         val r = visit(rest, env0)
         NamedAst.Type.RecordExtend(label, t, r, loc)
-      case WeededAst.Type.Schema(predicates, loc) =>
-        val ts = predicates map {
-          case (qname, attr) => qname -> attr.map(visit(_, env0))
-        }
-        NamedAst.Type.Schema(ts, loc)
+
+      case WeededAst.Type.SchemaEmpty(loc) => NamedAst.Type.SchemaEmpty(loc)
+
+      case WeededAst.Type.Schema(ps, rest, loc) =>
+        val ts = ps.map(visit(_, env0))
+        val r = visit(rest, env0)
+        NamedAst.Type.Schema(ts, r, loc)
+
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
+
       case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
+
       case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)
+
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env0), visit(tpe2, env0), loc)
     }
 
     visit(tpe, tenv0)
+  }
+
+  /**
+    * Performs naming on the given predicate with parameter `pred` under the given environment `env0` and type environment `tenv0`.
+    */
+  private def visitPredicateWithParam(pred: WeededAst.PredicateWithParam, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.PredicateWithParam, NameError] = pred match {
+    case WeededAst.PredicateWithParam(qname, exp) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.PredicateWithParam(qname, e)
+      }
   }
 
   /**
@@ -1148,7 +1169,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointDelta(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProject(name, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.UserError(loc) => Nil
   }
@@ -1185,13 +1206,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
-    case WeededAst.Type.Schema(m, loc) => m.flatMap {
-      case (qname, attr) => attr flatMap freeVars
-    }
+    case WeededAst.Type.SchemaEmpty(loc) => Nil
+    case WeededAst.Type.Schema(ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+  }
+
+  /**
+    * Returns the free variables in the given predicate with parameter `pred`.
+    */
+  private def freeVars(pred: WeededAst.PredicateWithParam): List[Name.Ident] = pred match {
+    case WeededAst.PredicateWithParam(qname, exp) => freeVars(exp)
   }
 
   /**

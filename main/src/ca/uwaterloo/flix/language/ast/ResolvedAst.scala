@@ -215,7 +215,7 @@ object ResolvedAst {
 
     case class FixpointDelta(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointProject(pred: ResolvedAst.PredicateWithParam, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -319,6 +319,8 @@ object ResolvedAst {
   case class HandlerBinding(sym: Symbol.EffSym, exp: ResolvedAst.Expression)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
+
+  case class PredicateWithParam(sym: Symbol.PredSym, exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 

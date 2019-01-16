@@ -4,6 +4,16 @@
 enum Void { }
 
 ///
+/// The True predicate.
+///
+rel True()
+
+///
+/// The False predicate.
+///
+rel False()
+
+///
 /// The identity function.
 ///
 def identity[a](x: a): a = x

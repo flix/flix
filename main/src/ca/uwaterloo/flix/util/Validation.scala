@@ -195,6 +195,15 @@ object Validation {
     }
 
   /**
+    * FlatMaps over t1.
+    */
+  def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
+    t1 match {
+      case Success(v1) => f(v1)
+      case _ => Failure(t1.errors)
+    }
+
+  /**
     * FlatMaps over t1 and t2.
     */
   def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])

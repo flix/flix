@@ -1074,14 +1074,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Schema: Rule1[ParsedAst.Type] = {
-      def Predicate: Rule1[(Name.QName, Seq[ParsedAst.Type])] = rule {
-        Names.QualifiedPredicate ~ optWS ~ atomic("(") ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic(")") ~> ((qn: Name.QName, ts: Seq[ParsedAst.Type]) => (qn, ts))
-      }
-
-      rule {
-        SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
-      }
+    def Schema: Rule1[ParsedAst.Type] =rule {
+      SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
     }
 
     def Native: Rule1[ParsedAst.Type] = rule {

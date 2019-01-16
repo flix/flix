@@ -56,10 +56,11 @@ sealed trait Type {
     case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
+    case Type.SchemaEmpty => Set.empty
+    case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _, _) => Set.empty
     case Type.Lattice(_, _, _) => Set.empty
-    case Type.Schema(m) => m.flatMap(_._2.typeVars).toSet
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -168,7 +169,8 @@ sealed trait Type {
     * Returns `true` if `this` type is a schema type.
     */
   def isSchema: Boolean = typeConstructor match {
-    case Type.Schema(_) => true
+    case Type.SchemaEmpty => true
+    case Type.SchemaExtend(_, _, _) => true
     case _ => false
   }
 
@@ -216,10 +218,11 @@ sealed trait Type {
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
-    case Type.Schema(m) => m.mkString(", ")
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
+    case Type.SchemaEmpty => "Schema { }"
+    case Type.SchemaExtend(sym, tpe, rest) => "Schema { " + sym + " : " + tpe + " | " + rest + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -412,15 +415,6 @@ object Type {
   case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a schema.
-    *
-    * @param m the types of the predicate symbols in the system.
-    */
-  case class Schema(m: Map[Symbol.PredSym, Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type constructor that represents tuples of the given `length`.
     */
   case class Tuple(length: Int) extends Type {
@@ -438,6 +432,20 @@ object Type {
     * A type constructor that represents a record extension type.
     */
   case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
+    * A type constructor that represents the empty schema type.
+    */
+  case object SchemaEmpty extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
+    * A type constructor that represents a schema extension type.
+    */
+  case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
     def kind: Kind = ??? // TODO
   }
 
@@ -619,17 +627,14 @@ object Type {
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
+      case Type.SchemaEmpty => Type.SchemaEmpty
+      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
-      case Type.Schema(m) =>
-        val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-          case (macc, (s, t)) => macc + (s -> visit(t))
-        }
-        Type.Schema(newM)
     }
 
     visit(tpe)
@@ -710,6 +715,17 @@ object Type {
             "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
 
           //
+          // SchemaEmpty.
+          //
+          case Type.SchemaEmpty => "Schema { }"
+
+          //
+          // SchemaExtend.
+          //
+          case Type.SchemaExtend(sym, t, rest) =>
+            "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
+
+          //
           // Enum.
           //
           case Type.Enum(sym, _) =>
@@ -726,14 +742,6 @@ object Type {
           //
           case Type.Lattice(sym, attr, _) =>
             sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
-
-          //
-          // Schema.
-          //
-          case Type.Schema(row) =>
-            "Schema {" + row.map {
-              case (s, t) => s.toString + ": " + visit(t, m)
-            }.mkString(", ") + "}"
 
           //
           // Application.

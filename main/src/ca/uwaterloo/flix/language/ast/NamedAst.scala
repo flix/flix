@@ -202,7 +202,7 @@ object NamedAst {
 
     case class FixpointDelta(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProject(name: Name.QName, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProject(pred: NamedAst.PredicateWithParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -298,7 +298,9 @@ object NamedAst {
 
     case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class Schema(predicates: List[(Name.QName, List[NamedAst.Type])], loc: SourceLocation) extends NamedAst.Type
+    case class SchemaEmpty(loc: SourceLocation) extends NamedAst.Type
+
+    case class Schema(ts: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
@@ -341,6 +343,8 @@ object NamedAst {
   case class HandlerBinding(qname: Name.QName, exp: NamedAst.Expression)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression)
+
+  case class PredicateWithParam(qname: Name.QName, exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
 

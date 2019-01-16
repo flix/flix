@@ -1297,16 +1297,16 @@ object ParsedAst {
       * @param base   the optional row variable.
       * @param sp2    the position of the last character in the type.
       */
-    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], base: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Schema Type.
       *
-      * @param sp1        the position of the first character in the type.
-      * @param predicates the predicates in the schema.
-      * @param sp2        the position of the last character in the type.
+      * @param sp1 the position of the first character in the type.
+      * @param ts  the types of the predicates in schema.
+      * @param sp2 the position of the last character in the type.
       */
-    case class Schema(sp1: SourcePosition, predicates: Seq[(Name.QName, Seq[ParsedAst.Type])], sp2: SourcePosition) extends ParsedAst.Type
+    case class Schema(sp1: SourcePosition, ts: Seq[ParsedAst.Type], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.

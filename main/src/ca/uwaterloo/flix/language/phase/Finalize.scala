@@ -629,15 +629,13 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
 
+      case Type.SchemaEmpty => MonoType.SchemaEmpty()
+
+      case Type.SchemaExtend(sym, tpe, rest) => MonoType.SchemaExtend(sym, visitType(tpe), visitType(rest))
+
       case Type.Relation(sym, attr, _) => MonoType.Relation(sym, attr map visitType)
 
       case Type.Lattice(sym, attr, _) => MonoType.Lattice(sym, attr map visitType)
-
-      case Type.Schema(m0) =>
-        val m = m0.foldLeft(Map.empty[Symbol.PredSym, MonoType]) {
-          case (macc, (sym, t)) => macc + (sym -> visitType(t))
-        }
-        MonoType.Schema(m)
 
       case Type.Native(clazz) => MonoType.Native(clazz)
 

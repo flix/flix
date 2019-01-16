@@ -1030,7 +1030,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
       mapN(paramExp, visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.FixpointProject(name, e1, e2, mkSL(sp1, sp2))
+        case (e1, e2) =>
+          val pred = WeededAst.PredicateWithParam(name, e1)
+          WeededAst.Expression.FixpointProject(pred, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1463,19 +1465,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      val zero = restOpt match {
+      val init = restOpt match {
         case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
         case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
       }
-      fields.foldRight(zero: WeededAst.Type) {
-        case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) => WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+      fields.foldRight(init: WeededAst.Type) {
+        case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
+          WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
       }
 
-    case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
-      val ps = predicates map {
-        case (qname, attr) => qname -> (attr map visitType).toList
+    case ParsedAst.Type.Schema(sp1, ps, restOpt, sp2) =>
+      val zero = restOpt match {
+        case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
+        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
       }
-      WeededAst.Type.Schema(ps.toList, mkSL(sp1, sp2))
+      val ts = ps.map(visitType).toList
+      WeededAst.Type.Schema(ts, zero, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 
@@ -1852,7 +1857,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
-    case ParsedAst.Type.Schema(sp1, _, _) => sp1
+    case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1

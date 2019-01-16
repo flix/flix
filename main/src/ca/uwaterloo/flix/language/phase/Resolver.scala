@@ -758,12 +758,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointDelta(e, tvar, loc)
 
-        case NamedAst.Expression.FixpointProject(name, exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
-            sym <- lookupPredicateSymbol(name, ns0, prog0)
-            e1 <- visit(exp1, tenv0)
-            e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(sym, e1, e2, tvar, loc)
+            p <- visitPredicateWithParam(pred, tenv0)
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointProject(p, e, tvar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
           for {
@@ -772,6 +771,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
+      }
+
+      /**
+        * Performs name resolution on the given predicate with parameter `pred`.
+        */
+      def visitPredicateWithParam(pred: NamedAst.PredicateWithParam, symToType: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.PredicateWithParam, ResolutionError] = pred match {
+        case NamedAst.PredicateWithParam(qname, exp) => for {
+          sym <- lookupPredicateSymbol(qname, ns0, prog0)
+          e <- visit(exp, tenv0)
+        } yield ResolvedAst.PredicateWithParam(sym, e)
       }
 
       visit(exp0, Map.empty)
@@ -1335,19 +1344,33 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         r <- lookupType(rest, ns0, root)
       } yield Type.RecordExtend(label.name, v, r)
 
-    case NamedAst.Type.Schema(predicates, loc) =>
-      val predicatesVal = traverse(predicates) {
-        case (qname, typeArgs) =>
-          val predSymVal = lookupPredicateSymbol(qname, ns0, root)
-          val typeArgsVal = traverse(typeArgs)(lookupType(_, ns0, root))
+    case NamedAst.Type.SchemaEmpty(loc) =>
+      Type.SchemaEmpty.toSuccess
 
-          mapN(predSymVal, typeArgsVal) {
-            case (sym, attr) => sym -> Type.mkRelationOrLattice(sym, attr)
+    case NamedAst.Type.Schema(ts, rest, loc) =>
+      // Translate the type into a schema row type.
+      val init = lookupType(rest, ns0, root)
+
+      // Fold over the predicate types and check that they are relations or lattices.
+      val result = Validation.foldRight(ts)(init) {
+        case (predType, acc) =>
+          // Lookup the type and check that is either a relation or lattice type.
+          flatMapN(lookupType(predType, ns0, root)) {
+            case t => t.typeConstructor match {
+              case Type.Relation(sym, _, _) => Type.SchemaExtend(sym, t, acc).toSuccess
+              case Type.Lattice(sym, _, _) => Type.SchemaExtend(sym, t, acc).toSuccess
+              case nonRelationOrLatticeType =>
+                ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
+            }
           }
       }
 
-      predicatesVal map {
-        case m => Type.Schema(m.toMap)
+      // Ensure that the result type has the True predicate.
+      mapN(result) {
+        case schema =>
+          val sym = Symbol.mkRelSym("True")
+          val tpe = Type.Unit
+          Type.SchemaExtend(sym, tpe, schema)
       }
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess

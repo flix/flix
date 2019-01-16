@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -101,14 +102,14 @@ object TypeError {
   }
 
   /**
-    * Undefined Label Error.
+    * Undefined field error.
     *
     * @param fieldName  the name of the missing field.
     * @param fieldType  the type of the missing field.
     * @param recordType the record type where the field is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
+  case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -125,21 +126,63 @@ object TypeError {
   }
 
   /**
-    * Unexpected non-row type.
+    * Undefined predicate error.
     *
-    * @param loc the location where the error occurred.
+    * @param sym        the missing predicate.
+    * @param predType   the type of the missing predicate.
+    * @param schemaType the schema type where the predicate is missing.
+    * @param loc        the location where the error occurred.
     */
-  case class NonRow(tpe: Type, loc: SourceLocation) extends TypeError {
+  case class UndefinedPredicate(sym: Symbol.PredSym, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected non-row type: '" << Red(tpe.show) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(sym.toString) << "' of type '" << Cyan(predType.show) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "unexpected non-row type.") << NewLine
+      vt << Code(loc, "missing predicate.") << NewLine
+      vt << "The schema type: " << Indent << NewLine
+      vt << NewLine
+      vt << schemaType.show << NewLine
+      vt << Dedent << NewLine
+      vt << "does not contain the predicate '" << Red(sym.toString) << "' of type " << Cyan(predType.show) << "." << NewLine
     }
   }
-  
+
+  /**
+    * Unexpected non-record type error.
+    *
+    * @param tpe the unexpected non-record type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unexpected non-record type: '" << Red(tpe.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unexpected non-record type.") << NewLine
+    }
+  }
+
+  /**
+    * Unexpected non-schema type error.
+    *
+    * @param tpe the unexpected non-schema type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unexpected non-schema type: '" << Red(tpe.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unexpected non-schema type.") << NewLine
+    }
+  }
+
   /**
     * Returns a string that represents the type difference between the two given types.
     */

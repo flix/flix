@@ -79,16 +79,13 @@ object Unification {
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
+      case Type.SchemaEmpty => Type.SchemaEmpty
+      case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, apply(tpe), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map apply, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map apply, kind)
-      case Type.Schema(row) =>
-        val newRow = row.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-          case (macc, (s, t)) => macc + (s -> apply(t))
-        }
-        Type.Schema(newRow)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
 
@@ -144,16 +141,32 @@ object Unification {
       *
       * @param fieldName  the name of the missing field.
       * @param fieldType  the type of the missing field.
-      * @param recordType the record type the field is missing from.
+      * @param recordType the record type where the field is missing.
       */
     case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
 
     /**
-      * An unification error due to an unexpected non-row type.
+      * An unification error due the predicate `sym` of type `predType` missing from the type `schemaType`.
       *
-      * @param tpe the unexpected non-row type.
+      * @param predSym    the symbol of the missing predicate.
+      * @param predType   the type of the missing predicate.
+      * @param schemaType the schema type where the predicate is missing.
       */
-    case class NonRowType(tpe: Type) extends UnificationError
+    case class UndefinedPredicate(predSym: Symbol.PredSym, predType: Type, schemaType: Type) extends UnificationError
+
+    /**
+      * An unification error due to an unexpected non-record type.
+      *
+      * @param nonRecordType the unexpected non-record type.
+      */
+    case class NonRecordType(nonRecordType: Type) extends UnificationError
+
+    /**
+      * An unification error due to an unexpected non-schema type.
+      *
+      * @param nonSchemaType the unexpected non-schema type.
+      */
+    case class NonSchemaType(nonSchemaType: Type) extends UnificationError
 
   }
 
@@ -223,13 +236,23 @@ object Unification {
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
+      case (Type.SchemaEmpty, Type.SchemaEmpty) => Result.Ok(Substitution.empty)
+
       case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
         // Attempt to write the row to match.
         rewriteRow(row2, label1, fieldType1, row2) flatMap {
           case (subst1, restRow2) =>
-
             // TODO: Missing the safety/occurs check.
+            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
+        }
 
+      case (Type.SchemaExtend(sym, tpe, restRow1), row2) =>
+        // Attempt to write the row to match.
+        rewriteSchemaRow(row2, sym, tpe, row2) flatMap {
+          case (subst1, restRow2) =>
+            // TODO: Missing the safety/occurs check.
             unify(subst1(restRow1), subst1(restRow2)) flatMap {
               case subst2 => Result.Ok(subst2 @@ subst1)
             }
@@ -246,17 +269,6 @@ object Unification {
       case (Type.Relation(sym1, attr1, kind1), Type.Relation(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
 
       case (Type.Lattice(sym1, attr1, kind1), Type.Lattice(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
-
-      case (Type.Schema(m1), Type.Schema(m2)) =>
-        // NB: The schemas "ought to" contain the same keys.
-        val keys = (m1.keySet ++ m2.keySet).toList
-
-        // Retrieve the types of each row (in the same order).
-        val types1 = keys.map(m1)
-        val types2 = keys.map(m2)
-
-        // And simply unify them.
-        unifyAll(types1, types2)
 
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
@@ -315,7 +327,42 @@ object Unification {
 
       case _ =>
         // Case 4: The type is not a row.
-        Err(UnificationError.NonRowType(row2))
+        Err(UnificationError.NonRecordType(row2))
+    }
+
+    /**
+      * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
+      */
+    // TODO: This is a copy of the above function. It would be nice if it could be the same function, but the shape of labels is different.
+    def rewriteSchemaRow(row2: Type, label1: Symbol.PredSym, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
+      case Type.SchemaExtend(label2, fieldType2, restRow2) =>
+        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
+        if (label1 == label2) {
+          // Case 1.1: The labels match, their types must match.
+          for {
+            subst <- unify(fieldType1, fieldType2)
+          } yield (subst, restRow2)
+        } else {
+          // Case 1.2: The labels do not match, attempt to match with a label further down.
+          rewriteSchemaRow(restRow2, label1, fieldType1, originalType) map {
+            case (subst, rewrittenRow) => (subst, Type.SchemaExtend(label2, fieldType2, rewrittenRow))
+          }
+        }
+      case tvar: Type.Var =>
+        // Case 2: The row is a type variable.
+        // Introduce a fresh type variable to represent one more level of the row.
+        val restRow2 = Type.freshTypeVar()
+        val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
+        val subst = Unification.Substitution(Map(tvar -> type2))
+        Ok((subst, restRow2))
+
+      case Type.SchemaEmpty =>
+        // Case 3: The `label` does not exist in the record.
+        Err(UnificationError.UndefinedPredicate(label1, fieldType1, originalType))
+
+      case _ =>
+        // Case 4: The type is not a row.
+        Err(UnificationError.NonSchemaType(row2))
     }
 
     unifyTypes(tpe1, tpe2)
@@ -384,14 +431,24 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
+
         case Result.Err(UnificationError.Mismatch(baseType1, baseType2)) =>
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
+
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
-        case Result.Err(UnificationError.UndefinedLabel(label, field, tpe)) =>
-          Err(TypeError.UndefinedLabel(label, field, tpe, loc))
-        case Result.Err(UnificationError.NonRowType(tpe)) =>
-          Err(TypeError.NonRow(tpe, loc))
+
+        case Result.Err(UnificationError.UndefinedLabel(fieldName, fieldType, recordType)) =>
+          Err(TypeError.UndefinedField(fieldName, fieldType, recordType, loc))
+
+        case Result.Err(UnificationError.NonRecordType(tpe)) =>
+          Err(TypeError.NonRecordType(tpe, loc))
+
+        case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
+          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, loc))
+
+        case Result.Err(UnificationError.NonSchemaType(tpe)) =>
+          Err(TypeError.NonSchemaType(tpe, loc))
       }
     }
     )
