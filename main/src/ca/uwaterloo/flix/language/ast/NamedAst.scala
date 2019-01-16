@@ -198,8 +198,6 @@ object NamedAst {
 
     case class FixpointSolve(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointCheck(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class FixpointProject(pred: NamedAst.PredicateWithParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -255,10 +253,6 @@ object NamedAst {
     sealed trait Head extends NamedAst.Predicate
 
     object Head {
-
-      case class True(loc: SourceLocation) extends NamedAst.Predicate.Head
-
-      case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
 
       case class Atom(name: Name.QName, exp: NamedAst.Expression, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 

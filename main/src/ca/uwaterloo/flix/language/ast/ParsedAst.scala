@@ -1002,15 +1002,6 @@ object ParsedAst {
     case class FixpointSolve(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Check expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the constraint expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FixpointCheck(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Fixpoint Project expression.
       *
       * @param sp1  the position of the first character in the expression.
@@ -1139,22 +1130,6 @@ object ParsedAst {
     sealed trait Head extends ParsedAst.Predicate
 
     object Head {
-
-      /**
-        * True Predicate.
-        *
-        * @param sp1 the position of the first character in the predicate.
-        * @param sp2 the position of the last character in the predicate.
-        */
-      case class True(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate.Head
-
-      /**
-        * False Predicate.
-        *
-        * @param sp1 the position of the first character in the predicate.
-        * @param sp2 the position of the last character in the predicate.
-        */
-      case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Atom Predicate.

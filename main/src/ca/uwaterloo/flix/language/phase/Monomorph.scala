@@ -488,10 +488,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.FixpointSolve(e, tpe, eff, loc)
 
-        case Expression.FixpointCheck(exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.FixpointCheck(e, tpe, eff, loc)
-
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
           val p = visitPredicateWithParam(pred, env0)
           val e = visitExp(exp, env0)
@@ -540,10 +536,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
         */
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
-        case Predicate.Head.True(loc) => Predicate.Head.True(loc)
-
-        case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-
         case Predicate.Head.Atom(pred, terms, tpe, loc) =>
           val p = visitPredicateWithParam(pred, env0)
           val ts = terms.map(t => visitExp(t, env0))

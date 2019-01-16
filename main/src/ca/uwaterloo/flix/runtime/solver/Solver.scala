@@ -598,8 +598,6 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       }
 
       interp += ((p.getSym, fact))
-    case _: TruePredicate => // nop
-    case _: FalsePredicate => throw new RuleError(new ReifiedSourceLocation("", 0, 0, 0, 0))
   }
 
   /**
@@ -918,8 +916,6 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     val constraintsWithStratum = constraintSystem.getConstraints.map {
       case c => c.getHeadPredicate match {
         case h: AtomPredicate => (c, stratification.getStratum(h.getSym))
-        case h: TruePredicate => (c, 0)
-        case h: FalsePredicate => (c, Int.MaxValue)
       }
 
     }

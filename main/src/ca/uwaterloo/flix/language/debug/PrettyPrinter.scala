@@ -453,10 +453,6 @@ object PrettyPrinter {
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointCheck(exp, tpe, loc) =>
-          vt.text("check ")
-          visitExp(exp)
-
         case Expression.FixpointProject(pred, exp, tpe, loc) =>
           vt.text("project ")
           fmtPredicateWithParam(pred, vt)

@@ -584,7 +584,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
-        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve | FixpointCheck |
+        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve |
         FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
@@ -859,10 +859,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("solve") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointSolve
     }
 
-    def FixpointCheck: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("check") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointCheck
-    }
-
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
@@ -947,7 +943,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
-    Predicates.Head.True | Predicates.Head.False | Predicates.Head.Atom
+    Predicates.Head.Atom
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
@@ -957,13 +953,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Predicates {
 
     object Head {
-      def True: Rule1[ParsedAst.Predicate.Head.True] = rule {
-        SP ~ atomic("true") ~ SP ~> ParsedAst.Predicate.Head.True
-      }
-
-      def False: Rule1[ParsedAst.Predicate.Head.False] = rule {
-        SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.Head.False
-      }
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
         SP ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom

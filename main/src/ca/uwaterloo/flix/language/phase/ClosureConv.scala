@@ -336,10 +336,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.FixpointSolve(e, tpe, loc)
 
-    case Expression.FixpointCheck(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.FixpointCheck(e, tpe, loc)
-
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val p = visitPredicateWithParam(pred)
       val e = visitExp(exp)
@@ -370,15 +366,10 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given head predicate `head0`.
     */
   private def visitHeadPredicate(head0: Predicate.Head)(implicit flix: Flix): Predicate.Head = head0 match {
-    case Predicate.Head.True(loc) => Predicate.Head.True(loc)
-
-    case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       val p = visitPredicateWithParam(pred)
       val ts = terms map visitHeadTerm
       Predicate.Head.Atom(p, ts, tpe, loc)
-
   }
 
   /**
@@ -526,7 +517,6 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
     case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
-    case Expression.FixpointCheck(exp, tpe, loc) => freeVars(exp)
     case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(pred.exp) ++ freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
@@ -550,10 +540,6 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given head predicate `head0`.
     */
   private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
-    case Predicate.Head.True(loc) => mutable.LinkedHashSet.empty
-
-    case Predicate.Head.False(loc) => mutable.LinkedHashSet.empty
-
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       freeVars(pred.exp) ++ terms.flatMap(freeVars)
   }
@@ -866,10 +852,6 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, tpe, loc)
 
-      case Expression.FixpointCheck(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointCheck(e, tpe, loc)
-
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val e = visitExp(exp)
@@ -892,8 +874,6 @@ object ClosureConv extends Phase[Root, Root] {
     }
 
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.True(loc) => Predicate.Head.True(loc)
-      case Predicate.Head.False(loc) => Predicate.Head.False(loc)
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm

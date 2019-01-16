@@ -248,8 +248,6 @@ object SimplifiedAst {
 
     case class FixpointSolve(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointCheck(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class FixpointProject(pred: SimplifiedAst.PredicateWithParam, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -275,10 +273,6 @@ object SimplifiedAst {
     sealed trait Head extends SimplifiedAst.Predicate
 
     object Head {
-
-      case class True(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
-
-      case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
       case class Atom(pred: SimplifiedAst.PredicateWithParam, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 

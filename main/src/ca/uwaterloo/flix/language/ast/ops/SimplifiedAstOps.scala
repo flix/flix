@@ -492,13 +492,6 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // Fixpoint Check.
-      //
-      case Expression.FixpointCheck(exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
-      //
       // Fixpoint Project.
       //
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
@@ -557,17 +550,12 @@ object SimplifiedAstOps {
       * Checks invariants of the given head predicate `h0`.
       */
     def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = h0 match {
-      case Predicate.Head.True(loc) => // nop
-
-      case Predicate.Head.False(loc) => // nop
-
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         checkPredicateWithParam(pred, env0, ienv0)
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
         checkType(tpe)
-
     }
 
     /**

@@ -474,13 +474,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.FixpointSolve(e, tpe, loc)
 
       //
-      // Fixpoint Check.
-      //
-      case Expression.FixpointCheck(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.FixpointCheck(e, tpe, loc)
-
-      //
       // Fixpoint Project.
       //
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
@@ -526,8 +519,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the terms of the given head predicate `p0`.
       */
     def visitHeadPred(p0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = p0 match {
-      case Predicate.Head.True(loc) => p0
-      case Predicate.Head.False(loc) => p0
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred, env0)
         val ts = terms.map(visitHeadTerm(_, env0))

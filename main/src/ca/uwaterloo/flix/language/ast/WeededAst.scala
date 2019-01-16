@@ -192,8 +192,6 @@ object WeededAst {
 
     case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointCheck(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -249,10 +247,6 @@ object WeededAst {
     sealed trait Head extends WeededAst.Predicate
 
     object Head {
-
-      case class True(loc: SourceLocation) extends WeededAst.Predicate.Head
-
-      case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Atom(name: Name.QName, exp: WeededAst.Expression, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 

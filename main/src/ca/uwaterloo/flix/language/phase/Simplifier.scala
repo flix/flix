@@ -563,10 +563,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
 
-      case TypedAst.Expression.FixpointCheck(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
-
       case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
         val e = visitExp(exp)
@@ -588,10 +584,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `head` predicate to the SimplifiedAst.
       */
     def visitHeadPred(head: TypedAst.Predicate.Head, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Head = head match {
-      case TypedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
-
-      case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
-
       case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
@@ -1265,10 +1257,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
-
       case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val e = visitExp(exp)
@@ -1303,8 +1291,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     def visitHeadPred(h0: SimplifiedAst.Predicate.Head): SimplifiedAst.Predicate.Head = h0 match {
-      case SimplifiedAst.Predicate.Head.True(loc) => h0
-      case SimplifiedAst.Predicate.Head.False(loc) => h0
       case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val ts = terms.map(visitHeadTerm)

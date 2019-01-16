@@ -1024,22 +1024,6 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(visitor, loc)
-
-      // Emit code for the constraint system.
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-
-      // Emit code for the stratification.
-      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
-
-      // Emit code for the fixpoint options.
-      newOptions(visitor)
-
-      // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Z", false);
-
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
@@ -1570,20 +1554,6 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.True(loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
-
-      // Retrieve the singleton instance.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.TruePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/TruePredicate;", false)
-
-    case Predicate.Head.False(loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
-
-      // Retrieve the singleton instance.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
-
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)

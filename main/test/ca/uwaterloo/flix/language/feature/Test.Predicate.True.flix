@@ -1,94 +1,94 @@
 @test
-def testTruePredicate01(): Bool =
-    check true.
+def testTruePredicate01(): Schema { True } =
+    solve True().
 
 @test
-def testTruePredicate02(): Bool =
-    let x = true.;
+def testTruePredicate02(): Schema { True } =
+    let x = True().;
     let u = x <+> x;
-    check u
+    solve u
 
 @test
-def testTruePredicate03(): Bool =
-    let x = true.;
+def testTruePredicate03(): Schema { True } =
+    let x = True().;
     let u = x <+> x <+> x;
-    check u
+    solve u
 
 @test
-def testTruePredicate04(): Bool =
-    let x = true.;
-    let y = true.;
+def testTruePredicate04(): Schema { True } =
+    let x = True().;
+    let y = True().;
     let u = x <+> y;
-    check u
+    solve u
 
 @test
-def testTruePredicate05(): Bool =
-    let x = true.;
-    let y = true.;
+def testTruePredicate05(): Schema { True } =
+    let x = True().;
+    let y = True().;
     let u = (x <+> y) <+> (y <+> x);
-    check u
+    solve u
 
 @test
-def testTruePredicate06(): Bool =
-    let x = true.;
-    let y = true.;
+def testTruePredicate06(): Schema { True } =
+    let x = True().;
+    let y = True().;
     let u = solve x;
     let v = solve y;
-    (check u) && (check v)
+    (solve u) <+> (solve v)
 
 @test
-def testTruePredicate07(): Bool =
-    let x = true.;
-    let y = true.;
+def testTruePredicate07(): Schema { True } =
+    let x = True().;
+    let y = True().;
     let u = solve x <+> y;
     let v = solve y <+> x;
-    (check u) && (check v)
+    (solve u) <+> (solve v)
 
 @test
-def testTruePredicate08(): Bool =
-    let x = true.;
-    let y = true.;
+def testTruePredicate08(): Schema { True } =
+    let x = True().;
+    let y = True().;
     let u = solve (solve x <+> y);
     let v = solve (solve y <+> x);
-    (check u) && (check v)
+    (solve u) <+> (solve v)
 
 @test
-def testTruePredicate09(): Bool =
-    let x = true.;
-    let y = true.;
+def testTruePredicate09(): Schema { True } =
+    let x = True().;
+    let y = True().;
     let u = solve (solve x <+> y);
     let v = solve (solve y <+> x);
-    check (solve u <+> v)
+    solve (solve u <+> v)
 
 @test
 def testTruePredicate10(): Bool =
-    (true.) |= (true.)
+    (True().) |= (True().)
 
 @test
 def testTruePredicate11(): Bool =
-    (true.) |= (true. true.)
+    (True().) |= (True(). True().)
 
 @test
 def testTruePredicate12(): Bool =
-    (true.) |= (true. true. true.)
+    (True().) |= (True(). True(). True().)
 
 @test
 def testTruePredicate13(): Bool =
-    (true. true. ) |= (true.)
+    (True(). True(). ) |= (True().)
 
 @test
 def testTruePredicate14(): Bool =
-    (true. true. true.) |= (true.)
+    (True(). True(). True().) |= (True().)
 
 @test
 def testTruePredicate15(): Bool =
-    (solve true.) |= (true.)
+    (solve True().) |= (True().)
 
 @test
 def testTruePredicate16(): Bool =
-    (solve (solve true.)) |= (true.)
+    (solve (solve True().)) |= (True().)
 
 @test
 def testTruePredicate17(): Bool =
-    (solve (solve (solve true.))) |= (true.)
+    (solve (solve (solve True().))) |= (True().)
 

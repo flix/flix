@@ -329,10 +329,6 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, tpe, eff, loc)
 
-      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointCheck(e, tpe, eff, loc)
-
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
         val e = visitExp(exp)
@@ -362,9 +358,6 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.True(loc) => h0
-      case Predicate.Head.False(loc) => h0
-
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitExp

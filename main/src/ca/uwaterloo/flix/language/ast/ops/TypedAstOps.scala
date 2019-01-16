@@ -220,9 +220,6 @@ object TypedAstOps {
       case Expression.FixpointSolve(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
-        visitExp(exp, env0)
-
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         visitPredicateWithParam(pred, env0)
         visitExp(exp, env0)
@@ -244,8 +241,6 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given head predicate `h0`.
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
-      case Predicate.Head.True(loc) => Map.empty
-      case Predicate.Head.False(loc) => Map.empty
       case Predicate.Head.Atom(pred, terms, tpe, loc) => visitPredicateWithParam(pred, env0) ++ terms.flatMap(visitExp(_, env0))
     }
 

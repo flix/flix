@@ -244,8 +244,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp, i0)
 
-      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp, i0)
-
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val i1 = visitExp(pred.exp, i0)
         visitExp(exp, i1)

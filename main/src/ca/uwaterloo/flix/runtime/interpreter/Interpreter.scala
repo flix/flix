@@ -327,13 +327,6 @@ object Interpreter {
       val o = newOptions()
       Solver.solve(s, t, o)
 
-    case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val t = newStratification(stf)(root, flix)
-      val o = newOptions()
-      val r = Solver.check(s, t, o)
-      if (r) Value.True else Value.False
-
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
@@ -751,10 +744,6 @@ object Interpreter {
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.True(_) => TruePredicate.getSingleton
-
-    case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
-
     case FinalAst.Predicate.Head.Atom(pred, terms0, _, _) =>
       val predSym = newPredSym(pred, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray

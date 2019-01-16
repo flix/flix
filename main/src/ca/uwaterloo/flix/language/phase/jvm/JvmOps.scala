@@ -561,8 +561,6 @@ object JvmOps {
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => visitExp(exp)
-
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -848,8 +846,6 @@ object JvmOps {
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
-
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
@@ -866,8 +862,6 @@ object JvmOps {
     }
 
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.True(loc) => Set.empty
-      case Predicate.Head.False(loc) => Set.empty
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
     }

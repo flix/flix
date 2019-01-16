@@ -21,10 +21,9 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Head.{False, True}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -354,12 +353,6 @@ object Stratifier extends Phase[Root, Root] {
       val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(uid, e, s, tpe, loc)
-      }
-
-    case Expression.FixpointCheck(uid, exp, _, tpe, loc) =>
-      val g = analysis.getDependencyGraph(uid)
-      mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointCheck(uid, e, s, tpe, loc)
       }
 
     case Expression.FixpointProject(pred, exp, tpe, loc) =>

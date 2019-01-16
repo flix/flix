@@ -401,16 +401,6 @@ object ControlFlowAnalysis {
         }
         AbstractValue.Graph(DependencyGraph.Empty)
 
-      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-        val v = visitExp(exp, env0, lenv0)
-        v match {
-          case AbstractValue.Bot =>
-          case AbstractValue.Graph(g) =>
-            l.updateDependencyGraph(uid, g)
-          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
-        }
-        AbstractValue.AnyPrimitive
-
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred, env0, lenv0)
         val v = visitExp(exp, env0, lenv0)
@@ -511,8 +501,6 @@ object ControlFlowAnalysis {
     * Optionally returns the predicate symbol of the given head predicate `head0`.
     */
   private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.True(_) => None
-    case Predicate.Head.False(_) => None
     case Predicate.Head.Atom(pred, terms, tpe, loc) => Some(pred.sym)
   }
 

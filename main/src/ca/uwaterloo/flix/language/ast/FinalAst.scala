@@ -227,8 +227,6 @@ object FinalAst {
 
     case class FixpointSolve(uid: Ast.UId, exp: FinalAst.Expression, stf: Ast.Stratification, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointCheck(uid: Ast.UId, exp: FinalAst.Expression, stf: Ast.Stratification, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class FixpointProject(pred: FinalAst.PredicateWithParam, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
@@ -254,10 +252,6 @@ object FinalAst {
     sealed trait Head extends FinalAst.Predicate
 
     object Head {
-
-      case class True(loc: SourceLocation) extends FinalAst.Predicate.Head
-
-      case class False(loc: SourceLocation) extends FinalAst.Predicate.Head
 
       case class Atom(pred: FinalAst.PredicateWithParam, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 

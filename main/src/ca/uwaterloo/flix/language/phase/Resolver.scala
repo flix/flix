@@ -748,11 +748,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, tvar, loc)
 
-        case NamedAst.Expression.FixpointCheck(exp, tvar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointCheck(e, tvar, loc)
-
         case NamedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           for {
             p <- visitPredicateWithParam(pred, tenv0)
@@ -843,10 +838,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
-
-        case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
-
         case NamedAst.Predicate.Head.Atom(qname, exp, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
@@ -1364,7 +1355,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       mapN(result) {
         case schema =>
           val sym = Symbol.mkRelSym("True")
-          val tpe = Type.Unit
+          val tpe = Type.Relation(sym, Nil, Kind.Star)
           Type.SchemaExtend(sym, tpe, schema)
       }
 

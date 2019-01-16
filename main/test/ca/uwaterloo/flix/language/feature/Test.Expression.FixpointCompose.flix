@@ -3,19 +3,19 @@ rel P[a](x: Int, y: a, z: Int)
 
 @test
 def testFixpointCompose01(): Unit =
-    let c1 = true.;
+    let c1 = True().;
     let rr = solve c1 <+> c1;
     ()
 
 @test
 def testFixpointCompose02(): Unit =
-    let c1 = true.;
+    let c1 = True().;
     let rr = solve c1 <+> c1 <+> c1;
     ()
 
 @test
 def testFixpointCompose03(): Unit =
-    let c1 = true.;
+    let c1 = True().;
     let rr = solve (solve c1 <+> c1) <+> (solve c1 <+> c1);
     ()
 

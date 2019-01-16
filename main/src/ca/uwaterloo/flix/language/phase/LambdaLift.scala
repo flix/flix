@@ -347,10 +347,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, tpe, loc)
 
-      case Expression.FixpointCheck(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointCheck(e, tpe, loc)
-
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val e = visitExp(exp)
@@ -390,8 +386,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs lambda lifting on the given head predicate `head0`.
       */
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.True(loc) => Predicate.Head.True(loc)
-      case Predicate.Head.False(loc) => Predicate.Head.False(loc)
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm
