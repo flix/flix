@@ -567,10 +567,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
 
-      case TypedAst.Expression.FixpointDelta(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
-
       case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
         val e = visitExp(exp)
@@ -1272,10 +1268,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
-
-      case SimplifiedAst.Expression.FixpointDelta(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)

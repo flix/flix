@@ -1040,22 +1040,6 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Z", false);
 
-    case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(visitor, loc)
-
-      // Emit code for the constraint system.
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-
-      // Emit code for the stratification.
-      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
-
-      // Emit code for the fixpoint options.
-      newOptions(visitor)
-
-      // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
-
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)

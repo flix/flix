@@ -223,9 +223,6 @@ object TypedAstOps {
       case Expression.FixpointCheck(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointDelta(exp, tpe, eff, loc) =>
-        visitExp(exp, env0)
-
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         visitPredicateWithParam(pred, env0)
         visitExp(exp, env0)

@@ -458,11 +458,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointCheck(Ast.freshUId(), e, Ast.Stratification.Empty, t, loc)
 
-      case SimplifiedAst.Expression.FixpointDelta(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointDelta(Ast.freshUId(), e, Ast.Stratification.Empty, t, loc)
-
       case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred, m)
         val e = visit(exp)

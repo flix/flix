@@ -499,13 +499,6 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // Fixpoint Delta.
-      //
-      case Expression.FixpointDelta(exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
-      //
       // Fixpoint Project.
       //
       case Expression.FixpointProject(pred, exp, tpe, loc) =>

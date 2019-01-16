@@ -481,13 +481,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.FixpointCheck(e, tpe, loc)
 
       //
-      // Fixpoint Delta.
-      //
-      case Expression.FixpointDelta(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.FixpointDelta(e, tpe, loc)
-
-      //
       // Fixpoint Project.
       //
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
