@@ -16,7 +16,6 @@
 
 package flix.runtime.fixpoint;
 
-import ca.uwaterloo.flix.runtime.solver.DeltaSolver;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.RuleError;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
@@ -81,14 +80,6 @@ public final class Solver {
         } catch (RuleError e) {
             return false;
         }
-    }
-
-    /**
-     * Delta Solves the given constraint system `cs` with the given stratification `stf` and options `o`.
-     */
-    public static String deltaSolve(ConstraintSystem cs, Stratification stf, Options o) {
-        DeltaSolver deltaSolver = new DeltaSolver(cs, stf, o);
-        return deltaSolver.deltaSolve(); // TODO: Should return a constraint system and not a string.
     }
 
     /**

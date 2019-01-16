@@ -880,11 +880,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointCheck(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointDelta(exp, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FixpointDelta(e, Type.freshTypeVar(), loc)
-      }
-
     case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
       mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
         case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), loc)
@@ -1168,7 +1163,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointDelta(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.UserError(loc) => Nil

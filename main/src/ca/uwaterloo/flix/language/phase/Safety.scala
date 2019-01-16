@@ -202,8 +202,6 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointCheck(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointDelta(exp, tpe, eff, loc) => visitExp(exp)
-
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitPredicateWithParam(pred) ::: visitExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)

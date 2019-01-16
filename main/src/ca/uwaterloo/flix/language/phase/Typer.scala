@@ -1311,18 +1311,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
-        case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
-          //
-          //  exp : Schema
-          //  ---------------
-          //  delta exp : Str
-          //
-          for {
-            inferredType <- visitExp(exp)
-            schemaType <- unifyM(inferredType, mkAnySchemaType(), loc)
-            resultType <- unifyM(tvar, Type.Str, loc)
-          } yield resultType
-
         case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           //
           //  exp1 : tpe    exp2 : Schema { P : a  | b }
@@ -1816,13 +1804,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
           TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Empty, loc)
-
-        /*
-         * FixpointDelta expression.
-         */
-        case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
-          val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointDelta(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * FixpointProject expression.

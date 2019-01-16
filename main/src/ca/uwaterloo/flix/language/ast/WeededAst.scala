@@ -194,8 +194,6 @@ object WeededAst {
 
     case class FixpointCheck(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointDelta(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

@@ -334,13 +334,6 @@ object Interpreter {
       val r = Solver.check(s, t, o)
       if (r) Value.True else Value.False
 
-    case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val t = newStratification(stf)(root, flix)
-      val o = newOptions()
-      val r = Solver.deltaSolve(s, t, o)
-      Value.Str(r)
-
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))

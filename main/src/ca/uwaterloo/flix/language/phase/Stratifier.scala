@@ -362,12 +362,6 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointCheck(uid, e, s, tpe, loc)
       }
 
-    case Expression.FixpointDelta(uid, exp, _, tpe, loc) =>
-      val g = analysis.getDependencyGraph(uid)
-      mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointDelta(uid, e, s, tpe, loc)
-      }
-
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       mapN(visitPredicateWithParam(pred), visitExp(exp)) {
         case (p, e) => Expression.FixpointProject(p, e, tpe, loc)

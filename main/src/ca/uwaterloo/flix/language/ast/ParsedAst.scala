@@ -1011,15 +1011,6 @@ object ParsedAst {
     case class FixpointCheck(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Delta expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the constraint expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class FixpointDelta(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Fixpoint Project expression.
       *
       * @param sp1  the position of the first character in the expression.

@@ -411,16 +411,6 @@ object ControlFlowAnalysis {
         }
         AbstractValue.AnyPrimitive
 
-      case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-        val v = visitExp(exp, env0, lenv0)
-        v match {
-          case AbstractValue.Bot =>
-          case AbstractValue.Graph(g) =>
-            l.updateDependencyGraph(uid, g)
-          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
-        }
-        AbstractValue.Graph(DependencyGraph.Empty)
-
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred, env0, lenv0)
         val v = visitExp(exp, env0, lenv0)
