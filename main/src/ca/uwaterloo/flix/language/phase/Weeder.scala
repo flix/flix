@@ -988,13 +988,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
 
       traverse(cs0)(visitConstraint) map {
-        case xs =>
-          val cs = xs.flatten
-          val base = WeededAst.Expression.FixpointConstraint(cs.head, cs.head.loc)
-          cs.tail.foldLeft(base: WeededAst.Expression) {
-            case (eacc, c) =>
-              val e2 = WeededAst.Expression.FixpointConstraint(c, loc)
-              WeededAst.Expression.FixpointCompose(eacc, e2, loc)
+        case cs =>
+          // Map each constraint into a constraint expression.
+          val constraintExps = cs.flatten.map(WeededAst.Expression.FixpointConstraint(_, loc))
+
+          // Combine all constraint expressions using compose.
+          constraintExps.reduceLeft[WeededAst.Expression] {
+            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
           }
       }
 
@@ -1922,13 +1922,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val tparams = Nil
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
-    // The main expression.
-    val zeroExp = WeededAst.Expression.FixpointConstraint(cs.head, cs.head.loc)
-    val innerExp = cs.foldLeft(zeroExp: WeededAst.Expression) {
-      case (eacc, c) =>
-        val constraintExp = WeededAst.Expression.FixpointConstraint(c, loc)
-        WeededAst.Expression.FixpointCompose(eacc, constraintExp, loc)
+    // Map each constraint into a constraint expression.
+    val constraintExps = cs.map(WeededAst.Expression.FixpointConstraint(_, loc))
+
+    // Combine all constraint expressions using compose.
+    val innerExp = constraintExps.reduceLeft[WeededAst.Expression] {
+      case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
     }
+
+    // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
     val toStringExp = WeededAst.Expression.NativeMethod("java.lang.Object", "toString", List(outerExp), loc)
 
