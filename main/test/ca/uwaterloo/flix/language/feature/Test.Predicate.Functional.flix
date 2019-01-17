@@ -1,51 +1,51 @@
 @test
-def testFunctional01(): Bool = check {
+def testFunctional01(): Schema { R } = solve {
     R(x) :- x <- zer().
 }
 
 @test
-def testFunctional02(): Bool = check {
+def testFunctional02(): Schema { R } = solve {
     R(x) :- x <- one().
 }
 
 @test
-def testFunctional03(): Bool = check {
+def testFunctional03(): Schema { R } = solve {
     R(x) :- x <- two().
 }
 
 @test
-def testFunctional04(): Bool = check {
+def testFunctional04(): Schema { A, R } = solve {
     A(1). A(2). A(3).
 
     R(x) :- A(x), y <- zer().
 }
 
 @test
-def testFunctional05(): Bool = check {
+def testFunctional05(): Schema { A, R } = solve {
     A(1). A(2). A(3).
 
     R(x) :- A(x), y <- one().
 }
 
 @test
-def testFunctional06(): Bool = check {
+def testFunctional06(): Schema { A, R } = solve {
     A(1). A(2). A(3).
 
     R(x) :- A(x), y <- two().
 }
 
 @test
-def testFunctional07(): Bool = check {
+def testFunctional07(): Schema { F } = solve {
     F(x) :- x <- zerOption().
 }
 
 @test
-def testFunctional08(): Bool = check {
+def testFunctional08(): Schema { F } = solve {
     F(x) :- x <- oneOption().
 }
 
 @test
-def testFunctional09(): Bool = check {
+def testFunctional09(): Schema { F } = solve {
     F(x) :- x <- twoOption().
 }
 

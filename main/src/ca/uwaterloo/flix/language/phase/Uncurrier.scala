@@ -100,8 +100,6 @@ object Uncurrier extends Phase[Root, Root] {
     * Uncurries all definitions inside the given head predicate `h`.
     */
   def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h match {
-    case Predicate.Head.True(loc) => h
-    case Predicate.Head.False(loc) => h
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       val ts = terms.map(visitHeadTerm(_, newDefs, root))
       Predicate.Head.Atom(pred, ts, tpe, loc)

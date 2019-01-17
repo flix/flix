@@ -149,7 +149,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointConstraint(c0, tpe, loc) => visitConstraint(c0)
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
-      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.UserError(tpe, loc) => Set.empty
@@ -171,8 +170,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitConstraint(c0: SimplifiedAst.Constraint): Set[Symbol.DefnSym] = {
       val headSymbols = c0.head match {
-        case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
-        case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
         case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) => terms.map(visitHeadTerm).fold(visitExp(pred.exp))(_ ++ _)
       }
 

@@ -41,7 +41,7 @@ namespace Path {
         match dotIndex with {
             case -1 => None
             case num => let actualIndex = dotIndex + 1;
-                        Some(native method java.lang.String.substring(myString, actualIndex))
+                        Some(native method java.lang.String.substring(myString, actualIndex) as Str)
         }
     }
 
@@ -50,7 +50,7 @@ namespace Path {
     ///
     def exists(p: Path): Bool = {
         let Path(javaPath) = p;
-        native method java.nio.file.Files.exists(javaPath, [ ] : Array[##java.nio.file.LinkOption])
+        native method java.nio.file.Files.exists(javaPath, [ ] : Array[##java.nio.file.LinkOption]) as Bool
     }
 
     ///

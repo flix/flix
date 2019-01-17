@@ -6,7 +6,7 @@ rel E(x: Int)
 rel R(x: Int)
 
 @test
-def testStratification01(): Bool = check {
+def testStratification01(): Schema { A, B, R } = solve {
     A(1). A(2). A(3).
 
     B(3).
@@ -15,7 +15,7 @@ def testStratification01(): Bool = check {
 }
 
 //@test // TODO
-def testStratification02(): Bool = check {
+def testStratification02(): Schema { A, B, R } = solve {
     A(1). A(2). A(3).
 
     B(3).
@@ -24,7 +24,7 @@ def testStratification02(): Bool = check {
 }
 
 @test
-def testStratification03(): Bool = check {
+def testStratification03(): Schema { A, B, C, R } = solve {
     A(1). A(2). A(3).
 
     B(3).
@@ -35,7 +35,7 @@ def testStratification03(): Bool = check {
 }
 
 //@test // TODO
-def testStratification04(): Bool = check {
+def testStratification04(): Schema { A, B, C, R } = solve {
     A(1). A(2). A(3).
 
     B(3).
@@ -46,7 +46,7 @@ def testStratification04(): Bool = check {
 }
 
 @test
-def testStratification05(): Bool = check {
+def testStratification05(): Schema { A, B, C, R } = solve {
     A(1). A(2).
     B(3).
 
@@ -56,7 +56,7 @@ def testStratification05(): Bool = check {
 }
 
 @test
-def testStratification06(): Bool = check {
+def testStratification06(): Schema { A, B, C, D, R } = solve {
     A(1). A(2).
     B(3).
 
@@ -67,7 +67,7 @@ def testStratification06(): Bool = check {
 }
 
 @test
-def testStratification07(): Bool = check {
+def testStratification07(): Schema { A, B, C, D, E, R } = solve {
     A(1). A(2).
     B(3).
 
@@ -79,21 +79,21 @@ def testStratification07(): Bool = check {
 }
 
 @test
-def testStratification08(): Bool = check {
+def testStratification08(): Schema { A, False } = solve {
     A(1).
     A(2).
     A(3).
 
-    false :- not A(1).
-    false :- not A(2).
-    false :- not A(3).
+    False() :- not A(1).
+    False() :- not A(2).
+    False() :- not A(3).
 }
 
 @test
-def testStratification09(): Bool = check {
+def testStratification09(): Schema { A, B, False } = solve {
     A(1). A(2).
     B(1).  B(2).
 
-    false :- not A(1), not B(1).
-    false :- not A(2), not B(2).
+    False() :- not A(1), not B(1).
+    False() :- not A(2), not B(2).
 }

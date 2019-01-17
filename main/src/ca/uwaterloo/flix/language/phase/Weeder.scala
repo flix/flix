@@ -984,18 +984,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => WeededAst.Expression.Let(Name.Ident(sp1, "_temp", sp1), e1, e2, mkSL(sp1, sp2)) //TODO skal spX i LetRec være sp1?
       }
 
-    case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs, sp2) =>
+    case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      traverse(cs)(visitConstraint) map {
-        case xs =>
-          // The base constraint is simple the true fact.
-          val base = WeededAst.Expression.FixpointConstraint(WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
-          // Combine each of the constraints using union.
-          xs.flatten.foldLeft(base: WeededAst.Expression) {
-            case (eacc, c) =>
-              val e2 = WeededAst.Expression.FixpointConstraint(c, loc)
-              WeededAst.Expression.FixpointCompose(eacc, e2, loc)
+      traverse(cs0)(visitConstraint) map {
+        case cs =>
+          // Map each constraint into a constraint expression.
+          val constraintExps = cs.flatten.map(WeededAst.Expression.FixpointConstraint(_, loc))
+
+          // Combine all constraint expressions using compose.
+          constraintExps.reduceLeft[WeededAst.Expression] {
+            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
           }
       }
 
@@ -1009,11 +1008,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
       visitExp(exp) map {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.FixpointCheck(sp1, exp, sp2) =>
-      visitExp(exp) map {
-        case e => WeededAst.Expression.FixpointCheck(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointProject(sp1, name, exp1, exp2, sp2) =>
@@ -1229,10 +1223,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given head predicate.
     */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-    case ParsedAst.Predicate.Head.True(sp1, sp2) => WeededAst.Predicate.Head.True(mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
-
     case ParsedAst.Predicate.Head.Atom(sp1, qname, expOpt, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
@@ -1245,7 +1235,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, ts) =>
           WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
       }
-
   }
 
   /**
@@ -1836,7 +1825,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
-    case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.UserError(sp1, _) => sp1
@@ -1934,14 +1922,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val tparams = Nil
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
-    // The main expression.
-    val trueFact = WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc)
-    val zeroExp = WeededAst.Expression.FixpointConstraint(trueFact, loc)
-    val innerExp = cs.foldLeft(zeroExp: WeededAst.Expression) {
-      case (eacc, c) =>
-        val constraintExp = WeededAst.Expression.FixpointConstraint(c, loc)
-        WeededAst.Expression.FixpointCompose(eacc, constraintExp, loc)
+    // Map each constraint into a constraint expression.
+    val constraintExps = cs.map(WeededAst.Expression.FixpointConstraint(_, loc))
+
+    // Combine all constraint expressions using compose.
+    val innerExp = constraintExps.reduceLeft[WeededAst.Expression] {
+      case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
     }
+
+    // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
     val toStringExp = WeededAst.Expression.NativeMethod("java.lang.Object", "toString", List(outerExp), loc)
 

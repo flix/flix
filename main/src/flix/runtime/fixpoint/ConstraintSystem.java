@@ -31,20 +31,11 @@ import java.util.List;
 public final class ConstraintSystem {
 
     /**
-     * Represents the empty constraint system.
-     */
-    private static final ConstraintSystem EMPTY = new ConstraintSystem(new Constraint[0], new Constraint[0]);
-
-    /**
      * Constructs a new constraint system of the given constraint `c`.
      */
     public static ConstraintSystem of(Constraint c) {
         if (c == null)
             throw new IllegalArgumentException("'c' must be non-null.");
-
-        if (c.isTrueFact()) {
-            return EMPTY;
-        }
 
         return of(new Constraint[]{c});
     }

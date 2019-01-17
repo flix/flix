@@ -70,19 +70,6 @@ public final class Solver {
     }
 
     /**
-     * Checks the given constraint system `cs` with the given stratification `stf` and options `o`.
-     */
-    public static boolean check(ConstraintSystem cs, Stratification stf, Options o) {
-        try {
-            ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
-            solver.solve();
-            return true;
-        } catch (RuleError e) {
-            return false;
-        }
-    }
-
-    /**
      * Returns `true` if all facts in `cs2` are included in `cs1`.
      */
     public static boolean entails(ConstraintSystem cs1, ConstraintSystem cs2) {

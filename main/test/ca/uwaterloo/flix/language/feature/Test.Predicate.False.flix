@@ -1,50 +1,50 @@
 @test
-def testFalsePredicate01(): Bool =
-    let x = false.;
-    !(check x)
+def testFalsePredicate01(): Schema { False } =
+    let x = False().;
+    solve x
 
 @test
-def testFalsePredicate02(): Bool =
-    let x = false.;
+def testFalsePredicate02(): Schema { False } =
+    let x = False().;
     let u = x <+> x;
-    !(check u)
+    solve u
 
 @test
-def testFalsePredicate03(): Bool =
-    let x = false.;
-    let y = false.;
+def testFalsePredicate03(): Schema { False } =
+    let x = False().;
+    let y = False().;
     let u = x <+> y;
-    !(check u)
+    solve u
 
 @test
-def testFalsePredicate04(): Bool =
-    let x = false.;
-    let y = false.;
+def testFalsePredicate04(): Schema { False } =
+    let x = False().;
+    let y = False().;
     let u = x <+> y;
     let v = y <+> x;
-    !(check u <+> v)
+    solve u <+> v
 
 @test
-def testFalsePredicate05(): Bool =
-    let x = false.;
-    let y = false.;
+def testFalsePredicate05(): Schema { False } =
+    let x = False().;
+    let y = False().;
     let u = x <+> y;
     let v = y <+> x;
     let w = y <+> v;
-    !(check w)
+    solve w
 
 @test
-def testFalsePredicate06(): Bool =
-    let x = false.;
-    let y = false.;
-    let u = check x;
-    let v = check y;
-    !u && !v
+def testFalsePredicate06(): Schema { False } =
+    let x = False().;
+    let y = False().;
+    let u = solve x;
+    let v = solve y;
+    u <+> v
 
 @test
-def testFalsePredicate07(): Bool =
-    let x = false.;
-    let y = false.;
-    let u = check (x <+> y);
-    let v = check (y <+> x);
-    !u && !v
+def testFalsePredicate07(): Schema { False } =
+    let x = False().;
+    let y = False().;
+    let u = solve (x <+> y);
+    let v = solve (y <+> x);
+    u <+> v

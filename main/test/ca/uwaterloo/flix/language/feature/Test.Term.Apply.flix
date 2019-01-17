@@ -1,24 +1,24 @@
 @test
-def testTransfer01(): Bool = check {
+def testTransfer01(): Schema { R } = solve {
     R(zer()).
     R(one()).
     R(two()).
 }
 
 @test
-def testTransfer02(): Bool = check {
+def testTransfer02(): Schema { R } = solve {
     R(inc(1)).
     R(dec(2)).
 }
 
 @test
-def testTransfer03(): Bool = check {
+def testTransfer03(): Schema { R } = solve {
     R(inc(dec(1))).
     R(dec(inc(2))).
 }
 
 @test
-def testTransfer04(): Bool = check {
+def testTransfer04(): Schema { A, B, R } = solve {
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -27,7 +27,7 @@ def testTransfer04(): Bool = check {
 }
 
 @test
-def testTransfer05(): Bool = check {
+def testTransfer05(): Schema { A, B, R } = solve {
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -35,7 +35,7 @@ def testTransfer05(): Bool = check {
 }
 
 @test
-def testTransfer06(): Bool = check {
+def testTransfer06(): Schema { A, B, R } = solve {
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -43,7 +43,7 @@ def testTransfer06(): Bool = check {
 }
 
 @test
-def testTransfer07(): Bool = check {
+def testTransfer07(): Schema { A, B, R } = solve {
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -51,7 +51,7 @@ def testTransfer07(): Bool = check {
 }
 
 @test
-def testTransfer08(): Bool = check {
+def testTransfer08(): Schema { A, B, R } = solve {
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -59,18 +59,18 @@ def testTransfer08(): Bool = check {
 }
 
 @test
-def testTransfer09(): Bool = check {
+def testTransfer09(): Schema { R } = solve {
     R(identity(42)).
 }
 
 @test
-def testTransfer10(): Bool = check {
+def testTransfer10(): Schema { R } = solve {
     R(fst((1, 2))).
     R(snd((1, 2))).
 }
 
 @test
-def testTransfer11(): Bool = check {
+def testTransfer11(): Schema { R } = solve {
     R(constant(42)(42)).
 }
 
@@ -84,4 +84,3 @@ def add(x: Int, y: Int): Int = x + y
 rel A(x: Int)
 rel B(x: Int)
 rel R(x: Int)
-

@@ -352,11 +352,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointCheck(exp, tpe, eff, loc) =>
-          for {
-            _ <- checkPats(exp, root)
-          } yield tast
-
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
           for {
             _ <- checkPats(pred.exp, root)
@@ -386,8 +381,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
-      case TypedAst.Predicate.Head.True(loc) => h0.toSuccess
-      case TypedAst.Predicate.Head.False(loc) => h0.toSuccess
       case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
         for {
           e <- checkPats(pred.exp, root)

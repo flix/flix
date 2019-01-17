@@ -881,11 +881,6 @@ object SymbolicEvaluator {
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
-        * Fixpoint Check.
-        */
-      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
         * Fixpoint Project.
         */
       case Expression.FixpointProject(pred, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")

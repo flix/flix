@@ -153,13 +153,6 @@ public final class Constraint {
     }
 
     /**
-     * Returns `true` if `this` constraint is the true fact.
-     */
-    public boolean isTrueFact() {
-        return isFact() && head instanceof TruePredicate;
-    }
-
-    /**
      * Returns the constraint parameters of `this` constraint.
      */
     public VarSym[] getConstraintParameters() {
@@ -251,12 +244,6 @@ public final class Constraint {
             throw new IllegalArgumentException("'that' must be non-null.");
 
         if (this.isFact() && that.isFact()) {
-            if (this.head instanceof FalsePredicate) {
-                return true;
-            }
-            if (this.head instanceof TruePredicate && that.head instanceof TruePredicate) {
-                return true;
-            }
             if (this.head instanceof AtomPredicate && that.head instanceof AtomPredicate) {
                 var thisHead = (AtomPredicate) this.head;
                 var thatHead = (AtomPredicate) that.head;

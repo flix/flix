@@ -16,14 +16,14 @@ namespace IFDS {
     rel SummaryEdge(node: Str, factin: Str, factout: Str)
 
     // Output
-    rel Result(node: Str, fact: Str)
+    rel Results(node: Str, fact: Str)
 
     rel Facts(fact: Str)
     rel Identity(node: Str)
 
     // Rules
     @test
-    def test(): Bool = check {
+    def test(): Schema { EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, PathEdge, SummaryEdge, Results, Facts, Identity } = solve {
         // intraproc
         PathEdge(d1,m,d3) :-
             PathEdge(d1,n,d2),
@@ -53,7 +53,7 @@ namespace IFDS {
             EshEndReturn(target,d2,call,d5s).
 
         // tabulate result
-        Result(n,d2) :- PathEdge(_,n,d2).
+        Results(n,d2) :- PathEdge(_,n,d2).
 
         // Example (uninitialized variables) from IFDS paper
         CFG("smain","n1").

@@ -875,11 +875,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointCheck(exp, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FixpointCheck(e, Type.freshTypeVar(), loc)
-      }
-
     case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
       mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
         case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), loc)
@@ -959,8 +954,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
-    case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
     case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) =>
       for {
         e <- visitExp(exp, outerEnv, tenv0)
@@ -1162,7 +1155,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.UserError(loc) => Nil
@@ -1226,8 +1218,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given head predicate `h0`.
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
-    case WeededAst.Predicate.Head.True(loc) => Nil
-    case WeededAst.Predicate.Head.False(loc) => Nil
     case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
   }
 

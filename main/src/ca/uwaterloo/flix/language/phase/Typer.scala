@@ -1299,18 +1299,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, inferredType, mkAnySchemaType(), loc)
           } yield resultType
 
-        case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
-          //
-          //  exp : a
-          //  ----------------
-          //  check exp : Bool
-          //
-          for {
-            inferredType <- visitExp(exp)
-            schemaType <- unifyM(inferredType, mkAnySchemaType(), loc)
-            resultType <- unifyM(tvar, Type.Bool, loc)
-          } yield resultType
-
         case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
           //
           //  exp1 : tpe    exp2 : Schema { P : a  | b }
@@ -1318,8 +1306,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  project P<exp1> exp2 : Schema { P : a | c }
           //
           val freshPredicateTypeVar = Type.freshTypeVar() // a
-          val freshRestSchemaTypeVar = Type.freshTypeVar() // b
-          val freshResultSchemaTypeVar = Type.freshTypeVar() // c
+        val freshRestSchemaTypeVar = Type.freshTypeVar() // b
+        val freshResultSchemaTypeVar = Type.freshTypeVar() // c
 
           for {
             parameterType <- visitExp(pred.exp)
@@ -1799,13 +1787,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Empty, loc)
 
         /*
-         * FixpointCheck expression.
-         */
-        case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
-          val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Empty, loc)
-
-        /*
          * FixpointProject expression.
          */
         case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
@@ -1949,20 +1930,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = head match {
-    //
-    //  --------
-    //  true : a
-    //
-    case ResolvedAst.Predicate.Head.True(loc) =>
-      Unification.liftM(mkAnySchemaType())
-
-    //
-    //  ---------
-    //  false : a
-    //
-    case ResolvedAst.Predicate.Head.False(loc) =>
-      Unification.liftM(mkAnySchemaType())
-
     case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
@@ -1985,7 +1952,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         termTypes <- seqM(terms.map(Expressions.infer(_, program)))
         predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
-
   }
 
   /**
@@ -2043,10 +2009,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
-
-    case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-
     case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
       val e = Expressions.reassemble(exp, program, subst0)
       val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
@@ -2125,7 +2087,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def mkAnySchemaType()(implicit genSym: GenSym): Type = {
     val sym = Symbol.mkRelSym("True")
-    val tpe = Type.Unit
+    val tpe = Type.Relation(sym, Nil, Kind.Star)
     Type.SchemaExtend(sym, tpe, Type.freshTypeVar())
   }
 

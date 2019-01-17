@@ -107,7 +107,7 @@ namespace IDE {
     rel InProc(proc: Str, node: Str)
 
     // Output
-    lat Result(node: Str, fact: Str, value: Value)
+    lat Results(node: Str, fact: Str, value: Value)
 
     // Rules for Example (constant propagation) from IDE paper
     def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
@@ -117,7 +117,7 @@ namespace IDE {
 
     // Rules
     @test
-    def test(): Bool = check {
+    def test(): Schema { EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, JumpFn, SummaryFn, ResultProc, InProc, Results } = solve {
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
         InProc(p,m) :- InProc(p,n), CFG(n,m).
@@ -152,13 +152,13 @@ namespace IDE {
             EshEndReturn(target,d2,call,d5,er).
 
         // tabulate result
-        Result(n,d,apply(fn,vp)) :-
+        Results(n,d,apply(fn,vp)) :-
             ResultProc(proc,dp,vp),
             InProc(proc,n),
             JumpFn(dp,n,d,fn).
 
         ResultProc(proc,dp,apply(cs,v)) :-
-            Result(call,d,v),
+            Results(call,d,v),
             EshCallStart(call,d,proc,dp,cs).
 
         CFG("smain","n1").
