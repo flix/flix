@@ -18,7 +18,7 @@ namespace String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int, s: Str): Char = native method java.lang.String.charAt(s, i)
+    pub def charAt(i: Int, s: Str): Char = native method java.lang.String.charAt(s, i) as Char
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
@@ -28,32 +28,32 @@ namespace String {
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.
     ///
-    pub def endsWith(s1: Str, s2: Str): Bool = native method java.lang.String.endsWith(s1, s2)
+    pub def endsWith(s1: Str, s2: Str): Bool = native method java.lang.String.endsWith(s1, s2) as Bool
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
-    pub def isEmpty(s: Str): Bool = native method java.lang.String.isEmpty(s)
+    pub def isEmpty(s: Str): Bool = native method java.lang.String.isEmpty(s) as Bool
 
     ///
     /// Returns the length of the string `s`.
     ///
-    pub def length(s: Str): Int = native method java.lang.String.length(s)
+    pub def length(s: Str): Int = native method java.lang.String.length(s) as Int
 
     ///
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
-    pub def startsWith(s1: Str, s2: Str): Bool = native method java.lang.String.startsWith(s1, s2)
+    pub def startsWith(s1: Str, s2: Str): Bool = native method java.lang.String.startsWith(s1, s2) as Bool
 
     //
     // Returns the lower case version of the string `s`.
     //
-    pub def toLowerCase(s: Str): Str = native method java.lang.String.toLowerCase(s)
+    pub def toLowerCase(s: Str): Str = native method java.lang.String.toLowerCase(s) as Str
 
     //
     // Returns the upper case version of the string `s`.
     //
-    pub def toUpperCase(s: Str): Str = native method java.lang.String.toUpperCase(s)
+    pub def toUpperCase(s: Str): Str = native method java.lang.String.toUpperCase(s) as Str
 
     ///
     /// Returns the given string `s` as a list of characters.
