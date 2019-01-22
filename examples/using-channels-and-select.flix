@@ -1,5 +1,4 @@
-
-/// Mooo's `n` times on channel `c`.
+ /// Mooo's `n` times on channel `c`.
 def mooo(c: Channel[Str], n: Int): Unit = match n with {
     case 0 => ()
     case n => c <- "Mooo!"; mooo(c, n - 1)
