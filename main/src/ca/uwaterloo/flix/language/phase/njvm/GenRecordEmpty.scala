@@ -102,7 +102,6 @@ object GenRecordEmpty {
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
       "equals method shouldn't be called")
 
-
     visitor.visitEnd()
     visitor.toByteArray
   }
