@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
+import ca.uwaterloo.flix.language.phase.njvm.GenRecordEmpty
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
@@ -135,6 +136,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     val tupleClasses = GenTupleClasses.gen(types)
 
+    val recordEmptyClasses = GenRecordEmpty.gen(types)
+
     //
     // Generate references classes.
     //
@@ -155,6 +158,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       tagClasses,
       tupleInterfaces,
       tupleClasses,
+      recordEmptyClasses,
       refClasses
     ).reduce(_ ++ _)
 

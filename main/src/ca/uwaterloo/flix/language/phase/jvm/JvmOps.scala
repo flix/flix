@@ -63,6 +63,7 @@ object JvmOps {
     case MonoType.Channel(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
+    case MonoType.RecordEmpty() => getRecordEmptyClassType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
@@ -283,6 +284,43 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
+
+  /**
+    * Returns the tuple interface type `IRecordEmpty`.
+    *
+    * For example,
+    *
+    * {}         =>    IRecordEmpty
+    * NB: The given type `tpe` must be a RecordEmpty type.
+    */
+  def getRecordEmptyInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form IRecordEmpty
+    val name = "IRecordEmpty"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the tuple class type `RecordEmtpy`
+    *
+    * For example,
+    *
+    * {}         =>    RecordEmpty
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getRecordEmptyClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form IRecordEmpty
+    val name = "RecordEmpty"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+
   /**
     * Returns reference class type for the given type `tpe`.
     *
@@ -493,9 +531,9 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+      case Expression.RecordEmpty(tpe, loc) => Set.empty
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO: RecordExtension
+      case Expression.RecordExtend(label, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
 
       case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO: RecordProjection
 
@@ -779,7 +817,7 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+      case Expression.RecordEmpty(tpe, loc) => Set(tpe)
 
       case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
 

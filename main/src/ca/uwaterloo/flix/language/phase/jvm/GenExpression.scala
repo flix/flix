@@ -517,9 +517,22 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+    case Expression.RecordEmpty(tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the class for the tuple
+      val classType = JvmOps.getRecordEmptyClassType()
+      // Instantiating a new object of tuple
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
 
-    case Expression.RecordSelect(exp, label, tpe, loc) => ???
+      // Descriptor of constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(), JvmType.Void)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+
+    case Expression.RecordSelect(exp, label, tpe, loc) => ??? // TODO
 
     case Expression.RecordExtend(label, value, rest, tpe, loc) => ??? // TODO
 
