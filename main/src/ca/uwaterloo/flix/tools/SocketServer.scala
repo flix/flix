@@ -70,29 +70,32 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     // Print the length and size of the received data.
     log(s"Received ${s.length} characters of input (${s.getBytes.length} bytes).")(ws)
 
-    // Print the source code.
+    // Print the string.
     for (line <- s.lines) {
       log("  >  " + line)(ws)
     }
 
-    // Evaluate the source code.
+    // Evaluate the string.
     val result = eval(s)(ws)
 
-    // Print the result.
+    // Print whether evaluation was successful.
     log("")(ws)
-    log("Result available.")(ws)
+    result match {
+      case Ok(__) => log("Evaluation was successful. Sending response:")(ws)
+      case Err(_) => log("Evaluation failure. Sending response:")(ws)
+    }
     log("")(ws)
 
-    // Convert the JSON result to a string.
-    val data = JsonMethods.pretty(JsonMethods.render(getJSON(result)))
+    // Convert the result to JSON.
+    val json = JsonMethods.pretty(JsonMethods.render(getJSON(result)))
 
-    // Print the result.
-    for (line <- data.lines) {
+    // Print the JSON data.
+    for (line <- json.lines) {
       log("  <  " + line)(ws)
     }
 
-    // Send the result.
-    ws.send(data)
+    // And finally send the JSON data.
+    ws.send(json)
   }
 
   /**
@@ -103,26 +106,32 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     e.printStackTrace()
   }
 
-
+  /**
+    * Evaluates the given string `input` as a Flix program.
+    */
   private def eval(input: String)(implicit ws: WebSocket): Result[String, String] = {
     try {
-      // Instantiate fresh Flix instance.
-      val flix = mkFlix(input)
-
-      // Evaluate the Flix program.
-      flix.compile() match {
+      // Compile the program.
+      mkFlix(input).compile() match {
         case Success(compilationResult) =>
+          // Compilation was successful.
 
-          // Evaluate the main function.
-          Ok(compilationResult.evalToString("main"))
+          // Determine if the main function is present.
+          compilationResult.getMain match {
+            case None =>
+              // The main function was not present. Just report successful compilation.
+              Ok("Compilation was successful. No main function.")
+            case Some(_) =>
+              // Evaluate the main function and get the result as a string.
+              Ok(compilationResult.evalToString("main"))
+          }
 
         case Failure(errors) =>
+          // Compilation failed. Retrieve and format the first error message.
           Err(errors.head.message.fmt(TerminalContext.NoTerminal))
       }
     } catch {
-      case ex: RuntimeException =>
-        Console.err.println(ex)
-        Err(ex.getMessage)
+      case ex: RuntimeException => Err(ex.getMessage)
     }
   }
 
