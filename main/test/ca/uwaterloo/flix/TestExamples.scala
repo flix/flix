@@ -15,6 +15,7 @@ class TestExamples extends Suites(
   new FlixTest("mutual-recursion-with-full-tail-call-elimination", "examples/mutual-recursion-with-full-tail-call-elimination.flix"),
   new FlixTest("sending-and-receiving-on-channels", "examples/sending-and-receiving-on-channels.flix"),
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix"),
+  new FlixTest("select-with-defaults-and-timers", "examples/select-with-defaults-and-timers.flix"),
   new FlixTest("fixpoint-computations-with-top-level-constraints", "examples/fixpoint-computations-with-top-level-constraints.flix"),
   new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix"),
   new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix"),
