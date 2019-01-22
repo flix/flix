@@ -47,13 +47,6 @@ object Main {
     if (cmdOpts.listen.nonEmpty) {
       val socketServer = new SocketServer(cmdOpts.listen.get)
       socketServer.run()
-
-      // TODO: Somehow wait
-    //  System.exit(0)
-
-      val rpcServer = new RpcServer(cmdOpts.listen.get)
-      //rpcServer.start()
-     // rpcServer.await()
     }
 
     // the default color context.
