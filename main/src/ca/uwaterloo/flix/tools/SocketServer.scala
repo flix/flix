@@ -67,10 +67,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     * Invoked when a client sends a message.
     */
   override def onMessage(ws: WebSocket, s: String): Unit = {
-    // Print the length and size of the received data.
+    // Log the length and size of the received data.
     log(s"Received ${s.length} characters of input (${s.getBytes.length} bytes).")(ws)
 
-    // Print the string.
+    // Log the string.
     for (line <- s.split("\n")) {
       log("  >  " + line)(ws)
     }
@@ -78,7 +78,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     // Evaluate the string.
     val result = eval(s)(ws)
 
-    // Print whether evaluation was successful.
+    // Log whether evaluation was successful.
     log("")(ws)
     result match {
       case Ok(__) => log("Evaluation was successful. Sending response:")(ws)
@@ -89,7 +89,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     // Convert the result to JSON.
     val json = JsonMethods.pretty(JsonMethods.render(getJSON(result)))
 
-    // Print the JSON data.
+    // Log the JSON data.
     for (line <- json.split("\n")) {
       log("  <  " + line)(ws)
     }
@@ -120,7 +120,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           compilationResult.getMain match {
             case None =>
               // The main function was not present. Just report successful compilation.
-              Ok("Compilation was successful. No main function.")
+              Ok("Compilation was successful. No main function to run.")
             case Some(_) =>
               // Evaluate the main function and get the result as a string.
               Ok(compilationResult.evalToString("main"))

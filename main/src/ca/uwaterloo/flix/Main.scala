@@ -47,6 +47,7 @@ object Main {
     if (cmdOpts.listen.nonEmpty) {
       val socketServer = new SocketServer(cmdOpts.listen.get)
       socketServer.run()
+      System.exit(0)
     }
 
     // the default color context.
