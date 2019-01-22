@@ -71,7 +71,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     log(s"Received ${s.length} characters of input (${s.getBytes.length} bytes).")(ws)
 
     // Print the string.
-    for (line <- s.lines) {
+    for (line <- s.split("\n")) {
       log("  >  " + line)(ws)
     }
 
@@ -90,7 +90,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     val json = JsonMethods.pretty(JsonMethods.render(getJSON(result)))
 
     // Print the JSON data.
-    for (line <- json.lines) {
+    for (line <- json.split("\n")) {
       log("  <  " + line)(ws)
     }
 
