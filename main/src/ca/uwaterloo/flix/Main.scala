@@ -21,7 +21,7 @@ import java.nio.file.Paths
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools.{Benchmarker, Packager, Tester}
+import ca.uwaterloo.flix.tools.{Benchmarker, Packager, SocketServer, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -45,9 +45,15 @@ object Main {
 
     // check if the --listen flag was passed.
     if (cmdOpts.listen.nonEmpty) {
+      val socketServer = new SocketServer(cmdOpts.listen.get)
+      socketServer.run()
+
+      // TODO: Somehow wait
+    //  System.exit(0)
+
       val rpcServer = new RpcServer(cmdOpts.listen.get)
-      rpcServer.start()
-      rpcServer.await()
+      //rpcServer.start()
+     // rpcServer.await()
     }
 
     // the default color context.
