@@ -158,6 +158,7 @@ object Main {
           }
         case Validation.Failure(errors) =>
           errors.foreach(e => println(e.message.fmt))
+          System.exit(1)
       }
     } catch {
       case ex: FlixError =>
