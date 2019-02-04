@@ -224,6 +224,7 @@ class Flix {
         Resolver |>
         Typer |>
         Effects |>
+        DeadCode |>
         PatternExhaustiveness |>
         Safety
 
