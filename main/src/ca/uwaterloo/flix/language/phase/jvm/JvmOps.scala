@@ -63,7 +63,8 @@ object JvmOps {
     case MonoType.Channel(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
-    case MonoType.RecordEmpty() => getRecordEmptyClassType()
+    case MonoType.RecordEmpty() => getRecordInterfaceType()
+    case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
@@ -293,10 +294,10 @@ object JvmOps {
     * {}         =>    IRecordEmpty
     * NB: The given type `tpe` must be a RecordEmpty type.
     */
-  def getRecordEmptyInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form IRecordEmpty
-    val name = "IRecordEmpty"
+    val name = "IRecord"
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -315,6 +316,15 @@ object JvmOps {
 
     // The JVM name is of the form IRecordEmpty
     val name = "RecordEmpty"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  def getRecordExtendClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form IRecordEmpty
+    val name = "RecordExtend"
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -821,7 +831,7 @@ object JvmOps {
 
       case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
+      case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value ) ++ visitExp(rest)
 
       case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 

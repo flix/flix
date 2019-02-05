@@ -534,7 +534,27 @@ object GenExpression {
 
     case Expression.RecordSelect(exp, label, tpe, loc) => ??? // TODO
 
-    case Expression.RecordExtend(label, value, rest, tpe, loc) => ??? // TODO
+    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the class for the tuple
+      val classType = JvmOps.getRecordExtendClassType()
+
+      val interfaceType = JvmOps.getRecordInterfaceType()
+
+      // Instantiating a new object of tuple
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+
+      visitor.visitLdcInsn(label)
+      compileExpression(value, visitor, currentClass, lenv0, entryPoint)//TODO: What if value is primitive type
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
+
+      // Descriptor of constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.String, JvmType.Object, interfaceType), JvmType.Void)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
     case Expression.RecordRestrict(label, rest, tpe, loc) => ??? // TODO
 
