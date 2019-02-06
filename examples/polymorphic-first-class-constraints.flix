@@ -24,8 +24,8 @@ def getEdgesWithColor[r](): Schema { LabelledEdge[Str] | r } = {
 /// Returns a set of polymorphic rules to compute the transitive closure of
 /// edges with the *same* label.
 def getRules[l](): Schema { LabelledEdge[l], LabelledPath[l] } = {
-    LabelledPath(x, w, y) :- LabelledEdge(x, w, y).
-    LabelledPath(x, w, z) :- LabelledPath(x, w, y), LabelledPath(y, w, z).
+    LabelledPath(x, l, y) :- LabelledEdge(x, l, y).
+    LabelledPath(x, l, z) :- LabelledPath(x, l, y), LabelledPath(y, l, z).
 }
 
 /// Computes the fixpoint of the two sets of facts with the rules.
