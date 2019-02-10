@@ -548,7 +548,8 @@ object GenExpression {
       visitor.visitInsn(DUP)
 
       visitor.visitLdcInsn(label)
-      compileExpression(value, visitor, currentClass, lenv0, entryPoint)//TODO: What if value is primitive type
+      compileExpression(value, visitor, currentClass, lenv0, entryPoint)
+      AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(value.tpe))
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
 
       // Descriptor of constructor

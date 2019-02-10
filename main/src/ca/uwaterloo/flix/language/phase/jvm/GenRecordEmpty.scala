@@ -1,29 +1,28 @@
-package ca.uwaterloo.flix.language.phase.njvm
+package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm._
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the tuple classes.
   */
-object GenRecordExtend {
+object GenRecordEmpty {
 
   /**
     * Returns the set of tuple classes for the given set of types `ts`.
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, MonoType.RecordExtend(label, value, rest)) =>
+      case (macc, MonoType.RecordEmpty()) =>
         // Case 1: The type constructor is a tuple.
         // Construct tuple class.
         val interfaceType = JvmOps.getRecordInterfaceType()
-        val jvmType = JvmOps.getRecordExtendClassType()
+        val jvmType = JvmOps.getRecordEmptyClassType()
         val jvmName = jvmType.name
-        val targs = List[JvmType](JvmType.String, JvmType.Object, interfaceType)
+        val targs = List()
         val bytecode = genByteCode(jvmType,interfaceType, targs)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, _) =>
@@ -87,16 +86,8 @@ object GenRecordExtend {
     // Source of the class
     visitor.visitSource(classType.name.toInternalName, null)
 
-    for ((field, ind) <- targs.zipWithIndex) {
-      // Name of the field
-      val fieldName = s"field$ind"
-
-      // Defining fields of the tuple
-      AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = true)
-    }
-
     // Emit the code for the constructor
-    compileRecordExtendConstructor(visitor, classType, targs)
+    compileRecordEmptyConstructor(visitor, classType, targs)
 
     // Generate 'getField' method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getField", AsmOps.getMethodDescriptor(Nil, JvmType.Object),
@@ -125,31 +116,15 @@ object GenRecordExtend {
     *
     * public RecordEmpty() {}
     */
-  def compileRecordExtendConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
+  def compileRecordEmptyConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
 
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(fields, JvmType.Void), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-
-
-    var offset: Int = 1
-
-    for ((field, ind) <- fields.zipWithIndex) {
-      val iLoad = AsmOps.getLoadInstruction(field)
-
-      constructor.visitVarInsn(ALOAD, 0)
-      constructor.visitVarInsn(iLoad, offset)
-      constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"field$ind", field.toDescriptor)
-
-      field match {
-        case JvmType.PrimLong | JvmType.PrimDouble => offset += 2
-        case _ => offset += 1
-      }
-    }
 
     // Return
     constructor.visitInsn(RETURN)
