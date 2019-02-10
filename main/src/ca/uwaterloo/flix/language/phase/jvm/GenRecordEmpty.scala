@@ -90,7 +90,7 @@ object GenRecordEmpty {
     compileRecordEmptyConstructor(visitor, classType, targs)
 
     // Generate 'getField' method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getField", AsmOps.getMethodDescriptor(Nil, JvmType.Object),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object),
       "getField method shouldn't be called")
 
     // Generate `toString` method

@@ -13,29 +13,12 @@ object GenRecordInterfaces {
   /**
     * Returns the set of tuple interfaces for the given set of types `ts`.
     */
-  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, MonoType.RecordEmpty()) =>
-        // Case 1: The type constructor is a tuple.
-        // Construct tuple interface.
-        val jvmType = JvmOps.getRecordInterfaceType()
-        val jvmName = jvmType.name
-        val targs = List()
-        val bytecode = genByteCode(jvmType, targs)
-        macc + (jvmName -> JvmClass(jvmName, bytecode))
-      case (macc, MonoType.RecordExtend(_,_,_)) =>
-        // Case 1: The type constructor is a tuple.
-        // Construct tuple interface.
-        val jvmType = JvmOps.getRecordInterfaceType()
-        val jvmName = jvmType.name
-        val targs = List()
-        val bytecode = genByteCode(jvmType, targs)
-        macc + (jvmName -> JvmClass(jvmName, bytecode))
-      case (macc, tpe) =>
-        // Case 2: The type constructor is a non-tuple.
-        // Nothing to be done. Return the map.
-        macc
-    }
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    val jvmType = JvmOps.getRecordInterfaceType()
+    val jvmName = jvmType.name
+    val targs = List()
+    val bytecode = genByteCode(jvmType, targs)
+    Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
   /**
@@ -58,7 +41,7 @@ object GenRecordInterfaces {
     // Source of the class
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
-    val getter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getField", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
+    val getter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
     getter.visitEnd()
 
     visitor.visitEnd()

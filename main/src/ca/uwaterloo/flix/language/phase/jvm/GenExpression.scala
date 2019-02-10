@@ -532,7 +532,17 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordSelect(exp, label, tpe, loc) => ??? // TODO
+    case Expression.RecordSelect(exp, label, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the class for the tuple
+      val interfaceType = JvmOps.getRecordInterfaceType()
+
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitLdcInsn(label)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "getField",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), true)
 
     case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       // Adding source line number for debugging

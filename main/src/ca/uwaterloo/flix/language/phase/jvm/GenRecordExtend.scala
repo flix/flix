@@ -3,9 +3,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
-
 /**
   * Generates bytecode for the tuple classes.
   */
@@ -97,9 +96,8 @@ object GenRecordExtend {
     // Emit the code for the constructor
     compileRecordExtendConstructor(visitor, classType, targs)
 
-    // Generate 'getField' method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getField", AsmOps.getMethodDescriptor(Nil, JvmType.Object),
-      "getField method shouldn't be called")
+    // Emit code for the 'getField' method
+    compileRecordExtendGetField(visitor, classType)
 
     // Generate `toString` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
@@ -156,6 +154,76 @@ object GenRecordExtend {
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
+  }
+
+
+  def compileRecordExtendGetField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+
+    val getField = visitor.visitMethod(ACC_PUBLIC, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
+
+    getField.visitCode()
+
+    //Get proper load instruction
+    val aLoad = AsmOps.getLoadInstruction(JvmType.String)
+
+    //Push "this" onto stack
+    getField.visitVarInsn(ALOAD, 0)
+
+    //Push this.field0 onto the stack
+    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field0", JvmType.String.toDescriptor)
+
+
+    //Push the function argument onto the stack
+    getField.visitVarInsn(ALOAD, 1)
+
+    //Compare both strings on the stack using equals.
+    getField.visitMethodInsn(INVOKEVIRTUAL, JvmType.String.name.toInternalName,
+      "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), true)
+
+
+    //Load the constant 1 onto the stack
+    getField.visitLdcInsn(1)
+
+
+    //create new label
+    val skip = new Label
+
+    //if the strings are equal ...
+    getField.visitJumpInsn(IF_ICMPNE, skip)
+
+    //true case
+    //return this.field1
+
+    //Load 'this' onto the stack
+    getField.visitVarInsn(ALOAD, 0)
+
+    //Push this.field1 onto the stack
+    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field1", JvmType.Object.toDescriptor)
+
+    //pop the stack
+    getField.visitInsn(ARETURN)
+
+    getField.visitLabel(skip)
+
+    //false case
+    //recursively call this.field2.getField(var1)
+
+    //Load 'this' onto the stack
+    getField.visitVarInsn(ALOAD, 0)
+
+    //Push this.field2 onto the stack
+    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
+
+    //Push var1 onto the stack
+    getField.visitVarInsn(ALOAD, 1)
+
+    //call this.field2.getField(var1)
+    getField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
+      "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), true)
+    getField.visitInsn(ARETURN)
+
+    getField.visitMaxs(1, 1)
+    getField.visitEnd()
   }
 
 }

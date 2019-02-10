@@ -545,7 +545,7 @@ object JvmOps {
 
       case Expression.RecordExtend(label, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO: RecordProjection
+      case Expression.RecordSelect(exp, label, tpe, loc) => visitExp(exp)
 
       case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO: RecordRestriction
 
@@ -829,9 +829,9 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => Set(tpe)
 
-      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
+      case Expression.RecordSelect(exp, label, tpe, loc) => Set(tpe) ++ visitExp(exp)
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value ) ++ visitExp(rest)
+      case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
 
       case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 

@@ -136,7 +136,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     val tupleClasses = GenTupleClasses.gen(types)
 
 
-    val recordInterfaces = GenRecordInterfaces.gen(types)
+    val recordInterfaces = GenRecordInterfaces.gen()
 
     val recordEmptyClasses = GenRecordEmpty.gen(types)
 
