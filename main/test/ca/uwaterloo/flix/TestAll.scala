@@ -20,8 +20,11 @@ import ca.uwaterloo.flix.language.LanguageSuite
 import ca.uwaterloo.flix.library.LibrarySuite
 import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 import org.scalatest.{ParallelTestExecution, Suites}
 
+@RunWith(classOf[JUnitRunner])
 class TestAll extends Suites(
   new LanguageSuite,
   new LibrarySuite,
