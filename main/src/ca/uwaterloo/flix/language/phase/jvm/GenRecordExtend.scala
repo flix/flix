@@ -163,33 +163,27 @@ object GenRecordExtend {
 
     getField.visitCode()
 
-    //Get proper load instruction
-    val aLoad = AsmOps.getLoadInstruction(JvmType.String)
-
     //Push "this" onto stack
     getField.visitVarInsn(ALOAD, 0)
 
     //Push this.field0 onto the stack
     getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field0", JvmType.String.toDescriptor)
 
-
     //Push the function argument onto the stack
     getField.visitVarInsn(ALOAD, 1)
 
     //Compare both strings on the stack using equals.
-    getField.visitMethodInsn(INVOKEVIRTUAL, JvmType.String.name.toInternalName,
-      "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), true)
+    getField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
+      "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
 
 
-    //Load the constant 1 onto the stack
-    getField.visitLdcInsn(1)
+    //create new labels
+    val falseCase = new Label
+    val ret = new Label
 
-
-    //create new label
-    val skip = new Label
 
     //if the strings are equal ...
-    getField.visitJumpInsn(IF_ICMPNE, skip)
+    getField.visitJumpInsn(IFEQ, falseCase)
 
     //true case
     //return this.field1
@@ -200,10 +194,11 @@ object GenRecordExtend {
     //Push this.field1 onto the stack
     getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field1", JvmType.Object.toDescriptor)
 
-    //pop the stack
-    getField.visitInsn(ARETURN)
 
-    getField.visitLabel(skip)
+    getField.visitJumpInsn(GOTO,ret)
+
+
+    getField.visitLabel(falseCase)
 
     //false case
     //recursively call this.field2.getField(var1)
@@ -220,6 +215,9 @@ object GenRecordExtend {
     //call this.field2.getField(var1)
     getField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
       "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), true)
+
+    getField.visitLabel(ret)
+
     getField.visitInsn(ARETURN)
 
     getField.visitMaxs(1, 1)
