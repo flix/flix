@@ -15,7 +15,7 @@ object GenRecordExtend {
     */
   def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, MonoType.RecordExtend(label, value, rest)) =>
+      case (macc, MonoType.RecordExtend(_, _, _)) =>
         // Case 1: The type constructor is a tuple.
         // Construct tuple class.
         val interfaceType = JvmOps.getRecordInterfaceType()

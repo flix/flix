@@ -331,6 +331,15 @@ object JvmOps {
   }
 
 
+  def getMainClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form Main
+    val name = "Main"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
   /**
     * Returns reference class type for the given type `tpe`.
     *

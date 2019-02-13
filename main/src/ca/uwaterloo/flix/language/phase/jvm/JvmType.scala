@@ -36,6 +36,8 @@ sealed trait JvmType {
     case JvmType.PrimFloat => "F"
     case JvmType.PrimDouble => "D"
     case JvmType.Reference(name) => name.toDescriptor
+    case JvmType.Array(tpe) => "[" + tpe.toDescriptor
+
   }
 }
 
@@ -129,5 +131,10 @@ object JvmType {
     * Represents a reference type of the given `name`.
     */
   case class Reference(name: JvmName) extends JvmType
+
+  /**
+    * Represents an array type of the given inner 'tpe'.
+    */
+  case class Array(tpe: JvmType) extends JvmType
 
 }
