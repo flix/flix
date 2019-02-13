@@ -1950,7 +1950,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         paramType <- Expressions.infer(exp, program)
         termTypes <- seqM(terms.map(Expressions.infer(_, program)))
-        predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
+        predicateType <- unifyM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
   }
 
@@ -1977,7 +1977,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         paramType <- Expressions.infer(exp, program)
         termTypes <- seqM(terms.map(Patterns.infer(_, program)))
-        predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
+        predicateType <- unifyM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
     //
@@ -2003,6 +2003,33 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         termType <- Expressions.infer(term, program)
         arrayType <- unifyM(Type.mkArray(sym.tvar), termType, loc)
       } yield mkAnySchemaType()
+  }
+
+  /**
+    * Returns the relation or lattice type of `sym` with the term types `ts` applied to the appropriate number of type variables.
+    *
+    * For example, if there is a relation:
+    *
+    * rel R[w](x: Int, y: Int, w: w)
+    *
+    * and this function is called with R and List(Int, Int) then it returns:
+    *
+    * Apply(R(List(Int, Int)), a)
+    *
+    * where a is a fresh type variable.
+    */
+  private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+    val quantifiers = sym match {
+      case x: Symbol.RelSym => program.relations(x).sc.quantifiers
+      case x: Symbol.LatSym => program.lattices(x).sc.quantifiers
+    }
+
+    val zero = Type.mkRelationOrLattice(sym, ts)
+    val result = quantifiers.foldLeft(zero) {
+      case (tacc, _) => Type.Apply(tacc, Type.freshTypeVar())
+    }
+
+    result
   }
 
   /**

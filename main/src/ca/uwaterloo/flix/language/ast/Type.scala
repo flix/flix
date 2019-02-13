@@ -59,8 +59,8 @@ sealed trait Type {
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Enum(_, _) => Set.empty
-    case Type.Relation(_, _, _) => Set.empty
-    case Type.Lattice(_, _, _) => Set.empty
+    case Type.Relation(_, ts, _) => ts.flatMap(_.typeVars).toSet
+    case Type.Lattice(_, ts, _) => ts.flatMap(_.typeVars).toSet
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
