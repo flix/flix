@@ -14,22 +14,13 @@ object GenRecordEmpty {
   /**
     * Returns the set of tuple classes for the given set of types `ts`.
     */
-  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, MonoType.RecordEmpty()) =>
-        // Case 1: The type constructor is a tuple.
-        // Construct tuple class.
-        val interfaceType = JvmOps.getRecordInterfaceType()
-        val jvmType = JvmOps.getRecordEmptyClassType()
-        val jvmName = jvmType.name
-        val targs = List()
-        val bytecode = genByteCode(jvmType,interfaceType, targs)
-        macc + (jvmName -> JvmClass(jvmName, bytecode))
-      case (macc, _) =>
-        // Case 2: The type constructor is not a RecordEmpty
-        // Nothing to be done. Return the map.
-        macc
-    }
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    val interfaceType = JvmOps.getRecordInterfaceType()
+    val jvmType = JvmOps.getRecordEmptyClassType()
+    val jvmName = jvmType.name
+    val targs = List()
+    val bytecode = genByteCode(jvmType,interfaceType, targs)
+    Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
   /**

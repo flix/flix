@@ -38,13 +38,14 @@ object GenMainClass {
       val jvmType = JvmOps.getMainClassType()
       val jvmName = jvmType.name
       val targs = List[JvmType](JvmType.Array(JvmType.String))
-      val bytecode = genByteCode(jvmType, targs)
+      val retJvmType = JvmOps.getErasedJvmType(defn.tpe)
+      val bytecode = genByteCode(jvmType, targs, retJvmType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
 
 
-  def genByteCode(jvmType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genByteCode(jvmType: JvmType.Reference, targs: List[JvmType], retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -58,27 +59,27 @@ object GenMainClass {
     visitor.visitSource(jvmType.name.toInternalName, null)
 
     // Emit the code for the main method
-    compileMainMethod(visitor, jvmType, targs)
+    compileMainMethod(visitor, jvmType, targs, retJvmType)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
-  def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
+  def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, targs: List[JvmType], retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", AsmOps.getMethodDescriptor(targs, JvmType.Void), null, null)
 
     main.visitCode()
-    main.visitTypeInsn(NEW, JvmType.Context.name.toInternalName)
-    main.visitInsn(DUP)
 
-    main.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName,
-      "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    val ns = JvmOps.getNamespace(Symbol.mkDefnSym("main"))
 
-
-    main.visitMethodInsn(INVOKEVIRTUAL, JvmName.Context.toInternalName, "m_main", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    main.visitInsn(ACONST_NULL)
+    main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
+      AsmOps.getMethodDescriptor(List(JvmType.Object), retJvmType), false)
 
     main.visitInsn(RETURN)
+    main.visitMaxs(1,1)
+    main.visitEnd()
   }
 
   /**
@@ -93,7 +94,6 @@ object GenMainClass {
       case defn =>
         // The main function must take zero arguments.
 //        if (defn.formals.isEmpty) Some(defn) else None TODO: def main() is not generating empty formals. Why?
-        println(defn.formals)
       Some(defn)
     }
   }

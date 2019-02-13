@@ -138,9 +138,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
 
     val recordInterfaces = GenRecordInterfaces.gen()
 
-    val recordEmptyClasses = GenRecordEmpty.gen(types)
+    val recordEmptyClasses = GenRecordEmpty.gen()
 
-    val recordExtendClasses = GenRecordExtend.gen(types)
+    val recordExtendClasses = GenRecordExtend.gen()
 
     //
     // Generate references classes.
