@@ -48,11 +48,20 @@ public final class Channel {
    */
   private int bufferSize;
 
+  /**
+   * a flag for whether the channel is unbuffered or not
+   */
+  private boolean unbuffered = false;
+
   public Channel(int bufferSize) {
-    if (bufferSize <= 0) {
+    if (bufferSize < 0) {
       throw new RuntimeException("Channel bufferSize must be positive");
+    } else if (bufferSize == 0) {
+      this.bufferSize = 1;
+      this.unbuffered = true;
+    } else {
+      this.bufferSize = bufferSize;
     }
-    this.bufferSize = bufferSize;
   }
 
   public static void spawn(Spawnable s) {
@@ -205,6 +214,15 @@ public final class Channel {
       // Clear waitingGetters.
       // If a waitingGetter does not receive an element, it can add itself again
       waitingGetters.clear();
+
+      // If the channel is unbuffered, wait for the element to be handed off before continuing
+      if (unbuffered) {
+        try {
+          waitingSetters.await();
+        } catch (InterruptedException e1) {
+          throw new RuntimeException("Thread interrupted");
+        }
+      }
     } finally {
       channelLock.unlock();
     }

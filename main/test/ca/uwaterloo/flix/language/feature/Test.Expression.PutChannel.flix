@@ -1,4 +1,68 @@
 @test
+def testUnbufferedChannel01(): Unit =
+  // Case when get is before put
+  // Test that nothing is broken
+  let c1 = chan Unit 0;
+  let c2 = chan Unit 1;
+  spawn {<- c1; c2 <- ()};
+  sleep(100i64 * Duration.oneMillisecond());
+  c1 <- ();
+  <- c2
+
+@test
+def testUnbufferedChannel02(): Unit =
+  // Case when put is before get
+  // Test that nothing is broken
+  let c = chan Unit 0;
+  spawn c <- ();
+  sleep(100i64 * Duration.oneMillisecond());
+  <- c
+
+@test
+def testUnbufferedChannel03(): Bool =
+  // Test that put does not put in any elements before a get is ready
+  let c1 = chan Unit 0;
+  let c2 = chan Unit 1;
+
+  spawn {c1 <- (); c2 <- ()};
+  sleep(100i64 * Duration.oneMillisecond());
+  let res = select {
+    case x <- c2 => false
+    case _ => {
+      <- c1;
+      true
+    }
+  };
+  res `assertEq!` true
+
+@test
+def testUnbufferedChannel04(): Unit =
+  // Test that two waiting putters is allowed
+  let c1 = chan Unit 0;
+  spawn c1 <- ();
+  spawn c1 <- ();
+  sleep(100i64 * Duration.oneMillisecond());
+  <- c1;
+  <- c1
+
+@test
+def testUnbufferedChannel05(): Unit =
+  // Test unbuffered channels with a select
+  let c1 = chan Unit 0;
+  // Wait on get first
+  spawn {sleep(100i64 * Duration.oneMillisecond()); c1 <- ()};
+  select {
+    case x <- c1 => ()
+  };
+  // Wait on put first
+  spawn c1 <- ();
+  sleep(100i64 * Duration.oneMillisecond());
+  select {
+    case x <- c1 => ()
+  }
+
+
+@test
 def testPutChannel01(): Channel[Unit] =
   let c = chan Unit 100;
   c <- ()
