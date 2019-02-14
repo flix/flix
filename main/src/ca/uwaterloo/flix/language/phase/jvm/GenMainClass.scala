@@ -37,15 +37,14 @@ object GenMainClass {
       // TODO: Ramin: Emit a main class with the appropriate method that calls the main shim.
       val jvmType = JvmOps.getMainClassType()
       val jvmName = jvmType.name
-      val targs = List[JvmType](JvmType.Array(JvmType.String))
       val retJvmType = JvmOps.getErasedJvmType(defn.tpe)
-      val bytecode = genByteCode(jvmType, targs, retJvmType)
+      val bytecode = genByteCode(jvmType, retJvmType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
 
 
 
-  def genByteCode(jvmType: JvmType.Reference, targs: List[JvmType], retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genByteCode(jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -59,15 +58,17 @@ object GenMainClass {
     visitor.visitSource(jvmType.name.toInternalName, null)
 
     // Emit the code for the main method
-    compileMainMethod(visitor, jvmType, targs, retJvmType)
+    compileMainMethod(visitor, jvmType, retJvmType)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
-  def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, targs: List[JvmType], retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
-    val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", AsmOps.getMethodDescriptor(targs, JvmType.Void), null, null)
+    val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
+    val resultDescriptor = JvmType.Void.toDescriptor
+    val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main",s"($argumentDescriptor)$resultDescriptor", null, null)
 
     main.visitCode()
 
