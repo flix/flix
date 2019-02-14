@@ -217,6 +217,9 @@ object ResolvedAst {
 
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class CPSReset(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class CPSShift(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
   }
 
   sealed trait Pattern {

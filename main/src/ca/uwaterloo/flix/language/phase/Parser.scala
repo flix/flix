@@ -583,7 +583,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
+        GetChannel | SelectChannel | Spawn | Sleep | CPSReset | CPSShift | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve |
         FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -888,6 +888,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Universal: Rule1[ParsedAst.Expression.Universal] = rule {
       SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
+    }
+
+    def CPSReset: Rule1[ParsedAst.Expression.CPSReset] = rule {
+      SP ~ atomic("reset") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.CPSReset
+    }
+
+    def CPSShift: Rule1[ParsedAst.Expression.CPSShift] = rule {
+      SP ~ atomic("shift") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.CPSShift
     }
 
   }

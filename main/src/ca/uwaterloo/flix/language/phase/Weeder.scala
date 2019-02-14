@@ -1033,6 +1033,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.UserError(sp1, sp2) =>
       WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.Expression.CPSReset(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.CPSReset(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.CPSShift(sp1, exp ,sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.CPSShift(e, mkSL(sp1, sp2))
+      }
   }
 
 

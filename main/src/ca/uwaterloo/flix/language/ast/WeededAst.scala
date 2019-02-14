@@ -198,6 +198,10 @@ object WeededAst {
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
+    case class CPSReset(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class CPSShift(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
   }
 
   sealed trait Pattern {

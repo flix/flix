@@ -886,6 +886,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
+
+    case WeededAst.Expression.CPSReset(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.CPSReset(e, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.CPSShift(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.CPSShift(e, Type.freshTypeVar(), loc)
+      }
   }
 
   /**
@@ -1158,6 +1168,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.UserError(loc) => Nil
+    case WeededAst.Expression.CPSReset(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.CPSShift(exp, loc) => freeVars(exp)
   }
 
   /**

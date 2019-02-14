@@ -768,6 +768,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
+
+        case NamedAst.Expression.CPSReset(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.CPSReset(e, tvar, loc)
+
+        case NamedAst.Expression.CPSShift(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.CPSShift(e, tvar, loc)
       }
 
       /**
