@@ -8,6 +8,10 @@ application {
     mainClassName = 'ca.uwaterloo.flix.Main'
 }
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '5.2.1'
+}
+
 sourceSets {
     main {
         scala {

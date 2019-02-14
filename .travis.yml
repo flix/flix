@@ -6,5 +6,8 @@ jdk:
 os:
     - linux
 
+before_install:
+  gradle wrapper
+
 notifications:
   email: false
