@@ -556,7 +556,7 @@ object JvmOps {
 
       case Expression.RecordSelect(exp, label, tpe, loc) => visitExp(exp)
 
-      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO: RecordRestriction
+      case Expression.RecordRestrict(label, rest, tpe, loc) => visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -842,7 +842,7 @@ object JvmOps {
 
       case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
+      case Expression.RecordRestrict(label, rest, tpe, loc) => Set(tpe) ++ visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)

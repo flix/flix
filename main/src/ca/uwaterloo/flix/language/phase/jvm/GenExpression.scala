@@ -567,7 +567,18 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordRestrict(label, rest, tpe, loc) => ??? // TODO
+    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the class for the tuple
+      val interfaceType = JvmOps.getRecordInterfaceType()
+
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitLdcInsn(label)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "removeField",
+        AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       // Adding source line number for debugging

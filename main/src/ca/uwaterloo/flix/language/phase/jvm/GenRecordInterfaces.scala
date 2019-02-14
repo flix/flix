@@ -41,8 +41,12 @@ object GenRecordInterfaces {
     // Source of the class
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
-    val getter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
-    getter.visitEnd()
+    val getField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
+    getField.visitEnd()
+
+    val removeField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "removeField", AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
+    removeField.visitEnd()
+
 
     visitor.visitEnd()
     visitor.toByteArray

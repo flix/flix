@@ -90,6 +90,9 @@ object GenRecordExtend {
     // Emit code for the 'getField' method
     compileRecordExtendGetField(visitor, classType)
 
+    // Emit code for the 'removeField' method
+    compileRecordExtendremoveField(visitor, classType)
+
     // Generate `toString` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
@@ -150,7 +153,8 @@ object GenRecordExtend {
 
   def compileRecordExtendGetField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
 
-    val getField = visitor.visitMethod(ACC_PUBLIC, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
+    val getField = visitor.visitMethod(ACC_PUBLIC, "getField",
+      AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
 
     getField.visitCode()
 
@@ -198,7 +202,8 @@ object GenRecordExtend {
     getField.visitVarInsn(ALOAD, 0)
 
     //Push this.field2 onto the stack
-    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
+    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2",
+      JvmOps.getRecordInterfaceType().toDescriptor)
 
     //Push var1 onto the stack
     getField.visitVarInsn(ALOAD, 1)
@@ -213,6 +218,79 @@ object GenRecordExtend {
 
     getField.visitMaxs(1, 1)
     getField.visitEnd()
+  }
+
+
+  def compileRecordExtendremoveField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+
+    val removeField = visitor.visitMethod(ACC_PUBLIC, "removeField",
+      AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()), null, null)
+
+    removeField.visitCode()
+
+    //Push "this" onto stack
+    removeField.visitVarInsn(ALOAD, 0)
+
+    //Push this.field0 onto the stack
+    removeField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field0", JvmType.String.toDescriptor)
+
+    //Push the function argument onto the stack
+    removeField.visitVarInsn(ALOAD, 1)
+
+    //Compare both strings on the stack using equals.
+    removeField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
+      "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+
+    //create new labels
+    val falseCase = new Label
+    val ret = new Label
+
+
+    //if the strings are equal ...
+    removeField.visitJumpInsn(IFEQ, falseCase)
+
+    //true case
+    //return this.field1
+
+    //Load 'this' onto the stack
+    removeField.visitVarInsn(ALOAD, 0)
+
+    //Push this.field1 onto the stack
+    removeField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
+
+    removeField.visitJumpInsn(GOTO,ret)
+
+
+    removeField.visitLabel(falseCase)
+
+    //false case
+    //recursively call this.field2.getField(var1)
+    removeField.visitVarInsn(ALOAD, 0)
+
+    //Load 'this' onto the stack
+    removeField.visitInsn(DUP)
+
+    //Push this.field2 onto the stack
+    removeField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
+
+    //Push var1 onto the stack
+    removeField.visitVarInsn(ALOAD, 1)
+
+    //call this.field2.getField(var1)
+    removeField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
+      "removeField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()), true)
+
+
+    removeField.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
+
+
+    removeField.visitVarInsn(ALOAD, 0)
+    removeField.visitLabel(ret)
+
+    removeField.visitInsn(ARETURN)
+
+    removeField.visitMaxs(1, 1)
+    removeField.visitEnd()
   }
 
 }
