@@ -1334,6 +1334,30 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.UserError(tvar, loc) => liftM(tvar)
 
+        /*
+        * CPSReset Expression.
+        */
+        case ResolvedAst.Expression.CPSReset(exp, tvar, loc) =>
+          //
+          //     exp : tpe
+          //  ---------------
+          //  reset exp : tpe
+          //
+          for {
+            e <- visitExp(exp)
+            _ <- unifyM(e, Type.freshTypeVar(), loc) // TODO JJS: is this line unnecessary
+            resultType <- unifyM(tvar, e, loc)
+          } yield resultType
+
+        /*
+        * CPSShift Expression. TODO JJS: fix
+        */
+        case ResolvedAst.Expression.CPSShift(exp, tvar, loc) =>
+          for {
+            e <- visitExp(exp)
+//            _ <- unifyM(e, Type.mkArrow(Type.mkArrow(),???), loc)
+            resultType <- unifyM(tvar, ???, loc)
+          } yield resultType
       }
 
       visitExp(exp0)
@@ -1807,6 +1831,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.UserError(tvar, loc) =>
           TypedAst.Expression.UserError(subst0(tvar), Eff.Empty, loc)
+
+        /*
+        * CPSReset expression.
+        */
+        case ResolvedAst.Expression.CPSReset(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.CPSReset(e, subst0(tvar), Eff.Empty, loc)
+
+        /*
+        * CPSShift expression.
+        */
+        case ResolvedAst.Expression.CPSShift(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.CPSShift(e, subst0(tvar), Eff.Empty, loc)
       }
 
       /**
