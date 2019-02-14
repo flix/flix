@@ -544,6 +544,8 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "getField",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), true)
 
+      AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
+
     case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
