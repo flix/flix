@@ -1,18 +1,33 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
 /**
-  * Generates bytecode for the tuple classes.
+  * Generates bytecode for the empty record class.
   */
 object GenRecordEmpty {
 
   /**
-    * Returns the set of tuple classes for the given set of types `ts`.
+    * Returns a Map with a single entry, for the empty record class
     */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     val interfaceType = JvmOps.getRecordInterfaceType()
@@ -29,7 +44,7 @@ object GenRecordEmpty {
     *
     * Then we create the name of the class to be generated and store the result in `className`
     *
-    * We then define the super of this class (Object is the supper here) and interfaces which this class implements
+    * We then define the super of this class (Object is the super here) and interfaces which this class implements
     * (RecordEmpty).
     * Then using super and interfaces we will create the class header.
     *
@@ -38,18 +53,31 @@ object GenRecordEmpty {
     *
     * public RecordEmpty() {}
     *
+    * First, we will generate the `getField(String)` method which will always throws an exception, since `getField` should not be called.
+    * The `getField` method is always the following:
+    *
+    * public string getField(String var1) throws Exception {
+    * throw new Exception("getField method shouldn't be called");
+    * }
+    *
+    * Afterwards, we will generate the `removeField(String)` method which will always throws an exception, since `removeField` should not be called.
+    * The `removeField` method is always the following:
+    *
+    * public string getField(String var1) throws Exception {
+    * throw new Exception("removeField method shouldn't be called");
+    * }
     *
     * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
     * The `toString` method is always the following:
     *
-    * public string toString(Object var1) throws Exception {
+    * public string toString() throws Exception {
     * throw new Exception("toString method shouldn't be called");
     * }
     *
     * Then, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * The `hashCode` method is always the following:
     *
-    * public int hashCode(Object var1) throws Exception {
+    * public int hashCode() throws Exception {
     * throw new Exception("hashCode method shouldn't be called");
     * }
     *
@@ -84,7 +112,7 @@ object GenRecordEmpty {
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object),
       "getField method shouldn't be called")
 
-    //Generate 'removeField' method
+    // Generate 'removeField' method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "removeField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()),
       "removeField method shouldn't be called")
 
