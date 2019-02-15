@@ -520,7 +520,7 @@ object GenExpression {
     case Expression.RecordEmpty(tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // We get the JvmType of the class for the tuple
+      // We get the JvmType of the class for the RecordEmpty
       val classType = JvmOps.getRecordEmptyClassType()
       // Instantiating a new object of tuple
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
@@ -535,23 +535,30 @@ object GenExpression {
     case Expression.RecordSelect(exp, label, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // We get the JvmType of the class for the tuple
+      // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
+      //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
+      //getField
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      //Push the desired label of the field we want get of the record onto the stack
       visitor.visitLdcInsn(label)
-      // Invoking the constructor
+
+      //Invoke the getField method on the record.
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "getField",
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), true)
 
+      //Returned value might be boxed so we need to unbox it.
       AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // We get the JvmType of the class for the tuple
+      // We get the JvmType of the class for the record extend
       val classType = JvmOps.getRecordExtendClassType()
 
+      // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
       // Instantiating a new object of tuple
@@ -559,9 +566,19 @@ object GenExpression {
       // Duplicating the class
       visitor.visitInsn(DUP)
 
+      //Push the required argument to call the RecordExtend constructor.
+
+      //Push the label of field (which is going to be the extension).
       visitor.visitLdcInsn(label)
+
+      //Push the value of the field onto the stack, since it is an expression we first need to compile it.
       compileExpression(value, visitor, currentClass, lenv0, entryPoint)
+
+      //Since the RecordExtend requires an Object as the second argument we need to box the value if it's a
+      //primitive type
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(value.tpe))
+
+      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
 
       // Descriptor of constructor
@@ -572,12 +589,15 @@ object GenExpression {
     case Expression.RecordRestrict(label, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // We get the JvmType of the class for the tuple
+      // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
+      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
       compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
+      //Push the label of field (which is going to be the removed/restricted).
       visitor.visitLdcInsn(label)
-      // Invoking the constructor
+
+      // Invoking the removeField method
       visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "removeField",
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
