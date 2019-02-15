@@ -360,10 +360,22 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         }
     }
 
-    // TODO: Lattice Facts
+    val latticeFacts = dataStore.lattices.flatMap {
+      case (sym, indexedLattice) =>
+        indexedLattice.scan.map {
+          case (key, value) =>
+            val cparams = Array.emptyObjectArray
+            val terms = (key.toArray.toList ::: value :: Nil) map {
+              case proxyObject => LitTerm.of(ConstantFunction.of(proxyObject)): Term
+            }
+            val head = AtomPredicate.of(sym, true, terms.toArray)
+            val body = new Array[Predicate](0)
 
-    // TODO: Merge relation and lattice facts.
-    val facts = relationFacts.toArray
+            Constraint.of(new Array[VarSym](0), head, body)
+        }
+    }
+
+    val facts = (relationFacts ++ latticeFacts).toArray
 
     ConstraintSystem.of(facts)
   }

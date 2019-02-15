@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.phase.Unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -323,7 +324,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val tpe = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
+        val zero = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
+        val tpe = quantifiers.foldLeft(zero) {
+          case (tacc, tvar) => Type.Apply(tacc, tvar)
+        }
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -340,7 +344,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val tpe = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
+        val zero = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
+        val tpe = quantifiers.foldLeft(zero) {
+          case (tacc, tvar) => Type.Apply(tacc, tvar)
+        }
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -1343,8 +1350,26 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           // Lookup the type and check that is either a relation or lattice type.
           flatMapN(lookupType(predType, ns0, root)) {
             case t => t.typeConstructor match {
-              case Type.Relation(sym, _, _) => Type.SchemaExtend(sym, t, acc).toSuccess
-              case Type.Lattice(sym, _, _) => Type.SchemaExtend(sym, t, acc).toSuccess
+              case Type.Relation(sym, attr, _) =>
+                // Retrieve the declaration and use it to match type parameters and type arguments.
+                val rel = root.relations(ns0)(sym.name)
+                val tvars = rel.tparams.map(_.tpe)
+                val targs = t.typeArguments
+                val subst = Substitution((tvars zip targs).foldLeft(Map.empty[Type.Var, Type]) {
+                  case (macc, (tvar, targ)) => macc + (tvar -> targ)
+                })
+                Type.SchemaExtend(sym, subst(t), acc).toSuccess
+
+              case Type.Lattice(sym, _, _) =>
+                // Retrieve the declaration and use it to match type parameters and type arguments.
+                val lat = root.lattices(ns0)(sym.name)
+                val tvars = lat.tparams.map(_.tpe)
+                val targs = t.typeArguments
+                val subst = Substitution((tvars zip targs).foldLeft(Map.empty[Type.Var, Type]) {
+                  case (macc, (tvar, targ)) => macc + (tvar -> targ)
+                })
+                Type.SchemaExtend(sym, subst(t), acc).toSuccess
+
               case nonRelationOrLatticeType =>
                 ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
             }
@@ -1371,6 +1396,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- traverse(tparams0)(tpe => lookupType(tpe, ns0, root));
         tresult <- lookupType(tresult0, ns0, root)
       ) yield Type.mkArrow(tparams, tresult)
+
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for (
         tpe1 <- lookupType(base0, ns0, root);

@@ -1,4 +1,3 @@
-//TODO SJ: make tests
 @test
 def testSelectChannel1(): Int =
   let c1 = chan Int 100;
@@ -35,6 +34,35 @@ def testSelectChannel2(): Bool = {
   c3 <- false;
 
   <- c3 `assertEq!` true
+}
+
+@test
+def testSelectChannel3(): Bool = {
+  let selectChannel = chan Unit 1;
+  let resultChannel = chan Unit 1;
+  spawn resultChannel <- doSelect(selectChannel);
+  spawn resultChannel <- doSelect(selectChannel);
+  // Sleep to ensure both selects are waiting for input
+  sleep(100i64 * Duration.oneMillisecond());
+  // Put an element into the selectChannel, and get result from the chosen select
+  selectChannel <- ();
+  <- resultChannel;
+  // Now put a second element into the selectChannel
+  // If the test works, this will allow the non-selected select to put an element into resultChannel
+  selectChannel <- ();
+  // Sleep to make sure the non-selected select has run
+  sleep(100i64 * Duration.oneMillisecond());
+  let result = select {
+    case x <- resultChannel => true
+    case _ => false
+  };
+  result `assertEq!` true
+}
+
+def doSelect(c: Channel[Unit]): Unit = {
+  select {
+    case x <- c => ()
+  }
 }
     
 // TESTS FROM THE PREVIOUS GROUP
