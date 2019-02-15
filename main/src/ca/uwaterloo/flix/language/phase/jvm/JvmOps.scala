@@ -287,16 +287,17 @@ object JvmOps {
 
 
   /**
-    * Returns the tuple interface type `IRecordEmpty`.
+    * Returns the record interface type `IRecord`.
     *
     * For example,
     *
-    * {}         =>    IRecordEmpty
-    * NB: The given type `tpe` must be a RecordEmpty type.
+    * {}                  =>    IRecord
+    * {x : Int}           =>    IRecord
+    * {x : Str, y : Int}  =>    IRecord
     */
   def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
-    // The JVM name is of the form IRecordEmpty
+    // The JVM name is of the form IRecord
     val name = "IRecord"
 
     // The type resides in the root package.
@@ -304,7 +305,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the tuple class type `RecordEmtpy`
+    * Returns the empty record class type `RecordEmtpy`
     *
     * For example,
     *
@@ -321,6 +322,18 @@ object JvmOps {
     JvmType.Reference(JvmName(RootPackage, name))
   }
 
+
+  /**
+    * Returns the extended record class type `RecordExtend`
+    *
+    * For example,
+    *
+    * {x : Int}           =>    RecordExtend
+    * {x : Str, y : Int}  =>    RecordExtend
+    *
+    * NB: The given type `tpe` must be a Record type.
+    * TODO: Miguel: Distinguish between different RecordExtend classes according the provided type. (To prevent boxing of primitive types)
+    */
   def getRecordExtendClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form IRecordEmpty
@@ -331,6 +344,10 @@ object JvmOps {
   }
 
 
+
+  /**
+    * Returns the Main  `Main`
+    */
   def getMainClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // The JVM name is of the form Main
