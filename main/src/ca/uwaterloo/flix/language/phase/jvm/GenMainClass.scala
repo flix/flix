@@ -64,17 +64,38 @@ object GenMainClass {
     visitor.toByteArray
   }
 
+  /**
+    * Emits code for the main method in the main class. The emitted (byte)code should satisfy the following signature for the method:
+    * public static void main(String[])
+    *
+    * The method itself needs simply invoke the m_main method which is in the root namespace.
+    *
+    * The emitted code for the method should correspond to:
+    *
+    * Ns.m_main((Object)null);
+    */
   def compileMainMethod(visitor: ClassWriter, jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
+    //Get the (argument) descriptor, since the main argument is of type String[], we need to get it's corresponding descriptor
     val argumentDescriptor = AsmOps.getArrayType(JvmType.String)
+
+    //Get the (result) descriptor, since main method returns void, we need to get the void type descriptor
     val resultDescriptor = JvmType.Void.toDescriptor
+
+    //Emit the main method signature
     val main = visitor.visitMethod(ACC_PUBLIC + ACC_STATIC, "main",s"($argumentDescriptor)$resultDescriptor", null, null)
 
     main.visitCode()
 
+    //Get the root namespace in order to get the class type when invoking m_main
     val ns = JvmOps.getNamespace(Symbol.mkDefnSym("main"))
 
+    //Call Ns.m_main((Object)null)
+
+    //push null onto the stack as it is the argument for m_main
     main.visitInsn(ACONST_NULL)
+
+    //Invoke m_main
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
       AsmOps.getMethodDescriptor(List(JvmType.Object), retJvmType), false)
 
