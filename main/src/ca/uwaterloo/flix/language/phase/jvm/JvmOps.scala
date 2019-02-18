@@ -311,11 +311,10 @@ object JvmOps {
     *
     * {}         =>    RecordEmpty
     *
-    * NB: The given type `tpe` must be a tuple type.
     */
   def getRecordEmptyClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
 
-    // The JVM name is of the form IRecordEmpty
+    // The JVM name is of the form RecordEmpty
     val name = "RecordEmpty"
 
     // The type resides in the root package.
@@ -324,23 +323,27 @@ object JvmOps {
 
 
   /**
-    * Returns the extended record class type `RecordExtend`
+    * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
     *
     * For example,
     *
-    * {x : Int}           =>    RecordExtend
-    * {x : Str, y : Int}  =>    RecordExtend
+    * {+z : Int  | {}}                =>    RecordExtend$Int
+    * {+y : Char | {z : Int}          =>    RecordExtend$Char
+    * {+x : Str |{y : Char, z : Int}  =>    RecordExtend$Obj
     *
-    * NB: The given type `tpe` must be a Record type.
-    * TODO: Miguel: Distinguish between different RecordExtend classes according the provided type. (To prevent boxing of primitive types)
+    * NB: The given type `tpe` must be a Record type
     */
-  def getRecordExtendClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getRecordExtendClassType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
 
-    // The JVM name is of the form IRecordEmpty
-    val name = "RecordExtend"
+    case MonoType.RecordExtend(_, value, _) =>
+      // Compute the stringified erased type of value.
+      val valueType = stringify(getErasedJvmType(value))
 
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+      // The JVM name is of the form RecordExtend
+      val name = "RecordExtend$" + valueType
+
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
   }
 
 

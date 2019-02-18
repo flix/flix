@@ -29,14 +29,20 @@ object GenRecordExtend {
   /**
     * Returns a Map with a single entry, for the extended record class
     */
-  //TODO: Miguel: Should return a set of extended record classes, one for each JvmType to avoid boxing
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-      val interfaceType = JvmOps.getRecordInterfaceType()
-      val jvmType = JvmOps.getRecordExtendClassType()
-      val jvmName = jvmType.name
-      val targs = List[JvmType](JvmType.String, JvmType.Object, interfaceType)
-      val bytecode = genByteCode(jvmType,interfaceType, targs)
-      Map(jvmName -> JvmClass(jvmName, bytecode))
+  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, tpe@MonoType.RecordExtend(_, value, _)) => {
+        val interfaceType = JvmOps.getRecordInterfaceType()
+        val jvmType = JvmOps.getRecordExtendClassType(tpe)
+        val jvmName = jvmType.name
+        val valueJvmErasedType = JvmOps.getErasedJvmType(value)
+        val targs = List[JvmType](JvmType.String, valueJvmErasedType, interfaceType)
+        val bytecode = genByteCode(jvmType, interfaceType, targs, valueJvmErasedType)
+        macc + (jvmName -> JvmClass(jvmName, bytecode))
+      }
+      case (macc, tpe) =>
+        macc
+    }
   }
 
   /**
@@ -46,7 +52,7 @@ object GenRecordExtend {
     * Then we create the name of the class to be generated and store the result in `className`
     *
     * We then define the super of this class (Object is the super here) and interfaces which this class implements
-    * (RecordEmpty).
+    * (RecordExtend).
     * Then using super and interfaces we will create the class header.
     *
     * Then we generate the code for each of the fields in the RecordExtend class, namely the label, value and the rest of the record
@@ -56,6 +62,8 @@ object GenRecordExtend {
     * private String field0;
     * private Object field1;
     * private IRecord field2;
+    *
+    * Then we generate the code for the getField method. Simply returns this.field1
     *
     * Then we precede with generating the code for constructor.The constructor receives three arguments, the field label,
     * value and the rest of the record.
@@ -68,7 +76,19 @@ object GenRecordExtend {
     * }
     *
     *
-    * Then we
+    * Then, we generate the getRecordWithField method. The method receives one argument, the field label.
+    * The method should check if the current record label is equal to the provided label. If it is equal it should return this
+    * (The record object which has the given label). In case the provided label is not equal we recursively call getRecordWithField on the rest of the record,
+    * and return the value provided by the recursive call.
+    *
+    *
+    * Afterwards, we generate the removeField method. The method receives one argument, the field label.
+    * The method should check if the current record label is equal to the provided label. If it is equal it should return the rest of the record
+    * (field2).In case the provided label is not equal we recursively call removeField on the rest of the record.
+    * Then we should set our 'rest' field(field2) to what was returned by the recursive call.
+    * Because we might need to update our 'rest' pointer since if the provided label is equal to the next field label,
+    * then this field should no longer be in the record. We then return 'this'.
+    *
     *
     * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
     * The `toString` method is always the following:
@@ -92,7 +112,8 @@ object GenRecordExtend {
     * }
     *
     */
-  private def genByteCode(classType: JvmType.Reference, interfaceType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, interfaceType: JvmType.Reference, targs: List[JvmType],
+                          valueJvmErasedType : JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -115,6 +136,9 @@ object GenRecordExtend {
       // Defining fields of the tuple
       AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = true)
     }
+
+    //Emit the code to getField (the value of the record field)
+    AsmOps.compileGetFieldMethod(visitor, classType.name, "field1", "getField", valueJvmErasedType)
 
     // Emit the code for the constructor
     compileRecordExtendConstructor(visitor, classType, targs)
@@ -202,7 +226,6 @@ object GenRecordExtend {
     */
   def compileRecordExtendGetRecordWithField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
 
-
     val interfaceType = JvmOps.getRecordInterfaceType()
     val getRecordWithField = visitor.visitMethod(ACC_PUBLIC, "getRecordWithField",
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
@@ -222,11 +245,9 @@ object GenRecordExtend {
     getRecordWithField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
       "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
 
-
     //create new labels
     val falseCase = new Label
     val ret = new Label
-
 
     //if the strings are equal ...
     getRecordWithField.visitJumpInsn(IFEQ, falseCase)
@@ -268,8 +289,6 @@ object GenRecordExtend {
     getRecordWithField.visitMaxs(1, 1)
     getRecordWithField.visitEnd()
   }
-
-
 
   /**
     * This method generates code for the removeField method in the RecordExtend class. The method receives one argument, the field label.
@@ -326,7 +345,6 @@ object GenRecordExtend {
     //this.field2 = this.field2.removeField(var1);
     //return this;
 
-
     //Load 'this' onto the stack
     removeField.visitVarInsn(ALOAD, 0)
 
@@ -343,14 +361,11 @@ object GenRecordExtend {
     removeField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
       "removeField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()), true)
 
-
-
     //this.field2 = this.field2.removeField(var1);
     removeField.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
 
     //push this onto the stack in order to return it.
     removeField.visitVarInsn(ALOAD, 0)
-
 
     //Emit return label
     removeField.visitLabel(ret)
