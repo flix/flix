@@ -536,8 +536,19 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
+      // Get the correct record extend class, given the expression type 'tpe'
       // We get the JvmType of the extended record class to call the proper getField
-      val classType = JvmOps.getRecordExtendClassType(exp.tpe)
+      val classType = {
+        // Compute the stringified erased type of 'tpe'.
+        val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
+
+        // The JVM name is of the form RecordExtend
+        val name = "RecordExtend$" + valueType
+
+        // The type resides in the root package.
+        JvmType.Reference(JvmName(JvmOps.RootPackage, name))
+      }
+
       // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
 
@@ -558,8 +569,6 @@ object GenExpression {
       //Invoke the getField method on the record. (To get the proper value)
       visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getField",
         AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
-
-
 
     case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       // Adding source line number for debugging

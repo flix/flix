@@ -344,9 +344,8 @@ object JvmOps {
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
+
   }
-
-
 
   /**
     * Returns the Main  `Main`
