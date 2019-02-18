@@ -120,21 +120,24 @@ object GenRecordExtend {
     compileRecordExtendConstructor(visitor, classType, targs)
 
     // Emit code for the 'getField' method
-    compileRecordExtendGetField(visitor, classType)
+    compileRecordExtendGetRecordWithField(visitor, classType)
 
     // Emit code for the 'removeField' method
     compileRecordExtendremoveField(visitor, classType)
 
     // Generate `toString` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString",
+      AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
 
     // Generate `hashCode` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode",
+      AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
       "hashCode method shouldn't be called")
 
     // Generate `equals` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals",
+      AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
       "equals method shouldn't be called")
 
     visitor.visitEnd()
@@ -191,30 +194,32 @@ object GenRecordExtend {
 
 
   /**
-    * This method generates code for the getField method in the RecordExtend class. The method receives one argument, the field label.
-    * The method should check if the current record label is equal to the provided label. If it is equal it should return the value stored
-    * in the field1 (the value of the field). In case the provided label is not equal we recursively call getField on the rest of the record,
+    * This method generates code for the getRecordWithField method in the RecordExtend class. The method receives one argument, the field label.
+    * The method should check if the current record label is equal to the provided label. If it is equal it should return this
+    * (The record object which has the given label). In case the provided label is not equal we recursively call getRecordWithField on the rest of the record,
     * and return the value provided by the recursive call.
     *
     */
-  def compileRecordExtendGetField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+  def compileRecordExtendGetRecordWithField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
 
-    val getField = visitor.visitMethod(ACC_PUBLIC, "getField",
-      AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
 
-    getField.visitCode()
+    val interfaceType = JvmOps.getRecordInterfaceType()
+    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC, "getRecordWithField",
+      AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
+
+    getRecordWithField.visitCode()
 
     //Push "this" onto stack
-    getField.visitVarInsn(ALOAD, 0)
+    getRecordWithField.visitVarInsn(ALOAD, 0)
 
     //Push this.field0 onto the stack
-    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field0", JvmType.String.toDescriptor)
+    getRecordWithField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field0", JvmType.String.toDescriptor)
 
     //Push the function argument onto the stack
-    getField.visitVarInsn(ALOAD, 1)
+    getRecordWithField.visitVarInsn(ALOAD, 1)
 
     //Compare both strings on the stack using equals.
-    getField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
+    getRecordWithField.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName,
       "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
 
 
@@ -224,47 +229,44 @@ object GenRecordExtend {
 
 
     //if the strings are equal ...
-    getField.visitJumpInsn(IFEQ, falseCase)
+    getRecordWithField.visitJumpInsn(IFEQ, falseCase)
 
     //true case
     //return this.field1
 
     //Load 'this' onto the stack
-    getField.visitVarInsn(ALOAD, 0)
-
-    //Push this.field1 onto the stack
-    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field1", JvmType.Object.toDescriptor)
+    getRecordWithField.visitVarInsn(ALOAD, 0)
 
     //Jump into the return label
-    getField.visitJumpInsn(GOTO,ret)
+    getRecordWithField.visitJumpInsn(GOTO,ret)
 
     //Emit false case label
-    getField.visitLabel(falseCase)
+    getRecordWithField.visitLabel(falseCase)
 
     //false case
     //recursively call this.field2.getField(var1)
 
     //Load 'this' onto the stack
-    getField.visitVarInsn(ALOAD, 0)
+    getRecordWithField.visitVarInsn(ALOAD, 0)
 
     //Push this.field2 onto the stack
-    getField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2",
+    getRecordWithField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2",
       JvmOps.getRecordInterfaceType().toDescriptor)
 
     //Push var1 onto the stack
-    getField.visitVarInsn(ALOAD, 1)
+    getRecordWithField.visitVarInsn(ALOAD, 1)
 
     //call this.field2.getField(var1)
-    getField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
-      "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), true)
+    getRecordWithField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
+      "getRecordWithField", AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
     //Emit ret label
-    getField.visitLabel(ret)
+    getRecordWithField.visitLabel(ret)
 
-    getField.visitInsn(ARETURN)
+    getRecordWithField.visitInsn(ARETURN)
 
-    getField.visitMaxs(1, 1)
-    getField.visitEnd()
+    getRecordWithField.visitMaxs(1, 1)
+    getRecordWithField.visitEnd()
   }
 
 

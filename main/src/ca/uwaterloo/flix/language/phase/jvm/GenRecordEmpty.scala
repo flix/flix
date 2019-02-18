@@ -53,10 +53,11 @@ object GenRecordEmpty {
     *
     * public RecordEmpty() {}
     *
-    * First, we will generate the `getField(String)` method which will always throws an exception, since `getField` should not be called.
-    * The `getField` method is always the following:
+    * First, we will generate the `getRecordWithField(String)` method which will always throws an exception,
+    * since `getRecordWithField` should not be called.
+    * The `getRecordWithField` method is always the following:
     *
-    * public string getField(String var1) throws Exception {
+    * public IRecord getRecordWithField(String var1) throws Exception {
     * throw new Exception("getField method shouldn't be called");
     * }
     *
@@ -108,24 +109,29 @@ object GenRecordEmpty {
     // Emit the code for the constructor
     compileRecordEmptyConstructor(visitor, classType, targs)
 
-    // Generate 'getField' method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object),
+    // Generate 'getRecordWithField' method
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getRecordWithField",
+      AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType),
       "getField method shouldn't be called")
 
     // Generate 'removeField' method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "removeField", AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "removeField",
+      AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()),
       "removeField method shouldn't be called")
 
     // Generate `toString` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString",
+      AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
 
     // Generate `hashCode` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode",
+      AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
       "hashCode method shouldn't be called")
 
     // Generate `equals` method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals",
+      AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
       "equals method shouldn't be called")
 
     visitor.visitEnd()

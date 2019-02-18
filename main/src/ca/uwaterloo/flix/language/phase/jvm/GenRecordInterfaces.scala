@@ -38,7 +38,7 @@ object GenRecordInterfaces {
 
   /**
     * This method will generate code for a record interface.
-    * There is a getField method which returns the (boxed) value of the field with the given label
+    * There is a getRecordWithField method which returns the Record (Object) with the given label
     * There is also a removeField which given a label removes said label from the record
     * After creating a record object using a record class,
     * the class type should never be used to reference to that object and this interface should be used for all interactions
@@ -57,11 +57,10 @@ object GenRecordInterfaces {
     // Source of the class
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
-    //Emitting a getField method
-    //TODO: Miguel: Emit a getField method for each JvmType to prevent boxing of primitive types
-    val getField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getField",
-      AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Object), null, null)
-    getField.visitEnd()
+    //Emitting a getRecordWithField method
+    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getRecordWithField",
+      AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
+    getRecordWithField.visitEnd()
 
     //Emitting a removeField method
     val removeField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "removeField",
