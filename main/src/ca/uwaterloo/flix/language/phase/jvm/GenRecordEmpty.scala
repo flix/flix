@@ -61,11 +61,11 @@ object GenRecordEmpty {
     * throw new Exception("getField method shouldn't be called");
     * }
     *
-    * Afterwards, we will generate the `removeField(String)` method which will always throws an exception, since `removeField` should not be called.
-    * The `removeField` method is always the following:
+    * Afterwards, we will generate the `restrictField(String)` method which will always throws an exception, since `restrictField` should not be called.
+    * The `restrictField` method is always the following:
     *
     * public string getField(String var1) throws Exception {
-    * throw new Exception("removeField method shouldn't be called");
+    * throw new Exception("restrictField method shouldn't be called");
     * }
     *
     * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
@@ -114,10 +114,10 @@ object GenRecordEmpty {
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType),
       "getField method shouldn't be called")
 
-    // Generate 'removeField' method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "removeField",
+    // Generate 'restrictField' method
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "restrictField",
       AsmOps.getMethodDescriptor(List(JvmType.String), JvmOps.getRecordInterfaceType()),
-      "removeField method shouldn't be called")
+      "restrictField method shouldn't be called")
 
     // Generate `toString` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString",

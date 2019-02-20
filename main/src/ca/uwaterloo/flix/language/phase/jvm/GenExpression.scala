@@ -538,16 +538,7 @@ object GenExpression {
 
       // Get the correct record extend class, given the expression type 'tpe'
       // We get the JvmType of the extended record class to call the proper getField
-      val classType = {
-        // Compute the stringified erased type of 'tpe'.
-        val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
-
-        // The JVM name is of the form RecordExtend
-        val name = "RecordExtend$" + valueType
-
-        // The type resides in the root package.
-        JvmType.Reference(JvmName(JvmOps.RootPackage, name))
-      }
+      val classType = JvmOps.getRecordType(tpe)
 
       // We get the JvmType of the record interface
       val interfaceType = JvmOps.getRecordInterfaceType()
@@ -612,8 +603,8 @@ object GenExpression {
       //Push the label of field (which is going to be the removed/restricted).
       visitor.visitLdcInsn(label)
 
-      // Invoking the removeField method
-      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "removeField",
+      // Invoking the restrictField method
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "restrictField",
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
 

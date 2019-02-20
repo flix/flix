@@ -115,8 +115,7 @@ object GenMainClass {
     root.defs.get(sym) flatMap {
       case defn =>
         // The main function must take zero arguments.
-//        if (defn.formals.isEmpty) Some(defn) else None TODO: def main() is not generating empty formals. Why?
-      Some(defn)
+        Some(defn)
     }
   }
 

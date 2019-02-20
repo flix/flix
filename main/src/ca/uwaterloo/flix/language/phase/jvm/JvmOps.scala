@@ -347,6 +347,29 @@ object JvmOps {
 
   }
 
+
+  /**
+    * Returns the extended record class type `RecordExtend$X` which contains the given type 'tpe'
+    *
+    * For example,
+    *
+    * Int                  =>    RecordExtend$Int
+    * Char                 =>    RecordExtend$Char
+    * {x : Char, y : Int}  =>    RecordExtend$Obj
+    *
+    */
+  def getRecordType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference =  {
+
+    // Compute the stringified erased type of 'tpe'.
+    val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
+
+    // The JVM name is of the form RecordExtend
+    val name = "RecordExtend$" + valueType
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(JvmOps.RootPackage, name))
+  }
+
   /**
     * Returns the Main  `Main`
     */
