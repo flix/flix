@@ -63,6 +63,8 @@ object JvmOps {
     case MonoType.Channel(_) => JvmType.Object
     case MonoType.Ref(_) => getRefClassType(tpe)
     case MonoType.Tuple(elms) => getTupleInterfaceType(tpe.asInstanceOf[MonoType.Tuple])
+    case MonoType.RecordEmpty() => getRecordInterfaceType()
+    case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
@@ -283,6 +285,103 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
+
+  /**
+    * Returns the record interface type `IRecord`.
+    *
+    * For example,
+    *
+    * {}                  =>    IRecord
+    * {x : Int}           =>    IRecord
+    * {x : Str, y : Int}  =>    IRecord
+    */
+  def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form IRecord
+    val name = "IRecord"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the empty record class type `RecordEmtpy`
+    *
+    * For example,
+    *
+    * {}         =>    RecordEmpty
+    *
+    */
+  def getRecordEmptyClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form RecordEmpty
+    val name = "RecordEmpty"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+
+  /**
+    * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
+    *
+    * For example,
+    *
+    * {+z : Int  | {}}                =>    RecordExtend$Int
+    * {+y : Char | {z : Int}          =>    RecordExtend$Char
+    * {+x : Str |{y : Char, z : Int}  =>    RecordExtend$Obj
+    *
+    * NB: The given type `tpe` must be a Record type
+    */
+  def getRecordExtendClassType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+
+    case MonoType.RecordExtend(_, value, _) =>
+      // Compute the stringified erased type of value.
+      val valueType = stringify(getErasedJvmType(value))
+
+      // The JVM name is of the form RecordExtend
+      val name = "RecordExtend$" + valueType
+
+      // The type resides in the root package.
+      JvmType.Reference(JvmName(RootPackage, name))
+
+  }
+
+
+  /**
+    * Returns the extended record class type `RecordExtend$X` which contains the given type 'tpe'
+    *
+    * For example,
+    *
+    * Int                  =>    RecordExtend$Int
+    * Char                 =>    RecordExtend$Char
+    * {x : Char, y : Int}  =>    RecordExtend$Obj
+    *
+    */
+  def getRecordType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference =  {
+
+    // Compute the stringified erased type of 'tpe'.
+    val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
+
+    // The JVM name is of the form RecordExtend
+    val name = "RecordExtend$" + valueType
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(JvmOps.RootPackage, name))
+  }
+
+  /**
+    * Returns the Main  `Main`
+    */
+  def getMainClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+
+    // The JVM name is of the form Main
+    val name = "Main"
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
   /**
     * Returns reference class type for the given type `tpe`.
     *
@@ -493,13 +592,13 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+      case Expression.RecordEmpty(tpe, loc) => Set.empty
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO: RecordExtension
+      case Expression.RecordExtend(label, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO: RecordProjection
+      case Expression.RecordSelect(exp, label, tpe, loc) => visitExp(exp)
 
-      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO: RecordRestriction
+      case Expression.RecordRestrict(label, rest, tpe, loc) => visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -779,13 +878,13 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+      case Expression.RecordEmpty(tpe, loc) => Set(tpe)
 
-      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
+      case Expression.RecordSelect(exp, label, tpe, loc) => Set(tpe) ++ visitExp(exp)
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
+      case Expression.RecordExtend(label, value, rest, tpe, loc) => Set(tpe) ++ visitExp(value) ++ visitExp(rest)
 
-      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
+      case Expression.RecordRestrict(label, rest, tpe, loc) => Set(tpe) ++ visitExp(rest)
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -939,7 +1038,7 @@ object JvmOps {
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
 
       case MonoType.RecordEmpty() => Set(tpe)
-      case MonoType.RecordExtend(label, value, rest) => nestedTypesOf(value) ++ nestedTypesOf(rest) + value + rest
+      case MonoType.RecordExtend(label, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
 
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
