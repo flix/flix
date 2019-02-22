@@ -46,21 +46,24 @@ public final class Channel {
    * bufferSize is the size of a channel. If you try to put an
    * element in a channel that's full, you wait until there's space.
    */
-  private int bufferSize;
+  private final int bufferSize;
 
   /**
    * a flag for whether the channel is unbuffered or not
    */
-  private boolean unbuffered = false;
+  private final boolean unbuffered;
 
   public Channel(int bufferSize) {
     if (bufferSize < 0) {
       throw new RuntimeException("Channel bufferSize must be positive");
     } else if (bufferSize == 0) {
+      // Channel is unbuffered. Internally the size is 1
       this.bufferSize = 1;
       this.unbuffered = true;
     } else {
+      // Channel is buffered with bufferSize.
       this.bufferSize = bufferSize;
+      this.unbuffered = false;
     }
   }
 
