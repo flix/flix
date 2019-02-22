@@ -136,6 +136,21 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     val tupleClasses = GenTupleClasses.gen(types)
 
     //
+    // Generate record interface.
+    //
+    val recordInterfaces = GenRecordInterfaces.gen()
+
+    //
+    // Generate empty record class.
+    //
+    val recordEmptyClasses = GenRecordEmpty.gen()
+
+    //
+    // Generate extended record classes for each (different) RecordExtend type in the program
+    //
+    val recordExtendClasses = GenRecordExtend.gen(types)
+
+    //
     // Generate references classes.
     //
     val refClasses = GenRefClasses.gen()
@@ -155,6 +170,9 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       tagClasses,
       tupleInterfaces,
       tupleClasses,
+      recordInterfaces,
+      recordEmptyClasses,
+      recordExtendClasses,
       refClasses
     ).reduce(_ ++ _)
 
