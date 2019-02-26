@@ -126,6 +126,11 @@ object Command {
   case object Help extends Command
 
   /**
+    * Praise Le Toucan.
+    */
+  case object Praise extends Command
+
+  /**
     * Unknown command.
     */
   case class Unknown(s: String) extends Command
@@ -305,6 +310,12 @@ object Command {
     //
     if (input == ":help" || input == ":h" || input == ":?")
       return Command.Help
+
+    //
+    // Praise
+    //
+    if (input == ":praise")
+      return Command.Praise
 
     //
     // Unknown
