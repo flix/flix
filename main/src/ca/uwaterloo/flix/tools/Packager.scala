@@ -39,6 +39,7 @@ object Packager {
     //
     // Compute all the directories and files we intend to create.
     //
+    val buildDirectory = getBuildDirectory(p)
     val sourceDirectory = getSourceDirectory(p)
     val testDirectory = getTestDirectory(p)
 
@@ -63,6 +64,7 @@ object Packager {
     //
     // Create the project directories and files.
     //
+    newDirectory(buildDirectory)
     newDirectory(sourceDirectory)
     newDirectory(testDirectory)
 
@@ -95,13 +97,13 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Int = 123
+        |def main(): Unit = ()
         |""".stripMargin
     }
 
     newFile(mainTestFile) {
       """@test
-        |def testMain01(): Bool = main() == 123
+        |def testMain01(): Bool = main() == ()
         |""".stripMargin
     }
   }
@@ -361,7 +363,7 @@ object Packager {
   private def newDirectory(p: Path): Unit = {
     if (Files.exists(p)) throw InternalCompilerException(s"Path '$p' already exists.")
 
-    Files.createDirectory(p)
+    Files.createDirectories(p)
   }
 
   /**
