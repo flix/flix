@@ -46,13 +46,25 @@ public final class Channel {
    * bufferSize is the size of a channel. If you try to put an
    * element in a channel that's full, you wait until there's space.
    */
-  private int bufferSize;
+  private final int bufferSize;
+
+  /**
+   * a flag for whether the channel is unbuffered or not
+   */
+  private final boolean unbuffered;
 
   public Channel(int bufferSize) {
-    if (bufferSize <= 0) {
+    if (bufferSize < 0) {
       throw new RuntimeException("Channel bufferSize must be positive");
+    } else if (bufferSize == 0) {
+      // Channel is unbuffered. Internally the size is 1
+      this.bufferSize = 1;
+      this.unbuffered = true;
+    } else {
+      // Channel is buffered with bufferSize.
+      this.bufferSize = bufferSize;
+      this.unbuffered = false;
     }
-    this.bufferSize = bufferSize;
   }
 
   public static void spawn(Spawnable s) {
@@ -205,6 +217,15 @@ public final class Channel {
       // Clear waitingGetters.
       // If a waitingGetter does not receive an element, it can add itself again
       waitingGetters.clear();
+
+      // If the channel is unbuffered, wait for the element to be handed off before continuing
+      if (unbuffered) {
+        try {
+          waitingSetters.await();
+        } catch (InterruptedException e1) {
+          throw new RuntimeException("Thread interrupted");
+        }
+      }
     } finally {
       channelLock.unlock();
     }
