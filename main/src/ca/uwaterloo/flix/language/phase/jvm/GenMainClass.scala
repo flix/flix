@@ -34,15 +34,12 @@ object GenMainClass {
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
-      // TODO: Ramin: Emit a main class with the appropriate method that calls the main shim.
       val jvmType = JvmOps.getMainClassType()
       val jvmName = jvmType.name
       val retJvmType = JvmOps.getErasedJvmType(defn.tpe)
       val bytecode = genByteCode(jvmType, retJvmType)
       Map(jvmName -> JvmClass(jvmName, bytecode))
   }
-
-
 
   def genByteCode(jvmType: JvmType.Reference, retJvmType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
@@ -92,10 +89,12 @@ object GenMainClass {
 
     //Call Ns.m_main((Object)null)
 
+    // TODO: We should actually pass the arguments.
     //push null onto the stack as it is the argument for m_main
     main.visitInsn(ACONST_NULL)
 
     //Invoke m_main
+    // TODO: This incorrectly assumes that main returns an object.
     main.visitMethodInsn(INVOKESTATIC, JvmOps.getNamespaceClassType(ns).name.toInternalName, "m_main",
       AsmOps.getMethodDescriptor(List(JvmType.Object), retJvmType), false)
 

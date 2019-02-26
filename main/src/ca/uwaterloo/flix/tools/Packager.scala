@@ -164,7 +164,7 @@ object Packager {
     val manifest =
       """Manifest-Version: 1.0
         |Main-Class: Main
-      """.stripMargin
+        |""".stripMargin
 
     // Add manifest file.
     addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
