@@ -8,8 +8,8 @@ def main2(): Int =
     let r2 = setX(r1, 3);
     r1.x + r2.x
 
-/// Returns the record `r` with a new value of its `y` label
-/// polymorphically preserving all other labels.
+/// Returns the record `r` with a new value of its `y` label.
+/// Preserves (retains) all other labels polymorphically.
 def setY[a](r: {y: Int | a}, v: Int): {y: Int | a} =
     { y = v | r }
 

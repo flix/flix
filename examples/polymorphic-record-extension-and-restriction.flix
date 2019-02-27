@@ -1,10 +1,10 @@
-/// Polymorphically extends the given record `r` with an `age` label.
-/// Note that this preserves any labels that `r` has.
+/// Polymorphically extends the record `r` with an `age` label.
+/// Preserves (retains) all other labels polymorphically.
 def withAge[a](r: a, v: Int): {age: Int | a} =
     { +age = v | r }
 
 /// Polymorphically restricts (removes) the `age` label from `r`.
-/// Note that this preserves all other labels that `r` has.
+/// Preserves (retains) all other labels polymorphically.
 def withoutAge[a](r: {age: Int | a}): a = {-age | r}
 
 /// Construct several records and extend them with an age.
