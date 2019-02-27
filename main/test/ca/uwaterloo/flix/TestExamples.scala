@@ -10,6 +10,8 @@ class TestExamples extends Suites(
   new FlixTest("lists-and-list-processing", "examples/lists-and-list-processing.flix"),
   new FlixTest("higher-order-functions.flix", "examples/higher-order-functions.flix"),
   new FlixTest("enums-and-parametric-polymorphism", "examples/enums-and-parametric-polymorphism.flix"),
+  new FlixTest("records-and-row-polymorphism", "examples/records-and-row-polymorphism.flix"),
+  new FlixTest("extensible-polymorphic-records", "examples/extensible-polymorphic-records.flix"),
   new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix"),
   new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix"),
   new FlixTest("mutual-recursion-with-full-tail-call-elimination", "examples/mutual-recursion-with-full-tail-call-elimination.flix"),
