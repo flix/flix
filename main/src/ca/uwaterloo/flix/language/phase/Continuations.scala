@@ -118,6 +118,21 @@ object Continuations extends Phase[Root, Root] {
       val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0Type))
       visitExp(exp1, kont1, kont0Type)
     }
+
+    case Expression.Tuple(elms, tpe, loc) => {
+      val syms = elms.map(exp => {
+        val sym = Symbol.freshVarSym("asd")
+        (exp, sym, Expression.Var(sym, exp.tpe, loc))})
+      val baseCase: Expression = mkApplyCont(kont0, Expression.Tuple(syms.map(e => e._3), tpe, loc))
+      syms.foldRight(baseCase){(syms, kont) =>
+        val exp = syms._1
+        val sym = syms._2
+        val varr = syms._3
+
+        val kont2 = mkLambda(sym, varr.tpe, kont)
+        visitExp(exp, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
+      }
+    }
   }
 
 
