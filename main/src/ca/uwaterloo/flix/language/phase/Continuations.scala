@@ -63,8 +63,16 @@ object Continuations extends Phase[Root, Root] {
     case Expression.Var(sym, tpe, loc) => mkApplyCont(kont0, exp0)
 
       // todo sjj: make cases
-      
-    case Expression.Binary(sop, op, exp1, exp2, tpe: Type, loc) =>
+
+    case Expression.Unary(sop, op, exp, tpe, loc) => {
+      val freshOperandSym = Symbol.freshVarSym("x") // TODO SJJ: What does the text do?
+      val freshOperandVar = Expression.Var(freshOperandSym, exp.tpe, loc)
+      val body = Expression.Unary(sop, op, freshOperandVar, tpe, loc)
+      val kont1 = mkLambda(freshOperandSym, freshOperandVar.tpe, mkApplyCont(kont0, body))
+      visitExp(exp, kont1, kont0Type)
+    }
+
+    case Expression.Binary(sop, op, exp1, exp2, tpe: Type, loc) => {
 
       //TODO SJJ: What is a semantic operator
 
@@ -74,14 +82,14 @@ object Continuations extends Phase[Root, Root] {
       val freshOperand2Sym = Symbol.freshVarSym("y")
       val freshOperand2Var = Expression.Var(freshOperand2Sym, exp2.tpe, loc)
 
-      val body = mkApplyCont(kont0,Expression.Binary(sop, op, freshOperand1Var, freshOperand2Var, tpe, loc))
+      val body = mkApplyCont(kont0, Expression.Binary(sop, op, freshOperand1Var, freshOperand2Var, tpe, loc))
       val kont2 = mkLambda(freshOperand2Sym, freshOperand2Var.tpe, body)
       val kont15 = visitExp(exp2, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
       val kont1 = mkLambda(freshOperand1Sym, freshOperand1Var.tpe, kont15)
       visitExp(exp1, kont1, kont0Type)
+    }
 
-
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => {
       //
       // Evaluate the conditional expression `exp1` passing a lambda that
       // selects the appropriate branch where to continue execution.
@@ -102,7 +110,17 @@ object Continuations extends Phase[Root, Root] {
 
       // Recurse on the conditional.
       visitExp(exp1, lambda, kont0Type)
+    }
+
+    // todo sjj: make cases
+
+    case Expression.Let(sym, exp1, exp2, tpe, loc) => {
+      val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0Type))
+      visitExp(exp1, kont1, kont0Type)
+    }
   }
+
+
 
   /**
     * Returns a lambda expression with the given symbol `sym` as a formal parameter,
