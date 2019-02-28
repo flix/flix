@@ -20,14 +20,24 @@ object Continuations extends Phase[Root, Root] {
     // Put gen sym into implicit scope.
     implicit val _ = flix.genSym
 
-//    // TODO
-//    root.defs map {
-//      case (sym, defn) => visitDefn(defn)
+    // todo map fra def sym til cps def sym
+//    val newDefs1 = root.defs map {
+//      case (sym, defn) => sym -> visitDefn(defn)
+//    }
+//    val newDefs2 = root.defs map {
+//      case (sym, defn) =>
+//        val freshSym = Symbol.freshDefnSym(sym)
+//        freshSym -> visitDefnAlt(defn)
 //    }
 
-    root.toSuccess
+    root/*.copy(defs = newDefs1 ++ newDefs2)*/.toSuccess
   }
 
+  def visitDefn(defn: Def)(implicit genSym: GenSym): Def = defn.copy(exp = visitExp(defn.exp, ??? /* id */, ???))
+
+  def visitDefnAlt(defn: Def)(implicit genSym: GenSym): Def = defn.copy(exp = visitExp(defn.exp, ??? /* id */, ???))
+
+  // todo sjj rename cps transform, only add to one visitDefn
   def visitExp(exp0: Expression, kont0: Expression.Lambda, kont0Type: Type)(implicit genSym: GenSym): Expression = exp0 match {
 
     //
@@ -65,7 +75,7 @@ object Continuations extends Phase[Root, Root] {
       // todo sjj: make cases
 
     case Expression.Unary(sop, op, exp, tpe, loc) => {
-      val freshOperandSym = Symbol.freshVarSym("x") // TODO SJJ: What does the text do?
+      val freshOperandSym = Symbol.freshVarSym() // TODO SJJ: What does the text do?
       val freshOperandVar = Expression.Var(freshOperandSym, exp.tpe, loc)
       val body = Expression.Unary(sop, op, freshOperandVar, tpe, loc)
       val kont1 = mkLambda(freshOperandSym, freshOperandVar.tpe, mkApplyCont(kont0, body))
@@ -77,9 +87,9 @@ object Continuations extends Phase[Root, Root] {
       //TODO SJJ: What is a semantic operator
 
       // Introduce a fresh variable symbol for the lambda.
-      val freshOperand1Sym = Symbol.freshVarSym("x") // TODO SJJ: What does the text do?
+      val freshOperand1Sym = Symbol.freshVarSym() // TODO SJJ: What does the text do?
       val freshOperand1Var = Expression.Var(freshOperand1Sym, exp1.tpe, loc)
-      val freshOperand2Sym = Symbol.freshVarSym("y")
+      val freshOperand2Sym = Symbol.freshVarSym()
       val freshOperand2Var = Expression.Var(freshOperand2Sym, exp2.tpe, loc)
 
       val body = mkApplyCont(kont0, Expression.Binary(sop, op, freshOperand1Var, freshOperand2Var, tpe, loc))
@@ -96,7 +106,7 @@ object Continuations extends Phase[Root, Root] {
       //
 
       // Introduce a fresh variable symbol for the lambda.
-      val freshCondSym = Symbol.freshVarSym("r")
+      val freshCondSym = Symbol.freshVarSym()
       val freshCondVar = Expression.Var(freshCondSym, Type.Bool, loc)
 
       // Construct an expression that branches on the variable symbol and
@@ -121,7 +131,7 @@ object Continuations extends Phase[Root, Root] {
 
     case Expression.Tuple(elms, tpe, loc) => {
       val syms = elms.map(exp => {
-        val sym = Symbol.freshVarSym("asd")
+        val sym = Symbol.freshVarSym()
         (exp, sym, Expression.Var(sym, exp.tpe, loc))})
       val baseCase: Expression = mkApplyCont(kont0, Expression.Tuple(syms.map(e => e._3), tpe, loc))
       syms.foldRight(baseCase){(syms, kont) =>
@@ -135,7 +145,7 @@ object Continuations extends Phase[Root, Root] {
     }
   }
 
-
+  // todo func to make list of exp to cps
 
   /**
     * Returns a lambda expression with the given symbol `sym` as a formal parameter,
