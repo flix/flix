@@ -517,13 +517,96 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+    case Expression.RecordEmpty(tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the class for the RecordEmpty
+      val classType = JvmOps.getRecordEmptyClassType()
+      // Instantiating a new object of tuple
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
 
-    case Expression.RecordSelect(exp, label, tpe, loc) => ???
+      // Descriptor of constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(), JvmType.Void)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.RecordExtend(label, value, rest, tpe, loc) => ??? // TODO
+    case Expression.RecordSelect(exp, label, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
 
-    case Expression.RecordRestrict(label, rest, tpe, loc) => ??? // TODO
+      // Get the correct record extend class, given the expression type 'tpe'
+      // We get the JvmType of the extended record class to call the proper getField
+      val classType = JvmOps.getRecordType(tpe)
+
+      // We get the JvmType of the record interface
+      val interfaceType = JvmOps.getRecordInterfaceType()
+
+      //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
+      //getRecordWithField
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      //Push the desired label of the field we want get of the record onto the stack
+      visitor.visitLdcInsn(label)
+
+      //Invoke the getRecordWithField method on the record. (To get the proper record object)
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "getRecordWithField",
+        AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+
+      //Cast to proper record extend class
+      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+
+      //Invoke the getField method on the record. (To get the proper value)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getField",
+        AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
+
+    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the class for the record extend
+      val classType = JvmOps.getRecordExtendClassType(tpe)
+
+      // We get the JvmType of the record interface
+      val interfaceType = JvmOps.getRecordInterfaceType()
+
+      // Instantiating a new object of tuple
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+
+      //Push the required argument to call the RecordExtend constructor.
+
+      //Push the label of field (which is going to be the extension).
+      visitor.visitLdcInsn(label)
+
+      //Push the value of the field onto the stack, since it is an expression we first need to compile it.
+      compileExpression(value, visitor, currentClass, lenv0, entryPoint)
+
+      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
+
+      // Descriptor of constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.String, JvmOps.getErasedJvmType(value.tpe),
+        interfaceType), JvmType.Void)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+
+    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the JvmType of the record interface
+      val interfaceType = JvmOps.getRecordInterfaceType()
+
+      //Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
+      compileExpression(rest, visitor, currentClass, lenv0, entryPoint)
+      //Push the label of field (which is going to be the removed/restricted).
+      visitor.visitLdcInsn(label)
+
+      // Invoking the restrictField method
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "restrictField",
+        AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       // Adding source line number for debugging

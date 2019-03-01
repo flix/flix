@@ -2,7 +2,6 @@ package ca.uwaterloo.flix.tools
 
 import java.nio.file.Files
 
-import ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.util.Options
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
@@ -17,44 +16,44 @@ class TestPackager extends FunSuite {
 
   test("init") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    tools.Packager.init(p, DefaultOptions)
+    Packager.init(p, DefaultOptions)
   }
 
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    tools.Packager.init(p, DefaultOptions)
-    tools.Packager.build(p, DefaultOptions)
+    Packager.init(p, DefaultOptions)
+    Packager.build(p, DefaultOptions)
   }
 
-  //  ignore("build-jar") {
-  //    val p = Files.createTempDirectory("flix-project-")
-  //    PackageManager.init(p, Opts)
-  //    PackageManager.build(p, Opts)
-  //    PackageManager.buildJar(p, Opts)
-  //  }
+  test("build-jar") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Packager.init(p, DefaultOptions)
+    Packager.build(p, DefaultOptions)
+    Packager.buildJar(p, DefaultOptions)
+  }
 
   test("build-pkg") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    tools.Packager.init(p, DefaultOptions)
-    tools.Packager.buildPkg(p, DefaultOptions)
+    Packager.init(p, DefaultOptions)
+    Packager.buildPkg(p, DefaultOptions)
   }
 
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    tools.Packager.init(p, DefaultOptions)
-    tools.Packager.benchmark(p, DefaultOptions)
+    Packager.init(p, DefaultOptions)
+    Packager.benchmark(p, DefaultOptions)
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    tools.Packager.init(p, DefaultOptions)
-    tools.Packager.run(p, DefaultOptions)
+    Packager.init(p, DefaultOptions)
+    Packager.run(p, DefaultOptions)
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
-    tools.Packager.init(p, DefaultOptions)
-    tools.Packager.test(p, DefaultOptions)
+    Packager.init(p, DefaultOptions)
+    Packager.test(p, DefaultOptions)
   }
 
 }

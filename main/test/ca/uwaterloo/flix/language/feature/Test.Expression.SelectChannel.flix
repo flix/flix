@@ -20,7 +20,7 @@ def testSelectChannel2(): Bool = {
   };
 
   // Sleep before putting element in c1, so select will give a Condition to c1 and c2
-  sleep(1i64 * Duration.oneSecond());
+  sleep(100i64 * Duration.oneMillisecond());
   c1 <- ();
 
   // Spawn c2 <- () as this will potentially deadlock if selectLock is not released
@@ -30,7 +30,7 @@ def testSelectChannel2(): Bool = {
   };
 
   // Sleep to give time to the other thread to put into c3 if it does not deadlock
-  sleep(1i64 * Duration.oneSecond());
+  sleep(100i64 * Duration.oneMillisecond());
   c3 <- false;
 
   <- c3 `assertEq!` true

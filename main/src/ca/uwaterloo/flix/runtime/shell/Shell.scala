@@ -189,6 +189,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
     case Command.Help => execHelp()
+    case Command.Praise => execPraise()
     case Command.Unknown(s) => execUnknown(s)
   }
 
@@ -624,6 +625,14 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println("  :quit :q                        Terminates the Flix shell.")
     w.println("  :help :h :?                     Shows this helpful information.")
     w.println()
+  }
+
+  /**
+    * Executes the praise command.
+    */
+  private def execPraise()(implicit terminal: Terminal): Unit = {
+    val w = terminal.writer()
+    w.print(Toucan.leToucan())
   }
 
   /**

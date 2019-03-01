@@ -2,6 +2,10 @@
 
 HEAD:
 
+Version 0.5:
+- Added support for unbuffered channels.
+- Added support for extensible records.
+
 Version 0.4:
 - Added support for first-class Datalog constraints.
 - Added support for processes and channels.
