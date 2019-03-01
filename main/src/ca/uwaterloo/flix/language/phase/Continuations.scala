@@ -21,21 +21,54 @@ object Continuations extends Phase[Root, Root] {
     implicit val _ = flix.genSym
 
     // todo map fra def sym til cps def sym
-//    val newDefs1 = root.defs map {
-//      case (sym, defn) => sym -> visitDefn(defn)
-//    }
-//    val newDefs2 = root.defs map {
-//      case (sym, defn) =>
-//        val freshSym = Symbol.freshDefnSym(sym)
-//        freshSym -> visitDefnAlt(defn)
-//    }
 
-    root/*.copy(defs = newDefs1 ++ newDefs2)*/.toSuccess
+    // Create a map for each def from sym -> sym'
+    val defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym] = root.defs map {
+      case (sym, defn) => sym -> Symbol.freshDefnSym(sym)
+    }
+
+    // Rewrite f(...) = ... to f(...) = f'(..., id)
+    val newDefs1 = root.defs map {
+      case (sym, defn) => sym -> visitDefn(defn, defSymMap)
+    }
+
+    val newDefs2 = root.defs map {
+      case (sym, defn) => defSymMap(sym) -> visitDefnAlt(defn, defSymMap)
+    }
+
+    root.copy(defs = newDefs1 ++ newDefs2).toSuccess
   }
 
-  def visitDefn(defn: Def)(implicit genSym: GenSym): Def = defn.copy(exp = visitExp(defn.exp, ??? /* id */, ???))
+  /**
+    * Rewrite the body of each def to call a new def, which takes a continuation as parameter
+    */
+  def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
+    // Make a fresh variable
+    val freshSym = Symbol.freshVarSym()
+    val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.loc)
+    // Make a new list of args, which includes the 'Id' function as a continuation
+    val args = defn.fparams.map(f => Expression.Var(f.sym, f.tpe, f.loc)) :+ mkLambda(freshSym, defn.tpe, freshSymVar)
+    // Rebind the body of 'def' to call the new function given by defSymMap
+    val body = Expression.ApplyDefTail(defSymMap(defn.sym), args, defn.tpe, defn.loc)
+    defn.copy(exp = body)
+  }
 
-  def visitDefnAlt(defn: Def)(implicit genSym: GenSym): Def = defn.copy(exp = visitExp(defn.exp, ??? /* id */, ???))
+  /**
+    * Perform CPS transformation of each function
+    */
+  def visitDefnAlt(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
+    // Add continuation as parameter to def
+    val kontSym = Symbol.freshVarSym("kont")
+    // TODO SJJ: How to make the resulttype of kont generic? Does it even matter as we are after the Typer?
+    // Type of continuation is a function type from defn.tpe -> T
+    val kontTpe = Type.mkArrow(defn.tpe, Type.freshTypeVar())
+    // TODO SJJ: Modifiers?
+    val kontFParam = FormalParam(kontSym, Modifiers.Empty , kontTpe , defn.loc)
+
+
+    // visitExp should take defSymMap? (E.g. if f(x) = f(x-1), then f'(x, k) = f'(x-1, k) rather than f'(x, k) = f(x-1, k) )
+    defn.copy(exp = visitExp(defn.exp, ???, ???), fparams = defn.fparams :+ kontFParam)
+  }
 
   // todo sjj rename cps transform, only add to one visitDefn
   def visitExp(exp0: Expression, kont0: Expression.Lambda, kont0Type: Type)(implicit genSym: GenSym): Expression = exp0 match {
