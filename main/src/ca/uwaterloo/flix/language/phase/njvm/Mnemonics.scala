@@ -4,8 +4,6 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmType
 
 object Mnemonics {
 
-  // TODO
-
   trait Stack
 
   trait StackNil extends Stack
@@ -30,17 +28,8 @@ object Mnemonics {
 
   }
 
-
-  def bipush[R <: Stack](value: Byte): F[R] => F[R ** Int] = ???
-
-  def iadd[R <: Stack](): F[R ** Int ** Int] => F[R ** Int] = ???
-
   def fakepush[R <: Stack](): F[R] => F[R ** Int] = ???
 
-  //
-  // A = ?
-  // B = R1 ** Int
-  //
 
   implicit class ComposeOps[A <: Stack, B <: Stack](f: F[A] => F[B]) {
     def |>>[C <: Stack](g: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => g(f(x))
@@ -53,31 +42,45 @@ object Mnemonics {
 
   def h[R <: Stack](): F[R] => F[R ** Int ** Int] = |>(fakepush(), fakepush())
 
+  def u[R <: Stack](): F[R] => F[R ** Int ** Int ** Int] =
+    fakepush() andThen
+      (fakepush() andThen
+        fakepush())
+
   def w[R <: Stack](): F[R] => F[R ** Int ** Int] = fakepush() |>> fakepush()
 
-  //val r: F[StackNil ** JvmType.Reference ** JvmType.Reference] = f.apply(new F[StackNil])
 
   object Instructions {
 
     /**
       * Polymorphic UNCHECKED return.
       */
-    def UNCHECKED_RETURN[R <: Stack, A](t: JvmType): F[R ** A] => F[R] = ???
+    def UNCHECKED_RETURN[A](t: JvmType): F[StackNil ** A] => F[Nothing] = ???
+
+    /**
+      * Pushes the value of `this` onto the stack.
+      */
+    def THIS[R <: Stack]: F[R] => F[R ** JvmType.Reference] = ???
+
+    /**
+      * Returns without a value.
+      */
+    def RETURN: F[StackNil] => F[Nothing] = ???
 
     /**
       * Returns an object reference.
       */
-    def ARETURN[R <: Stack]: F[R ** JvmType.Reference] => F[R] = t => t.areturn()
+    def ARETURN: F[StackNil ** JvmType.Reference] => F[Nothing] = t => t.areturn()
 
     /**
       * Returns a primitive float.
       */
-    def FRETURN[R <: Stack]: F[R ** JvmType.PrimFloat.type] => F[R] = ???
+    def FRETURN: F[StackNil ** JvmType.PrimFloat.type] => F[Nothing] = ???
 
     /**
       * Returns a primitive double.
       */
-    def DRETURN[R <: Stack]: F[R ** JvmType.PrimDouble.type] => F[R] = ???
+    def DRETURN: F[StackNil ** JvmType.PrimDouble.type] => F[Nothing] = ???
 
     /**
       * Pushes the result of adding the two top-most ints.
