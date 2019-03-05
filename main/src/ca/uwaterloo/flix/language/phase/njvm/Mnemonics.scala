@@ -12,20 +12,41 @@ object Mnemonics {
 
   case class StackCons[+R <: Stack, +T](rest: R, top: T) extends Stack
 
-  type **[A, B] = (A, B)
+  type **[R <: Stack, T] = StackCons[R, T]
 
-  trait F[T] {
+  class F[T] {
+
+    def compile(): Array[Byte] = ???
 
   }
 
   def bipush[R <: Stack](value: Byte): F[R] => F[R ** Int] = ???
 
-  def fakepush[R <: Stack]: F[R] => F[R ** JvmType.Reference] = ???
+  def iadd[R <: Stack](): F[R ** Int ** Int] => F[R ** Int] = ???
+
+  def fakepush[R <: Stack](): F[R] => F[R ** Int] = ???
 
   def areturn[R <: Stack]: F[R ** JvmType.Reference] => F[R] = ???
 
-  def combine[A <: Stack, B <: Stack, C <: Stack](t1: F[A] => F[B], t2: F[B] => F[C]): F[A] => F[C] = ???
+  //
+  // A = ?
+  // B = R1 ** Int
+  //
 
-  //val foo = combine(fakepush, areturn)
+  implicit class ComposeOps[A <: Stack, B <: Stack](f: F[A] => F[B]) {
+    def |>>[C <: Stack](g: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => g(f(x))
+  }
+
+  def |>[A <: Stack, B <: Stack, C <: Stack](t1: F[A] => F[B], t2: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => t2.apply(t1.apply(x))
+
+  val f = fakepush().apply(new F[StackNil])
+  val g = fakepush().apply(f)
+
+  def h[R <: Stack](): F[R] => F[R ** Int ** Int] = |>(fakepush(), fakepush())
+
+  def w[R <: Stack](): F[R] => F[R ** Int ** Int] = fakepush() |>> fakepush()
+
+  //val r: F[StackNil ** JvmType.Reference ** JvmType.Reference] = f.apply(new F[StackNil])
+
 
 }
