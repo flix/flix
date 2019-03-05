@@ -16,17 +16,26 @@ object Mnemonics {
 
   class F[T] {
 
+    import org.objectweb.asm.MethodVisitor
+    import org.objectweb.asm.Opcodes
+
+    private val mv: MethodVisitor = ???
+
     def compile(): Array[Byte] = ???
 
+    def areturn[S](): F[S] = {
+      mv.visitInsn(Opcodes.ARETURN)
+      this.asInstanceOf[F[S]]
+    }
+
   }
+
 
   def bipush[R <: Stack](value: Byte): F[R] => F[R ** Int] = ???
 
   def iadd[R <: Stack](): F[R ** Int ** Int] => F[R ** Int] = ???
 
   def fakepush[R <: Stack](): F[R] => F[R ** Int] = ???
-
-  def areturn[R <: Stack]: F[R ** JvmType.Reference] => F[R] = ???
 
   //
   // A = ?
@@ -48,5 +57,33 @@ object Mnemonics {
 
   //val r: F[StackNil ** JvmType.Reference ** JvmType.Reference] = f.apply(new F[StackNil])
 
+  object Instructions {
+
+    /**
+      * Polymorphic UNCHECKED return.
+      */
+    def UNCHECKED_RETURN[R <: Stack, A](t: JvmType): F[R ** A] => F[R] = ???
+
+    /**
+      * Returns an object reference.
+      */
+    def ARETURN[R <: Stack]: F[R ** JvmType.Reference] => F[R] = t => t.areturn()
+
+    /**
+      * Returns a primitive float.
+      */
+    def FRETURN[R <: Stack]: F[R ** JvmType.PrimFloat.type] => F[R] = ???
+
+    /**
+      * Returns a primitive double.
+      */
+    def DRETURN[R <: Stack]: F[R ** JvmType.PrimDouble.type] => F[R] = ???
+
+    /**
+      * Pushes the result of adding the two top-most ints.
+      */
+    def IADD[R <: Stack]: F[R ** JvmType.PrimInt.type ** JvmType.PrimInt.type] => F[R ** JvmType.PrimInt.type] = ???
+
+  }
 
 }
