@@ -70,7 +70,6 @@ public final class Channel {
   public static void spawn(Spawnable s) {
     // Create a new Thread and evaluate the spawned expression in the new Thread
     Thread thread = new Thread(s::spawn);
-    thread.setDaemon(true);
     thread.start();
   }
 
