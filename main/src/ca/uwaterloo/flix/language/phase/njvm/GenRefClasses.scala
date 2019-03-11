@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ca.uwaterloo.flix.language.phase.njvm
 
 /**
-  * Generates bytecode for the extended record class.
+  * Generates bytecode for the cell classes.
   */
-object GenRecordExtend {
-
+object GenRefClasses {
   // TODO: incrementally copy over.
 
 }

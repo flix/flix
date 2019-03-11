@@ -28,27 +28,9 @@ object Mnemonics {
 
   }
 
-  def fakepush[R <: Stack](): F[R] => F[R ** Int] = ???
-
-
   implicit class ComposeOps[A <: Stack, B <: Stack](f: F[A] => F[B]) {
     def |>>[C <: Stack](g: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => g(f(x))
   }
-
-  def |>[A <: Stack, B <: Stack, C <: Stack](t1: F[A] => F[B], t2: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => t2.apply(t1.apply(x))
-
-  val f = fakepush().apply(new F[StackNil])
-  val g = fakepush().apply(f)
-
-  def h[R <: Stack](): F[R] => F[R ** Int ** Int] = |>(fakepush(), fakepush())
-
-  def u[R <: Stack](): F[R] => F[R ** Int ** Int ** Int] =
-    fakepush() andThen
-      (fakepush() andThen
-        fakepush())
-
-  def w[R <: Stack](): F[R] => F[R ** Int ** Int] = fakepush() |>> fakepush()
-
 
   object Instructions {
 
