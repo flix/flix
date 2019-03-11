@@ -21,7 +21,7 @@ import java.nio.file.{Files, LinkOption, Path}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
@@ -729,7 +729,7 @@ object JvmOps {
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
-    case MonoType.Float32 => Type.Float32
+    case MonoType.Float32 => Type.Cst(TypeConstructor.Float32)
     case MonoType.Float64 => Type.Float64
     case MonoType.Int8 => Type.Int8
     case MonoType.Int16 => Type.Int16

@@ -189,10 +189,10 @@ object TypeError {
   private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
     case (Type.Var(_, _), _) => TypeDiff.Star(TypeConstructor.Other)
     case (_, Type.Var(_, _)) => TypeDiff.Star(TypeConstructor.Other)
+    case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Unit, Type.Unit) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Bool, Type.Bool) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Char, Type.Char) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Float32, Type.Float32) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Float64, Type.Float64) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Int8, Type.Int8) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Int16, Type.Int16) => TypeDiff.Star(TypeConstructor.Other)

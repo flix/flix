@@ -491,7 +491,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Unit => default
         case Type.Bool => default
         case Type.Char => default
-        case Type.Float32 => default
+        case Type.Cst(TypeConstructor.Float32) => default
         case Type.Float64 => default
         case Type.Int8 => default
         case Type.Int16 => default
@@ -709,7 +709,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Unit => Expression.Int32(123, sl)
         case Type.Bool => Expression.Int32(123, sl)
         case Type.Char => Expression.Int32(123, sl)
-        case Type.Float32 => Expression.Int32(123, sl)
+        case Type.Cst(TypeConstructor.Float32) => Expression.Int32(123, sl)
         case Type.Float64 => Expression.Int32(123, sl)
         case Type.Int8 => Expression.Int32(123, sl)
         case Type.Int16 => Expression.Int32(123, sl)
@@ -940,7 +940,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Character].getMethod("toString", classOf[Char])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
-        case Type.Float32 =>
+        case Type.Cst(TypeConstructor.Float32) =>
           val method = classOf[java.lang.Float].getMethod("toString", classOf[Float])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
@@ -1177,7 +1177,7 @@ object Synthesize extends Phase[Root, Root] {
     def isPrimitive(tpe: Type): Boolean = tpe match {
       case Type.Bool => true
       case Type.Char => true
-      case Type.Float32 => true
+      case Type.Cst(TypeConstructor.Float32) => true
       case Type.Float64 => true
       case Type.Int8 => true
       case Type.Int16 => true

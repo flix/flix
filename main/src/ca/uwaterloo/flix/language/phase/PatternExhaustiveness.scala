@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
@@ -50,39 +50,39 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * types. This allows us to handle True, False, Tuples etc in the same
     * way we would a user defined enum.
     */
-  sealed trait TypeConstructor
+  sealed trait TyCon
 
-  object TypeConstructor {
+  object TyCon {
 
-    case object Unit extends TypeConstructor
+    case object Unit extends TyCon
 
-    case object True extends TypeConstructor
+    case object True extends TyCon
 
-    case object False extends TypeConstructor
+    case object False extends TyCon
 
-    case object Char extends TypeConstructor
+    case object Char extends TyCon
 
-    case object BigInt extends TypeConstructor
+    case object BigInt extends TyCon
 
-    case object Int8 extends TypeConstructor
+    case object Int8 extends TyCon
 
-    case object Int16 extends TypeConstructor
+    case object Int16 extends TyCon
 
-    case object Int32 extends TypeConstructor
+    case object Int32 extends TyCon
 
-    case object Int64 extends TypeConstructor
+    case object Int64 extends TyCon
 
-    case object Float32 extends TypeConstructor
+    case object Float32 extends TyCon
 
-    case object Float64 extends TypeConstructor
+    case object Float64 extends TyCon
 
-    case object Str extends TypeConstructor
+    case object Str extends TyCon
 
-    case object Wild extends TypeConstructor
+    case object Wild extends TyCon
 
-    case class Tuple(args: List[TypeConstructor]) extends TypeConstructor
+    case class Tuple(args: List[TyCon]) extends TyCon
 
-    case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TypeConstructor]) extends TypeConstructor
+    case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
   }
 
@@ -97,7 +97,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case object Exhaustive extends Exhaustiveness
 
-    case class NonExhaustive(pat: List[TypeConstructor]) extends Exhaustiveness
+    case class NonExhaustive(pat: List[TyCon]) extends Exhaustiveness
 
   }
 
@@ -432,7 +432,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     def findNonMatchingPat(rules: List[List[Pattern]], n: Int, root: TypedAst.Root): Exhaustiveness = {
       if (n == 0) {
         if (rules.isEmpty) {
-          return NonExhaustive(List.empty[TypeConstructor])
+          return NonExhaustive(List.empty[TyCon])
         }
         return Exhaustive
       }
@@ -476,7 +476,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             // If sigma is not empty, pick one of the missing constructors and return it
             case _ :: _ => NonExhaustive(rebuildPattern(missing.head, ctors))
             // Else, prepend a wildcard
-            case Nil => NonExhaustive(rebuildPattern(TypeConstructor.Wild, ctors))
+            case Nil => NonExhaustive(rebuildPattern(TyCon.Wild, ctors))
           }
         }
       }
@@ -510,7 +510,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param root  The ast root
       * @return The specialized matrix of rules
       */
-    def specialize(ctor: TypeConstructor, rules: List[List[Pattern]], root: TypedAst.Root): List[List[TypedAst.Pattern]] = {
+    def specialize(ctor: TyCon, rules: List[List[Pattern]], root: TypedAst.Root): List[List[TypedAst.Pattern]] = {
       // First figure out how many arguments are needed by the ctor
       val numArgs = countCtorArgs(ctor)
 
@@ -527,7 +527,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         // If it's not our constructor, we ignore it
         case TypedAst.Pattern.Tag(_, tag, exp, _, _) =>
           ctor match {
-            case TypeConstructor.Enum(name, _, _, _) =>
+            case TyCon.Enum(name, _, _, _) =>
               if (tag == name) {
                 exp match {
                   // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
@@ -545,7 +545,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             case _ => acc
           }
         case TypedAst.Pattern.Tuple(elms, _, _) =>
-          if (ctor.isInstanceOf[TypeConstructor.Tuple]) {
+          if (ctor.isInstanceOf[TyCon.Tuple]) {
             (elms ::: pat.tail) :: acc
           } else {
             acc
@@ -608,7 +608,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * Baz
       *
       */
-    def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TypeConstructor] = {
+    def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TyCon] = {
       def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.head match {
         case _: Pattern.Wild => pats
         case _: Pattern.Var => pats
@@ -639,19 +639,19 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param root  Root of the expression tree
       * @return
       */
-    def missingFromSig(ctors: List[TypeConstructor], root: TypedAst.Root): List[TypeConstructor] = {
+    def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
       // Enumerate all the constructors that we need to cover
-      def getAllCtors(x: TypeConstructor, xs: List[TypeConstructor]) = x match {
+      def getAllCtors(x: TyCon, xs: List[TyCon]) = x match {
         // For built in constructors, we can add all the options since we know them a priori
-        case TypeConstructor.Unit => TypeConstructor.Unit :: xs
-        case TypeConstructor.True => TypeConstructor.True :: TypeConstructor.False :: xs
-        case TypeConstructor.False => TypeConstructor.True :: TypeConstructor.False :: xs
-        case a: TypeConstructor.Tuple => a :: xs
+        case TyCon.Unit => TyCon.Unit :: xs
+        case TyCon.True => TyCon.True :: TyCon.False :: xs
+        case TyCon.False => TyCon.True :: TyCon.False :: xs
+        case a: TyCon.Tuple => a :: xs
 
         // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
         // other enums
-        case TypeConstructor.Enum(_, sym, _, _) => {
-          root.enums.get(sym).get.cases.map(x => TypeConstructor.Enum(x._1, sym, countTypeArgs(x._2.tpe), List.empty[TypeConstructor]))
+        case TyCon.Enum(_, sym, _, _) => {
+          root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
         }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
@@ -659,15 +659,15 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
          * The only way we get a match is through a wild. Technically, you could, for example, cover a Char by
          * having a case for [0 255], but we'll ignore that case for now
          */
-        case _ => TypeConstructor.Wild :: xs
+        case _ => TyCon.Wild :: xs
       }
 
-      val expCtors = ctors.foldRight(List.empty[TypeConstructor])(getAllCtors)
+      val expCtors = ctors.foldRight(List.empty[TyCon])(getAllCtors)
       /* We cover the needed constructors if there is a wild card in the
        * root constructor set, or if we match every constructor for the
        * expression
        */
-      expCtors.foldRight(List.empty[TypeConstructor])((x, xs) => if (ctors.exists(y => sameCtor(x, y))) xs else x :: xs)
+      expCtors.foldRight(List.empty[TyCon])((x, xs) => if (ctors.exists(y => sameCtor(x, y))) xs else x :: xs)
     }
 
     /**
@@ -676,22 +676,22 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param ctor The constructor to get from
       * @return The number of arguments for the constructor
       */
-    def countCtorArgs(ctor: TypeConstructor): Int = ctor match {
-      case TypeConstructor.Unit => 0
-      case TypeConstructor.True => 0
-      case TypeConstructor.False => 0
-      case TypeConstructor.Char => 0
-      case TypeConstructor.BigInt => 0
-      case TypeConstructor.Int8 => 0
-      case TypeConstructor.Int16 => 0
-      case TypeConstructor.Int32 => 0
-      case TypeConstructor.Int64 => 0
-      case TypeConstructor.Float32 => 0
-      case TypeConstructor.Float64 => 0
-      case TypeConstructor.Str => 0
-      case TypeConstructor.Wild => 0
-      case TypeConstructor.Tuple(args) => args.size
-      case TypeConstructor.Enum(_, _, numArgs, _) => numArgs
+    def countCtorArgs(ctor: TyCon): Int = ctor match {
+      case TyCon.Unit => 0
+      case TyCon.True => 0
+      case TyCon.False => 0
+      case TyCon.Char => 0
+      case TyCon.BigInt => 0
+      case TyCon.Int8 => 0
+      case TyCon.Int16 => 0
+      case TyCon.Int32 => 0
+      case TyCon.Int64 => 0
+      case TyCon.Float32 => 0
+      case TyCon.Float64 => 0
+      case TyCon.Str => 0
+      case TyCon.Wild => 0
+      case TyCon.Tuple(args) => args.size
+      case TyCon.Enum(_, _, numArgs, _) => numArgs
     }
 
     /**
@@ -703,7 +703,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Unit => 0
       case Type.Bool => 0
       case Type.Char => 0
-      case Type.Float32 => 0
+      case Type.Cst(TypeConstructor.Float32) => 0
       case Type.Float64 => 0
       case Type.Int8 => 0
       case Type.Int16 => 0
@@ -736,22 +736,22 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param ctor The TypeConstructor to print
       * @return A human readable string of the constructor
       */
-    def prettyPrintCtor(ctor: TypeConstructor): String = ctor match {
-      case TypeConstructor.Unit => "Unit"
-      case TypeConstructor.True => "True"
-      case TypeConstructor.False => "False"
-      case TypeConstructor.Char => "Char"
-      case TypeConstructor.BigInt => "BigInt"
-      case TypeConstructor.Int8 => "Int8"
-      case TypeConstructor.Int16 => "Int16"
-      case TypeConstructor.Int32 => "Int32"
-      case TypeConstructor.Int64 => "Int64"
-      case TypeConstructor.Float32 => "Float32"
-      case TypeConstructor.Float64 => "Float64"
-      case TypeConstructor.Str => "Str"
-      case TypeConstructor.Wild => "_"
-      case TypeConstructor.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
-      case TypeConstructor.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TypeConstructor.Tuple(args))
+    def prettyPrintCtor(ctor: TyCon): String = ctor match {
+      case TyCon.Unit => "Unit"
+      case TyCon.True => "True"
+      case TyCon.False => "False"
+      case TyCon.Char => "Char"
+      case TyCon.BigInt => "BigInt"
+      case TyCon.Int8 => "Int8"
+      case TyCon.Int16 => "Int16"
+      case TyCon.Int32 => "Int32"
+      case TyCon.Int64 => "Int64"
+      case TyCon.Float32 => "Float32"
+      case TyCon.Float64 => "Float64"
+      case TyCon.Str => "Str"
+      case TyCon.Wild => "_"
+      case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
+      case TyCon.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TyCon.Tuple(args))
     }
 
 
@@ -762,11 +762,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param c2 Second constructor to compare
       * @return True if they are the same constructor
       */
-    def sameCtor(c1: TypeConstructor, c2: TypeConstructor): Boolean = (c1, c2) match {
+    def sameCtor(c1: TyCon, c2: TyCon): Boolean = (c1, c2) match {
       // Two enums are the same constructor if they have the same name and enum sym
-      case (TypeConstructor.Enum(n1, s1, _, _), TypeConstructor.Enum(n2, s2, _, _)) => n1 == n2 && s1 == s2
+      case (TyCon.Enum(n1, s1, _, _), TyCon.Enum(n2, s2, _, _)) => n1 == n2 && s1 == s2
       // Everything else is the same constructor if they are the same type
-      case (a: TypeConstructor.Tuple, b: TypeConstructor.Tuple) => true
+      case (a: TyCon.Tuple, b: TyCon.Tuple) => true
       case (a, b) => a == b;
     }
 
@@ -776,30 +776,30 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param pattern The pattern to convert
       * @return a TypeConstructor representing the given pattern
       */
-    def patToCtor(pattern: TypedAst.Pattern): TypeConstructor = pattern match {
-      case Pattern.Wild(_, _) => TypeConstructor.Wild
-      case Pattern.Var(_, _, _) => TypeConstructor.Wild
-      case Pattern.Unit(_) => TypeConstructor.Unit
-      case Pattern.True(_) => TypeConstructor.True
-      case Pattern.False(_) => TypeConstructor.False
-      case Pattern.Char(_, _) => TypeConstructor.Char
-      case Pattern.Float32(_, _) => TypeConstructor.Float32
-      case Pattern.Float64(_, _) => TypeConstructor.Float64
-      case Pattern.Int8(_, _) => TypeConstructor.Int8
-      case Pattern.Int16(_, _) => TypeConstructor.Int16
-      case Pattern.Int32(_, _) => TypeConstructor.Int32
-      case Pattern.Int64(_, _) => TypeConstructor.Int64
-      case Pattern.BigInt(_, _) => TypeConstructor.BigInt
-      case Pattern.Str(_, _) => TypeConstructor.Str
+    def patToCtor(pattern: TypedAst.Pattern): TyCon = pattern match {
+      case Pattern.Wild(_, _) => TyCon.Wild
+      case Pattern.Var(_, _, _) => TyCon.Wild
+      case Pattern.Unit(_) => TyCon.Unit
+      case Pattern.True(_) => TyCon.True
+      case Pattern.False(_) => TyCon.False
+      case Pattern.Char(_, _) => TyCon.Char
+      case Pattern.Float32(_, _) => TyCon.Float32
+      case Pattern.Float64(_, _) => TyCon.Float64
+      case Pattern.Int8(_, _) => TyCon.Int8
+      case Pattern.Int16(_, _) => TyCon.Int16
+      case Pattern.Int32(_, _) => TyCon.Int32
+      case Pattern.Int64(_, _) => TyCon.Int64
+      case Pattern.BigInt(_, _) => TyCon.BigInt
+      case Pattern.Str(_, _) => TyCon.Str
       case Pattern.Tag(sym, tag, pat, tpe, _) => {
         val (args, numArgs) = pat match {
-          case Pattern.Unit(_) => (List.empty[TypeConstructor], 0)
+          case Pattern.Unit(_) => (List.empty[TyCon], 0)
           case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
           case a => (List(patToCtor(a)), 1)
         }
-        TypeConstructor.Enum(tag, sym, numArgs, args)
+        TyCon.Enum(tag, sym, numArgs, args)
       }
-      case Pattern.Tuple(elms, _, _) => TypeConstructor.Tuple(elms.map(patToCtor))
+      case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
     }
 
     /**
@@ -811,11 +811,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param lst The list to add to
       * @return The new list
       */
-    def rebuildPattern(tc: TypeConstructor, lst: List[TypeConstructor]): List[TypeConstructor] = tc match {
-      case TypeConstructor.Tuple(args) => TypeConstructor.Tuple(lst.take(args.size)) :: lst.drop(args.size)
-      case TypeConstructor.Enum(name, sym, numArgs, _) => TypeConstructor.Enum(name, sym, numArgs,
+    def rebuildPattern(tc: TyCon, lst: List[TyCon]): List[TyCon] = tc match {
+      case TyCon.Tuple(args) => TyCon.Tuple(lst.take(args.size)) :: lst.drop(args.size)
+      case TyCon.Enum(name, sym, numArgs, _) => TyCon.Enum(name, sym, numArgs,
         if (numArgs > lst.size) {
-          lst.take(lst.size) ::: List.fill(numArgs)(TypeConstructor.Wild)
+          lst.take(lst.size) ::: List.fill(numArgs)(TyCon.Wild)
         } else {
           lst.take(numArgs)
         }) :: lst.drop(numArgs)
