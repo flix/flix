@@ -1711,8 +1711,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /*
        * Constraint expression.
        */
-      case ResolvedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
-        val c = reassembleConstraint(cons, program, subst0)
+      case ResolvedAst.Expression.FixpointConstraint(c0, tvar, loc) =>
+        // Pattern match on the constraint.
+        val ResolvedAst.Constraint(cparams0, head0, body0, loc) = c0
+
+        // Unification was successful. Reassemble the head and body predicates.
+        val head = reassembleHeadPredicate(head0, program, subst0)
+        val body = body0.map(b => reassembleBodyPredicate(b, program, subst0))
+
+        // Reassemble the constraint parameters.
+        val cparams = cparams0.map {
+          case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, l) =>
+            TypedAst.ConstraintParam.HeadParam(sym, subst0(tpe), l)
+          case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, l) =>
+            TypedAst.ConstraintParam.RuleParam(sym, subst0(tpe), l)
+        }
+
+        // Reassemble the constraint.
+        val c = TypedAst.Constraint(cparams, head, body, loc)
         TypedAst.Expression.FixpointConstraint(c, subst0(tvar), Eff.Empty, loc)
 
       /*
@@ -1973,27 +1989,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
       val t = reassembleExp(term, program, subst0)
       TypedAst.Predicate.Body.Functional(sym, t, loc)
-  }
-
-  /**
-    * Reassembles the given constraint `c0`.
-    */
-  private def reassembleConstraint(c0: ResolvedAst.Constraint, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Constraint = c0 match {
-    case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
-      // Unification was successful. Reassemble the head and body predicates.
-      val head = reassembleHeadPredicate(head0, program, subst0)
-      val body = body0.map(b => reassembleBodyPredicate(b, program, subst0))
-
-      // Reassemble the constraint parameters.
-      val cparams = cparams0.map {
-        case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, l) =>
-          TypedAst.ConstraintParam.HeadParam(sym, subst0(tpe), l)
-        case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, l) =>
-          TypedAst.ConstraintParam.RuleParam(sym, subst0(tpe), l)
-      }
-
-      // Reassemble the constraint.
-      TypedAst.Constraint(cparams, head, body, loc)
   }
 
   /**
