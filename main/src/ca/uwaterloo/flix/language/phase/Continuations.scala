@@ -32,6 +32,7 @@ object Continuations extends Phase[Root, Root] {
       case (sym, defn) => sym -> visitDefn(defn, defSymMap)
     }
 
+    // For each function f(...), make an f'(..., id)
     val newDefs2 = root.defs map {
       case (sym, defn) => defSymMap(sym) -> visitDefnAlt(defn, defSymMap)
     }
@@ -43,13 +44,14 @@ object Continuations extends Phase[Root, Root] {
     * Rewrite the body of each def to call a new def, which takes a continuation as parameter
     */
   def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
+    // todo sjj: make example
     // Make a fresh variable
     val freshSym = Symbol.freshVarSym()
     val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.loc)
     // Make a new list of args, which includes the 'Id' function as a continuation
     val args = defn.fparams.map(f => Expression.Var(f.sym, f.tpe, f.loc)) :+ mkLambda(freshSym, defn.tpe, freshSymVar)
     // Rebind the body of 'def' to call the new function given by defSymMap
-    val body = Expression.ApplyDefTail(defSymMap(defn.sym), args, defn.tpe, defn.loc)
+    val body = Expression.Apply(Expression.Def(defSymMap(defn.sym),defn.tpe, defn.loc), args, defn.tpe, defn.loc)
     defn.copy(exp = body)
   }
 
@@ -66,12 +68,13 @@ object Continuations extends Phase[Root, Root] {
     val kontFParam = FormalParam(kontSym, Modifiers.Empty , kontTpe , defn.loc)
 
 
-    // visitExp should take defSymMap? (E.g. if f(x) = f(x-1), then f'(x, k) = f'(x-1, k) rather than f'(x, k) = f(x-1, k) )
-    defn.copy(exp = visitExp(defn.exp, ???, ???), fparams = defn.fparams :+ kontFParam)
+    // todo sjj: visitExp should take defSymMap? (E.g. if f(x) = f(x-1), then f'(x, k) = f'(x-1, k) rather than f'(x, k) = f(x-1, k) )
+    // todo sjj: var correct here
+    defn.copy(exp = visitExp(defn.exp, Expression.Var(kontSym, kontTpe, defn.loc), kontTpe), fparams = defn.fparams :+ kontFParam)
   }
 
   // todo sjj rename cps transform, only add to one visitDefn
-  def visitExp(exp0: Expression, kont0: Expression.Lambda, kont0Type: Type)(implicit genSym: GenSym): Expression = exp0 match {
+  def visitExp(exp0: Expression, kont0: Expression, kont0Type: Type)(implicit genSym: GenSym): Expression = exp0 match {
 
     //
     // Unit. Apply `kont0` to the value.
@@ -176,6 +179,8 @@ object Continuations extends Phase[Root, Root] {
         visitExp(exp, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
       }
     }
+
+    case _ => print(exp0);exp0
   }
 
   // todo func to make list of exp to cps
