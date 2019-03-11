@@ -2,13 +2,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
-object Continuations extends Phase[Root, Root] {
+object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
     * Transforms all expressions in the given AST `root` into continuation passing style (CPS).
@@ -19,7 +19,8 @@ object Continuations extends Phase[Root, Root] {
 
     // Put gen sym into implicit scope.
     implicit val _ = flix.genSym
-
+    print("h"+root.defs)
+    print("\n\ntest\n\n")
     // todo map fra def sym til cps def sym
 
     // Create a map for each def from sym -> sym'
@@ -37,7 +38,10 @@ object Continuations extends Phase[Root, Root] {
       case (sym, defn) => defSymMap(sym) -> visitDefnAlt(defn, defSymMap)
     }
 
-    root.copy(defs = newDefs1 ++ newDefs2).toSuccess
+    val out = root.copy(defs = newDefs1 ++ newDefs2).toSuccess
+    print()
+    print(out.get.defs)
+    out
   }
 
   /**
@@ -45,13 +49,19 @@ object Continuations extends Phase[Root, Root] {
     */
   def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
     // todo sjj: make example
-    // Make a fresh variable
-    val freshSym = Symbol.freshVarSym()
-    val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.loc)
-    // Make a new list of args, which includes the 'Id' function as a continuation
-    val args = defn.fparams.map(f => Expression.Var(f.sym, f.tpe, f.loc)) :+ mkLambda(freshSym, defn.tpe, freshSymVar)
+    // Make an id function, x -> x, to pass as continuation argument
+    val freshSym = Symbol.freshVarSym("shim")
+    val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.eff, defn.loc)
+    val id = mkLambda(freshSym, defn.tpe, freshSymVar)
+
+    // todo sjj: what about Eff?
     // Rebind the body of 'def' to call the new function given by defSymMap
-    val body = Expression.Apply(Expression.Def(defSymMap(defn.sym),defn.tpe, defn.loc), args, defn.tpe, defn.loc)
+    val defnApply: Expression = Expression.Def(defSymMap(defn.sym), defn.tpe, defn.eff, defn.loc)
+    val body = (defn.fparams :+ id.fparam).foldLeft(defnApply){
+      (acc, fparam) =>
+        Expression.Apply(acc, Expression.Var(fparam.sym, fparam.tpe, empEff(), fparam.loc), getReturnType(acc.tpe), empEff(), defn.loc)
+    }
+
     defn.copy(exp = body)
   }
 
@@ -67,10 +77,9 @@ object Continuations extends Phase[Root, Root] {
     // TODO SJJ: Modifiers?
     val kontFParam = FormalParam(kontSym, Modifiers.Empty , kontTpe , defn.loc)
 
-
     // todo sjj: visitExp should take defSymMap? (E.g. if f(x) = f(x-1), then f'(x, k) = f'(x-1, k) rather than f'(x, k) = f(x-1, k) )
     // todo sjj: var correct here
-    defn.copy(exp = visitExp(defn.exp, Expression.Var(kontSym, kontTpe, defn.loc), kontTpe), fparams = defn.fparams :+ kontFParam)
+    defn.copy(exp = visitExp(defn.exp, Expression.Var(kontSym, kontTpe, empEff(), defn.loc), kontTpe), fparams = defn.fparams :+ kontFParam)
   }
 
   // todo sjj rename cps transform, only add to one visitDefn
@@ -79,63 +88,60 @@ object Continuations extends Phase[Root, Root] {
     //
     // Unit. Apply `kont0` to the value.
     //
-    case Expression.Unit => mkApplyCont(kont0, exp0)
+    case Expression.Unit(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
     //
     // True. Apply `kont0` to the value.
     //
-    case Expression.True => mkApplyCont(kont0, exp0)
+    case Expression.True(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.False => mkApplyCont(kont0, exp0)
+    case Expression.False(loc) => mkApplyCont(kont0, exp0, empEff(),loc)
 
-    case Expression.Char(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Char(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Float32(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Float32(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Float64(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Float64(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Int8(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Int8(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Int16(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Int16(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Int32(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Int32(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Int64(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Int64(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.BigInt(lit) => mkApplyCont(kont0, exp0)
+    case Expression.BigInt(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Str(lit) => mkApplyCont(kont0, exp0)
+    case Expression.Str(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-    case Expression.Var(sym, tpe, loc) => mkApplyCont(kont0, exp0)
+    case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
       // todo sjj: make cases
 
-    case Expression.Unary(sop, op, exp, tpe, loc) => {
+    case Expression.Unary(op, exp, tpe, _, loc) => {
       val freshOperandSym = Symbol.freshVarSym() // TODO SJJ: What does the text do?
-      val freshOperandVar = Expression.Var(freshOperandSym, exp.tpe, loc)
-      val body = Expression.Unary(sop, op, freshOperandVar, tpe, loc)
-      val kont1 = mkLambda(freshOperandSym, freshOperandVar.tpe, mkApplyCont(kont0, body))
+      val freshOperandVar = Expression.Var(freshOperandSym, exp.tpe, empEff(), loc)
+      val body = Expression.Unary(op, freshOperandVar, tpe, empEff(), loc)
+      val kont1 = mkLambda(freshOperandSym, freshOperandVar.tpe, mkApplyCont(kont0, body, empEff(), loc))
       visitExp(exp, kont1, kont0Type)
     }
 
-    case Expression.Binary(sop, op, exp1, exp2, tpe: Type, loc) => {
-
-      //TODO SJJ: What is a semantic operator
-
+    case Expression.Binary(op, exp1, exp2, tpe, _, loc) => {
       // Introduce a fresh variable symbol for the lambda.
       val freshOperand1Sym = Symbol.freshVarSym() // TODO SJJ: What does the text do?
-      val freshOperand1Var = Expression.Var(freshOperand1Sym, exp1.tpe, loc)
+      val freshOperand1Var = Expression.Var(freshOperand1Sym, exp1.tpe, empEff(), loc)
       val freshOperand2Sym = Symbol.freshVarSym()
-      val freshOperand2Var = Expression.Var(freshOperand2Sym, exp2.tpe, loc)
+      val freshOperand2Var = Expression.Var(freshOperand2Sym, exp2.tpe, empEff(), loc)
 
-      val body = mkApplyCont(kont0, Expression.Binary(sop, op, freshOperand1Var, freshOperand2Var, tpe, loc))
+      val body = mkApplyCont(kont0, Expression.Binary(op, freshOperand1Var, freshOperand2Var, tpe, empEff(), loc), empEff(), loc)
       val kont2 = mkLambda(freshOperand2Sym, freshOperand2Var.tpe, body)
       val kont15 = visitExp(exp2, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
       val kont1 = mkLambda(freshOperand1Sym, freshOperand1Var.tpe, kont15)
       visitExp(exp1, kont1, kont0Type)
     }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => {
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) => {
       //
       // Evaluate the conditional expression `exp1` passing a lambda that
       // selects the appropriate branch where to continue execution.
@@ -143,13 +149,13 @@ object Continuations extends Phase[Root, Root] {
 
       // Introduce a fresh variable symbol for the lambda.
       val freshCondSym = Symbol.freshVarSym()
-      val freshCondVar = Expression.Var(freshCondSym, Type.Bool, loc)
+      val freshCondVar = Expression.Var(freshCondSym, Type.Bool, empEff(), loc)
 
       // Construct an expression that branches on the variable symbol and
       // continues execution in the CPS converted version of one of the two branches.
       val e2 = visitExp(exp2, kont0, kont0Type)
       val e3 = visitExp(exp3, kont0, kont0Type)
-      val e = Expression.IfThenElse(freshCondVar, e2, e3, kont0Type, loc)
+      val e = Expression.IfThenElse(freshCondVar, e2, e3, kont0Type, empEff(), loc)
 
       // Constructs the lambda to pass as the continuation to the evaluation of the conditional.
       val lambda = mkLambda(freshCondSym, Type.Bool, e)
@@ -160,16 +166,16 @@ object Continuations extends Phase[Root, Root] {
 
     // todo sjj: make cases
 
-    case Expression.Let(sym, exp1, exp2, tpe, loc) => {
+    case Expression.Let(sym, exp1, exp2, tpe, _, loc) => {
       val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0Type))
       visitExp(exp1, kont1, kont0Type)
     }
 
-    case Expression.Tuple(elms, tpe, loc) => {
+    case Expression.Tuple(elms, tpe, eff, loc) => {
       val syms = elms.map(exp => {
         val sym = Symbol.freshVarSym()
-        (exp, sym, Expression.Var(sym, exp.tpe, loc))})
-      val baseCase: Expression = mkApplyCont(kont0, Expression.Tuple(syms.map(e => e._3), tpe, loc))
+        (exp, sym, Expression.Var(sym, exp.tpe, empEff(), loc))})
+      val baseCase: Expression = mkApplyCont(kont0, Expression.Tuple(syms.map(e => e._3), tpe, empEff(), loc), empEff(), loc)
       syms.foldRight(baseCase){(syms, kont) =>
         val exp = syms._1
         val sym = syms._2
@@ -180,7 +186,7 @@ object Continuations extends Phase[Root, Root] {
       }
     }
 
-    case _ => print(exp0);exp0
+    case _ => exp0
   }
 
   // todo func to make list of exp to cps
@@ -192,23 +198,29 @@ object Continuations extends Phase[Root, Root] {
   private def mkLambda(sym: Symbol.VarSym, argType: Type, exp: Expression): Expression.Lambda = {
     val loc = exp.loc
     val fparam = FormalParam(sym, Modifiers.Empty, argType, loc)
-    Expression.Lambda(List(fparam), exp, Type.mkArrow(argType, exp.tpe), loc)
+    Expression.Lambda(fparam, exp, Type.mkArrow(argType, exp.tpe), empEff(), loc)
   }
 
   /**
     * Returns an apply expression that applies the given continuation `kont0` to the value or variable expression `exp0`.
     */
-  private def mkApplyCont(kont0: Expression, exp0: Expression) = {
+  private def mkApplyCont(kont0: Expression, exp0: Expression, eff: ca.uwaterloo.flix.language.ast.Eff, loc: SourceLocation) = {
     val kontReturnType = getReturnType(kont0.tpe)
-    Expression.Apply(kont0, List(exp0), kont0.tpe, SourceLocation.Generated)
+    Expression.Apply(kont0, exp0, kontReturnType, eff, loc)
   }
 
   /**
     * Returns the return type of the given type `tpe` which must be an arrow type.
     */
   private def getReturnType(tpe: Type): Type = {
-    assert(tpe.isArrow)
-    tpe.typeArguments.last
+    if (tpe.isArrow) {
+      tpe.typeArguments.last
+    }
+    else {
+      tpe
+    }
   }
+
+  private def empEff(): ca.uwaterloo.flix.language.ast.Eff = ca.uwaterloo.flix.language.ast.Eff.Empty
 
 }

@@ -237,10 +237,10 @@ class Flix {
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
+      Continuations |>
       Monomorph |>
       Synthesize |>
       Simplifier |>
-      Continuations |>
       Uncurrier |>
       ClosureConv |>
       LambdaLift |>
