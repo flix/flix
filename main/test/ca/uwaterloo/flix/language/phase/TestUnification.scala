@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
@@ -175,7 +175,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Float32") {
-    val result = Unification.unify(Type.Float32, Type.Float32)
+    val result = Unification.unify(Type.Cst(TypeConstructor.Float32), Type.Cst(TypeConstructor.Float32))
     assert(isOk(result))
   }
 
