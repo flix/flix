@@ -584,14 +584,12 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     val args = t0.typeArguments.map(visitType)
 
     base match {
-      // Type Constructors.
-      case Type.Cst(TypeConstructor.Float32) => MonoType.Float32
-
       // Primitive Types.
       case Type.Unit => MonoType.Unit
       case Type.Bool => MonoType.Bool
       case Type.Char => MonoType.Char
-      case Type.Float64 => MonoType.Float64
+      case Type.Cst(TypeConstructor.Float32) => MonoType.Float32
+      case Type.Cst(TypeConstructor.Float64) => MonoType.Float64
       case Type.Int8 => MonoType.Int8
       case Type.Int16 => MonoType.Int16
       case Type.Int32 => MonoType.Int32

@@ -180,7 +180,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Float64") {
-    val result = Unification.unify(Type.Float64, Type.Float64)
+    val result = Unification.unify(Type.Cst(TypeConstructor.Float64), Type.Cst(TypeConstructor.Float64))
     assert(isOk(result))
   }
 

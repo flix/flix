@@ -85,7 +85,7 @@ object SimplifiedAst {
     }
 
     case class Float64(lit: scala.Double) extends SimplifiedAst.Expression {
-      final val tpe = Type.Float64
+      final val tpe = Type.Cst(TypeConstructor.Float64)
       final val loc = SourceLocation.Unknown
     }
 

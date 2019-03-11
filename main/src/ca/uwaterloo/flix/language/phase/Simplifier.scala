@@ -141,7 +141,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             throw InternalCompilerException(s"Impossible.")
           case UnaryOperator.Minus => e.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Neg
-            case Type.Float64 => SemanticOperator.Float64Op.Neg
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Neg
             case Type.Int8 => SemanticOperator.Int8Op.Neg
             case Type.Int16 => SemanticOperator.Int16Op.Neg
             case Type.Int32 => SemanticOperator.Int32Op.Neg
@@ -174,7 +174,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val sop = op match {
           case BinaryOperator.Plus => e1.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Add
-            case Type.Float64 => SemanticOperator.Float64Op.Add
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Add
             case Type.Int8 => SemanticOperator.Int8Op.Add
             case Type.Int16 => SemanticOperator.Int16Op.Add
             case Type.Int32 => SemanticOperator.Int32Op.Add
@@ -185,7 +185,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.Minus => e1.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Sub
-            case Type.Float64 => SemanticOperator.Float64Op.Sub
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Sub
             case Type.Int8 => SemanticOperator.Int8Op.Sub
             case Type.Int16 => SemanticOperator.Int16Op.Sub
             case Type.Int32 => SemanticOperator.Int32Op.Sub
@@ -195,7 +195,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.Times => e1.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Mul
-            case Type.Float64 => SemanticOperator.Float64Op.Mul
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Mul
             case Type.Int8 => SemanticOperator.Int8Op.Mul
             case Type.Int16 => SemanticOperator.Int16Op.Mul
             case Type.Int32 => SemanticOperator.Int32Op.Mul
@@ -205,7 +205,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.Divide => e1.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Div
-            case Type.Float64 => SemanticOperator.Float64Op.Div
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Div
             case Type.Int8 => SemanticOperator.Int8Op.Div
             case Type.Int16 => SemanticOperator.Int16Op.Div
             case Type.Int32 => SemanticOperator.Int32Op.Div
@@ -215,7 +215,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.Modulo => e1.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Rem
-            case Type.Float64 => SemanticOperator.Float64Op.Rem
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Rem
             case Type.Int8 => SemanticOperator.Int8Op.Rem
             case Type.Int16 => SemanticOperator.Int16Op.Rem
             case Type.Int32 => SemanticOperator.Int32Op.Rem
@@ -225,7 +225,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.Exponentiate => e1.tpe match {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Exp
-            case Type.Float64 => SemanticOperator.Float64Op.Exp
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Exp
             case Type.Int8 => SemanticOperator.Int8Op.Exp
             case Type.Int16 => SemanticOperator.Int16Op.Exp
             case Type.Int32 => SemanticOperator.Int32Op.Exp
@@ -236,7 +236,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case BinaryOperator.Less => e1.tpe match {
             case Type.Char => SemanticOperator.CharOp.Lt
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Lt
-            case Type.Float64 => SemanticOperator.Float64Op.Lt
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Lt
             case Type.Int8 => SemanticOperator.Int8Op.Lt
             case Type.Int16 => SemanticOperator.Int16Op.Lt
             case Type.Int32 => SemanticOperator.Int32Op.Lt
@@ -247,7 +247,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case BinaryOperator.LessEqual => e1.tpe match {
             case Type.Char => SemanticOperator.CharOp.Le
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Le
-            case Type.Float64 => SemanticOperator.Float64Op.Le
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Le
             case Type.Int8 => SemanticOperator.Int8Op.Le
             case Type.Int16 => SemanticOperator.Int16Op.Le
             case Type.Int32 => SemanticOperator.Int32Op.Le
@@ -258,7 +258,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case BinaryOperator.Greater => e1.tpe match {
             case Type.Char => SemanticOperator.CharOp.Gt
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Gt
-            case Type.Float64 => SemanticOperator.Float64Op.Gt
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Gt
             case Type.Int8 => SemanticOperator.Int8Op.Gt
             case Type.Int16 => SemanticOperator.Int16Op.Gt
             case Type.Int32 => SemanticOperator.Int32Op.Gt
@@ -269,7 +269,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case BinaryOperator.GreaterEqual => e1.tpe match {
             case Type.Char => SemanticOperator.CharOp.Ge
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Ge
-            case Type.Float64 => SemanticOperator.Float64Op.Ge
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Ge
             case Type.Int8 => SemanticOperator.Int8Op.Ge
             case Type.Int16 => SemanticOperator.Int16Op.Ge
             case Type.Int32 => SemanticOperator.Int32Op.Ge
@@ -281,7 +281,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Bool => SemanticOperator.BoolOp.Eq
             case Type.Char => SemanticOperator.CharOp.Eq
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
-            case Type.Float64 => SemanticOperator.Float64Op.Eq
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
             case Type.Int8 => SemanticOperator.Int8Op.Eq
             case Type.Int16 => SemanticOperator.Int16Op.Eq
             case Type.Int32 => SemanticOperator.Int32Op.Eq
@@ -294,7 +294,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Bool => SemanticOperator.BoolOp.Neq
             case Type.Char => SemanticOperator.CharOp.Neq
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Neq
-            case Type.Float64 => SemanticOperator.Float64Op.Neq
+            case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Neq
             case Type.Int8 => SemanticOperator.Int8Op.Neq
             case Type.Int16 => SemanticOperator.Int16Op.Neq
             case Type.Int32 => SemanticOperator.Int32Op.Neq
@@ -885,7 +885,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Type.Bool => SemanticOperator.BoolOp.Eq
         case Type.Char => SemanticOperator.CharOp.Eq
         case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
-        case Type.Float64 => SemanticOperator.Float64Op.Eq
+        case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
         case Type.Int8 => SemanticOperator.Int8Op.Eq
         case Type.Int16 => SemanticOperator.Int16Op.Eq
         case Type.Int32 => SemanticOperator.Int32Op.Eq

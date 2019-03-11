@@ -193,7 +193,6 @@ object TypeError {
     case (Type.Unit, Type.Unit) => TypeDiff.Star(TyCon.Other)
     case (Type.Bool, Type.Bool) => TypeDiff.Star(TyCon.Other)
     case (Type.Char, Type.Char) => TypeDiff.Star(TyCon.Other)
-    case (Type.Float64, Type.Float64) => TypeDiff.Star(TyCon.Other)
     case (Type.Int8, Type.Int8) => TypeDiff.Star(TyCon.Other)
     case (Type.Int16, Type.Int16) => TypeDiff.Star(TyCon.Other)
     case (Type.Int32, Type.Int32) => TypeDiff.Star(TyCon.Other)

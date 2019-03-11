@@ -333,7 +333,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a Record type
     */
-  def getRecordExtendClassType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getRecordExtendClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
 
     case MonoType.RecordExtend(_, value, _) =>
       // Compute the stringified erased type of value.
@@ -358,7 +358,7 @@ object JvmOps {
     * {x : Char, y : Int}  =>    RecordExtend$Obj
     *
     */
-  def getRecordType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference =  {
+  def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // Compute the stringified erased type of 'tpe'.
     val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
@@ -730,7 +730,7 @@ object JvmOps {
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
     case MonoType.Float32 => Type.Cst(TypeConstructor.Float32)
-    case MonoType.Float64 => Type.Float64
+    case MonoType.Float64 => Type.Cst(TypeConstructor.Float64)
     case MonoType.Int8 => Type.Int8
     case MonoType.Int16 => Type.Int16
     case MonoType.Int32 => Type.Int32

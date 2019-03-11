@@ -90,7 +90,7 @@ object TypedAst {
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Float64
+      final def tpe: Type = Type.Cst(TypeConstructor.Float64)
 
       final def eff: ast.Eff = ast.Eff.Empty
     }
@@ -282,7 +282,7 @@ object TypedAst {
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Float64
+      def tpe: Type = Type.Cst(TypeConstructor.Float64)
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {

@@ -80,7 +80,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Unit => Type.Unit
         case Type.Bool => Type.Bool
         case Type.Char => Type.Char
-        case Type.Float64 => Type.Float64
         case Type.Int8 => Type.Int8
         case Type.Int16 => Type.Int16
         case Type.Int32 => Type.Int32

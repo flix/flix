@@ -38,7 +38,6 @@ sealed trait Type {
     case Type.Unit => Set.empty
     case Type.Bool => Set.empty
     case Type.Char => Set.empty
-    case Type.Float64 => Set.empty
     case Type.Int8 => Set.empty
     case Type.Int16 => Set.empty
     case Type.Int32 => Set.empty
@@ -200,7 +199,6 @@ sealed trait Type {
     case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
-    case Type.Float64 => "Float64"
     case Type.Int8 => "Int8"
     case Type.Int16 => "Int16"
     case Type.Int32 => "Int32"
@@ -294,13 +292,6 @@ object Type {
     * A type constructor that represent character values.
     */
   case object Char extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 64-bit floating point numbers.
-    */
-  case object Float64 extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -611,7 +602,6 @@ object Type {
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
-      case Type.Float64 => Type.Float64
       case Type.Int8 => Type.Int8
       case Type.Int16 => Type.Int16
       case Type.Int32 => Type.Int32
@@ -674,7 +664,6 @@ object Type {
           case Type.Unit => "Unit"
           case Type.Bool => "Bool"
           case Type.Char => "Char"
-          case Type.Float64 => "Float64"
           case Type.Int8 => "Int8"
           case Type.Int16 => "Int16"
           case Type.Int32 => "Int32"
