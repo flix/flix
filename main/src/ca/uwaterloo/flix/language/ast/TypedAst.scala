@@ -96,7 +96,7 @@ object TypedAst {
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Int8
+      final def tpe: Type = Type.Cst(TypeConstructor.Int8)
 
       final def eff: ast.Eff = ast.Eff.Empty
     }
@@ -286,7 +286,7 @@ object TypedAst {
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int8
+      def tpe: Type = Type.Cst(TypeConstructor.Int8)
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Pattern {

@@ -1280,7 +1280,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Float32" => Type.Cst(TypeConstructor.Float32).toSuccess
       case "Float64" => Type.Cst(TypeConstructor.Float64).toSuccess
       case "Int" => Type.Int32.toSuccess
-      case "Int8" => Type.Int8.toSuccess
+      case "Int8" => Type.Cst(TypeConstructor.Int8).toSuccess
       case "Int16" => Type.Int16.toSuccess
       case "Int32" => Type.Int32.toSuccess
       case "Int64" => Type.Int64.toSuccess

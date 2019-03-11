@@ -90,7 +90,7 @@ object SimplifiedAst {
     }
 
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
-      final val tpe = Type.Int8
+      final val tpe = Type.Cst(TypeConstructor.Int8)
       final val loc = SourceLocation.Unknown
     }
 
