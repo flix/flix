@@ -1289,7 +1289,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Channel" => Type.Channel.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Vector" => Type.Vector.toSuccess
-      case "Ref" => Type.Ref.toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.Ref).toSuccess
 
       // Disambiguate type.
       case typeName =>

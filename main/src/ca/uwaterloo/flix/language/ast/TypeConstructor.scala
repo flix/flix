@@ -58,4 +58,11 @@ object TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
+  /**
+    * A type constructor that represents the type of references.
+    */
+  case object Ref extends TypeConstructor {
+    def kind: Kind = Kind.Star -> Kind.Star
+  }
+
 }

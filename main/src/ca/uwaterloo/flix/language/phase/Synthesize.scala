@@ -728,7 +728,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.String].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
-        case Type.Apply(Type.Ref, _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Array, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Vector, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
@@ -988,7 +988,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Str => exp0
 
-        case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Str("<<ref>>", sl)
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
 

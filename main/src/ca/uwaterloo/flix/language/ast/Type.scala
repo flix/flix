@@ -43,7 +43,6 @@ sealed trait Type {
     case Type.Array => Set.empty
     case Type.Vector => Set.empty
     case Type.Native(clazz) => Set.empty
-    case Type.Ref => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
@@ -169,14 +168,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a reference type.
-    */
-  def isRef: Boolean = typeConstructor match {
-    case Type.Ref => true
-    case _ => false
-  }
-
-  /**
     * Returns `true` if `this` type does not contain type variables.
     */
   def isDeterminate: Boolean = this match {
@@ -201,7 +192,6 @@ sealed trait Type {
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Native(clazz) => "Native"
-    case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
@@ -317,13 +307,6 @@ object Type {
     * A type constructor that represent native objects.
     */
   case class Native(clazz: Class[_]) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represents references.
-    */
-  case object Ref extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -562,7 +545,6 @@ object Type {
       case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
-      case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
@@ -621,7 +603,6 @@ object Type {
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName
-          case Type.Ref => "Ref"
 
           //
           // Arrow.

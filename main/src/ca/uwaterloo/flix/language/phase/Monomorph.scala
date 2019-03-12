@@ -85,7 +85,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Array => Type.Array
         case Type.Vector => Type.Vector
         case Type.Native(clazz) => Type.Native(clazz)
-        case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
         case Type.RecordEmpty => Type.RecordEmpty

@@ -68,7 +68,6 @@ object Unification {
       case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
-      case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
@@ -224,7 +223,7 @@ object Unification {
           Result.Ok(Substitution.empty)
         else
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))
-      case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
+      case (Type.Cst(TypeConstructor.Ref), Type.Cst(TypeConstructor.Ref)) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
 

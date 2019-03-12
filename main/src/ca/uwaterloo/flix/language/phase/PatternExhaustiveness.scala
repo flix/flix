@@ -712,7 +712,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.BigInt => 0
       case Type.Str => 0
       case Type.Native(clazz) => 0
-      case Type.Ref => 0
+      case Type.Cst(TypeConstructor.Ref) => 0
       case Type.Arrow(length) => length
       case Type.Channel => 1
       case Type.Array => 1

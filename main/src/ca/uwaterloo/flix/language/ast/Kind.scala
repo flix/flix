@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.tc.Show
   */
 trait Kind {
 
+  def ->(that: Kind): Kind = Kind.Arrow(List(this), that)
+
   override def toString: String = Kind.ShowInstance.show(this)
 
 }
