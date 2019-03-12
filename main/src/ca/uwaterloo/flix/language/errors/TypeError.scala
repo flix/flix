@@ -195,7 +195,6 @@ object TypeError {
     case (Type.Native(clazz1), Type.Native(clazz2)) => TypeDiff.Star(TyCon.Other)
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TyCon.Enum(name1.name))
-    case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TyCon.Tuple)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       (diff(t11, t21), diff(t12, t22)) match {
         case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)

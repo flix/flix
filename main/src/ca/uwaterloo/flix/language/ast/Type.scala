@@ -39,7 +39,6 @@ sealed trait Type {
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
-    case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
@@ -129,8 +128,9 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is a tuple type.
     */
+  @deprecated("removed", "0.5")
   def isTuple: Boolean = typeConstructor match {
-    case Type.Tuple(l) => true
+    case Type.Cst(TypeConstructor.Tuple(l)) => true
     case _ => false
   }
 
@@ -174,7 +174,6 @@ sealed trait Type {
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
-    case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
@@ -271,13 +270,6 @@ object Type {
     * @param kind the kind of the lattice.
     */
   case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
-
-  /**
-    * A type constructor that represents tuples of the given `length`.
-    */
-  case class Tuple(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
 
   /**
     * A type constructor that represents the empty record type.
@@ -392,7 +384,7 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    val tuple = Tuple(ts.length)
+    val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
     ts.foldLeft(tuple: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -442,7 +434,6 @@ object Type {
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
-      case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
@@ -482,6 +473,12 @@ object Type {
           case Type.Var(id, kind) => m(id)
 
           //
+          // Tuple.
+          //
+          case Type.Cst(TypeConstructor.Tuple(l)) =>
+            "(" + args.map(visit(_, m)).mkString(", ") + ")"
+
+          //
           // Type Constructors.
           //
           case Type.Cst(tc) => tc.toString
@@ -504,12 +501,6 @@ object Type {
             } else {
               "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
             }
-
-          //
-          // Tuple.
-          //
-          case Type.Tuple(l) =>
-            "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
           //
           // RecordEmpty.

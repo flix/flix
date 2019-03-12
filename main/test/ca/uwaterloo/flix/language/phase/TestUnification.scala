@@ -224,11 +224,6 @@ class TestUnification extends FunSuite {
     assert(isOk(result))
   }
 
-  test("Unify.FTuple") {
-    val result = Unification.unify(Type.Tuple(42), Type.Tuple(42))
-    assert(isOk(result))
-  }
-
   test("Unify.Zero") {
     val result = Unification.unify(Type.Zero, Type.Zero)
     assert(isOk(result))

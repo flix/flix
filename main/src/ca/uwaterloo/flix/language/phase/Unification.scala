@@ -62,7 +62,6 @@ object Unification {
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
-      case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
@@ -212,8 +211,6 @@ object Unification {
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))
 
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-
-      case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 

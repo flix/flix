@@ -79,7 +79,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
         case Type.Native(clazz) => Type.Native(clazz)
         case Type.Arrow(l) => Type.Arrow(l)
-        case Type.Tuple(l) => Type.Tuple(l)
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)

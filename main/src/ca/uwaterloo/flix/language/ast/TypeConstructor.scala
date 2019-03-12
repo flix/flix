@@ -117,6 +117,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of tuples.
+    */
+  case class Tuple(l: Int) extends TypeConstructor {
+    /**
+      * The shape of a tuple is (t1, ..., tn).
+      */
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
     * A type constructor that represent the type of vectors.
     */
   case object Vector extends TypeConstructor {
