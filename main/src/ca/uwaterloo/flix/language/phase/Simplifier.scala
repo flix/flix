@@ -131,7 +131,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case UnaryOperator.LogicalNot => SemanticOperator.BoolOp.Not
           case UnaryOperator.BitwiseNegate => e.tpe match {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Not
-            case Type.Int16 => SemanticOperator.Int16Op.Not
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Not
             case Type.Int32 => SemanticOperator.Int32Op.Not
             case Type.Int64 => SemanticOperator.Int64Op.Not
             case Type.BigInt => SemanticOperator.BigIntOp.Not
@@ -143,7 +143,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Neg
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Neg
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Neg
-            case Type.Int16 => SemanticOperator.Int16Op.Neg
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Neg
             case Type.Int32 => SemanticOperator.Int32Op.Neg
             case Type.Int64 => SemanticOperator.Int64Op.Neg
             case Type.BigInt => SemanticOperator.BigIntOp.Neg
@@ -176,7 +176,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Add
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Add
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Add
-            case Type.Int16 => SemanticOperator.Int16Op.Add
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Add
             case Type.Int32 => SemanticOperator.Int32Op.Add
             case Type.Int64 => SemanticOperator.Int64Op.Add
             case Type.BigInt => SemanticOperator.BigIntOp.Add
@@ -187,7 +187,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Sub
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Sub
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Sub
-            case Type.Int16 => SemanticOperator.Int16Op.Sub
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Sub
             case Type.Int32 => SemanticOperator.Int32Op.Sub
             case Type.Int64 => SemanticOperator.Int64Op.Sub
             case Type.BigInt => SemanticOperator.BigIntOp.Sub
@@ -197,7 +197,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Mul
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Mul
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Mul
-            case Type.Int16 => SemanticOperator.Int16Op.Mul
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Mul
             case Type.Int32 => SemanticOperator.Int32Op.Mul
             case Type.Int64 => SemanticOperator.Int64Op.Mul
             case Type.BigInt => SemanticOperator.BigIntOp.Mul
@@ -207,7 +207,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Div
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Div
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Div
-            case Type.Int16 => SemanticOperator.Int16Op.Div
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Div
             case Type.Int32 => SemanticOperator.Int32Op.Div
             case Type.Int64 => SemanticOperator.Int64Op.Div
             case Type.BigInt => SemanticOperator.BigIntOp.Div
@@ -217,7 +217,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Rem
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Rem
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Rem
-            case Type.Int16 => SemanticOperator.Int16Op.Rem
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Rem
             case Type.Int32 => SemanticOperator.Int32Op.Rem
             case Type.Int64 => SemanticOperator.Int64Op.Rem
             case Type.BigInt => SemanticOperator.BigIntOp.Rem
@@ -227,7 +227,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Exp
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Exp
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Exp
-            case Type.Int16 => SemanticOperator.Int16Op.Exp
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Exp
             case Type.Int32 => SemanticOperator.Int32Op.Exp
             case Type.Int64 => SemanticOperator.Int64Op.Exp
             case Type.BigInt => SemanticOperator.BigIntOp.Exp
@@ -238,7 +238,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Lt
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Lt
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Lt
-            case Type.Int16 => SemanticOperator.Int16Op.Lt
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Lt
             case Type.Int32 => SemanticOperator.Int32Op.Lt
             case Type.Int64 => SemanticOperator.Int64Op.Lt
             case Type.BigInt => SemanticOperator.BigIntOp.Lt
@@ -249,7 +249,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Le
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Le
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Le
-            case Type.Int16 => SemanticOperator.Int16Op.Le
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Le
             case Type.Int32 => SemanticOperator.Int32Op.Le
             case Type.Int64 => SemanticOperator.Int64Op.Le
             case Type.BigInt => SemanticOperator.BigIntOp.Le
@@ -260,7 +260,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Gt
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Gt
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Gt
-            case Type.Int16 => SemanticOperator.Int16Op.Gt
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Gt
             case Type.Int32 => SemanticOperator.Int32Op.Gt
             case Type.Int64 => SemanticOperator.Int64Op.Gt
             case Type.BigInt => SemanticOperator.BigIntOp.Gt
@@ -271,7 +271,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Ge
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Ge
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Ge
-            case Type.Int16 => SemanticOperator.Int16Op.Ge
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Ge
             case Type.Int32 => SemanticOperator.Int32Op.Ge
             case Type.Int64 => SemanticOperator.Int64Op.Ge
             case Type.BigInt => SemanticOperator.BigIntOp.Ge
@@ -283,7 +283,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
-            case Type.Int16 => SemanticOperator.Int16Op.Eq
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
             case Type.Int32 => SemanticOperator.Int32Op.Eq
             case Type.Int64 => SemanticOperator.Int64Op.Eq
             case Type.BigInt => SemanticOperator.BigIntOp.Eq
@@ -296,7 +296,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Neq
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Neq
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Neq
-            case Type.Int16 => SemanticOperator.Int16Op.Neq
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Neq
             case Type.Int32 => SemanticOperator.Int32Op.Neq
             case Type.Int64 => SemanticOperator.Int64Op.Neq
             case Type.BigInt => SemanticOperator.BigIntOp.Neq
@@ -313,7 +313,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.BitwiseAnd => e1.tpe match {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.And
-            case Type.Int16 => SemanticOperator.Int16Op.And
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.And
             case Type.Int32 => SemanticOperator.Int32Op.And
             case Type.Int64 => SemanticOperator.Int64Op.And
             case Type.BigInt => SemanticOperator.BigIntOp.And
@@ -321,7 +321,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.BitwiseOr => e1.tpe match {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Or
-            case Type.Int16 => SemanticOperator.Int16Op.Or
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Or
             case Type.Int32 => SemanticOperator.Int32Op.Or
             case Type.Int64 => SemanticOperator.Int64Op.Or
             case Type.BigInt => SemanticOperator.BigIntOp.Or
@@ -329,7 +329,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.BitwiseXor => e1.tpe match {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Xor
-            case Type.Int16 => SemanticOperator.Int16Op.Xor
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Xor
             case Type.Int32 => SemanticOperator.Int32Op.Xor
             case Type.Int64 => SemanticOperator.Int64Op.Xor
             case Type.BigInt => SemanticOperator.BigIntOp.Xor
@@ -337,7 +337,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.BitwiseLeftShift => e1.tpe match {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Shl
-            case Type.Int16 => SemanticOperator.Int16Op.Shl
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Shl
             case Type.Int32 => SemanticOperator.Int32Op.Shl
             case Type.Int64 => SemanticOperator.Int64Op.Shl
             case Type.BigInt => SemanticOperator.BigIntOp.Shl
@@ -345,7 +345,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.BitwiseRightShift => e1.tpe match {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Shr
-            case Type.Int16 => SemanticOperator.Int16Op.Shr
+            case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Shr
             case Type.Int32 => SemanticOperator.Int32Op.Shr
             case Type.Int64 => SemanticOperator.Int64Op.Shr
             case Type.BigInt => SemanticOperator.BigIntOp.Shr
@@ -887,7 +887,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
         case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
         case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
-        case Type.Int16 => SemanticOperator.Int16Op.Eq
+        case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
         case Type.Int32 => SemanticOperator.Int32Op.Eq
         case Type.Int64 => SemanticOperator.Int64Op.Eq
         case Type.BigInt => SemanticOperator.BigIntOp.Eq

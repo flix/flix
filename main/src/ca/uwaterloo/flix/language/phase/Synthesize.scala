@@ -494,7 +494,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Float32) => default
         case Type.Cst(TypeConstructor.Float64) => default
         case Type.Cst(TypeConstructor.Int8) => default
-        case Type.Int16 => default
+        case Type.Cst(TypeConstructor.Int16) => default
         case Type.Int32 => default
         case Type.Int64 => default
         case Type.BigInt => default
@@ -712,7 +712,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Float32) => Expression.Int32(123, sl)
         case Type.Cst(TypeConstructor.Float64) => Expression.Int32(123, sl)
         case Type.Cst(TypeConstructor.Int8) => Expression.Int32(123, sl)
-        case Type.Int16 => Expression.Int32(123, sl)
+        case Type.Cst(TypeConstructor.Int16) => Expression.Int32(123, sl)
 
         case Type.Int32 => exp0
 
@@ -952,7 +952,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Byte].getMethod("toString", classOf[Byte])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
-        case Type.Int16 =>
+        case Type.Cst(TypeConstructor.Int16) =>
           val method = classOf[java.lang.Short].getMethod("toString", classOf[Short])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
@@ -1180,7 +1180,7 @@ object Synthesize extends Phase[Root, Root] {
       case Type.Cst(TypeConstructor.Float32) => true
       case Type.Cst(TypeConstructor.Float64) => true
       case Type.Cst(TypeConstructor.Int8) => true
-      case Type.Int16 => true
+      case Type.Cst(TypeConstructor.Int16) => true
       case Type.Int32 => true
       case Type.Int64 => true
       case _ => false

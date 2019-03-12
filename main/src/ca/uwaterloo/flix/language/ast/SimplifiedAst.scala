@@ -95,7 +95,7 @@ object SimplifiedAst {
     }
 
     case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
-      final val tpe = Type.Int16
+      final val tpe = Type.Cst(TypeConstructor.Int16)
       final val loc = SourceLocation.Unknown
     }
 

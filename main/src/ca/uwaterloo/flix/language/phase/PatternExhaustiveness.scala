@@ -706,7 +706,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Float32) => 0
       case Type.Cst(TypeConstructor.Float64) => 0
       case Type.Cst(TypeConstructor.Int8) => 0
-      case Type.Int16 => 0
+      case Type.Cst(TypeConstructor.Int16) => 0
       case Type.Int32 => 0
       case Type.Int64 => 0
       case Type.BigInt => 0
