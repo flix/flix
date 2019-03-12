@@ -43,7 +43,6 @@ sealed trait Type {
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
-    case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, ts, _) => ts.flatMap(_.typeVars).toSet
     case Type.Lattice(_, ts, _) => ts.flatMap(_.typeVars).toSet
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -104,8 +103,9 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is an enum type.
     */
+  @deprecated("removed", "0.5")
   def isEnum: Boolean = typeConstructor match {
-    case Type.Enum(sym, kind) => true
+    case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
     case _ => false
   }
 
@@ -171,7 +171,6 @@ sealed trait Type {
     case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Native(clazz) => "Native"
     case Type.Arrow(l) => s"Arrow($l)"
-    case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.RecordEmpty => "{ }"
@@ -244,14 +243,6 @@ object Type {
   case class Arrow(length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
-
-  /**
-    * A type constructor that represents enums.
-    *
-    * @param sym  the symbol of the enum.
-    * @param kind the kind of the enum.
-    */
-  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
     * A type constructor that represents a relation with attributes of the given types.
@@ -411,13 +402,6 @@ object Type {
   def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Cst(TypeConstructor.Vector), elmType), len)
 
   /**
-    * Constructs the set type of A.
-    */
-  def mkFSet(a: Type): Type = {
-    Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), a)
-  }
-
-  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -441,7 +425,6 @@ object Type {
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
-      case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
     }
@@ -471,6 +454,12 @@ object Type {
           // Type Variable.
           //
           case Type.Var(id, kind) => m(id)
+
+          //
+          // Enum.
+          //
+          case Type.Cst(TypeConstructor.Enum(sym, _)) =>
+            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
           //
           // Tuple.
@@ -523,12 +512,6 @@ object Type {
           //
           case Type.SchemaExtend(sym, t, rest) =>
             "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
-
-          //
-          // Enum.
-          //
-          case Type.Enum(sym, _) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
           //
           // Relation.

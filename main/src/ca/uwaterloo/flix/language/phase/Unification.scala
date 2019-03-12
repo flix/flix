@@ -68,7 +68,6 @@ object Unification {
       case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, apply(tpe), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
-      case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map apply, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map apply, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
@@ -242,7 +241,6 @@ object Unification {
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
-      case (Type.Enum(sym1, kind1), Type.Enum(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
 
       case (Type.Relation(sym1, attr1, kind1), Type.Relation(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
 

@@ -107,6 +107,11 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of enums.
+    */
+  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+
+  /**
     * A type constructor that represent the type of references.
     */
   case object Ref extends TypeConstructor {

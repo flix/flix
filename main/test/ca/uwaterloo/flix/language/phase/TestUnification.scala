@@ -281,7 +281,7 @@ class TestUnification extends FunSuite {
 
   test("Unify.Enum.01") {
     val sym = Symbol.mkEnumSym("Color")
-    val result = Unification.unify(Type.Enum(sym, Kind.Star), Type.Enum(sym, Kind.Star))
+    val result = Unification.unify(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), Type.Cst(TypeConstructor.Enum(sym, Kind.Star)))
     assert(isOk(result))
   }
 

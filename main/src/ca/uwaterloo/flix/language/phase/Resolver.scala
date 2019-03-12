@@ -1321,7 +1321,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
       }
     case NamedAst.Type.Enum(sym) =>
-      Type.Enum(sym, Kind.Star).toSuccess
+      Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1640,7 +1640,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Enum(enum.sym, Kind.Star)
+      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, Kind.Star))
     }
 
   /**

@@ -742,7 +742,7 @@ object JvmOps {
     case MonoType.Native(clazz) => Type.Native(clazz)
     case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
-    case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
+    case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
     case MonoType.Relation(sym, attr) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Lattice(sym, attr) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack

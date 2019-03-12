@@ -1155,7 +1155,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the enum symbol of the given enum type `tpe`.
       */
     def getEnumSym(tpe: Type): Symbol.EnumSym = {
-      val Type.Enum(sym, _) = tpe.typeConstructor
+      val Type.Cst(TypeConstructor.Enum(sym, _)) = tpe.typeConstructor
       sym
     }
 

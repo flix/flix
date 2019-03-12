@@ -91,7 +91,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
-        case Type.Enum(sym, kind) => Type.Enum(sym, kind)
         case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
         case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))

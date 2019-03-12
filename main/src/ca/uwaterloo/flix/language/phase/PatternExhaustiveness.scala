@@ -717,6 +717,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Arrow(length) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
+      case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
       case Type.Cst(TypeConstructor.Vector) => 2
       case Type.Cst(TypeConstructor.Tuple(l)) => l
       case Type.Zero => 0
@@ -725,7 +726,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
-      case Type.Enum(sym, kind) => 0
       case Type.Relation(sym, attr, kind) => 0
       case Type.Lattice(sym, attr, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)

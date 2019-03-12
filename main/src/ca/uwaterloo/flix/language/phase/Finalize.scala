@@ -602,13 +602,13 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Channel) => MonoType.Channel(args.head)
 
+      case Type.Cst(TypeConstructor.Enum(sym, _)) => MonoType.Enum(sym, args)
+
       case Type.Cst(TypeConstructor.Ref) => MonoType.Ref(args.head)
 
       case Type.Cst(TypeConstructor.Vector) => MonoType.Array(args.head)
 
       case Type.Cst(TypeConstructor.Tuple(l)) => MonoType.Tuple(args)
-
-      case Type.Enum(sym, _) => MonoType.Enum(sym, args)
 
       case Type.Arrow(l) => MonoType.Arrow(args.init, args.last)
 
