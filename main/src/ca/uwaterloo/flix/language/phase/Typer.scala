@@ -408,7 +408,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.Int32(lit, loc) => liftM(Type.Cst(TypeConstructor.Int32))
       case ResolvedAst.Expression.Int64(lit, loc) => liftM(Type.Cst(TypeConstructor.Int64))
       case ResolvedAst.Expression.BigInt(lit, loc) => liftM(Type.Cst(TypeConstructor.BigInt))
-      case ResolvedAst.Expression.Str(lit, loc) => liftM(Type.Str)
+      case ResolvedAst.Expression.Str(lit, loc) => liftM(Type.Cst(TypeConstructor.Str))
 
       /*
        * Lambda expression.
@@ -1808,7 +1808,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Cst(TypeConstructor.Int32))
       case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Cst(TypeConstructor.Int64))
       case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.Cst(TypeConstructor.BigInt))
-      case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)
+      case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Cst(TypeConstructor.Str))
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = program.enums(sym)

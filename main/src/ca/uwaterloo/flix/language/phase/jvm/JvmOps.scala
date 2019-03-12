@@ -736,7 +736,7 @@ object JvmOps {
     case MonoType.Int32 => Type.Cst(TypeConstructor.Int32)
     case MonoType.Int64 => Type.Cst(TypeConstructor.Int64)
     case MonoType.BigInt => Type.Cst(TypeConstructor.BigInt)
-    case MonoType.Str => Type.Str
+    case MonoType.Str => Type.Cst(TypeConstructor.Str)
     case MonoType.Channel(elm) => Type.Apply(Type.Channel, hackMonoType2Type(elm))
     case MonoType.Array(elm) => Type.Apply(Type.Array, hackMonoType2Type(elm))
     case MonoType.Native(clazz) => Type.Native(clazz)

@@ -210,7 +210,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Str") {
-    val result = Unification.unify(Type.Str, Type.Str)
+    val result = Unification.unify(Type.Cst(TypeConstructor.Str), Type.Cst(TypeConstructor.Str))
     assert(isOk(result))
   }
 

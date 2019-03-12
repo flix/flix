@@ -180,7 +180,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Add
             case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Add
             case Type.Cst(TypeConstructor.BigInt) => SemanticOperator.BigIntOp.Add
-            case Type.Str => SemanticOperator.StringOp.Concat
+            case Type.Cst(TypeConstructor.Str) => SemanticOperator.StringOp.Concat
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Minus => e1.tpe match {
@@ -287,7 +287,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
             case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
             case Type.Cst(TypeConstructor.BigInt) => SemanticOperator.BigIntOp.Eq
-            case Type.Str => SemanticOperator.StringOp.Eq
+            case Type.Cst(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.NotEqual => e1.tpe match {
@@ -300,7 +300,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Neq
             case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Neq
             case Type.Cst(TypeConstructor.BigInt) => SemanticOperator.BigIntOp.Neq
-            case Type.Str => SemanticOperator.StringOp.Neq
+            case Type.Cst(TypeConstructor.Str) => SemanticOperator.StringOp.Neq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LogicalAnd => e1.tpe match {
@@ -891,7 +891,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
         case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
         case Type.Cst(TypeConstructor.BigInt) => SemanticOperator.BigIntOp.Eq
-        case Type.Str => SemanticOperator.StringOp.Eq
+        case Type.Cst(TypeConstructor.Str) => SemanticOperator.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 

@@ -115,7 +115,7 @@ object SimplifiedAst {
     }
 
     case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
-      final val tpe = Type.Str
+      final val tpe = Type.Cst(TypeConstructor.Str)
       final val loc = SourceLocation.Unknown
     }
 

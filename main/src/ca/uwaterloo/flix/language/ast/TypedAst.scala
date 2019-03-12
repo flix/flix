@@ -126,7 +126,7 @@ object TypedAst {
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Str
+      final def tpe: Type = Type.Cst(TypeConstructor.Str)
 
       final def eff: ast.Eff = ast.Eff.Empty
     }
@@ -306,7 +306,7 @@ object TypedAst {
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Str
+      def tpe: Type = Type.Cst(TypeConstructor.Str)
     }
 
     case class Tag(sym: Symbol.EnumSym, tag: String, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
