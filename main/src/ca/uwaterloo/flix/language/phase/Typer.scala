@@ -406,7 +406,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.Int8(lit, loc) => liftM(Type.Cst(TypeConstructor.Int8))
       case ResolvedAst.Expression.Int16(lit, loc) => liftM(Type.Cst(TypeConstructor.Int16))
       case ResolvedAst.Expression.Int32(lit, loc) => liftM(Type.Cst(TypeConstructor.Int32))
-      case ResolvedAst.Expression.Int64(lit, loc) => liftM(Type.Int64)
+      case ResolvedAst.Expression.Int64(lit, loc) => liftM(Type.Cst(TypeConstructor.Int64))
       case ResolvedAst.Expression.BigInt(lit, loc) => liftM(Type.BigInt)
       case ResolvedAst.Expression.Str(lit, loc) => liftM(Type.Str)
 
@@ -1199,7 +1199,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         for {
           e <- visitExp(exp)
-          _ <- unifyM(e, Type.Int64, loc)
+          _ <- unifyM(e, Type.Cst(TypeConstructor.Int64), loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
         } yield resultType
 
@@ -1806,7 +1806,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Int8(i, loc) => liftM(Type.Cst(TypeConstructor.Int8))
       case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Cst(TypeConstructor.Int16))
       case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Cst(TypeConstructor.Int32))
-      case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
+      case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Cst(TypeConstructor.Int64))
       case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
       case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>

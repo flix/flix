@@ -293,7 +293,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Everything else uses one slot.
     */
   private def getStackSize(tpe: Type): Int = tpe match {
-    case Type.Int64 | Type.Cst(TypeConstructor.Float64) => 2
+    case Type.Cst(TypeConstructor.Int64) | Type.Cst(TypeConstructor.Float64) => 2
     case _ => 1
   }
 

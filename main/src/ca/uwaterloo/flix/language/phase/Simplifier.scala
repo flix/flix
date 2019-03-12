@@ -133,7 +133,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Not
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Not
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Not
-            case Type.Int64 => SemanticOperator.Int64Op.Not
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Not
             case Type.BigInt => SemanticOperator.BigIntOp.Not
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -145,7 +145,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Neg
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Neg
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Neg
-            case Type.Int64 => SemanticOperator.Int64Op.Neg
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Neg
             case Type.BigInt => SemanticOperator.BigIntOp.Neg
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -178,7 +178,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Add
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Add
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Add
-            case Type.Int64 => SemanticOperator.Int64Op.Add
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Add
             case Type.BigInt => SemanticOperator.BigIntOp.Add
             case Type.Str => SemanticOperator.StringOp.Concat
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
@@ -189,7 +189,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Sub
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Sub
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Sub
-            case Type.Int64 => SemanticOperator.Int64Op.Sub
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Sub
             case Type.BigInt => SemanticOperator.BigIntOp.Sub
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -199,7 +199,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Mul
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Mul
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Mul
-            case Type.Int64 => SemanticOperator.Int64Op.Mul
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Mul
             case Type.BigInt => SemanticOperator.BigIntOp.Mul
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -209,7 +209,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Div
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Div
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Div
-            case Type.Int64 => SemanticOperator.Int64Op.Div
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Div
             case Type.BigInt => SemanticOperator.BigIntOp.Div
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -219,7 +219,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Rem
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Rem
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Rem
-            case Type.Int64 => SemanticOperator.Int64Op.Rem
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Rem
             case Type.BigInt => SemanticOperator.BigIntOp.Rem
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -229,7 +229,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Exp
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Exp
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Exp
-            case Type.Int64 => SemanticOperator.Int64Op.Exp
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Exp
             case Type.BigInt => SemanticOperator.BigIntOp.Exp
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -240,7 +240,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Lt
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Lt
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Lt
-            case Type.Int64 => SemanticOperator.Int64Op.Lt
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Lt
             case Type.BigInt => SemanticOperator.BigIntOp.Lt
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -251,7 +251,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Le
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Le
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Le
-            case Type.Int64 => SemanticOperator.Int64Op.Le
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Le
             case Type.BigInt => SemanticOperator.BigIntOp.Le
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -262,7 +262,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Gt
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Gt
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Gt
-            case Type.Int64 => SemanticOperator.Int64Op.Gt
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Gt
             case Type.BigInt => SemanticOperator.BigIntOp.Gt
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -273,7 +273,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Ge
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Ge
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Ge
-            case Type.Int64 => SemanticOperator.Int64Op.Ge
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Ge
             case Type.BigInt => SemanticOperator.BigIntOp.Ge
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -285,7 +285,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
-            case Type.Int64 => SemanticOperator.Int64Op.Eq
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
             case Type.BigInt => SemanticOperator.BigIntOp.Eq
             case Type.Str => SemanticOperator.StringOp.Eq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
@@ -298,7 +298,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Neq
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Neq
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Neq
-            case Type.Int64 => SemanticOperator.Int64Op.Neq
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Neq
             case Type.BigInt => SemanticOperator.BigIntOp.Neq
             case Type.Str => SemanticOperator.StringOp.Neq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
@@ -315,7 +315,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.And
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.And
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.And
-            case Type.Int64 => SemanticOperator.Int64Op.And
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.And
             case Type.BigInt => SemanticOperator.BigIntOp.And
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -323,7 +323,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Or
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Or
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Or
-            case Type.Int64 => SemanticOperator.Int64Op.Or
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Or
             case Type.BigInt => SemanticOperator.BigIntOp.Or
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -331,7 +331,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Xor
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Xor
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Xor
-            case Type.Int64 => SemanticOperator.Int64Op.Xor
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Xor
             case Type.BigInt => SemanticOperator.BigIntOp.Xor
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -339,7 +339,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Shl
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Shl
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Shl
-            case Type.Int64 => SemanticOperator.Int64Op.Shl
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Shl
             case Type.BigInt => SemanticOperator.BigIntOp.Shl
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -347,7 +347,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Shr
             case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Shr
             case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Shr
-            case Type.Int64 => SemanticOperator.Int64Op.Shr
+            case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Shr
             case Type.BigInt => SemanticOperator.BigIntOp.Shr
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
@@ -889,7 +889,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
         case Type.Cst(TypeConstructor.Int16) => SemanticOperator.Int16Op.Eq
         case Type.Cst(TypeConstructor.Int32) => SemanticOperator.Int32Op.Eq
-        case Type.Int64 => SemanticOperator.Int64Op.Eq
+        case Type.Cst(TypeConstructor.Int64) => SemanticOperator.Int64Op.Eq
         case Type.BigInt => SemanticOperator.BigIntOp.Eq
         case Type.Str => SemanticOperator.StringOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")

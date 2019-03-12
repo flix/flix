@@ -37,7 +37,6 @@ sealed trait Type {
     case Type.Cst(tc) => Set.empty
     case Type.Bool => Set.empty
     case Type.Char => Set.empty
-    case Type.Int64 => Set.empty
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Channel => Set.empty
@@ -194,7 +193,6 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Bool => "Bool"
     case Type.Char => "Char"
-    case Type.Int64 => "Int64"
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Channel => "Channel"
@@ -277,13 +275,6 @@ object Type {
     * A type constructor that represent character values.
     */
   case object Char extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 64-bit signed integers.
-    */
-  case object Int64 extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -565,7 +556,6 @@ object Type {
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
-      case Type.Int64 => Type.Int64
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Channel => Type.Channel
@@ -623,7 +613,6 @@ object Type {
           //
           case Type.Bool => "Bool"
           case Type.Char => "Char"
-          case Type.Int64 => "Int64"
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Channel => "Channel"
