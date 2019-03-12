@@ -189,8 +189,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           glbType <- inferExp(e6, program)
           _______ <- unifyM(botType, declaredType, loc)
           _______ <- unifyM(topType, declaredType, loc)
-          _______ <- unifyM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
-          _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
+          _______ <- unifyM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Bool)), loc)
+          _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Bool)), loc)
           _______ <- unifyM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
           _______ <- unifyM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
         } yield declaredType
@@ -398,8 +398,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        * Literal expression.
        */
       case ResolvedAst.Expression.Unit(loc) => liftM(Type.Cst(TypeConstructor.Unit))
-      case ResolvedAst.Expression.True(loc) => liftM(Type.Bool)
-      case ResolvedAst.Expression.False(loc) => liftM(Type.Bool)
+      case ResolvedAst.Expression.True(loc) => liftM(Type.Cst(TypeConstructor.Bool))
+      case ResolvedAst.Expression.False(loc) => liftM(Type.Cst(TypeConstructor.Bool))
       case ResolvedAst.Expression.Char(lit, loc) => liftM(Type.Char)
       case ResolvedAst.Expression.Float32(lit, loc) => liftM(Type.Cst(TypeConstructor.Float32))
       case ResolvedAst.Expression.Float64(lit, loc) => liftM(Type.Cst(TypeConstructor.Float64))
@@ -439,7 +439,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case UnaryOperator.LogicalNot =>
           for (
             tpe <- visitExp(exp1);
-            res <- unifyM(tvar, tpe, Type.Bool, loc)
+            res <- unifyM(tvar, tpe, Type.Cst(TypeConstructor.Bool), loc)
           ) yield res
 
         case UnaryOperator.Plus =>
@@ -512,7 +512,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
             ____ <- unifyM(tpe1, tpe2, loc);
-            resultType <- unifyM(tvar, Type.Bool, loc)
+            resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
           ) yield resultType
 
         case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
@@ -520,14 +520,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
             ____ <- unifyM(tpe1, tpe2, loc);
-            resultType <- unifyM(tvar, Type.Bool, loc)
+            resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
           ) yield resultType
 
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
-            resultType <- unifyM(tvar, tpe1, tpe2, Type.Bool, loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, Type.Cst(TypeConstructor.Bool), loc)
           ) yield resultType
 
         case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
@@ -577,7 +577,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           tpe1 <- visitExp(exp1);
           tpe2 <- visitExp(exp2);
           tpe3 <- visitExp(exp3);
-          ____ <- unifyM(Type.Bool, tpe1, loc);
+          ____ <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc);
           rtpe <- unifyM(tvar, tpe2, tpe3, loc)
         ) yield rtpe
 
@@ -597,7 +597,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           patternType <- unifyM(patternTypes, loc)
           ___________ <- unifyM(matchType, patternType, loc)
           guardTypes <- seqM(guards map visitExp)
-          guardType <- unifyM(Type.Bool :: guardTypes, loc)
+          guardType <- unifyM(Type.Cst(TypeConstructor.Bool) :: guardTypes, loc)
           actualBodyTypes <- seqM(bodies map visitExp)
           resultType <- unifyM(tvar :: actualBodyTypes, loc)
         } yield resultType
@@ -612,7 +612,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for (
           actualCondTypes <- seqM(condExps map visitExp);
           actualBodyTypes <- seqM(bodyExps map visitExp);
-          unifiedCondTypes <- unifyM(Type.Bool :: actualCondTypes, loc);
+          unifiedCondTypes <- unifyM(Type.Cst(TypeConstructor.Bool) :: actualCondTypes, loc);
           unifiedBodyType <- unifyM(actualBodyTypes, loc);
           resultType <- unifyM(tvar, unifiedBodyType, loc)
         ) yield resultType
@@ -1001,7 +1001,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: Must check the type of the param.
         for {
           bodyType <- visitExp(exp)
-          resultType <- unifyM(bodyType, Type.Bool, loc)
+          resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
         } yield resultType
 
       /*
@@ -1012,7 +1012,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: Must check the type of the param.
         for {
           bodyType <- visitExp(exp)
-          resultType <- unifyM(bodyType, Type.Bool, loc)
+          resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
         } yield resultType
 
       /*
@@ -1270,7 +1270,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           tpe1 <- visitExp(exp1)
           tpe2 <- visitExp(exp2)
           schemaType <- unifyM(tpe1, tpe2, mkAnySchemaType(), loc)
-          resultType <- unifyM(tvar, Type.Bool, loc)
+          resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
         } yield resultType
 
       /*
@@ -1798,8 +1798,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Wild(tvar, loc) => liftM(tvar)
       case ResolvedAst.Pattern.Var(sym, tvar, loc) => unifyM(sym.tvar, tvar, loc)
       case ResolvedAst.Pattern.Unit(loc) => liftM(Type.Cst(TypeConstructor.Unit))
-      case ResolvedAst.Pattern.True(loc) => liftM(Type.Bool)
-      case ResolvedAst.Pattern.False(loc) => liftM(Type.Bool)
+      case ResolvedAst.Pattern.True(loc) => liftM(Type.Cst(TypeConstructor.Bool))
+      case ResolvedAst.Pattern.False(loc) => liftM(Type.Cst(TypeConstructor.Bool))
       case ResolvedAst.Pattern.Char(c, loc) => liftM(Type.Char)
       case ResolvedAst.Pattern.Float32(i, loc) => liftM(Type.Cst(TypeConstructor.Float32))
       case ResolvedAst.Pattern.Float64(i, loc) => liftM(Type.Cst(TypeConstructor.Float64))
@@ -1956,7 +1956,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val declaredType = Scheme.instantiate(defn.sc)
       for {
         argumentTypes <- seqM(terms.map(t => inferExp(t, program)))
-        unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
+        unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Cst(TypeConstructor.Bool)), loc)
       } yield mkAnySchemaType()
 
     //

@@ -701,7 +701,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     def countTypeArgs(tpe: Type): Int = tpe match {
       case Type.Var(_, _) => 0
       case Type.Cst(TypeConstructor.Unit) => 0
-      case Type.Bool => 0
+      case Type.Cst(TypeConstructor.Bool) => 0
       case Type.Char => 0
       case Type.Cst(TypeConstructor.Float32) => 0
       case Type.Cst(TypeConstructor.Float64) => 0

@@ -278,7 +278,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Equal => e1.tpe match {
-            case Type.Bool => SemanticOperator.BoolOp.Eq
+            case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
             case Type.Char => SemanticOperator.CharOp.Eq
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
@@ -291,7 +291,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.NotEqual => e1.tpe match {
-            case Type.Bool => SemanticOperator.BoolOp.Neq
+            case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Neq
             case Type.Char => SemanticOperator.CharOp.Neq
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Neq
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Neq
@@ -304,11 +304,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LogicalAnd => e1.tpe match {
-            case Type.Bool => SemanticOperator.BoolOp.And
+            case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.And
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LogicalOr => e1.tpe match {
-            case Type.Bool => SemanticOperator.BoolOp.Or
+            case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Or
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.BitwiseAnd => e1.tpe match {
@@ -882,7 +882,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
        * Compute the semantic operator.
        */
       val sop = e1.tpe match {
-        case Type.Bool => SemanticOperator.BoolOp.Eq
+        case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
         case Type.Char => SemanticOperator.CharOp.Eq
         case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
         case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
@@ -895,7 +895,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
-      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, loc)
+      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), loc)
     }
 
     /**

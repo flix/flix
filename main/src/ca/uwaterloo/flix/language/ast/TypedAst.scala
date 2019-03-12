@@ -66,13 +66,13 @@ object TypedAst {
     }
 
     case class True(loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Bool
+      final def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
       final def eff: ast.Eff = ast.Eff.Empty
     }
 
     case class False(loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Bool
+      final def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
       final def eff: ast.Eff = ast.Eff.Empty
     }
@@ -204,11 +204,11 @@ object TypedAst {
     case class HandleWith(exp: TypedAst.Expression, bindings: List[TypedAst.HandlerBinding], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Bool
+      def tpe: Type = Type.Cst(TypeConstructor.Bool)
     }
 
     case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression {
-      def tpe: Type = Type.Bool
+      def tpe: Type = Type.Cst(TypeConstructor.Bool)
     }
 
     case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -266,11 +266,11 @@ object TypedAst {
     }
 
     case class True(loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Bool
+      def tpe: Type = Type.Cst(TypeConstructor.Bool)
     }
 
     case class False(loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Bool
+      def tpe: Type = Type.Cst(TypeConstructor.Bool)
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Pattern {

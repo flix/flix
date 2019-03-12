@@ -1274,7 +1274,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
       case "Unit" => Type.Cst(TypeConstructor.Unit).toSuccess
-      case "Bool" => Type.Bool.toSuccess
+      case "Bool" => Type.Cst(TypeConstructor.Bool).toSuccess
       case "Char" => Type.Char.toSuccess
       case "Float" => Type.Cst(TypeConstructor.Float64).toSuccess
       case "Float32" => Type.Cst(TypeConstructor.Float32).toSuccess

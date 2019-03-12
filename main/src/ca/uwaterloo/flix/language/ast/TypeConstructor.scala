@@ -17,6 +17,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the Bool type.
+    */
+  case object Bool extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of 32-bit floating point numbers.
     */
   case object Float32 extends TypeConstructor {

@@ -586,7 +586,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     base match {
       // Primitive Types.
       case Type.Cst(TypeConstructor.Unit) => MonoType.Unit
-      case Type.Bool => MonoType.Bool
+      case Type.Cst(TypeConstructor.Bool) => MonoType.Bool
       case Type.Char => MonoType.Char
       case Type.Cst(TypeConstructor.Float32) => MonoType.Float32
       case Type.Cst(TypeConstructor.Float64) => MonoType.Float64
