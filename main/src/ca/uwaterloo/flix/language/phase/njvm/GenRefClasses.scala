@@ -16,10 +16,96 @@
 
 package ca.uwaterloo.flix.language.phase.njvm
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.phase.jvm.JvmType
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
+
+
+
+
 /**
   * Generates bytecode for the cell classes.
   */
 object GenRefClasses {
   // TODO: incrementally copy over.
+
+
+  def gen()(implicit root: Root, flix: Flix): Unit = {
+//    genRefClass()
+  }
+  /**
+    * Generating class `classType` with value of type `tpe`
+    */
+  def genRefClass(classType : JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
+
+    val frame = new ClassGenerator(classType)
+
+    frame.compile()
+  }
+
+  /**
+    * Generating constructor for the class `classType` with value of type `cellType`
+    */
+  def genConstructor(classType: JvmType.Reference, cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
+  {
+//    val iLoad = AsmOps.getLoadInstruction(cellType)
+//    val initMethod = cw.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
+//    initMethod.visitCode()
+//    initMethod.visitVarInsn(ALOAD, 0)
+//    initMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+//    initMethod.visitVarInsn(ALOAD, 0)
+//    initMethod.visitVarInsn(iLoad, 1)
+//    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
+//    initMethod.visitInsn(RETURN)
+//    initMethod.visitMaxs(2, 2)
+//    initMethod.visitEnd()
+//
+//
+//    val JvmInstructions : F[StackNil] => F[StackNil] =
+//      THIS[StackNil] |>>
+//      INVOKE(INVOKESPECIAL, JvmName.Object.toInternalName, Nil, JvmType.Void)|>>
+//      THIS[StackNil] |>>
+//      UNCHECKED_LOAD(cellType, 1) |>>
+//      UNCHECKED_PUTFIELD("value", cellType) |>>
+//      RETURN
+//
+//    cg.GenMethod(List(PUBLIC), "<init>", Nil, JvmType.Void,
+//      JvmInstructions)
+
+  }
+
+  /**
+    * Generating `getValue` method for the class `classType` with value of type `cellType`
+    */
+  def genGetValue(classType: JvmType.Reference, cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
+  {
+
+    val JvmInstructions : F[StackNil] => F[StackNil] =
+        THIS[StackNil] |>>
+        UNCHECKED_GETFIELD("value", cellType) |>>
+        UNCHECKED_RETURN(cellType)
+
+    cg.GenMethod(List(PUBLIC), "getValue", Nil, cellType,
+      JvmInstructions)
+  }
+
+  /**
+    * Generating `setValue` method for the class `classType` with value of type `cellType`
+    */
+  def genSetValue(cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit = {
+
+    val JvmInstructions : F[StackNil] => F[StackNil] =
+          THIS[StackNil] |>>
+          UNCHECKED_LOAD(cellType, 1) |>> // permissionObject.LOAD
+          UNCHECKED_PUTFIELD("value", cellType) |>>
+          RETURN
+
+    cg.GenMethod(List(PUBLIC), "setValue", List(cellType), JvmType.Void,
+      JvmInstructions)
+  }
+
 
 }

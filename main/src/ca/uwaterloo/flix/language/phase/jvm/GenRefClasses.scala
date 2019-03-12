@@ -107,7 +107,7 @@ object GenRefClasses {
     setValue.visitCode()
     setValue.visitVarInsn(ALOAD, 0)
     setValue.visitVarInsn(iLoad, 1)
-    setValue.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
+    setValue.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value2", cellType.toDescriptor)
     setValue.visitInsn(RETURN)
     setValue.visitMaxs(2, 2)
     setValue.visitEnd()
