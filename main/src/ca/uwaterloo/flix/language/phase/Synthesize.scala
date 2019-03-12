@@ -970,7 +970,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
-        case Type.Channel =>
+        case Type.Cst(TypeConstructor.Channel) =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
@@ -992,7 +992,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
 
-        case Type.Apply(Type.Channel, _) => Expression.Str("<<channel>>", sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Channel), _) => Expression.Str("<<channel>>", sl)
 
         case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 

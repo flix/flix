@@ -210,7 +210,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           r.sym.setStackOffset(currentOffset)
 
           // Compute the next free stack offset.
-          val elementType = Type.getChannelInnerType(r.chan.tpe)
+          val elementType = r.chan.tpe.typeArguments.head
           currentOffset = currentOffset + getStackSize(elementType)
 
           // Visit the channel expression of the rule.

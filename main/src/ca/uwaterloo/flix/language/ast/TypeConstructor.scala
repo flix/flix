@@ -87,6 +87,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of channels.
+    */
+  case object Channel extends TypeConstructor {
+    /**
+      * The shape of a channel is Channel[t].
+      */
+    def kind: Kind = Kind.Star -> Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of references.
     */
   case object Ref extends TypeConstructor {

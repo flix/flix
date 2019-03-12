@@ -602,7 +602,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Vector => MonoType.Array(args.head)
 
-      case Type.Channel => MonoType.Channel(args.head)
+      case Type.Cst(TypeConstructor.Channel) => MonoType.Channel(args.head)
 
       case Type.Cst(TypeConstructor.Ref) => MonoType.Ref(args.head)
 
