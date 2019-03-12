@@ -110,7 +110,7 @@ object SimplifiedAst {
     }
 
     case class BigInt(lit: java.math.BigInteger) extends SimplifiedAst.Expression {
-      final val tpe = Type.BigInt
+      final val tpe = Type.Cst(TypeConstructor.BigInt)
       final val loc = SourceLocation.Unknown
     }
 

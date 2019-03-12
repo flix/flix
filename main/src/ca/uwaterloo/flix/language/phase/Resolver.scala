@@ -1284,7 +1284,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Int16" => Type.Cst(TypeConstructor.Int16).toSuccess
       case "Int32" => Type.Cst(TypeConstructor.Int32).toSuccess
       case "Int64" => Type.Cst(TypeConstructor.Int64).toSuccess
-      case "BigInt" => Type.BigInt.toSuccess
+      case "BigInt" => Type.Cst(TypeConstructor.BigInt).toSuccess
       case "Str" => Type.Str.toSuccess
       case "Channel" => Type.Channel.toSuccess
       case "Array" => Type.Array.toSuccess

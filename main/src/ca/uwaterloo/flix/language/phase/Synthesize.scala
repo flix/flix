@@ -497,7 +497,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Int16) => default
         case Type.Cst(TypeConstructor.Int32) => default
         case Type.Cst(TypeConstructor.Int64) => default
-        case Type.BigInt => default
+        case Type.Cst(TypeConstructor.BigInt) => default
         case Type.Str => default
 
         case _ =>
@@ -716,7 +716,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Int32) => exp0
         case Type.Cst(TypeConstructor.Int64) => Expression.Int32(123, sl)
 
-        case Type.BigInt =>
+        case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
@@ -962,7 +962,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Long].getMethod("toString", classOf[Long])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
-        case Type.BigInt =>
+        case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 

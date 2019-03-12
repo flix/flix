@@ -35,7 +35,6 @@ sealed trait Type {
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
     case Type.Cst(tc) => Set.empty
-    case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Channel => Set.empty
     case Type.Array => Set.empty
@@ -96,14 +95,6 @@ sealed trait Type {
     */
   def isVar: Boolean = typeConstructor match {
     case Type.Var(_, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is an array type.
-    */
-  def isArray: Boolean = typeConstructor match {
-    case Type.Array => true
     case _ => false
   }
 
@@ -180,7 +171,6 @@ sealed trait Type {
   override def toString: String = this match {
     case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
     case Type.Cst(tc) => tc.toString
-    case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Channel => "Channel"
     case Type.Array => "Array"
@@ -248,13 +238,6 @@ object Type {
     */
   case class Cst(tc: TypeConstructor) extends Type {
     def kind: Kind = tc.kind
-  }
-
-  /**
-    * A type constructor that represent arbitrary-precision integers.
-    */
-  case object BigInt extends Type {
-    def kind: Kind = Kind.Star
   }
 
   /**
@@ -519,7 +502,6 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Channel => Type.Channel
       case Type.Array => Type.Array
@@ -573,7 +555,6 @@ object Type {
           //
           // Primitive Types.
           //
-          case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Channel => "Channel"
           case Type.Array => "Array"

@@ -60,7 +60,6 @@ object Unification {
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Channel => Type.Channel
       case Type.Array => Type.Array
@@ -211,7 +210,7 @@ object Unification {
       case (Type.Cst(TypeConstructor.Int16), Type.Cst(TypeConstructor.Int16)) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Int32), Type.Cst(TypeConstructor.Int32)) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Int64), Type.Cst(TypeConstructor.Int64)) => Result.Ok(Substitution.empty)
-      case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
+      case (Type.Cst(TypeConstructor.BigInt), Type.Cst(TypeConstructor.BigInt)) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
       case (Type.Channel, Type.Channel) => Result.Ok(Substitution.empty)
       case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)

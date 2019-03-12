@@ -120,7 +120,7 @@ object TypedAst {
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.BigInt
+      final def tpe: Type = Type.Cst(TypeConstructor.BigInt)
 
       final def eff: ast.Eff = ast.Eff.Empty
     }
@@ -302,7 +302,7 @@ object TypedAst {
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.BigInt
+      def tpe: Type = Type.Cst(TypeConstructor.BigInt)
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Pattern {

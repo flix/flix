@@ -73,6 +73,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent arbitrary-precision integers.
+    */
+  case object BigInt extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represents the type of references.
     */
   case object Ref extends TypeConstructor {
