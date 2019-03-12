@@ -87,6 +87,16 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the type of arrays.
+    */
+  case object Array extends TypeConstructor {
+    /**
+      * The shape of an array is Array[t].
+      */
+    def kind: Kind = Kind.Star -> Kind.Star
+  }
+  
+  /**
     * A type constructor that represent the type of channels.
     */
   case object Channel extends TypeConstructor {

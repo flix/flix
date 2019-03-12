@@ -35,7 +35,6 @@ sealed trait Type {
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
     case Type.Cst(tc) => Set.empty
-    case Type.Array => Set.empty
     case Type.Vector => Set.empty
     case Type.Native(clazz) => Set.empty
     case Type.Zero => Set.empty
@@ -169,7 +168,6 @@ sealed trait Type {
   override def toString: String = this match {
     case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
     case Type.Cst(tc) => tc.toString
-    case Type.Array => "Array"
     case Type.Vector => "Vector"
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
@@ -234,13 +232,6 @@ object Type {
     */
   case class Cst(tc: TypeConstructor) extends Type {
     def kind: Kind = tc.kind
-  }
-
-  /**
-    * A type constructor that represent arrays.
-    */
-  case object Array extends Type {
-    def kind: Kind = Kind.Star
   }
 
   /**
@@ -417,28 +408,14 @@ object Type {
   }
 
   /**
+    * Constructs the array type [elmType] where 'elmType' is the given type.
+    */
+  def mkArray(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Array), elmType)
+
+  /**
     * Constructs the channel type [elmType] where 'elmType' is the given type.
     */
   def mkChannel(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Channel), elmType)
-
-  /**
-    * Constructs the array type [elmType] where 'elmType' is the given type.
-    */
-  def mkArray(elmType: Type): Type = Apply(Array, elmType)
-
-  /**
-    * Return the inner type of the array or vector
-    *
-    * For example given Array[Int] return Int,
-    * and given Vector[Int, 5] return Int.
-    */
-  def getArrayInnerType(tpe: Type): Type = {
-    tpe match {
-      case Type.Apply(Type.Array, t) => t
-      case Type.Apply(Type.Apply(Type.Vector, t), _) => t
-      case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
-    }
-  }
 
   /**
     * Constructs the vector type [|elmType, Len|] where
@@ -472,7 +449,6 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
@@ -523,7 +499,6 @@ object Type {
           //
           // Primitive Types.
           //
-          case Type.Array => "Array"
           case Type.Vector => "Vector"
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString

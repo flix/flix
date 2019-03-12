@@ -728,8 +728,8 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.String].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
+        case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
-        case Type.Apply(Type.Array, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Vector, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
         case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
@@ -966,7 +966,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.math.BigInteger].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
-        case Type.Array =>
+        case Type.Cst(TypeConstructor.Array) =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
@@ -990,7 +990,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Str("<<ref>>", sl)
 
-        case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Str("<<array>>", sl)
 
         case Type.Apply(Type.Cst(TypeConstructor.Channel), _) => Expression.Str("<<channel>>", sl)
 

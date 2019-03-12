@@ -60,7 +60,6 @@ object Unification {
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
@@ -211,7 +210,7 @@ object Unification {
       case (Type.Cst(TypeConstructor.BigInt), Type.Cst(TypeConstructor.BigInt)) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Str), Type.Cst(TypeConstructor.Str)) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Channel), Type.Cst(TypeConstructor.Channel)) => Result.Ok(Substitution.empty)
-      case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
+      case (Type.Cst(TypeConstructor.Array), Type.Cst(TypeConstructor.Array)) => Result.Ok(Substitution.empty)
       case (Type.Vector, Type.Vector) => Result.Ok(Substitution.empty)
       case (Type.Native(clazz1), Type.Native(clazz2)) =>
         if (clazz1 == clazz2)

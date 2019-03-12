@@ -190,7 +190,6 @@ object TypeError {
     case (Type.Var(_, _), _) => TypeDiff.Star(TyCon.Other)
     case (_, Type.Var(_, _)) => TypeDiff.Star(TyCon.Other)
     case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
-    case (Type.Array, Type.Array) => TypeDiff.Star(TyCon.Other)
     case (Type.Vector, Type.Vector) => TypeDiff.Star(TyCon.Other)
     case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
     case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)
