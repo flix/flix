@@ -79,7 +79,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
         case Type.Bool => Type.Bool
         case Type.Char => Type.Char
-        case Type.Int32 => Type.Int32
         case Type.Int64 => Type.Int64
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str

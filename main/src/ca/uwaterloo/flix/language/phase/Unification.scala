@@ -62,7 +62,6 @@ object Unification {
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
-      case Type.Int32 => Type.Int32
       case Type.Int64 => Type.Int64
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
@@ -214,7 +213,7 @@ object Unification {
       case (Type.Cst(TypeConstructor.Float64), Type.Cst(TypeConstructor.Float64)) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Int8), Type.Cst(TypeConstructor.Int8)) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Int16), Type.Cst(TypeConstructor.Int16)) => Result.Ok(Substitution.empty)
-      case (Type.Int32, Type.Int32) => Result.Ok(Substitution.empty)
+      case (Type.Cst(TypeConstructor.Int32), Type.Cst(TypeConstructor.Int32)) => Result.Ok(Substitution.empty)
       case (Type.Int64, Type.Int64) => Result.Ok(Substitution.empty)
       case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)

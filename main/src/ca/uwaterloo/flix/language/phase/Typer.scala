@@ -405,7 +405,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.Float64(lit, loc) => liftM(Type.Cst(TypeConstructor.Float64))
       case ResolvedAst.Expression.Int8(lit, loc) => liftM(Type.Cst(TypeConstructor.Int8))
       case ResolvedAst.Expression.Int16(lit, loc) => liftM(Type.Cst(TypeConstructor.Int16))
-      case ResolvedAst.Expression.Int32(lit, loc) => liftM(Type.Int32)
+      case ResolvedAst.Expression.Int32(lit, loc) => liftM(Type.Cst(TypeConstructor.Int32))
       case ResolvedAst.Expression.Int64(lit, loc) => liftM(Type.Int64)
       case ResolvedAst.Expression.BigInt(lit, loc) => liftM(Type.BigInt)
       case ResolvedAst.Expression.Str(lit, loc) => liftM(Type.Str)
@@ -542,7 +542,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
             lhsType <- unifyM(tvar, tpe1, loc);
-            rhsType <- unifyM(tpe2, Type.Int32, loc)
+            rhsType <- unifyM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
           ) yield lhsType
       }
 
@@ -746,7 +746,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for (
           actualElementType <- visitExp(elm);
           actualLengthType <- visitExp(len);
-          lengthType <- unifyM(actualLengthType, Type.Int32, loc);
+          lengthType <- unifyM(actualLengthType, Type.Cst(TypeConstructor.Int32), loc);
           resultType <- unifyM(tvar, Type.mkArray(actualElementType), loc)
         ) yield resultType
 
@@ -763,7 +763,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           actualBaseType <- visitExp(base);
           actualIndexType <- visitExp(index);
           arrayType <- unifyM(actualBaseType, Type.mkArray(tvar), loc);
-          indexType <- unifyM(actualIndexType, Type.Int32, loc)
+          indexType <- unifyM(actualIndexType, Type.Cst(TypeConstructor.Int32), loc)
         ) yield tvar
 
       /*
@@ -778,7 +778,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for (
           baseType <- visitExp(base);
           arrayType <- unifyM(baseType, Type.mkArray(tvar), loc);
-          resultType <- unifyM(Type.freshTypeVar(), Type.Int32, loc)
+          resultType <- unifyM(Type.freshTypeVar(), Type.Cst(TypeConstructor.Int32), loc)
         ) yield resultType
 
       /*
@@ -790,13 +790,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -----------------------------------------
         //  base[index] = elm : Unit
         //
-        val elementType = Type.freshTypeVar();
+        val elementType = Type.freshTypeVar()
         for (
           actualBaseType <- visitExp(base);
           actualIndexType <- visitExp(index);
           actualElementType <- visitExp(elm);
           arrayType <- unifyM(actualBaseType, Type.mkArray(elementType), loc);
-          indexType <- unifyM(actualIndexType, Type.Int32, loc);
+          indexType <- unifyM(actualIndexType, Type.Cst(TypeConstructor.Int32), loc);
           elementType <- unifyM(actualElementType, elementType, loc);
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
         ) yield resultType
@@ -814,8 +814,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           actualBaseType <- visitExp(base);
           actualStartIndexType <- visitExp(startIndex);
           actualEndIndexType <- visitExp(endIndex);
-          startIndexType <- unifyM(actualStartIndexType, Type.Int32, loc);
-          endIndexType <- unifyM(actualEndIndexType, Type.Int32, loc);
+          startIndexType <- unifyM(actualStartIndexType, Type.Cst(TypeConstructor.Int32), loc);
+          endIndexType <- unifyM(actualEndIndexType, Type.Cst(TypeConstructor.Int32), loc);
           resultType <- unifyM(tvar, actualBaseType, loc)
         ) yield resultType
 
@@ -889,7 +889,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for (
           baseType <- visitExp(base);
           _ <- unifyM(baseType, Type.mkVector(freshResultType, Type.Succ(0, freshLengthVar)), loc);
-          resultType <- unifyM(tvar, Type.Int32, loc)
+          resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Int32), loc)
         ) yield resultType
 
       case ResolvedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, loc) =>
@@ -1088,7 +1088,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         for {
           actualLengthType <- visitExp(exp)
-          lengthType <- unifyM(actualLengthType, Type.Int32, loc)
+          lengthType <- unifyM(actualLengthType, Type.Cst(TypeConstructor.Int32), loc)
           resultType <- liftM(Type.mkChannel(tpe))
         } yield resultType
 
@@ -1554,7 +1554,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e = visitExp(base, subst0)
         optEndIndex match {
           case None =>
-            val len = TypedAst.Expression.VectorLength(e, Type.Int32, Eff.Empty, loc)
+            val len = TypedAst.Expression.VectorLength(e, Type.Cst(TypeConstructor.Int32), Eff.Empty, loc)
             TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Empty, loc)
           case Some(endIndex) =>
             val len = TypedAst.Expression.Int32(endIndex, loc)
@@ -1805,7 +1805,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Float64(i, loc) => liftM(Type.Cst(TypeConstructor.Float64))
       case ResolvedAst.Pattern.Int8(i, loc) => liftM(Type.Cst(TypeConstructor.Int8))
       case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Cst(TypeConstructor.Int16))
-      case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
+      case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Cst(TypeConstructor.Int32))
       case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
       case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
       case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)

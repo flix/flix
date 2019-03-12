@@ -495,7 +495,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Float64) => default
         case Type.Cst(TypeConstructor.Int8) => default
         case Type.Cst(TypeConstructor.Int16) => default
-        case Type.Int32 => default
+        case Type.Cst(TypeConstructor.Int32) => default
         case Type.Int64 => default
         case Type.BigInt => default
         case Type.Str => default
@@ -646,8 +646,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Int32), ast.Eff.Empty, sl)
-      Expression.Apply(exp1, exp2, Type.Int32, ast.Eff.Empty, sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32)), ast.Eff.Empty, sl)
+      Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Int32), ast.Eff.Empty, sl)
     }
 
     /**
@@ -681,7 +681,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkHashExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Int32)
+      val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32))
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Empty, sl)
@@ -713,9 +713,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Float64) => Expression.Int32(123, sl)
         case Type.Cst(TypeConstructor.Int8) => Expression.Int32(123, sl)
         case Type.Cst(TypeConstructor.Int16) => Expression.Int32(123, sl)
-
-        case Type.Int32 => exp0
-
+        case Type.Cst(TypeConstructor.Int32) => exp0
         case Type.Int64 => Expression.Int32(123, sl)
 
         case Type.BigInt =>
@@ -788,7 +786,7 @@ object Synthesize extends Phase[Root, Root] {
                   BinaryOperator.Plus,
                   Expression.Int32(index, sl),
                   mkApplyHash(Expression.Var(freshX, caseType, ast.Eff.Empty, sl)),
-                  Type.Int32,
+                  Type.Cst(TypeConstructor.Int32),
                   ast.Eff.Empty,
                   sl
                 )
@@ -798,7 +796,7 @@ object Synthesize extends Phase[Root, Root] {
             }
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Int32, ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rs, Type.Cst(TypeConstructor.Int32), ast.Eff.Empty, sl)
           }
 
           //
@@ -845,7 +843,7 @@ object Synthesize extends Phase[Root, Root] {
                 BinaryOperator.Plus,
                 e1,
                 e2,
-                Type.Int32,
+                Type.Cst(TypeConstructor.Int32),
                 ast.Eff.Empty,
                 sl
               )
@@ -855,7 +853,7 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Int32, ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Int32), ast.Eff.Empty, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")
@@ -956,7 +954,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Short].getMethod("toString", classOf[Short])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
-        case Type.Int32 =>
+        case Type.Cst(TypeConstructor.Int32) =>
           val method = classOf[java.lang.Integer].getMethod("toString", classOf[Int])
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Empty, sl)
 
@@ -1181,7 +1179,7 @@ object Synthesize extends Phase[Root, Root] {
       case Type.Cst(TypeConstructor.Float64) => true
       case Type.Cst(TypeConstructor.Int8) => true
       case Type.Cst(TypeConstructor.Int16) => true
-      case Type.Int32 => true
+      case Type.Cst(TypeConstructor.Int32) => true
       case Type.Int64 => true
       case _ => false
     }

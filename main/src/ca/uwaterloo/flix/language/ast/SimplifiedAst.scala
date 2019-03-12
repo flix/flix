@@ -100,7 +100,7 @@ object SimplifiedAst {
     }
 
     case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
-      final val tpe = Type.Int32
+      final val tpe = Type.Cst(TypeConstructor.Int32)
       final val loc = SourceLocation.Unknown
     }
 

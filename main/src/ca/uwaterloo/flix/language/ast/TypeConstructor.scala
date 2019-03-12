@@ -44,4 +44,11 @@ object TypeConstructor {
     def kind: Kind = Kind.Star
   }
 
+  /**
+    * A type constructor that represent the type of 32-bit integers.
+    */
+  case object Int32 extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
 }
