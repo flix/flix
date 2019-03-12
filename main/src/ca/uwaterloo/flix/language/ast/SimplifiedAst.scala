@@ -75,7 +75,7 @@ object SimplifiedAst {
     }
 
     case class Char(lit: scala.Char) extends SimplifiedAst.Expression {
-      final val tpe = Type.Char
+      final val tpe = Type.Cst(TypeConstructor.Char)
       final val loc = SourceLocation.Unknown
     }
 

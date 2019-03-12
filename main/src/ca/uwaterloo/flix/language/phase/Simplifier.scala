@@ -234,7 +234,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Less => e1.tpe match {
-            case Type.Char => SemanticOperator.CharOp.Lt
+            case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Lt
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Lt
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Lt
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Lt
@@ -245,7 +245,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LessEqual => e1.tpe match {
-            case Type.Char => SemanticOperator.CharOp.Le
+            case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Le
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Le
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Le
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Le
@@ -256,7 +256,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Greater => e1.tpe match {
-            case Type.Char => SemanticOperator.CharOp.Gt
+            case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Gt
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Gt
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Gt
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Gt
@@ -267,7 +267,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.GreaterEqual => e1.tpe match {
-            case Type.Char => SemanticOperator.CharOp.Ge
+            case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Ge
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Ge
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Ge
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Ge
@@ -279,7 +279,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.Equal => e1.tpe match {
             case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
-            case Type.Char => SemanticOperator.CharOp.Eq
+            case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq
@@ -292,7 +292,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           }
           case BinaryOperator.NotEqual => e1.tpe match {
             case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Neq
-            case Type.Char => SemanticOperator.CharOp.Neq
+            case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Neq
             case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Neq
             case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Neq
             case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Neq
@@ -883,7 +883,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
        */
       val sop = e1.tpe match {
         case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.Eq
-        case Type.Char => SemanticOperator.CharOp.Eq
+        case Type.Cst(TypeConstructor.Char) => SemanticOperator.CharOp.Eq
         case Type.Cst(TypeConstructor.Float32) => SemanticOperator.Float32Op.Eq
         case Type.Cst(TypeConstructor.Float64) => SemanticOperator.Float64Op.Eq
         case Type.Cst(TypeConstructor.Int8) => SemanticOperator.Int8Op.Eq

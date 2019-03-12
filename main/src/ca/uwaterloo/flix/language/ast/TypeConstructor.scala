@@ -24,6 +24,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent the Char type.
+    */
+  case object Char extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of 32-bit floating point numbers.
     */
   case object Float32 extends TypeConstructor {
@@ -69,6 +76,9 @@ object TypeConstructor {
     * A type constructor that represents the type of references.
     */
   case object Ref extends TypeConstructor {
+    /**
+      * The shape of a reference is Ref[t].
+      */
     def kind: Kind = Kind.Star -> Kind.Star
   }
 

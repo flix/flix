@@ -1275,7 +1275,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       // Basic Types
       case "Unit" => Type.Cst(TypeConstructor.Unit).toSuccess
       case "Bool" => Type.Cst(TypeConstructor.Bool).toSuccess
-      case "Char" => Type.Char.toSuccess
+      case "Char" => Type.Cst(TypeConstructor.Char).toSuccess
       case "Float" => Type.Cst(TypeConstructor.Float64).toSuccess
       case "Float32" => Type.Cst(TypeConstructor.Float32).toSuccess
       case "Float64" => Type.Cst(TypeConstructor.Float64).toSuccess

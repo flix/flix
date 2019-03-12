@@ -35,7 +35,6 @@ sealed trait Type {
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
     case Type.Cst(tc) => Set.empty
-    case Type.Char => Set.empty
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Channel => Set.empty
@@ -181,7 +180,6 @@ sealed trait Type {
   override def toString: String = this match {
     case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
     case Type.Cst(tc) => tc.toString
-    case Type.Char => "Char"
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Channel => "Channel"
@@ -250,13 +248,6 @@ object Type {
     */
   case class Cst(tc: TypeConstructor) extends Type {
     def kind: Kind = tc.kind
-  }
-
-  /**
-    * A type constructor that represent character values.
-    */
-  case object Char extends Type {
-    def kind: Kind = Kind.Star
   }
 
   /**
@@ -528,7 +519,6 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Char => Type.Char
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Channel => Type.Channel
@@ -583,7 +573,6 @@ object Type {
           //
           // Primitive Types.
           //
-          case Type.Char => "Char"
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Channel => "Channel"
