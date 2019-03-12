@@ -33,9 +33,9 @@ class TestUnification extends FunSuite {
   /////////////////////////////////////////////////////////////////////////////
 
   test("Substitution.Empty.01") {
-    val tpe = Type.Unit
+    val tpe = Type.Cst(TypeConstructor.Unit)
     val subst = Unification.Substitution.empty
-    assertResult(Type.Unit)(subst(tpe))
+    assertResult(Type.Cst(TypeConstructor.Unit))(subst(tpe))
   }
 
   test("Substitution.Empty.02") {
@@ -51,9 +51,9 @@ class TestUnification extends FunSuite {
   }
 
   test("Substitution.Empty.04") {
-    val tpe = Type.mkArrow(Type.Bool, Type.Unit)
+    val tpe = Type.mkArrow(Type.Bool, Type.Cst(TypeConstructor.Unit))
     val subst = Unification.Substitution.empty
-    assertResult(Type.mkArrow(Type.Bool, Type.Unit))(subst(tpe))
+    assertResult(Type.mkArrow(Type.Bool, Type.Cst(TypeConstructor.Unit)))(subst(tpe))
   }
 
   test("Substitution.Singleton.01") {
@@ -140,12 +140,12 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Var.01") {
-    val result = Unification.unify(Type.Var(1, Kind.Star), Type.Unit)
+    val result = Unification.unify(Type.Var(1, Kind.Star), Type.Cst(TypeConstructor.Unit))
     assert(isOk(result))
   }
 
   test("Unify.Var.02") {
-    val result = Unification.unify(Type.Unit, Type.Var(1, Kind.Star))
+    val result = Unification.unify(Type.Cst(TypeConstructor.Unit), Type.Var(1, Kind.Star))
     assert(isOk(result))
   }
 
@@ -160,7 +160,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Unit") {
-    val result = Unification.unify(Type.Unit, Type.Unit)
+    val result = Unification.unify(Type.Cst(TypeConstructor.Unit), Type.Cst(TypeConstructor.Unit))
     assert(isOk(result))
   }
 

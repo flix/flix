@@ -35,7 +35,6 @@ sealed trait Type {
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
     case Type.Cst(tc) => Set.empty
-    case Type.Unit => Set.empty
     case Type.Bool => Set.empty
     case Type.Char => Set.empty
     case Type.Int32 => Set.empty
@@ -194,7 +193,6 @@ sealed trait Type {
   override def toString: String = this match {
     case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
     case Type.Cst(tc) => tc.toString
-    case Type.Unit => "Unit"
     case Type.Bool => "Bool"
     case Type.Char => "Char"
     case Type.Int32 => "Int32"
@@ -268,13 +266,6 @@ object Type {
     */
   case class Cst(tc: TypeConstructor) extends Type {
     def kind: Kind = tc.kind
-  }
-
-  /**
-    * A type constructor that represents the unit value.
-    */
-  case object Unit extends Type {
-    def kind: Kind = Kind.Star
   }
 
   /**
@@ -581,7 +572,6 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
       case Type.Int32 => Type.Int32
@@ -641,7 +631,6 @@ object Type {
           //
           // Primitive Types.
           //
-          case Type.Unit => "Unit"
           case Type.Bool => "Bool"
           case Type.Char => "Char"
           case Type.Int32 => "Int32"

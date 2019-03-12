@@ -60,7 +60,6 @@ object Unification {
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
       case Type.Char => Type.Char
       case Type.Int32 => Type.Int32
@@ -208,7 +207,7 @@ object Unification {
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
       case (_, x: Type.Var) => unifyVar(x, tpe1)
-      case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
+      case (Type.Cst(TypeConstructor.Unit), Type.Cst(TypeConstructor.Unit)) => Result.Ok(Substitution.empty)
       case (Type.Bool, Type.Bool) => Result.Ok(Substitution.empty)
       case (Type.Char, Type.Char) => Result.Ok(Substitution.empty)
       case (Type.Cst(TypeConstructor.Float32), Type.Cst(TypeConstructor.Float32)) => Result.Ok(Substitution.empty)

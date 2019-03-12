@@ -159,10 +159,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
          * Special Case 1: Unit
          */
         (op, e1.tpe, e2.tpe) match {
-          case (BinaryOperator.Equal, Type.Unit, Type.Unit) =>
+          case (BinaryOperator.Equal, Type.Cst(TypeConstructor.Unit), Type.Cst(TypeConstructor.Unit)) =>
             // Unit is always equal to itself.
             return SimplifiedAst.Expression.True
-          case (BinaryOperator.NotEqual, Type.Unit, Type.Unit) =>
+          case (BinaryOperator.NotEqual, Type.Cst(TypeConstructor.Unit), Type.Cst(TypeConstructor.Unit)) =>
             // Unit is never not equal to itself.
             return SimplifiedAst.Expression.False
           case _ => // fallthrough
@@ -541,7 +541,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
-        val newTpe = Type.mkArrow(Type.Unit, e.tpe)
+        val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
@@ -652,14 +652,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           //
           if (cparams.isEmpty) {
             // Construct the definition type.
-            val arrowType = Type.mkArrow(Type.Unit, e0.tpe)
+            val arrowType = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e0.tpe)
 
             // Assemble the fresh definition.
             val ann = Ast.Annotations.Empty
             val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
 
             val varX = Symbol.freshVarSym("_unit")
-            val param = SimplifiedAst.FormalParam(varX, mod, Type.Unit, SourceLocation.Unknown)
+            val param = SimplifiedAst.FormalParam(varX, mod, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
 
             val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(e0), arrowType, e0.loc)
 
@@ -717,9 +717,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
           val varX = Symbol.freshVarSym()
-          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val exp = visitExp(exp0)
-          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkArrow(Type.Unit, exp.tpe), loc)
+          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkArrow(Type.Cst(TypeConstructor.Unit), exp.tpe), loc)
 
           toplevel += (freshSym -> freshDef)
           freshSym
@@ -872,7 +872,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
        * Special Case 1: Unit
        */
       (e1.tpe, e2.tpe) match {
-        case (Type.Unit, Type.Unit) =>
+        case (Type.Cst(TypeConstructor.Unit), Type.Cst(TypeConstructor.Unit)) =>
           // Unit is always equal to itself.
           return SimplifiedAst.Expression.True
         case _ => // fallthrough

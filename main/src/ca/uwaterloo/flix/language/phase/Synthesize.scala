@@ -488,7 +488,7 @@ object Synthesize extends Phase[Root, Root] {
        * Match on the type to determine what equality expression to generate.
        */
       tpe match {
-        case Type.Unit => default
+        case Type.Cst(TypeConstructor.Unit) => default
         case Type.Bool => default
         case Type.Char => default
         case Type.Cst(TypeConstructor.Float32) => default
@@ -706,7 +706,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Determine the hash code based on the type `tpe`.
       tpe match {
-        case Type.Unit => Expression.Int32(123, sl)
+        case Type.Cst(TypeConstructor.Unit) => Expression.Int32(123, sl)
         case Type.Bool => Expression.Int32(123, sl)
         case Type.Char => Expression.Int32(123, sl)
         case Type.Cst(TypeConstructor.Float32) => Expression.Int32(123, sl)
@@ -929,7 +929,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Determine the string representation based on the type `tpe`.
       tpe match {
-        case Type.Unit =>
+        case Type.Cst(TypeConstructor.Unit) =>
           Expression.Str("()", sl)
 
         case Type.Bool =>

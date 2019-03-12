@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -76,8 +76,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         */
       def visit(t: Type): Type = t match {
         case Type.Cst(tc) => Type.Cst(tc)
-        case Type.Var(_, _) => Type.Unit
-        case Type.Unit => Type.Unit
+        case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
         case Type.Bool => Type.Bool
         case Type.Char => Type.Char
         case Type.Int32 => Type.Int32

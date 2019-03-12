@@ -86,7 +86,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers.Empty
           val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Eff.Empty
@@ -1270,10 +1270,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   // TODO: Add support for Higher-Kinded types.
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
-    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+    case NamedAst.Type.Unit(loc) => Type.Cst(TypeConstructor.Unit).toSuccess
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Type.Unit.toSuccess
+      case "Unit" => Type.Cst(TypeConstructor.Unit).toSuccess
       case "Bool" => Type.Bool.toSuccess
       case "Char" => Type.Char.toSuccess
       case "Float" => Type.Cst(TypeConstructor.Float64).toSuccess
