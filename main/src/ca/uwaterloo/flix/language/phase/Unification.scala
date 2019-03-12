@@ -60,7 +60,6 @@ object Unification {
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
@@ -197,28 +196,23 @@ object Unification {
       */
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
+
       case (_, x: Type.Var) => unifyVar(x, tpe1)
-      case (Type.Cst(TypeConstructor.Unit), Type.Cst(TypeConstructor.Unit)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Bool)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Char), Type.Cst(TypeConstructor.Char)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Float32), Type.Cst(TypeConstructor.Float32)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Float64), Type.Cst(TypeConstructor.Float64)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Int8), Type.Cst(TypeConstructor.Int8)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Int16), Type.Cst(TypeConstructor.Int16)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Int32), Type.Cst(TypeConstructor.Int32)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Int64), Type.Cst(TypeConstructor.Int64)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.BigInt), Type.Cst(TypeConstructor.BigInt)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Str), Type.Cst(TypeConstructor.Str)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Channel), Type.Cst(TypeConstructor.Channel)) => Result.Ok(Substitution.empty)
-      case (Type.Cst(TypeConstructor.Array), Type.Cst(TypeConstructor.Array)) => Result.Ok(Substitution.empty)
-      case (Type.Vector, Type.Vector) => Result.Ok(Substitution.empty)
+
+      case (Type.Cst(c1), Type.Cst(c2)) =>
+        if (c1 == c2)
+          Result.Ok(Substitution.empty)
+        else
+          Result.Err(UnificationError.Mismatch(tpe1, tpe2))
+
       case (Type.Native(clazz1), Type.Native(clazz2)) =>
         if (clazz1 == clazz2)
           Result.Ok(Substitution.empty)
         else
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))
-      case (Type.Cst(TypeConstructor.Ref), Type.Cst(TypeConstructor.Ref)) => Result.Ok(Substitution.empty)
+
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)

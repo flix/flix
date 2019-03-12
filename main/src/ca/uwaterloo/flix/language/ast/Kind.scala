@@ -36,6 +36,8 @@ object Kind {
     */
   object Star extends Kind
 
+  object Nat extends Kind
+
   /**
     * The kind of type expressions that take a sequence of kinds `kparams` to a kind `kr`.
     */
@@ -53,6 +55,7 @@ object Kind {
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
       case Kind.Star => "*"
+      case Kind.Nat => "Nat"
       case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
       case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
       case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"

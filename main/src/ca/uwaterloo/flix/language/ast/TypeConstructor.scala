@@ -95,7 +95,7 @@ object TypeConstructor {
       */
     def kind: Kind = Kind.Star -> Kind.Star
   }
-  
+
   /**
     * A type constructor that represent the type of channels.
     */
@@ -114,6 +114,16 @@ object TypeConstructor {
       * The shape of a reference is Ref[t].
       */
     def kind: Kind = Kind.Star -> Kind.Star
+  }
+
+  /**
+    * A type constructor that represent the type of vectors.
+    */
+  case object Vector extends TypeConstructor {
+    /**
+      * The shape of a vector is Array[t;n].
+      */
+    def kind: Kind = (Kind.Star -> Kind.Nat) -> Kind.Star
   }
 
 }

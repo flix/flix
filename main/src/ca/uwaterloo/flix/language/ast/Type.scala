@@ -35,7 +35,6 @@ sealed trait Type {
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
     case Type.Cst(tc) => Set.empty
-    case Type.Vector => Set.empty
     case Type.Native(clazz) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
@@ -168,7 +167,6 @@ sealed trait Type {
   override def toString: String = this match {
     case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
     case Type.Cst(tc) => tc.toString
-    case Type.Vector => "Vector"
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Native(clazz) => "Native"
@@ -232,13 +230,6 @@ object Type {
     */
   case class Cst(tc: TypeConstructor) extends Type {
     def kind: Kind = tc.kind
-  }
-
-  /**
-    * A type constructor that represent vectors.
-    */
-  case object Vector extends Type {
-    def kind: Kind = Kind.Star
   }
 
   /**
@@ -425,7 +416,7 @@ object Type {
     *
     *                len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
     */
-  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Vector, elmType), len)
+  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Cst(TypeConstructor.Vector), elmType), len)
 
   /**
     * Constructs the set type of A.
@@ -449,7 +440,6 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
@@ -499,7 +489,6 @@ object Type {
           //
           // Primitive Types.
           //
-          case Type.Vector => "Vector"
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName

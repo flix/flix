@@ -426,11 +426,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
-        val arrayType = tpe match {
-          case Type.Apply(Type.Apply(Type.Vector, t), _) => Type.mkArray(t)
-          case _ => throw InternalCompilerException("Type must be of vector type.")
-        }
-        SimplifiedAst.Expression.ArrayLit(elms map visitExp, arrayType, loc)
+        val es = elms map visitExp
+        val t = Type.mkArray(tpe.typeArguments.head)
+        SimplifiedAst.Expression.ArrayLit(es, t, loc)
 
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
         val e = visitExp(elm)

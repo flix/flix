@@ -730,8 +730,8 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
-        case Type.Apply(Type.Vector, _) => Expression.Int32(123, sl)
-        case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Vector), _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
         case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
 
         case _ =>
@@ -974,7 +974,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
-        case Type.Vector =>
+        case Type.Cst(TypeConstructor.Vector) =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
@@ -994,9 +994,9 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Cst(TypeConstructor.Channel), _) => Expression.Str("<<channel>>", sl)
 
-        case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
+        case Type.Apply(Type.Cst(TypeConstructor.Vector), _) => Expression.Str("<<vector>>", sl)
 
-        case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 
