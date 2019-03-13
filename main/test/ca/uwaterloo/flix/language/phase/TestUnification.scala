@@ -214,11 +214,6 @@ class TestUnification extends FunSuite {
     assert(isOk(result))
   }
 
-  test("Unify.Native") {
-    val result = Unification.unify(Type.Native(classOf[String]), Type.Native(classOf[String]))
-    assert(isOk(result))
-  }
-
   test("Unify.Arrow") {
     val result = Unification.unify(Type.Arrow(3), Type.Arrow(3))
     assert(isOk(result))

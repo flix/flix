@@ -1058,7 +1058,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val clazz = constructor.getDeclaringClass
         for {
           inferredArgumentTypes <- seqM(actuals.map(visitExp))
-          resultType <- unifyM(tvar, Type.Native(clazz), loc)
+          resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Native(clazz)), loc)
         } yield resultType
 
       /*

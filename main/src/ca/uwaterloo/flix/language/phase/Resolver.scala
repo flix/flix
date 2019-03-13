@@ -667,7 +667,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
-              val exceptionType = Type.Native(clazz)
+              val exceptionType = Type.Cst(TypeConstructor.Native(clazz))
               visit(body, tenv0 + (sym -> exceptionType)) map {
                 case b => ResolvedAst.CatchRule(sym, clazz, b)
               }
@@ -1388,7 +1388,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case NamedAst.Type.Native(fqn, loc) =>
       lookupJvmClass(fqn.mkString("."), loc) map {
-        case clazz => Type.Native(clazz)
+        case clazz => Type.Cst(TypeConstructor.Native(clazz))
       }
 
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>

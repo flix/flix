@@ -720,18 +720,22 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.math.BigInteger].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
-        case Type.Native(clazz) =>
-          val method = classOf[java.lang.Object].getMethod("hashCode")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
-
         case Type.Cst(TypeConstructor.Str) =>
           val method = classOf[java.lang.String].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
         case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
+
+        case Type.Cst(TypeConstructor.Native(clazz)) =>
+          val method = classOf[java.lang.Object].getMethod("hashCode")
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
+
         case Type.Apply(Type.Cst(TypeConstructor.Vector), _) => Expression.Int32(123, sl)
+
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
+
         case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
 
         case _ =>
@@ -974,6 +978,10 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
+        case Type.Cst(TypeConstructor.Native(clazz)) =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+
         case Type.Cst(TypeConstructor.Vector) =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
@@ -981,10 +989,6 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Zero => Expression.Str("<<Zero>>", sl)
 
         case Type.Succ(len, t) => Expression.Str("<<Succession>>", sl)
-
-        case Type.Native(clazz) =>
-          val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
 
         case Type.Cst(TypeConstructor.Str) => exp0
 

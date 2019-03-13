@@ -112,6 +112,13 @@ object TypeConstructor {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
 
   /**
+    * A type constructor that represent the type of JVM classes.
+    */
+  case class Native(clazz: Class[_]) extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of references.
     */
   case object Ref extends TypeConstructor {

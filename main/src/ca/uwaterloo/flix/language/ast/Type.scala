@@ -35,7 +35,6 @@ sealed trait Type {
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
     case Type.Cst(tc) => Set.empty
-    case Type.Native(clazz) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
@@ -169,7 +168,6 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Native(clazz) => "Native"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
@@ -230,12 +228,6 @@ object Type {
     def kind: Kind = tc.kind
   }
 
-  /**
-    * A type constructor that represent native objects.
-    */
-  case class Native(clazz: Class[_]) extends Type {
-    def kind: Kind = Kind.Star
-  }
 
   /**
     * A type expression that represents functions.
@@ -416,7 +408,6 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
@@ -477,7 +468,6 @@ object Type {
           //
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString
-          case Type.Native(clazz) => "#" + clazz.getName
 
           //
           // Arrow.

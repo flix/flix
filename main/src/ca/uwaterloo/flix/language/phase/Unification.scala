@@ -60,7 +60,6 @@ object Unification {
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Native(clazz) => Type.Native(clazz)
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
@@ -197,14 +196,14 @@ object Unification {
 
       case (_, x: Type.Var) => unifyVar(x, tpe1)
 
-      case (Type.Cst(c1), Type.Cst(c2)) =>
-        if (c1 == c2)
+      case (Type.Cst(TypeConstructor.Native(clazz1)), Type.Cst(TypeConstructor.Native(clazz2))) =>
+        if (clazz1 == clazz2)
           Result.Ok(Substitution.empty)
         else
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))
 
-      case (Type.Native(clazz1), Type.Native(clazz2)) =>
-        if (clazz1 == clazz2)
+      case (Type.Cst(c1), Type.Cst(c2)) =>
+        if (c1 == c2)
           Result.Ok(Substitution.empty)
         else
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))

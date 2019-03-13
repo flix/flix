@@ -739,7 +739,7 @@ object JvmOps {
     case MonoType.Str => Type.Cst(TypeConstructor.Str)
     case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
     case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
-    case MonoType.Native(clazz) => Type.Native(clazz)
+    case MonoType.Native(clazz) => Type.Cst(TypeConstructor.Native(clazz))
     case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)

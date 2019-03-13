@@ -604,6 +604,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Enum(sym, _)) => MonoType.Enum(sym, args)
 
+      case Type.Cst(TypeConstructor.Native(clazz)) => MonoType.Native(clazz)
+
       case Type.Cst(TypeConstructor.Ref) => MonoType.Ref(args.head)
 
       case Type.Cst(TypeConstructor.Vector) => MonoType.Array(args.head)
@@ -623,8 +625,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Relation(sym, attr, _) => MonoType.Relation(sym, attr map visitType)
 
       case Type.Lattice(sym, attr, _) => MonoType.Lattice(sym, attr map visitType)
-
-      case Type.Native(clazz) => MonoType.Native(clazz)
 
       case Type.Zero => MonoType.Unit
 
