@@ -86,7 +86,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers.Empty
           val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Eff.Empty
@@ -1270,26 +1270,26 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   // TODO: Add support for Higher-Kinded types.
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
-    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+    case NamedAst.Type.Unit(loc) => Type.Cst(TypeConstructor.Unit).toSuccess
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Type.Unit.toSuccess
-      case "Bool" => Type.Bool.toSuccess
-      case "Char" => Type.Char.toSuccess
-      case "Float" => Type.Float64.toSuccess
-      case "Float32" => Type.Float32.toSuccess
-      case "Float64" => Type.Float64.toSuccess
-      case "Int" => Type.Int32.toSuccess
-      case "Int8" => Type.Int8.toSuccess
-      case "Int16" => Type.Int16.toSuccess
-      case "Int32" => Type.Int32.toSuccess
-      case "Int64" => Type.Int64.toSuccess
-      case "BigInt" => Type.BigInt.toSuccess
-      case "Str" => Type.Str.toSuccess
-      case "Channel" => Type.Channel.toSuccess
-      case "Array" => Type.Array.toSuccess
-      case "Vector" => Type.Vector.toSuccess
-      case "Ref" => Type.Ref.toSuccess
+      case "Unit" => Type.Cst(TypeConstructor.Unit).toSuccess
+      case "Bool" => Type.Cst(TypeConstructor.Bool).toSuccess
+      case "Char" => Type.Cst(TypeConstructor.Char).toSuccess
+      case "Float" => Type.Cst(TypeConstructor.Float64).toSuccess
+      case "Float32" => Type.Cst(TypeConstructor.Float32).toSuccess
+      case "Float64" => Type.Cst(TypeConstructor.Float64).toSuccess
+      case "Int" => Type.Cst(TypeConstructor.Int32).toSuccess
+      case "Int8" => Type.Cst(TypeConstructor.Int8).toSuccess
+      case "Int16" => Type.Cst(TypeConstructor.Int16).toSuccess
+      case "Int32" => Type.Cst(TypeConstructor.Int32).toSuccess
+      case "Int64" => Type.Cst(TypeConstructor.Int64).toSuccess
+      case "BigInt" => Type.Cst(TypeConstructor.BigInt).toSuccess
+      case "Str" => Type.Cst(TypeConstructor.Str).toSuccess
+      case "Array" => Type.Cst(TypeConstructor.Array).toSuccess
+      case "Channel" => Type.Cst(TypeConstructor.Channel).toSuccess
+      case "Ref" => Type.Cst(TypeConstructor.Ref).toSuccess
+      case "Vector" => Type.Cst(TypeConstructor.Vector).toSuccess
 
       // Disambiguate type.
       case typeName =>
@@ -1321,7 +1321,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
       }
     case NamedAst.Type.Enum(sym) =>
-      Type.Enum(sym, Kind.Star).toSuccess
+      Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1640,7 +1640,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Enum(enum.sym, Kind.Star)
+      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, Kind.Star))
     }
 
   /**

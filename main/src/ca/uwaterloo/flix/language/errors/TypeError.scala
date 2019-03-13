@@ -187,30 +187,16 @@ object TypeError {
     * Returns a string that represents the type difference between the two given types.
     */
   private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
-    case (Type.Var(_, _), _) => TypeDiff.Star(TypeConstructor.Other)
-    case (_, Type.Var(_, _)) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Unit, Type.Unit) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Bool, Type.Bool) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Char, Type.Char) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Float32, Type.Float32) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Float64, Type.Float64) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Int8, Type.Int8) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Int16, Type.Int16) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Int32, Type.Int32) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Int64, Type.Int64) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.BigInt, Type.BigInt) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Str, Type.Str) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Array, Type.Array) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Vector, Type.Vector) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Zero, Type.Zero) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Native(clazz1), Type.Native(clazz2)) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Arrow)
-    case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TypeConstructor.Enum(name1.name))
-    case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Tuple)
+    case (Type.Var(_, _), _) => TypeDiff.Star(TyCon.Other)
+    case (_, Type.Var(_, _)) => TypeDiff.Star(TyCon.Other)
+    case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
+    case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
+    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)
+    case (Type.Native(clazz1), Type.Native(clazz2)) => TypeDiff.Star(TyCon.Other)
+    case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       (diff(t11, t21), diff(t12, t22)) match {
-        case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TypeConstructor.Other)
+        case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)
         case (diff1, diff2) => TypeDiff.Apply(diff1, diff2)
       }
     case _ => TypeDiff.Mismatch(tpe1, tpe2)
@@ -246,7 +232,7 @@ object TypeError {
     /**
       * Represents a matched type.
       */
-    case class Star(constructor: TypeConstructor) extends TypeDiff
+    case class Star(constructor: TyCon) extends TypeDiff
 
     /**
       * Represents a type application.
@@ -263,29 +249,29 @@ object TypeError {
   /**
     * Represents a type constructor.
     */
-  sealed trait TypeConstructor
+  sealed trait TyCon
 
-  object TypeConstructor {
+  object TyCon {
 
     /**
       * Arrow constructor.
       */
-    case object Arrow extends TypeConstructor
+    case object Arrow extends TyCon
 
     /**
       * Enum constructor.
       */
-    case class Enum(name: String) extends TypeConstructor
+    case class Enum(name: String) extends TyCon
 
     /**
       * Tuple constructor.
       */
-    case object Tuple extends TypeConstructor
+    case object Tuple extends TyCon
 
     /**
       * Other constructor.
       */
-    case object Other extends TypeConstructor
+    case object Other extends TyCon
 
   }
 
@@ -301,14 +287,14 @@ object TypeError {
 
       base match {
         case TypeDiff.Star(constructor) => constructor match {
-          case TypeConstructor.Arrow =>
+          case TyCon.Arrow =>
             intercalate(args, visit, vt, before = "", separator = " -> ", after = "")
-          case TypeConstructor.Enum(name) =>
+          case TyCon.Enum(name) =>
             vt << name
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
-          case TypeConstructor.Tuple =>
+          case TyCon.Tuple =>
             intercalate(args, visit, vt, before = "(", separator = ", ", after = ")")
-          case TypeConstructor.Other =>
+          case TyCon.Other =>
             vt << "*"
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         }
