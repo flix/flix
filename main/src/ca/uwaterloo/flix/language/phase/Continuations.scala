@@ -19,8 +19,6 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Put gen sym into implicit scope.
     implicit val _ = flix.genSym
-    print("h"+root.defs)
-    print("\n\ntest\n\n")
     // todo map fra def sym til cps def sym
 
     // Create a map for each def from sym -> sym'
@@ -38,10 +36,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case (sym, defn) => defSymMap(sym) -> visitDefnAlt(defn, defSymMap)
     }
 
-    val out = root.copy(defs = newDefs1 ++ newDefs2).toSuccess
-    print()
-    print(out.get.defs)
-    out
+    root.copy(defs = newDefs1 ++ newDefs2).toSuccess
   }
 
   /**
@@ -50,13 +45,16 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
     // todo sjj: make example
     // Make an id function, x -> x, to pass as continuation argument
-    val freshSym = Symbol.freshVarSym("shim")
+    val freshSym = Symbol.freshVarSym()
     val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.eff, defn.loc)
     val id = mkLambda(freshSym, defn.tpe, freshSymVar)
 
     // todo sjj: what about Eff?
     // Rebind the body of 'def' to call the new function given by defSymMap
     val defnApply: Expression = Expression.Def(defSymMap(defn.sym), defn.tpe, defn.eff, defn.loc)
+    // todo sjj: assert length 1
+    // todo sjj: fjern liste i fparams
+    // todo sjj: check subtree for shift/reset (dyr funktion til start)
     val body = (defn.fparams :+ id.fparam).foldLeft(defnApply){
       (acc, fparam) =>
         Expression.Apply(acc, Expression.Var(fparam.sym, fparam.tpe, empEff(), fparam.loc), getReturnType(acc.tpe), empEff(), defn.loc)
