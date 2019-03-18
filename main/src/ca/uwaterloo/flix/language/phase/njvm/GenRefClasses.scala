@@ -80,32 +80,32 @@ object GenRefClasses {
   /**
     * Generating `getValue` method for the class `classType` with value of type `cellType`
     */
-  def genGetValue(classType: JvmType.Reference, cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
+  def genGetValue[T](funLocals: FunLocals0, field1 : Field[T], cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
   {
 
     val JvmInstructions : F[StackNil] => F[StackNil] =
-        THIS[StackNil] |>>
-        UNCHECKED_GETFIELD("value", cellType) |>>
+        funLocals.LOAD[StackNil]() |>>
+        field1.GET_FIELD() |>>
         UNCHECKED_RETURN(cellType)
 
-    cg.GenMethod(List(PUBLIC), "getValue", Nil, cellType,
+    cg.GenMethod(List(Public), "getValue", Nil, cellType,
       JvmInstructions)
   }
 
   /**
     * Generating `setValue` method for the class `classType` with value of type `cellType`
     */
-  def genSetValue(cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit = {
+  def genSetValue[T](funLocals: FunLocals1[T], field1 : Field[T], cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit = {
 
     val JvmInstructions : F[StackNil] => F[StackNil] =
-          THIS[StackNil] |>>
-          UNCHECKED_LOAD(cellType, 1) |>> // permissionObject.LOAD
-          UNCHECKED_PUTFIELD("value", cellType) |>>
-          RETURN
+            funLocals._1.LOAD[StackNil]() |>>
+            funLocals._2.LOAD() |>>
+            field1.PUT_FIELD() |>>
+            RETURN
 
-    cg.GenMethod(List(PUBLIC), "setValue", List(cellType), JvmType.Void,
+
+    cg.GenMethod(List(Public), "setValue", List(cellType), JvmType.Void,
       JvmInstructions)
   }
-
 
 }
