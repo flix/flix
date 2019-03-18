@@ -91,10 +91,9 @@ object GenRefClasses1 {
     val JvmInstructions : F[StackNil] => F[StackNil] =
         funSig.arg0.LOAD[StackNil]() |>>
         field0.GET_FIELD() |>>
-        UNCHECKED_RETURN(field0.fieldType)
+        UNCHECKED_RETURN(funSig.returnType)
 
-    cg.GenMethod(funSig,
-      JvmInstructions)
+    cg.GenMethod(funSig, JvmInstructions)
   }
 
   /**

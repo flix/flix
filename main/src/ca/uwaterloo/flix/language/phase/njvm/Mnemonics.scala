@@ -95,8 +95,8 @@ object Mnemonics {
     }
 
     def _return[S](fieldType : JvmType): F[S] = {
-      val iRet = AsmOps.getReturnInstruction(fieldType)
-      mv.visitInsn(ARETURN)
+      val ret = AsmOps.getReturnInstruction(fieldType)
+      mv.visitInsn(ret)
       this.asInstanceOf[F[S]]
     }
 
