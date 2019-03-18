@@ -24,11 +24,13 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
+import ca.uwaterloo.flix.language.phase.njvm.GenRefClasses1
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
+
 
 object JvmBackend extends Phase[Root, CompilationResult] {
 
@@ -153,7 +155,10 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate references classes.
     //
-    val refClasses = GenRefClasses.gen()
+
+//    val refClasses = GenRefClasses.gen()
+    val refClasses = GenRefClasses1.gen()
+
 
     //
     // Collect all the classes and interfaces together.

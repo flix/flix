@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.jvm.{AsmOps, JvmType}
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
 import org.objectweb.asm.Opcodes._
@@ -14,7 +15,32 @@ object Mnemonics {
 
   type **[R <: Stack, T] = StackCons[R, T]
 
-  sealed trait JvmModifier
+  sealed trait JvmModifier {
+    def toInternal: Int = this match {
+      case JvmModifier.Public => ACC_PUBLIC
+      case JvmModifier.Private => ACC_PRIVATE
+      case JvmModifier.Protected => ACC_PROTECTED
+      case JvmModifier.Static => ACC_STATIC
+      case JvmModifier.Final => ACC_FINAL
+      case JvmModifier.Super => ACC_SUPER
+      case JvmModifier.Synchronized => ACC_SYNCHRONIZED
+      case JvmModifier.Volatile => ACC_VOLATILE
+      case JvmModifier.Bridge => ACC_BRIDGE
+      case JvmModifier.VarArgs => ACC_VARARGS
+      case JvmModifier.Transient => ACC_TRANSIENT
+      case JvmModifier.Native => ACC_NATIVE
+      case JvmModifier.Interface => ACC_INTERFACE
+      case JvmModifier.Abstract => ACC_ABSTRACT
+      case JvmModifier.Strict => ACC_STRICT
+      case JvmModifier.Synthetic => ACC_SYNTHETIC
+      case JvmModifier.Annotation => ACC_ANNOTATION
+      case JvmModifier.Enum => ACC_ENUM
+      case JvmModifier.Mandated => ACC_MANDATED
+      case JvmModifier.Deprecated => ACC_DEPRECATED
+
+      case JvmModifier.InvokeSpecial => INVOKESPECIAL
+    }
+  }
   object JvmModifier {
     case object Public extends JvmModifier
     case object Private extends JvmModifier
@@ -36,30 +62,12 @@ object Mnemonics {
     case object Enum extends JvmModifier
     case object Mandated extends JvmModifier
     case object Deprecated extends JvmModifier
+
+
+    case object InvokeSpecial extends JvmModifier
+
   }
 
-  def toInternal(modifier : JvmModifier): Int = modifier match {
-    case JvmModifier.Public => ACC_PUBLIC
-    case JvmModifier.Private => ACC_PRIVATE
-    case JvmModifier.Protected => ACC_PROTECTED
-    case JvmModifier.Static => ACC_STATIC
-    case JvmModifier.Final => ACC_FINAL
-    case JvmModifier.Super => ACC_SUPER
-    case JvmModifier.Synchronized => ACC_SYNCHRONIZED
-    case JvmModifier.Volatile => ACC_VOLATILE
-    case JvmModifier.Bridge => ACC_BRIDGE
-    case JvmModifier.VarArgs => ACC_VARARGS
-    case JvmModifier.Transient => ACC_TRANSIENT
-    case JvmModifier.Native => ACC_NATIVE
-    case JvmModifier.Interface => ACC_INTERFACE
-    case JvmModifier.Abstract => ACC_ABSTRACT
-    case JvmModifier.Strict => ACC_STRICT
-    case JvmModifier.Synthetic => ACC_SYNTHETIC
-    case JvmModifier.Annotation => ACC_ANNOTATION
-    case JvmModifier.Enum => ACC_ENUM
-    case JvmModifier.Mandated => ACC_MANDATED
-    case JvmModifier.Deprecated => ACC_DEPRECATED
-  }
 
   class F[T](mv : MethodVisitor, ct : JvmType.Reference) {
 
@@ -79,6 +87,13 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+    def invoke[S](invokeCode : JvmModifier, className : String, methodName: String,
+                  args : List[JvmType], returnType : JvmType): F[S] = {
+
+      mv.visitMethodInsn(invokeCode.toInternal, className, methodName, AsmOps.getMethodDescriptor(args, returnType), false)
+      this.asInstanceOf[F[S]]
+    }
+
     def _return[S](fieldType : JvmType): F[S] = {
       val iRet = AsmOps.getReturnInstruction(fieldType)
       mv.visitInsn(ARETURN)
@@ -89,6 +104,8 @@ object Mnemonics {
       mv.visitInsn(RETURN)
       this.asInstanceOf[F[S]]
     }
+
+
   }
 
   implicit class ComposeOps[A <: Stack, B <: Stack](f: F[A] => F[B]) {
@@ -102,7 +119,7 @@ object Mnemonics {
     /**
       * Polymorphic UNCHECKED return.
       */
-    def UNCHECKED_RETURN[T](t: JvmType): F[StackNil ** T] => F[StackNil] = ???
+    def UNCHECKED_RETURN[T](jvmType: JvmType): F[StackNil ** T] => F[StackNil] = t => t._return(jvmType)
 
     //END OF UNCHECKED METHODS
 
@@ -161,50 +178,84 @@ object Mnemonics {
 
   class FieldC[T](val fieldName: String, val fieldType: JvmType) extends Field[T]
 
-  type FunLocals0 = Local[JvmType.Reference]
-  type FunLocals1[T1] = (Local[JvmType.Reference], Local[T1])
-  type FunLocals2[T1, T2] = (Local[JvmType.Reference], Local[T1], Local[T2])
+  sealed trait FunSig[R] {
+    val modifiers : List[JvmModifier]
+    val methodName : String
+    val returnType : JvmType
 
-  def mkFunSig0[R](classType: JvmType, returnType : JvmType) : FunLocals0 =
-    new LocalC[JvmType.Reference](classType, 0)
-
-  def mkFunSig1[T1, R](classType: JvmType, arg1Type: JvmType ,returnType : JvmType) : FunLocals1[T1] = {
-
-    ( new LocalC[JvmType.Reference](classType, 0),
-      new LocalC[T1](arg1Type, 1))
+    def getArgsType : List[JvmType]
   }
 
-  def mkFunSig2[T1, T2, R](classType: JvmType, arg1Type: JvmType, arg2Type: JvmType ,returnType : JvmType) :
-  FunLocals2[T1,T2] = {
+  class FunSig0[R](val modifiers : List[JvmModifier], val methodName : String, val returnType : JvmType,
+                   classType: JvmType) extends FunSig[R] {
+   val arg0 : Local[JvmType.Reference] = new LocalC[JvmType.Reference](classType, 0)
 
-    ( new LocalC[JvmType.Reference](classType, 0),
-      new LocalC[T1](arg1Type, 1),
-      new LocalC[T2](arg2Type, 2))
+    override def getArgsType: List[JvmType] = List()
   }
 
-  def mkField[T](fieldName: String, fieldType: JvmType) : Field[T] = {
-    new FieldC[T](fieldName, fieldType)
+  class FunSig1[T1, R](val modifiers : List[JvmModifier], val methodName : String, val returnType : JvmType,
+                       classType: JvmType, arg1Type: JvmType) extends FunSig[R] {
+    val arg0 : Local[JvmType.Reference] = new LocalC[JvmType.Reference](classType, 0)
+    val arg1 : Local[T1] = new LocalC[T1](arg1Type, 1)
+
+    override def getArgsType: List[JvmType] = List(arg1Type)
   }
 
 
-  class ClassGenerator(classType: JvmType.Reference) {
+  trait MethodHandler0Void {
+    val invokeCode : JvmModifier
+    val className : String
+    val methodName: String
+    val args : List[JvmType]
+    val returnType : JvmType
 
-    private val cw: ClassWriter = AsmOps.mkClassWriter()
+    def invoke[R <: Stack ](): F[R ** JvmType.Reference] => F[R] =
+      t => t.invoke(invokeCode, className, methodName, args, returnType)
+  }
 
-    def GenMethod(modifiers: List[JvmModifier], methodName: String,
-                  argsType: List[JvmType], returnType: JvmType,
-                  frameTransformer : F[StackNil] => F[StackNil]) : Unit = {
+  class MethodHandler0VoidC(val invokeCode : JvmModifier, val  className : String, val methodName: String,
+                            val args : List[JvmType], val returnType : JvmType) extends MethodHandler0Void
 
-      val modifierVal = modifiers.map(modifier => toInternal(modifier)).sum
 
-      val mv = cw.visitMethod(modifierVal, methodName, AsmOps.getMethodDescriptor(argsType, returnType),
-        null, null)
+  def mkMethodHandler0Void[R <: Stack](invokeCode : JvmModifier, className : String, methodName: String,
+                                       args : List[JvmType], returnType : JvmType) : MethodHandler0Void=
+  { new MethodHandler0VoidC(invokeCode,className, methodName, args, returnType) }
+
+
+  class ClassGenerator(classType: JvmType.Reference,
+                       modifiers : List[JvmModifier], superClass : String, implementedInterfaces : Array[String])
+                      (implicit flix: Flix) {
+
+    private val cw: ClassWriter = {
+      val cw = AsmOps.mkClassWriter()
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      cw.visit(AsmOps.JavaVersion, modifierVal, classType.name.toInternalName, null,
+        superClass, implementedInterfaces)
+      cw
+    }
+
+    def GenMethod[R](funSig : FunSig[R], frameTransformer : F[StackNil] => F[StackNil]) : Unit = {
+
+      val modifierVal = funSig.modifiers.map(modifier => modifier.toInternal).sum
+
+      val mv = cw.visitMethod(modifierVal, funSig.methodName,
+        AsmOps.getMethodDescriptor(funSig.getArgsType, funSig.returnType), null, null)
       mv.visitCode()
+
       frameTransformer(new F[StackNil](mv, classType))
 
       mv.visitMaxs(1,1)
       mv.visitEnd()
 
+    }
+
+    def compileField[T](modifiers: List[JvmModifier] ,fieldName: String, fieldType: JvmType) : Field[T] = {
+
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      val field = cw.visitField(modifierVal, fieldName, fieldType.toDescriptor, null, null)
+      field.visitEnd()
+
+      new FieldC[T](fieldName, fieldType)
     }
 
     def compile(): Array[Byte] = {

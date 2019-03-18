@@ -18,94 +18,98 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.JvmType
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmType}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 
 
-
-
 /**
   * Generates bytecode for the cell classes.
   */
-object GenRefClasses {
+object GenRefClasses1 {
   // TODO: incrementally copy over.
 
 
-  def gen()(implicit root: Root, flix: Flix): Unit = {
-//    genRefClass()
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass]  = {
+    // Type that we need a cell class for
+    val types = List(JvmType.PrimBool, JvmType.PrimChar, JvmType.PrimFloat, JvmType.PrimDouble,
+      JvmType.PrimByte, JvmType.PrimShort, JvmType.PrimInt, JvmType.PrimLong, JvmType.Object)
+
+    // Generating each cell class
+    types.map { tpe =>
+      val classType = JvmName.getCellClassType(tpe)
+      classType.name -> JvmClass(classType.name, genRefClass(classType, tpe))
+    }.toMap
   }
+
   /**
     * Generating class `classType` with value of type `tpe`
     */
-  def genRefClass(classType : JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
+  def genRefClass(classType : JvmType.Reference, cellType : JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
 
-    val frame = new ClassGenerator(classType)
+    val cg = new ClassGenerator(classType,List(Public,Final), JvmName.Object.toInternalName, null)
 
-    frame.compile()
+    val field0 = cg.compileField(List(Private),"field0", cellType)
+    val constructorLocals = new FunSig1(List(Public), "<init>", JvmType.Void, classType, cellType)
+    val getValueLocals = new FunSig0(List(Public,Final), "getValue", cellType, classType)
+    val setValueLocals = new FunSig1(List(Public,Final), "setValue", JvmType.Void, classType, cellType)
+
+    genConstructor(constructorLocals, field0, cg)
+    genGetValue(getValueLocals, field0,cg)
+    genSetValue(setValueLocals, field0, cg)
+
+
+    cg.compile()
   }
 
   /**
     * Generating constructor for the class `classType` with value of type `cellType`
     */
-  def genConstructor(classType: JvmType.Reference, cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
+  def genConstructor[T,U](funSig: FunSig1[T,U], field0 : Field[T], cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
   {
-//    val iLoad = AsmOps.getLoadInstruction(cellType)
-//    val initMethod = cw.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(cellType), JvmType.Void), null, null)
-//    initMethod.visitCode()
-//    initMethod.visitVarInsn(ALOAD, 0)
-//    initMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-//    initMethod.visitVarInsn(ALOAD, 0)
-//    initMethod.visitVarInsn(iLoad, 1)
-//    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", cellType.toDescriptor)
-//    initMethod.visitInsn(RETURN)
-//    initMethod.visitMaxs(2, 2)
-//    initMethod.visitEnd()
-//
-//
-//    val JvmInstructions : F[StackNil] => F[StackNil] =
-//      THIS[StackNil] |>>
-//      INVOKE(INVOKESPECIAL, JvmName.Object.toInternalName, Nil, JvmType.Void)|>>
-//      THIS[StackNil] |>>
-//      UNCHECKED_LOAD(cellType, 1) |>>
-//      UNCHECKED_PUTFIELD("value", cellType) |>>
-//      RETURN
-//
-//    cg.GenMethod(List(PUBLIC), "<init>", Nil, JvmType.Void,
-//      JvmInstructions)
+    val constructorHandler = mkMethodHandler0Void(InvokeSpecial, JvmName.Object.toInternalName, "<init>" ,Nil, JvmType.Void)
+
+    val JvmInstructions : F[StackNil] => F[StackNil] =
+      funSig.arg0.LOAD[StackNil]()|>>
+      constructorHandler.invoke()|>>
+      funSig.arg0.LOAD() |>>
+      funSig.arg1.LOAD() |>>
+      field0.PUT_FIELD() |>>
+      RETURN
+
+    cg.GenMethod(funSig, JvmInstructions)
 
   }
 
   /**
     * Generating `getValue` method for the class `classType` with value of type `cellType`
     */
-  def genGetValue[T](funLocals: FunLocals0, field1 : Field[T], cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
+  def genGetValue[T](funSig: FunSig0[T], field0 : Field[T], cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit =
   {
 
     val JvmInstructions : F[StackNil] => F[StackNil] =
-        funLocals.LOAD[StackNil]() |>>
-        field1.GET_FIELD() |>>
-        UNCHECKED_RETURN(cellType)
+        funSig.arg0.LOAD[StackNil]() |>>
+        field0.GET_FIELD() |>>
+        UNCHECKED_RETURN(field0.fieldType)
 
-    cg.GenMethod(List(Public), "getValue", Nil, cellType,
+    cg.GenMethod(funSig,
       JvmInstructions)
   }
 
   /**
     * Generating `setValue` method for the class `classType` with value of type `cellType`
     */
-  def genSetValue[T](funLocals: FunLocals1[T], field1 : Field[T], cellType: JvmType, cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit = {
+  def genSetValue[T,U](funSig: FunSig1[T,U], field0 : Field[T], cg: ClassGenerator)(implicit root: Root, flix: Flix): Unit = {
 
     val JvmInstructions : F[StackNil] => F[StackNil] =
-            funLocals._1.LOAD[StackNil]() |>>
-            funLocals._2.LOAD() |>>
-            field1.PUT_FIELD() |>>
+            funSig.arg0.LOAD[StackNil]() |>>
+            funSig.arg1.LOAD() |>>
+            field0.PUT_FIELD() |>>
             RETURN
 
 
-    cg.GenMethod(List(Public), "setValue", List(cellType), JvmType.Void,
-      JvmInstructions)
+    cg.GenMethod(funSig, JvmInstructions)
   }
 
 }
