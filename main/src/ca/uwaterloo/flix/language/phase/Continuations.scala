@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -19,7 +19,6 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Put gen sym into implicit scope.
     implicit val _ = flix.genSym
-    // todo map fra def sym til cps def sym
 
     // Create a map for each def from sym -> sym'
     val defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym] = root.defs map {
@@ -31,7 +30,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case (sym, defn) => sym -> visitDefn(defn, defSymMap)
     }
 
-    // For each function f(...), make an f'(..., id)
+    // For each function f(...), make an f'(..., id) with the same body as f
     val newDefs2 = root.defs map {
       case (sym, defn) => defSymMap(sym) -> visitDefnAlt(defn, defSymMap)
     }
@@ -43,22 +42,29 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     * Rewrite the body of each def to call a new def, which takes a continuation as parameter
     */
   def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
-    // todo sjj: make example
+
     // Make an id function, x -> x, to pass as continuation argument
     val freshSym = Symbol.freshVarSym()
     val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.eff, defn.loc)
     val id = mkLambda(freshSym, defn.tpe, freshSymVar)
 
-    // todo sjj: what about Eff?
     // Rebind the body of 'def' to call the new function given by defSymMap
-    val defnApply: Expression = Expression.Def(defSymMap(defn.sym), defn.tpe, defn.eff, defn.loc)
-    // todo sjj: assert length 1
-    // todo sjj: fjern liste i fparams
+    val primeDefn = Expression.Def(defSymMap(defn.sym), defn.tpe, defn.eff, defn.loc)
     // todo sjj: check subtree for shift/reset (dyr funktion til start)
-    val body = (defn.fparams :+ id.fparam).foldLeft(defnApply){
-      (acc, fparam) =>
-        Expression.Apply(acc, Expression.Var(fparam.sym, fparam.tpe, empEff(), fparam.loc), getReturnType(acc.tpe), empEff(), defn.loc)
-    }
+
+    assert(defn.fparams.length == 1)
+    val fparam = defn.fparams.head
+    val args = Expression.Var(fparam.sym, fparam.tpe, empEff(), fparam.loc)
+    //val bodyddd = Expression.ApplyWithKont(primeDefn, args, id, defn.tpe, defn.eff, defn.loc)
+
+
+
+    // "generic"
+    val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), defn.loc)
+    // type here is always (defn.tpe -> defn.tpe) -> defn.tpe (... so its not really generic here ... but f' is generic in its types)
+    val primeDefnType = Type.mkArrow(Type.mkArrow(defn.tpe, defn.tpe), defn.tpe)
+    // f(x) = f'(x)(id)
+    val body = Expression.Apply(Expression.Apply(primeDefn, args, primeDefnType, defn.eff, defn.loc), id, defn.tpe, defn.eff, defn.loc)
 
     defn.copy(exp = body)
   }
@@ -67,17 +73,16 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     * Perform CPS transformation of each function
     */
   def visitDefnAlt(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
-    // Add continuation as parameter to def
-    val kontSym = Symbol.freshVarSym("kont")
-    // TODO SJJ: How to make the resulttype of kont generic? Does it even matter as we are after the Typer?
-    // Type of continuation is a function type from defn.tpe -> T
-    val kontTpe = Type.mkArrow(defn.tpe, Type.freshTypeVar())
-    // TODO SJJ: Modifiers?
-    val kontFParam = FormalParam(kontSym, Modifiers.Empty , kontTpe , defn.loc)
+    val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), defn.loc)
 
-    // todo sjj: visitExp should take defSymMap? (E.g. if f(x) = f(x-1), then f'(x, k) = f'(x-1, k) rather than f'(x, k) = f(x-1, k) )
-    // todo sjj: var correct here
-    defn.copy(exp = visitExp(defn.exp, Expression.Var(kontSym, kontTpe, empEff(), defn.loc), kontTpe), fparams = defn.fparams :+ kontFParam)
+    val kontSym = Symbol.freshVarSym()
+    val kontTpe = Type.mkArrow(defn.tpe, genericTypeParam.tpe)
+    val kontVar = Expression.Var(kontSym, kontTpe, empEff(), defn.loc)
+
+    // type is (defn.tpe -> genericType T) -> genericType T
+    val bodyTpe = Type.mkArrow(kontTpe, genericTypeParam.tpe)
+    // body is: kont => visitExp(defn.exp, kont)
+    defn.copy(exp = mkLambda(kontSym, kontTpe, visitExp(defn.exp, kontVar, kontTpe)), tparams = defn.tparams :+ genericTypeParam, tpe = bodyTpe)
   }
 
   // todo sjj rename cps transform, only add to one visitDefn
@@ -162,8 +167,6 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp1, lambda, kont0Type)
     }
 
-    // todo sjj: make cases
-
     case Expression.Let(sym, exp1, exp2, tpe, _, loc) => {
       val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0Type))
       visitExp(exp1, kont1, kont0Type)
@@ -184,6 +187,17 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      val freshSym = Symbol.freshVarSym()
+      val freshSymTpe = exp.tpe
+      val freshSymVar = Expression.Var(freshSym, freshSymTpe, eff, loc)
+
+      // fparam => y, where y is the result of visitExp(exp)
+      val lambda = mkLambda(fparam.sym, tpe, freshSymVar)
+      // freshSym => kont(exp => freshSym)
+      val newKont = mkLambda(freshSym, freshSymTpe, Expression.Apply(kont0, lambda, tpe, eff, loc))
+      visitExp(exp, newKont, kont0Type)
+    // todo sjj: make cases
     case _ => exp0
   }
 
