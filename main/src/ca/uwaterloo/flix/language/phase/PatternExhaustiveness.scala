@@ -365,6 +365,16 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           } yield tast
 
         case Expression.UserError(_, _, _) => tast.toSuccess
+
+        case Expression.CPSReset(exp, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
+
+        case Expression.CPSShift(exp, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
       }
     }
 

@@ -206,6 +206,9 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.UserError(tpe, eff, loc) => Nil
 
+    case Expression.CPSReset(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.CPSShift(exp, tpe, eff, loc) => visitExp(exp)
   }
 
   /**

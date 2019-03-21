@@ -1,3 +1,6 @@
 def main(): Int =
-    f(1, 2)
-def f(x: Int, y: Int):Int = x+y
+    reset {
+        let x = shift k -> k(1);
+        x + "s";
+        1
+    }

@@ -1339,13 +1339,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         */
         case ResolvedAst.Expression.CPSReset(exp, tvar, loc) =>
           //
-          //     exp : tpe
+          //     exp : Int32
           //  ---------------
-          //  reset exp : tpe
+          //  reset exp : Int32
           //
           for {
             e <- visitExp(exp)
-            _ <- unifyM(e, Type.freshTypeVar(), loc) // TODO JJS: is this line unnecessary
+            _ <- unifyM(e, Type.Int32, loc) // TODO JJS: is this line unnecessary
             resultType <- unifyM(tvar, e, loc)
           } yield resultType
 
@@ -1353,10 +1353,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * CPSShift Expression. TODO JJS: fix
         */
         case ResolvedAst.Expression.CPSShift(exp, tvar, loc) =>
+          //
+          //  exp : (T -> Int32) -> Int32
+          //  ---------------------------
+          //         shift exp : T
+          //
           for {
             e <- visitExp(exp)
-//            _ <- unifyM(e, Type.mkArrow(Type.mkArrow(),???), loc)
-            resultType <- unifyM(tvar, ???, loc)
+            resultType <- unifyM(tvar, Type.freshTypeVar(), loc)
+            _ <- unifyM(e, Type.mkArrow(Type.mkArrow(resultType, Type.Int32), Type.Int32), loc)
           } yield resultType
       }
 
