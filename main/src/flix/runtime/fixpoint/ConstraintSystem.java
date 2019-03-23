@@ -21,10 +21,7 @@ import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.symbol.LatSym;
 import flix.runtime.fixpoint.symbol.RelSym;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
 /**
  * Represents a system of constraints.
@@ -159,9 +156,18 @@ public final class ConstraintSystem {
         }
 
         // Otherwise pretty print the facts.
+
+        // Convert each fact to a string and sort them.
+        String[] strings = new String[facts.length];
+        for (var i = 0; i < strings.length; i++) {
+            strings[i] = facts[i].toString();
+        }
+        Arrays.sort(strings);
+
+        // Join the strings together with a delimiter, prefix, and suffix.
         StringJoiner sj = new StringJoiner(" ", "{ ", " }");
-        for (var fact : facts) {
-            sj.add(fact.toString());
+        for (var s : strings) {
+            sj.add(s);
         }
         return sj.toString();
     }
