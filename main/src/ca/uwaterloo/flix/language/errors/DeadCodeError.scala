@@ -23,14 +23,14 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 // TODO: DOC
-case class DeadCodeError(loc: SourceLocation) extends CompilationError {
+case class DeadCodeError(loc: SourceLocation, msg: String) extends CompilationError {
   val kind: String = "Dead Code Error"
   val source: Source = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal()
     vt << Line(kind, source.format) << NewLine
-    vt << ">> Write something" << NewLine
+    vt << ">> Error: " + msg << NewLine
     vt << NewLine
-    vt << Code(loc, "fdsgsd.") << NewLine
+    vt << Code(loc, "Look here, you!") << NewLine
   }
 }
