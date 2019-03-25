@@ -16,6 +16,7 @@ object DeadCode extends Phase[Root, Root] {
       case (sym, defn) => visitDef(defn).map(x => sym -> x)
     }
 
+
     mapN(newDefs) {
       case defs => root.copy(defs = defs.toMap)
     }
@@ -26,15 +27,28 @@ object DeadCode extends Phase[Root, Root] {
       case _ => defn
     }
 
-  private def visitExp(exp: TypedAst.Expression): Validation[TypedAst.Expression, DeadCodeError] =
-    exp match {
+  private def visitExp(e: TypedAst.Expression): Validation[TypedAst.Expression, DeadCodeError] =
+    e match {
+      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+        if (freeVar(e).contains(fparam.sym)) {
+          e.toSuccess
+        } else {
+          DeadCodeError(fparam.sym.loc, "Lambda parameter never used.").toFailure
+        }
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         if (freeVar(exp2).contains(sym)) {
-          exp.toSuccess
+          e.toSuccess
         } else {
           DeadCodeError(sym.loc, "Variable never used.").toFailure
         }
-      case _ => exp.toSuccess
+      case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+        val condVal = visitExp(exp1)
+        val thenVal = visitExp(exp2)
+        val elseVal = visitExp(exp3)
+        mapN(condVal, thenVal, elseVal) {
+          case (condExp, thenExp, elseExp) => e
+        }
+      case _ => e.toSuccess
     }
 
   private def freeVar(exp: TypedAst.Expression): Set[Symbol.VarSym] =
