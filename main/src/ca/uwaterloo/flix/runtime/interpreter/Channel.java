@@ -172,7 +172,9 @@ public final class Channel {
    * @param channels the channels to unlock
    */
   private static void unlockAllChannels(Channel[] channels) {
-    for (Channel c : channels) c.channelLock.unlock();
+      for (int i = channels.length - 1; i >= 0; i--) {
+        channels[i].channelLock.unlock();
+      }
   }
 
   /**
