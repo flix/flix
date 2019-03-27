@@ -1,20 +1,29 @@
+/// Flix supports stratified negation.
+
+/// We declare several relations related to movies:
 rel Movie(title: Str)
-rel StarringIn(title: Str, name: Str)
-rel DirectedBy(title: Str, name: Str)
-rel DirectorNotInMovie(title: Str)
+rel Actor(title: Str, name: Str)
+rel Director(title: Str, name: Str)
+rel PureMovie(title: Str)
 
-Movie("The Hateful Eight").
+/// We declare some facts about movies:
 Movie("Interstellar").
+Movie("The Hateful Eight").
 
-StarringIn("The Hateful Eight", "Samuel L. Jackson").
-StarringIn("The Hateful Eight", "Kurt Russel").
-StarringIn("The Hateful Eight", "Quentin Tarantino").
-StarringIn("Interstellar", "Matthew McConaughey").
-StarringIn("Interstellar", "Anne Hathaway").
+/// We declare some facts about actors:
+Actor("Interstellar", "Matthew McConaughey").
+Actor("Interstellar", "Anne Hathaway").
+Actor("The Hateful Eight", "Samuel L. Jackson").
+Actor("The Hateful Eight", "Kurt Russel").
+Actor("The Hateful Eight", "Quentin Tarantino").
 
-DirectedBy("The Hateful Eight", "Quentin Tarantino").
-DirectedBy("Interstellar", "Christopher Nolan").
+/// We declare some facts about directors:
+Director("Interstellar", "Christopher Nolan").
+Director("The Hateful Eight", "Quentin Tarantino").
 
-DirectorNotInMovie(title) :-
-    Movie(title), DirectedBy(title, name), not StarringIn(title, name).
-
+/// We can now compute all the movies in which the
+/// director of the movie does not appear as an actor.
+PureMovie(movie) :-
+    Movie(movie),
+    Director(movie, person),
+    not Actor(movie, person).
