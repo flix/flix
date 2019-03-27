@@ -88,10 +88,20 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Lambda(fparams, e, tpe, eff, loc)
 
+      case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.LambdaWithKont(fparam1, fparam2, e, tpe, eff, loc)
+
       case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.Apply(e1, e2, tpe, eff, loc)
+
+      case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        Expression.ApplyWithKont(e1, e2, e3, tpe, eff, loc)
 
       case Expression.Unary(op, exp, tpe, eff, loc) =>
         val e = visitExp(exp)

@@ -201,10 +201,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0 ++ env1)
           Expression.Lambda(p, e, subst0(tpe), eff, loc)
 
+        case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) =>
+          val (p1, env1) = specializeFormalParam(fparam1, subst0)
+          val (p2, env2) = specializeFormalParam(fparam1, subst0)
+          val e = visitExp(exp, env0 ++ env1 ++ env2)
+          Expression.LambdaWithKont(p1, p2, e, subst0(tpe), eff, loc)
+
         case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.Apply(e1, e2, subst0(tpe), eff, loc)
+
+        case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          val e3 = visitExp(exp3, env0)
+          Expression.ApplyWithKont(e1, e2, e3, subst0(tpe), eff, loc)
 
         case Expression.Unary(op, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)

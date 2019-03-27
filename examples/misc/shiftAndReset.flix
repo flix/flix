@@ -1,6 +1,2 @@
-def main(): Int =
-    reset {
-        let x = shift k -> k(1);
-        x + "s";
-        1
-    }
+@test
+def main(x: Int): Int = 2
