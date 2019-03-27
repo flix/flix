@@ -1,4 +1,6 @@
-/// Flix supports stratified negation.
+/// Flix supports stratified negation for constraints.
+/// The Flix compiler will statically ensure that use
+/// of negation is safe and compute its stratification.
 
 /// We declare several relations related to movies:
 rel Movie(title: Str)
