@@ -34,7 +34,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case (sym, defn) => sym -> visitDefn(defn, defSymMap)
     }
 
-    // For each function f(...), make an f'(..., id) with k(f.body)
+    // For each function f(...), make an f'(..., k) with visit(f.body, k)
     val newDefs2: Map[Symbol.DefnSym, Def] = root.defs map {
       case (sym, defn) => defSymMap(sym)._1 -> defToCPS(defn, defSymMap)
     }
@@ -75,16 +75,17 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   def defToCPS(defn: Def, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Def = {
     val genericTypeParam: TypeParam = defSymMap(defn.sym)._2
 
-    // todo sjj: Fix the rest of this function!
-
+    // Add generic continuation as formal parameter to f'
     val kontSym = Symbol.freshVarSym()
     val kontTpe = Type.mkArrow(defn.tpe, genericTypeParam.tpe)
+    val kontParam = FormalParam(kontSym, Modifiers.Empty, kontTpe, defn.loc)
     val kontVar = Expression.Var(kontSym, kontTpe, empEff(), defn.loc)
 
-    // type is (defn.tpe -> genericType T) -> genericType T
-    val bodyTpe = Type.mkArrow(kontTpe, genericTypeParam.tpe)
-    // body is: kont => visitExp(defn.exp, kont)
-    defn.copy(exp = mkLambda(kontSym, kontTpe, CPSTransform(defn.exp, kontVar, kontTpe)), tparams = defn.tparams :+ genericTypeParam, tpe = bodyTpe)
+    // Body = visitExp(f.exp, k)
+    val bodyTpe = genericTypeParam.tpe
+    val body = CPSTransform(defn.exp, kontVar, kontTpe)
+
+    defn.copy(exp = body, fparams = defn.fparams :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = bodyTpe)
   }
 
   // todo sjj: check subtree for shift/reset (dyr funktion til start)
