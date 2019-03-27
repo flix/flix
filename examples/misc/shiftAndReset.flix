@@ -1,2 +1,2 @@
 @test
-def main(x: Int): Int = 2
+def main(): Unit = 2; ()

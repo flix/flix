@@ -51,17 +51,17 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     // todo sjj: should we make the id function polymorphic in its type (x: t -> x: t) rather than (x: defn.tpe -> defn.tpe)
     // Make an id function, x -> x, to pass as continuation argument
     val freshSym = Symbol.freshVarSym()
-    val freshSymVar = Expression.Var(freshSym, defn.tpe, defn.eff, defn.loc)
-    val id = mkLambda(freshSym, defn.tpe, freshSymVar)
-
-    // create f' as Def
-    val defnPrimeNameType = defSymMap(defn.sym)
-    val defnPrime = Expression.Def(defnPrimeNameType._1, defnPrimeNameType._2.tpe, defn.eff, defn.loc)
+    val freshSymVar = Expression.Var(freshSym, getReturnType(defn.tpe), defn.eff, defn.loc)
+    val id = mkLambda(freshSym, getReturnType(defn.tpe), freshSymVar)
 
     // find the arguments of f, which should be used to call f'
     assert(defn.fparams.length == 1)
     val fparam = defn.fparams.head
     val arg = Expression.Var(fparam.sym, fparam.tpe, empEff(), fparam.loc)
+
+    // create f' as Def
+    val (defnPrimeName, genericTypeParam) = defSymMap(defn.sym)
+    val defnPrime = Expression.Def(defnPrimeName, Type.mkUncurriedArrow(List(fparam.tpe, Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)), genericTypeParam.tpe), defn.eff, defn.loc)
 
     // the new body of f is to call f' with the arguments of f and a continuation (which is id)
     val body = Expression.ApplyWithKont(defnPrime, arg, id, defnPrime.tpe, defn.eff, defn.loc)
@@ -77,15 +77,17 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Add generic continuation as formal parameter to f'
     val kontSym = Symbol.freshVarSym()
-    val kontTpe = Type.mkArrow(defn.tpe, genericTypeParam.tpe)
+    val kontTpe = Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)
     val kontParam = FormalParam(kontSym, Modifiers.Empty, kontTpe, defn.loc)
     val kontVar = Expression.Var(kontSym, kontTpe, empEff(), defn.loc)
 
     // Body = visitExp(f.exp, k)
-    val bodyTpe = genericTypeParam.tpe
+    val defnTpe = Type.mkUncurriedArrow(List(defn.fparams.head.tpe, Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)), genericTypeParam.tpe)
+
+    Type.mkUncurriedArrow(List(Type.Int32, Type.mkArrow(Type.Int32, Type.Int32)), Type.Int32)
     val body = CPSTransform(defn.exp, kontVar, kontTpe)
 
-    defn.copy(exp = body, fparams = defn.fparams :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = bodyTpe)
+    defn.copy(exp = body, fparams = defn.fparams :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = defnTpe)
   }
 
   // todo sjj: check subtree for shift/reset (dyr funktion til start)
