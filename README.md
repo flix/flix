@@ -9,7 +9,7 @@ The syntax of Flix resembles Scala and Datalog.
 The type system supports local type inference and is based on Hindley-Milner. 
 Flix runs on the Java Virtual Machine and compiles directly to JVM bytecode.
 
-See the [official Flix website](https://flix.github.io/) for more information about Flix. 
+See the [official Flix website](https://flix.dev/) for more information about Flix. 
 
 [![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)

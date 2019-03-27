@@ -166,7 +166,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   private def log(msg: String)(implicit ws: WebSocket): Unit = {
     val dateFormat = new SimpleDateFormat(DateFormat)
     val datePart = dateFormat.format(new Date())
-    val clientPart = ws.getRemoteSocketAddress
+    val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
     Console.println(s"[$datePart] [$clientPart]: $msg")
   }
 
