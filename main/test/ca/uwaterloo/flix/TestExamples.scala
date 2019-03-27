@@ -20,9 +20,11 @@ class TestExamples extends Suites(
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix"),
   new FlixTest("select-with-defaults-and-timers", "examples/select-with-defaults-and-timers.flix"),
   new FlixTest("fixpoint-computations-with-top-level-constraints", "examples/fixpoint-computations-with-top-level-constraints.flix"),
+  new FlixTest("fixpoint-computations-with-stratified-negation", "examples/fixpoint-computations-with-stratified-negation.flix"),
   new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix"),
   new FlixTest("polymorphic-first-class-constraints", "examples/polymorphic-first-class-constraints.flix"),
   new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix"),
+  new FlixTest("fixpoint-constraints-on-lattices", "examples/fixpoint-constraints-on-lattices.flix"),
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix"),
 
   // TODO: Cleanup
