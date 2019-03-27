@@ -1,9 +1,5 @@
-///
-/// This example shows how to define a lattice and use it
-/// in the constraint language.
-///
-
-/// We begin by defining the elements of the Sign lattice.
+/// We define the elements of the lattice as an enum. The somewhat
+/// unorthodox formatting shows the structure of the lattice:
 enum Sign {
               case Top,
 
@@ -12,12 +8,12 @@ enum Sign {
               case Bot
 }
 
-/// Next, we define the the lattice operations as functions:
+/// Next, we define all the components that constitute the lattice:
 
-/// The equality relation on Sign lattice elements.
+/// The equality relation on the lattice elements.
 def equ(e1: Sign, e2: Sign): Bool = e1 == e2
 
-/// The partial order relation on Sign lattice elements.
+/// The partial order relation on the lattice elements.
 def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
     case (Bot, _)   => true
     case (Neg, Neg) => true
@@ -27,7 +23,7 @@ def leq(e1: Sign, e2: Sign): Bool = match (e1, e2) with {
     case _          => false
 }
 
-/// The least upper bound of two sign lattice elements.
+/// The least upper bound relation on the lattice elements.
 def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
     case (Bot, x)   => x
     case (x, Bot)   => x
@@ -37,6 +33,7 @@ def lub(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
     case _          => Top
 }
 
+/// The greatest lower bound relation on the lattice elements.
 def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
     case (Top, x)   => x
     case (x, Top)   => x
@@ -46,17 +43,21 @@ def glb(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
     case _          => Bot
 }
 
-/// We define the Sign lattice attaching its components.
+/// Flix does not yet support type classes, so we use this ugly syntax
+/// to tell Flix that these functions define a lattice on Sign.
 let Sign<> = (Bot, Top, equ, leq, lub, glb)
 
+/// We can now declare three map lattices:
 lat A(x: Str, s: Sign)
 lat B(x: Str, s: Sign)
 lat R(x: Str, s: Sign)
 
+/// We can write facts with lattice semantics:
 A("a", Pos).
-A("b", Neg).
 B("a", Top).
+A("b", Neg).
 
+/// And rules with lattice semantics:
 R("c", s) :- A("a", s).
 R("c", s) :- A("b", s).
 R("d", s) :- A(x, s), B(x, s).
