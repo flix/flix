@@ -2,14 +2,14 @@ package ca.uwaterloo.flix.tools
 
 import java.io.PrintWriter
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
-import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
+import java.nio.file._
+import java.util.zip.{ZipEntry, ZipFile, ZipInputStream, ZipOutputStream}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options, StreamOps, Validation}
+import ca.uwaterloo.flix.util._
 
 import scala.collection.mutable
 
@@ -69,10 +69,10 @@ object Packager {
     newDirectory(testDirectory)
 
     newFile(packageFile) {
-      s"""{
-         |  "package": "$packageName",
-         |  "version": "0.1.0"
-         |}
+      s"""(package
+         |  (name     "$packageName")
+         |  (version  "0.1.0")
+         |)
          |""".stripMargin
     }
 
@@ -97,7 +97,7 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Unit = ()
+        |def main(): Unit = Console.printLine("Hello World!")
         |""".stripMargin
     }
 
@@ -118,7 +118,10 @@ object Packager {
 
     // Configure a new Flix object.
     val flix = new Flix()
-    flix.setOptions(o.copy(writeClassFiles = true))
+    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), writeClassFiles = true))
+
+    // Copy all class files from the Flix runtime jar.
+    copyRuntimeClassFiles(p)
 
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
@@ -173,8 +176,9 @@ object Packager {
 
     // Add all class files.
     for (buildFile <- getAllFiles(getBuildDirectory(p))) {
-      val name = getBuildDirectory(p).relativize(buildFile).toString
-      addToZip(zip, name, buildFile)
+      val fileName = getBuildDirectory(p).relativize(buildFile).toString
+      val fileNameWithSlashes = fileName.replace('\\', '/')
+      addToZip(zip, fileNameWithSlashes, buildFile)
     }
 
     // Close the zip file.
@@ -285,6 +289,39 @@ object Packager {
   }
 
   /**
+    * Copies all Flix runtime class files into the build directory.
+    */
+  private def copyRuntimeClassFiles(p: Path): Unit = {
+    // Retrieve the Flix runtime JAR file.
+    val is = LocalResource.getInputStream("/resources/runtime/flix-runtime.jar")
+    val zip = new ZipInputStream(is)
+
+    // Iterate through its directories and classes.
+    var entry = zip.getNextEntry
+    while (entry != null) {
+      // Check if the entry is a directory or a file.
+      if (entry.isDirectory) {
+        // Case 1: The entry is a directory. Recreate the directory (and its parent directories) inside the build directory.
+        val directoryPath = getBuildDirectory(p).resolve(entry.getName).normalize()
+        Files.createDirectories(directoryPath)
+      } else {
+        // Case 2: The entry is a file. Verify that it is a class file.
+        val classFilePath = getBuildDirectory(p).resolve(entry.getName).normalize()
+        if (classFilePath.toString.endsWith(".class")) {
+          // The entry is a class file. Write its content to the build directory.
+          StreamOps.writeAll(zip, classFilePath)
+        }
+      }
+
+      // Done with this entry.
+      zip.closeEntry()
+
+      // Ready to process the next entry.
+      entry = zip.getNextEntry
+    }
+  }
+
+  /**
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
@@ -313,7 +350,7 @@ object Packager {
   /**
     * Returns the path to the build directory relative to the given path `p`.
     */
-  private def getBuildDirectory(p: Path): Path = p.resolve("./target/flix/").normalize()
+  private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
@@ -328,7 +365,7 @@ object Packager {
   /**
     * Returns the path to the package file relative to the given path `p`.
     */
-  private def getPackageFile(p: Path): Path = p.resolve("./package.json").normalize()
+  private def getPackageFile(p: Path): Path = p.resolve("./package.sn").normalize()
 
   /**
     * Returns the path to the HISTORY file relative to the given path `p`.

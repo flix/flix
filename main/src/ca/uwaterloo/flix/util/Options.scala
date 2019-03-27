@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
+import java.nio.file.{Path, Paths}
 import java.time.{Duration => JDuration}
 
 object Options {
@@ -34,6 +35,7 @@ object Options {
     quickchecker = false,
     test = false,
     target = JvmTarget.Version18,
+    targetDirectory = Paths.get("./target/flix/"),
     timeout = None,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
@@ -61,6 +63,7 @@ object Options {
   * @param quickchecker    enables the quickchecker.
   * @param test            enables test mode.
   * @param target          the target JVM.
+  * @param targetDirectory the target directory for compiled code.
   * @param timeout         selects the solver timeout.
   * @param threads         selects the number of threads to use.
   * @param verbosity       selects the level of verbosity.
@@ -78,6 +81,7 @@ case class Options(core: Boolean,
                    monitor: Boolean,
                    quickchecker: Boolean,
                    target: JvmTarget,
+                   targetDirectory: Path,
                    test: Boolean,
                    timeout: Option[JDuration],
                    threads: Int,
