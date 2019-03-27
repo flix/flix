@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.tools
 
-import java.io.{FileInputStream, PrintWriter}
+import java.io.PrintWriter
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
+import java.nio.file._
 import java.util.zip.{ZipEntry, ZipFile, ZipInputStream, ZipOutputStream}
 
 import ca.uwaterloo.flix.api.Flix
@@ -69,10 +69,10 @@ object Packager {
     newDirectory(testDirectory)
 
     newFile(packageFile) {
-      s"""{
-         |  "package": "$packageName",
-         |  "version": "0.1.0"
-         |}
+      s"""(package
+         |  (name     "$packageName")
+         |  (version  "0.1.0")
+         |)
          |""".stripMargin
     }
 
@@ -97,7 +97,7 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Unit = ()
+        |def main(): Unit = Console.printLine("Hello World!")
         |""".stripMargin
     }
 
@@ -118,7 +118,7 @@ object Packager {
 
     // Configure a new Flix object.
     val flix = new Flix()
-    flix.setOptions(o.copy(writeClassFiles = true))
+    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), writeClassFiles = true))
 
     // Copy all class files from the Flix runtime jar.
     copyRuntimeClassFiles(p)
@@ -350,7 +350,7 @@ object Packager {
   /**
     * Returns the path to the build directory relative to the given path `p`.
     */
-  private def getBuildDirectory(p: Path): Path = p.resolve("./target/flix/").normalize()
+  private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
@@ -365,7 +365,7 @@ object Packager {
   /**
     * Returns the path to the package file relative to the given path `p`.
     */
-  private def getPackageFile(p: Path): Path = p.resolve("./package.json").normalize()
+  private def getPackageFile(p: Path): Path = p.resolve("./package.sn").normalize()
 
   /**
     * Returns the path to the HISTORY file relative to the given path `p`.

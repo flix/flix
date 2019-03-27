@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import java.lang.reflect.InvocationTargetException
-import java.nio.file.{Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
@@ -31,11 +30,6 @@ import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 object JvmBackend extends Phase[Root, CompilationResult] {
-
-  /**
-    * The directory where to place the generated class files.
-    */
-  val TargetDirectory: Path = Paths.get("./target/flix/")
 
   /**
     * Emits JVM bytecode for the given AST `root`.
@@ -183,7 +177,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
         for ((jvmName, jvmClass) <- allClasses) {
-          JvmOps.writeClass(TargetDirectory, jvmClass)
+          JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
         }
       }
     }
