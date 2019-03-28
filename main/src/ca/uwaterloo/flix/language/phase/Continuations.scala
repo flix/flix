@@ -76,7 +76,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val genericTypeParam: TypeParam = defSymMap(defn.sym)._2
 
     // Add generic continuation as formal parameter to f'
-    val kontSym = Symbol.freshVarSym()
+    val kontSym = Symbol.freshVarSym("k")
     val kontTpe = Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)
     val kontParam = FormalParam(kontSym, Modifiers.Empty, kontTpe, defn.loc)
     val kontVar = Expression.Var(kontSym, kontTpe, empEff(), defn.loc)
@@ -216,7 +216,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   private def mkLambda(sym: Symbol.VarSym, argType: Type, exp: Expression): Expression.Lambda = {
     val loc = exp.loc
     val fparam = FormalParam(sym, Modifiers.Empty, argType, loc)
-    Expression.Lambda(fparam, exp, Type.mkArrow(argType, exp.tpe), empEff(), loc)
+    val res = Expression.Lambda(fparam, exp, Type.mkArrow(argType, exp.tpe), empEff(), loc)
+    val e = "test"
+    res
   }
 
   /**
