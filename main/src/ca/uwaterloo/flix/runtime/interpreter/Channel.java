@@ -92,39 +92,39 @@ public final class Channel {
     while (!Thread.interrupted()) {
       // Lock all channels in sorted order
       lockAllChannels(sortedChannels);
-      // Lock the select lock after the channels
-      selectLock.lock();
-
       try {
-        // Check if any channel has an element
-        for (int index = 0; index < channels.length; index++) {
-          Channel channel = channels[index];
-          Object element = channel.tryGet();
-          if (element != null) {
-            // Element found.
-            // Return the element and the branchNumber (index of the array) of the containing channel
-            return new SelectChoice(index, element);
+        // Lock the select lock after the channels
+        selectLock.lock();
+
+        try {
+          // Check if any channel has an element
+          for (int index = 0; index < channels.length; index++) {
+            Channel channel = channels[index];
+            Object element = channel.tryGet();
+            if (element != null) {
+              // Element found.
+              // Return the element and the branchNumber (index of the array) of the containing channel
+              return new SelectChoice(index, element);
+            }
           }
+
+          // No element was found.
+
+          // If there is a default case, choose this
+          if (hasDefault) {
+            return SelectChoice.DEFAULT_CHOICE;
+          }
+
+          // Add our condition to all channels to get notified when a new element is added
+          for (Channel channel : channels) {
+            channel.addGetter(selectLock, condition);
+          }
+        } finally {
+          // Unlock all channels in sorted order, so other threads may input elements
+          unlockAllChannels(sortedChannels);
         }
 
-        // No element was found.
-
-        // If there is a default case, choose this
-        if (hasDefault) {
-          return SelectChoice.DEFAULT_CHOICE;
-        }
-
-        // Add our condition to all channels to get notified when a new element is added
-        for (Channel channel : channels) {
-          channel.addGetter(selectLock, condition);
-        }
-      } finally {
-        // Unlock all channels in sorted order, so other threads may input elements
-        unlockAllChannels(sortedChannels);
-      }
-
-      // Wait for an element to be added to any of the channels
-      try {
+        // Wait for an element to be added to any of the channels
         condition.await();
       } catch (InterruptedException e) {
         throw new RuntimeException("Thread interrupted");
