@@ -26,6 +26,7 @@ class TestExamples extends Suites(
   new FlixTest("polymorphic-first-class-constraints", "examples/polymorphic-first-class-constraints.flix"),
   new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix"),
   new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix"),
+  new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix"),
 
   // TODO: Cleanup
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix"),
