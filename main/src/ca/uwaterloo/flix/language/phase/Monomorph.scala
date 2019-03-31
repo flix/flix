@@ -583,15 +583,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
       // Lookup the definition and its declared type.
       val defn = root.defs(sym)
-      val declaredType = defn.tpe
 
-      // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
-
-      // Check if the substitution is empty, if so there is no need for specialization.
-      if (subst.isEmpty) {
+      // Check if the function is non-polymorphic.
+      if (defn.tparams.isEmpty) {
         return sym
       }
+
+      // Unify the declared and actual type to obtain the substitution map.
+      val declaredType = defn.tpe
+      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
