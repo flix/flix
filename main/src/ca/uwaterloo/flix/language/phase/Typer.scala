@@ -272,6 +272,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
+            // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly.
             Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, resultType, defn0.eff, defn0.loc))
 
           case Err(e) => Err(e)
