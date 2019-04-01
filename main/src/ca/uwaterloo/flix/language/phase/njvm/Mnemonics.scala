@@ -125,7 +125,7 @@ object Mnemonics {
     case t if t =:= typeOf[JvmType.PrimLong.type] => JvmType.PrimLong
     case t if t =:= typeOf[JvmType.PrimFloat.type] => JvmType.PrimFloat
     case t if t =:= typeOf[JvmType.PrimDouble.type] => JvmType.PrimDouble
-    case t if t =:= typeOf[JvmType.Reference] => JvmType.Object
+    case t if t =:= typeOf[JvmType.Object.type] => JvmType.Object
   }
 
 
@@ -175,101 +175,33 @@ object Mnemonics {
 
     private val fieldType = getJvmType[T]
 
-    def GET_FIELD[R <: Stack]: F[R ** JvmType.Reference] => F[R ** T] =  t => t.getField(fieldName, fieldType)
-    def PUT_FIELD[R <: Stack]: F[R ** JvmType.Reference ** T] => F[R] =  t => t.putField(fieldName, fieldType)
+    def GET_FIELD[R <: Stack]: F[R ** JvmType.Object.type] => F[R ** T] =  t => t.getField(fieldName, fieldType)
+    def PUT_FIELD[R <: Stack]: F[R ** JvmType.Object.type ** T] => F[R] =  t => t.putField(fieldName, fieldType)
   }
 
-
-
-  abstract class MethodHandler{
-    def INVOKE[R <: Stack]: F[R ** JvmType.Reference] => F[R]  =
+  abstract class Method{
+    def INVOKE[R <: Stack]: F[R ** JvmType.Object.type] => F[R]  =
       t => t.invoke(JvmModifier.InvokeSpecial, JvmName.Object.toInternalName, "<init>" ,Nil, JvmType.Void)
 
   }
-  class MethodHandler0[R : TypeTag] () extends MethodHandler{}
-  class MethodHandler1[T1: TypeTag, R : TypeTag] () extends MethodHandler{}
+
+  class Method0[R : TypeTag]() extends Method{}
+  class Method1[T1: TypeTag, R : TypeTag]() extends Method{}
 
 
-  abstract class FunSig[R : TypeTag](cw: ClassWriter, ct : JvmType.Reference, modifiers : List[JvmModifier], methodName : String) {
-
-
-    def getModifiers : List[JvmModifier] = modifiers
-
-    def getMethodName : String = methodName
-
-    def getArgsType : List[JvmType]
-
-    def getReturnType : JvmType = getJvmType[R]
-
-    def genMethod(ft : F[StackNil] => F[StackNil ** R]) : MethodHandler
-    def genVoidMethod(ft : F[StackNil] => F[StackNil]) : MethodHandler
-
-    protected def genMethodWithoutHandler(ft : F[StackNil] => F[StackNil ** R]) : Unit = {
-
-      genMethodCommon(ft |>> Instructions.RETURN[R])
-    }
-
-    protected def genVoidMethodWithoutHandler(ft : F[StackNil] => F[StackNil]) : Unit = {
-      genMethodCommon(ft |>>  Instructions.RETURN)
-    }
-
-    private def genMethodCommon(ft : F[StackNil] => F[StackNil]) : Unit = {
-      val modifierVal = getModifiers.map(modifier => modifier.toInternal).sum
-
-      val mv = cw.visitMethod(modifierVal, getMethodName,
-      AsmOps.getMethodDescriptor(getArgsType, getReturnType), null, null)
-      mv.visitCode()
-
-      ft(new F[StackNil](mv, ct))
-
-      mv.visitMaxs(1,1)
-      mv.visitEnd()
-    }
-
-
+  class FunSig0[R : TypeTag] {
+    def getArg0 : Local[JvmType.Object.type] = new Local[JvmType.Object.type ](0)
   }
 
-  class FunSig0[R : TypeTag] (cw: ClassWriter, ct : JvmType.Reference, modifiers : List[JvmModifier], methodName : String)
-    extends FunSig[R](cw, ct, modifiers, methodName) {
+  class FunSig1[T1 : TypeTag, R : TypeTag]  {
 
-
-    def getArg0 : Local[JvmType.Reference] = new Local[JvmType.Reference](0)
-
-    override def getArgsType: List[JvmType] = List()
-
-    override def genMethod(ft: F[StackNil] => F[StackNil ** R]): MethodHandler0[R] = {
-      genMethodWithoutHandler(ft)
-      new MethodHandler0[R]
-    }
-
-    override def genVoidMethod(ft: F[StackNil] => F[StackNil]): MethodHandler0[R] = {
-      genVoidMethodWithoutHandler(ft)
-      new MethodHandler0[R]
-    }
-  }
-
-  class FunSig1[T1 : TypeTag, R : TypeTag] (cw: ClassWriter, ct : JvmType.Reference, modifiers : List[JvmModifier], methodName : String)
-    extends FunSig[R](cw, ct, modifiers, methodName) {
-
-    def getArg0 : Local[JvmType.Reference] = new Local[JvmType.Reference](0)
+    def getArg0 : Local[JvmType.Object.type] = new Local[JvmType.Object.type](0)
 
     def getArg1 : Local[T1] = new Local[T1](1)
-
-    override def getArgsType: List[JvmType] = List(getJvmType[T1])
-
-    override def genMethod(ft: F[StackNil] => F[StackNil ** R]) : MethodHandler1[T1, R] = {
-      genMethodWithoutHandler(ft)
-      new MethodHandler1[T1, R]
-    }
-    override def genVoidMethod(ft: F[StackNil] => F[StackNil]): MethodHandler1[T1, R] = {
-      genVoidMethodWithoutHandler(ft)
-      new MethodHandler1[T1, R]
-    }
   }
 
 
-
-  class ClassGenerator(classType: JvmType.Reference,
+  class ClassGenerator(ct: JvmType.Reference,
                        modifiers : List[JvmModifier], superClass : String, implementedInterfaces : Array[String])
                       (implicit flix: Flix) {
 
@@ -277,18 +209,47 @@ object Mnemonics {
     private val cw: ClassWriter = {
       val cw = AsmOps.mkClassWriter()
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
-      cw.visit(AsmOps.JavaVersion, modifierVal, classType.name.toInternalName, null,
+      cw.visit(AsmOps.JavaVersion, modifierVal, ct.name.toInternalName, null,
         superClass, implementedInterfaces)
       cw
     }
 
 
-    def mkFunSig0[R : TypeTag](modifiers : List[JvmModifier], methodName : String)  : FunSig0[R] = {
-      new FunSig0[R](cw, classType, modifiers, methodName)
+    def mkMethod0[R : TypeTag](modifiers : List[JvmModifier], methodName : String,
+                               f : FunSig0[R] => F[StackNil] => F[StackNil]) : Method0[R] = {
+
+      val returnType = getJvmType[R]
+      val funSig = new FunSig0[R]()
+
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      val mv = cw.visitMethod(modifierVal, methodName,
+        AsmOps.getMethodDescriptor(List(), returnType), null, null)
+      mv.visitCode()
+
+      f(funSig)(new F[StackNil](mv, ct))
+
+      mv.visitMaxs(1,1)
+      mv.visitEnd()
+      new Method0[R]()
     }
 
-    def mkFunSig1[T1 : TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String)  : FunSig1[T1, R] = {
-      new FunSig1[T1, R](cw, classType, modifiers, methodName)
+    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String,
+                               f : FunSig1[T1, R] => F[StackNil] => F[StackNil]) : Method1[T1, R] = {
+
+      val arg1Type = getJvmType[T1]
+      val returnType = getJvmType[R]
+      val funSig = new FunSig1[T1,R]()
+
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      val mv = cw.visitMethod(modifierVal, methodName,
+        AsmOps.getMethodDescriptor(List(arg1Type), returnType), null, null)
+      mv.visitCode()
+
+      f(funSig)(new F[StackNil](mv, ct))
+
+      mv.visitMaxs(1,1)
+      mv.visitEnd()
+      new Method1[T1, R]()
     }
 
     def compileField[T : TypeTag](modifiers: List[JvmModifier] ,fieldName: String) : Field[T] = {
@@ -299,6 +260,53 @@ object Mnemonics {
       field.visitEnd()
 
       new Field[T](fieldName)
+    }
+
+    def compile(): Array[Byte] = {
+      cw.visitEnd()
+      cw.toByteArray
+    }
+  }
+
+
+  class InterfaceGenerator(it: JvmType.Reference,
+                       modifiers : List[JvmModifier], superClass : String, implementedInterfaces : Array[String])
+                      (implicit flix: Flix) {
+
+
+    private val cw: ClassWriter = {
+      val cw = AsmOps.mkClassWriter()
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      cw.visit(AsmOps.JavaVersion, modifierVal, it.name.toInternalName, null,
+        superClass, implementedInterfaces)
+      cw
+    }
+
+
+    def mkMethod0[R : TypeTag](modifiers : List[JvmModifier], methodName : String) : Method0[R] = {
+
+      val returnType = getJvmType[R]
+
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      val mv = cw.visitMethod(modifierVal, methodName,
+        AsmOps.getMethodDescriptor(List(), returnType), null, null)
+      mv.visitEnd()
+
+      new Method0[R]()
+    }
+
+    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String,
+                                           f : FunSig1[T1, R] => F[StackNil] => F[StackNil]) : Method1[T1, R] = {
+
+      val arg1Type = getJvmType[T1]
+      val returnType = getJvmType[R]
+
+      val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+      val mv = cw.visitMethod(modifierVal, methodName,
+        AsmOps.getMethodDescriptor(List(arg1Type), returnType), null, null)
+      mv.visitEnd()
+
+      new Method1[T1, R]()
     }
 
     def compile(): Array[Byte] = {
