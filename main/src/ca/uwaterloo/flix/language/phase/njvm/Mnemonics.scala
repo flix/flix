@@ -71,6 +71,9 @@ object Mnemonics {
 
   }
 
+  object MnemonicsType {
+    case object Self
+  }
 
   class F[T](mv : MethodVisitor, ct : JvmType.Reference) {
 
@@ -115,6 +118,7 @@ object Mnemonics {
     def |>>[C <: Stack](g: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => g(f(x))
   }
 
+
   def getJvmType[T : TypeTag]: JvmType = typeOf[T] match {
     case t if t =:= typeOf[JvmType.Void.type] => JvmType.Void
     case t if t =:= typeOf[JvmType.PrimBool.type] => JvmType.PrimBool
@@ -125,7 +129,17 @@ object Mnemonics {
     case t if t =:= typeOf[JvmType.PrimLong.type] => JvmType.PrimLong
     case t if t =:= typeOf[JvmType.PrimFloat.type] => JvmType.PrimFloat
     case t if t =:= typeOf[JvmType.PrimDouble.type] => JvmType.PrimDouble
+
+    case t if t =:= typeOf[JvmType.String.type] => JvmType.String
     case t if t =:= typeOf[JvmType.Object.type] => JvmType.Object
+
+  }
+
+  def getJvmType[T : TypeTag](jt : JvmType): JvmType = typeOf[T] match {
+
+    case t if t =:= typeOf[MnemonicsType.Self.type] => jt
+    case _ => getJvmType[T]
+
   }
 
 
@@ -218,7 +232,7 @@ object Mnemonics {
     def mkMethod0[R : TypeTag](modifiers : List[JvmModifier], methodName : String,
                                f : FunSig0[R] => F[StackNil] => F[StackNil]) : Method0[R] = {
 
-      val returnType = getJvmType[R]
+      val returnType = getJvmType[R](ct)
       val funSig = new FunSig0[R]()
 
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
@@ -233,7 +247,7 @@ object Mnemonics {
       new Method0[R]()
     }
 
-    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String,
+    def mkMethod1[T1 : TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String,
                                f : FunSig1[T1, R] => F[StackNil] => F[StackNil]) : Method1[T1, R] = {
 
       val arg1Type = getJvmType[T1]
@@ -285,7 +299,7 @@ object Mnemonics {
 
     def mkMethod0[R : TypeTag](modifiers : List[JvmModifier], methodName : String) : Method0[R] = {
 
-      val returnType = getJvmType[R]
+      val returnType = getJvmType[R](it)
 
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       val mv = cw.visitMethod(modifierVal, methodName,
@@ -295,11 +309,10 @@ object Mnemonics {
       new Method0[R]()
     }
 
-    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String,
-                                           f : FunSig1[T1, R] => F[StackNil] => F[StackNil]) : Method1[T1, R] = {
+    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String) : Method1[T1, R] = {
 
-      val arg1Type = getJvmType[T1]
-      val returnType = getJvmType[R]
+      val arg1Type = getJvmType[T1](it)
+      val returnType = getJvmType[R](it)
 
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       val mv = cw.visitMethod(modifierVal, methodName,

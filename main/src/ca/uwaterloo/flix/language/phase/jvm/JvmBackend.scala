@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
+import ca.uwaterloo.flix.language.phase.njvm.GenRecordInterface
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
@@ -139,7 +140,8 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate record interface.
     //
-    val recordInterfaces = GenRecordInterfaces.gen()
+//    val recordInterfaces = GenRecordInterfaces.gen()
+      val recordInterfaces = GenRecordInterface.gen()
 
     //
     // Generate empty record class.
