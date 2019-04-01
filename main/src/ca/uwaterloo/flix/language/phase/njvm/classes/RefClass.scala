@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmType}
 import ca.uwaterloo.flix.language.phase.njvm.Api
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 
 import scala.reflect.runtime.universe._
 
@@ -13,14 +14,14 @@ class RefClass[T : TypeTag](implicit root: Root, flix: Flix) {
 
   //Setup
   private val ct : JvmType.Reference = JvmName.getCellClassType(getJvmType[T])
-  private val cg : ClassGenerator =  new ClassGenerator(ct, List(Public,Final), JvmName.Object.toInternalName, null)
+  private val cg : ClassGenerator =  new ClassGenerator(ct, List(Public,Final), JvmType.Object, null)
 
   //Declare Fields
   private val field0 : Field[T] = cg.compileField[T](List(Private),"field0")
 
   //Declare methods
   //Constructor
-  val constructor : Method1[T, JvmType.Void.type ] = genConstructor
+  val constructor: Method1[T, JvmType.Void.type] = genConstructor
 
   //getValue
   val getValue : Method0[T] = genGetValueMethod
@@ -29,17 +30,16 @@ class RefClass[T : TypeTag](implicit root: Root, flix: Flix) {
   val setValue : Method1[T, JvmType.Void.type ] = getSetValueMethod
 
   //Constructor
-  private def genConstructor : Method1[T, JvmType.Void.type] = {
+  private def genConstructor: Method1[T, JvmType.Void.type] = {
 
-    val superConstructor = Api.JavaRuntimeFunction.ObjectConstructor
     cg.mkMethod1[T, JvmType.Void.type](List(Public), "<init>",
       sig =>
         sig.getArg0.LOAD[StackNil]|>>
-          superConstructor.INVOKE |>>
+          Api.JavaRuntimeFunctions.ObjectConstructor.INVOKE |>>
           sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
           field0.PUT_FIELD |>>
-          Instructions.RETURN)
+          RETURN)
   }
 
   private def genGetValueMethod : Method0[T] =
@@ -48,7 +48,7 @@ class RefClass[T : TypeTag](implicit root: Root, flix: Flix) {
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
-          Instructions.RETURN[T])
+          RETURN[T])
 
 
   private def getSetValueMethod: Method1[T, JvmType.Void.type] =
@@ -58,7 +58,7 @@ class RefClass[T : TypeTag](implicit root: Root, flix: Flix) {
           sig.getArg0.LOAD[StackNil] |>>
             sig.getArg1.LOAD |>>
             field0.PUT_FIELD |>>
-            Instructions.RETURN
+            RETURN
       )
 
   def genClass : (JvmName, JvmClass) =

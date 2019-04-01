@@ -1,7 +1,8 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.{AsmOps, JvmName, JvmType}
+import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.phase.jvm.{AsmOps, JvmName, JvmOps, JvmType}
 
 import scala.reflect.runtime.universe._
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
@@ -41,6 +42,11 @@ object Mnemonics {
       case JvmModifier.Deprecated => ACC_DEPRECATED
 
       case JvmModifier.InvokeSpecial => INVOKESPECIAL
+      case JvmModifier.InvokeVirtual => INVOKEVIRTUAL
+      case JvmModifier.InvokeInterface => INVOKEINTERFACE
+      case JvmModifier.InvokeStatic => INVOKESTATIC
+
+
     }
   }
 
@@ -68,11 +74,21 @@ object Mnemonics {
 
 
     case object InvokeSpecial extends JvmModifier
+    case object InvokeVirtual extends JvmModifier
+    case object InvokeInterface extends JvmModifier
+    case object InvokeStatic extends JvmModifier
+
+
 
   }
 
+  sealed trait MnemonicsType
   object MnemonicsType {
-    case object Self
+    case object UnsupportedOperationException extends MnemonicsType
+
+    case object RecordInterface extends MnemonicsType
+
+
   }
 
   class F[T](mv : MethodVisitor, ct : JvmType.Reference) {
@@ -111,6 +127,27 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+    def _new[S](jt : JvmType.Reference): F[S] = {
+      mv.visitTypeInsn(NEW, jt.name.toInternalName)
+      this.asInstanceOf[F[S]]
+    }
+
+    def dup[S](): F[S] = {
+      mv.visitInsn(DUP)
+      this.asInstanceOf[F[S]]
+    }
+
+    def ldc[S](value : Object): F[S] = {
+      mv.visitLdcInsn(value)
+      this.asInstanceOf[F[S]]
+    }
+
+    def _throw[S](): F[S] = {
+      mv.visitInsn(ATHROW)
+      this.asInstanceOf[F[S]]
+    }
+
+
 
   }
 
@@ -119,7 +156,7 @@ object Mnemonics {
   }
 
 
-  def getJvmType[T : TypeTag]: JvmType = typeOf[T] match {
+  def getJvmType[T : TypeTag] (implicit root: Root, flix: Flix): JvmType = typeOf[T] match {
     case t if t =:= typeOf[JvmType.Void.type] => JvmType.Void
     case t if t =:= typeOf[JvmType.PrimBool.type] => JvmType.PrimBool
     case t if t =:= typeOf[JvmType.PrimChar.type] => JvmType.PrimChar
@@ -130,27 +167,31 @@ object Mnemonics {
     case t if t =:= typeOf[JvmType.PrimFloat.type] => JvmType.PrimFloat
     case t if t =:= typeOf[JvmType.PrimDouble.type] => JvmType.PrimDouble
 
+    case _ => getJvmTypeReference[T]
+  }
+
+
+  def getJvmTypeReference[T : TypeTag] (implicit root: Root, flix: Flix): JvmType.Reference = typeOf[T] match {
+
     case t if t =:= typeOf[JvmType.String.type] => JvmType.String
     case t if t =:= typeOf[JvmType.Object.type] => JvmType.Object
 
-  }
+    case t if t =:= typeOf[JvmType.Reference] => JvmType.Object
 
-  def getJvmType[T : TypeTag](jt : JvmType): JvmType = typeOf[T] match {
-
-    case t if t =:= typeOf[MnemonicsType.Self.type] => jt
-    case _ => getJvmType[T]
+    case t if t =:= typeOf[MnemonicsType.UnsupportedOperationException.type] => JvmType.Reference(JvmName.UnsupportedOperationException)
+    case t if t =:= typeOf[MnemonicsType.RecordInterface.type] => JvmOps.getRecordInterfaceType()
 
   }
+
 
 
   object Instructions {
-
 
     /**
       * Polymorphic return.
       */
 
-    def RETURN[T : TypeTag]: F[StackNil ** T] => F[StackNil] = {
+    def RETURN[T : TypeTag](implicit root: Root, flix: Flix): F[StackNil ** T] => F[StackNil] = {
 
       val jvmType = getJvmType[T]
 
@@ -166,6 +207,19 @@ object Mnemonics {
       */
     def IADD[R <: Stack]: F[R ** JvmType.PrimInt.type ** JvmType.PrimInt.type] => F[R ** JvmType.PrimInt.type] = ???
 
+    def NEW[R <: Stack, T <: MnemonicsType : TypeTag](implicit root: Root, flix: Flix): F[R] => F[R ** T] =
+      t => t._new(getJvmTypeReference[T])
+
+    def DUP[R <: Stack, T : TypeTag]: F[R ** T] => F[R ** T ** T] =
+      t => t.dup()
+
+    def LDC_STRING[R <: Stack](value: String) : F[R] => F[R ** JvmType.String.type] =
+      t => t.ldc(value)
+
+    def THROW : F[StackNil**MnemonicsType.UnsupportedOperationException.type] => F[StackNil] =
+      t => t._throw()
+
+
 
   }
 
@@ -173,7 +227,7 @@ object Mnemonics {
   /**
     * Capability which allows to load/store a local variable
     */
-   class Local[T : TypeTag](location: Int){
+   class Local[T : TypeTag](location: Int)(implicit root: Root, flix: Flix){
 
     private val localType = getJvmType[T]
 
@@ -185,54 +239,73 @@ object Mnemonics {
   /**
     * Capability which allows to get/put a field
     */
-  class Field[T : TypeTag](fieldName: String){
+  class Field[T : TypeTag](fieldName: String)(implicit root: Root, flix: Flix){
 
     private val fieldType = getJvmType[T]
 
-    def GET_FIELD[R <: Stack]: F[R ** JvmType.Object.type] => F[R ** T] =  t => t.getField(fieldName, fieldType)
-    def PUT_FIELD[R <: Stack]: F[R ** JvmType.Object.type ** T] => F[R] =  t => t.putField(fieldName, fieldType)
+    def GET_FIELD[R <: Stack]: F[R ** JvmType.Reference] => F[R ** T] =  t => t.getField(fieldName, fieldType)
+    def PUT_FIELD[R <: Stack]: F[R ** JvmType.Reference ** T] => F[R] =  t => t.putField(fieldName, fieldType)
   }
 
-  abstract class Method{
-    def INVOKE[R <: Stack]: F[R ** JvmType.Object.type] => F[R]  =
-      t => t.invoke(JvmModifier.InvokeSpecial, JvmName.Object.toInternalName, "<init>" ,Nil, JvmType.Void)
 
-  }
-
-  class Method0[R : TypeTag]() extends Method{}
-  class Method1[T1: TypeTag, R : TypeTag]() extends Method{}
-
-
-  class FunSig0[R : TypeTag] {
-    def getArg0 : Local[JvmType.Object.type] = new Local[JvmType.Object.type ](0)
+  class FunSig0[R : TypeTag]() {
+    def getArg0(implicit root: Root, flix: Flix): Local[JvmType.Reference] = new Local[JvmType.Reference](0)
   }
 
   class FunSig1[T1 : TypeTag, R : TypeTag]  {
 
-    def getArg0 : Local[JvmType.Object.type] = new Local[JvmType.Object.type](0)
+    def getArg0(implicit root: Root, flix: Flix): Local[JvmType.Reference] = new Local[JvmType.Reference](0)
 
-    def getArg1 : Local[T1] = new Local[T1](1)
+    def getArg1(implicit root: Root, flix: Flix) : Local[T1] = new Local[T1](1)
+  }
+
+
+  class Method0[R : TypeTag](invokeCode : JvmModifier, ct : JvmType.Reference, methodName : String) {
+
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** JvmType.Reference] => F[S**R] =
+      t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
+
+
+    def INVOKE_VOID[S <: Stack](implicit root: Root, flix: Flix) : F[S ** JvmType.Reference] => F[S] =
+      t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
+  }
+
+
+
+  class Method1[T1: TypeTag, R : TypeTag](invokeCode : JvmModifier, ct : JvmType.Reference, methodName : String) {
+
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix) : F[S**JvmType.Reference**T1] => F[S**R] =
+      t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
+
+
+    def INVOKE_VOID[S <: Stack](implicit root: Root, flix: Flix): F[S**JvmType.Reference**T1] => F[S] =
+      t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
   }
 
 
   class ClassGenerator(ct: JvmType.Reference,
-                       modifiers : List[JvmModifier], superClass : String, implementedInterfaces : Array[String])
-                      (implicit flix: Flix) {
+                       modifiers : List[JvmModifier], superClass : JvmType.Reference, implementedInterfaces : Array[JvmType.Reference])
+                      (implicit root: Root, flix: Flix) {
 
 
     private val cw: ClassWriter = {
+
+      val superClassName = superClass.name.toInternalName
+      val implementedInterfacesNames =
+        if(implementedInterfaces == null) null else implementedInterfaces.map(interface => interface.name.toInternalName)
+
       val cw = AsmOps.mkClassWriter()
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       cw.visit(AsmOps.JavaVersion, modifierVal, ct.name.toInternalName, null,
-        superClass, implementedInterfaces)
+        superClassName, implementedInterfacesNames)
       cw
     }
 
 
     def mkMethod0[R : TypeTag](modifiers : List[JvmModifier], methodName : String,
-                               f : FunSig0[R] => F[StackNil] => F[StackNil]) : Method0[R] = {
+                                              f : FunSig0[R] => F[StackNil] => F[StackNil]) : Method0[R] = {
 
-      val returnType = getJvmType[R](ct)
+      val returnType = getJvmType[R]
       val funSig = new FunSig0[R]()
 
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
@@ -244,11 +317,12 @@ object Mnemonics {
 
       mv.visitMaxs(1,1)
       mv.visitEnd()
-      new Method0[R]()
+      new Method0[R](JvmModifier.InvokeVirtual, ct, methodName)
     }
 
+
     def mkMethod1[T1 : TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String,
-                               f : FunSig1[T1, R] => F[StackNil] => F[StackNil]) : Method1[T1, R] = {
+                                                            f : FunSig1[T1, R] => F[StackNil] => F[StackNil]) : Method1[T1, R] = {
 
       val arg1Type = getJvmType[T1]
       val returnType = getJvmType[R]
@@ -263,7 +337,7 @@ object Mnemonics {
 
       mv.visitMaxs(1,1)
       mv.visitEnd()
-      new Method1[T1, R]()
+      new Method1[T1, R](JvmModifier.InvokeInterface, ct, methodName)
     }
 
     def compileField[T : TypeTag](modifiers: List[JvmModifier] ,fieldName: String) : Field[T] = {
@@ -284,42 +358,47 @@ object Mnemonics {
 
 
   class InterfaceGenerator(it: JvmType.Reference,
-                       modifiers : List[JvmModifier], superClass : String, implementedInterfaces : Array[String])
-                      (implicit flix: Flix) {
+                       modifiers : List[JvmModifier], superClass : JvmType.Reference, implementedInterfaces : Array[JvmType.Reference])
+                          (implicit root: Root, flix: Flix) {
 
 
     private val cw: ClassWriter = {
+
+      val superClassName = superClass.name.toInternalName
+      val implementedInterfacesNames =
+        if(implementedInterfaces == null) null else implementedInterfaces.map(interface => interface.name.toInternalName)
+
       val cw = AsmOps.mkClassWriter()
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       cw.visit(AsmOps.JavaVersion, modifierVal, it.name.toInternalName, null,
-        superClass, implementedInterfaces)
+        superClassName, implementedInterfacesNames)
       cw
     }
 
 
     def mkMethod0[R : TypeTag](modifiers : List[JvmModifier], methodName : String) : Method0[R] = {
 
-      val returnType = getJvmType[R](it)
+      val returnType = getJvmType[R]
 
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       val mv = cw.visitMethod(modifierVal, methodName,
         AsmOps.getMethodDescriptor(List(), returnType), null, null)
       mv.visitEnd()
 
-      new Method0[R]()
+      new Method0[R](JvmModifier.InvokeInterface, it, methodName)
     }
 
-    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String) : Method1[T1, R] = {
+    def mkMethod1[T1:TypeTag, R : TypeTag](modifiers : List[JvmModifier], methodName : String) : Method1[T1, R]  = {
 
-      val arg1Type = getJvmType[T1](it)
-      val returnType = getJvmType[R](it)
+      val arg1Type = getJvmType[T1]
+      val returnType = getJvmType[R]
 
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       val mv = cw.visitMethod(modifierVal, methodName,
         AsmOps.getMethodDescriptor(List(arg1Type), returnType), null, null)
       mv.visitEnd()
 
-      new Method1[T1, R]()
+      new Method1[T1, R](JvmModifier.InvokeInterface, it, methodName)
     }
 
     def compile(): Array[Byte] = {
