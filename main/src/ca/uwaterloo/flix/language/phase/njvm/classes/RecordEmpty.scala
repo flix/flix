@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmOps, JvmType}
+import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api
 import ca.uwaterloo.flix.language.phase.njvm.Api.JavaRuntimeFunctions
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
@@ -29,32 +29,48 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
   }
 
   val getRecordWithField : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genGetRecordWithFieldMethod
+
   val restrictField : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genRestrictFieldInterfaceMethod
+
+  val _toString : Method0[JvmType.String.type] = genToStringMethod
+
+  val _hashCode : Method0[JvmType.PrimInt.type] = genHashCodeMethod
+
+  val equals : Method1[JvmType.Object.type, JvmType.PrimBool.type] = genEqualsMethod
 
 
   private def genGetRecordWithFieldMethod : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
     cg.mkMethod1[JvmType.String.type, MnemonicsType.RecordInterface.type](List(Public, Final), "getRecordWithField",
       _ =>
-        NEW[StackNil, MnemonicsType.UnsupportedOperationException.type] |>>
-        DUP |>>
-        LDC_STRING("getRecordWithField shouldn't be called") |>>
-        Api.JavaRuntimeFunctions.ExceptionConstructor.INVOKE |>>
-        THROW
+        newUnsupportedOperationExceptionInstructions("getRecordWithField shouldn't be called")
     )
 
   private def genRestrictFieldInterfaceMethod : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
     cg.mkMethod1[JvmType.String.type, MnemonicsType.RecordInterface.type](List(Public, Final), "restrictField",
       _ =>
-        NEW[StackNil, MnemonicsType.UnsupportedOperationException.type] |>>
-        DUP |>>
-        LDC_STRING("restrictField shouldn't be called") |>>
-        Api.JavaRuntimeFunctions.ExceptionConstructor.INVOKE |>>
-        THROW
+        newUnsupportedOperationExceptionInstructions("restrictField shouldn't be called")
+    )
+
+  private def genToStringMethod: Method0[JvmType.String.type] =
+    cg.mkMethod0[JvmType.String.type](List(Public, Final), "toString",
+      _ =>
+        newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
+    )
+
+  private def genHashCodeMethod: Method0[JvmType.PrimInt.type] =
+    cg.mkMethod0[JvmType.PrimInt.type](List(Public, Final), "hashCode",
+      _ =>
+        newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
+    )
+
+  private def genEqualsMethod: Method1[JvmType.Object.type, JvmType.PrimBool.type] =
+    cg.mkMethod1[JvmType.Object.type, JvmType.PrimBool.type](List(Public, Final), "equal",
+      _ =>
+        newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )
 
 
 
   def genClass: (JvmName, JvmClass) = ct.name -> JvmClass(ct.name, cg.compile())
-
 
 }

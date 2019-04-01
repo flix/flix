@@ -219,8 +219,6 @@ object Mnemonics {
     def THROW : F[StackNil**MnemonicsType.UnsupportedOperationException.type] => F[StackNil] =
       t => t._throw()
 
-
-
   }
 
   //Capabilities
@@ -265,20 +263,11 @@ object Mnemonics {
     def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** JvmType.Reference] => F[S**R] =
       t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
 
-
-    def INVOKE_VOID[S <: Stack](implicit root: Root, flix: Flix) : F[S ** JvmType.Reference] => F[S] =
-      t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
   }
-
-
 
   class Method1[T1: TypeTag, R : TypeTag](invokeCode : JvmModifier, ct : JvmType.Reference, methodName : String) {
 
     def INVOKE[S <: Stack](implicit root: Root, flix: Flix) : F[S**JvmType.Reference**T1] => F[S**R] =
-      t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
-
-
-    def INVOKE_VOID[S <: Stack](implicit root: Root, flix: Flix): F[S**JvmType.Reference**T1] => F[S] =
       t => t.invoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
   }
 
@@ -407,4 +396,13 @@ object Mnemonics {
     }
   }
 
+
+  def newUnsupportedOperationExceptionInstructions (value : String) (implicit root: Root, flix: Flix) : F[StackNil] => F[StackNil] = {
+      Instructions.NEW[StackNil, MnemonicsType.UnsupportedOperationException.type] |>>
+      Instructions.DUP |>>
+      Instructions.LDC_STRING("restrictField shouldn't be called") |>>
+      Api.JavaRuntimeFunctions.ExceptionConstructor.INVOKE |>>
+      Instructions.THROW
+  }
 }
+

@@ -29,6 +29,12 @@ class RefClass[T : TypeTag](implicit root: Root, flix: Flix) {
   //setValue
   val setValue : Method1[T, JvmType.Void.type ] = getSetValueMethod
 
+  val _toString : Method0[JvmType.String.type] = genToStringMethod
+
+  val _hashCode : Method0[JvmType.PrimInt.type] = genHashCodeMethod
+
+  val equals : Method1[JvmType.Object.type, JvmType.PrimBool.type] = genEqualsMethod
+
   //Constructor
   private def genConstructor: Method1[T, JvmType.Void.type] = {
 
@@ -60,6 +66,26 @@ class RefClass[T : TypeTag](implicit root: Root, flix: Flix) {
             field0.PUT_FIELD |>>
             RETURN
       )
+
+
+  private def genToStringMethod: Method0[JvmType.String.type] =
+    cg.mkMethod0[JvmType.String.type](List(Public, Final), "toString",
+      _ =>
+        newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
+    )
+
+  private def genHashCodeMethod: Method0[JvmType.PrimInt.type] =
+    cg.mkMethod0[JvmType.PrimInt.type](List(Public, Final), "hashCode",
+      _ =>
+        newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
+    )
+
+  private def genEqualsMethod: Method1[JvmType.Object.type, JvmType.PrimBool.type] =
+    cg.mkMethod1[JvmType.Object.type, JvmType.PrimBool.type](List(Public, Final), "equal",
+      _ =>
+        newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
+    )
+
 
   def genClass : (JvmName, JvmClass) =
     ct.name -> JvmClass(ct.name , cg.compile())
