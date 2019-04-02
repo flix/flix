@@ -15,7 +15,7 @@ class TestExamples extends Suites(
   new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix"),
   new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix"),
   new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix"),
-  new FlixTest("type-safe-builders", "examples/type-safe-builders.flix"),
+  new FlixTest("type-safe-builders-with-ufcs-and-records", "examples/type-safe-builders-with-ufcs-and-records.flix"),
   new FlixTest("mutual-recursion-with-full-tail-call-elimination", "examples/mutual-recursion-with-full-tail-call-elimination.flix"),
   new FlixTest("sending-and-receiving-on-channels", "examples/sending-and-receiving-on-channels.flix"),
   new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix"),
