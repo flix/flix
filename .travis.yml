@@ -18,7 +18,7 @@ before_install:
   - cd
   - wget http://downloads.typesafe.com/scala/2.12.3/scala-2.12.3.tgz
   - tar xzf scala-2.12.3.tgz
-  - cd flix/lib
+  - cd flix/flix/lib
   - wget http://central.maven.org/maven2/org/scala-lang/scala-reflect/2.12.3/scala-reflect-2.12.3.jar
   - cd
   - export SCALA_HOME=`pwd`/scala-2.12.3
