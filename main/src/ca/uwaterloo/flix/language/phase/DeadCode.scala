@@ -35,11 +35,34 @@ object DeadCode extends Phase[Root, Root] {
         } else {
           DeadCodeError(fparam.sym.loc, "Lambda parameter never used.").toFailure
         }
+      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+        val applyVal1 = visitExp(exp1)
+        val applyVal2 = visitExp(exp2)
+        mapN(applyVal1, applyVal2) {
+          case (applyVal1, applyVal2) => e
+        }
+      case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) =>
+        val unaryVal = visitExp(exp)
+        mapN(unaryVal) {
+          case (unaryVal) => e
+        }
+      case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+        val binaryVal1 = visitExp(exp1)
+        val binaryVal2 = visitExp(exp2)
+        mapN(binaryVal1, binaryVal2) {
+          case (binaryVal1, binaryVal2) => e
+        }
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         if (freeVar(exp2).contains(sym)) {
           e.toSuccess
         } else {
           DeadCodeError(sym.loc, "Variable never used.").toFailure
+        }
+      case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
+        val letRecVal1 = visitExp(exp1)
+        val letRecVal2 = visitExp(exp2)
+        mapN(letRecVal1, letRecVal2) {
+          case (letRecVal1, letRecVal2) => e
         }
       case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val condVal = visitExp(exp1)
@@ -48,6 +71,21 @@ object DeadCode extends Phase[Root, Root] {
         mapN(condVal, thenVal, elseVal) {
           case (condExp, thenExp, elseExp) => e
         }
+      case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) =>
+        val matchVal = visitExp(exp)
+        val symVal = (for (r <- rules) yield {
+          if (patternVar(r.pat).subsetOf(freeVar(r.exp))) {
+            List.empty
+          } else {
+            patternVar(r.pat).diff(freeVar(r.exp))
+          }
+        }).flatten
+        val patVarVal = if (symVal.length == 0) e.toSuccess else DeadCodeError(symVal.head.loc, "Matching variable(s) not used in expression.").toFailure
+        mapN(matchVal, patVarVal) {
+          case (matchVal, patVarVal) => e
+        }
+      case TypedAst.Expression.Switch(rules, tpe, eff, loc) => e.toSuccess // TODO
+      case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => e.toSuccess // TODO
       case _ => e.toSuccess
     }
 
@@ -61,7 +99,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2)
       case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2)
       case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2) ++ freeVar(exp3)
-      case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => freeVar(exp) ++ (for (r <- rules) yield freeVar(r.exp)).flatten.toSet
+      case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => freeVar(exp) ++ (for (r <- rules) yield freeVar(r.exp)).flatten.toSet // TODO: Is this correct?
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) => (for (r <- rules) yield freeVar(r._1) ++ freeVar(r._2)).flatten.toSet
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => freeVar(exp)
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => (for (e <- elms) yield freeVar(e)).flatten.toSet
@@ -107,4 +145,10 @@ object DeadCode extends Phase[Root, Root] {
       case _ => Set.empty
     }
 
+  private def patternVar(pat: TypedAst.Pattern): Set[Symbol.VarSym] =
+    pat match {
+      case TypedAst.Pattern.Var(sym, tpe, loc) => Set(sym)
+      case TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => patternVar(pat) // Correct?
+      case TypedAst.Pattern.Tuple(elms, tpe, loc) => (for (e <- elms) yield patternVar(e)).flatten.toSet
+    }
 }
