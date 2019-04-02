@@ -13,13 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ca.uwaterloo.flix.language.phase.njvm
+
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmType}
+import ca.uwaterloo.flix.language.phase.njvm.classes.RecordExtend
 
 /**
   * Generates bytecode for the extended record class.
   */
 object GenRecordExtend {
 
-  // TODO: incrementally copy over.
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
+    Map(
+      new RecordExtend[JvmType.PrimBool.type].genClass,
+      new RecordExtend[JvmType.PrimChar.type].genClass,
+      new RecordExtend[JvmType.PrimFloat.type].genClass,
+      new RecordExtend[JvmType.PrimDouble.type].genClass,
+      new RecordExtend[JvmType.PrimByte.type].genClass,
+      new RecordExtend[JvmType.PrimShort.type].genClass,
+      new RecordExtend[JvmType.PrimInt.type].genClass,
+      new RecordExtend[JvmType.PrimLong.type].genClass,
+      new RecordExtend[JvmType.Object.type].genClass)
+  }
 }

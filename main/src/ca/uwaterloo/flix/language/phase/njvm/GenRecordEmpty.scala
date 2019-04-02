@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.phase.njvm.classes.RecordEmpty
   */
 object GenRecordEmpty {
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName,JvmClass] = {
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     Map(new RecordEmpty().genClass)
   }

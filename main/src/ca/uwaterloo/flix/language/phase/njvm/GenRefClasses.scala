@@ -22,12 +22,12 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmType}
 import ca.uwaterloo.flix.language.phase.njvm.classes.RefClass
 
 /**
-  * Generates bytecode for the cell classes.
+  * Generates bytecode for the ref classes.
   */
 
 object GenRefClasses {
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName,JvmClass] = {
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
 
     Map(
       new RefClass[JvmType.PrimBool.type].genClass,

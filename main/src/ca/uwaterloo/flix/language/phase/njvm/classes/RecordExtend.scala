@@ -4,22 +4,29 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.JavaRuntimeFunctions
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import org.objectweb.asm.Label
 
-class RecordEmpty(implicit root: Root, flix: Flix) {
+import scala.reflect.runtime.universe._
+
+
+class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
 
   //Setup
   private val ct: JvmType.Reference = JvmOps.getRecordEmptyClassType()
   private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), JvmType.Object, Array(JvmOps.getRecordInterfaceType()))
 
-  //Fields
-  //Class with no fields
+  //Fields each variable represents a field which can be accessed
+  //while generating code for this class
+  private val field0: Field[JvmType.String.type] = cg.compileField(List(Private), "field0")
+  private val field1: Field[T] = cg.compileField(List(Private), "field1")
+  private val field2: Field[MnemonicsType.RecordInterface.type] = cg.compileField(List(Private), "field2")
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-  val constructor: Method0[JvmType.Void.type] = genConstructor
+  val constructor: Method3[JvmType.String.type, T, MnemonicsType.RecordInterface.type, JvmType.Void.type] = genConstructor
 
   val getRecordWithField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genGetRecordWithFieldMethod
 
@@ -31,49 +38,51 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
 
   val equals: Method1[JvmType.Object.type, JvmType.PrimBool.type] = genEqualsMethod
 
+  private def genConstructor: Method3[JvmType.String.type, T, MnemonicsType.RecordInterface.type, JvmType.Void.type] = {
 
-  /**
-    * This method generates the constructor for the RecordEmpty class. This constructor doesn't receive any arguments.
-    * The method returns the capability to call the constructor
-    * For example for RecordEmpty() creates the following constructor:
-    *
-    * public RecordEmpty() {}
-    */
-  private def genConstructor: Method0[JvmType.Void.type] = {
-
-    cg.mkMethod0(List(Public), "<init>",
+    cg.mkMethod3(List(Public), "<init>",
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
           JavaRuntimeFunctions.ObjectConstructor.INVOKE |>>
+          sig.getArg0.LOAD |>>
+          sig.getArg1.LOAD |>>
+          field0.PUT_FIELD |>>
+
+          sig.getArg0.LOAD |>>
+          sig.getArg2.LOAD |>>
+          field1.PUT_FIELD |>>
+
+          sig.getArg0.LOAD |>>
+          sig.getArg3.LOAD |>>
+          field2.PUT_FIELD |>>
           RETURN)
   }
 
-  /**
-    * Method which generates the `getRecordWithField(String)` method which will always throws an exception,
-    * since `getRecordWithField` should not be called.
-    * Despite in order to stay in line with our format we still return the capability to call the method
-    * The `getRecordWithField` method is always the following:
-    *
-    * public IRecord getRecordWithField(String var1) throws Exception {
-    * throw new Exception("getField method shouldn't be called");
-    * }
-    *
-    */
-  private def genGetRecordWithFieldMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
+  private def genGetRecordWithFieldMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = {
+
+//    val ret = new Label
+//    val falseCase = new Label
+//
+//    cg.mkMethod1(List(Public, Final), "getRecordWithField",
+//      sig =>
+//        sig.getArg0.LOAD[StackNil] |>>
+//          field0.GET_FIELD |>>
+//          sig.getArg1.LOAD |>>
+//          JavaRuntimeFunctions.StringEquals.INVOKE |>>
+//          IFEQ(falseCase) |>>
+//          sig.getArg0.LOAD |>>
+//          GOTO(ret)|>>
+//          EMIT(falseCase) |>>
+//          EMIT(ret) |>>
+//          RETURN[MnemonicsType.RecordInterface.type]
+//
+//    )
     cg.mkMethod1(List(Public, Final), "getRecordWithField",
       _ =>
         newUnsupportedOperationExceptionInstructions("getRecordWithField shouldn't be called")
     )
 
-  /**
-    * Method which generates the `restrictField(String)` method which will always throws an exception, since `restrictField` should not be called.
-    * Despite in order to stay in line with our format we still return the capability to call the method
-    * The `restrictField` method is always the following:
-    *
-    * public string getField(String var1) throws Exception {
-    * throw new Exception("restrictField method shouldn't be called");
-    * }
-    */
+  }
   private def genRestrictFieldInterfaceMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
     cg.mkMethod1(List(Public, Final), "restrictField",
       _ =>
@@ -125,9 +134,8 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )
 
-
   /**
-    * Method which generates the mapping from the JvmName to JvmClass (which contains the class bytecode)
+    *  Method which generates the mapping from the JvmName to JvmClass (which contains the class bytecode)
     */
   def genClass: (JvmName, JvmClass) = ct.name -> JvmClass(ct.name, cg.compile())
 

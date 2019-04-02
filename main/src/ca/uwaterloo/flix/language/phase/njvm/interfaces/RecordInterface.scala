@@ -8,17 +8,27 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, Meth
 
 class RecordInterface(implicit root: Root, flix: Flix) {
   //Setup
-  private val it : JvmType.Reference = JvmOps.getRecordInterfaceType()
-  private val ig : InterfaceGenerator =  new InterfaceGenerator(it, List(Public, Abstract, Interface), JvmType.Object, null)
+  private val it: JvmType.Reference = JvmOps.getRecordInterfaceType()
+  private val ig: InterfaceGenerator = new InterfaceGenerator(it, List(Public, Abstract, Interface), JvmType.Object, Array())
+  //Fields
+  //Interface has no fields ig doesn't even allow to compile fields
 
-  val getRecordWithField : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genGetRecordWithFieldInterfaceMethod
-  val restrictField : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genRestrictFieldInterfaceMethod
+  //Methods each variable represents a method which can be called
+  //there each of them holds the capability to call the corresponding method
+  val getRecordWithField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genGetRecordWithFieldInterfaceMethod
+  val restrictField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genRestrictFieldInterfaceMethod
 
-  private def genGetRecordWithFieldInterfaceMethod : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
-    ig.mkMethod1[JvmType.String.type, MnemonicsType.RecordInterface.type](List(Public, Abstract), "getRecordWithField")
+  /**
+    * Generate the getRecordWithField interface method. Returns the capability to call the method
+    */
+  private def genGetRecordWithFieldInterfaceMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
+    ig.mkMethod1(List(Public, Abstract), "getRecordWithField")
 
-  private def genRestrictFieldInterfaceMethod : Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
-    ig.mkMethod1[JvmType.String.type, MnemonicsType.RecordInterface.type](List(Public, Abstract), "restrictField")
+  /**
+    * Generate the restrictField interface method. Returns the capability to call the method
+    */
+  private def genRestrictFieldInterfaceMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
+    ig.mkMethod1(List(Public, Abstract), "restrictField")
 
 
   def genInterface: (JvmName, JvmClass) = {

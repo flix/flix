@@ -27,8 +27,8 @@ import org.objectweb.asm.Opcodes._
   */
 object GenRecordInterface {
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] ={
-      Map(new RecordInterface().genInterface)
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    Map(new RecordInterface().genInterface)
   }
 
 }
