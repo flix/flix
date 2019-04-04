@@ -32,9 +32,9 @@ object PrettyPrinter {
         vt << Bold("def") << " " << Blue(sym.toString) << "("
         for (fparam <- defn.fparams) {
           fmtParam(fparam, vt)
-          vt << ", "
+          if (fparam != defn.fparams.last) vt << ", "
         }
-        vt << ") = "
+        vt << s"): ${defn.tpe.show} = "
         vt << Indent << NewLine
         fmtExp(defn, vt)
         vt << Dedent << NewLine << NewLine
@@ -71,7 +71,7 @@ object PrettyPrinter {
           vt.text("(")
           for (fparam <- fparams) {
             vt.text(fparam.sym.toString)
-            vt.text(", ")
+            if (fparam != fparams.last) vt.text(", ")
           }
           vt.text(")")
           vt.text(" -> ")
@@ -82,7 +82,7 @@ object PrettyPrinter {
           vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -92,7 +92,7 @@ object PrettyPrinter {
           vt.text(", [")
           for (freeVar <- freeVars) {
             fmtSym(freeVar.sym, vt)
-            vt.text(", ")
+            if (freeVar != freeVars.last) vt.text(", ")
           }
           vt.text("])")
 
@@ -102,7 +102,7 @@ object PrettyPrinter {
           vt.text(", [")
           for (freeVar <- freeVars) {
             fmtSym(freeVar.sym, vt)
-            vt.text(", ")
+            if (freeVar != freeVars.last) vt.text(", ")
           }
           vt.text("])")
 
@@ -111,7 +111,7 @@ object PrettyPrinter {
           vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -120,7 +120,7 @@ object PrettyPrinter {
           vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
           vt.text(")")
@@ -130,7 +130,7 @@ object PrettyPrinter {
           vt.text("(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -139,7 +139,7 @@ object PrettyPrinter {
           vt.text("*(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -148,7 +148,7 @@ object PrettyPrinter {
           vt.text("*(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -157,7 +157,7 @@ object PrettyPrinter {
           vt.text("*(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -166,7 +166,7 @@ object PrettyPrinter {
           vt.text("*(")
           for (arg <- args) {
             visitExp(arg)
-            vt.text(", ")
+            if (arg != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -257,7 +257,7 @@ object PrettyPrinter {
           vt.text("(")
           for (elm <- elms) {
             visitExp(elm)
-            vt.text(", ")
+            if (elm != elms.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -384,7 +384,7 @@ object PrettyPrinter {
           vt.text("(")
           for (e <- args) {
             visitExp(e)
-            vt.text(", ")
+            if (e != args.last) vt.text(", ")
           }
           vt.text(")")
 
@@ -395,7 +395,7 @@ object PrettyPrinter {
           vt.text("(")
           for (e <- args) {
             visitExp(e)
-            vt.text(", ")
+            if (e != args.last) vt.text(", ")
           }
           vt.text(")")
 
