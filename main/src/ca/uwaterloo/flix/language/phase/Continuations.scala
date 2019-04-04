@@ -85,14 +85,14 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val defnTpe = Type.mkUncurriedArrow(List(defn.fparams.head.tpe, Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)), genericTypeParam.tpe)
 
     Type.mkUncurriedArrow(List(Type.Int32, Type.mkArrow(Type.Int32, Type.Int32)), Type.Int32)
-    val body = CPSTransform(defn.exp, kontVar, kontTpe)
+    val body = visitExp(defn.exp, kontVar, kontTpe)
 
     defn.copy(exp = body, fparams = defn.fparams :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = defnTpe)
   }
 
   // todo sjj: check subtree for shift/reset (dyr funktion til start)
   // todo sjj rename cps transform, only add to one visitDefn
-  def CPSTransform(exp0: Expression, kont0: Expression, kont0Type: Type)(implicit genSym: GenSym): Expression = exp0 match {
+  def visitExp(exp0: Expression, kont0: Expression, kont0Type: Type)(implicit genSym: GenSym): Expression = exp0 match {
 
     //
     // Unit. Apply `kont0` to the value.
@@ -133,7 +133,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       val freshOperandVar = Expression.Var(freshOperandSym, exp.tpe, empEff(), loc)
       val body = Expression.Unary(op, freshOperandVar, tpe, empEff(), loc)
       val kont1 = mkLambda(freshOperandSym, freshOperandVar.tpe, mkApplyCont(kont0, body, empEff(), loc))
-      CPSTransform(exp, kont1, kont0Type)
+      visitExp(exp, kont1, kont0Type)
     }
 
     case Expression.Binary(op, exp1, exp2, tpe, _, loc) => {
@@ -145,9 +145,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       val body = mkApplyCont(kont0, Expression.Binary(op, freshOperand1Var, freshOperand2Var, tpe, empEff(), loc), empEff(), loc)
       val kont2 = mkLambda(freshOperand2Sym, freshOperand2Var.tpe, body)
-      val kont15 = CPSTransform(exp2, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
+      val kont15 = visitExp(exp2, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
       val kont1 = mkLambda(freshOperand1Sym, freshOperand1Var.tpe, kont15)
-      CPSTransform(exp1, kont1, kont0Type)
+      visitExp(exp1, kont1, kont0Type)
     }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) => {
@@ -162,52 +162,79 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Construct an expression that branches on the variable symbol and
       // continues execution in the CPS converted version of one of the two branches.
-      val e2 = CPSTransform(exp2, kont0, kont0Type)
-      val e3 = CPSTransform(exp3, kont0, kont0Type)
+      val e2 = visitExp(exp2, kont0, kont0Type)
+      val e3 = visitExp(exp3, kont0, kont0Type)
       val e = Expression.IfThenElse(freshCondVar, e2, e3, kont0Type, empEff(), loc)
 
       // Constructs the lambda to pass as the continuation to the evaluation of the conditional.
       val lambda = mkLambda(freshCondSym, Type.Bool, e)
 
       // Recurse on the conditional.
-      CPSTransform(exp1, lambda, kont0Type)
+      visitExp(exp1, lambda, kont0Type)
     }
 
     case Expression.Let(sym, exp1, exp2, tpe, _, loc) => {
-      val kont1 = mkLambda(sym, exp1.tpe, CPSTransform(exp2, kont0, kont0Type))
-      CPSTransform(exp1, kont1, kont0Type)
+      val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0Type))
+      visitExp(exp1, kont1, kont0Type)
     }
 
     case Expression.Tuple(elms, tpe, eff, loc) => {
-      val syms = elms.map(exp => {
-        val sym = Symbol.freshVarSym()
-        (exp, sym, Expression.Var(sym, exp.tpe, empEff(), loc))})
-      val baseCase: Expression = mkApplyCont(kont0, Expression.Tuple(syms.map(e => e._3), tpe, empEff(), loc), empEff(), loc)
-      syms.foldRight(baseCase){(syms, kont) =>
-        val exp = syms._1
-        val sym = syms._2
-        val varr = syms._3
-
-        val kont2 = mkLambda(sym, varr.tpe, kont)
-        CPSTransform(exp, kont2, kont0Type) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
-      }
+      visitExps(elms, kont0, kont0Type, Expression.Tuple(_, tpe, eff, loc))
     }
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
-      val freshSym = Symbol.freshVarSym()
-      val freshSymTpe = exp.tpe
-      val freshSymVar = Expression.Var(freshSym, freshSymTpe, eff, loc)
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) => {
+      // make a new lambda with type exp.tpe -> generic
+      val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), exp.loc)
+      val freshKontSym = Symbol.freshVarSym("k")
+      val freshKontTpe = Type.mkArrow(getReturnType(exp.tpe), genericTypeParam.tpe)
+      val freshKontParam = FormalParam(freshKontSym, Modifiers.Empty, freshKontTpe, exp.loc)
+      val freshKontVar = Expression.Var(freshKontSym, freshKontTpe, empEff(), exp.loc)
 
-      // fparam => y, where y is the result of visitExp(exp)
-      val lambda = mkLambda(fparam.sym, tpe, freshSymVar)
-      // freshSym => kont(exp => freshSym)
-      val newKont = mkLambda(freshSym, freshSymTpe, Expression.Apply(kont0, lambda, tpe, eff, loc))
-      CPSTransform(exp, newKont, kont0Type)
-    // todo sjj: make cases
+      // kont0(x -> e) becomes kont0((x,k) -> visitExp(e, k))
+      val e = visitExp(exp, freshKontVar, freshKontTpe)
+      val lambda = Expression.LambdaWithKont(fparam, freshKontParam, e, tpe, eff, loc)
+      mkApplyCont(kont0, lambda, eff, loc)
+    }
+
     case _ => exp0
   }
 
-  // todo func to make list of exp to cps
+  /**
+    * Convert a List of Expressions to CPS.
+    *
+    * E.g. f(e1,e2) becomes visitExp(e1, x => visitExp(e2, y => k(f(x, y))))
+    * @param exps list of Expression to convert to CPS
+    * @param kont0 the base continuation
+    * @param kont0Type the type of the base continuation
+    * @param f function to specialize the final Expression (i.e. the Expression of the caller)
+    * @return Expression with the list converted to CPS
+    */
+  private def visitExps(exps: List[Expression], kont0: Expression, kont0Type: Type, f: List[Expression] => Expression)(implicit genSym: GenSym): Expression = {
+    // TODO SJJ: Handle CPure expressions
+    val loc = SourceLocation.Generated
+
+    // create new symbols for the lambdas
+    val freshSyms = exps map { exp =>
+      val freshSym = Symbol.freshVarSym()
+      val freshSymVar = Expression.Var(freshSym, exp.tpe, empEff(), loc)
+      (exp, freshSymVar)
+    }
+
+    // in the base case, we apply the continuation with f("parameters")
+    val baseCase: Expression = mkApplyCont(kont0, f(freshSyms.map(_._2)), empEff(), loc)
+
+    // process all elements of the list
+    freshSyms.foldRight(baseCase) {(syms, kont) =>
+      val (exp, freshSymVar) = syms
+      val kont1 = mkLambda(freshSymVar.sym, freshSymVar.tpe, kont)
+      visitExp(exp, kont1, kont0Type)
+    }
+  }
+
+  /**
+    * Placeholder method for when control effects are supported.
+    */
+  private def isCPure(exp: Expression): Boolean = false
 
   /**
     * Returns a lambda expression with the given symbol `sym` as a formal parameter,

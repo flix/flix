@@ -1,2 +1,2 @@
 @test
-def main(): Int = 2
+def main(): Str = (2, 2); "xD"
