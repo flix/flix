@@ -12,23 +12,36 @@ import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 object DeadCode extends Phase[Root, Root] {
 
   def run(root: Root)(implicit flix: Flix): Validation[Root, DeadCodeError] = flix.phase("DeadCode") {
-
-    val newDefs = traverse(root.defs)  {
-      case (sym, defn) => visitDef(defn).map(x => sym -> x)
+    // TODO: Improve weird/terrible code below
+    val defsRes = root.defs.map(x => visitDef(x._2)).toList.unzip
+    val defsVal = defsRes._1
+    val defsEnums = defsRes._2.flatten.toSet
+    val enums = root.enums.values.map(x => visitEnum(x)).toSet.flatten
+    val unusedEnums = enums.diff(defsEnums)
+    // TODO: Restructure code (visitEnum, etc.) so that we can retrieve correct loc
+    val enumsVal = if (unusedEnums.size == 0) root.enums.toSuccess else DeadCodeError(root.enums.head._2.loc, "Enum not used").toFailure
+    val newDefs = traverse(defsVal) {
+      case defn => defn.map(x => x.sym -> x)
     }
 
-
-    mapN(newDefs) {
-      case defs => root.copy(defs = defs.toMap)
+    println(enums);
+    println(defsEnums);
+    mapN(newDefs, enumsVal) {
+      case (defs, enums) => root.copy(defs = defs.toMap)
     }
   }
 
-  private def visitDef(defn: TypedAst.Def): Validation[TypedAst.Def, DeadCodeError] =
-    mapN(visitExp(defn.exp)._1) {
-      case _ => defn
-    }
+  private def visitEnum(enum: TypedAst.Enum): Set[String] = enum.cases.keys.toSet // TODO: Improve
 
-  private def visitExp(e: TypedAst.Expression): (Validation[TypedAst.Expression, DeadCodeError], Set[Symbol.EnumSym]) =
+  private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, DeadCodeError], Set[String]) = {
+    val defVal = visitExp(defn.exp)
+    (mapN(defVal._1) {
+      case _ => defn
+    }, defVal._2)
+  }
+
+  // TODO: Clean up variable names now that this functions returns things other than Validation
+  private def visitExp(e: TypedAst.Expression): (Validation[TypedAst.Expression, DeadCodeError], Set[String]) =
     e match {
       case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) => (
         if (freeVar(e).contains(fparam.sym)) {
@@ -56,7 +69,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val letVal = visitExp(exp1)
         val expVal = visitExp(exp2)
-        val freeVarVal = // TODO: Figure out naming now that we return tuples
+        val freeVarVal =
           if (freeVar(exp2).contains(sym)) e.toSuccess else DeadCodeError(sym.loc, "Variable never used.").toFailure // TODO: Handle let recursion
         (mapN(letVal._1, expVal._1, freeVarVal) {
           case (letVal, expVal, freeVarVal) => e
@@ -97,8 +110,14 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) => (e.toSuccess, Set.empty) // TODO
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val expVal = visitExp(exp)
-        (expVal._1, Set(sym) ++ expVal._2) // TODO: Correct? What is exp?
-      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => (e.toSuccess, Set.empty) // TODO
+        (expVal._1, Set(tag) ++ expVal._2)
+      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
+        val elmsRes = elms.map(visitExp).unzip
+        val elmsEnums = elmsRes._2.toSet.flatten
+        val elmsVal = traverse(elmsRes._1) { case ev => ev }
+        (mapN(elmsVal) {
+          case ex => e
+        }, elmsEnums)
       case TypedAst.Expression.RecordEmpty(tpe, eff, loc) => (e.toSuccess, Set.empty)
       case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
         val valueVal = visitExp(value)
@@ -207,7 +226,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2)
       case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) => freeVar(exp)
       case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2)
-      case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2)
+      case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => (freeVar(exp1) ++ freeVar(exp2)) -- Set(sym)
       case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2)
       case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => freeVar(exp1) ++ freeVar(exp2) ++ freeVar(exp3)
       case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => freeVar(exp) ++ (for (r <- rules) yield freeVar(r.exp)).flatten.toSet // TODO: Is this correct?
