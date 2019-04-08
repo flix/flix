@@ -24,8 +24,6 @@ object DeadCode extends Phase[Root, Root] {
       case defn => defn.map(x => x.sym -> x)
     }
 
-    println(enums);
-    println(defsEnums);
     mapN(newDefs, enumsVal) {
       case (defs, enums) => root.copy(defs = defs.toMap)
     }
@@ -89,13 +87,13 @@ object DeadCode extends Phase[Root, Root] {
         }, condVal._2 ++ thenVal._2 ++ elseVal._2)
       case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) =>
         val matchVal = visitExp(exp)
-        val rulesValList = for (r <- rules; guardVal = visitExp(r.guard); expVal = visitExp(r.exp)) yield {
+        val rulesRes = (for (r <- rules; guardVal = visitExp(r.guard); expVal = visitExp(r.exp)) yield {
           (mapN(guardVal._1, expVal._1) {
             case (guardVal, expVal) => e
           }, guardVal._2 ++ expVal._2)
-        }
-        val rulesValTuple = rulesValList.unzip
-        // TODO: Combine results
+        }).unzip
+        val rulesVal = traverse(rulesRes._1) { case v => v }
+        val rulesEnums = rulesRes._2.toSet.flatten
         val unusedSyms = (for (r <- rules; patVar = patternVar(r.pat); expVar = freeVar(r.exp)) yield {
           if (patVar.subsetOf(expVar)) {
             List.empty
@@ -104,9 +102,9 @@ object DeadCode extends Phase[Root, Root] {
           }
         }).flatten
         val patVarVal = if (unusedSyms.length == 0) e.toSuccess else DeadCodeError(unusedSyms.head.loc, "Matching variable(s) not used in expression.").toFailure
-        (mapN(matchVal._1, patVarVal) {
-          case (matchVal, patVarVal) => e
-        }, matchVal._2)
+        (mapN(matchVal._1, patVarVal, rulesVal) {
+          case (m, p, r) => e
+        }, matchVal._2 ++ rulesEnums)
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) => (e.toSuccess, Set.empty) // TODO
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val expVal = visitExp(exp)
@@ -126,7 +124,14 @@ object DeadCode extends Phase[Root, Root] {
           case (matchVal, patVarVal) => e
         }, valueVal._2 ++ restVal._2)
       case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) => visitExp(rest)
-      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => (e.toSuccess, Set.empty) // TODO
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
+        val elmsRes = elms.map {
+          case elm => visitExp(elm)
+        }.unzip
+        val elmsVal = traverse(elmsRes._1) { case elm => elm}
+        (mapN(elmsVal) {
+          case elm => e
+        }, elmsRes._2.toSet.flatten)
       case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
         val elmVal = visitExp(elm)
         val lenVal = visitExp(len)
@@ -154,7 +159,14 @@ object DeadCode extends Phase[Root, Root] {
         (mapN(baseVal._1, beginVal._1, endVal._1) {
           case (baseVal, beginVal, endVal) => e
         }, baseVal._2 ++ beginVal._2 ++ endVal._2)
-      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => (e.toSuccess, Set.empty) // TODO
+      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
+        val elmsRes = elms.map {
+          case elm => visitExp(elm)
+        }.unzip
+        val elmsVal = traverse(elmsRes._1) { case elm => elm}
+        (mapN(elmsVal) {
+          case elm => e
+        }, elmsRes._2.toSet.flatten)
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => visitExp(elm)
       case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => visitExp(base)
       case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
@@ -173,11 +185,11 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
-        val varVal = visitExp(exp1) // Is this and the below name appropriate?
-        val valueVal = visitExp(exp2)
-        (mapN(varVal._1, valueVal._1) {
-          case (varVal, valueVal) => e
-        }, varVal._2 ++ valueVal._2)
+        val varRes = visitExp(exp1)
+        val valueRes = visitExp(exp2)
+        (mapN(varRes._1, valueRes._1) {
+          case (v, va) => e
+        }, varRes._2 ++ valueRes._2)
       case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) => (e.toSuccess, Set.empty) // TODO
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) => (e.toSuccess, Set.empty) // TODO
       case TypedAst.Expression.Universal(fparam, exp, eff, loc) => (e.toSuccess, Set.empty) // TODO
@@ -283,4 +295,6 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Pattern.Tuple(elms, tpe, loc) => (for (e <- elms) yield patternVar(e)).flatten.toSet
       case _ => Set.empty
     }
+
+  private def[T] traverseExps(xs: Traversable[T]): (Validation[T])
 }
