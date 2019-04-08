@@ -19,7 +19,7 @@ object DeadCode extends Phase[Root, Root] {
     val enums = root.enums.values.map(x => visitEnum(x)).toSet.flatten
     val unusedEnums = enums.diff(defsEnums)
     // TODO: Restructure code (visitEnum, etc.) so that we can retrieve correct loc
-    val enumsVal = if (unusedEnums.size == 0) root.enums.toSuccess else DeadCodeError(root.enums.head._2.loc, "Enum not used").toFailure
+    val enumsVal = if (unusedEnums.size == 0) root.enums.toSuccess else DeadCodeError(root.enums.head._2.loc, "Enum case never used").toFailure
     val newDefs = traverse(defsVal) {
       case defn => defn.map(x => x.sym -> x)
     }
