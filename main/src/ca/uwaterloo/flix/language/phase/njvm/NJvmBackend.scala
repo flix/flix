@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.jvm
+package ca.uwaterloo.flix.language.phase.njvm
 
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Path, Paths}
@@ -24,15 +24,15 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.language.phase.njvm.GenRecordInterface
-import ca.uwaterloo.flix.runtime.interpreter.Interpreter
+import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 
-object JvmBackend extends Phase[Root, CompilationResult] {
+object NJvmBackend extends Phase[Root, CompilationResult] {
 
   /**
     * The directory where to place the generated class files.
@@ -140,16 +140,18 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate record interface.
     //
-    val recordInterfaces = GenRecordInterfaces.gen()
+    val recordInterfaces = GenRecordInterface.gen()
 
     //
     // Generate empty record class.
     //
     val recordEmptyClasses = GenRecordEmpty.gen()
 
+
     //
     // Generate extended record classes for each (different) RecordExtend type in the program
     //
+    import ca.uwaterloo.flix.language.phase.jvm.GenRecordExtend
     val recordExtendClasses = GenRecordExtend.gen(types)
 
     //
@@ -157,6 +159,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
 
     val refClasses = GenRefClasses.gen()
+
 
     //
     // Collect all the classes and interfaces together.

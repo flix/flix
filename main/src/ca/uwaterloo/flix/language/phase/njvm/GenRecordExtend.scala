@@ -27,16 +27,15 @@ import ca.uwaterloo.flix.language.phase.njvm.classes.RecordExtend
 object GenRecordExtend {
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-
     Map(
-      new RecordExtend[JvmType.PrimBool.type].genClass,
-      new RecordExtend[JvmType.PrimChar.type].genClass,
-      new RecordExtend[JvmType.PrimFloat.type].genClass,
-      new RecordExtend[JvmType.PrimDouble.type].genClass,
-      new RecordExtend[JvmType.PrimByte.type].genClass,
-      new RecordExtend[JvmType.PrimShort.type].genClass,
-      new RecordExtend[JvmType.PrimInt.type].genClass,
-      new RecordExtend[JvmType.PrimLong.type].genClass,
+      new RecordExtend[JvmType.PrimBool].genClass,
+      new RecordExtend[JvmType.PrimChar].genClass,
+      new RecordExtend[JvmType.PrimFloat].genClass,
+      new RecordExtend[JvmType.PrimDouble].genClass,
+      new RecordExtend[JvmType.PrimByte].genClass,
+      new RecordExtend[JvmType.PrimShort].genClass,
+      new RecordExtend[JvmType.PrimInt].genClass,
+      new RecordExtend[JvmType.PrimLong].genClass,
       new RecordExtend[JvmType.Object.type].genClass)
   }
 }

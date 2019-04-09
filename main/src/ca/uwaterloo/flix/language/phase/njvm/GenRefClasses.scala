@@ -28,16 +28,15 @@ import ca.uwaterloo.flix.language.phase.njvm.classes.RefClass
 object GenRefClasses {
 
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-
     Map(
-      new RefClass[JvmType.PrimBool.type].genClass,
-      new RefClass[JvmType.PrimChar.type].genClass,
-      new RefClass[JvmType.PrimFloat.type].genClass,
-      new RefClass[JvmType.PrimDouble.type].genClass,
-      new RefClass[JvmType.PrimByte.type].genClass,
-      new RefClass[JvmType.PrimShort.type].genClass,
-      new RefClass[JvmType.PrimInt.type].genClass,
-      new RefClass[JvmType.PrimLong.type].genClass,
+      new RefClass[JvmType.PrimBool].genClass,
+      new RefClass[JvmType.PrimChar].genClass,
+      new RefClass[JvmType.PrimFloat].genClass,
+      new RefClass[JvmType.PrimDouble].genClass,
+      new RefClass[JvmType.PrimByte].genClass,
+      new RefClass[JvmType.PrimShort].genClass,
+      new RefClass[JvmType.PrimInt].genClass,
+      new RefClass[JvmType.PrimLong].genClass,
       new RefClass[JvmType.Object.type].genClass)
   }
 }

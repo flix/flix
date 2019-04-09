@@ -3,11 +3,11 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.Api.JavaRuntimeFunctions
+import ca.uwaterloo.flix.language.phase.njvm.Api.Java
+import ca.uwaterloo.flix.language.phase.njvm.JvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
-import org.objectweb.asm.Label
 
 import scala.reflect.runtime.universe._
 
@@ -15,35 +15,22 @@ import scala.reflect.runtime.universe._
 class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
 
   //Setup
-  private val ct: JvmType.Reference = JvmOps.getRecordEmptyClassType()
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), JvmType.Object, Array(JvmOps.getRecordInterfaceType()))
+  private val ct: JvmType.Reference = getRecordEmptyClassType()
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), JvmType.Object, Array(getRecordInterfaceType()))
 
   //Fields each variable represents a field which can be accessed
   //while generating code for this class
-  private val field0: Field[JvmType.String.type] = cg.compileField(List(Private), "field0")
-  private val field1: Field[T] = cg.compileField(List(Private), "field1")
-  private val field2: Field[MnemonicsType.RecordInterface.type] = cg.compileField(List(Private), "field2")
+  private val field0: Field[JvmType.String.type] = cg.mkField("field0")
+  private val field1: Field[T] = cg.mkField("field1")
+  private val field2: Field[JvmType.Reference] = cg.mkField("field2")
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-  val constructor: Method3[JvmType.String.type, T, MnemonicsType.RecordInterface.type, JvmType.Void.type] = genConstructor
-
-  val getRecordWithField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genGetRecordWithFieldMethod
-
-  val restrictField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genRestrictFieldInterfaceMethod
-
-  val _toString: Method0[JvmType.String.type] = genToStringMethod
-
-  val _hashCode: Method0[JvmType.PrimInt.type] = genHashCodeMethod
-
-  val equals: Method1[JvmType.Object.type, JvmType.PrimBool.type] = genEqualsMethod
-
-  private def genConstructor: Method3[JvmType.String.type, T, MnemonicsType.RecordInterface.type, JvmType.Void.type] = {
-
-    cg.mkMethod3(List(Public), "<init>",
+  val defaultConstructor: Method3[JvmType.String.type, T, JvmType.Reference, JvmType.Void] = {
+    cg.mkMethod3("<init>",
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
-          JavaRuntimeFunctions.ObjectConstructor.INVOKE |>>
+          Java.Lang.Object.Constructor.INVOKE |>>
           sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
           field0.PUT_FIELD |>>
@@ -55,36 +42,29 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
           sig.getArg0.LOAD |>>
           sig.getArg3.LOAD |>>
           field2.PUT_FIELD |>>
-          RETURN)
+          RETURN,
+      List(Public))
   }
 
-  private def genGetRecordWithFieldMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = {
+  val lookupFieldMethod: Method1[JvmType.String.type, JvmType.Reference] =
+    cg.mkMethod1("lookupField",
+      sig =>
+        sig.getArg0.LOAD[StackNil] |>>
+          field0.GET_FIELD |>>
+          sig.getArg1.LOAD |>>
+          Java.Lang.String.Equals.INVOKE |>>
+          IFEQ(
+            sig.getArg0.LOAD[StackNil] |>>
+              RETURN) |>>
+          sig.getArg0.LOAD |>>
+          //TODO:Invoke IRecord lookup field
+          RETURN
 
-//    val ret = new Label
-//    val falseCase = new Label
-//
-//    cg.mkMethod1(List(Public, Final), "getRecordWithField",
-//      sig =>
-//        sig.getArg0.LOAD[StackNil] |>>
-//          field0.GET_FIELD |>>
-//          sig.getArg1.LOAD |>>
-//          JavaRuntimeFunctions.StringEquals.INVOKE |>>
-//          IFEQ(falseCase) |>>
-//          sig.getArg0.LOAD |>>
-//          GOTO(ret)|>>
-//          EMIT(falseCase) |>>
-//          EMIT(ret) |>>
-//          RETURN[MnemonicsType.RecordInterface.type]
-//
-//    )
-    cg.mkMethod1(List(Public, Final), "getRecordWithField",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("getRecordWithField shouldn't be called")
+
     )
 
-  }
-  private def genRestrictFieldInterfaceMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
-    cg.mkMethod1(List(Public, Final), "restrictField",
+  val restrictFieldMethod: Method1[JvmType.String.type, JvmType.Reference] =
+    cg.mkMethod1("restrictField",
       _ =>
         newUnsupportedOperationExceptionInstructions("restrictField shouldn't be called")
     )
@@ -98,8 +78,8 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  private def genToStringMethod: Method0[JvmType.String.type] =
-    cg.mkMethod0(List(Public, Final), "toString",
+  val toStringMethod: Method0[JvmType.String.type] =
+    cg.mkMethod0("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
     )
@@ -112,8 +92,8 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  private def genHashCodeMethod: Method0[JvmType.PrimInt.type] =
-    cg.mkMethod0(List(Public, Final), "hashCode",
+  val hashCodeMethod: Method0[JvmType.PrimInt] =
+    cg.mkMethod0("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
     )
@@ -128,14 +108,14 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
     * }
     *
     */
-  private def genEqualsMethod: Method1[JvmType.Object.type, JvmType.PrimBool.type] =
-    cg.mkMethod1(List(Public, Final), "equal",
+  val equalsMethod: Method1[JvmType.Object.type, JvmType.PrimBool] =
+    cg.mkMethod1("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )
 
   /**
-    *  Method which generates the mapping from the JvmName to JvmClass (which contains the class bytecode)
+    * Method which generates the mapping from the JvmName to JvmClass (which contains the class bytecode)
     */
   def genClass: (JvmName, JvmClass) = ct.name -> JvmClass(ct.name, cg.compile())
 

@@ -3,7 +3,8 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.Api.JavaRuntimeFunctions
+import ca.uwaterloo.flix.language.phase.njvm.Api.Java
+import ca.uwaterloo.flix.language.phase.njvm.JvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
@@ -11,26 +12,14 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 class RecordEmpty(implicit root: Root, flix: Flix) {
 
   //Setup
-  private val ct: JvmType.Reference = JvmOps.getRecordEmptyClassType()
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), JvmType.Object, Array(JvmOps.getRecordInterfaceType()))
+  private val ct: JvmType.Reference = getRecordEmptyClassType()
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), JvmType.Object, Array(getRecordInterfaceType()))
 
   //Fields
   //Class with no fields
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-  val constructor: Method0[JvmType.Void.type] = genConstructor
-
-  val getRecordWithField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genGetRecordWithFieldMethod
-
-  val restrictField: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] = genRestrictFieldInterfaceMethod
-
-  val _toString: Method0[JvmType.String.type] = genToStringMethod
-
-  val _hashCode: Method0[JvmType.PrimInt.type] = genHashCodeMethod
-
-  val equals: Method1[JvmType.Object.type, JvmType.PrimBool.type] = genEqualsMethod
-
 
   /**
     * This method generates the constructor for the RecordEmpty class. This constructor doesn't receive any arguments.
@@ -39,30 +28,30 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
     *
     * public RecordEmpty() {}
     */
-  private def genConstructor: Method0[JvmType.Void.type] = {
+  val defaultConstructor: Method0[JvmType.Void] = {
 
-    cg.mkMethod0(List(Public), "<init>",
+    cg.mkMethod0("<init>",
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
-          JavaRuntimeFunctions.ObjectConstructor.INVOKE |>>
-          RETURN)
+          Java.Lang.Object.Constructor.INVOKE |>>
+          RETURN,
+      List(Public))
   }
 
   /**
-    * Method which generates the `getRecordWithField(String)` method which will always throws an exception,
+    * Method which generates the `lookupField(String)` method which will always throws an exception,
     * since `getRecordWithField` should not be called.
     * Despite in order to stay in line with our format we still return the capability to call the method
-    * The `getRecordWithField` method is always the following:
+    * The `lookupField` method is always the following:
     *
-    * public IRecord getRecordWithField(String var1) throws Exception {
-    * throw new Exception("getField method shouldn't be called");
+    * public IRecord lookupField(String var1) throws Exception {
+    * throw new Exception("lookupField method shouldn't be called");
     * }
-    *
     */
-  private def genGetRecordWithFieldMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
-    cg.mkMethod1(List(Public, Final), "getRecordWithField",
+  val lookupFieldMethod: Method1[JvmType.String.type, JvmType.Reference] =
+    cg.mkMethod1("lookupField",
       _ =>
-        newUnsupportedOperationExceptionInstructions("getRecordWithField shouldn't be called")
+        newUnsupportedOperationExceptionInstructions("lookupField shouldn't be called")
     )
 
   /**
@@ -74,8 +63,8 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
     * throw new Exception("restrictField method shouldn't be called");
     * }
     */
-  private def genRestrictFieldInterfaceMethod: Method1[JvmType.String.type, MnemonicsType.RecordInterface.type] =
-    cg.mkMethod1(List(Public, Final), "restrictField",
+  val restrictFieldMethod: Method1[JvmType.String.type, JvmType.Reference] =
+    cg.mkMethod1("restrictField",
       _ =>
         newUnsupportedOperationExceptionInstructions("restrictField shouldn't be called")
     )
@@ -89,8 +78,8 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  private def genToStringMethod: Method0[JvmType.String.type] =
-    cg.mkMethod0(List(Public, Final), "toString",
+  val toStringMethod: Method0[JvmType.String.type] =
+    cg.mkMethod0("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
     )
@@ -103,8 +92,8 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  private def genHashCodeMethod: Method0[JvmType.PrimInt.type] =
-    cg.mkMethod0(List(Public, Final), "hashCode",
+  val hashCodeMethod: Method0[JvmType.PrimInt] =
+    cg.mkMethod0("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
     )
@@ -119,12 +108,11 @@ class RecordEmpty(implicit root: Root, flix: Flix) {
     * }
     *
     */
-  private def genEqualsMethod: Method1[JvmType.Object.type, JvmType.PrimBool.type] =
-    cg.mkMethod1(List(Public, Final), "equal",
+  val equalsMethod: Method1[JvmType.Object.type, JvmType.PrimBool] =
+    cg.mkMethod1("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )
-
 
   /**
     * Method which generates the mapping from the JvmName to JvmClass (which contains the class bytecode)
