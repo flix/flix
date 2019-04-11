@@ -5,7 +5,6 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
@@ -17,7 +16,7 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
 
   //Setup
   private val ct: NJvmType.Reference = getRecordExtendClassType(getJvmType[T])
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), NJvmType.Object, List(getRecordInterfaceType()))
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType()))
 
   //Fields each variable represents a field which can be accessed
   //while generating code for this class
@@ -41,11 +40,11 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     * }
     *
     */
-  val defaultConstructor: Method3[NJvmType.String.type, T, NJvmType.Reference, NJvmType.Void] = {
-    cg.mkMethod3("<init>",
+  val defaultConstructor: VoidMethod3[NJvmType.String.type, T, NJvmType.Reference] = {
+    cg.mkConstructor3(
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
-          Java.Lang.Object.Constructor.INVOKE |>>
+          cg.SUPER |>>
           sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
           field0.PUT_FIELD |>>
@@ -57,8 +56,8 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
           sig.getArg0.LOAD |>>
           sig.getArg3.LOAD |>>
           field2.PUT_FIELD |>>
-          RETURN_VOID,
-      List(Public))
+          RETURN_VOID
+    )
   }
 
   /**
@@ -94,7 +93,7 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
         sig.getArg0.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
           sig.getArg1.LOAD |>>
-          Java.Lang.String.Equals.INVOKE |>>
+          Java.Lang.String.equals.INVOKE |>>
           IFEQ(
             sig.getArg0.LOAD[StackNil] |>>
               RETURN) |>>
@@ -126,7 +125,7 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
         sig.getArg0.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
           sig.getArg1.LOAD |>>
-          Java.Lang.String.Equals.INVOKE |>>
+          Java.Lang.String.equals.INVOKE |>>
           IFEQ(
             sig.getArg0.LOAD[StackNil] |>>
               field2.GET_FIELD |>>
@@ -195,6 +194,6 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
 
   def getJvmClass: JvmClass = jvmClass
 
-  def genClass: (JvmName, MnemonicsClass) =
+  def getClassMapping: (JvmName, MnemonicsClass) =
     ct.name -> this
 }

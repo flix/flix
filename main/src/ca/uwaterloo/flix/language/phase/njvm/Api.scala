@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
-import ca.uwaterloo.flix.language.phase.jvm.{JvmName}
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{**, F, JvmModifier, Stack}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 
 /**
   * This singleton will contain a bunch of capabilities to invoke methods which we
@@ -9,28 +9,34 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{**, F, JvmModifier, Stac
   * This is essentially filled in an ad-hoc manner
   */
 object Api {
+
   object Java {
+
     object Lang {
+
       object Object {
-        object Constructor {
-          def INVOKE[S <: Stack]: F[S ** NJvmType.Reference] => F[S] =
-            t => t.emitInvoke(JvmModifier.InvokeSpecial, JvmName.Object.toInternalName, "<init>", Nil, NJvmType.Void())
-        }
+        val constructor: VoidMethod0 = new VoidMethod0(JvmModifier.InvokeSpecial, NJvmType.Object, "<init>")
       }
+
       object String {
-        object Equals {
+
+        object equals {
           def INVOKE[S <: Stack]: F[S ** NJvmType.String.type ** NJvmType.String.type] => F[S ** NJvmType.PrimBool] =
             t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool())
         }
+
       }
-      object Exception {
-        object Constructor {
-          def INVOKE[S <: Stack]: F[S ** NJvmType.Reference ** NJvmType.String.type] => F[S] =
-            t => t.emitInvoke(JvmModifier.InvokeSpecial, JvmName.UnsupportedOperationException.toInternalName, "<init>", List(NJvmType.String), NJvmType.Void())
-        }
+
+      object UnsupportedOperationException {
+        val constructor: VoidMethod1[NJvmType.String.type] =
+          new VoidMethod1(JvmModifier.InvokeSpecial, NJvmType.Reference(JvmName.UnsupportedOperationException), "<init>")
+
       }
+
     }
+
   }
+
 }
 
 

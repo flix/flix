@@ -11,11 +11,11 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 
 import scala.reflect.runtime.universe._
 
-class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass{
+class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
   private val ct: NJvmType.Reference = getRefClassType(getJvmType[T])
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), NJvmType.Object, List())
+  private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
   //Fields each variable represents a field which can be acessed
   //while generating code for this class
@@ -35,17 +35,16 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val defaultConstructor: Method1[T, NJvmType.Void] = {
+  val defaultConstructor: VoidMethod1[T] = {
 
-    cg.mkMethod1("<init>",
+    cg.mkConstructor1(
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
-          Java.Lang.Object.Constructor.INVOKE |>>
+          cg.SUPER |>>
           sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
           field0.PUT_FIELD |>>
-          RETURN_VOID,
-      List(Public))
+          RETURN_VOID)
   }
 
   /**
@@ -132,12 +131,13 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )
 
-    /**
-      * Variable which generates the JvmClass (contains the class bytecode)
-      */
-  private val jvmClass : JvmClass = JvmClass(ct.name, cg.compile())
-  def getJvmClass : JvmClass = jvmClass
+  /**
+    * Variable which generates the JvmClass (contains the class bytecode)
+    */
+  private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
 
-  def genClass: (JvmName, MnemonicsClass) =
+  def getJvmClass: JvmClass = jvmClass
+
+  def getClassMapping: (JvmName, MnemonicsClass) =
     ct.name -> this
 }

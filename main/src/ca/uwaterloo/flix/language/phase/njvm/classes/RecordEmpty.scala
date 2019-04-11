@@ -9,11 +9,11 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 
-class RecordEmpty(map : Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
+class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
   private val ct: NJvmType.Reference = getRecordEmptyClassType()
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), NJvmType.Object, List(getRecordInterfaceType()))
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType()))
 
   //Fields
   //Class with no fields
@@ -28,14 +28,13 @@ class RecordEmpty(map : Map[JvmName, MnemonicsClass])(implicit root: Root, flix:
     *
     * public RecordEmpty() {}
     */
-  val defaultConstructor: Method0[NJvmType.Void] = {
+  val defaultConstructor: VoidMethod0 = {
 
-    cg.mkMethod0("<init>",
+    cg.mkConstructor0(
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
-          Java.Lang.Object.Constructor.INVOKE |>>
-          RETURN_VOID,
-      List(Public))
+          cg.SUPER |>>
+          RETURN_VOID)
   }
 
   /**
@@ -44,7 +43,7 @@ class RecordEmpty(map : Map[JvmName, MnemonicsClass])(implicit root: Root, flix:
     * Despite this in order to stay in line with our format we still store the capability to call the method
     * The `lookupField` method is always the following:
     *
-    * public IRecord lookupField(String var1) throws Exception {
+    * public Object lookupField(String var1) throws Exception {
     * throw new Exception("lookupField method shouldn't be called");
     * }
     */
@@ -117,10 +116,11 @@ class RecordEmpty(map : Map[JvmName, MnemonicsClass])(implicit root: Root, flix:
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
     */
-  private val jvmClass : JvmClass = JvmClass(ct.name, cg.compile())
-  def getJvmClass : JvmClass = jvmClass
+  private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
 
-  def genClass: (JvmName, MnemonicsClass) =
+  def getJvmClass: JvmClass = jvmClass
+
+  def getClassMapping: (JvmName, MnemonicsClass) =
     ct.name -> this
 
 }

@@ -19,18 +19,17 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
-import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the record interface.
   */
-object GenRecordInterface extends MnemonicsGenerator{
+object GenRecordInterface extends MnemonicsGenerator {
 
-  def gen(map : Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
-    map + new RecordInterface().genClass
+  def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
+    map + new RecordInterface().getClassMapping
   }
 
 }

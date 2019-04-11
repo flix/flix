@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.language.phase.jvm._
+import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
@@ -139,17 +140,18 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     val tupleClasses = GenTupleClasses.gen(types)
 
     /** Generated classes using NJVM */
-     val map : Map[JvmName, MnemonicsClass] = Map()
-     val classes : List[MnemonicsGenerator] =
-       //Generate interfaces first
-       List(
-         GenRecordInterface,
-         GenRecordEmpty,
-         GenRecordExtend,
-         GenRefClasses
-         )
+    val map: Map[JvmName, MnemonicsClass] = Map()
+    val classes: List[MnemonicsGenerator] =
+    //Generate interfaces first
+      List(
+        GenRecordInterface,
+        GenRecordEmpty,
+        GenRecordExtend,
+        GenRefClasses
+      )
 
-    val njvmClasses = classes.foldLeft(map){ (acc, i) => i.gen(acc, Set())}.map( f => (f._1, f._2.getJvmClass))
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, Set()) }
+      .map(f => (f._1, f._2.getJvmClass))
 
     //
     // Collect all the classes and interfaces together.

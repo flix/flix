@@ -3,11 +3,11 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getErasedJvmType, stringify, _}
-import ca.uwaterloo.flix.language.phase.jvm.{JvmType, _}
+import ca.uwaterloo.flix.language.phase.jvm.JvmOps._
+import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier.{Abstract, Final, Private, Public}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Method0
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
@@ -113,25 +113,6 @@ object Mnemonics {
   }
 
   /**
-    * Types used by the framework to ensure correcteness at compile time.
-    * There are some classes/interfaces in flix which we statically know will always exists such as
-    * RefClasses, RecordExtend Classes, IRecord. So we can statically ensure that methods which use these classes
-    * in their signature are well-formed.
-    *
-    * This is temporary it just serves as a way to translate certain JvmType.Reference by assigning it a permanent type
-    * (In flix classes types such as tuples/enum can only be known at runtime)
-    */
-  //  sealed trait MnemonicsType
-  //
-  //  object MnemonicsType {
-  //
-  //    case object UnsupportedOperationException extends MnemonicsType
-  //
-  //    case object RecordInterface extends MnemonicsType
-  //
-  //  }
-
-  /**
     * F class as in Mnemonics
     * It simply serves as way to interface with the underlying method of generating Java bytecode
     * in this case we use the org.web.asm library
@@ -201,7 +182,7 @@ object Mnemonics {
                       args: List[NJvmType], returnType: NJvmType): F[S] = {
 
       //Last argument is true if invoking interface
-      val flag = if(invokeCode == JvmModifier.InvokeInterface) true else false
+      val flag = if (invokeCode == JvmModifier.InvokeInterface) true else false
       mv.visitMethodInsn(invokeCode.toInternal, className, methodName, getMethodDescriptor(args, returnType), flag)
       this.asInstanceOf[F[S]]
     }
@@ -481,20 +462,26 @@ object Mnemonics {
   }
 
   /**
-    * Capability which allows to invoke a method with 0 arguments
+    * Capability which allows to invoke a (non-void) method with 0 arguments
     */
   //TODO: Similar to FunSig might need to have different types in order to ensure the type safety with
-  //TODO: Static methods, interface methods, etc. Also might need an INVOKE_VOID method as we want the stack frame after
-  //TODO: after invoking a void method to be F[S] and not F[S ** JvmType.Void.type]
+  //TODO: Static methods, interface methods, etc.
   class Method0[R: TypeTag](invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
 
     def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** NJvmType.Reference] => F[S ** R] =
       t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
-
   }
 
   /**
-    * Capability which allows to invoke a method with 1 argument
+    * Capability which allows to invoke a (void) method with 0 arguments
+    */
+  class VoidMethod0(invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** NJvmType.Reference] => F[S] =
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(), NJvmType.Void())
+  }
+
+  /**
+    * Capability which allows to invoke a (non-void) method with 1 argument
     */
   //TODO: Similar to Method0
   class Method1[T1: TypeTag, R: TypeTag](invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
@@ -504,7 +491,15 @@ object Mnemonics {
   }
 
   /**
-    * Capability which allows to invoke a method with 2 arguments
+    * Capability which allows to invoke a (void) method with 1 argument
+    */
+  class VoidMethod1[T1: TypeTag](invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** NJvmType.Reference ** T1] => F[S] =
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1]), NJvmType.Void())
+  }
+
+  /**
+    * Capability which allows to invoke a (non-void) method with 2 arguments
     */
   //TODO: Similar to Method0
   class Method2[T1: TypeTag, T2: TypeTag, R: TypeTag](invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
@@ -512,6 +507,15 @@ object Mnemonics {
     def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** NJvmType.Reference ** T1 ** T2] => F[S ** R] =
       t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2]), getJvmType[R])
   }
+
+  /**
+    * Capability which allows to invoke a (void) method with 2 arguments
+    */
+  class VoidMethod2[T1: TypeTag, T2: TypeTag](invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** NJvmType.Reference ** T1 ** T2] => F[S] =
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2]), NJvmType.Void())
+  }
+
 
   /**
     * Capability which allows to invoke a method with 3 arguments
@@ -523,36 +527,29 @@ object Mnemonics {
       t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2], getJvmType[T3]), getJvmType[R])
   }
 
-  //  class MnemonicsLabel[S <: Stack](label: Label) {
-  //
-  //    def JMP: F[S] => F[S] = t => t.goto(label)
-  //  }
-  //
-  //    def mkLabel[S <: Stack, R <: Stack](f: MnemonicsLabel[S] => F[S] => F[R]): F[S] => F[R] = {
-  //
-  //      val label = new Label
-  //      val mnemonicsLabel = new MnemonicsLabel(label)
-  //
-  //      f(mnemonicsLabel)
-  //    }
-
+  /**
+    * Capability which allows to invoke a (void) method with 2 arguments
+    */
+  class VoidMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag](invokeCode: JvmModifier, ct: NJvmType.Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** NJvmType.Reference ** T1 ** T2 ** T3] => F[S] =
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2], getJvmType[T3]), NJvmType.Void())
+  }
 
   /**
     * This class allows to generate classes. It includes support to generate(CompileField) and methods
     *
     * @param ct                    classType of the class we want to generate
     * @param modifiers             list of modififers which we want to generate the class with (public, abstract, etc..)
-    * @param superClass            the class we are generating superClass
     * @param implementedInterfaces Array of interfaces which this new class shall implement
     */
-  class ClassGenerator(ct: NJvmType.Reference,
-                       modifiers: List[JvmModifier], superClass: NJvmType.Reference, implementedInterfaces: List[NJvmType.Reference])
+  class ClassGenerator(ct: NJvmType.Reference, implementedInterfaces: List[NJvmType.Reference],
+                       modifiers: List[JvmModifier] = List(Public, Final))
                       (implicit root: Root, flix: Flix) {
 
     //Create the class writer and initialize, by providing the correct params.
     //The modifiers, superclass, implementedInterfaces
     private val cw: ClassWriter = {
-      val superClassName = superClass.name.toInternalName
+      val superClassName = NJvmType.Object.name.toInternalName
       val implementedInterfacesNames = implementedInterfaces.map(interface => interface.name.toInternalName).toArray
 
       val cw = AsmOps.mkClassWriter()
@@ -562,16 +559,19 @@ object Mnemonics {
       cw
     }
 
+    def SUPER: F[StackNil ** NJvmType.Reference] => F[StackNil] =
+      Java.Lang.Object.constructor.INVOKE
+
     /**
-      * This method generates in the current class we are generating a method with 0 arguments
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current class we are generating a (non-void) method with 0 arguments
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
       * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
       *                   will describe what instruction the method we are generating will execute.
-      * @return returns a Method0 capability allows now the possibility to invoke this new Method with 0 arguments
+      * @return returns a Method0 capability allows now the possibility to invoke this new (non-void)  method with 0 arguments
       */
     def mkMethod0[R: TypeTag](methodName: String, f: FunSig0[R] => F[StackNil] => F[StackNil],
                               modifiers: List[JvmModifier] = List(Public, Final)): Method0[R] = {
@@ -585,15 +585,53 @@ object Mnemonics {
     }
 
     /**
-      * This method generates in the current class we are generating a method with 1 argument1
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current class we are generating a (void) method with 0 arguments
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
       * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
       *                   will describe what instruction the method we are generating will execute.
-      * @return returns a Method1 capability allows now the possibility to invoke this new Method with 1 argument
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 0 arguments
+      */
+    def mkVoidMethod0(methodName: String, f: FunSig0[NJvmType.Void] => F[StackNil] => F[StackNil],
+                      modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod0 = {
+
+      val returnType = NJvmType.Void()
+      val funSig = new FunSig0[NJvmType.Void]()
+
+      emitVirtualMethod(modifiers, methodName, List(), returnType, f(funSig))
+
+      new VoidMethod0(JvmModifier.InvokeVirtual, ct, methodName)
+    }
+
+    /**
+      * This method generates in the current class we are generating a constructor with 0 arguments
+      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
+      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                  will describe what instruction the constructor we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 0 arguments
+      */
+    def mkConstructor0(f: FunSig0[NJvmType.Void] => F[StackNil] => F[StackNil],
+                       modifiers: List[JvmModifier] = List(Public)): VoidMethod0 = {
+
+      mkVoidMethod0("<init>", f, modifiers)
+    }
+
+    /**
+      * This method generates in the current class we are generating a (non-void) method with 1 argument
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                   will describe what instruction the method we are generating will execute.
+      * @return returns a Method1 capability allows now the possibility to invoke this new (non-void) method with 1 argument
       */
     def mkMethod1[T1: TypeTag, R: TypeTag](methodName: String, f: FunSig1[T1, R] => F[StackNil] => F[StackNil],
                                            modifiers: List[JvmModifier] = List(Public, Final)): Method1[T1, R] = {
@@ -607,20 +645,57 @@ object Mnemonics {
     }
 
     /**
-      * This method generates in the current class we are generating a method with 2 arguments
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current class we are generating a (void) method with 1 argument
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
       * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
       *                   will describe what instruction the method we are generating will execute.
-      * @return returns a Method2 capability allows now the possibility to invoke this new Method with 2 arguments
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 1 argument
       */
-    def mkMethod2[T1: TypeTag, T2: TypeTag, R: TypeTag](methodName: String,
-                                                        f: FunSig2[T1, T2, R] => F[StackNil] => F[StackNil],
-                                                        modifiers: List[JvmModifier] = List(Public, Final)): Method2[T1, T2, R] = {
+    def mkVoidMethod1[T1: TypeTag](methodName: String, f: FunSig1[T1, NJvmType.Void] => F[StackNil] => F[StackNil],
+                                   modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod1[T1] = {
 
+      val arg1Type = getJvmType[T1]
+      val returnType = NJvmType.Void()
+      val funSig = new FunSig1[T1, NJvmType.Void]()
+
+      emitVirtualMethod(modifiers, methodName, List(arg1Type), returnType, f(funSig))
+
+      new VoidMethod1(JvmModifier.InvokeVirtual, ct, methodName)
+    }
+
+    /**
+      * This method generates in the current class we are generating a constructor with 1 argument
+      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
+      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                  will describe what instruction the constructor we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 1 argument
+      */
+    def mkConstructor1[T1: TypeTag](f: FunSig1[T1, NJvmType.Void] => F[StackNil] => F[StackNil],
+                                    modifiers: List[JvmModifier] = List(Public)): VoidMethod1[T1] = {
+
+      mkVoidMethod1("<init>", f, modifiers)
+    }
+
+    /**
+      * This method generates in the current class we are generating a (non-void) method with 2 arguments
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                   will describe what instruction the method we are generating will execute.
+      * @return returns a Method2 capability allows now the possibility to invoke this new  (non-void) method with 2 arguments
+      */
+    def mkMethod2[T1: TypeTag, T2: TypeTag, R: TypeTag](methodName: String, f: FunSig2[T1, T2, R] => F[StackNil] => F[StackNil],
+                                                        modifiers: List[JvmModifier] = List(Public, Final)): Method2[T1, T2, R] = {
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val returnType = getJvmType[R]
@@ -633,18 +708,58 @@ object Mnemonics {
     }
 
     /**
-      * This method generates in the current class we are generating a method with 3 arguments
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current class we are generating a (void) method with 2 arguments
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
       * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
       *                   will describe what instruction the method we are generating will execute.
-      * @return returns a Method3 capability allows now the possibility to invoke this new Method with 3 arguments
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 2 arguments
       */
-    def mkMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag](methodName: String,
-                                                                     f: FunSig3[T1, T2, T3, R] => F[StackNil] => F[StackNil],
+    def mkVoidMethod2[T1: TypeTag, T2: TypeTag](methodName: String, f: FunSig2[T1, T2, NJvmType.Void] => F[StackNil] => F[StackNil],
+                                                modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod2[T1, T2] = {
+
+      val arg1Type = getJvmType[T1]
+      val arg2Type = getJvmType[T2]
+
+      val returnType = NJvmType.Void()
+      val funSig = new FunSig2[T1, T2, NJvmType.Void]()
+
+      emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type), returnType, f(funSig))
+
+      new VoidMethod2(JvmModifier.InvokeVirtual, ct, methodName)
+    }
+
+    /**
+      * This method generates in the current class we are generating a constructor with 2 arguments
+      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
+      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                  will describe what instruction the constructor we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 2 arguments
+      */
+    def mkConstructor2[T1: TypeTag, T2: TypeTag](f: FunSig2[T1, T2, NJvmType.Void] => F[StackNil] => F[StackNil],
+                                                 modifiers: List[JvmModifier] = List(Public)): VoidMethod2[T1, T2] = {
+
+      mkVoidMethod2("<init>", f, modifiers)
+    }
+
+    /**
+      * This method generates in the current class we are generating a (non-void) method with 3 arguments
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                   will describe what instruction the method we are generating will execute.
+      * @return returns a Method3 capability allows now the possibility to invoke this new (non-void) method with 3 arguments
+      */
+    def mkMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag](methodName: String, f: FunSig3[T1, T2, T3, R] => F[StackNil] => F[StackNil],
                                                                      modifiers: List[JvmModifier] = List(Public, Final)): Method3[T1, T2, T3, R] = {
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
@@ -655,6 +770,48 @@ object Mnemonics {
 
       emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType, f(funSig))
       new Method3(JvmModifier.InvokeVirtual, ct, methodName)
+    }
+
+    /**
+      * This method generates in the current class we are generating a (void) method with 3 arguments
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @param f          , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                   will describe what instruction the method we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 3 arguments
+      */
+    def mkVoidMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag](methodName: String, f: FunSig3[T1, T2, T3, NJvmType.Void] => F[StackNil] => F[StackNil],
+                                                             modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod3[T1, T2, T3] = {
+
+      val arg1Type = getJvmType[T1]
+      val arg2Type = getJvmType[T2]
+      val arg3Type = getJvmType[T3]
+
+      val returnType = NJvmType.Void()
+      val funSig = new FunSig3[T1, T2, T3, NJvmType.Void]()
+
+      emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType, f(funSig))
+
+      new VoidMethod3(JvmModifier.InvokeVirtual, ct, methodName)
+    }
+
+    /**
+      * This method generates in the current class we are generating a constructor with 3 arguments
+      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
+      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                  will describe what instruction the constructor we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 3 arguments
+      */
+    def mkConstructor3[T1: TypeTag, T2: TypeTag, T3: TypeTag](f: FunSig3[T1, T2, T3, NJvmType.Void] => F[StackNil] => F[StackNil],
+                                                              modifiers: List[JvmModifier] = List(Public)): VoidMethod3[T1, T2, T3] = {
+
+      mkVoidMethod3("<init>", f, modifiers)
     }
 
     /**
@@ -717,8 +874,7 @@ object Mnemonics {
     * @param superClass            the class we are generating superClass
     * @param implementedInterfaces Array of interfaces which this new class shall implement
     */
-  class InterfaceGenerator(it: NJvmType.Reference,
-                           modifiers: List[JvmModifier], superClass: NJvmType.Reference, implementedInterfaces: List[NJvmType.Reference])
+  class InterfaceGenerator(it: NJvmType.Reference, implementedInterfaces: List[NJvmType.Reference], modifiers: List[JvmModifier] = List(Public, Abstract, Interface))
                           (implicit root: Root, flix: Flix) {
 
 
@@ -726,7 +882,7 @@ object Mnemonics {
     //The modifiers, superclass, implementedInterfaces
     private val cw: ClassWriter = {
 
-      val superClassName = superClass.name.toInternalName
+      val superClassName = NJvmType.Object.name.toInternalName
       val implementedInterfacesNames = implementedInterfaces.map(interface => interface.name.toInternalName).toArray
 
       val cw = AsmOps.mkClassWriter()
@@ -736,15 +892,14 @@ object Mnemonics {
       cw
     }
 
-
     /**
-      * This method generates in the current interface we are generating a method with 0 arguments
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current interface we are generating a (non-void) method with 0 arguments
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
-      * @return returns a Method0 capability allows now the possibility to invoke this new Method with 0 arguments
+      * @return returns a Method0 capability allows now the possibility to invoke this new (non-void) method with 0 arguments
       */
     def mkMethod0[R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method0[R] = {
 
@@ -756,13 +911,31 @@ object Mnemonics {
     }
 
     /**
-      * This method generates in the current interface we are generating a method with 1 argument
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current interface we are generating a (void) method with 0 arguments
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
-      * @return returns a Method1 capability allows now the possibility to invoke this new Method with arguments
+      * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 0 arguments
+      */
+    def mkVoidMethod0(methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod0 = {
+
+      val returnType = NJvmType.Void()
+
+      emitInterfaceMethod(modifiers, methodName, List(), returnType)
+
+      new VoidMethod0(JvmModifier.InvokeInterface, it, methodName)
+    }
+
+    /**
+      * This method generates in the current interface we are generating a (non-void) method with 1 argument
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @return returns a Method1 capability allows now the possibility to invoke this new (non-void) method with arguments
       */
     def mkMethod1[T1: TypeTag, R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method1[T1, R] = {
 
@@ -775,13 +948,32 @@ object Mnemonics {
     }
 
     /**
-      * This method generates in the current interface we are generating a method with 2 arguments
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current interface we are generating a (void) method with 1 argument
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
-      * @return returns a Method2 capability allows now the possibility to invoke this new Method with 2 arguments
+      * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 1 argument
+      */
+    def mkVoidMethod1[T1: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod1[T1] = {
+
+      val arg1Type = getJvmType[T1]
+      val returnType = NJvmType.Void()
+
+      emitInterfaceMethod(modifiers, methodName, List(arg1Type), returnType)
+
+      new VoidMethod1(JvmModifier.InvokeInterface, it, methodName)
+    }
+
+    /**
+      * This method generates in the current interface we are generating a (non-void) method with 2 arguments
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @return returns a Method2 capability allows now the possibility to invoke this new (non-void) method with 2 arguments
       */
     def mkMethod2[T1: TypeTag, T2: TypeTag, R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method2[T1, T2, R] = {
 
@@ -795,13 +987,33 @@ object Mnemonics {
     }
 
     /**
-      * This method generates in the current interface we are generating a method with 3 arguments
-      * given the provided params. It return the capability to invoke method. This way we ensure we only call methods
+      * This method generates in the current interface we are generating a (void) method with 2 arguments
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
       * @param methodName name which we want to give to the method we are generating
-      * @return returns a Method3 capability allows now the possibility to invoke this new Method with 3 arguments
+      * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 2 arguments
+      */
+    def mkVoidMethod2[T1: TypeTag, T2: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod2[T1, T2] = {
+
+      val arg1Type = getJvmType[T1]
+      val arg2Type = getJvmType[T2]
+      val returnType = NJvmType.Void()
+
+      emitInterfaceMethod(modifiers, methodName, List(arg1Type, arg2Type), returnType)
+
+      new VoidMethod2(JvmModifier.InvokeInterface, it, methodName)
+    }
+
+    /**
+      * This method generates in the current interface we are generating a (non-void) method with 3 arguments
+      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @return returns a Method3 capability allows now the possibility to invoke this new (non-void) method with 3 arguments
       */
     def mkMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method3[T1, T2, T3, R] = {
 
@@ -814,6 +1026,27 @@ object Mnemonics {
       new Method3(JvmModifier.InvokeInterface, it, methodName)
     }
 
+    /**
+      * This method generates in the current interface we are generating a (void) method with 2 arguments
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
+      * @param methodName name which we want to give to the method we are generating
+      * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 2 arguments
+      */
+    def mkVoidMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod3[T1, T2, T3] = {
+
+      val arg1Type = getJvmType[T1]
+      val arg2Type = getJvmType[T2]
+      val arg3Type = getJvmType[T2]
+
+      val returnType = NJvmType.Void()
+
+      emitInterfaceMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType)
+
+      new VoidMethod3(JvmModifier.InvokeInterface, it, methodName)
+    }
 
     /**
       * Auxiliary method which actually emits the method bytecode onto the current interface.
@@ -824,7 +1057,6 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @param args       List of the arguments JvmType of the function we are generating code for
       * @param returnType the JvmType of the return type of the function we are generating code for
-      * @param f          is a frame transfomer  it will describe what instruction the method we are generating will execute.
       */
     private def emitInterfaceMethod(modifiers: List[JvmModifier], methodName: String,
                                     args: List[NJvmType], returnType: NJvmType): Unit = {
@@ -855,7 +1087,7 @@ object Mnemonics {
     Instructions.NEW[StackNil](NJvmType.Reference(JvmName.UnsupportedOperationException)) |>>
       Instructions.DUP |>>
       Instructions.LDC_STRING(message) |>>
-      Java.Lang.Exception.Constructor.INVOKE |>>
+      Java.Lang.UnsupportedOperationException.constructor.INVOKE |>>
       Instructions.THROW
   }
 
@@ -961,15 +1193,15 @@ object Mnemonics {
     *
     * NB: The given type `tpe` must be a Record type
     */
-  def getRecordExtendClassType(jt : NJvmType)(implicit root: Root, flix: Flix): NJvmType.Reference = {
-      // Compute the stringified erased type of value.
-      val valueType = stringify(jt)
+  def getRecordExtendClassType(jt: NJvmType)(implicit root: Root, flix: Flix): NJvmType.Reference = {
+    // Compute the stringified erased type of value.
+    val valueType = stringify(jt)
 
-      // The JVM name is of the form RecordExtend
-      val name = "RecordExtend$" + valueType
+    // The JVM name is of the form RecordExtend
+    val name = "RecordExtend$" + valueType
 
-      // The type resides in the root package.
-      NJvmType.Reference(JvmName(RootPackage, name))
+    // The type resides in the root package.
+    NJvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -980,15 +1212,15 @@ object Mnemonics {
     *
     * NB: The type must be a reference type.
     */
-  def getRefClassType(jt : NJvmType)(implicit root: Root, flix: Flix): NJvmType.Reference = {
+  def getRefClassType(jt: NJvmType)(implicit root: Root, flix: Flix): NJvmType.Reference = {
 
-      val arg = stringify(jt)
+    val arg = stringify(jt)
 
-      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-      val name = "Ref" + "$" + arg
+    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+    val name = "Ref" + "$" + arg
 
-      // The type resides in the ca.uwaterloo.flix.api.cell package.
-      NJvmType.Reference(JvmName(Nil, name))
+    // The type resides in the ca.uwaterloo.flix.api.cell package.
+    NJvmType.Reference(JvmName(Nil, name))
   }
 
 
@@ -998,9 +1230,10 @@ object Mnemonics {
     * MnemonicClass to the proper class we can acess the capabilities to call the methods in the class
     * which we are sure we have generated as the class is in the Map
     */
-  trait MnemonicsClass{
+  trait MnemonicsClass {
     def getJvmClass: JvmClass
-    def genClass: (JvmName, MnemonicsClass)
+
+    def getClassMapping: (JvmName, MnemonicsClass)
   }
 
 
@@ -1009,18 +1242,17 @@ object Mnemonics {
     * of MnemonicsGenerator in order to generate all the required classes.
     */
   //TODO: better naming?
-  trait MnemonicsGenerator{
+  trait MnemonicsGenerator {
 
     /**
       * Method should receive a Map of all the generated classes so far. It should generate all the new classes
       * and return an updated map with the new generated classes.
       *
       * @param map of all the generated classes so far.
-      * @param ts set of Monotypes this will be used to generate certain classes such as Enum.
-      *
+      * @param ts  set of Monotypes this will be used to generate certain classes such as Enum.
       * @return update map with new generated classes
       */
-    def gen(map : Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
+    def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
   }
 
 }

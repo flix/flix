@@ -8,11 +8,10 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, Method1}
 
-class RecordInterface(implicit root: Root, flix: Flix) extends MnemonicsClass
-{
+class RecordInterface(implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
   private val it: NJvmType.Reference = getRecordInterfaceType()
-  private val ig: InterfaceGenerator = new InterfaceGenerator(it, List(Public, Abstract, Interface), NJvmType.Object, List())
+  private val ig: InterfaceGenerator = new InterfaceGenerator(it, List())
 
   //Fields
   //Interface has no fields ig doesn't even allow to compile fields
@@ -30,10 +29,10 @@ class RecordInterface(implicit root: Root, flix: Flix) extends MnemonicsClass
     */
   val restrictFieldMethod: Method1[NJvmType.String.type, NJvmType.Reference] = ig.mkMethod1("restrictField")
 
-  private val jvmClass : JvmClass = JvmClass(it.name, ig.compile())
+  private val jvmClass: JvmClass = JvmClass(it.name, ig.compile())
 
-  def getJvmClass : JvmClass = jvmClass
+  def getJvmClass: JvmClass = jvmClass
 
-  def genClass: (JvmName, MnemonicsClass) =
+  def getClassMapping: (JvmName, MnemonicsClass) =
     it.name -> this
 }
