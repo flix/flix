@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 /**
   * This singleton will contain a bunch of capabilities to invoke methods which we
@@ -21,15 +22,15 @@ object Api {
       object String {
 
         object equals {
-          def INVOKE[S <: Stack]: F[S ** NJvmType.String.type ** NJvmType.String.type] => F[S ** NJvmType.PrimBool] =
-            t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool())
+          def INVOKE[S <: Stack]: F[S ** JString.type ** JString.type] => F[S ** NJvmType.PrimBool] =
+            t => t.emitInvoke(JvmModifier.InvokeVirtual, JString.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool())
         }
 
       }
 
       object UnsupportedOperationException {
-        val constructor: VoidMethod1[NJvmType.String.type] =
-          new VoidMethod1(JvmModifier.InvokeSpecial, NJvmType.Reference(JvmName.UnsupportedOperationException), "<init>")
+        val constructor: VoidMethod1[JString.type] =
+          new VoidMethod1(JvmModifier.InvokeSpecial, Reference(JvmName.UnsupportedOperationException), "<init>")
 
       }
 

@@ -46,40 +46,40 @@ object NJvmType {
   /**
     * The Flix Context class.
     */
-  val Context: NJvmType.Reference = Reference(JvmName.Context)
+  val Context: Reference = Reference(JvmName.Context)
 
   /**
     * The `ca.uwaterloo.flix.api.Unit` type
     */
-  val Unit: NJvmType.Reference = Reference(JvmName.Runtime.Value.Unit)
+  val Unit: Reference = Reference(JvmName.Runtime.Value.Unit)
 
   /**
     * The `java.lang.BigInteger` type.
     */
-  val BigInteger: NJvmType.Reference = Reference(JvmName.BigInteger)
+  val BigInteger: Reference = Reference(JvmName.BigInteger)
 
   /**
     * The `java.lang.Object` type.
     */
-  val Object: NJvmType.Reference = NJvmType.Reference(JvmName.Object)
+  val Object: Reference = Reference(JvmName.Object)
 
   /**
     * The `java.lang.String` type.
     */
-  val String: NJvmType.Reference = NJvmType.Reference(JvmName.String)
+  val JString: Reference = Reference(JvmName.String)
   /**
     * The `ca.uwaterloo.flix.runtime.interpreter.Spawnable` type.
     */
-  val Spawnable: NJvmType.Reference = Reference(JvmName.Spawnable)
+  val Spawnable: Reference = Reference(JvmName.Spawnable)
 
   /**
     * The `scala.math.package$` type
     */
-  val ScalaMathPkg: NJvmType.Reference = Reference(JvmName.ScalaMathPkg)
+  val ScalaMathPkg: Reference = Reference(JvmName.ScalaMathPkg)
 
-  val ProxyObject: NJvmType.Reference = Reference(JvmName.ProxyObject)
+  val ProxyObject: Reference = Reference(JvmName.ProxyObject)
 
-  val Function: NJvmType.Reference = Reference(JvmName.Function)
+  val Function: Reference = Reference(JvmName.Function)
 
   /**
     * Represents the void type.

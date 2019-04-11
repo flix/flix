@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
 import ca.uwaterloo.flix.language.phase.njvm.classes.RecordExtend
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+
 
 /**
   * Generates bytecode for the extended record class.
@@ -31,14 +33,14 @@ object GenRecordExtend extends MnemonicsGenerator {
   def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
 
     map + (
-      new RecordExtend[NJvmType.PrimBool](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimChar](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimFloat](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimDouble](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimByte](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimShort](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimInt](map).getClassMapping,
-      new RecordExtend[NJvmType.PrimLong](map).getClassMapping,
-      new RecordExtend[NJvmType.Object.type](map).getClassMapping)
+      new RecordExtend[PrimBool](map).getClassMapping,
+      new RecordExtend[PrimChar](map).getClassMapping,
+      new RecordExtend[PrimFloat](map).getClassMapping,
+      new RecordExtend[PrimDouble](map).getClassMapping,
+      new RecordExtend[PrimByte](map).getClassMapping,
+      new RecordExtend[PrimShort](map).getClassMapping,
+      new RecordExtend[PrimInt](map).getClassMapping,
+      new RecordExtend[PrimLong](map).getClassMapping,
+      new RecordExtend[Object.type](map).getClassMapping)
   }
 }

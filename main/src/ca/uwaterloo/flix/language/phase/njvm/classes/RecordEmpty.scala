@@ -3,14 +3,15 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+
 
 class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
-  private val ct: NJvmType.Reference = getRecordEmptyClassType()
+  private val ct: Reference = getRecordEmptyClassType()
   private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType()))
 
   //Fields
@@ -45,7 +46,7 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("lookupField method shouldn't be called");
     * }
     */
-  val lookupFieldMethod: Method1[NJvmType.String.type, NJvmType.Reference] =
+  val lookupFieldMethod: Method1[JString.type, Reference] =
     cg.mkMethod1("lookupField",
       _ =>
         newUnsupportedOperationExceptionInstructions("lookupField shouldn't be called")
@@ -60,7 +61,7 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("restrictField method shouldn't be called");
     * }
     */
-  val restrictFieldMethod: Method1[NJvmType.String.type, NJvmType.Reference] =
+  val restrictFieldMethod: Method1[JString.type, Reference] =
     cg.mkMethod1("restrictField",
       _ =>
         newUnsupportedOperationExceptionInstructions("restrictField shouldn't be called")
@@ -75,7 +76,7 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[NJvmType.String.type] =
+  val toStringMethod: Method0[JString.type] =
     cg.mkMethod0("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
@@ -89,7 +90,7 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  val hashCodeMethod: Method0[NJvmType.PrimInt] =
+  val hashCodeMethod: Method0[PrimInt] =
     cg.mkMethod0("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
@@ -105,7 +106,7 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * }
     *
     */
-  val equalsMethod: Method1[NJvmType.Object.type, NJvmType.PrimBool] =
+  val equalsMethod: Method1[Object.type, PrimBool] =
     cg.mkMethod1("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")

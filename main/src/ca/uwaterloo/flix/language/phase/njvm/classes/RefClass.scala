@@ -3,16 +3,16 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 import scala.reflect.runtime.universe._
 
 class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
-  private val ct: NJvmType.Reference = getRefClassType(getJvmType[T])
+  private val ct: Reference = getRefClassType(getJvmType[T])
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
   //Fields each variable represents a field which can be acessed
@@ -75,7 +75,7 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val setValueMethod: Method1[T, NJvmType.Void] =
+  val setValueMethod: Method1[T, Void] =
     cg.mkMethod1("setValue",
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
@@ -93,7 +93,7 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[NJvmType.String.type] =
+  val toStringMethod: Method0[JString.type] =
     cg.mkMethod0("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
@@ -107,7 +107,7 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  val hashCodeMethod: Method0[NJvmType.PrimInt] =
+  val hashCodeMethod: Method0[PrimInt] =
     cg.mkMethod0("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
@@ -123,7 +123,7 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val equalsMethod: Method1[NJvmType.Object.type, NJvmType.PrimBool] =
+  val equalsMethod: Method1[Object.type, PrimBool] =
     cg.mkMethod1("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
