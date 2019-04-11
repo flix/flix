@@ -18,24 +18,27 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmType}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
 import ca.uwaterloo.flix.language.phase.njvm.classes.RecordExtend
 
 /**
   * Generates bytecode for the extended record class.
   */
-object GenRecordExtend {
+object GenRecordExtend extends MnemonicsGenerator{
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map(
-      new RecordExtend[JvmType.PrimBool].genClass,
-      new RecordExtend[JvmType.PrimChar].genClass,
-      new RecordExtend[JvmType.PrimFloat].genClass,
-      new RecordExtend[JvmType.PrimDouble].genClass,
-      new RecordExtend[JvmType.PrimByte].genClass,
-      new RecordExtend[JvmType.PrimShort].genClass,
-      new RecordExtend[JvmType.PrimInt].genClass,
-      new RecordExtend[JvmType.PrimLong].genClass,
-      new RecordExtend[JvmType.Object.type].genClass)
+  def gen(map : Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
+
+    map + (
+      new RecordExtend[NJvmType.PrimBool](map).genClass,
+      new RecordExtend[NJvmType.PrimChar](map).genClass,
+      new RecordExtend[NJvmType.PrimFloat](map).genClass,
+      new RecordExtend[NJvmType.PrimDouble](map).genClass,
+      new RecordExtend[NJvmType.PrimByte](map).genClass,
+      new RecordExtend[NJvmType.PrimShort](map).genClass,
+      new RecordExtend[NJvmType.PrimInt](map).genClass,
+      new RecordExtend[NJvmType.PrimLong](map).genClass,
+      new RecordExtend[NJvmType.Object.type](map).genClass)
   }
 }

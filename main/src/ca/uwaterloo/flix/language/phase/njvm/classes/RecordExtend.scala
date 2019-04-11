@@ -4,29 +4,44 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
-import ca.uwaterloo.flix.language.phase.njvm.JvmType
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
 
 import scala.reflect.runtime.universe._
 
 
-class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
+class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
-  private val ct: JvmType.Reference = getRecordEmptyClassType()
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), JvmType.Object, Array(getRecordInterfaceType()))
+  private val ct: NJvmType.Reference = getRecordExtendClassType(getJvmType[T])
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(Public, Final), NJvmType.Object, List(getRecordInterfaceType()))
 
   //Fields each variable represents a field which can be accessed
   //while generating code for this class
-  private val field0: Field[JvmType.String.type] = cg.mkField("field0")
+  private val field0: Field[NJvmType.String.type] = cg.mkField("field0")
   private val field1: Field[T] = cg.mkField("field1")
-  private val field2: Field[JvmType.Reference] = cg.mkField("field2")
+  private val field2: Field[NJvmType.Reference] = cg.mkField("field2")
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-  val defaultConstructor: Method3[JvmType.String.type, T, JvmType.Reference, JvmType.Void] = {
+
+  /**
+    * Generate the constructor for the RecordExtend class. This constructor receives three arguments, the field label,
+    * value and the rest of the record.
+    * Variable contains the capability to call the constructor
+    * For example for RecordExtend$Obj(String, Object, Object) creates the following constructor:
+    *
+    * public RecordExtend$Obj(String var1, Object var2, Object var3) {
+    *   this.field0 = var1;
+    *   this.field1 = var2;
+    *   this.field2 = var3;
+    * }
+    *
+    */
+  val defaultConstructor: Method3[NJvmType.String.type, T, NJvmType.Reference, NJvmType.Void] = {
     cg.mkMethod3("<init>",
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
@@ -42,11 +57,38 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
           sig.getArg0.LOAD |>>
           sig.getArg3.LOAD |>>
           field2.PUT_FIELD |>>
-          RETURN,
+          RETURN_VOID,
       List(Public))
   }
 
-  val lookupFieldMethod: Method1[JvmType.String.type, JvmType.Reference] =
+  /**
+    * Gennerate the getField method in the RecordExtend class. The method receives no arguments.
+    * It should simply return the record field (value) which is store in the variable field2.
+    *
+    * We store the capability to call getField in getFieldMethod
+    */
+  val getFieldMethod: Method0[T] = {
+    cg.mkMethod0("getField",
+      sig =>
+        sig.getArg0.LOAD[StackNil] |>>
+          field1.GET_FIELD |>>
+          RETURN
+    )
+  }
+
+
+  /**
+    * Gennerate the lookupField method in the RecordExtend class. The method receives one argument, the field label.
+    * The method should check if the current record label is equal to the provided label. If it is equal it should return this
+    * (The record object which has the given label). In case the provided label is not equal we recursively call lookupField on the rest of the record,
+    * and return the value provided by the recursive call.
+    *
+    * We store the capability to call lookupField in lookupFieldMethod
+    */
+  val lookupFieldMethod: Method1[NJvmType.String.type, NJvmType.Reference] = {
+    val recordInterface: RecordInterface =
+      map.getOrElse(getRecordInterfaceType().name, null).asInstanceOf[RecordInterface]
+
     cg.mkMethod1("lookupField",
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
@@ -57,50 +99,82 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
             sig.getArg0.LOAD[StackNil] |>>
               RETURN) |>>
           sig.getArg0.LOAD |>>
-          //TODO:Invoke IRecord lookup field
+          field2.GET_FIELD |>>
+          CHECK_CAST(getRecordInterfaceType()) |>>
+          sig.getArg1.LOAD |>>
+          recordInterface.lookupFieldMethod.INVOKE |>>
           RETURN
-
-
     )
-
-  val restrictFieldMethod: Method1[JvmType.String.type, JvmType.Reference] =
-    cg.mkMethod1("restrictField",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("restrictField shouldn't be called")
-    )
+  }
 
   /**
-    * Method which generates the `toString()` method which will always throws an exception, since `toString` should not be called.
-    * Despite in order to stay in line with our format we still return the capability to call the method
+    * Generate the restrictField method in the RecordExtend class. The method receives one argument, the field label.
+    * The method should check if the current record label is equal to the provided label. If it is equal it should return the rest of the record
+    * (field2).In case the provided label is not equal we recursively call restrictField on the rest of the record.
+    * Then we should set our 'rest' field(field2) to what was returned by the recursive call.
+    * Because we might need to update our 'rest' pointer since if the provided label is equal to the next field label,
+    * then this field should no longer be in the record. We then return 'this'.
+    *
+    * We store the capability to call restrictField in restrictFieldMethod
+    */
+  val restrictFieldMethod: Method1[NJvmType.String.type, NJvmType.Reference] = {
+    val recordInterface: RecordInterface =
+      map.getOrElse(getRecordInterfaceType().name, null).asInstanceOf[RecordInterface]
+
+    cg.mkMethod1("restrictField",
+      sig =>
+        sig.getArg0.LOAD[StackNil] |>>
+          field0.GET_FIELD |>>
+          sig.getArg1.LOAD |>>
+          Java.Lang.String.Equals.INVOKE |>>
+          IFEQ(
+            sig.getArg0.LOAD[StackNil] |>>
+              field2.GET_FIELD |>>
+              RETURN) |>>
+          sig.getArg0.LOAD |>>
+          DUP |>>
+          field2.GET_FIELD |>>
+          CHECK_CAST(getRecordInterfaceType()) |>>
+          sig.getArg1.LOAD |>>
+          recordInterface.restrictFieldMethod.INVOKE |>>
+          field2.PUT_FIELD |>>
+          sig.getArg0.LOAD |>>
+          RETURN
+    )
+  }
+
+  /**
+    * Generate the `toString()` method which will always throws an exception, since `toString` should not be called.
+    * Despite this in order to stay in line with our format we still store the capability to call the method
     * The `toString` method is always the following:
     *
     * public string toString() throws Exception {
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[JvmType.String.type] =
+  val toStringMethod: Method0[NJvmType.String.type] =
     cg.mkMethod0("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
     )
 
-  /** Method which generates the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
-    * Despite in order to stay in line with our format we still return the capability to call the method
+  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
+    * Despite this in order to stay in line with our format we still store the capability to call the method
     * The `hashCode` method is always the following:
     *
     * public int hashCode() throws Exception {
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  val hashCodeMethod: Method0[JvmType.PrimInt] =
+  val hashCodeMethod: Method0[NJvmType.PrimInt] =
     cg.mkMethod0("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
     )
 
   /**
-    * Method which generates the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
-    * Despite in order to stay in line with our format we still return the capability to call the method
+    * Generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
+    * Despite this in order to stay in line with our format we still store the capability to call the method
     * The `equals` method is always the following:
     *
     * public boolean equals(Object var1) throws Exception {
@@ -108,15 +182,19 @@ class RecordExtend[T: TypeTag](implicit root: Root, flix: Flix) {
     * }
     *
     */
-  val equalsMethod: Method1[JvmType.Object.type, JvmType.PrimBool] =
+  val equalsMethod: Method1[NJvmType.Object.type, NJvmType.PrimBool] =
     cg.mkMethod1("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )
 
   /**
-    * Method which generates the mapping from the JvmName to JvmClass (which contains the class bytecode)
+    * Variable which generates the JvmClass (contains the class bytecode)
     */
-  def genClass: (JvmName, JvmClass) = ct.name -> JvmClass(ct.name, cg.compile())
+  private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
 
+  def getJvmClass: JvmClass = jvmClass
+
+  def genClass: (JvmName, MnemonicsClass) =
+    ct.name -> this
 }

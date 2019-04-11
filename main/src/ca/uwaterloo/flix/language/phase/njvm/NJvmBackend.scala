@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.language.phase.jvm._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.Validation._
@@ -137,29 +138,18 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val tupleClasses = GenTupleClasses.gen(types)
 
-    //
-    // Generate record interface.
-    //
-    val recordInterfaces = GenRecordInterface.gen()
+    /** Generated classes using NJVM */
+     val map : Map[JvmName, MnemonicsClass] = Map()
+     val classes : List[MnemonicsGenerator] =
+       //Generate interfaces first
+       List(
+         GenRecordInterface,
+         GenRecordEmpty,
+         GenRecordExtend,
+         GenRefClasses
+         )
 
-    //
-    // Generate empty record class.
-    //
-    val recordEmptyClasses = GenRecordEmpty.gen()
-
-
-    //
-    // Generate extended record classes for each (different) RecordExtend type in the program
-    //
-    import ca.uwaterloo.flix.language.phase.jvm.GenRecordExtend
-    val recordExtendClasses = GenRecordExtend.gen(types)
-
-    //
-    // Generate references classes.
-    //
-
-    val refClasses = GenRefClasses.gen()
-
+    val njvmClasses = classes.foldLeft(map){ (acc, i) => i.gen(acc, Set())}.map( f => (f._1, f._2.getJvmClass))
 
     //
     // Collect all the classes and interfaces together.
@@ -176,10 +166,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       tagClasses,
       tupleInterfaces,
       tupleClasses,
-      recordInterfaces,
-      recordEmptyClasses,
-      recordExtendClasses,
-      refClasses
+      njvmClasses
     ).reduce(_ ++ _)
 
     //

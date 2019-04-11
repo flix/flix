@@ -18,26 +18,29 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmType}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
 import ca.uwaterloo.flix.language.phase.njvm.classes.RefClass
 
 /**
   * Generates bytecode for the ref classes.
   */
 
-object GenRefClasses {
+object GenRefClasses extends MnemonicsGenerator{
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map(
-      new RefClass[JvmType.PrimBool].genClass,
-      new RefClass[JvmType.PrimChar].genClass,
-      new RefClass[JvmType.PrimFloat].genClass,
-      new RefClass[JvmType.PrimDouble].genClass,
-      new RefClass[JvmType.PrimByte].genClass,
-      new RefClass[JvmType.PrimShort].genClass,
-      new RefClass[JvmType.PrimInt].genClass,
-      new RefClass[JvmType.PrimLong].genClass,
-      new RefClass[JvmType.Object.type].genClass)
+  def gen(map : Map[JvmName, MnemonicsClass] ,  ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
+    map + (
+      new RefClass[NJvmType.PrimBool].genClass,
+      new RefClass[NJvmType.PrimChar].genClass,
+      new RefClass[NJvmType.PrimFloat].genClass,
+      new RefClass[NJvmType.PrimDouble].genClass,
+      new RefClass[NJvmType.PrimByte].genClass,
+      new RefClass[NJvmType.PrimShort].genClass,
+      new RefClass[NJvmType.PrimInt].genClass,
+      new RefClass[NJvmType.PrimLong].genClass,
+      new RefClass[NJvmType.Object.type].genClass)
   }
+
 }
 

@@ -13,20 +13,20 @@ object Api {
     object Lang {
       object Object {
         object Constructor {
-          def INVOKE[S <: Stack]: F[S ** JvmType.Reference] => F[S] =
-            t => t.emitInvoke(JvmModifier.InvokeSpecial, JvmName.Object.toInternalName, "<init>", Nil, JvmType.Void())
+          def INVOKE[S <: Stack]: F[S ** NJvmType.Reference] => F[S] =
+            t => t.emitInvoke(JvmModifier.InvokeSpecial, JvmName.Object.toInternalName, "<init>", Nil, NJvmType.Void())
         }
       }
       object String {
         object Equals {
-          def INVOKE[S <: Stack]: F[S ** JvmType.String.type ** JvmType.String.type] => F[S ** JvmType.PrimBool] =
-            t => t.emitInvoke(JvmModifier.InvokeVirtual, JvmType.String.name.toInternalName, "equals", List(JvmType.Object), JvmType.PrimBool())
+          def INVOKE[S <: Stack]: F[S ** NJvmType.String.type ** NJvmType.String.type] => F[S ** NJvmType.PrimBool] =
+            t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool())
         }
       }
       object Exception {
         object Constructor {
-          def INVOKE[S <: Stack]: F[S ** JvmType.Reference ** JvmType.String.type] => F[S] =
-            t => t.emitInvoke(JvmModifier.InvokeSpecial, JvmName.UnsupportedOperationException.toInternalName, "<init>", List(JvmType.String), JvmType.Void())
+          def INVOKE[S <: Stack]: F[S ** NJvmType.Reference ** NJvmType.String.type] => F[S] =
+            t => t.emitInvoke(JvmModifier.InvokeSpecial, JvmName.UnsupportedOperationException.toInternalName, "<init>", List(NJvmType.String), NJvmType.Void())
         }
       }
     }
