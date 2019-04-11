@@ -3,9 +3,7 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.{Api, NJvmType}
-import ca.uwaterloo.flix.language.phase.njvm.Api.Java
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 

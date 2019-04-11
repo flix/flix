@@ -5,7 +5,6 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, Method1}
 
 class RecordInterface(implicit root: Root, flix: Flix) extends MnemonicsClass {

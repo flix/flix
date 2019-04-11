@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 
 /**

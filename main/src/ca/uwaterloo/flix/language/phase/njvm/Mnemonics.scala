@@ -7,7 +7,6 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmOps._
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Method0
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
@@ -540,9 +539,9 @@ object Mnemonics {
     *
     * @param ct                    classType of the class we want to generate
     * @param modifiers             list of modififers which we want to generate the class with (public, abstract, etc..)
-    * @param implementedInterfaces Array of interfaces which this new class shall implement
+    * @param interfaces Array of interfaces which this new class shall implement
     */
-  class ClassGenerator(ct: NJvmType.Reference, implementedInterfaces: List[NJvmType.Reference],
+  class ClassGenerator(ct: NJvmType.Reference, interfaces: List[NJvmType.Reference],
                        modifiers: List[JvmModifier] = List(Public, Final))
                       (implicit root: Root, flix: Flix) {
 
@@ -550,12 +549,12 @@ object Mnemonics {
     //The modifiers, superclass, implementedInterfaces
     private val cw: ClassWriter = {
       val superClassName = NJvmType.Object.name.toInternalName
-      val implementedInterfacesNames = implementedInterfaces.map(interface => interface.name.toInternalName).toArray
+      val interfacesNames = interfaces.map(interface => interface.name.toInternalName).toArray
 
       val cw = AsmOps.mkClassWriter()
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       cw.visit(AsmOps.JavaVersion, modifierVal, ct.name.toInternalName, null,
-        superClassName, implementedInterfacesNames)
+        superClassName, interfacesNames)
       cw
     }
 
@@ -871,10 +870,9 @@ object Mnemonics {
     *
     * @param it                    classType of the interaface we want to generate
     * @param modifiers             list of modififers which we want to generate the class with (public, abstract, etc..)
-    * @param superClass            the class we are generating superClass
-    * @param implementedInterfaces Array of interfaces which this new class shall implement
+    * @param interfaces Array of interfaces which this new class shall implement
     */
-  class InterfaceGenerator(it: NJvmType.Reference, implementedInterfaces: List[NJvmType.Reference], modifiers: List[JvmModifier] = List(Public, Abstract, Interface))
+  class InterfaceGenerator(it: NJvmType.Reference, interfaces: List[NJvmType.Reference], modifiers: List[JvmModifier] = List(Public, Abstract, Interface))
                           (implicit root: Root, flix: Flix) {
 
 
@@ -883,12 +881,12 @@ object Mnemonics {
     private val cw: ClassWriter = {
 
       val superClassName = NJvmType.Object.name.toInternalName
-      val implementedInterfacesNames = implementedInterfaces.map(interface => interface.name.toInternalName).toArray
+      val interfacesNames = interfaces.map(interface => interface.name.toInternalName).toArray
 
       val cw = AsmOps.mkClassWriter()
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       cw.visit(AsmOps.JavaVersion, modifierVal, it.name.toInternalName, null,
-        superClassName, implementedInterfacesNames)
+        superClassName, interfacesNames)
       cw
     }
 
