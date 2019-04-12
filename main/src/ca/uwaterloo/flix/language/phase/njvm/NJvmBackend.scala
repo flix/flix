@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase.jvm
+package ca.uwaterloo.flix.language.phase.njvm
 
 import java.lang.reflect.InvocationTargetException
+import java.nio.file.{Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.language.phase.njvm.GenRecordInterface
-import ca.uwaterloo.flix.runtime.interpreter.Interpreter
+import ca.uwaterloo.flix.language.phase.jvm._
+import ca.uwaterloo.flix.language.phase.njvm.Api.Java
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
 
-object JvmBackend extends Phase[Root, CompilationResult] {
+object NJvmBackend extends Phase[Root, CompilationResult] {
+
+  /**
+    * The directory where to place the generated class files.
+    */
+  val TargetDirectory: Path = Paths.get("./target/flix/")
 
   /**
     * Emits JVM bytecode for the given AST `root`.
@@ -131,26 +139,19 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     val tupleClasses = GenTupleClasses.gen(types)
 
-    //
-    // Generate record interface.
-    //
-    val recordInterfaces = GenRecordInterfaces.gen()
+    /** Generated classes using NJVM */
+    val map: Map[JvmName, MnemonicsClass] = Map()
+    val classes: List[MnemonicsGenerator] =
+    //Generate interfaces first
+      List(
+        GenRecordInterface,
+        GenRecordEmpty,
+        GenRecordExtend,
+        GenRefClasses
+      )
 
-    //
-    // Generate empty record class.
-    //
-    val recordEmptyClasses = GenRecordEmpty.gen()
-
-    //
-    // Generate extended record classes for each (different) RecordExtend type in the program
-    //
-    val recordExtendClasses = GenRecordExtend.gen(types)
-
-    //
-    // Generate references classes.
-    //
-
-    val refClasses = GenRefClasses.gen()
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, Set()) }
+      .map(f => (f._1, f._2.getJvmClass))
 
     //
     // Collect all the classes and interfaces together.
@@ -167,10 +168,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       tagClasses,
       tupleInterfaces,
       tupleClasses,
-      recordInterfaces,
-      recordEmptyClasses,
-      recordExtendClasses,
-      refClasses
+      njvmClasses
     ).reduce(_ ++ _)
 
     //
@@ -180,7 +178,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
         for ((jvmName, jvmClass) <- allClasses) {
-          JvmOps.writeClass(flix.options.targetDirectory, jvmClass)
+          JvmOps.writeClass(TargetDirectory, jvmClass)
         }
       }
     }

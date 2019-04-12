@@ -38,7 +38,7 @@ object GenRecordInterfaces {
 
   /**
     * This method will generate code for a record interface.
-    * There is a getRecordWithField method which returns the Record (Object) with the given label
+    * There is a lookupField method which returns the Record (Object) with the given label
     * There is also a restrictField which given a label removes said label from the record
     * After creating a record object using a record class,
     * the class type should never be used to reference to that object and this interface should be used for all interactions
@@ -58,7 +58,7 @@ object GenRecordInterfaces {
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
     //Emitting a getRecordWithField method
-    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getRecordWithField",
+    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "lookupField",
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
     getRecordWithField.visitEnd()
 

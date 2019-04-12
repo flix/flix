@@ -77,9 +77,9 @@ object GenRecordExtend {
     * }
     *
     *
-    * Then, we generate the getRecordWithField method. The method receives one argument, the field label.
+    * Then, we generate the lookupField method. The method receives one argument, the field label.
     * The method should check if the current record label is equal to the provided label. If it is equal it should return this
-    * (The record object which has the given label). In case the provided label is not equal we recursively call getRecordWithField on the rest of the record,
+    * (The record object which has the given label). In case the provided label is not equal we recursively call lookupField on the rest of the record,
     * and return the value provided by the recursive call.
     *
     *
@@ -144,8 +144,8 @@ object GenRecordExtend {
     // Emit the code for the constructor
     compileRecordExtendConstructor(visitor, classType, targs)
 
-    // Emit code for the 'getField' method
-    compileRecordExtendGetRecordWithField(visitor, classType)
+    // Emit code for the 'lookupField' method
+    compileRecordExtendLookupField(visitor, classType)
 
     // Emit code for the 'restrictField' method
     compileRecordExtendRestrictField(visitor, classType)
@@ -219,16 +219,16 @@ object GenRecordExtend {
 
 
   /**
-    * This method generates code for the getRecordWithField method in the RecordExtend class. The method receives one argument, the field label.
+    * This method generates code for the lookupField method in the RecordExtend class. The method receives one argument, the field label.
     * The method should check if the current record label is equal to the provided label. If it is equal it should return this
-    * (The record object which has the given label). In case the provided label is not equal we recursively call getRecordWithField on the rest of the record,
+    * (The record object which has the given label). In case the provided label is not equal we recursively call lookupField on the rest of the record,
     * and return the value provided by the recursive call.
     *
     */
-  def compileRecordExtendGetRecordWithField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+  def compileRecordExtendLookupField(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
 
     val interfaceType = JvmOps.getRecordInterfaceType()
-    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC, "getRecordWithField",
+    val getRecordWithField = visitor.visitMethod(ACC_PUBLIC, "lookupField",
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), null, null)
 
     getRecordWithField.visitCode()
@@ -266,7 +266,7 @@ object GenRecordExtend {
     getRecordWithField.visitLabel(falseCase)
 
     //false case
-    //recursively call this.field2.getField(var1)
+    //recursively call this.field2.lookupField(var1)
 
     //Load 'this' onto the stack
     getRecordWithField.visitVarInsn(ALOAD, 0)
@@ -280,7 +280,7 @@ object GenRecordExtend {
 
     //call this.field2.getField(var1)
     getRecordWithField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
-      "getRecordWithField", AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+      "lookupField", AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
     //Emit ret label
     getRecordWithField.visitLabel(ret)
