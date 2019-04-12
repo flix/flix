@@ -29,6 +29,8 @@ import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 object GenRefClasses extends MnemonicsGenerator {
 
+  // TODO: Miguel: Is it really worth it to have these small 2line classes? Or at least we should the move them into Mnemonics.
+
   def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
     map + (
       new RefClass[PrimBool].getClassMapping,

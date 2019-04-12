@@ -42,6 +42,8 @@ sealed trait NJvmType {
 
 object NJvmType {
 
+  // TODO: Miguel: Ultimately all of these will be removed and replaced by a generic-typed Reference.
+
   /**
     * The Flix Context class.
     */

@@ -32,6 +32,8 @@ import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 object Mnemonics {
 
+  // TODO: Miguel: Add some comments for these very critical components :)
+
   trait Stack
 
   trait StackNil extends Stack
@@ -196,7 +198,6 @@ object Mnemonics {
       */
     def emitInvoke[S](invokeCode: JvmModifier, className: String, methodName: String,
                       args: List[NJvmType], returnType: NJvmType): F[S] = {
-
       //Last argument is true if invoking interface
       val flag = if (invokeCode == JvmModifier.InvokeInterface) true else false
       mv.visitMethodInsn(invokeCode.toInternal, className, methodName, getMethodDescriptor(args, returnType), flag)
@@ -433,6 +434,8 @@ object Mnemonics {
   //TODO: Maybe need to have different types for signatures of static method as the 1st local (0 index) of static
   //TODO: functions isn't a local of type JvmType.Reference
   class FunSig0[R: TypeTag]() {
+    // TODO: I think the implicit root and flix arguments could be arguments of the class instead of the method?
+
     def getArg0(implicit root: Root, flix: Flix): Local[Reference] = new Local(0)
   }
 
@@ -553,8 +556,8 @@ object Mnemonics {
   /**
     * This class allows to generate classes. It includes support to generate(CompileField) and methods
     *
-    * @param ct                    classType of the class we want to generate
-    * @param modifiers             list of modififers which we want to generate the class with (public, abstract, etc..)
+    * @param ct         classType of the class we want to generate
+    * @param modifiers  list of modififers which we want to generate the class with (public, abstract, etc..)
     * @param interfaces Array of interfaces which this new class shall implement
     */
   class ClassGenerator(ct: Reference, interfaces: List[Reference],
@@ -574,6 +577,7 @@ object Mnemonics {
       cw
     }
 
+    // TODO: Miguel: Should this not be in Instructions?
     def SUPER: F[StackNil ** Reference] => F[StackNil] =
       Java.Lang.Object.constructor.INVOKE
 
@@ -884,8 +888,8 @@ object Mnemonics {
   /**
     * This class allows to generate interfaces. It includes support to interface methods
     *
-    * @param it                    classType of the interaface we want to generate
-    * @param modifiers             list of modififers which we want to generate the class with (public, abstract, etc..)
+    * @param it         classType of the interaface we want to generate
+    * @param modifiers  list of modififers which we want to generate the class with (public, abstract, etc..)
     * @param interfaces Array of interfaces which this new class shall implement
     */
   class InterfaceGenerator(it: Reference, interfaces: List[Reference], modifiers: List[JvmModifier] = List(Public, Abstract, Interface))
@@ -1088,6 +1092,27 @@ object Mnemonics {
       cw.visitEnd()
       cw.toByteArray
     }
+  }
+
+  /**
+    * A stack transformer that throws an unsupported operation exception for toString.
+    */
+  def toStringNotImplemented(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
+    newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
+  }
+
+  /**
+    * A stack transformer that throws an unsupported operation exception for equals.
+    */
+  def equalsNotImplemented(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
+    newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
+  }
+
+  /**
+    * A stack transformer that throws an unsupported operation exception for hashCode.
+    */
+  def hashCodeNotImplemented(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
+    newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
   }
 
   //TODO: Might need to similarly to InterfaceGenerator and ClassGenerator generate a StaticGenerator

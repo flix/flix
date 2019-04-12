@@ -49,7 +49,6 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     *
     */
   val defaultConstructor: VoidMethod1[T] = {
-
     cg.mkConstructor1(
       sig =>
         sig.getArg0.LOAD[StackNil] |>>
@@ -109,24 +108,7 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     */
   val toStringMethod: Method0[JString.type] =
-    cg.mkMethod0("toString",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
-    )
-
-  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
-    * Despite this in order to stay in line with our format we still store the capability to call the method
-    * The `hashCode` method is always the following:
-    *
-    * public int hashCode() throws Exception {
-    * throw new Exception("hashCode method shouldn't be called");
-    * }
-    */
-  val hashCodeMethod: Method0[PrimInt] =
-    cg.mkMethod0("hashCode",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
-    )
+    cg.mkMethod0("toString", _ => toStringNotImplemented)
 
   /**
     * Generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
@@ -139,16 +121,25 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     *
     */
   val equalsMethod: Method1[Object.type, PrimBool] =
-    cg.mkMethod1("equal",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
-    )
+    cg.mkMethod1("equal", _ => equalsNotImplemented)
+
+  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
+    * Despite this in order to stay in line with our format we still store the capability to call the method
+    * The `hashCode` method is always the following:
+    *
+    * public int hashCode() throws Exception {
+    * throw new Exception("hashCode method shouldn't be called");
+    * }
+    */
+  val hashCodeMethod: Method0[PrimInt] =
+    cg.mkMethod0("hashCode", _ => hashCodeNotImplemented)
 
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
     */
   private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
 
+  // TODO: Miguel: Why do we need a getter here?
   def getJvmClass: JvmClass = jvmClass
 
   def getClassMapping: (JvmName, MnemonicsClass) =
