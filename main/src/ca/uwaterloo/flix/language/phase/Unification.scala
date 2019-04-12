@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -59,31 +59,14 @@ object Unification {
           case Some(y) if x.kind == tpe.kind => y
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
-      case Type.Unit => Type.Unit
-      case Type.Bool => Type.Bool
-      case Type.Char => Type.Char
-      case Type.Float32 => Type.Float32
-      case Type.Float64 => Type.Float64
-      case Type.Int8 => Type.Int8
-      case Type.Int16 => Type.Int16
-      case Type.Int32 => Type.Int32
-      case Type.Int64 => Type.Int64
-      case Type.BigInt => Type.BigInt
-      case Type.Str => Type.Str
-      case Type.Channel => Type.Channel
-      case Type.Array => Type.Array
-      case Type.Vector => Type.Vector
-      case Type.Native(clazz) => Type.Native(clazz)
-      case Type.Ref => Type.Ref
+      case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(l) => Type.Arrow(l)
-      case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
       case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, apply(tpe), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
-      case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map apply, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map apply, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
@@ -210,29 +193,22 @@ object Unification {
       */
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
+
       case (_, x: Type.Var) => unifyVar(x, tpe1)
-      case (Type.Unit, Type.Unit) => Result.Ok(Substitution.empty)
-      case (Type.Bool, Type.Bool) => Result.Ok(Substitution.empty)
-      case (Type.Char, Type.Char) => Result.Ok(Substitution.empty)
-      case (Type.Float32, Type.Float32) => Result.Ok(Substitution.empty)
-      case (Type.Float64, Type.Float64) => Result.Ok(Substitution.empty)
-      case (Type.Int8, Type.Int8) => Result.Ok(Substitution.empty)
-      case (Type.Int16, Type.Int16) => Result.Ok(Substitution.empty)
-      case (Type.Int32, Type.Int32) => Result.Ok(Substitution.empty)
-      case (Type.Int64, Type.Int64) => Result.Ok(Substitution.empty)
-      case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
-      case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
-      case (Type.Channel, Type.Channel) => Result.Ok(Substitution.empty)
-      case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
-      case (Type.Vector, Type.Vector) => Result.Ok(Substitution.empty)
-      case (Type.Native(clazz1), Type.Native(clazz2)) =>
+
+      case (Type.Cst(TypeConstructor.Native(clazz1)), Type.Cst(TypeConstructor.Native(clazz2))) =>
         if (clazz1 == clazz2)
           Result.Ok(Substitution.empty)
         else
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))
-      case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
+
+      case (Type.Cst(c1), Type.Cst(c2)) =>
+        if (c1 == c2)
+          Result.Ok(Substitution.empty)
+        else
+          Result.Err(UnificationError.Mismatch(tpe1, tpe2))
+
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-      case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
@@ -264,7 +240,6 @@ object Unification {
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
-      case (Type.Enum(sym1, kind1), Type.Enum(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
 
       case (Type.Relation(sym1, attr1, kind1), Type.Relation(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
 

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -68,7 +68,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
       val isRootNs = defn.sym.namespace.isEmpty
-      val isSingleUnitArg = defn.fparams.nonEmpty && defn.fparams.head.tpe == Type.Unit
+      val isSingleUnitArg = defn.fparams.nonEmpty && defn.fparams.head.tpe == Type.Cst(TypeConstructor.Unit)
       val isNonSynthetic = !defn.mod.isSynthetic
       val isBenchmark = defn.ann.isBenchmark
       val isTest = defn.ann.isTest

@@ -21,6 +21,7 @@ import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
 
 import java.util.Arrays;
+import java.util.StringJoiner;
 
 /**
  * Represents an atom predicate of the form: sym(terms).
@@ -144,6 +145,10 @@ public final class AtomPredicate implements Predicate {
      */
     @Override
     public String toString() {
-        return sym.toString() + "(" + Arrays.toString(terms) + ")";
+        StringJoiner sj = new StringJoiner(",", sym.toString() + "(", ")");
+        for (var term : terms) {
+            sj.add(term.toString());
+        }
+        return sj.toString();
     }
 }

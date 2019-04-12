@@ -21,7 +21,7 @@ import java.nio.file.{Files, LinkOption, Path}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
@@ -333,7 +333,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a Record type
     */
-  def getRecordExtendClassType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getRecordExtendClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
 
     case MonoType.RecordExtend(_, value, _) =>
       // Compute the stringified erased type of value.
@@ -358,7 +358,7 @@ object JvmOps {
     * {x : Char, y : Int}  =>    RecordExtend$Obj
     *
     */
-  def getRecordType(tpe : MonoType)(implicit root: Root, flix: Flix): JvmType.Reference =  {
+  def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // Compute the stringified erased type of 'tpe'.
     val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
@@ -726,26 +726,26 @@ object JvmOps {
   @deprecated("will be removed", "0.5")
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
     case MonoType.Var(id) => Type.Var(id, Kind.Star)
-    case MonoType.Unit => Type.Unit
-    case MonoType.Bool => Type.Bool
-    case MonoType.Char => Type.Char
-    case MonoType.Float32 => Type.Float32
-    case MonoType.Float64 => Type.Float64
-    case MonoType.Int8 => Type.Int8
-    case MonoType.Int16 => Type.Int16
-    case MonoType.Int32 => Type.Int32
-    case MonoType.Int64 => Type.Int64
-    case MonoType.BigInt => Type.BigInt
-    case MonoType.Str => Type.Str
-    case MonoType.Channel(elm) => Type.Apply(Type.Channel, hackMonoType2Type(elm))
-    case MonoType.Array(elm) => Type.Apply(Type.Array, hackMonoType2Type(elm))
-    case MonoType.Native(clazz) => Type.Native(clazz)
-    case MonoType.Ref(elm) => Type.Apply(Type.Ref, hackMonoType2Type(elm))
+    case MonoType.Unit => Type.Cst(TypeConstructor.Unit)
+    case MonoType.Bool => Type.Cst(TypeConstructor.Bool)
+    case MonoType.Char => Type.Cst(TypeConstructor.Char)
+    case MonoType.Float32 => Type.Cst(TypeConstructor.Float32)
+    case MonoType.Float64 => Type.Cst(TypeConstructor.Float64)
+    case MonoType.Int8 => Type.Cst(TypeConstructor.Int8)
+    case MonoType.Int16 => Type.Cst(TypeConstructor.Int16)
+    case MonoType.Int32 => Type.Cst(TypeConstructor.Int32)
+    case MonoType.Int64 => Type.Cst(TypeConstructor.Int64)
+    case MonoType.BigInt => Type.Cst(TypeConstructor.BigInt)
+    case MonoType.Str => Type.Cst(TypeConstructor.Str)
+    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
+    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
+    case MonoType.Native(clazz) => Type.Cst(TypeConstructor.Native(clazz))
+    case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
-    case MonoType.Enum(sym, args) => Type.mkApply(Type.Enum(sym, Kind.Star), args map hackMonoType2Type)
+    case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
     case MonoType.Relation(sym, attr) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
     case MonoType.Lattice(sym, attr) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
-    case MonoType.Tuple(length) => Type.Tuple(0) // hack
+    case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty

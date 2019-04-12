@@ -2,6 +2,9 @@
 
 HEAD:
 
+Version 0.6:
+- Added preliminary support for a simple build system.
+
 Version 0.5:
 - Added support for unbuffered channels.
 - Added support for extensible records.
