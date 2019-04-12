@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
