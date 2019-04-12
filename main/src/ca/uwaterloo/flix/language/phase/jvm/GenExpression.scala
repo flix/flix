@@ -544,14 +544,14 @@ object GenExpression {
       val interfaceType = JvmOps.getRecordInterfaceType()
 
       //Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
-      //getRecordWithField
+      //lookupField
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       //Push the desired label of the field we want get of the record onto the stack
       visitor.visitLdcInsn(label)
 
-      //Invoke the getRecordWithField method on the record. (To get the proper record object)
-      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "getRecordWithField",
+      //Invoke the lookupField method on the record. (To get the proper record object)
+      visitor.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
         AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
       //Cast to proper record extend class
