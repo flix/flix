@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, MatchRule, Pattern}
 import ca.uwaterloo.flix.language.errors.RedundancyError
+import ca.uwaterloo.flix.language.errors.RedundancyError.{Dead, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -45,7 +46,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO: RelSym
     // TODO: LatSym
 
-    def +(that: Used): Used = ???
+    // TODO: Optimize for empty case.
+    def ++(that: Used): Used = Used(this.defSyms ++ that.defSyms, this.varSyms ++ that.varSyms)
+
+    def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
   }
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
@@ -92,7 +96,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Str(_, _) => Used.empty
 
-    case Expression.Wild(tpe, eff, loc) => Used.empty
+    case Expression.Wild(_, _, _) => Used.empty
 
     case Expression.Var(sym, tpe, eff, loc) => Used.of(sym)
 
@@ -104,30 +108,41 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Lambda(fparam, exp, tpe, eff, loc) => ??? // TODO
 
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-      val u1 = usedExp(exp1)
-      val u2 = usedExp(exp2)
-      mapN(u1, u2)(_ + _)
+    case Expression.Apply(exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
 
-    case Expression.Unary(op, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Unary(op, exp, _, _, _) => ??? // TODO
 
-    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
-      val u1 = usedExp(exp1)
-      val u2 = usedExp(exp2)
-      mapN(u1, u2)(_ + _)
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      ???
+    case Expression.Let(sym, exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      flatMapN(us1, us2) {
+        case (u1, u2) if unused(sym, u2) => UnusedVarSym(sym, sym.loc).toFailure
+        case (u1, u2) => ((u1 ++ u2) - sym).toSuccess
+      }
 
     case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      val us3 = usedExp(exp3)
+      mapN(us1, us2, us3)(_ ++ _ ++ _)
 
-      ???
+    case Expression.Match(exp, rules, tpe, eff, loc) => Used.empty // TODO
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
     case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      Used.empty // TODO
+
     case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
     case Expression.RecordEmpty(tpe, eff, loc) => ??? // TODO
     case Expression.RecordSelect(exp, label, tpe, eff, loc) => ??? // TODO
@@ -333,4 +348,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         RedundancyError.ImpossibleMatch(p1.loc, p2.loc).toFailure
     case _ => ().toSuccess
   }
+
+  private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean = used.varSyms.contains(sym)
 }
