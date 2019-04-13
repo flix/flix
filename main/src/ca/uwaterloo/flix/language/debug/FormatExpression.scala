@@ -3,22 +3,25 @@ package ca.uwaterloo.flix.language.debug
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
-  * Implementations of `toString` for expressions of all the different ASTs.
+  * Formatting of expressions.
   */
 object FormatExpression {
 
+  /**
+    * TypedAst.
+    */
   def format(e0: TypedAst.Expression): String = e0 match {
     case TypedAst.Expression.Unit(_) => "()"
     case TypedAst.Expression.True(_) => "true"
     case TypedAst.Expression.False(_) => "false"
     case TypedAst.Expression.Char(lit, _) => "'" + lit + "'"
-    case TypedAst.Expression.Float32(lit, _) => s"{$lit}f32"
-    case TypedAst.Expression.Float64(lit, _) => s"{$lit}f64"
-    case TypedAst.Expression.Int8(lit, _) => s"{$lit}i8"
-    case TypedAst.Expression.Int16(lit, _) => s"{$lit}i16"
-    case TypedAst.Expression.Int32(lit, _) => s"{$lit}i32"
-    case TypedAst.Expression.Int64(lit, _) => s"{$lit}i64"
-    case TypedAst.Expression.BigInt(lit, _) => s"{$lit}i64"
+    case TypedAst.Expression.Float32(lit, _) => s"${lit}f32"
+    case TypedAst.Expression.Float64(lit, _) => s"${lit}f64"
+    case TypedAst.Expression.Int8(lit, _) => s"${lit}i8"
+    case TypedAst.Expression.Int16(lit, _) => s"${lit}i16"
+    case TypedAst.Expression.Int32(lit, _) => s"${lit}i32"
+    case TypedAst.Expression.Int64(lit, _) => s"${lit}i64"
+    case TypedAst.Expression.BigInt(lit, _) => s"${lit}i64"
     case TypedAst.Expression.Str(lit, _) => "\"" + lit + "\""
     case TypedAst.Expression.Wild(_, _, _) => "_"
     case TypedAst.Expression.Var(sym, _, _, _) => s"Sym($sym)"

@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.debug.FormatSourceLocation
 import flix.runtime.ReifiedSourceLocation
 
 
@@ -58,5 +59,10 @@ case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine
     * Returns a reified source location.
     */
   def reified: ReifiedSourceLocation = new ReifiedSourceLocation(source.format, beginLine, beginCol, endLine, endCol)
+
+  /**
+    * Returns a human-readable string representation for debugging.
+    */
+  override def toString: String = FormatSourceLocation.format(this)
 
 }

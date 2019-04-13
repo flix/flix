@@ -25,6 +25,19 @@ import ca.uwaterloo.flix.util.Validation._
 
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  object Used {
+    /**
+      * Represents the empty set of used symbols.
+      */
+    val empty: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
+
+    /**
+      * Returns a `used` object where the given variable `sym` is marked as used.
+      */
+    def of(sym: Symbol.VarSym): Validation[Used, RedundancyError] = Used(Set.empty, Set(sym)).toSuccess
+
+  }
+
   case class Used(defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym]) {
     // TODO: EffSym
     // TODO: EnumSym
@@ -46,94 +59,116 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[TypedAst.Def, RedundancyError] = {
     for {
-      _ <- visitExp(defn.exp, Map.empty)
+      _ <- usedExp(defn.exp)
       _ <- constantFoldExp(defn.exp, Map.empty)
     } yield defn
   }
 
-  private def visitExp(e0: TypedAst.Expression, c: Map[Symbol.VarSym, AbsVal]): Validation[TypedAst.Expression, RedundancyError] = e0 match {
-    case Expression.Unit(loc) => e0.toSuccess
-    case Expression.True(loc) => e0.toSuccess
-    case Expression.False(loc) => e0.toSuccess
-    case Expression.Char(lit, loc) => e0.toSuccess
-    case Expression.Float32(lit, loc) => e0.toSuccess
-    case Expression.Float64(lit, loc) => e0.toSuccess
-    case Expression.Int8(lit, loc) => e0.toSuccess
-    case Expression.Int16(lit, loc) => e0.toSuccess
-    case Expression.Int32(lit, loc) => e0.toSuccess
-    case Expression.Int64(lit, loc) => e0.toSuccess
-    case Expression.BigInt(lit, loc) => e0.toSuccess
-    case Expression.Str(lit, loc) => e0.toSuccess
-    case Expression.Wild(tpe, eff, loc) => e0.toSuccess
-    case Expression.Var(sym, tpe, eff, loc) => e0.toSuccess
-    case Expression.Def(sym, tpe, eff, loc) => e0.toSuccess
-    case Expression.Eff(sym, tpe, eff, loc) => e0.toSuccess
-    case Expression.Hole(sym, tpe, eff, loc) => e0.toSuccess
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-    case Expression.Unary(op, exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => e0.toSuccess
+  /**
+    * Returns symbols used in the given expression `e0`.
+    */
+  private def usedExp(e0: TypedAst.Expression): Validation[Used, RedundancyError] = e0 match {
+    case Expression.Unit(_) => Used.empty
+
+    case Expression.True(_) => Used.empty
+
+    case Expression.False(_) => Used.empty
+
+    case Expression.Char(_, _) => Used.empty
+
+    case Expression.Float32(_, _) => Used.empty
+
+    case Expression.Float64(_, _) => Used.empty
+
+    case Expression.Int8(_, _) => Used.empty
+
+    case Expression.Int16(_, _) => Used.empty
+
+    case Expression.Int32(_, _) => Used.empty
+
+    case Expression.Int64(_, _) => Used.empty
+
+    case Expression.BigInt(_, _) => Used.empty
+
+    case Expression.Str(_, _) => Used.empty
+
+    case Expression.Wild(tpe, eff, loc) => Used.empty
+
+    case Expression.Var(sym, tpe, eff, loc) => Used.of(sym)
+
+    case Expression.Def(sym, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Eff(sym, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+      val u1 = usedExp(exp1)
+      val u2 = usedExp(exp2)
+      mapN(u1, u2)(_ + _)
+
+    case Expression.Unary(op, exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+      val u1 = usedExp(exp1)
+      val u2 = usedExp(exp2)
+      mapN(u1, u2)(_ + _)
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      for {
-        _ <- visitExp(exp1, c)
-        _ <- visitExp(exp2, c)
-      } yield e0
+      ???
 
-    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => e0.toSuccess
+    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
 
-      val current = eval(exp1)
-      for {
-        _ <- compatible(c, current, exp1.loc)
-        _ <- visitExp(exp2, current)
-      } yield e0
+      ???
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => e0.toSuccess
-    case Expression.Switch(rules, tpe, eff, loc) => e0.toSuccess
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Tuple(elms, tpe, eff, loc) => e0.toSuccess
-    case Expression.RecordEmpty(tpe, eff, loc) => e0.toSuccess
-    case Expression.RecordSelect(exp, label, tpe, eff, loc) => e0.toSuccess
-    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => e0.toSuccess
-    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => e0.toSuccess
-    case Expression.ArrayLit(elms, tpe, eff, loc) => e0.toSuccess
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => e0.toSuccess
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => e0.toSuccess
-    case Expression.ArrayLength(base, tpe, eff, loc) => e0.toSuccess
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => e0.toSuccess
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => e0.toSuccess
-    case Expression.VectorLit(elms, tpe, eff, loc) => e0.toSuccess
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => e0.toSuccess
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => e0.toSuccess
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => e0.toSuccess
-    case Expression.VectorLength(base, tpe, eff, loc) => e0.toSuccess
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => e0.toSuccess
-    case Expression.Ref(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Deref(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => e0.toSuccess
-    case Expression.Existential(fparam, exp, eff, loc) => e0.toSuccess
-    case Expression.Universal(fparam, exp, eff, loc) => e0.toSuccess
-    case Expression.Ascribe(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Cast(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => e0.toSuccess
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => e0.toSuccess
-    case Expression.NativeField(field, tpe, eff, loc) => e0.toSuccess
-    case Expression.NativeMethod(method, args, tpe, eff, loc) => e0.toSuccess
-    case Expression.NewChannel(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.GetChannel(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => e0.toSuccess
-    case Expression.Spawn(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.Sleep(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.FixpointConstraint(c, tpe, eff, loc) => e0.toSuccess
-    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-    case Expression.FixpointSolve(exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => e0.toSuccess
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-    case Expression.UserError(tpe, eff, loc) => e0.toSuccess
+    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordEmpty(tpe, eff, loc) => ??? // TODO
+    case Expression.RecordSelect(exp, label, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLength(base, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? // TODO
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorLit(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorLength(base, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
+    case Expression.Existential(fparam, exp, eff, loc) => ??? // TODO
+    case Expression.Universal(fparam, exp, eff, loc) => ??? // TODO
+    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+    case Expression.NativeField(field, tpe, eff, loc) => ??? // TODO
+    case Expression.NativeMethod(method, args, tpe, eff, loc) => ??? // TODO
+    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Sleep(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointConstraint(c, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.UserError(tpe, eff, loc) => ??? // TODO
   }
 
   sealed trait Value
@@ -234,18 +269,18 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
 
     //
-    //    case Expression.Unit(loc) => e0.toSuccess
-    //    case Expression.True(loc) => e0.toSuccess
-    //    case Expression.False(loc) => e0.toSuccess
-    //    case Expression.Char(lit, loc) => e0.toSuccess
-    //    case Expression.Float32(lit, loc) => e0.toSuccess
-    //    case Expression.Float64(lit, loc) => e0.toSuccess
-    //    case Expression.Int8(lit, loc) => e0.toSuccess
-    //    case Expression.Int16(lit, loc) => e0.toSuccess
-    //    case Expression.Int32(lit, loc) => e0.toSuccess
-    //    case Expression.Int64(lit, loc) => e0.toSuccess
-    //    case Expression.BigInt(lit, loc) => e0.toSuccess
-    //    case Expression.Str(lit, loc) => e0.toSuccess
+    //    case Expression.Unit(loc) => ??? // TODO
+    //    case Expression.True(loc) => ??? // TODO
+    //    case Expression.False(loc) => ??? // TODO
+    //    case Expression.Char(lit, loc) => ??? // TODO
+    //    case Expression.Float32(lit, loc) => ??? // TODO
+    //    case Expression.Float64(lit, loc) => ??? // TODO
+    //    case Expression.Int8(lit, loc) => ??? // TODO
+    //    case Expression.Int16(lit, loc) => ??? // TODO
+    //    case Expression.Int32(lit, loc) => ??? // TODO
+    //    case Expression.Int64(lit, loc) => ??? // TODO
+    //    case Expression.BigInt(lit, loc) => ??? // TODO
+    //    case Expression.Str(lit, loc) => ??? // TODO
 
 
     case class Var(sym: Symbol.VarSym) extends StableExp
@@ -254,38 +289,38 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case class Apply(exp1: StableExp, exp2: StableExp) extends StableExp
 
-//    case Expression.Unary(op, exp, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => e0.toSuccess
-//
-//    case Expression.Match(exp, rules, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Switch(rules, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Tuple(elms, tpe, eff, loc) => e0.toSuccess
-//    case Expression.RecordEmpty(tpe, eff, loc) => e0.toSuccess
-//    case Expression.RecordSelect(exp, label, tpe, eff, loc) => e0.toSuccess
-//    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => e0.toSuccess
-//    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => e0.toSuccess
-//    case Expression.ArrayLit(elms, tpe, eff, loc) => e0.toSuccess
-//    case Expression.ArrayNew(elm, len, tpe, eff, loc) => e0.toSuccess
-//    case Expression.ArrayLoad(base, index, tpe, eff, loc) => e0.toSuccess
-//    case Expression.ArrayLength(base, tpe, eff, loc) => e0.toSuccess
-//    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => e0.toSuccess
-//    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => e0.toSuccess
-//    case Expression.VectorLit(elms, tpe, eff, loc) => e0.toSuccess
-//    case Expression.VectorNew(elm, len, tpe, eff, loc) => e0.toSuccess
-//    case Expression.VectorLoad(base, index, tpe, eff, loc) => e0.toSuccess
-//    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => e0.toSuccess
-//    case Expression.VectorLength(base, tpe, eff, loc) => e0.toSuccess
-//    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Ref(exp, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Deref(exp, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Assign(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-//    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => e0.toSuccess
-//    case Expression.NewChannel(exp, tpe, eff, loc) => e0.toSuccess
-//    case Expression.GetChannel(exp, tpe, eff, loc) => e0.toSuccess
-//    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => e0.toSuccess
-//    case Expression.SelectChannel(rules, default, tpe, eff, loc) => e0.toSuccess
-//    case Expression.Spawn(exp, tpe, eff, loc) => e0.toSuccess
+    //    case Expression.Unary(op, exp, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    //
+    //    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+    //    case Expression.RecordEmpty(tpe, eff, loc) => ??? // TODO
+    //    case Expression.RecordSelect(exp, label, tpe, eff, loc) => ??? // TODO
+    //    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ??? // TODO
+    //    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? // TODO
+    //    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
+    //    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+    //    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
+    //    case Expression.ArrayLength(base, tpe, eff, loc) => ??? // TODO
+    //    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? // TODO
+    //    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ??? // TODO
+    //    case Expression.VectorLit(elms, tpe, eff, loc) => ??? // TODO
+    //    case Expression.VectorNew(elm, len, tpe, eff, loc) => ??? // TODO
+    //    case Expression.VectorLoad(base, index, tpe, eff, loc) => ??? // TODO
+    //    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? // TODO
+    //    case Expression.VectorLength(base, tpe, eff, loc) => ??? // TODO
+    //    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    //    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
+    //    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
+    //    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
+    //    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    //    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    //    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
 
   }
 

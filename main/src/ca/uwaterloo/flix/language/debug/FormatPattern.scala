@@ -3,10 +3,13 @@ package ca.uwaterloo.flix.language.debug
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
-  * Implementations of `toString` for patterns of all the different ASTs.
+  * Formatting Patterns.
   */
 object FormatPattern {
 
+  /**
+    * TypedAst.
+    */
   def format(p0: TypedAst.Pattern): String = p0 match {
     case TypedAst.Pattern.Wild(_, _) => "_"
     case TypedAst.Pattern.Var(sym, _, _) => sym.toString
