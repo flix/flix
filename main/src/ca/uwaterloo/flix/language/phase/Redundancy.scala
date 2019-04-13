@@ -152,7 +152,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us3 = usedExp(exp3)
       mapN(us1, us2, us3)(_ ++ _ ++ _)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => Used.empty // TODO
+    case Expression.Match(exp, rules, tpe, eff, loc) =>
+      val us1 = usedExp(exp)
+      mapN(us1, traverse(rules) {
+        case MatchRule(pat, guard, body) =>
+          // TODO: Need to deal with pattern and guard.
+          usedExp(body)
+      }) {
+        case (u1, xs) => xs.reduce(_ ++ _) ++ u1
+      }
 
     case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
 
@@ -365,7 +373,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => ().toSuccess
   }
 
-  private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean = !used.varSyms.contains(sym)
+  private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean =
+    !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
   private def unused(sym: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(sym)
 }
