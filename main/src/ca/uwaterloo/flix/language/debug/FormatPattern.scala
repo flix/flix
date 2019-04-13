@@ -2,6 +2,9 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 
+/**
+  * Implementations of `toString` for patterns of all the different ASTs.
+  */
 object FormatPattern {
 
   def format(p0: TypedAst.Pattern): String = p0 match {
