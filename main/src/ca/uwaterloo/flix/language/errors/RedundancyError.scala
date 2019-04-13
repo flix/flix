@@ -65,6 +65,7 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
+    // TODO: Suggest using wildcard.
     val source: Source = sym.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal

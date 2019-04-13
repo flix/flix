@@ -18,13 +18,15 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, FormalParam, MatchRule, Pattern, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, FormalParam, MatchRule, Pattern, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{Dead, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
+
+  // TODO: Write test cases for each type of e.g. variable usage/introduction.
 
   object Used {
 
@@ -36,6 +38,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns a `used` object where the given variable `sym` is marked as used.
       */
     def of(sym: Symbol.VarSym): Validation[Used, RedundancyError] = Used(Set.empty, Set(sym)).toSuccess
+
+    def of(sym: Symbol.DefnSym): Validation[Used, RedundancyError] = Used(Set(sym), Set.empty).toSuccess
+
 
   }
 
@@ -114,13 +119,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Wild(_, _, _) => Used.emptyVal
 
-    case Expression.Var(sym, tpe, eff, loc) => Used.of(sym)
+    case Expression.Var(sym, _, _, _) => Used.of(sym)
 
-    case Expression.Def(sym, tpe, eff, loc) => ??? // TODO
+    case Expression.Def(sym, _, _, _) => Used.of(sym)
 
-    case Expression.Eff(sym, tpe, eff, loc) => ??? // TODO
+    case Expression.Eff(sym, _, _, _) => ??? // TODO
 
-    case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
+    case Expression.Hole(sym, _, _, _) => Used.emptyVal
 
     case Expression.Lambda(fparam, exp, tpe, eff, loc) => ??? // TODO
 
@@ -129,7 +134,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = usedExp(exp2)
       mapN(us1, us2)(_ ++ _)
 
-    case Expression.Unary(op, exp, _, _, _) => ??? // TODO
+    case Expression.Unary(_, exp, _, _, _) => usedExp(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       val us1 = usedExp(exp1)
@@ -254,27 +259,53 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.NativeMethod(method, args, tpe, eff, loc) => ??? // TODO
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.NewChannel(exp, _, _, _) => usedExp(exp)
 
-    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.GetChannel(exp, _, _, _) => usedExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+    case Expression.SelectChannel(rules, defaultOpt, _, _, _) =>
+      val defaultVal = defaultOpt match {
+        case None => Used.emptyVal
+        case Some(default) => usedExp(default)
+      }
 
-    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
+      val rulesVal = traverse(rules) {
+        case SelectChannelRule(sym, chan, body) =>
+          val chanVal = usedExp(chan)
+          val bodyVal = usedExp(body)
+          flatMapN(chanVal, bodyVal) {
+            case (usedChan, usedBody) if unused(sym, usedBody) => UnusedVarSym(sym).toFailure
+            case (usedChan, usedBody) => (usedChan ++ usedBody).toSuccess
+          }
+      }
+      mapN(defaultVal, rulesVal) {
+        case (defaultUsed, rulesUsed) => rulesUsed.foldLeft(defaultUsed)(_ ++ _)
+      }
 
-    case Expression.Sleep(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Spawn(exp, _, _, _) => usedExp(exp)
 
-    case Expression.FixpointConstraint(c, tpe, eff, loc) => ??? // TODO
+    case Expression.Sleep(exp, _, _, _) => usedExp(exp)
 
-    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointConstraint(c, _, _, _) => usedConstraint(c)
 
-    case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointSolve(exp, _, _, _) => usedExp(exp)
 
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.FixpointProject(_, exp, _, _, _) => usedExp(exp)
+
+    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
 
     case Expression.UserError(_, _, _) => Used.emptyVal
   }
@@ -284,6 +315,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case xs => xs.foldLeft(Used.empty)(_ ++ _)
     }
 
+
+  private def usedConstraint(c: TypedAst.Constraint): Validation[Used, RedundancyError] = ??? // TODO
 
   sealed trait Value
 
@@ -341,6 +374,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO
   private def isPure(e: Expression): Boolean = ???
 
+  // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
+  // TODO: Maybe we need a measure on physical code size?
 
   private def constantFoldExp(e0: TypedAst.Expression, env0: Map[Symbol.VarSym, Pattern]): Validation[Value, RedundancyError] = e0 match {
 
