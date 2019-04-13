@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.debug.FormatPattern
+import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 
 object TypedAst {
 
@@ -56,6 +56,8 @@ object TypedAst {
     def eff: ast.Eff
 
     def loc: SourceLocation
+
+    final override def toString: String = FormatExpression.format(this)
   }
 
   object Expression {

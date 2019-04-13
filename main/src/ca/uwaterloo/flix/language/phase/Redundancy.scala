@@ -223,14 +223,69 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => Value.Bool.toSuccess
   }
 
+  // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
+
   // TODO: Need notion of stable expression which should be used instead of variable symbol.
   sealed trait StableExp
 
   object StableExp {
 
-    case class StableVar() extends StableExp
+    // TODO: Should literals be considered stable?
 
-    case class StableApply() extends StableExp
+
+    //
+    //    case Expression.Unit(loc) => e0.toSuccess
+    //    case Expression.True(loc) => e0.toSuccess
+    //    case Expression.False(loc) => e0.toSuccess
+    //    case Expression.Char(lit, loc) => e0.toSuccess
+    //    case Expression.Float32(lit, loc) => e0.toSuccess
+    //    case Expression.Float64(lit, loc) => e0.toSuccess
+    //    case Expression.Int8(lit, loc) => e0.toSuccess
+    //    case Expression.Int16(lit, loc) => e0.toSuccess
+    //    case Expression.Int32(lit, loc) => e0.toSuccess
+    //    case Expression.Int64(lit, loc) => e0.toSuccess
+    //    case Expression.BigInt(lit, loc) => e0.toSuccess
+    //    case Expression.Str(lit, loc) => e0.toSuccess
+
+
+    case class Var(sym: Symbol.VarSym) extends StableExp
+
+    case class Def(sym: Symbol.DefnSym) extends StableExp
+
+    case class Apply(exp1: StableExp, exp2: StableExp) extends StableExp
+
+//    case Expression.Unary(op, exp, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => e0.toSuccess
+//
+//    case Expression.Match(exp, rules, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Switch(rules, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Tuple(elms, tpe, eff, loc) => e0.toSuccess
+//    case Expression.RecordEmpty(tpe, eff, loc) => e0.toSuccess
+//    case Expression.RecordSelect(exp, label, tpe, eff, loc) => e0.toSuccess
+//    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => e0.toSuccess
+//    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => e0.toSuccess
+//    case Expression.ArrayLit(elms, tpe, eff, loc) => e0.toSuccess
+//    case Expression.ArrayNew(elm, len, tpe, eff, loc) => e0.toSuccess
+//    case Expression.ArrayLoad(base, index, tpe, eff, loc) => e0.toSuccess
+//    case Expression.ArrayLength(base, tpe, eff, loc) => e0.toSuccess
+//    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => e0.toSuccess
+//    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => e0.toSuccess
+//    case Expression.VectorLit(elms, tpe, eff, loc) => e0.toSuccess
+//    case Expression.VectorNew(elm, len, tpe, eff, loc) => e0.toSuccess
+//    case Expression.VectorLoad(base, index, tpe, eff, loc) => e0.toSuccess
+//    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => e0.toSuccess
+//    case Expression.VectorLength(base, tpe, eff, loc) => e0.toSuccess
+//    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Ref(exp, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Deref(exp, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Assign(exp1, exp2, tpe, eff, loc) => e0.toSuccess
+//    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => e0.toSuccess
+//    case Expression.NewChannel(exp, tpe, eff, loc) => e0.toSuccess
+//    case Expression.GetChannel(exp, tpe, eff, loc) => e0.toSuccess
+//    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => e0.toSuccess
+//    case Expression.SelectChannel(rules, default, tpe, eff, loc) => e0.toSuccess
+//    case Expression.Spawn(exp, tpe, eff, loc) => e0.toSuccess
 
   }
 
