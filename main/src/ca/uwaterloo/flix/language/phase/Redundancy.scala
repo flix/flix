@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, FormalParam, MatchRule, Pattern, SelectChannelRule, TypeParam}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
@@ -58,22 +58,33 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
     val defs = root.defs.map { case (_, v) => visitDef(v, root) }
 
+    val usedVal = sequence(defs).map {
+      case us => us.foldLeft(Used.empty)(_ ++ _)
+    }
+
     for {
-      _ <- sequence(defs)
+      used <- usedVal
+      _ <- checkUnusedEnums(root, used)
     } yield root
 
   }
 
-  private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[TypedAst.Def, RedundancyError] = {
+  private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[Used, RedundancyError] = {
     for {
       u <- usedExp(defn.exp)
       _ <- checkUnusedFormalParameters(defn, u)
       _ <- checkUnusedTypeParameters(defn)
       _ <- constantFoldExp(defn.exp, Map.empty)
-    } yield defn
+    } yield u
   }
 
-  private def checkUnusedFormalParameters(defn: TypedAst.Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
+  private def checkUnusedEnums(root: Root, used: Redundancy.Used): Validation[Unit, RedundancyError] = {
+
+    ().toSuccess
+  }
+
+
+  private def checkUnusedFormalParameters(defn: Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
       case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym, Some(defn.sym)).toFailure
       case FormalParam(_, _, _, _) => ().toSuccess
