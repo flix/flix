@@ -28,11 +28,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Write test cases for each type of e.g. variable usage/introduction.
 
+  val Empty: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
+
   object Used {
 
     val empty: Used = Used(Set.empty, Set.empty)
-
-    val emptyVal: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
 
     def of(sym: Symbol.VarSym): Used = Used(Set.empty, Set(sym))
 
@@ -43,7 +43,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   case class Used(defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym]) {
-    // TODO: EffSym
     // TODO: EnumSym
     // TODO: Cases
     // TODO: RelSym
@@ -102,39 +101,39 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns symbols used in the given expression `e0`.
     */
   private def usedExp(e0: TypedAst.Expression): Validation[Used, RedundancyError] = e0 match {
-    case Expression.Unit(_) => Used.emptyVal
+    case Expression.Unit(_) => Empty
 
-    case Expression.True(_) => Used.emptyVal
+    case Expression.True(_) => Empty
 
-    case Expression.False(_) => Used.emptyVal
+    case Expression.False(_) => Empty
 
-    case Expression.Char(_, _) => Used.emptyVal
+    case Expression.Char(_, _) => Empty
 
-    case Expression.Float32(_, _) => Used.emptyVal
+    case Expression.Float32(_, _) => Empty
 
-    case Expression.Float64(_, _) => Used.emptyVal
+    case Expression.Float64(_, _) => Empty
 
-    case Expression.Int8(_, _) => Used.emptyVal
+    case Expression.Int8(_, _) => Empty
 
-    case Expression.Int16(_, _) => Used.emptyVal
+    case Expression.Int16(_, _) => Empty
 
-    case Expression.Int32(_, _) => Used.emptyVal
+    case Expression.Int32(_, _) => Empty
 
-    case Expression.Int64(_, _) => Used.emptyVal
+    case Expression.Int64(_, _) => Empty
 
-    case Expression.BigInt(_, _) => Used.emptyVal
+    case Expression.BigInt(_, _) => Empty
 
-    case Expression.Str(_, _) => Used.emptyVal
+    case Expression.Str(_, _) => Empty
 
-    case Expression.Wild(_, _, _) => Used.emptyVal
+    case Expression.Wild(_, _, _) => Empty
 
     case Expression.Var(sym, _, _, _) => Used.of(sym).toSuccess
 
     case Expression.Def(sym, _, _, _) => Used.of(sym).toSuccess
 
-    case Expression.Eff(sym, _, _, _) => Used.emptyVal
+    case Expression.Eff(sym, _, _, _) => Empty
 
-    case Expression.Hole(sym, _, _, _) => Used.emptyVal
+    case Expression.Hole(sym, _, _, _) => Empty
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
       flatMapN(usedExp(exp)) {
@@ -203,7 +202,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Tuple(elms, _, _, _) => usedExps(elms)
 
-    case Expression.RecordEmpty(_, _, _) => Used.emptyVal
+    case Expression.RecordEmpty(_, _, _) => Empty
 
     case Expression.RecordSelect(exp, _, _, _, _) => usedExp(exp)
 
@@ -247,11 +246,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.VectorLoad(base, _, _, _, _) => usedExp(base)
 
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorStore(base, _, elm, _, _, _) =>
+      val us1 = usedExp(base)
+      val us2 = usedExp(elm)
+      mapN(us1, us2)(_ ++ _)
 
-    case Expression.VectorLength(base, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorLength(base, _, _, _) => usedExp(base)
 
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? // TODO
+    case Expression.VectorSlice(base, _, _, _, _, _) => usedExp(base)
 
     case Expression.Ref(exp, _, _, _) => usedExp(exp)
 
@@ -266,13 +268,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Existential(fparam, exp, _, _) =>
       flatMapN(usedExp(exp)) {
-        case used if unused(fparam.sym, used) => UnusedVarSym(fparam.sym).toFailure // TODO: Should this be a UnusedVar error?
+        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym, None).toFailure
         case used => used.toSuccess
       }
 
     case Expression.Universal(fparam, exp, _, _) =>
       flatMapN(usedExp(exp)) {
-        case used if unused(fparam.sym, used) => UnusedVarSym(fparam.sym).toFailure // TODO: Should this be a UnusedVar error?
+        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym, None).toFailure
         case used => used.toSuccess
       }
 
@@ -280,13 +282,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Cast(exp, _, _, _) => usedExp(exp)
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+    case Expression.NativeConstructor(_, args, _, _, _) => usedExps(args)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
 
-    case Expression.NativeField(field, tpe, eff, loc) => ??? // TODO
+    case Expression.NativeField(_, _, _, _) => Used.empty.toSuccess
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) => ??? // TODO
+    case Expression.NativeMethod(_, args, _, _, _) => usedExps(args)
 
     case Expression.NewChannel(exp, _, _, _) => usedExp(exp)
 
@@ -299,7 +301,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.SelectChannel(rules, defaultOpt, _, _, _) =>
       val defaultVal = defaultOpt match {
-        case None => Used.emptyVal
+        case None => Empty
         case Some(default) => usedExp(default)
       }
 
@@ -336,7 +338,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = usedExp(exp2)
       mapN(us1, us2)(_ ++ _)
 
-    case Expression.UserError(_, _, _) => Used.emptyVal
+    case Expression.UserError(_, _, _) => Empty
   }
 
   private def usedExps(es: List[TypedAst.Expression]): Validation[Used, RedundancyError] =
