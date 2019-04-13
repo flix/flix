@@ -28,28 +28,33 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Write test cases for each type of e.g. variable usage/introduction.
 
-  val Empty: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
+  val Empty: Validation[Used, RedundancyError] = Used.Empty.toSuccess
 
   object Used {
 
-    val empty: Used = Used(Set.empty, Set.empty)
+    val Empty: Used = Used(Set.empty, Set.empty, Set.empty, Set.empty)
 
-    def of(sym: Symbol.VarSym): Used = Used(Set.empty, Set(sym))
+    def of(sym: Symbol.EnumSym, tag: String): Used = Empty
 
-    def of(sym: Symbol.DefnSym): Used = Used(Set(sym), Set.empty)
+    def of(sym: Symbol.DefnSym): Used = Empty.copy(defSyms = Set(sym))
 
-    def of(sym: Symbol.EnumSym, tag: String): Used = Used(Set.empty, Set.empty)
+    def of(sym: Symbol.VarSym): Used = Empty.copy(varSyms = Set(sym))
+
+
 
   }
 
-  case class Used(defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym]) {
+  case class Used(defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym], relSyms: Set[Symbol.RelSym], latSyms: Set[Symbol.LatSym]) {
     // TODO: EnumSym
     // TODO: Cases
-    // TODO: RelSym
-    // TODO: LatSym
 
     // TODO: Optimize for empty case.
-    def ++(that: Used): Used = Used(this.defSyms ++ that.defSyms, this.varSyms ++ that.varSyms)
+    def ++(that: Used): Used = Used(
+      this.defSyms ++ that.defSyms,
+      this.varSyms ++ that.varSyms,
+      this.relSyms ++ that.relSyms,
+      this.latSyms ++ that.latSyms
+    )
 
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
   }
@@ -58,7 +63,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val defs = root.defs.map { case (_, v) => visitDef(v, root) }
 
     val usedVal = sequence(defs).map {
-      case us => us.foldLeft(Used.empty)(_ ++ _)
+      case us => us.foldLeft(Used.Empty)(_ ++ _)
     }
 
     for {
@@ -192,7 +197,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (cond, body) => mapN(usedExp(cond), usedExp(body))(_ ++ _)
       }
       mapN(rulesVal) {
-        case rs => rs.foldLeft(Used.empty)(_ ++ _)
+        case rs => rs.foldLeft(Used.Empty)(_ ++ _)
       }
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
@@ -286,7 +291,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
 
-    case Expression.NativeField(_, _, _, _) => Used.empty.toSuccess
+    case Expression.NativeField(_, _, _, _) => Used.Empty.toSuccess
 
     case Expression.NativeMethod(_, args, _, _, _) => usedExps(args)
 
@@ -343,7 +348,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def usedExps(es: List[TypedAst.Expression]): Validation[Used, RedundancyError] =
     mapN(traverse(es)(usedExp)) {
-      case xs => xs.foldLeft(Used.empty)(_ ++ _)
+      case xs => xs.foldLeft(Used.Empty)(_ ++ _)
     }
 
 
