@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -33,6 +33,27 @@ object RedundancyError {
       vt << Code(varSym.loc, "unused formal parameter.") << NewLine
       vt << NewLine
       vt << "Remove the formal parameter or use it inside the function."
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that the given type parameter `ident` is not used within `defSym`.
+    *
+    * @param ident  the unused type variable
+    * @param defSym the definition symbol.
+    */
+  case class UnusedTypeParam(ident: Name.Ident, defSym: Symbol.DefnSym) extends RedundancyError {
+    val source: Source = ident.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused type parameter '" << Red(ident.name) << "'. The parameter is not used in the signature of '" << Cyan(defSym.text) << "'." << NewLine
+      vt << NewLine
+      vt << Code(ident.loc, "unused type parameter.") << NewLine
+      vt << NewLine
+      vt << "Remove the type parameter or use it in the function signature."
       vt << NewLine
       vt
     }

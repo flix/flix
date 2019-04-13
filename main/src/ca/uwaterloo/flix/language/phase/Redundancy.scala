@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, FormalParam, MatchRule, Pattern}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, FormalParam, MatchRule, Pattern, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{Dead, UnusedFormalParam, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError.{Dead, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -65,6 +65,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     for {
       u <- usedExp(defn.exp)
       _ <- checkFparams(defn, u)
+      _ <- checkUnusedTypeparams(defn)
       _ <- constantFoldExp(defn.exp, Map.empty)
     } yield defn
   }
@@ -72,7 +73,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def checkFparams(defn: TypedAst.Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
       case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym, Some(defn.sym)).toFailure
-      case FormalParam(sym, _, _, _) => ().toSuccess
+      case FormalParam(_, _, _, _) => ().toSuccess
+    }
+  }
+
+  private def checkUnusedTypeparams(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
+    traverse(defn.tparams) {
+      case TypeParam(name, tvar, _) if unused(tvar, defn.tpe.typeVars) => UnusedTypeParam(name, defn.sym).toFailure
+      case TypeParam(_, _, _) => ().toSuccess
     }
   }
 
@@ -358,4 +366,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean = !used.varSyms.contains(sym)
+
+  private def unused(sym: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(sym)
 }

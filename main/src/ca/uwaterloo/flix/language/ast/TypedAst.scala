@@ -378,6 +378,6 @@ object TypedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
 }
