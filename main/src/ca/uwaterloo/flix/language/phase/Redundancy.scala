@@ -34,9 +34,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     val emptyVal: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
 
-    /**
-      * Returns a `used` object where the given variable `sym` is marked as used.
-      */
     def of(sym: Symbol.VarSym): Validation[Used, RedundancyError] = Used(Set.empty, Set(sym)).toSuccess
 
     def of(sym: Symbol.DefnSym): Validation[Used, RedundancyError] = Used(Set(sym), Set.empty).toSuccess
@@ -69,20 +66,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[TypedAst.Def, RedundancyError] = {
     for {
       u <- usedExp(defn.exp)
-      _ <- checkFparams(defn, u)
-      _ <- checkUnusedTypeparams(defn)
+      _ <- checkUnusedFormalParameters(defn, u)
+      _ <- checkUnusedTypeParameters(defn)
       _ <- constantFoldExp(defn.exp, Map.empty)
     } yield defn
   }
 
-  private def checkFparams(defn: TypedAst.Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
+  private def checkUnusedFormalParameters(defn: TypedAst.Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
       case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym, Some(defn.sym)).toFailure
       case FormalParam(_, _, _, _) => ().toSuccess
     }
   }
 
-  private def checkUnusedTypeparams(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
+  private def checkUnusedTypeParameters(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
     traverse(defn.tparams) {
       case TypeParam(name, tvar, _) if unused(tvar, defn.tpe.typeVars) => UnusedTypeParam(name, defn.sym).toFailure
       case TypeParam(_, _, _) => ().toSuccess
@@ -123,11 +120,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Def(sym, _, _, _) => Used.of(sym)
 
-    case Expression.Eff(sym, _, _, _) => ??? // TODO
+    case Expression.Eff(sym, _, _, _) => Used.emptyVal
 
     case Expression.Hole(sym, _, _, _) => Used.emptyVal
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => ??? // TODO
+    case Expression.Lambda(fparam, exp, _, _, _) =>
+      flatMapN(usedExp(exp)) {
+        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym, None).toFailure
+        case used => used.toSuccess
+      }
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       val us1 = usedExp(exp1)
@@ -149,7 +150,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (u1, u2) => ((u1 ++ u2) - sym).toSuccess
       }
 
-    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO
+    case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      flatMapN(us1, us2) {
+        // TODO: Redundancy: How do we want to check let-rec?
+        case (u1, u2) if unused(sym, u1) => UnusedVarSym(sym).toFailure
+        case (u1, u2) if unused(sym, u2) => UnusedVarSym(sym).toFailure
+        case (u1, u2) => ((u1 ++ u2) - sym).toSuccess
+      }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val us1 = usedExp(exp1)
