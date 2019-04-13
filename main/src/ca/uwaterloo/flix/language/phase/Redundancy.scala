@@ -34,10 +34,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     val emptyVal: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
 
-    def of(sym: Symbol.VarSym): Validation[Used, RedundancyError] = Used(Set.empty, Set(sym)).toSuccess
+    def of(sym: Symbol.VarSym): Used = Used(Set.empty, Set(sym))
 
-    def of(sym: Symbol.DefnSym): Validation[Used, RedundancyError] = Used(Set(sym), Set.empty).toSuccess
+    def of(sym: Symbol.DefnSym): Used = Used(Set(sym), Set.empty)
 
+    def of(sym: Symbol.EnumSym, tag: String): Used = Used(Set.empty, Set.empty)
 
   }
 
@@ -116,9 +117,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Wild(_, _, _) => Used.emptyVal
 
-    case Expression.Var(sym, _, _, _) => Used.of(sym)
+    case Expression.Var(sym, _, _, _) => Used.of(sym).toSuccess
 
-    case Expression.Def(sym, _, _, _) => Used.of(sym)
+    case Expression.Def(sym, _, _, _) => Used.of(sym).toSuccess
 
     case Expression.Eff(sym, _, _, _) => Used.emptyVal
 
@@ -176,12 +177,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (u1, xs) => xs.reduce(_ ++ _) ++ u1
       }
 
-    case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
+    case Expression.Switch(rules, _, _, _) =>
+      val rulesVal = traverse(rules) {
+        case (cond, body) => mapN(usedExp(cond), usedExp(body))(_ ++ _)
+      }
+      mapN(rulesVal) {
+        case rs => rs.foldLeft(Used.empty)(_ ++ _)
+      }
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-      Used.emptyVal // TODO
+    case Expression.Tag(sym, tag, exp, _, _, _) =>
+      mapN(usedExp(exp)) {
+        case used => used ++ Used.of(sym, tag)
+      }
 
-    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
+    case Expression.Tuple(elms, _, _, _) => usedExps(elms)
 
     case Expression.RecordEmpty(_, _, _) => Used.emptyVal
 
