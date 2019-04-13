@@ -27,10 +27,10 @@ import ca.uwaterloo.flix.util.Validation._
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object Used {
-    /**
-      * Represents the empty set of used symbols.
-      */
-    val empty: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
+
+    val empty: Used = Used(Set.empty, Set.empty)
+
+    val emptyVal: Validation[Used, RedundancyError] = Used(Set.empty, Set.empty).toSuccess
 
     /**
       * Returns a `used` object where the given variable `sym` is marked as used.
@@ -88,31 +88,31 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns symbols used in the given expression `e0`.
     */
   private def usedExp(e0: TypedAst.Expression): Validation[Used, RedundancyError] = e0 match {
-    case Expression.Unit(_) => Used.empty
+    case Expression.Unit(_) => Used.emptyVal
 
-    case Expression.True(_) => Used.empty
+    case Expression.True(_) => Used.emptyVal
 
-    case Expression.False(_) => Used.empty
+    case Expression.False(_) => Used.emptyVal
 
-    case Expression.Char(_, _) => Used.empty
+    case Expression.Char(_, _) => Used.emptyVal
 
-    case Expression.Float32(_, _) => Used.empty
+    case Expression.Float32(_, _) => Used.emptyVal
 
-    case Expression.Float64(_, _) => Used.empty
+    case Expression.Float64(_, _) => Used.emptyVal
 
-    case Expression.Int8(_, _) => Used.empty
+    case Expression.Int8(_, _) => Used.emptyVal
 
-    case Expression.Int16(_, _) => Used.empty
+    case Expression.Int16(_, _) => Used.emptyVal
 
-    case Expression.Int32(_, _) => Used.empty
+    case Expression.Int32(_, _) => Used.emptyVal
 
-    case Expression.Int64(_, _) => Used.empty
+    case Expression.Int64(_, _) => Used.emptyVal
 
-    case Expression.BigInt(_, _) => Used.empty
+    case Expression.BigInt(_, _) => Used.emptyVal
 
-    case Expression.Str(_, _) => Used.empty
+    case Expression.Str(_, _) => Used.emptyVal
 
-    case Expression.Wild(_, _, _) => Used.empty
+    case Expression.Wild(_, _, _) => Used.emptyVal
 
     case Expression.Var(sym, tpe, eff, loc) => Used.of(sym)
 
@@ -165,15 +165,29 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
 
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-      Used.empty // TODO
+      Used.emptyVal // TODO
 
     case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordEmpty(tpe, eff, loc) => ??? // TODO
-    case Expression.RecordSelect(exp, label, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
+
+    case Expression.RecordEmpty(_, _, _) => Used.emptyVal
+
+    case Expression.RecordSelect(exp, _, _, _, _) => usedExp(exp)
+
+    case Expression.RecordExtend(_, value, rest, _, _, _) =>
+      val us1 = usedExp(value)
+      val us2 = usedExp(rest)
+      mapN(us1, us2)(_ ++ _)
+
+    case Expression.RecordRestrict(_, rest, _, _, _) => usedExp(rest)
+
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      usedExps(elms)
+
+    case Expression.ArrayNew(elm, len, _, _, _) =>
+      val us1 = usedExp(elm)
+      val us2 = usedExp(len)
+      mapN(us1, us2)(_ ++ _)
+
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
     case Expression.ArrayLength(base, tpe, eff, loc) => ??? // TODO
     case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? // TODO
@@ -209,6 +223,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
     case Expression.UserError(tpe, eff, loc) => ??? // TODO
   }
+
+  private def usedExps(es: List[TypedAst.Expression]): Validation[Used, RedundancyError] =
+    mapN(traverse(es)(usedExp)) {
+      case xs => xs.foldLeft(Used.empty)(_ ++ _)
+    }
+
 
   sealed trait Value
 
