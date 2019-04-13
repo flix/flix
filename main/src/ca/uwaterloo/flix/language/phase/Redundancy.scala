@@ -188,40 +188,95 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = usedExp(len)
       mapN(us1, us2)(_ ++ _)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayLength(base, tpe, eff, loc) => ??? // TODO
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? // TODO
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ??? // TODO
-    case Expression.VectorLit(elms, tpe, eff, loc) => ??? // TODO
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => ??? // TODO
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      val us1 = usedExp(base)
+      val us2 = usedExp(index)
+      mapN(us1, us2)(_ ++ _)
+
+    case Expression.ArrayLength(base, _, _, _) => usedExp(base)
+
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
+      val us1 = usedExp(base)
+      val us2 = usedExp(index)
+      val us3 = usedExp(elm)
+      mapN(us1, us2, us3)(_ ++ _ ++ _)
+
+    case Expression.ArraySlice(base, begin, end, _, _, _) =>
+      val us1 = usedExp(base)
+      val us2 = usedExp(begin)
+      val us3 = usedExp(end)
+      mapN(us1, us2, us3)(_ ++ _ ++ _)
+
+    case Expression.VectorLit(elms, _, _, _) => usedExps(elms)
+
+    case Expression.VectorNew(elm, len, _, _, _) => usedExp(elm)
+
+    case Expression.VectorLoad(base, _, _, _, _) => usedExp(base)
+
     case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? // TODO
+
     case Expression.VectorLength(base, tpe, eff, loc) => ??? // TODO
+
     case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? // TODO
-    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Ref(exp, _, _, _) => usedExp(exp)
+
+    case Expression.Deref(exp, _, _, _) => usedExp(exp)
+
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
+
     case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
-    case Expression.Existential(fparam, exp, eff, loc) => ??? // TODO
-    case Expression.Universal(fparam, exp, eff, loc) => ??? // TODO
-    case Expression.Ascribe(exp, tpe, eff, loc) => ??? // TODO
-    case Expression.Cast(exp, tpe, eff, loc) => ??? // TODO
+
+    case Expression.Existential(fparam, exp, _, _) =>
+      flatMapN(usedExp(exp)) {
+        case used if unused(fparam.sym, used) => UnusedVarSym(fparam.sym).toFailure // TODO: Should this be a UnusedVar error?
+        case used => used.toSuccess
+      }
+
+    case Expression.Universal(fparam, exp, _, _) =>
+      flatMapN(usedExp(exp)) {
+        case used if unused(fparam.sym, used) => UnusedVarSym(fparam.sym).toFailure // TODO: Should this be a UnusedVar error?
+        case used => used.toSuccess
+      }
+
+    case Expression.Ascribe(exp, _, _, _) => usedExp(exp)
+
+    case Expression.Cast(exp, _, _, _) => usedExp(exp)
+
     case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
+
     case Expression.NativeField(field, tpe, eff, loc) => ??? // TODO
+
     case Expression.NativeMethod(method, args, tpe, eff, loc) => ??? // TODO
+
     case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
     case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+
     case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.Sleep(exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.FixpointConstraint(c, tpe, eff, loc) => ??? // TODO
+
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO
+
     case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO
+
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    case Expression.UserError(tpe, eff, loc) => ??? // TODO
+
+    case Expression.UserError(_, _, _) => Used.emptyVal
   }
 
   private def usedExps(es: List[TypedAst.Expression]): Validation[Used, RedundancyError] =
