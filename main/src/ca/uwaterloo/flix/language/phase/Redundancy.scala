@@ -18,9 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, MatchRule, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, FormalParam, MatchRule, Pattern}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{Dead, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError.{Dead, UnusedFormalParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -63,9 +63,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[TypedAst.Def, RedundancyError] = {
     for {
-      _ <- usedExp(defn.exp)
+      u <- usedExp(defn.exp)
+      _ <- checkFparams(defn, u)
       _ <- constantFoldExp(defn.exp, Map.empty)
     } yield defn
+  }
+
+  private def checkFparams(defn: TypedAst.Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
+    traverse(defn.fparams) {
+      case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym, Some(defn.sym)).toFailure
+      case FormalParam(sym, _, _, _) => ().toSuccess
+    }
   }
 
   /**
@@ -124,7 +132,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us1 = usedExp(exp1)
       val us2 = usedExp(exp2)
       flatMapN(us1, us2) {
-        case (u1, u2) if unused(sym, u2) => UnusedVarSym(sym, sym.loc).toFailure
+        case (u1, u2) if unused(sym, u2) => UnusedVarSym(sym).toFailure
         case (u1, u2) => ((u1 ++ u2) - sym).toSuccess
       }
 
@@ -349,5 +357,5 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => ().toSuccess
   }
 
-  private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean = used.varSyms.contains(sym)
+  private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean = !used.varSyms.contains(sym)
 }
