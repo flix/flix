@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.debug.FormatPattern
 
 object TypedAst {
 
@@ -253,6 +254,8 @@ object TypedAst {
     def tpe: Type
 
     def loc: SourceLocation
+
+    final override def toString: String = FormatPattern.format(this)
   }
 
   object Pattern {

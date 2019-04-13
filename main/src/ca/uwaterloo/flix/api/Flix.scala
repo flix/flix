@@ -226,6 +226,7 @@ class Flix {
         Typer |>
         Effects |>
         PatternExhaustiveness |>
+        Redundancy |>
         Safety
 
     // Apply the pipeline to the parsed AST.
