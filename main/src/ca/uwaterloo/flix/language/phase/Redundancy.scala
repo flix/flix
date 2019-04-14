@@ -24,7 +24,10 @@ import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedFormalParam, Unu
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+// TODO: DOC
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
+
+  // TODO: Empty or empty?
 
   // TODO: Write test cases for each type of e.g. variable usage/introduction.
 
@@ -32,29 +35,34 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object Used {
 
-    val Empty: Used = Used(Set.empty, Set.empty, Set.empty, Set.empty)
+    val Empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty, Set.empty)
 
-    def of(sym: Symbol.EnumSym, tag: String): Used = Empty
+    def of(sym: Symbol.EnumSym, tag: String): Used = Empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
 
     def of(sym: Symbol.DefnSym): Used = Empty.copy(defSyms = Set(sym))
 
     def of(sym: Symbol.VarSym): Used = Empty.copy(varSyms = Set(sym))
 
-
-
   }
 
-  case class Used(defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym], relSyms: Set[Symbol.RelSym], latSyms: Set[Symbol.LatSym]) {
+  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym], relSyms: Set[Symbol.RelSym], latSyms: Set[Symbol.LatSym]) {
     // TODO: EnumSym
     // TODO: Cases
 
-    // TODO: Optimize for empty case.
-    def ++(that: Used): Used = Used(
-      this.defSyms ++ that.defSyms,
-      this.varSyms ++ that.varSyms,
-      this.relSyms ++ that.relSyms,
-      this.latSyms ++ that.latSyms
-    )
+    def ++(that: Used): Used =
+      if (this eq Used.Empty) {
+        that
+      } else if (that eq Used.Empty) {
+        this
+      } else {
+        Used(
+          this.enumSyms ++ that.enumSyms,
+          this.defSyms ++ that.defSyms,
+          this.varSyms ++ that.varSyms,
+          this.relSyms ++ that.relSyms,
+          this.latSyms ++ that.latSyms
+        )
+      }
 
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
   }
@@ -523,4 +531,33 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
   private def unused(sym: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(sym)
+
+  object MultiMap {
+    def Empty[K, V]: MultiMap[K, V] = MultiMap(Map.empty)
+  }
+
+  case class MultiMap[K, V](m: Map[K, Set[V]]) {
+
+    def get(k: K): Set[V] = m.getOrElse(k, Set.empty)
+
+    def +(k: K, v: V): MultiMap[K, V] = {
+      val s = m.getOrElse(k, Set.empty)
+      MultiMap(m + (k -> (s + v)))
+    }
+
+    def +(k: K, v: Set[V]): MultiMap[K, V] = {
+      val s = m.getOrElse(k, Set.empty)
+      MultiMap(m + (k -> (s ++ v)))
+    }
+
+    // TODO: Efficiency
+    def ++(that: MultiMap[K, V]): MultiMap[K, V] = {
+      val keys1 = this.m.keys
+      val keys2 = that.m.keys
+      keys2.foldLeft(this) {
+        case (macc, k) => macc + (k, that.get(k))
+      }
+    }
+  }
+
 }
