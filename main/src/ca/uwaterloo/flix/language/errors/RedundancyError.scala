@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Green, Line, Magenta, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -45,7 +45,7 @@ object RedundancyError {
       vt << NewLine
       vt << Code(sym.loc, "unused enum.") << NewLine
       vt << NewLine
-      vt << Magenta("Possible Fixes:") << NewLine
+      vt << "Possible Fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the enum." << NewLine
       vt << "  (1)  Remove the enum." << NewLine
@@ -71,7 +71,7 @@ object RedundancyError {
       vt << NewLine
       vt << Code(tag.loc, "unused tag.") << NewLine
       vt << NewLine
-      vt << Magenta("Possible Fixes:") << NewLine
+      vt << "Possible Fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the case." << NewLine
       vt << "  (1)  Remove the case." << NewLine
@@ -80,7 +80,6 @@ object RedundancyError {
       vt
     }
   }
-
 
 
 
