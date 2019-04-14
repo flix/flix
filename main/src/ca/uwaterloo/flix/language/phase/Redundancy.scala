@@ -31,17 +31,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Write test cases for each type of e.g. variable usage/introduction.
 
-  val Empty: Validation[Used, RedundancyError] = Used.Empty.toSuccess
+  val Empty: Validation[Used, RedundancyError] = Used.empty.toSuccess
 
   object Used {
 
-    val Empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty, Set.empty)
+    val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty, Set.empty)
 
-    def of(sym: Symbol.EnumSym, tag: String): Used = Empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
+    def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
 
-    def of(sym: Symbol.DefnSym): Used = Empty.copy(defSyms = Set(sym))
+    def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
-    def of(sym: Symbol.VarSym): Used = Empty.copy(varSyms = Set(sym))
+    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
 
   }
 
@@ -50,9 +50,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO: Cases
 
     def ++(that: Used): Used =
-      if (this eq Used.Empty) {
+      if (this eq Used.empty) {
         that
-      } else if (that eq Used.Empty) {
+      } else if (that eq Used.empty) {
         this
       } else {
         Used(
@@ -71,7 +71,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val defs = root.defs.map { case (_, v) => visitDef(v, root) }
 
     val usedVal = sequence(defs).map {
-      case us => us.foldLeft(Used.Empty)(_ ++ _)
+      case us => us.foldLeft(Used.empty)(_ ++ _)
     }
 
     for {
@@ -95,7 +95,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (sym, decl) =>
         used.enumSyms.get(sym) match {
           case None => UnusedEnumSym(sym).toFailure
-          case Some(usedTags) => ().toSuccess
+          case Some(usedTags) =>
+            decl.cases.keySet
+            ().toSuccess
         }
     }
   }
@@ -209,7 +211,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (cond, body) => mapN(usedExp(cond), usedExp(body))(_ ++ _)
       }
       mapN(rulesVal) {
-        case rs => rs.foldLeft(Used.Empty)(_ ++ _)
+        case rs => rs.foldLeft(Used.empty)(_ ++ _)
       }
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
@@ -303,7 +305,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
 
-    case Expression.NativeField(_, _, _, _) => Used.Empty.toSuccess
+    case Expression.NativeField(_, _, _, _) => Used.empty.toSuccess
 
     case Expression.NativeMethod(_, args, _, _, _) => usedExps(args)
 
@@ -360,7 +362,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def usedExps(es: List[TypedAst.Expression]): Validation[Used, RedundancyError] =
     mapN(traverse(es)(usedExp)) {
-      case xs => xs.foldLeft(Used.Empty)(_ ++ _)
+      case xs => xs.foldLeft(Used.empty)(_ ++ _)
     }
 
 
