@@ -13,6 +13,26 @@ trait RedundancyError extends CompilationError {
 object RedundancyError {
 
   /**
+    * An error raised to indicate that the given enum symbol `sym` is not used.
+    *
+    * @param sym the unused enum symbol.
+    */
+  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
+    val source: Source = sym.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused enum '" << Red(sym.name) << "'. The enum and its cases are never referenced." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unused enum.") << NewLine
+      vt << NewLine
+      vt << "Remove the enum declaration or use it somewhere."
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the given formal parameter `varSym` is not used within `defSym`.
     *
     * @param varSym    the unused variable symbol.

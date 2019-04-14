@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedEnumSym, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -90,13 +90,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     } yield u
   }
 
-  private def checkUnusedEnums(root: Root, used: Redundancy.Used): Validation[Unit, RedundancyError] = {
-
-    ().toSuccess
+  private def checkUnusedEnums(root: Root, used: Used): Validation[List[Unit], RedundancyError] = {
+    traverse(root.enums) {
+      case (sym, decl) =>
+        used.enumSyms.get(sym) match {
+          case None => UnusedEnumSym(sym).toFailure
+          case Some(usedTags) => ().toSuccess
+        }
+    }
   }
 
-
-  private def checkUnusedFormalParameters(defn: Def, used: Redundancy.Used): Validation[List[Unit], RedundancyError] = {
+  private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
       case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym, Some(defn.sym)).toFailure
       case FormalParam(_, _, _, _) => ().toSuccess
@@ -538,7 +542,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   case class MultiMap[K, V](m: Map[K, Set[V]]) {
 
-    def get(k: K): Set[V] = m.getOrElse(k, Set.empty)
+    def get(k: K): Option[Set[V]] = m.get(k)
 
     def +(k: K, v: V): MultiMap[K, V] = {
       val s = m.getOrElse(k, Set.empty)
@@ -552,10 +556,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // TODO: Efficiency
     def ++(that: MultiMap[K, V]): MultiMap[K, V] = {
-      val keys1 = this.m.keys
       val keys2 = that.m.keys
       keys2.foldLeft(this) {
-        case (macc, k) => macc + (k, that.get(k))
+        case (macc, k) => macc + (k, that.m(k))
       }
     }
   }
