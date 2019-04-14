@@ -19,9 +19,12 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Green, Line, Magenta, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
+/**
+  * A common super-type for redundancy errors.
+  */
 trait RedundancyError extends CompilationError {
   def kind: String = "Redundancy Error"
 }
@@ -29,20 +32,25 @@ trait RedundancyError extends CompilationError {
 object RedundancyError {
 
   /**
-    * An error raised to indicate that the given enum symbol `sym` is not used.
+    * An error raised to indicate that the enum with the symbol `sym` is not used.
     *
     * @param sym the unused enum symbol.
     */
-  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
+  case class UnusedEnum(sym: Symbol.EnumSym) extends RedundancyError {
     val source: Source = sym.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused enum '" << Red(sym.name) << "'. The enum and its cases are never referenced." << NewLine
+      vt << ">> Unused enum '" << Red(sym.name) << "'. Neither the enum nor its cases are ever used." << NewLine
       vt << NewLine
       vt << Code(sym.loc, "unused enum.") << NewLine
       vt << NewLine
-      vt << "Remove the enum declaration or use it somewhere."
+      vt << Magenta("Possible Fixes:") << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the enum." << NewLine
+      vt << "  (1)  Remove the enum." << NewLine
+      vt << "  (3)  Mark the enum as public." << NewLine
+      vt << "  (4)  Prefix the enum name with an underscore." << NewLine
       vt << NewLine
       vt
     }
@@ -119,6 +127,7 @@ object RedundancyError {
 
   /**
     */
+  // TODO: Remove
   case class Dead(loc: SourceLocation) extends RedundancyError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
@@ -132,7 +141,7 @@ object RedundancyError {
     }
   }
 
-
+  // TODO: Refactor
   case class ImpossibleMatch(loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
     val source: Source = loc1.source
     val message: VirtualTerminal = {

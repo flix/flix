@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 import scala.reflect.ClassTag
@@ -26,6 +27,11 @@ import scala.reflect.ClassTag
 trait TestUtils {
 
   this: FunSuite =>
+
+  /**
+    * Compiles the given input string `s` with the given compilation options `o`.
+    */
+  def compile(s: String, o: Options): Validation[CompilationResult, CompilationError] = new Flix().setOptions(o).addStr(s).compile()
 
   /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.

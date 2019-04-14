@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedEnumSym, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedEnum, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -94,7 +94,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     traverse(root.enums) {
       case (sym, decl) =>
         used.enumSyms.get(sym) match {
-          case None => UnusedEnumSym(sym).toFailure
+          case None => UnusedEnum(sym).toFailure
           case Some(usedTags) =>
             decl.cases.keySet
             ().toSuccess
@@ -564,5 +564,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
   }
+
+  // TODO: What counts as a use of an enum? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
 
 }
