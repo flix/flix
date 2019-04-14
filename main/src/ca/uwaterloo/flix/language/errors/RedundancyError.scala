@@ -36,7 +36,7 @@ object RedundancyError {
     *
     * @param sym the unused enum symbol.
     */
-  case class UnusedEnum(sym: Symbol.EnumSym) extends RedundancyError {
+  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
     val source: Source = sym.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -55,6 +55,36 @@ object RedundancyError {
       vt
     }
   }
+
+  /**
+    * An error raised to indicate that in the enum with symbol `sym` the case `tag` is unused.
+    *
+    * @param sym the enum symbol.
+    * @param tag the unused tag.
+    */
+  case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Ident) extends RedundancyError {
+    val source: Source = tag.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused case '" << Red(tag.name) << "' in enum '" << Cyan(sym.name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(tag.loc, "unused tag.") << NewLine
+      vt << NewLine
+      vt << Magenta("Possible Fixes:") << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the case." << NewLine
+      vt << "  (1)  Remove the case." << NewLine
+      vt << "  (3)  Prefix the case with an underscore." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+
+
+
+
 
   /**
     * An error raised to indicate that the given formal parameter `varSym` is not used within `defSym`.
@@ -119,23 +149,6 @@ object RedundancyError {
       vt << Code(sym.loc, "unused local variable.") << NewLine
       vt << NewLine
       vt << "Remove the variable declaration or use the variable within its scope."
-      vt << NewLine
-      vt
-    }
-  }
-
-
-  /**
-    */
-  // TODO: Remove
-  case class Dead(loc: SourceLocation) extends RedundancyError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Redundancy" << NewLine
-      vt << NewLine
-      vt << Code(loc, "impossible.") << NewLine
       vt << NewLine
       vt
     }

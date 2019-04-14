@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedEnum, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedEnumSym, UnusedEnumTag, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -76,7 +76,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     for {
       used <- usedVal
-      _ <- checkUnusedEnums(root, used)
+      _ <- checkUnusedEnumSymbolsAndTags(used)(root)
     } yield root
 
   }
@@ -90,17 +90,30 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     } yield u
   }
 
-  private def checkUnusedEnums(root: Root, used: Used): Validation[List[Unit], RedundancyError] = {
+  /**
+    * Checks for unused enum symbols and tags.
+    */
+  private def checkUnusedEnumSymbolsAndTags(used: Used)(implicit root: Root): Validation[List[Unit], RedundancyError] =
     traverse(root.enums) {
+      case (sym, decl) if decl.mod.isPublic =>
+        // Enum is public. No usage requirements.
+        ().toSuccess
       case (sym, decl) =>
+        // Enum is non-public.
+        // Lookup usage information for this specific enum.
         used.enumSyms.get(sym) match {
-          case None => UnusedEnum(sym).toFailure
+          case None =>
+            // Case 1: Enum is never used.
+            UnusedEnumSym(sym).toFailure
           case Some(usedTags) =>
-            decl.cases.keySet
-            ().toSuccess
+            // Case 2: Enum is used and here are its used tags.
+            // Check if there is any unused tag.
+            decl.cases.values.find(caze => usedTags.contains(caze.tag.name)) match {
+              case None => ().toSuccess
+              case Some(caze) => UnusedEnumTag(sym, caze.tag).toFailure
+            }
         }
     }
-  }
 
   private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
@@ -395,18 +408,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         val v1 = m1(key)
         val v2 = m2(key)
 
-        compat(v1, v2, loc)
+        ???
     }
   }
 
-  private def compat(v1: AbsVal, v2: AbsVal, loc: SourceLocation): Validation[Unit, RedundancyError] = (v1, v2) match {
-    case (AbsVal.Range(b1, e1), AbsVal.Range(b2, e2)) =>
-      if (e1 < b2 || e2 < b1)
-        RedundancyError.Dead(loc).toFailure
-      else
-        ().toSuccess
-
-  }
 
   // TODO: We could store an upper, lower bound, and equal. At least for integers.
   // TODO: For other types it would just be equal and not equal.
@@ -566,5 +571,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: What counts as a use of an enum? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
+  // TODO: The pattern matching is difficult, because you could have a default match onsomething just of that type.
+  // TODO: What about the void enum? How would you deal with that? What about the singleton. The above choices start to seem more false in the presence of those.
+  // TODO: Add appropriate cases once a definition has been decided.
+  // And if you just require it to be used in a type, should that type then be used?
 
 }

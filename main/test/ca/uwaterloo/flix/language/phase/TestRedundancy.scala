@@ -9,19 +9,7 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
-  test("UnusedEnum.01") {
-    val input =
-      s"""
-         |enum One {
-         |  case One
-         |}
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedEnum](result)
-  }
-
-  test("UnusedEnum.02") {
+  test("UnusedEnumSym.01") {
     val input =
       s"""
          |enum Color {
@@ -32,10 +20,10 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedEnum](result)
+    expectError[RedundancyError.UnusedEnumSym](result)
   }
 
-  test("UnusedEnum.03") {
+  test("UnusedEnumSym.02") {
     val input =
       s"""
          |enum One {
@@ -48,17 +36,33 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedEnum](result)
+    expectError[RedundancyError.UnusedEnumSym](result)
   }
 
-  test("UnusedEnum.04") {
+  test("UnusedEnumSym.03") {
     val input =
       s"""
          |type USD = USD(Int)
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedEnum](result)
+    expectError[RedundancyError.UnusedEnumSym](result)
+  }
+
+  test("UnusedEnumTag.01") {
+    val input =
+      s"""
+         |enum Color {
+         |  case Red,
+         |  case Green,
+         |  case Blue
+         |}
+         |
+         |def main(): Color = Red
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedEnumTag](result)
   }
 
 }
