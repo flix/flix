@@ -122,15 +122,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def checkUnusedRelationsAndLattices(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
     val unusedRelSyms = root.relations.keys.filter(sym => unused(sym, used))
-    val failures1 = unusedRelSyms.map(UnusedRelSym).toStream
-
     val unusedLatSyms = root.lattices.keys.filter(sym => unused(sym, used))
-    //val failures2 = unusedLatSyms.map(UnusedRelSym).toStream // TODO
+    val failures1 = unusedRelSyms.map(UnusedRelSym).toStream
+    val failures2 = unusedLatSyms.map(UnusedLatSym).toStream
 
-    if (failures1.isEmpty)
+    if (failures1.isEmpty && failures2.isEmpty)
       Nil.toSuccess
     else
-      Failure(failures1)
+      Failure(failures1 #::: failures2)
   }
 
   private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
