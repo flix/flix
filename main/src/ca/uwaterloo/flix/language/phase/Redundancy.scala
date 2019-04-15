@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, MatchRule, Pattern, Root, SelectChannelRule, TypeParam}
 import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.{UnusedEnumSym, UnusedEnumTag, UnusedFormalParam, UnusedTypeParam, UnusedVarSym}
+import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -46,9 +46,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym], relSyms: Set[Symbol.RelSym], latSyms: Set[Symbol.LatSym]) {
-    // TODO: EnumSym
-    // TODO: Cases
-
     def ++(that: Used): Used =
       if (this eq Used.empty) {
         that
@@ -63,6 +60,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           this.latSyms ++ that.latSyms
         )
       }
+
+    def --(syms: Set[Symbol.VarSym]): Used = copy(varSyms = varSyms -- syms)
 
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
   }
@@ -203,19 +202,28 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (u1, u2) => ((u1 ++ u2) - sym).toSuccess
       }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = usedExp(exp1)
       val us2 = usedExp(exp2)
       val us3 = usedExp(exp3)
       mapN(us1, us2, us3)(_ ++ _ ++ _)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
-      val us1 = usedExp(exp)
-      mapN(us1, traverse(rules) {
+    case Expression.Match(exp, rules, _, _, _) =>
+      val usedMatch = usedExp(exp)
+      val usedRules = traverse(rules) {
         case MatchRule(pat, guard, body) =>
-          // TODO: Need to deal with pattern and guard.
-          usedExp(body)
-      }) {
+          val fvs = freeVars(pat)
+          flatMapN(usedExp(guard), usedExp(body)) {
+            case (usedGuard, usedBody) =>
+              val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).toList
+              if (unusedVarSyms.isEmpty)
+                ((usedGuard ++ usedBody) -- fvs).toSuccess
+              else
+                Failure(unusedVarSyms.map(sym => UnusedVarSym(sym)).toStream)
+          }
+      }
+
+      mapN(usedMatch, usedRules) {
         case (u1, xs) => xs.reduce(_ ++ _) ++ u1
       }
 
@@ -378,6 +386,29 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case xs => xs.foldLeft(Used.empty)(_ ++ _)
     }
 
+  /**
+    * Returns the free variables in the pattern `p0`.
+    */
+  private def freeVars(p0: Pattern): Set[Symbol.VarSym] = p0 match {
+    case Pattern.Wild(_, _) => Set.empty
+    case Pattern.Var(sym, _, _) => Set(sym)
+    case Pattern.Unit(loc) => Set.empty
+    case Pattern.True(loc) => Set.empty
+    case Pattern.False(loc) => Set.empty
+    case Pattern.Char(_, _) => Set.empty
+    case Pattern.Float32(_, _) => Set.empty
+    case Pattern.Float64(_, _) => Set.empty
+    case Pattern.Int8(_, _) => Set.empty
+    case Pattern.Int16(_, _) => Set.empty
+    case Pattern.Int32(_, _) => Set.empty
+    case Pattern.Int64(_, _) => Set.empty
+    case Pattern.BigInt(_, _) => Set.empty
+    case Pattern.Str(_, _) => Set.empty
+    case Pattern.Tag(_, _, pat, _, _) => freeVars(pat)
+    case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
+    }
+  }
 
   private def usedConstraint(c: TypedAst.Constraint): Validation[Used, RedundancyError] = ??? // TODO
 
@@ -575,5 +606,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: What about the void enum? How would you deal with that? What about the singleton. The above choices start to seem more false in the presence of those.
   // TODO: Add appropriate cases once a definition has been decided.
   // And if you just require it to be used in a type, should that type then be used?
+
+  // TODO: Type Parameters: When is a type parameter considered to be used?
+
+  // TODO: Allow wildcards everywhere.
+  // TODO: Add tests for wildcards.
+
+  // TODO: How do we want to think about shadowing? If we allow shadowing we need to augment error messages to
+  // to explain that the dead variable could have been shadowed.
 
 }

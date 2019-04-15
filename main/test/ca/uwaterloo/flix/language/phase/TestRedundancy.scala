@@ -65,7 +65,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedEnumTag](result)
   }
 
-  test("UnusedFormalParam.01") {
+  test("UnusedFormalParam.Def.01") {
     val input =
       s"""
          |def f(x: Int): Int = 123
@@ -75,7 +75,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.02") {
+  test("UnusedFormalParam.Def.02") {
     val input =
       s"""
          |def f(x: Int, y: Int): Int = y
@@ -85,7 +85,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.03") {
+  test("UnusedFormalParam.Def.03") {
     val input =
       s"""
          |def f(x: Int, y: Int): Int = x
@@ -95,7 +95,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.04") {
+  test("UnusedFormalParam.Def.04") {
     val input =
       s"""
          |def f(x: Int, y: Int, z: Int): Int = x + z
@@ -105,7 +105,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.05") {
+  test("UnusedFormalParam.Lambda.01") {
     val input =
       s"""
          |def f(): Int =
@@ -117,7 +117,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.06") {
+  test("UnusedFormalParam.Lambda.02") {
     val input =
       s"""
          |def f(): Int =
@@ -129,7 +129,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.07") {
+  test("UnusedFormalParam.Lambda.03") {
     val input =
       s"""
          |def f(): Int =
@@ -141,7 +141,19 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.09") {
+  test("UnusedFormalParam.Lambda.04") {
+    val input =
+      s"""
+         |def f(): Int =
+         |  let f = (x, y, z) -> x + z;
+         |  f(1, 2, 3)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.Forall.01") {
     val input =
       s"""
          |def f(): Bool = \\forall(x: Int). true
@@ -151,7 +163,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedFormalParam.10") {
+  test("UnusedFormalParam.Exists.01") {
     val input =
       s"""
          |def f(): Bool = \\exists(x: Int). true
@@ -159,6 +171,136 @@ class TestRedundancy extends FunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedVarSym.Let.01") {
+    val input =
+      s"""
+         |def f(): Int =
+         |  let x = 123;
+         |  456
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.Let.02") {
+    val input =
+      s"""
+         |def f(): Int =
+         |  let x = 123;
+         |  let x = 456;
+         |  x
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.LetMatch.01") {
+    val input =
+      s"""
+         |def f(): Int =
+         |    let (x, y) = (1, 2);
+         |    x
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.LetMatch.02") {
+    val input =
+      s"""
+         |def f(): Int =
+         |    let (x, y) = (1, 2);
+         |    y
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.LetMatch.03") {
+    val input =
+      s"""
+         |def f(): Int =
+         |    let (x, y, z) = (1, 2, 3);
+         |    x + y
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.LetMatch.04") {
+    val input =
+      s"""
+         |def f(): Int =
+         |    let (x, y, z) = (1, 2, 3);
+         |    x + z
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.Pattern.01") {
+    val input =
+      s"""
+         |pub enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
+         |def f(x: Option[Int]): Int =
+         |    match x with {
+         |        case x => 123
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.Pattern.02") {
+    val input =
+      s"""
+         |pub enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
+         |def f(x: Option[Int]): Int =
+         |    match x with {
+         |        case None    => 123
+         |        case Some(x) => 456
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.Pattern.03") {
+    val input =
+      s"""
+         |pub enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
+         |def f(x: Option[(Int, Int)]): Int =
+         |    match x with {
+         |        case None         => 123
+         |        case Some((x, y)) => y
+         |    }
+         |
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
   }
 
 }

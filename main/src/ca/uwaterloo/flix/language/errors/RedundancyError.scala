@@ -45,7 +45,7 @@ object RedundancyError {
       vt << NewLine
       vt << Code(sym.loc, "unused enum.") << NewLine
       vt << NewLine
-      vt << "Possible Fixes:" << NewLine
+      vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the enum." << NewLine
       vt << "  (1)  Remove the enum." << NewLine
@@ -71,7 +71,7 @@ object RedundancyError {
       vt << NewLine
       vt << Code(tag.loc, "unused tag.") << NewLine
       vt << NewLine
-      vt << "Possible Fixes:" << NewLine
+      vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the case." << NewLine
       vt << "  (2)  Remove the case." << NewLine
@@ -95,11 +95,35 @@ object RedundancyError {
       vt << NewLine
       vt << Code(sym.loc, "unused formal parameter.") << NewLine
       vt << NewLine
-      vt << "Possible Fixes:" << NewLine
+      vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the formal parameter." << NewLine
       vt << "  (2)  Remove the formal parameter." << NewLine
-      vt << "  (3)  Replace the parameter name with an underscore." << NewLine
+      vt << "  (3)  Prefix the formal parameter name with an underscore." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that the given variable symbol `sym` is not used.
+    *
+    * @param sym the unused variable symbol.
+    */
+  case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
+    val source: Source = sym.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused local variable '" << Red(sym.text) << "'. The variable is not referenced within its scope." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unused local variable.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the local variable." << NewLine
+      vt << "  (2)  Remove local variable declaration." << NewLine
+      vt << "  (3)  Prefix the variable name with an underscore." << NewLine
       vt << NewLine
       vt
     }
@@ -129,26 +153,6 @@ object RedundancyError {
     }
   }
 
-  /**
-    * An error raised to indicate that the given variable symbol `sym` is not used.
-    *
-    * @param sym the unused variable symbol.
-    */
-  case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
-    // TODO: Suggest using wildcard.
-    val source: Source = sym.loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused local variable '" << Red(sym.text) << "'. The variable is not referenced within its scope." << NewLine
-      vt << NewLine
-      vt << Code(sym.loc, "unused local variable.") << NewLine
-      vt << NewLine
-      vt << "Remove the variable declaration or use the variable within its scope."
-      vt << NewLine
-      vt
-    }
-  }
 
   // TODO: Refactor
   case class ImpossibleMatch(loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
