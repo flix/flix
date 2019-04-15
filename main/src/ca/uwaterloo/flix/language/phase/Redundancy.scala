@@ -95,7 +95,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       u <- usedExp(defn.exp)
       _ <- checkUnusedFormalParameters(defn, u)
       _ <- checkUnusedTypeParameters(defn)
-   //   _ <- constantFoldExp(defn.exp, Map.empty)
+      //   _ <- constantFoldExp(defn.exp, Map.empty)
     } yield u
   }
 
@@ -627,13 +627,19 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => ().toSuccess
   }
 
-  private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean =
+  private def unused(sym: Symbol.VarSym, used: Used): Boolean =
     !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
-  private def unused(sym: Symbol.PredSym, used: Redundancy.Used): Boolean =
+  /**
+    * Returns `true` if `sym` is unused according to the argument `used`.
+    */
+  private def unused(sym: Symbol.PredSym, used: Used): Boolean =
     !used.predSyms.contains(sym)
 
-  private def unused(sym: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(sym)
+  /**
+    * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
+    */
+  private def unused(tvar: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(tvar)
 
   object MultiMap {
     def Empty[K, V]: MultiMap[K, V] = MultiMap(Map.empty)
