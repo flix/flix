@@ -32,6 +32,31 @@ trait RedundancyError extends CompilationError {
 object RedundancyError {
 
   /**
+    * An error raised to indicate that the def with the symbol `sym` is not used.
+    *
+    * @param sym the unused enum symbol.
+    */
+  case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
+    val source: Source = sym.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused definition '" << Red(sym.name) << "'. The definition is never referenced." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unused definition.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the definition." << NewLine
+      vt << "  (1)  Remove the definition." << NewLine
+      vt << "  (3)  Mark the definition as public." << NewLine
+      vt << "  (4)  Prefix the definition name with an underscore." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the enum with the symbol `sym` is not used.
     *
     * @param sym the unused enum symbol.

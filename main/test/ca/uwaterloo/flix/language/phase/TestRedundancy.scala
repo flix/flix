@@ -9,6 +9,16 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
+  test("UnusedDefSym.01") {
+    val input =
+      s"""
+         |def f(): Int = 123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedDefSym](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""

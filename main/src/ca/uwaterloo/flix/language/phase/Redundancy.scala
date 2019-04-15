@@ -84,6 +84,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     for {
       used <- usedVal
+      _ <- checkUnusedDefs(used)(root)
       _ <- checkUnusedEnumsAndTags(used)(root)
       _ <- checkUnusedRelationsAndLattices(used)(root)
     } yield root
@@ -97,6 +98,22 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       _ <- checkUnusedTypeParameters(defn)
       //   _ <- constantFoldExp(defn.exp, Map.empty)
     } yield u
+  }
+
+  // TODO: Test cases.
+  private def checkUnusedDefs(used: Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
+    // TODO: Maybe this can be cleaned up.
+    traverse(root.defs) {
+      case (sym, decl) if decl.mod.isPublic || sym.text == "main" =>
+        // Def is public. No usage requirements.
+        ().toSuccess
+      case (sym, decl) =>
+        // Def is non-public. Check if the def is used.
+        if (unused(sym, used))
+          UnusedDefSym(sym).toFailure
+        else
+          ().toSuccess
+    }
   }
 
   /**
@@ -627,8 +644,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => ().toSuccess
   }
 
-  private def unused(sym: Symbol.VarSym, used: Used): Boolean =
-    !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
+  private def unused(sym: Symbol.DefnSym, used: Used): Boolean =
+    !used.defSyms.contains(sym)
 
   /**
     * Returns `true` if `sym` is unused according to the argument `used`.
@@ -640,6 +657,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def unused(tvar: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(tvar)
+
+  private def unused(sym: Symbol.VarSym, used: Used): Boolean =
+    !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
   object MultiMap {
     def Empty[K, V]: MultiMap[K, V] = MultiMap(Map.empty)
