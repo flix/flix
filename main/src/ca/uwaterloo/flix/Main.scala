@@ -162,6 +162,8 @@ object Main {
           }
         case Validation.Failure(errors) =>
           errors.foreach(e => println(e.message.fmt))
+          println()
+          println(s"Compilation failed with ${errors.length} errors.")
           System.exit(1)
       }
     } catch {
