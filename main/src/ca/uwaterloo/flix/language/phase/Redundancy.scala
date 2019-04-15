@@ -36,8 +36,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object Used {
 
+    /**
+      * Returns an object where no symbol is marked as used.
+      */
     val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty)
 
+    /**
+      * Returns an object where the given enum symbol `sym` and `tag` is marked as used.
+      */
     def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
 
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
@@ -141,7 +147,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def checkUnusedTypeParameters(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
     traverse(defn.tparams) {
-      case TypeParam(name, tvar, _) if unused(tvar, defn.tpe.typeVars) => UnusedTypeParam(name, defn.sym).toFailure
+      case TypeParam(name, tvar, _) if unused(tvar, defn.tpe.typeVars) => UnusedTypeParam(name).toFailure
       case TypeParam(_, _, _) => ().toSuccess
     }
   }

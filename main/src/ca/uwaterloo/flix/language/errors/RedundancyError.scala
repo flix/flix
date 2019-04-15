@@ -179,29 +179,34 @@ object RedundancyError {
     }
   }
 
-  //------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------
   /**
-    * An error raised to indicate that the given type parameter `ident` is not used within `defSym`.
+    * An error raised to indicate that the given type parameter `ident` is not used.
     *
-    * @param ident  the unused type variable
-    * @param defSym the definition symbol.
+    * @param ident the unused type variable.
     */
-  case class UnusedTypeParam(ident: Name.Ident, defSym: Symbol.DefnSym) extends RedundancyError {
+  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
     val source: Source = ident.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused type parameter '" << Red(ident.name) << "'. The parameter is not used in the signature of '" << Cyan(defSym.text) << "'." << NewLine
+      vt << ">> Unused type parameter '" << Red(ident.name) << "'." << NewLine
       vt << NewLine
       vt << Code(ident.loc, "unused type parameter.") << NewLine
       vt << NewLine
-      vt << "Remove the type parameter or use it in the function signature."
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the type parameter." << NewLine
+      vt << "  (2)  Remove type parameter." << NewLine
+      vt << "  (3)  Prefix the type parameter name with an underscore.." << NewLine
       vt << NewLine
       vt
     }
   }
+
+
+  //------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------
 
 
   // TODO: Refactor
