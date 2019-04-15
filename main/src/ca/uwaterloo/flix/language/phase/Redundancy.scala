@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
@@ -35,17 +36,19 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object Used {
 
-    val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty, Set.empty)
+    val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty)
 
     def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
 
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
+    def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
+
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
 
   }
 
-  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], varSyms: Set[Symbol.VarSym], relSyms: Set[Symbol.RelSym], latSyms: Set[Symbol.LatSym]) {
+  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], predSyms: Set[Symbol.PredSym], varSyms: Set[Symbol.VarSym]) {
     def ++(that: Used): Used =
       if (this eq Used.empty) {
         that
@@ -55,9 +58,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.varSyms ++ that.varSyms,
-          this.relSyms ++ that.relSyms,
-          this.latSyms ++ that.latSyms
+          this.predSyms ++ that.predSyms,
+          this.varSyms ++ that.varSyms
         )
       }
 
@@ -75,7 +77,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     for {
       used <- usedVal
-      _ <- checkUnusedEnumSymbolsAndTags(used)(root)
+      _ <- checkUnusedEnumsAndTags(used)(root)
+      _ <- checkUnusedRelationsAndLattices(used)(root)
     } yield root
 
   }
@@ -92,7 +95,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Checks for unused enum symbols and tags.
     */
-  private def checkUnusedEnumSymbolsAndTags(used: Used)(implicit root: Root): Validation[List[Unit], RedundancyError] =
+  private def checkUnusedEnumsAndTags(used: Used)(implicit root: Root): Validation[List[Unit], RedundancyError] =
     traverse(root.enums) {
       case (sym, decl) if decl.mod.isPublic =>
         // Enum is public. No usage requirements.
@@ -114,6 +117,22 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         }
     }
 
+  /**
+    * Checks for unused relation and lattice symbols.
+    */
+  private def checkUnusedRelationsAndLattices(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
+    val unusedRelSyms = root.relations.keys.filter(sym => unused(sym, used))
+    val failures1 = unusedRelSyms.map(UnusedRelSym).toStream
+
+    val unusedLatSyms = root.lattices.keys.filter(sym => unused(sym, used))
+    //val failures2 = unusedLatSyms.map(UnusedRelSym).toStream // TODO
+
+    if (failures1.isEmpty)
+      Nil.toSuccess
+    else
+      Failure(failures1)
+  }
+
   private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
       case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym).toFailure
@@ -129,7 +148,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Returns symbols used in the given expression `e0`.
+    * Returns the symbols used in the given expression `e0`.
     */
   private def usedExp(e0: TypedAst.Expression): Validation[Used, RedundancyError] = e0 match {
     case Expression.Unit(_) => Empty
@@ -362,7 +381,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Sleep(exp, _, _, _) => usedExp(exp)
 
-    case Expression.FixpointConstraint(c, _, _, _) => usedConstraint(c)
+    case Expression.FixpointConstraint(c, _, _, _) => visitConstraint(c)
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       val us1 = usedExp(exp1)
@@ -410,7 +429,38 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  private def usedConstraint(c: TypedAst.Constraint): Validation[Used, RedundancyError] = ??? // TODO
+  /**
+    * Returns the symbols used in the given constraint `c0`.
+    */
+  private def visitConstraint(c0: Constraint): Validation[Used, RedundancyError] = {
+    val Constraint(_, head, body, _) = c0
+    mapN(visitHeadPred(head), traverse(body)(visitBodyPred)) {
+      case (h, bs) => bs.foldLeft(h)(_ ++ _)
+    }
+  }
+
+  /**
+    * Returns the symbols used in the given head predicate `h0`.
+    */
+  private def visitHeadPred(h0: Predicate.Head): Validation[Used, RedundancyError] = h0 match {
+    case Head.Atom(pred, terms, _, _) =>
+      mapN(usedExp(pred.exp), usedExps(terms)) {
+        case (usedParam, usedTerms) => Used.of(pred.sym) ++ usedParam ++ usedTerms
+      }
+  }
+
+  /**
+    * Returns the symbols used in the given body predicate `h0`.
+    */
+  private def visitBodyPred(b0: Predicate.Body): Validation[Used, RedundancyError] = b0 match {
+    case Body.Atom(pred, _, terms, _, _) =>
+      mapN(usedExp(pred.exp)) {
+        case usedParam => Used.of(pred.sym) ++ usedParam
+      }
+
+    case Body.Filter(sym, terms, loc) => ??? // TODO
+    case Body.Functional(sym, term, loc) => ??? // TODO
+  }
 
   sealed trait Value
 
@@ -571,6 +621,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def unused(sym: Symbol.VarSym, used: Redundancy.Used): Boolean =
     !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
+
+  private def unused(sym: Symbol.PredSym, used: Redundancy.Used): Boolean =
+    !used.predSyms.contains(sym)
 
   private def unused(sym: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(sym)
 

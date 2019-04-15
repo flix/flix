@@ -106,6 +106,31 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the given relation symbol `sym` is not used.
+    *
+    * @param sym the unused relation symbol.
+    */
+  case class UnusedRelSym(sym: Symbol.RelSym) extends RedundancyError {
+    val source: Source = sym.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused relation '" << Red(sym.name) << "'. The relation is never referenced." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "unused relation.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the relation." << NewLine
+      vt << "  (1)  Remove the relation." << NewLine
+      vt << "  (3)  Mark the relation as public." << NewLine
+      vt << "  (4)  Prefix the relation name with an underscore." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the given variable symbol `sym` is not used.
     *
     * @param sym the unused variable symbol.
