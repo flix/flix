@@ -76,8 +76,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
 
-    return root.toSuccess
-
     val defs = root.defs.map { case (_, v) => visitDef(v, root) }
 
     val usedVal = sequence(defs).map {
@@ -97,7 +95,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       u <- usedExp(defn.exp)
       _ <- checkUnusedFormalParameters(defn, u)
       _ <- checkUnusedTypeParameters(defn)
-      _ <- constantFoldExp(defn.exp, Map.empty)
+   //   _ <- constantFoldExp(defn.exp, Map.empty)
     } yield u
   }
 
@@ -119,7 +117,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           case Some(usedTags) =>
             // Case 2: Enum is used and here are its used tags.
             // Check if there is any unused tag.
-            decl.cases.values.find(caze => usedTags.contains(caze.tag.name)) match {
+            decl.cases.values.find(caze => !usedTags.contains(caze.tag.name)) match {
               case None => ().toSuccess
               case Some(caze) => UnusedEnumTag(sym, caze.tag).toFailure
             }
@@ -150,7 +148,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def checkUnusedTypeParameters(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
     traverse(defn.tparams) {
-      case TypeParam(name, tvar, _) if unused(tvar, defn.tpe.typeVars) => UnusedTypeParam(name).toFailure
+      case TypeParam(name, tvar, _) if unused(tvar, defn.sc.base.typeVars) => UnusedTypeParam(name).toFailure
       case TypeParam(_, _, _) => ().toSuccess
     }
   }
