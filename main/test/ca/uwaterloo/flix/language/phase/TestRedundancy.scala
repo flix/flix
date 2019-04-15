@@ -297,6 +297,35 @@ class TestRedundancy extends FunSuite with TestUtils {
          |        case Some((x, y)) => y
          |    }
          |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.Select.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    let c = chan Int 0;
+         |    select {
+         |        case x <- c => 123
+         |    }
+         |
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("UnusedVarSym.Select.02") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    let c = chan Int 0;
+         |    select {
+         |        case x <- c => x
+         |        case x <- c => 123
+         |    }
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
