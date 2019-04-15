@@ -34,7 +34,8 @@ object TypedAst {
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym])
 
-  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation)
+  // TODO: Remove .tpe from here.
+  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, sc: Scheme, tpe: Type, eff: ast.Eff, loc: SourceLocation)
 
   case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], tpe: Type, eff: ast.Eff, loc: SourceLocation)
 

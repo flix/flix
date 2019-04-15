@@ -75,6 +75,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
+
+    return root.toSuccess
+
     val defs = root.defs.map { case (_, v) => visitDef(v, root) }
 
     val usedVal = sequence(defs).map {

@@ -464,7 +464,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -684,7 +684,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -913,7 +913,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -1230,7 +1230,7 @@ object Synthesize extends Phase[Root, Root] {
      * (a) Every type that appears as return type of some definition.
      */
     val typesInDefs: Set[Type] = root.defs.map {
-      case (_, Def(_, _, _, _, _, _, exp, _, _, _)) => exp.tpe
+      case (_, Def(_, _, _, _, _, _, exp, _, _, _, _)) => exp.tpe
     }.toSet
 
     /*
