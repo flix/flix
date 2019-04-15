@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Cyan, Line, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -57,7 +57,7 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that in the enum with symbol `sym` the case `tag` is unused.
+    * An error raised to indicate that in the enum with symbol `sym` the case `tag` is not used.
     *
     * @param sym the enum symbol.
     * @param tag the unused tag.
@@ -74,43 +74,40 @@ object RedundancyError {
       vt << "Possible Fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the case." << NewLine
-      vt << "  (1)  Remove the case." << NewLine
+      vt << "  (2)  Remove the case." << NewLine
       vt << "  (3)  Prefix the case with an underscore." << NewLine
       vt << NewLine
       vt
     }
   }
 
-
-
-
-
   /**
-    * An error raised to indicate that the given formal parameter `varSym` is not used within `defSym`.
+    * An error raised to indicate that the given formal parameter symbol `sym` is not used.
     *
-    * @param varSym    the unused variable symbol.
-    * @param defSymOpt the optional definition symbol.
+    * @param sym the unused variable symbol.
     */
-  case class UnusedFormalParam(varSym: Symbol.VarSym, defSymOpt: Option[Symbol.DefnSym]) extends RedundancyError {
-    val source: Source = varSym.loc.source
+  case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
+    val source: Source = sym.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      defSymOpt match {
-        case None =>
-          vt << ">> Unused formal parameter '" << Red(varSym.text) << "'. The parameter is not used inside the function." << NewLine
-        case Some(defSym) =>
-          vt << ">> Unused formal parameter '" << Red(varSym.text) << "'. The parameter is not used inside '" << Cyan(defSym.text) << "'." << NewLine
-      }
+      vt << ">> Unused formal parameter '" << Red(sym.text) << "'. The parameter is not used within its scope." << NewLine
       vt << NewLine
-      vt << Code(varSym.loc, "unused formal parameter.") << NewLine
+      vt << Code(sym.loc, "unused formal parameter.") << NewLine
       vt << NewLine
-      vt << "Remove the formal parameter or use it inside the function."
+      vt << "Possible Fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the formal parameter." << NewLine
+      vt << "  (2)  Remove the formal parameter." << NewLine
+      vt << "  (3)  Replace the parameter name with an underscore." << NewLine
       vt << NewLine
       vt
     }
   }
 
+  //------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------------------
   /**
     * An error raised to indicate that the given type parameter `ident` is not used within `defSym`.
     *

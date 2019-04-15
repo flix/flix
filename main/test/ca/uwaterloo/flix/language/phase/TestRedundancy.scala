@@ -65,4 +65,100 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedEnumTag](result)
   }
 
+  test("UnusedFormalParam.01") {
+    val input =
+      s"""
+         |def f(x: Int): Int = 123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.02") {
+    val input =
+      s"""
+         |def f(x: Int, y: Int): Int = y
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.03") {
+    val input =
+      s"""
+         |def f(x: Int, y: Int): Int = x
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.04") {
+    val input =
+      s"""
+         |def f(x: Int, y: Int, z: Int): Int = x + z
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.05") {
+    val input =
+      s"""
+         |def f(): Int =
+         |  let f = x -> 123;
+         |  f(1)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.06") {
+    val input =
+      s"""
+         |def f(): Int =
+         |  let f = (x, y) -> x;
+         |  f(1, 2)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.07") {
+    val input =
+      s"""
+         |def f(): Int =
+         |  let f = (x, y) -> y;
+         |  f(1, 2)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.09") {
+    val input =
+      s"""
+         |def f(): Bool = \\forall(x: Int). true
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
+  test("UnusedFormalParam.10") {
+    val input =
+      s"""
+         |def f(): Bool = \\exists(x: Int). true
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedFormalParam](result)
+  }
+
 }

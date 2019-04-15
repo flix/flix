@@ -117,7 +117,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
-      case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym, Some(defn.sym)).toFailure
+      case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym).toFailure
       case FormalParam(_, _, _, _) => ().toSuccess
     }
   }
@@ -169,7 +169,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
       flatMapN(usedExp(exp)) {
-        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym, None).toFailure
+        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym).toFailure
         case used => used.toSuccess
       }
 
@@ -300,13 +300,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Existential(fparam, exp, _, _) =>
       flatMapN(usedExp(exp)) {
-        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym, None).toFailure
+        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym).toFailure
         case used => used.toSuccess
       }
 
     case Expression.Universal(fparam, exp, _, _) =>
       flatMapN(usedExp(exp)) {
-        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym, None).toFailure
+        case used if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym).toFailure
         case used => used.toSuccess
       }
 
