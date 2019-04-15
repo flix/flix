@@ -390,7 +390,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.FixpointSolve(exp, _, _, _) => usedExp(exp)
 
-    case Expression.FixpointProject(_, exp, _, _, _) => usedExp(exp)
+    case Expression.FixpointProject(_, exp, _, _, _) => usedExp(exp) // TODO: Use predSym here?
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       val us1 = usedExp(exp1)
@@ -457,6 +457,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       mapN(usedExp(pred.exp)) {
         case usedParam => Used.of(pred.sym) ++ usedParam
       }
+
+    // TODO: Add test cases for predicates.
 
     case Body.Filter(sym, terms, loc) => ??? // TODO
     case Body.Functional(sym, term, loc) => ??? // TODO
@@ -667,5 +669,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: How do we want to think about shadowing? If we allow shadowing we need to augment error messages to
   // to explain that the dead variable could have been shadowed.
+
+  // TODO: In the case of predicates, do we want to assert that there are some facts? What about in the presence of
+  // first-class constraints?
 
 }
