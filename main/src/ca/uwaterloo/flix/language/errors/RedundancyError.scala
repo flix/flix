@@ -156,6 +156,30 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the given type parameter `ident` is not used.
+    *
+    * @param ident the unused type variable.
+    */
+  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
+    val source: Source = ident.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unused type parameter '" << Red(ident.name) << "'. The parameter is not referenced in any signature." << NewLine
+      vt << NewLine
+      vt << Code(ident.loc, "unused type parameter.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the type parameter." << NewLine
+      vt << "  (2)  Remove type parameter." << NewLine
+      vt << "  (3)  Prefix the type parameter name with an underscore.." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the given variable symbol `sym` is not used.
     *
     * @param sym the unused variable symbol.
@@ -178,31 +202,6 @@ object RedundancyError {
       vt
     }
   }
-
-  /**
-    * An error raised to indicate that the given type parameter `ident` is not used.
-    *
-    * @param ident the unused type variable.
-    */
-  case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
-    val source: Source = ident.loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused type parameter '" << Red(ident.name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(ident.loc, "unused type parameter.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the type parameter." << NewLine
-      vt << "  (2)  Remove type parameter." << NewLine
-      vt << "  (3)  Prefix the type parameter name with an underscore.." << NewLine
-      vt << NewLine
-      vt
-    }
-  }
-
 
   //------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------

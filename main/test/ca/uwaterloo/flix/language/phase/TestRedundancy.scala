@@ -173,6 +173,46 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
+  test("UnusedTypeVar.01") {
+    val input =
+      s"""
+         |def f[a](): Int = 123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeVar.02") {
+    val input =
+      s"""
+         |def f[a, b](x: a): a = x
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeVar.03") {
+    val input =
+      s"""
+         |def f[a, b](x: b): b = x
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeVar.04") {
+    val input =
+      s"""
+         |def f[a, b, c](x: a, y: c): (a, c) = (x, y)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
   test("UnusedVarSym.Let.01") {
     val input =
       s"""

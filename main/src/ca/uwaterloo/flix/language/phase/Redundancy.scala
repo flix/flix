@@ -662,6 +662,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
+  // TODO: Check unused type parameters in enums
+
   // TODO: What counts as a use of an enum? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
   // TODO: The pattern matching is difficult, because you could have a default match onsomething just of that type.
   // TODO: What about the void enum? How would you deal with that? What about the singleton. The above choices start to seem more false in the presence of those.
