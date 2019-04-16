@@ -246,6 +246,7 @@ object RedundancyError {
       vt << NewLine
       vt << "  (1)  Use the result computed by the expression." << NewLine
       vt << "  (2)  Remove the expression statement." << NewLine
+      vt << "  (3)  Introduce a let-binding with a wildcard name." << NewLine
       vt << NewLine
       vt
     }

@@ -38,17 +38,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty)
 
     /**
-      * Returns an object where the given enum symbol `sym` and `tag` is marked as used.
+      * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
     def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
 
-    // TODO
+    /**
+      * Returns an object where the given defn symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
-    // TODO
+    /**
+      * Returns an object where the given predicate symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
 
-    // TODO
+    /**
+      * Returns an object where the given variable symbol `sym` is marked as used.
+      */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
 
   }
@@ -725,4 +731,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Does new channel have a side-effect or not? Is it allowed to be discarded?
   // TODO: How do we want to deal with expressions that have side-effects and a return value that must be used.
   // E.g. like the above.
+
+  // TODO: Add more tests for useless expressions ones the effect system is implemented.
+
 }
