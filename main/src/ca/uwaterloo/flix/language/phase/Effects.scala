@@ -33,6 +33,9 @@ object Effects extends Phase[Root, Root] {
   def run(root: Root)(implicit flix: Flix): Validation[Root, EffectError] = flix.phase("Effects") {
 
     // TODO: Implement Effects.
+
+    // TODO: Need not only effects, but also whether a result must be used or not.
+
     return root.toSuccess
 
   }

@@ -552,10 +552,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
-
-  // TODO
-  private def isPure(e: Expression): Boolean = ???
-
   // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
   // TODO: Maybe we need a measure on physical code size?
 
@@ -591,7 +587,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
 
-  // TODO: Need notion of stable expression which should be used instead of variable symbol.
+  // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
   sealed trait StableExp
 
   object StableExp {
@@ -655,15 +651,58 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  /**
+    * Attempts to unify the two given patterns `p1` and `p2`.
+    *
+    * Returns a substitution if successful. Otherwise returns a redundancy error.
+    */
+  // TODO: Have to check that there is no infinite recursion here...
+  private def unify(p1: Pattern, p2: Pattern): Validation[Substitution, RedundancyError] = (p1, p2) match {
+    case (Pattern.Wild(_, _), Pattern.Wild(_, _)) => Substitution.empty.toSuccess
 
-  private def unify(p1: Pattern, p2: Pattern): Validation[Unit, RedundancyError] = (p1, p2) match {
-    case (Pattern.Tag(_, tag1, pat1, _, _), Pattern.Tag(_, tag2, pat2, _, _)) =>
-      if (tag1 == tag2)
-        unify(pat1, pat2)
-      else
-        RedundancyError.ImpossibleMatch(p1.loc, p2.loc).toFailure
-    case _ => ().toSuccess
+    case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Substitution(Map(sym1 -> p2)).toSuccess // TODO: Is this safe?
+
+    case (Pattern.Var(sym, _, _), _) => Substitution(Map(sym -> p2)).toSuccess
+
+    case (_, Pattern.Var(sym, _, _)) => Substitution(Map(sym -> p1)).toSuccess
+
+    case (Pattern.Unit(_), Pattern.Unit(_)) => Substitution.empty.toSuccess
+
+    case (Pattern.True(_), Pattern.True(_)) => Substitution.empty.toSuccess
+
+    case (Pattern.False(_), Pattern.False(_)) => Substitution.empty.toSuccess
+
+    case (Pattern.Char(lit1, _), Pattern.Char(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Float32(lit1, _), Pattern.Float32(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Float64(lit1, _), Pattern.Float64(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Int8(lit1, _), Pattern.Int8(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Int16(lit1, _), Pattern.Int16(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Int32(lit1, _), Pattern.Int32(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Int64(lit1, _), Pattern.Int64(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.BigInt(lit1, _), Pattern.BigInt(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Str(lit1, _), Pattern.Str(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+
+    case (Pattern.Tag(_, tag1, pat1, _, _), Pattern.Tag(_, tag2, pat2, _, _)) if tag1 == tag2 => unify(pat1, pat2)
+
+    case (Pattern.Tuple(elms1, _, _), Pattern.Tuple(elms2, _, _)) => ??? // TODO
+
+    case _ => RedundancyError.ImpossibleMatch(p1.loc, p2.loc).toFailure
   }
+
+
+  private def unifyAll(ps1: List[Pattern], ps2: List[Pattern]): Validation[Substitution, RedundancyError] = (ps1, ps2) match {
+    case (Nil, Nil) => Substitution.empty.toSuccess
+    case _ => ??? // TODO
+  }
+
 
   private def unused(sym: Symbol.DefnSym, used: Used): Boolean =
     !used.defSyms.contains(sym)
@@ -681,6 +720,62 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def unused(sym: Symbol.VarSym, used: Used): Boolean =
     !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
+
+
+  // TODO: Carry the local environment mapping vars to patterns
+  // TODO: but also carry equality relation... which should probably be a bimap (?)
+  // TODO: Introduce bimap class?
+  case class Env(env: Map[Symbol.VarSym, Pattern], eq1: MultiMap[StableExp, StableExp], eq2: MultiMap[StableExp, StableExp])
+
+  // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
+
+  // Note the eq maps do not contain transitive closure.
+
+  /**
+    * Companion object of [[Substitution]].
+    */
+  object Substitution {
+    val empty: Substitution = Substitution(Map.empty)
+  }
+
+  /**
+    * TODO: A substitution is a map from type variables to types.
+    */
+  case class Substitution(m: Map[Symbol.VarSym, Pattern]) {
+
+    /**
+      * Returns `true` if `this` is the empty substitution.
+      */
+    def isEmpty: Boolean = m.isEmpty
+
+    /**
+      * Applies `this` substitution to the given type `tpe`.
+      */
+    def apply(tpe: Pattern): Pattern = ??? // TODO: Check for occurs check.
+
+    /**
+      * Applies `this` substitution to the given types `ts`.
+      */
+    def apply(ts: List[Pattern]): List[Pattern] = ts map apply
+
+    /**
+      * Returns the left-biased composition of `this` substitution with `that` substitution.
+      */
+    def ++(that: Substitution): Substitution = {
+      Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
+    }
+
+    /**
+      * Returns the composition of `this` substitution with `that` substitution.
+      */
+    def @@(that: Substitution): Substitution = {
+      val m = that.m.foldLeft(Map.empty[Symbol.VarSym, Pattern]) {
+        case (macc, (x, t)) => macc.updated(x, this.apply(t))
+      }
+      Substitution(m) ++ this
+    }
+
+  }
 
   object MultiMap {
     def Empty[K, V]: MultiMap[K, V] = MultiMap(Map.empty)
@@ -733,5 +828,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // E.g. like the above.
 
   // TODO: Add more tests for useless expressions ones the effect system is implemented.
+
+  // TODO: We should probably disallow shadowing, because of things like this:
+  // TODO: Shadowing in pattern matches:
+  // match o with {
+  //   case Some(x) => match o with { case x => }}
+  // }
+
+  // TODO: Also talk about linear patterns, and why disallow them.
+
+  // TODO: No implicit promotions. No implicit coercions.
 
 }
