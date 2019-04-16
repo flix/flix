@@ -250,6 +250,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us3 = usedExp(exp3)
       mapN(us1, us2, us3)(_ ++ _ ++ _)
 
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      val us1 = usedExp(exp1)
+      val us2 = usedExp(exp2)
+      mapN(us1, us2)(_ ++ _)
+
     case Expression.Match(exp, rules, _, _, _) =>
       val usedMatch = usedExp(exp)
       val usedRules = traverse(rules) {

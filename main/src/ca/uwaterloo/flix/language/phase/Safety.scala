@@ -81,6 +81,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)

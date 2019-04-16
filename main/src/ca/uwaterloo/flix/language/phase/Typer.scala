@@ -548,6 +548,27 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       /*
+       * If-then-else expression.
+       */
+      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+        for (
+          tpe1 <- visitExp(exp1);
+          tpe2 <- visitExp(exp2);
+          tpe3 <- visitExp(exp3);
+          ____ <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc);
+          rtpe <- unifyM(tvar, tpe2, tpe3, loc)
+        ) yield rtpe
+
+      /*
+       * Stm expression.
+       */
+      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+        for {
+          tpe1 <- visitExp(exp1)
+          tpe2 <- visitExp(exp2)
+        } yield tpe2
+
+      /*
        * Let expression.
        */
       case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
@@ -569,18 +590,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           boundVar <- unifyM(sym.tvar, tpe1, loc);
           resultVar <- unifyM(tvar, tpe2, loc)
         ) yield resultVar
-
-      /*
-       * If-then-else expression.
-       */
-      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
-        for (
-          tpe1 <- visitExp(exp1);
-          tpe2 <- visitExp(exp2);
-          tpe3 <- visitExp(exp3);
-          ____ <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc);
-          rtpe <- unifyM(tvar, tpe2, tpe3, loc)
-        ) yield rtpe
 
       /*
        * Match expression.
@@ -1384,6 +1393,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), Eff.Empty, loc)
+
+      /*
+       * Stm expression.
+       */
+      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        TypedAst.Expression.Stm(e1, e2, subst0(tvar), Eff.Empty, loc)
 
       /*
        * Let expression.

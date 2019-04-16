@@ -498,6 +498,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.Statement(exp1, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
       /*
        * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
@@ -976,12 +982,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Sleep(sp1, exp, sp2) =>
       visitExp(exp) map {
         case e => WeededAst.Expression.Sleep(e, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.Statement(exp1, exp2, sp2) =>
-      val sp1 = leftMostSourcePosition(exp1)
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.Let(Name.Ident(sp1, "_temp", sp1), e1, e2, mkSL(sp1, sp2)) //TODO skal spX i LetRec være sp1?
       }
 
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs0, sp2) =>
@@ -1776,6 +1776,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
@@ -1821,7 +1822,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
     case ParsedAst.Expression.Sleep(sp1, _, _) => sp1
-    case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1

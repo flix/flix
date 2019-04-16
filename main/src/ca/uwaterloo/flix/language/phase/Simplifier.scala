@@ -357,6 +357,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
+
+      case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.Let(Symbol.freshVarSym(), visitExp(e1), visitExp(e2), tpe, loc)
+
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
         val zero = SimplifiedAst.Expression.SwitchError(tpe, loc)
         rules.foldRight(zero: SimplifiedAst.Expression) {
@@ -365,6 +369,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val body = visitExp(e2)
             SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
         }
+
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 

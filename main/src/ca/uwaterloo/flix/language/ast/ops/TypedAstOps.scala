@@ -79,6 +79,9 @@ object TypedAstOps {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
 
+      case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
       case Expression.Match(matchExp, rules, tpe, eff, loc) =>
         val m = visitExp(matchExp, env0)
         rules.foldLeft(m) {

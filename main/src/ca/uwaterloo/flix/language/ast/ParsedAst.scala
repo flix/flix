@@ -536,6 +536,15 @@ object ParsedAst {
     case class IfThenElse(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Statement Expression.
+      *
+      * @param exp1 the first expression.
+      * @param exp2 the second expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * LetMatch Expression (let-binding with pattern match).
       *
       * @param sp1  the position of the first character in the expression.
@@ -964,15 +973,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Sleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Statement Expression.
-      *
-      * @param exp1 the first expression.
-      * @param exp2 the second expression.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint Sequence expression.

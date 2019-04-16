@@ -446,6 +446,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.IfThenElse(e1, e2, e3, tvar, loc)
 
+        case NamedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Stm(e1, e2, tvar, loc)
+
         case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)

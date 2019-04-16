@@ -35,6 +35,7 @@ object FormatExpression {
     case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => s"Let($sym, $exp1, $exp2)"
     case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => s"LetRec($sym, $exp1, $exp2)"
     case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"IfThenElse($exp1, $exp2, $exp3)"
+    case TypedAst.Expression.Stm(exp1, exp2, _, _, _) => s"Stm($exp1, $exp2)"
     case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => s"Match($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.Switch(rules, tpe, eff, loc) => s"Switch(${rules.mkString(", ")})"
     case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => s"Tag($sym, $tag, $exp)"

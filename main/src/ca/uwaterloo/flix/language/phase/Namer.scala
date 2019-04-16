@@ -588,6 +588,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), loc)
       }
 
+    case WeededAst.Expression.Stm(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1, env0, tenv0)
+      val e2 = visitExp(exp2, env0, tenv0)
+      mapN(e1, e2) {
+        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), loc)
+      }
+
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
@@ -1099,6 +1106,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) => filterBoundVars(freeVars(exp1), List(ident)) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
