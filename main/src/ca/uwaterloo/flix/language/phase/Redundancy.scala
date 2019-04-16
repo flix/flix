@@ -813,4 +813,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: No implicit promotions. No implicit coercions.
 
+  // TODO: Rewrite tests to not use Option, but some other new type.
+
 }
