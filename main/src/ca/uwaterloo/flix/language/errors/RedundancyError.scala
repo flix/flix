@@ -228,6 +228,29 @@ object RedundancyError {
     }
   }
 
+  /**
+    * An error raised to indicate that an expression is useless.
+    *
+    * @param loc the location of the expression.
+    */
+  case class UselessExpression(loc: SourceLocation) extends RedundancyError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Useless expression: It has no side-effect(s) and its result is discarded." << NewLine
+      vt << NewLine
+      vt << Code(loc, "useless expression.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Use the result computed by the expression." << NewLine
+      vt << "  (2)  Remove the expression statement." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
   //------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------------------------

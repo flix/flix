@@ -28,10 +28,6 @@ import ca.uwaterloo.flix.util.Validation._
 // TODO: DOC
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
-  // TODO: Empty or empty?
-
-  // TODO: Write test cases for each type of e.g. variable usage/introduction.
-
   val Empty: Validation[Used, RedundancyError] = Used.empty.toSuccess
 
   object Used {
@@ -46,14 +42,18 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
 
+    // TODO
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
 
+    // TODO
     def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
 
+    // TODO
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
 
   }
 
+  // TODO
   case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], predSyms: Set[Symbol.PredSym], varSyms: Set[Symbol.VarSym]) {
     def ++(that: Used): Used =
       if (this eq Used.empty) {
@@ -74,6 +74,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
   }
 
+  // TODO
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
 
     val defs = root.defs.map { case (_, v) => visitDef(v, root) }
@@ -91,6 +92,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  // TODO
   private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[Used, RedundancyError] = {
     for {
       u <- usedExp(defn.exp)
@@ -156,6 +158,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Failure(failures1 #::: failures2)
   }
 
+  // TODO
   private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
     traverse(defn.fparams) {
       case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym).toFailure
@@ -163,6 +166,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
+  // TODO
   private def checkUnusedTypeParameters(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
     traverse(defn.tparams) {
       case TypeParam(name, tvar, _) if unused(tvar, defn.sc.base.typeVars) => UnusedTypeParam(name).toFailure
@@ -253,7 +257,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       val us1 = usedExp(exp1)
       val us2 = usedExp(exp2)
-      mapN(us1, us2)(_ ++ _)
+      flatMapN(us1, us2) {
+        case (used1, used2) =>
+          if (exp1.eff.isPure)
+            UselessExpression(exp1.loc).toFailure
+          else
+            (used1 ++ used2).toSuccess
+      }
 
     case Expression.Match(exp, rules, _, _, _) =>
       val usedMatch = usedExp(exp)
@@ -712,4 +722,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: In the case of predicates, do we want to assert that there are some facts? What about in the presence of
   // first-class constraints?
 
+  // TODO: Does new channel have a side-effect or not? Is it allowed to be discarded?
+  // TODO: How do we want to deal with expressions that have side-effects and a return value that must be used.
+  // E.g. like the above.
 }
