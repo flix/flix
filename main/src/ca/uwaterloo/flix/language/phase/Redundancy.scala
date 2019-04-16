@@ -279,9 +279,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedRules = traverse(rules) {
         case MatchRule(pat, guard, body) =>
           val fvs = freeVars(pat)
-          // TODO: Extend env
-          flatMapN(visitExp(guard, env0), visitExp(body, env0)) {
-            case (usedGuard, usedBody) =>
+          val extendedEnv = env0 + (exp -> pat)
+          // TODO: Need to use the subst somehow...
+          flatMapN(checkImpossiblePattern(exp, env0, pat), visitExp(guard, extendedEnv), visitExp(body, extendedEnv)) {
+            case (_, usedGuard, usedBody) =>
               val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).toList
               if (unusedVarSyms.isEmpty)
                 ((usedGuard ++ usedBody) -- fvs).toSuccess
@@ -513,82 +514,33 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Body.Functional(sym, term, loc) => ??? // TODO
   }
 
-  sealed trait Value
 
-  object Value {
+  private def checkImpossiblePattern(exp: Expression, env: Env, pat: Pattern): Validation[Unit, RedundancyError] = {
+    exp match {
+      case Expression.Var(sym, _, _, _) => env.env.get(sym) match {
+        case Some(pat2) => mapN(unify(pat, pat2)) {
+          case subst =>
+            // TODO: use the subst?
+            ()
+        }
+        case None => ().toSuccess
+      }
 
-    case object Bool extends Value
-
-  }
-
-
-  private def eval(e0: TypedAst.Expression): Map[Symbol.VarSym, AbsVal] = e0 match {
-    case Expression.Binary(op, Expression.Var(sym, _, _, _), Expression.Int32(v, _), tpe, eff, loc) => op match {
-      case BinaryOperator.Equal => Map(sym -> AbsVal.Range(v, v))
-      case _ => Map.empty
-    }
-    case _ => Map.empty
-  }
-
-  private def compatible(m1: Map[Symbol.VarSym, Redundancy.AbsVal], m2: Map[Symbol.VarSym, Redundancy.AbsVal], loc: SourceLocation): Validation[Unit, RedundancyError] = {
-    val commonKeys = m1.keys.filter(k2 => m2.contains(k2))
-
-    commonKeys.headOption match {
-      case None =>
-        ().toSuccess
-      case Some(key) =>
-        val v1 = m1(key)
-        val v2 = m2(key)
-
-        ???
+      case _ => ().toSuccess
     }
   }
+
 
 
   // TODO: We could store an upper, lower bound, and equal. At least for integers.
   // TODO: For other types it would just be equal and not equal.
   // TODO: Might even be for entire expressions, like xs.length > 0, xs.length == 0, and not just variables.
 
-  sealed trait AbsVal
-
-  object AbsVal {
-
-    case class Range(b: Int, e: Int) extends AbsVal
-
-  }
 
   // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
   // TODO: Maybe we need a measure on physical code size?
 
-  private def constantFoldExp(e0: TypedAst.Expression, env0: Map[Symbol.VarSym, Pattern]): Validation[Value, RedundancyError] = e0 match {
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      for {
-        _ <- constantFoldExp(exp1, env0)
-        _ <- constantFoldExp(exp2, env0)
-      } yield Value.Bool
-
-    case Expression.Match(exp, rules, tpe, eff, loc) => exp match {
-      case Expression.Var(sym, _, _, _) =>
-        val rs = traverse(rules) {
-          case MatchRule(pat, guard, body) =>
-            env0.get(sym) match {
-              case None =>
-                constantFoldExp(body, env0 + (sym -> pat))
-
-              case Some(pat2) =>
-                mapN(unify(pat, pat2)) {
-                  case _ => constantFoldExp(body, env0 + (sym -> pat))
-                }
-            }
-        }
-
-        mapN(rs) {
-          case _ => Value.Bool
-        }
-    }
-    case _ => Value.Bool.toSuccess
-  }
 
   // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
 
@@ -734,7 +686,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val empty: Env = Env(Map.empty, MultiMap.Empty, MultiMap.Empty)
   }
 
-  case class Env(env: Map[Symbol.VarSym, Pattern], eq1: MultiMap[StableExp, StableExp], eq2: MultiMap[StableExp, StableExp])
+  // TODO: Env should probably allow stable paths.
+  case class Env(env: Map[Symbol.VarSym, Pattern], eq1: MultiMap[StableExp, StableExp], eq2: MultiMap[StableExp, StableExp]) {
+
+    // TODO: Should take a stable path.
+    def +(p: (Expression, Pattern)): Env = {
+      val (exp, pat) = p
+      exp match {
+        case Expression.Var(sym, _, _, _) =>
+          copy(env = env + (sym -> pat))
+        case _ => this
+      }
+    }
+
+  }
 
   // TODO: Maybe this is actually a relation...
   // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
@@ -742,9 +707,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // Note the eq maps do not contain transitive closure.
 
   /**
-    * Companion object of [[Substitution]].
+    * Companion object of the [[Substitution]] class.
     */
   object Substitution {
+    /**
+      * The empty substitution.
+      */
     val empty: Substitution = Substitution(Map.empty)
   }
 
@@ -752,11 +720,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * TODO: A substitution is a map from type variables to types.
     */
   case class Substitution(m: Map[Symbol.VarSym, Pattern]) {
-
-    /**
-      * Returns `true` if `this` is the empty substitution.
-      */
-    def isEmpty: Boolean = m.isEmpty
 
     /**
       * Applies `this` substitution to the given type `tpe`.
