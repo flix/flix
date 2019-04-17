@@ -555,7 +555,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case class Var(sym: Symbol.VarSym) extends StablePath
 
-    case class RecordSelect(stablePath: StablePath, label: String) extends StablePath
+    case class RecordSelect(sp: StablePath, label: String) extends StablePath
+
+    // TODO: Add additional cases.
 
   }
 

@@ -519,4 +519,29 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessPatternMatch](result)
   }
 
+  test("UselessPatternMatch.StablePath.01") {
+    val input =
+      s"""
+         |enum Color {
+         |    case Red,
+         |    case Blu
+         |}
+         |
+         |def main(): Int =
+         |    let r = { c = Red };
+         |    match r.c with {
+         |        case Red => 123
+         |        case Blu => match r.c with {
+         |            case Red => 123
+         |            case Blu => 456
+         |        }
+         |    }
+         |
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessPatternMatch](result)
+  }
+
+
 }
