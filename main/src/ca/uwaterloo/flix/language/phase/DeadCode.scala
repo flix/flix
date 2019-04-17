@@ -15,9 +15,9 @@ object DeadCode extends Phase[Root, Root] {
     // TODO: Improve weird/terrible code below
     val defsRes = root.defs.map(x => visitDef(x._2)).toList.unzip
     val defsVal = defsRes._1
-    val defsEnums = defsRes._2.flatten.toSet
+    val usedEnums = defsRes._2.flatten.toSet
     val enums = root.enums.values.map(x => visitEnum(x)).toSet.flatten
-    val unusedEnums = enums.diff(defsEnums)
+    val unusedEnums = enums.diff(usedEnums)
     // TODO: Restructure code (visitEnum, etc.) so that we can retrieve correct loc
     val enumsVal = if (unusedEnums.size == 0) {
       root.enums.toSuccess
@@ -29,22 +29,28 @@ object DeadCode extends Phase[Root, Root] {
       case defn => defn.map(x => x.sym -> x)
     }
 
-    mapN(newDefs, enumsVal) {
+    println("Enums:" + enums); println("Used: " + usedEnums); println("Unused: " + unusedEnums); mapN(newDefs, enumsVal) {
       case (defs, enums) => root.copy(defs = defs.toMap)
     }
   }
 
-  private def visitEnum(enum: TypedAst.Enum): Map[Symbol.EnumSym, String] = enum.cases.map(x => (x._2.sym -> x._2.tag.name)) // TODO: Improve
+  private def visitEnum(enum: TypedAst.Enum): Map[Symbol.EnumSym, String] = {
+    val enums = enum.cases.map(x => x._2.sym -> x._2.tag.name) // TODO: Improve
+    println("venums: " + enums); enums
+  }
 
   private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, DeadCodeError], Set[(Symbol.EnumSym, String)]) = {
-    val defVal = visitExp(defn.exp)
-    val defEnums = defVal match {
-      case Validation.Success(value) => value.tags
-      case _ => Set.empty[(Symbol.EnumSym, String)] // TODO: Think this through
+    val expVal = visitExp(defn.exp)
+    val used = expVal match {
+      case Validation.Success(value) => value
+      case _ => Used(Set.empty, Set.empty) // TODO: Think this through
     }
-    (mapN(defVal) {
+    val fparamSyms = (for (fparam <- defn.fparams) yield fparam.sym).toSet
+    val unusedFParamSyms = fparamSyms -- used.vars
+    val fparamSymVal = if (unusedFParamSyms.size == 0) defn.toSuccess else DeadCodeError(unusedFParamSyms.head.loc, "Formal parameter never used.").toFailure
+    println(used.tags); (mapN(expVal, fparamSymVal) {
       case _ => defn
-    }, defEnums)
+    }, used.tags)
   }
 
   // TODO: Clean up variable names now that this functions returns things other than Validation
