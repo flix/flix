@@ -135,9 +135,7 @@ object Packager {
     }
 
     flix.check() match {
-      case Validation.Success(_) =>
-        implicit val _ = TerminalContext.AnsiTerminal
-        println("Check Completed!")
+      case Validation.Success(_) => ()
       case Validation.Failure(errors) =>
         implicit val _ = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
