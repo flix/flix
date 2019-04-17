@@ -141,7 +141,6 @@ object Packager {
       case Validation.Failure(errors) =>
         implicit val _ = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
-        None
     }
   }
 
