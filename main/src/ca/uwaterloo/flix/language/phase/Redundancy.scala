@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.MultiMap
 
 // TODO: DOC
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
@@ -596,7 +597,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: but also carry equality relation... which should probably be a bimap (?)
   // TODO: Introduce bimap class?
   object Env {
-    val empty: Env = Env(Map.empty, MultiMap.Empty, MultiMap.Empty)
+    val empty: Env = Env(Map.empty, MultiMap.empty, MultiMap.empty)
   }
 
   // TODO: Env should probably allow stable paths.
@@ -621,12 +622,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an object where no symbol is marked as used.
       */
-    val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
       */
-    def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
+    def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.empty + (sym, tag))
 
     /**
       * Returns an object where the given defn symbol `sym` is marked as used.
@@ -722,33 +723,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
-  object MultiMap {
-    // TODO: rename to empty.
-    def Empty[K, V]: MultiMap[K, V] = MultiMap(Map.empty)
-  }
-
-  case class MultiMap[K, V](m: Map[K, Set[V]]) {
-
-    def get(k: K): Option[Set[V]] = m.get(k)
-
-    def +(k: K, v: V): MultiMap[K, V] = {
-      val s = m.getOrElse(k, Set.empty)
-      MultiMap(m + (k -> (s + v)))
-    }
-
-    def +(k: K, v: Set[V]): MultiMap[K, V] = {
-      val s = m.getOrElse(k, Set.empty)
-      MultiMap(m + (k -> (s ++ v)))
-    }
-
-    // TODO: Efficiency
-    def ++(that: MultiMap[K, V]): MultiMap[K, V] = {
-      val keys2 = that.m.keys
-      keys2.foldLeft(this) {
-        case (macc, k) => macc + (k, that.m(k))
-      }
-    }
-  }
 
   // TODO: Check unused type parameters in enums, relations, and lattices.
 
