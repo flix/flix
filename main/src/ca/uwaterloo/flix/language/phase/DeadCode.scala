@@ -18,7 +18,6 @@ object DeadCode extends Phase[Root, Root] {
     val usedEnums = defsRes._2.flatten.toSet
     val enums = root.enums.values.map(x => visitEnum(x)).toSet.flatten
     val unusedEnums = enums.diff(usedEnums)
-    // TODO: Restructure code (visitEnum, etc.) so that we can retrieve correct loc
     val enumsVal = if (unusedEnums.size == 0) {
       root.enums.toSuccess
     } else {
@@ -29,14 +28,14 @@ object DeadCode extends Phase[Root, Root] {
       case defn => defn.map(x => x.sym -> x)
     }
 
-    println("Enums:" + enums); println("Used: " + usedEnums); println("Unused: " + unusedEnums); mapN(newDefs, enumsVal) {
+    mapN(newDefs, enumsVal) {
       case (defs, enums) => root.copy(defs = defs.toMap)
     }
   }
 
-  private def visitEnum(enum: TypedAst.Enum): Map[Symbol.EnumSym, String] = {
-    val enums = enum.cases.map(x => x._2.sym -> x._2.tag.name) // TODO: Improve
-    println("venums: " + enums); enums
+  private def visitEnum(enum: TypedAst.Enum): Set[(Symbol.EnumSym, String)] = {
+    val enumKeys = enum.cases.keySet
+    enumKeys.map(x => (enum.sym, x))
   }
 
   private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, DeadCodeError], Set[(Symbol.EnumSym, String)]) = {
@@ -45,10 +44,10 @@ object DeadCode extends Phase[Root, Root] {
       case Validation.Success(value) => value
       case _ => Used(Set.empty, Set.empty) // TODO: Think this through
     }
-    val fparamSyms = (for (fparam <- defn.fparams) yield fparam.sym).toSet
+    val fparamSyms = (for (fparam <- defn.fparams if fparam.sym.text != "_unit") yield fparam.sym).toSet
     val unusedFParamSyms = fparamSyms -- used.vars
     val fparamSymVal = if (unusedFParamSyms.size == 0) defn.toSuccess else DeadCodeError(unusedFParamSyms.head.loc, "Formal parameter never used.").toFailure
-    println(used.tags); (mapN(expVal, fparamSymVal) {
+    (mapN(expVal, fparamSymVal) {
       case _ => defn
     }, used.tags)
   }
@@ -80,7 +79,6 @@ object DeadCode extends Phase[Root, Root] {
         expVal match {
           case Validation.Success(value) =>
             if (!value.vars.contains(sym)) {
-              println(value.vars);
               DeadCodeError(sym.loc, "Variable never used.").toFailure // Correct?
             } else {
               mapN(letVal, expVal) {
