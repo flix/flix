@@ -187,23 +187,91 @@ object DeadCode extends Phase[Root, Root] {
         mapN(visitExp(exp1), visitExp(exp2)) {
           case (e1, e2) => e1 + e2
         }
-      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
-      case TypedAst.Expression.Existential(fparam, exp, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
-      case TypedAst.Expression.Universal(fparam, exp, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
+      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+        val bindingsVal = traverse(bindings) {
+          case TypedAst.HandlerBinding(sym, exp) => visitExp(exp)
+        }
+        mapN(visitExp(exp), bindingsVal) {
+          case (ex, bi) => ex + bi.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+        }
+      case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
+        mapN(visitExp(exp)) {
+          case ex => ex + Used(Set(fparam.sym), Set.empty)
+        }
+      case TypedAst.Expression.Universal(fparam, exp, eff, loc) =>
+        mapN(visitExp(exp)) {
+          case ex => ex + Used(Set(fparam.sym), Set.empty)
+        }
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
-      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
-      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
+      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
+        val argsVal = traverse(args) { case arg => visitExp(arg) }
+        mapN(argsVal) {
+          case ar => ar.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+        }
+      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val rulesVal = traverse(rules) {
+          case TypedAst.CatchRule(sym, clazz, exp) => mapN(Used(Set(sym), Set.empty).toSuccess, visitExp(exp)) {
+            case (sy, ex) => sy + ex
+          }
+        }
+        mapN(visitExp(exp), rulesVal) {
+          case (ex, ru) => ex + ru.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+        }
       case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
         mapN(visitExp(exp1), visitExp(exp2)) {
           case (e1, e2) => e1 + e2
         }
-      case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
+      case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val defVal = default match {
+          case Some(ex) => visitExp(ex)
+          case None => Used(Set.empty, Set.empty).toSuccess
+        }
+        val rulesVal = traverse(rules) {
+          case TypedAst.SelectChannelRule(sym, chan, exp) =>
+            mapN(Used(Set(sym), Set.empty).toSuccess, visitExp(chan), visitExp(exp)) {
+              case (sy, ch, ex) => sy + ch + ex
+            }
+        }
+        mapN(defVal, rulesVal) {
+          case (de, ru) => de + ru.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+        }
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
-      case TypedAst.Expression.FixpointConstraint(c, tpe, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
+      case TypedAst.Expression.FixpointConstraint(c, tpe, eff, loc) =>
+        val cparamsVal = traverse(c.cparams) {
+          case TypedAst.ConstraintParam.HeadParam(sym, tpe, loc) => Used(Set(sym), Set.empty).toSuccess
+          case TypedAst.ConstraintParam.RuleParam(sym, tpe, loc) => Used(Set(sym), Set.empty).toSuccess
+        }
+        val headVal = c.head match {
+          case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+            val predVal = visitExp(pred.exp)
+            val termsVal = traverse(terms) {
+              case ex => visitExp(ex)
+            }
+            mapN(predVal, termsVal) {
+              case (pr, te) => pr + te.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+            }
+        }
+        val bodyVal = traverse(c.body) {
+          case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => visitExp(pred.exp)
+          case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
+            val termsVal = traverse(terms) {
+              case ex => visitExp(ex)
+            }
+            mapN(termsVal) {
+              case trm => trm.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+            }
+          case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
+            mapN(Used(Set(sym), Set.empty).toSuccess, visitExp(term)) {
+              case (sy, te) => sy + te
+            }
+        }
+        mapN(cparamsVal, headVal, bodyVal) {
+          (cp, he, bo) => cp.foldLeft(Used(Set.empty, Set.empty)) (_ + _) + he + bo.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+        }
       case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         mapN(visitExp(exp1), visitExp(exp2)) {
           case (e1, e2) => e1 + e2
@@ -288,6 +356,7 @@ object DeadCode extends Phase[Root, Root] {
 
 case class Used(vars: Set[Symbol.VarSym], tags: Set[(Symbol.EnumSym, String)]) {
   def +(that: Used): Used = Used(vars ++ that.vars, tags ++ that.tags)
+  def +(that: Symbol.VarSym) = Used(vars + that, tags)
   //def -(that: Used): Used = Used(vars -- that.vars, tags -- that.tags)
   def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags)
   def empty(): Used = Used(Set.empty, Set.empty)
