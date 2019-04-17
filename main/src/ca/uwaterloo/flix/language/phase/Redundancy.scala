@@ -563,9 +563,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   def toStablePath(e0: Expression): Option[StablePath] = e0 match {
 
-    case Expression.Var(sym, _, _, _) => Some(StablePath.Var(sym))
+    case Expression.Var(sym, _, _, _) =>
+      Some(StablePath.Var(sym))
 
-    case Expression.RecordSelect(exp, label, _, _, _) => toStablePath(exp).map(sp => StablePath.RecordSelect(sp, label))
+    case Expression.RecordSelect(exp, label, _, _, _) =>
+      toStablePath(exp).map(sp => StablePath.RecordSelect(sp, label))
 
     case _ => None
   }
@@ -738,7 +740,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // TODO: Check unused type parameters in enums
+  // TODO: Check unused type parameters in enums, relations, and lattices.
 
   // TODO: What counts as a use of an enum? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
   // TODO: The pattern matching is difficult, because you could have a default match onsomething just of that type.
@@ -763,16 +765,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Add more tests for useless expressions ones the effect system is implemented.
 
-  // TODO: We should probably disallow shadowing, because of things like this:
-  // TODO: Shadowing in pattern matches:
-  // match o with {
-  //   case Some(x) => match o with { case x => }}
-  // }
-
-  // TODO: Also talk about linear patterns, and why disallow them.
-
-  // TODO: No implicit promotions. No implicit coercions.
-
   // TODO: Rewrite tests to not use Option, but some other new type.
 
   // TODO: Should we also consider tricky cases such as:
@@ -790,5 +782,22 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //        }
   //        case _ => Square(Blu)
   //    }
+
+  // TODO: Define a notion of contradiction:
+  // P(x) and Q(x) cannot be true at the same time.
+  // E.g. x == 0 and x == 1, or isEmpty(xs) and nonEmpty(xs).
+  // But isEmpty(r.l) and nonEmpty(r.l) cannot be true at the same time.
+  // TODO: Question is how to deal with the grammar. And how to represent these things.
+  // TODO: How to deal with conjunctions and disjunctions?
+
+
+
+
+  // Notes for the paper:
+  // - We disallow shadowing (because its confusing in the presence of pattern matching).
+  // - We disallow both implicit widening and narrowing of integers.
+  // - We disallow all forms of implicit coercions.
+  // - We disallow linear patterns.
+
 
 }
