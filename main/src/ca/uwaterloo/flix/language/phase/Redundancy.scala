@@ -28,67 +28,24 @@ import ca.uwaterloo.flix.util.Validation._
 // TODO: DOC
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  // TODO: DOC
   val Empty: Validation[Used, RedundancyError] = Used.empty.toSuccess
 
-  object Used {
-
-    /**
-      * Returns an object where no symbol is marked as used.
-      */
-    val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty)
-
-    /**
-      * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
-      */
-    def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
-
-    /**
-      * Returns an object where the given defn symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
-
-    /**
-      * Returns an object where the given predicate symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
-
-    /**
-      * Returns an object where the given variable symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
-
-  }
-
-  // TODO
-  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], predSyms: Set[Symbol.PredSym], varSyms: Set[Symbol.VarSym]) {
-    def ++(that: Used): Used =
-      if (this eq Used.empty) {
-        that
-      } else if (that eq Used.empty) {
-        this
-      } else {
-        Used(
-          this.enumSyms ++ that.enumSyms,
-          this.defSyms ++ that.defSyms,
-          this.predSyms ++ that.predSyms,
-          this.varSyms ++ that.varSyms
-        )
-      }
-
-    def --(syms: Set[Symbol.VarSym]): Used = copy(varSyms = varSyms -- syms)
-
-    def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
-  }
-
-  // TODO
+  /**
+    * Checks the given AST `root` for redundancies.
+    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
+    // Checks for redundancies in each definition and computes its used symbols.
+    val defsVal = traverse(root.defs) {
+      case (_, v) => visitDef(v, root)
+    }
 
-    val defs = root.defs.map { case (_, v) => visitDef(v, root) }
-
-    val usedVal = sequence(defs).map {
+    // Merges used symbols for each definition together.
+    val usedVal = mapN(defsVal) {
       case us => us.foldLeft(Used.empty)(_ ++ _)
     }
 
+    // Check that all declarations are used.
     for {
       used <- usedVal
       _ <- checkUnusedDefs(used)(root)
@@ -104,7 +61,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       u <- visitExp(defn.exp, Env.empty)
       _ <- checkUnusedFormalParameters(defn, u)
       _ <- checkUnusedTypeParameters(defn)
-      //   _ <- constantFoldExp(defn.exp, Map.empty)
     } yield u
   }
 
@@ -152,6 +108,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Checks for unused relation and lattice symbols.
     */
+  // TODO: split into two
   private def checkUnusedRelationsAndLattices(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
     val unusedRelSyms = root.relations.keys.filter(sym => unused(sym, used))
     val unusedLatSyms = root.lattices.keys.filter(sym => unused(sym, used))
@@ -535,17 +492,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
 
-  // TODO: We could store an upper, lower bound, and equal. At least for integers.
-  // TODO: For other types it would just be equal and not equal.
-  // TODO: Might even be for entire expressions, like xs.length > 0, xs.length == 0, and not just variables.
-
-
-  // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
-  // TODO: Maybe we need a measure on physical code size?
-
-
-  // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
-
   // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
   sealed trait StablePath
 
@@ -620,13 +566,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => RedundancyError.UselessPatternMatch(p1, p2).toFailure
   }
 
-
+  // TODO: DOC
   private def unifyAll(ps1: List[Pattern], ps2: List[Pattern]): Validation[Substitution, RedundancyError] = (ps1, ps2) match {
     case (Nil, Nil) => Substitution.empty.toSuccess
     case _ => ??? // TODO
   }
 
-
+  // TODO: DOC
   private def unused(sym: Symbol.DefnSym, used: Used): Boolean =
     !used.defSyms.contains(sym)
 
@@ -641,6 +587,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def unused(tvar: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(tvar)
 
+  // TODO: DOC
   private def unused(sym: Symbol.VarSym, used: Used): Boolean =
     !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
@@ -667,6 +614,69 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
 
   // Note the eq maps do not contain transitive closure.
+
+  // TODO: Need better name.
+  object Used {
+
+    /**
+      * Returns an object where no symbol is marked as used.
+      */
+    val empty: Used = Used(MultiMap.Empty, Set.empty, Set.empty, Set.empty)
+
+    /**
+      * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
+      */
+    def of(sym: Symbol.EnumSym, tag: String): Used = empty.copy(enumSyms = MultiMap.Empty + (sym, tag))
+
+    /**
+      * Returns an object where the given defn symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
+
+    /**
+      * Returns an object where the given predicate symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
+
+    /**
+      * Returns an object where the given variable symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
+
+  }
+
+  /**
+    * A representation of symbols used within an expression, definition, or similar.
+    */
+  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], predSyms: Set[Symbol.PredSym], varSyms: Set[Symbol.VarSym]) {
+
+    /**
+      * Returns the union of `this` and `that`.
+      */
+    def ++(that: Used): Used =
+      if (this eq Used.empty) {
+        that
+      } else if (that eq Used.empty) {
+        this
+      } else {
+        Used(
+          this.enumSyms ++ that.enumSyms,
+          this.defSyms ++ that.defSyms,
+          this.predSyms ++ that.predSyms,
+          this.varSyms ++ that.varSyms
+        )
+      }
+
+    /**
+      * Removes all variable symbol from this object.
+      */
+    def --(syms: Set[Symbol.VarSym]): Used = copy(varSyms = varSyms -- syms)
+
+    /**
+      * Removes the given variable symbol from this object.
+      */
+    def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
+  }
 
   /**
     * Companion object of the [[Substitution]] class.
@@ -783,14 +793,25 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //        case _ => Square(Blu)
   //    }
 
+
+  // TODO: We could store an upper, lower bound, and equal. At least for integers.
+  // TODO: For other types it would just be equal and not equal.
+  // TODO: Might even be for entire expressions, like xs.length > 0, xs.length == 0, and not just variables.
+
+
+  // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
+  // TODO: Maybe we need a measure on physical code size?
+
+
+  // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
+
+
   // TODO: Define a notion of contradiction:
   // P(x) and Q(x) cannot be true at the same time.
   // E.g. x == 0 and x == 1, or isEmpty(xs) and nonEmpty(xs).
   // But isEmpty(r.l) and nonEmpty(r.l) cannot be true at the same time.
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
-
-
 
 
   // Notes for the paper:
