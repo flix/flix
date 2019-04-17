@@ -48,21 +48,46 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Check that all declarations are used.
     for {
-      used <- usedVal
-      _ <- checkUnusedDefs(used)(root)
-      _ <- checkUnusedEnumsAndTags(used)(root)
-      _ <- checkUnusedRelationsAndLattices(used)(root)
+      u <- usedVal
+      _ <- checkUnusedDefs(u)(root)
+      _ <- checkUnusedEnumsAndTags(u)(root)
+      _ <- checkUnusedRelations(u)(root)
+      _ <- checkUnusedLattices(u)(root)
     } yield root
 
   }
 
-  // TODO
+  /**
+    * Checks the given definition `defn` for redundancies.
+    */
   private def visitDef(defn: TypedAst.Def, root: TypedAst.Root): Validation[Used, RedundancyError] = {
+    /**
+      * Checks for unused formal parameters in the given definition `def`.
+      */
+    def checkUnusedFormalParameters(used: Used): Validation[Unit, RedundancyError] = {
+      val unusedParams = defn.fparams.filter(fparam => unused(fparam.sym, used))
+      if (unusedParams.isEmpty)
+        ().toSuccess
+      else
+        Failure(unusedParams.map(fparam => UnusedFormalParam(fparam.sym)).toStream)
+    }
+
+    /**
+      * Checks for unused type parameters in the given definition `def`.
+      */
+    def checkUnusedTypeParameters(used: Used): Validation[Unit, RedundancyError] = {
+      val unusedParams = defn.tparams.filter(tparam => unused(tparam.tpe, defn.sc.base.typeVars))
+      if (unusedParams.isEmpty)
+        ().toSuccess
+      else
+        Failure(unusedParams.map(tparam => UnusedTypeParam(tparam.name)).toStream)
+    }
+
     for {
-      u <- visitExp(defn.exp, Env.empty)
-      _ <- checkUnusedFormalParameters(defn, u)
-      _ <- checkUnusedTypeParameters(defn)
-    } yield u
+      used <- visitExp(defn.exp, Env.empty)
+      _ <- checkUnusedFormalParameters(used)
+      _ <- checkUnusedTypeParameters(used)
+    } yield used
   }
 
   // TODO: Test cases.
@@ -107,35 +132,29 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
   /**
-    * Checks for unused relation and lattice symbols.
+    * Checks for unused relation symbols.
     */
-  // TODO: split into two
-  private def checkUnusedRelationsAndLattices(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
+  private def checkUnusedRelations(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
     val unusedRelSyms = root.relations.keys.filter(sym => unused(sym, used))
-    val unusedLatSyms = root.lattices.keys.filter(sym => unused(sym, used))
-    val failures1 = unusedRelSyms.map(UnusedRelSym).toStream
-    val failures2 = unusedLatSyms.map(UnusedLatSym).toStream
+    val failures = unusedRelSyms.map(UnusedRelSym).toStream
 
-    if (failures1.isEmpty && failures2.isEmpty)
+    if (failures.isEmpty)
       Nil.toSuccess
     else
-      Failure(failures1 #::: failures2)
+      Failure(failures)
   }
 
-  // TODO
-  private def checkUnusedFormalParameters(defn: Def, used: Used): Validation[List[Unit], RedundancyError] = {
-    traverse(defn.fparams) {
-      case FormalParam(sym, _, _, _) if unused(sym, used) => UnusedFormalParam(sym).toFailure
-      case FormalParam(_, _, _, _) => ().toSuccess
-    }
-  }
+  /**
+    * Checks for unused lattice symbols.
+    */
+  private def checkUnusedLattices(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
+    val unusedLatSyms = root.lattices.keys.filter(sym => unused(sym, used))
+    val failures = unusedLatSyms.map(UnusedLatSym).toStream
 
-  // TODO
-  private def checkUnusedTypeParameters(defn: TypedAst.Def): Validation[List[Unit], RedundancyError] = {
-    traverse(defn.tparams) {
-      case TypeParam(name, tvar, _) if unused(tvar, defn.sc.base.typeVars) => UnusedTypeParam(name).toFailure
-      case TypeParam(_, _, _) => ().toSuccess
-    }
+    if (failures.isEmpty)
+      Nil.toSuccess
+    else
+      Failure(failures)
   }
 
   /**
