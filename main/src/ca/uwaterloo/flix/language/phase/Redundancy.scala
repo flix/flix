@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Validation
@@ -279,9 +279,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedRules = traverse(rules) {
         case MatchRule(pat, guard, body) =>
           val fvs = freeVars(pat)
-          val extendedEnv = env0 + (exp -> pat)
+          val stablePathOpt = toStablePath(exp)
+          val extendedEnv = stablePathOpt match {
+            case None => env0
+            case Some(stablePath) => env0 + (stablePath -> pat)
+          }
           // TODO: Need to use the subst somehow...
-          flatMapN(checkImpossiblePattern(exp, env0, pat), visitExp(guard, extendedEnv), visitExp(body, extendedEnv)) {
+          flatMapN(checkImpossiblePattern(stablePathOpt, env0, pat), visitExp(guard, extendedEnv), visitExp(body, extendedEnv)) {
             case (_, usedGuard, usedBody) =>
               val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).toList
               if (unusedVarSyms.isEmpty)
@@ -515,9 +519,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
 
-  private def checkImpossiblePattern(exp: Expression, env: Env, pat: Pattern): Validation[Unit, RedundancyError] = {
-    exp match {
-      case Expression.Var(sym, _, _, _) => env.env.get(sym) match {
+  // TODO: Should prbl. not take an option.
+  private def checkImpossiblePattern(stablePathOpt: Option[StablePath], env: Env, pat: Pattern): Validation[Unit, RedundancyError] = {
+    stablePathOpt match {
+      case None => ().toSuccess
+      case Some(stablePath) => env.env.get(stablePath) match {
         case Some(pat2) => mapN(unify(pat, pat2)) {
           case subst =>
             // TODO: use the subst?
@@ -525,11 +531,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         case None => ().toSuccess
       }
-
-      case _ => ().toSuccess
     }
   }
-
 
 
   // TODO: We could store an upper, lower bound, and equal. At least for integers.
@@ -541,71 +544,28 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Maybe we need a measure on physical code size?
 
 
-
   // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
 
   // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
-  sealed trait StableExp
+  sealed trait StablePath
 
-  object StableExp {
+  object StablePath {
 
-    // TODO: Should literals be considered stable?
+    // TODO: What should be considered a stable path?
 
+    case class Var(sym: Symbol.VarSym) extends StablePath
 
-    //
-    //    case Expression.Unit(loc) => ??? // TODO
-    //    case Expression.True(loc) => ??? // TODO
-    //    case Expression.False(loc) => ??? // TODO
-    //    case Expression.Char(lit, loc) => ??? // TODO
-    //    case Expression.Float32(lit, loc) => ??? // TODO
-    //    case Expression.Float64(lit, loc) => ??? // TODO
-    //    case Expression.Int8(lit, loc) => ??? // TODO
-    //    case Expression.Int16(lit, loc) => ??? // TODO
-    //    case Expression.Int32(lit, loc) => ??? // TODO
-    //    case Expression.Int64(lit, loc) => ??? // TODO
-    //    case Expression.BigInt(lit, loc) => ??? // TODO
-    //    case Expression.Str(lit, loc) => ??? // TODO
+    case class RecordSelect(stablePath: StablePath, label: String) extends StablePath
 
+  }
 
-    case class Var(sym: Symbol.VarSym) extends StableExp
+  def toStablePath(e0: Expression): Option[StablePath] = e0 match {
 
-    case class Def(sym: Symbol.DefnSym) extends StableExp
+    case Expression.Var(sym, _, _, _) => Some(StablePath.Var(sym))
 
-    case class Apply(exp1: StableExp, exp2: StableExp) extends StableExp
+    case Expression.RecordSelect(exp, label, _, _, _) => toStablePath(exp).map(sp => StablePath.RecordSelect(sp, label))
 
-    //    case Expression.Unary(op, exp, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => ??? // TODO
-    //
-    //    case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Tuple(elms, tpe, eff, loc) => ??? // TODO
-    //    case Expression.RecordEmpty(tpe, eff, loc) => ??? // TODO
-    //    case Expression.RecordSelect(exp, label, tpe, eff, loc) => ??? // TODO
-    //    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ??? // TODO
-    //    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? // TODO
-    //    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
-    //    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
-    //    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
-    //    case Expression.ArrayLength(base, tpe, eff, loc) => ??? // TODO
-    //    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? // TODO
-    //    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ??? // TODO
-    //    case Expression.VectorLit(elms, tpe, eff, loc) => ??? // TODO
-    //    case Expression.VectorNew(elm, len, tpe, eff, loc) => ??? // TODO
-    //    case Expression.VectorLoad(base, index, tpe, eff, loc) => ??? // TODO
-    //    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? // TODO
-    //    case Expression.VectorLength(base, tpe, eff, loc) => ??? // TODO
-    //    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Ref(exp, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Deref(exp, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    //    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
-    //    case Expression.NewChannel(exp, tpe, eff, loc) => ??? // TODO
-    //    case Expression.GetChannel(exp, tpe, eff, loc) => ??? // TODO
-    //    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? // TODO
-    //    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
-    //    case Expression.Spawn(exp, tpe, eff, loc) => ??? // TODO
-
+    case _ => None
   }
 
   /**
@@ -687,16 +647,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: Env should probably allow stable paths.
-  case class Env(env: Map[Symbol.VarSym, Pattern], eq1: MultiMap[StableExp, StableExp], eq2: MultiMap[StableExp, StableExp]) {
+  case class Env(env: Map[StablePath, Pattern], eq1: MultiMap[StablePath, StablePath], eq2: MultiMap[StablePath, StablePath]) {
 
     // TODO: Should take a stable path.
-    def +(p: (Expression, Pattern)): Env = {
-      val (exp, pat) = p
-      exp match {
-        case Expression.Var(sym, _, _, _) =>
-          copy(env = env + (sym -> pat))
-        case _ => this
-      }
+    def +(p: (StablePath, Pattern)): Env = {
+      val (stablePath, pattern) = p
+      copy(env = env + (stablePath -> pattern))
     }
 
   }
