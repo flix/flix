@@ -493,21 +493,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
 
-  // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
-  sealed trait StablePath
-
-  object StablePath {
-
-    // TODO: What should be considered a stable path?
-
-    case class Var(sym: Symbol.VarSym) extends StablePath
-
-    case class RecordSelect(sp: StablePath, label: String) extends StablePath
-
-    // TODO: Add additional cases.
-
-  }
-
   def toStablePath(e0: Expression): Option[StablePath] = e0 match {
 
     case Expression.Var(sym, _, _, _) =>
@@ -592,6 +577,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def unused(sym: Symbol.VarSym, used: Used): Boolean =
     !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
+  // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
+  sealed trait StablePath
+
+  object StablePath {
+
+    // TODO: What should be considered a stable path?
+
+    case class Var(sym: Symbol.VarSym) extends StablePath
+
+    case class RecordSelect(sp: StablePath, label: String) extends StablePath
+
+    // TODO: Add additional cases.
+
+  }
 
   // TODO: Carry the local environment mapping vars to patterns
   // TODO: but also carry equality relation... which should probably be a bimap (?)
