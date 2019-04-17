@@ -415,4 +415,108 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
+  test("UselessPatternMatch.01") {
+    val input =
+      s"""
+         |enum Color {
+         |    case Red,
+         |    case Blu
+         |}
+         |
+         |def main(): Int =
+         |    let c = Red;
+         |    match c with {
+         |        case Red => 123
+         |        case Blu => match c with {
+         |            case Red => 123
+         |            case Blu => 456
+         |        }
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessPatternMatch](result)
+  }
+
+  test("UselessPatternMatch.02") {
+    val input =
+      s"""
+         |enum Color {
+         |    case Red(Int),
+         |    case Blu(Int)
+         |}
+         |
+         |def main(): Int =
+         |    let c = Red(123);
+         |    match c with {
+         |        case Red(x) => x
+         |        case Blu(x) => match c with {
+         |            case Red(y) => y
+         |            case Blu(y) => y
+         |        }
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessPatternMatch](result)
+  }
+
+  test("UselessPatternMatch.03") {
+    val input =
+      s"""
+         |enum Color {
+         |    case Red,
+         |    case Blu
+         |}
+         |
+         |enum Shape {
+         |    case Circle(Color),
+         |    case Square(Color)
+         |}
+         |
+         |def main(): Int =
+         |    let s = Circle(Red);
+         |    match s with {
+         |        case Circle(Red) => 123
+         |        case Square(Blu) => match s with {
+         |            case Circle(_) => 123
+         |            case Square(_) => 456
+         |        }
+         |        case _ => 789
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessPatternMatch](result)
+  }
+
+  test("UselessPatternMatch.04") {
+    val input =
+      s"""
+         |enum Color {
+         |    case Red,
+         |    case Blu
+         |}
+         |
+         |enum Shape {
+         |    case Circle(Color),
+         |    case Square(Color)
+         |}
+         |
+         |def main(): Int =
+         |    let s = Circle(Red);
+         |    match s with {
+         |        case Circle(Red) => 123
+         |        case Square(Blu) => match s with {
+         |            case Square(Red) => 123
+         |            case _           => 456
+         |        }
+         |        case _ => 789
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessPatternMatch](result)
+  }
+
 }

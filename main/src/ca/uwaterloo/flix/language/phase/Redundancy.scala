@@ -575,7 +575,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   // TODO: Have to check that there is no infinite recursion here...
   private def unify(p1: Pattern, p2: Pattern): Validation[Substitution, RedundancyError] = (p1, p2) match {
-    case (Pattern.Wild(_, _), Pattern.Wild(_, _)) => Substitution.empty.toSuccess
+    case (Pattern.Wild(_, _), _) => Substitution.empty.toSuccess
+
+    case (_, Pattern.Wild(_, _)) => Substitution.empty.toSuccess
 
     case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Substitution(Map(sym1 -> p2)).toSuccess // TODO: Is this safe?
 
@@ -611,7 +613,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Pattern.Tuple(elms1, _, _), Pattern.Tuple(elms2, _, _)) => ??? // TODO
 
-    case _ => RedundancyError.ImpossibleMatch(p1.loc, p2.loc).toFailure
+    case _ => RedundancyError.UselessPatternMatch(p1, p2).toFailure
   }
 
 
@@ -770,5 +772,21 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: No implicit promotions. No implicit coercions.
 
   // TODO: Rewrite tests to not use Option, but some other new type.
+
+  // TODO: Should we also consider tricky cases such as:
+  // match s with {
+  // case Circle(Red) =>
+  // case Circle(x) =>
+  // where we know that x cannot be red, because that would have matched?
+  // What about nested patterns like:
+  // def main(): Int =
+  //    let s = Circle(Red);
+  //    match s with {
+  //        case Circle(Red) => 123
+  //        case Square(Blu) => match s with {
+  //            case Square(Red) =>
+  //        }
+  //        case _ => Square(Blu)
+  //    }
 
 }

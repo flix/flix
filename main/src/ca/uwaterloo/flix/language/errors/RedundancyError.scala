@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -252,27 +252,26 @@ object RedundancyError {
     }
   }
 
-  //------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------
-  //------------------------------------------------------------------------------------------------------
-
-
-  // TODO: Refactor
-  case class ImpossibleMatch(loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
-    val source: Source = loc1.source
+  /**
+    * An error raised to indicate that a pattern match is useless, i.e. cannot match because of a prior pattern match.
+    *
+    * @param pat1 the useless pattern.
+    * @param pat2 the previous pattern.
+    */
+  case class UselessPatternMatch(pat1: TypedAst.Pattern, pat2: TypedAst.Pattern) extends RedundancyError {
+    val source: Source = pat2.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Impossible pattern match due to prior pattern match." << NewLine
+      vt << ">> Useless pattern match due to prior pattern match." << NewLine
       vt << NewLine
-      vt << Code(loc2, "impossible due to prior match.") << NewLine
+      vt << Code(pat1.loc, "useless match.") << NewLine
       vt << NewLine
-      vt << ">> Previous match ensure that this cannot match" << NewLine
+      vt << s"The match value is: '" << Cyan(pat2.toString) << "' which is incompatible with current pattern." << NewLine
       vt << NewLine
-      vt << ">> First pattern match was here:" << NewLine
-      vt << Code(loc1, "first match.") << NewLine
-      vt << ">> Second pattern match was here:" << NewLine
-      vt << Code(loc2, "second match.") << NewLine
+      vt << "The previous pattern match was here:" << NewLine
+      vt << NewLine
+      vt << Code(pat2.loc, "previous match.") << NewLine
       vt << NewLine
       vt
     }

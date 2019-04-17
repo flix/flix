@@ -12,7 +12,7 @@ object FormatPattern {
     */
   def format(p0: TypedAst.Pattern): String = p0 match {
     case TypedAst.Pattern.Wild(_, _) => "_"
-    case TypedAst.Pattern.Var(sym, _, _) => sym.toString
+    case TypedAst.Pattern.Var(sym, _, _) => sym.text
     case TypedAst.Pattern.Unit(_) => "()"
     case TypedAst.Pattern.True(_) => "true"
     case TypedAst.Pattern.False(_) => "false"
