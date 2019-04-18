@@ -73,6 +73,5 @@ def testSingleCase13(): Bool =
     let xs = List.map(Celsius, List.range(0, 10));
     let ys = List.map(Fahrenheit, List.range(0, 10));
     let zs = List.map(Temperature, xs);
-    let ws = List.map(Temperature, ys);
-        List.length(zs) == 10 && List.length(ws) == 10
+        List.length(ys) == 10 && List.length(zs) == 10
 
