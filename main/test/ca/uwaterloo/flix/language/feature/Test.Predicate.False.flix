@@ -28,7 +28,7 @@ def testFalsePredicate04(): Schema { False } =
 def testFalsePredicate05(): Schema { False } =
     let x = False().;
     let y = False().;
-    let u = x <+> y;
+    let _ = x <+> y;
     let v = y <+> x;
     let w = y <+> v;
     solve w

@@ -696,7 +696,7 @@ def map05(): Bool = assert!(Map.eq(Map.map(v -> 3*v, @{2 -> -1, 5 -> 15, 11 -> -
 // mapWithKey                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def mapWithKey01(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> v, @{}), @{}))
+def mapWithKey01(): Bool = assert!(Map.eq(Map.mapWithKey((_, v) -> v, @{}), @{}))
 
 @test
 def mapWithKey02(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> k + v, @{1 -> 4}), @{1 -> 5}))

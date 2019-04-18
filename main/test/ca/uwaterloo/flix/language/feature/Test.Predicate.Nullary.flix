@@ -41,13 +41,13 @@ def testNullaryAtom06(): Bool =
 @test
 def testNullaryAtom07(): Bool =
     let x = Rich().;
-    let y = Famous().;
+    let _ = Famous().;
     let c = Happy() :- Rich(), Famous().;
     !((solve x <+> c) |= Happy().)
 
 @test
 def testNullaryAtom08(): Bool =
-    let x = Rich().;
+    let _ = Rich().;
     let y = Famous().;
     let c = Happy() :- Rich(), Famous().;
     !((solve y <+> c) |= Happy().)

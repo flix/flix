@@ -122,7 +122,6 @@ class TestStratifier extends FunSuite with TestUtils {
         |rel B(c: Int)
         |rel C(c: Int)
         |rel D(c: Int)
-        |rel E(c: Int)
         |rel X(c: Int)
         |A(c) :- X(c), B(c).
         |B(c) :- X(c), C(c).
