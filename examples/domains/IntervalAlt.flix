@@ -83,14 +83,14 @@ namespace Domain/IntervalAlt {
     ///
     /// Abstracts a concrete integer into the IntervalAlt domain.
     ///
-    def alpha(i: BigInt): IntervalAlt = Range(i, i)
+    pub def alpha(i: BigInt): IntervalAlt = Range(i, i)
 
     ///
     /// Over-approximates integer `increment`.
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: IntervalAlt): IntervalAlt = match e with {
+    pub def inc(e: IntervalAlt): IntervalAlt = match e with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
         case Top            => Top
@@ -101,7 +101,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: IntervalAlt): IntervalAlt = match e with {
+    pub def dec(e: IntervalAlt): IntervalAlt = match e with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
         case Top            => Top
@@ -112,7 +112,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2
-    def plus(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
+    pub def plus(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
@@ -124,7 +124,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
+    pub def minus(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
@@ -136,7 +136,7 @@ namespace Domain/IntervalAlt {
     ///
     #safe2((x, y) -> x * y)
     #strict2 /* #monotone2 loops/timeout */
-    def times(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
+    pub def times(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) =>
@@ -151,7 +151,7 @@ namespace Domain/IntervalAlt {
       */
     #safeBelnap2((x, y) -> x == y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-    def eq(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   => switch {
@@ -167,14 +167,14 @@ namespace Domain/IntervalAlt {
       */
     #safeBelnap2((x, y) -> x != y)
     // NB: Strictness and monotonicity follows from the properties of `not` and `eq`.
-    def neq(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
     #safeBelnap2((x, y) -> x < y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
-    def less(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   =>
@@ -194,7 +194,7 @@ namespace Domain/IntervalAlt {
       */
     #safeBelnap2((x, y) -> x <= y)
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
-    def lessEqual(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let IntervalAlt<> = (Bot, Top, equ, leq, lub, glb)
 

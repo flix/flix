@@ -25,7 +25,7 @@ namespace Domain/Mod3 {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Mod3, e2: Mod3): Bool = match (e1, e2) with {
+    pub def leq(e1: Mod3, e2: Mod3): Bool = match (e1, e2) with {
         case (Bot, _)   => true
         case (Zer, Zer) => true
         case (One, One) => true
@@ -38,7 +38,7 @@ namespace Domain/Mod3 {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+    pub def lub(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (Bot, x)   => x
         case (x, Bot)   => x
         case (Zer, Zer) => Zer
@@ -51,7 +51,7 @@ namespace Domain/Mod3 {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+    pub def glb(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (Top, x)   => x
         case (x, Top)   => x
         case (Zer, Zer) => Zer
@@ -75,7 +75,7 @@ namespace Domain/Mod3 {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    def alpha(i: BigInt): Mod3 =
+    pub def alpha(i: BigInt): Mod3 =
     // TODO: The verifier must handle errors so it never enters a Switch/MatchError.
         switch {
             case (i % 3ii == 1ii) || (i % 3ii == -1ii)  => One
@@ -88,7 +88,7 @@ namespace Domain/Mod3 {
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: Mod3): Mod3 = match e with {
+    pub def inc(e: Mod3): Mod3 = match e with {
        case Bot => Bot
        case Zer => One
        case One => Two
@@ -101,7 +101,7 @@ namespace Domain/Mod3 {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: Mod3): Mod3 = match e with {
+    pub def dec(e: Mod3): Mod3 = match e with {
        case Bot => Bot
        case Zer => Two
        case One => Zer
@@ -114,7 +114,7 @@ namespace Domain/Mod3 {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
-    def plus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+    pub def plus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
        case (Bot, _)   => Bot
        case (Zer, x)   => x
@@ -131,7 +131,7 @@ namespace Domain/Mod3 {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+    pub def minus(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
        case (_, Bot)   => Bot
        case (Bot, _)   => Bot
        case (Zer, Zer) => Zer
@@ -151,7 +151,7 @@ namespace Domain/Mod3 {
     ///
     /* unknown #safe2((x, y) -> x * y) */
     #strict2 #monotone2 #commutative #associative
-    def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
+    pub def times(e1: Mod3, e2: Mod3): Mod3 = match (e1, e2) with {
         case (_, Bot)   => Bot
         case (Bot, _)   => Bot
         case (Zer, _)   => Zer
@@ -166,7 +166,7 @@ namespace Domain/Mod3 {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: Mod3, e2: Mod3): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: Mod3, e2: Mod3): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case (Zer, One) => Belnap/Belnap.False
@@ -184,7 +184,7 @@ namespace Domain/Mod3 {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
@@ -192,7 +192,7 @@ namespace Domain/Mod3 {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def less(e1: Mod3, e2: Mod3): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: Mod3, e2: Mod3): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _) => Belnap/Belnap.Bot
         case (_, Bot) => Belnap/Belnap.Bot
         case _        => Belnap/Belnap.Top
@@ -204,7 +204,7 @@ namespace Domain/Mod3 {
     #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def lessEqual(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(e1: Mod3, e2: Mod3): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Mod3<> = (Bot, Top, equ, leq, lub, glb)
 

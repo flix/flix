@@ -81,7 +81,7 @@ namespace Domain/ParitySign {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    def alpha(i: Int): ParitySign = switch {
+    pub def alpha(i: Int): ParitySign = switch {
         case (i == 0) => Zer
         case (i <= 0) => if (i % 2 != 0) ONeg else ENeg
         case (i >= 0) => if (i % 2 != 0) OPos else EPos
@@ -90,7 +90,7 @@ namespace Domain/ParitySign {
     ///
     /// Over-approximates integer `increment`.
     ///
-    def inc(e: ParitySign): ParitySign = match e with {
+    pub def inc(e: ParitySign): ParitySign = match e with {
         case Bot    => Bot
         case ONeg   => ENeg
         case Zer    => OPos
@@ -103,7 +103,7 @@ namespace Domain/ParitySign {
     ///
     /// Over-approximates integer `decrement`.
     ///
-    def dec(e: ParitySign): ParitySign = match e with {
+    pub def dec(e: ParitySign): ParitySign = match e with {
         case Bot    => Bot
         case ONeg   => ENeg
         case Zer    => ONeg
@@ -116,7 +116,7 @@ namespace Domain/ParitySign {
     ///
     /// Over-approximates integer `addition`.
     ///
-    def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
+    pub def plus(e1: ParitySign, e2: ParitySign): ParitySign = match (e1, e2) with {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         // case (ONeg, ONeg) => Even // TODO: Need Even and Odd

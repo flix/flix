@@ -68,14 +68,14 @@ namespace Domain/Interval {
     ///
     /// Abstracts a concrete integer into the interval domain.
     ///
-    def alpha(i: BigInt): Interval = Range(i, i)
+    pub def alpha(i: BigInt): Interval = Range(i, i)
 
     ///
     /// Over-approximates integer `increment`.
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: Interval): Interval = match e with {
+    pub def inc(e: Interval): Interval = match e with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
         case Top            => Top
@@ -86,7 +86,7 @@ namespace Domain/Interval {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: Interval): Interval = match e with {
+    pub def dec(e: Interval): Interval = match e with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
         case Top            => Top
@@ -97,7 +97,7 @@ namespace Domain/Interval {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2
-    def plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+    pub def plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
@@ -109,7 +109,7 @@ namespace Domain/Interval {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+    pub def minus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
@@ -121,7 +121,7 @@ namespace Domain/Interval {
     ///
     #safe2((x, y) -> x * y)
     #strict2 /* undecidable #monotone2 */
-    def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+    pub def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) =>
@@ -136,7 +136,7 @@ namespace Domain/Interval {
       */
     #safeBelnap2((x, y) -> x == y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-    def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   => switch {
@@ -152,14 +152,14 @@ namespace Domain/Interval {
       */
     #safeBelnap2((x, y) -> x != y)
     // NB: Strictness and monotonicity follows from the properties of `not` and `eq`.
-    def neq(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     /**
       * Over-approximates `less than`.
       */
    #safeBelnap2((x, y) -> x < y)
    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
-    def less(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
+   pub def less(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   =>
@@ -179,7 +179,7 @@ namespace Domain/Interval {
       */
     #safeBelnap2((x, y) -> x <= y)
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
-    def lessEqual(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Interval<> = (Bot, Top, leq, equ, lub, glb)
 
