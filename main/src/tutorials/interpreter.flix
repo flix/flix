@@ -200,16 +200,34 @@ def compileBExp(e: BExp): List[Inst] = match e with {
 //
 // We test each compiler by writing some tests:
 //
+@test
 def testCompileAExp1(): List[Inst] = compileAExp(Cst(42))
+
+@test
 def testCompileAExp2(): List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
+
+@test
 def testCompileAExp3(): List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
+
+@test
 def testCompileAExp4(): List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
+
+@test
 def testCompileAExp5(): List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
+@test
 def testCompileBExp1(): List[Inst] = compileBExp(True)
+
+@test
 def testCompileBExp2(): List[Inst] = compileBExp(Not(True))
+
+@test
 def testCompileBExp3(): List[Inst] = compileBExp(Conj(True, False))
+
+@test
 def testCompileBExp4(): List[Inst] = compileBExp(Disj(True, False))
+
+@test
 def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 
 //
@@ -253,8 +271,17 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
 //
 // and we can test the compiler and interpreter:
 //
+@test
 def testCompileAndEval1(): Int = evalInst(compileAExp(Cst(42)), Nil)
+
+@test
 def testCompileAndEval2(): Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
+
+@test
 def testCompileAndEval3(): Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
+
+@test
 def testCompileAndEval4(): Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
+
+@test
 def testCompileAndEval5(): Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)

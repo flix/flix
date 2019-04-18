@@ -73,7 +73,7 @@ namespace Domain/StrictSign {
     ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
-    def alpha(i: BigInt): Sign = switch {
+    pub def alpha(i: BigInt): Sign = switch {
         case i < 0ii    => Neg
         case i > 0ii    => Pos
         case true       => Zer
@@ -84,7 +84,7 @@ namespace Domain/StrictSign {
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: Sign): Sign = match e with {
+    pub def inc(e: Sign): Sign = match e with {
         case Bot => Bot
         case Neg => Top
         case Zer => Pos
@@ -97,7 +97,7 @@ namespace Domain/StrictSign {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: Sign): Sign = match e with {
+    pub def dec(e: Sign): Sign = match e with {
         case Bot => Bot
         case Neg => Neg
         case Zer => Neg
@@ -110,7 +110,7 @@ namespace Domain/StrictSign {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative #associative
-    def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    pub def plus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         case (Neg, Neg) => Neg
@@ -130,7 +130,7 @@ namespace Domain/StrictSign {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    pub def minus(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         case (Neg, Neg) => Top
@@ -150,7 +150,7 @@ namespace Domain/StrictSign {
     ///
     #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
-    def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
+    pub def times(e1: Sign, e2: Sign): Sign = match (e1, e2) with {
         case (Bot, _)   => Bot
         case (_, Bot)   => Bot
         case (Neg, Neg) => Pos
@@ -172,7 +172,7 @@ namespace Domain/StrictSign {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case (Neg, Neg) => Belnap/Belnap.Top
@@ -194,7 +194,7 @@ namespace Domain/StrictSign {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
@@ -202,7 +202,7 @@ namespace Domain/StrictSign {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def less(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: Sign, e2: Sign): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)   => Belnap/Belnap.Bot
         case (_, Bot)   => Belnap/Belnap.Bot
         case (Neg, Zer) => Belnap/Belnap.True
@@ -220,7 +220,7 @@ namespace Domain/StrictSign {
     #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let Sign<> = (Bot, Top, equ, leq, lub, glb)
 

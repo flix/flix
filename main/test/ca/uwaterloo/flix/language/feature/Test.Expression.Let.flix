@@ -2,7 +2,7 @@
 // Expression.Let                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
-def f01(): Int = let x = true; 42
+def f01(): Int = let _ = true; 42
 
 @test
 def testLet01(): Bool = assertEq!(f01(), 42)
@@ -44,19 +44,19 @@ def f07(): Int =
 @test
 def testLet07(): Bool = assertEq!(f07(), 6)
 
-def f08(a: Int, b: Int, c: Int): Int =
-  let x = 1337;
+def f08(_: Int, _: Int, _: Int): Int =
+  let _ = 1337;
   let y = -101010;
-  let z = 42;
+  let _ = 42;
     y
 
 @test
 def testLet08(): Bool = assertEq!(f08(-1337, 101010, -42), -101010)
 
-def f09(a: Int, b: Int, c: Int): Int =
-  let x = 1337;
-  let y = -101010;
-  let z = 42;
+def f09(_: Int, b: Int, _: Int): Int =
+  let _ = 1337;
+  let _ = -101010;
+  let _ = 42;
     b
 
 @test
@@ -68,51 +68,51 @@ def f10(): Int64 = let x = 0i64; x
 def testLet10(): Bool = assertEq!(f10(), 0i64)
 
 def f11(): Int64 =
-  let x = 1337i64;
+  let _ = 1337i64;
   let y = -101010i64;
-  let z = 42i64;
+  let _ = 42i64;
     y
 
 @test
 def testLet11(): Bool = assertEq!(f11(), -101010i64)
 
-def f12(a: Int64, b: Int64, c: Int64): Int64 =
-  let x = 1337i64;
+def f12(_: Int64, _: Int64, _: Int64): Int64 =
+  let _ = 1337i64;
   let y = -101010i64;
-  let z = 42i64;
+  let _ = 42i64;
     y
 
 @test
 def testLet12(): Bool = assertEq!(f12(-1337i64, 101010i64, -42i64), -101010i64)
 
-def f13(a: Int32, b: Int64, c: Int64): Int64 =
-  let x = 1337i32;
+def f13(_: Int32, _: Int64, _: Int64): Int64 =
+  let _ = 1337i32;
   let y = -101010i64;
-  let z = 42i64;
+  let _ = 42i64;
     y
 
 @test
 def testLet13(): Bool = assertEq!(f13(-1337i32, 101010i64, -42i64), -101010i64)
 
-def f14(a: Int64, b: Int64, c: Int64): Int64 =
-  let x = 1337i64;
-  let y = -101010i64;
-  let z = 42i64;
+def f14(_: Int64, b: Int64, _: Int64): Int64 =
+  let _ = 1337i64;
+  let _ = -101010i64;
+  let _ = 42i64;
     b
 
 @test
 def testLet14(): Bool = assertEq!(f14(-1337i64, 101010i64, -42i64), 101010i64)
 
-def f15(a: Int32, b: Int64, c: Int64): Int64 =
-  let x = 1337i32;
-  let y = -101010i64;
-  let z = 42i64;
+def f15(_: Int32, b: Int64, _: Int64): Int64 =
+  let _ = 1337i32;
+  let _ = -101010i64;
+  let _ = 42i64;
     b
 
 @test
 def testLet15(): Bool = assertEq!(f15(-1337i32, 101010i64, -42i64), 101010i64)
 
-enum ConstProp16 { case Top16, case Val16(Int), case Bot16 }
+enum ConstProp16 { case Val16(Int) }
 def f16(): ConstProp16 = let x = ConstProp16.Val16(42); x
 
 @test
@@ -134,7 +134,7 @@ def f19(): (Int, Int) = let x = (123, 456); x
 def testLet19(): Bool = assertEq!(f19(), (123, 456))
 
 def f20(): Char =
-  let x = 'a';
+  let _ = 'a';
   let y = 'b';
     y
 
@@ -142,7 +142,7 @@ def f20(): Char =
 def testLet20(): Bool = assertEq!(f20(), 'b')
 
 def f21(): Float32 =
-  let x = 1.2f32;
+  let _ = 1.2f32;
   let y = 3.4f32;
     y
 
@@ -150,7 +150,7 @@ def f21(): Float32 =
 def testLet21(): Bool = assertEq!(f21(), 3.4f32)
 
 def f22(): Float64 =
-  let x = 1.2f64;
+  let _ = 1.2f64;
   let y = 3.4f64;
     y
 
@@ -166,7 +166,7 @@ def f23(x: Int): Int32 =
 def testLet23(): Bool = assertEq!(f23(0), 6)
 
 def f24(x: Int): Int64 =
-  let x = x + 1;
+  let _ = x + 1;
   let x = 40i64;
   let x = x + 2i64;
     x
@@ -175,7 +175,7 @@ def f24(x: Int): Int64 =
 def testLet24(): Bool = assertEq!(f24(0), 42i64)
 
 def f25(): BigInt =
-  let x = 12345678901234567890ii;
+  let _ = 12345678901234567890ii;
   let y = 98765432109876543210ii;
     y
 
@@ -232,10 +232,3 @@ def f30(): Int =
 
 @test
 def testLet30(): Bool = assertEq!(f30(), 1 + 2 + 3 + 4)
-
-
-
-
-
-
-
