@@ -118,7 +118,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Lambda.01") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |  let f = x -> 123;
          |  f(1)
          |
@@ -130,7 +130,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Lambda.02") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |  let f = (x, y) -> x;
          |  f(1, 2)
          |
@@ -142,7 +142,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Lambda.03") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |  let f = (x, y) -> y;
          |  f(1, 2)
          |
@@ -154,7 +154,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Lambda.04") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |  let f = (x, y, z) -> x + z;
          |  f(1, 2, 3)
          |
@@ -186,7 +186,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeVar.01") {
     val input =
       s"""
-         |def f[a](): Int = 123
+         |pub def f[a](): Int = 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -196,7 +196,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeVar.02") {
     val input =
       s"""
-         |def f[a, b](x: a): a = x
+         |pub def f[a, b](x: a): a = x
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -206,7 +206,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeVar.03") {
     val input =
       s"""
-         |def f[a, b](x: b): b = x
+         |pub def f[a, b](x: b): b = x
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -216,7 +216,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedTypeVar.04") {
     val input =
       s"""
-         |def f[a, b, c](x: a, y: c): (a, c) = (x, y)
+         |pub def f[a, b, c](x: a, y: c): (a, c) = (x, y)
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -226,7 +226,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Let.01") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |  let x = 123;
          |  456
          |
@@ -238,7 +238,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Let.02") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |  let x = 123;
          |  let x = 456;
          |  x
@@ -251,7 +251,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.LetMatch.01") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |    let (x, y) = (1, 2);
          |    x
          |
@@ -263,7 +263,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.LetMatch.02") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |    let (x, y) = (1, 2);
          |    y
          |
@@ -275,7 +275,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.LetMatch.03") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |    let (x, y, z) = (1, 2, 3);
          |    x + y
          |
@@ -287,7 +287,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.LetMatch.04") {
     val input =
       s"""
-         |def f(): Int =
+         |pub def f(): Int =
          |    let (x, y, z) = (1, 2, 3);
          |    x + z
          |
@@ -304,7 +304,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    case Some(t)
          |}
          |
-         |def f(x: Option[Int]): Int =
+         |pub def f(x: Option[Int]): Int =
          |    match x with {
          |        case x => 123
          |    }
@@ -322,7 +322,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    case Some(t)
          |}
          |
-         |def f(x: Option[Int]): Int =
+         |pub def f(x: Option[Int]): Int =
          |    match x with {
          |        case None    => 123
          |        case Some(x) => 456
@@ -341,7 +341,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |    case Some(t)
          |}
          |
-         |def f(x: Option[(Int, Int)]): Int =
+         |pub def f(x: Option[(Int, Int)]): Int =
          |    match x with {
          |        case None         => 123
          |        case Some((x, y)) => y
