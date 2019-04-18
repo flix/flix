@@ -1,5 +1,5 @@
 // TODO: OpenOption
-enum OpenOption {
+pub enum OpenOption {
     case Append,
     case Create,
     case Read,

@@ -1,4 +1,4 @@
-type InputStream = InputStream(##java.io.InputStream)
+pub type InputStream = InputStream(##java.io.InputStream)
 
 namespace InputStream {
 

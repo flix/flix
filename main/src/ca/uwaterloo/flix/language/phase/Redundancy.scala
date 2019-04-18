@@ -141,7 +141,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks for unused relation symbols.
     */
   private def checkUnusedRelations(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
-    val unusedRelSyms = root.relations.keys.filter(sym => unused(sym, used))
+    val unusedRelSyms = root.relations.collect {
+      case (sym, decl) if unused(sym, decl, used) => sym
+    }
     val failures = unusedRelSyms.map(UnusedRelSym).toStream
 
     if (failures.isEmpty)
@@ -154,7 +156,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks for unused lattice symbols.
     */
   private def checkUnusedLattices(used: Redundancy.Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
-    val unusedLatSyms = root.lattices.keys.filter(sym => unused(sym, used))
+    val unusedLatSyms = root.lattices.collect {
+      case (sym, decl) if unused(sym, decl, used) => sym
+    }
     val failures = unusedLatSyms.map(UnusedLatSym).toStream
 
     if (failures.isEmpty)
@@ -594,11 +598,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def unused(sym: Symbol.DefnSym, used: Used): Boolean =
     !used.defSyms.contains(sym)
 
-  /**
-    * Returns `true` if `sym` is unused according to the argument `used`.
-    */
-  private def unused(sym: Symbol.PredSym, used: Used): Boolean =
-    !used.predSyms.contains(sym)
+  private def unused(sym: Symbol.RelSym, decl: Relation, used: Used): Boolean =
+    !decl.mod.isPublic && !used.predSyms.contains(sym)
+
+  private def unused(sym: Symbol.LatSym, decl: Lattice, used: Used): Boolean =
+    !decl.mod.isPublic && !used.predSyms.contains(sym)
 
   /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.

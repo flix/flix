@@ -6,12 +6,12 @@ pub enum Void { }
 ///
 /// The True predicate.
 ///
-rel True()
+pub rel True()
 
 ///
 /// The False predicate.
 ///
-rel False()
+pub rel False()
 
 ///
 /// The identity function.

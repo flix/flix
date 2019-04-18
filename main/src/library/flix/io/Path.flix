@@ -14,10 +14,10 @@
                          //throws IOException
 
 // TODO: Where and how to define this?
-type IOError = IOError(Str)
+pub type IOError = IOError(Str)
 
 // TODO: Where and how to define this?
-type Charset = Charset(Str)
+pub type Charset = Charset(Str)
 
 type Path = Path(##java.nio.file.Path)
 
