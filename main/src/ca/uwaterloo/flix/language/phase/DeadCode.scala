@@ -42,7 +42,7 @@ object DeadCode extends Phase[Root, Root] {
     val expVal = visitExp(defn.exp)
     val used = expVal match {
       case Validation.Success(value) => value
-      case _ => Used(Set.empty, Set.empty) // TODO: Think this through
+      case _ => Used() // TODO: Think this through
     }
     val fparamSyms = (for (fparam <- defn.fparams if fparam.sym.text != "_unit") yield fparam.sym).toSet
     val unusedFParamSyms = fparamSyms -- used.vars
@@ -125,9 +125,9 @@ object DeadCode extends Phase[Root, Root] {
             }
         }
         mapN(matchVal, rulesVal) {
-          case (m, r) => m + (r.foldLeft(Used(Set.empty, Set.empty)) (_ + _))
+          case (m, r) => m + (r.foldLeft(Used()) (_ + _))
         }
-      case TypedAst.Expression.Switch(rules, tpe, eff, loc) => Used(Set.empty, Set.empty).toSuccess // TODO
+      case TypedAst.Expression.Switch(rules, tpe, eff, loc) => Used().toSuccess // TODO
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val expVal = visitExp(exp)
         val newTagVal = Used(Set.empty, Set((sym, tag))).toSuccess
@@ -137,7 +137,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         val elmsVal = traverse(elms) { case elm => visitExp(elm) }
         mapN(elmsVal) {
-          case ex => ex.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case ex => ex.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
         mapN(visitExp(value), visitExp(rest)) {
@@ -147,7 +147,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         val elmsVal = traverse(elms) { case elm => visitExp(elm) }
         mapN(elmsVal) {
-          case ex => ex.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case ex => ex.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
         mapN(visitExp(elm), visitExp(len)) {
@@ -172,7 +172,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
         val elmsVal = traverse(elms) { case elm => visitExp(elm) }
         mapN(elmsVal) {
-          case ex => ex.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case ex => ex.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => visitExp(elm)
       case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => visitExp(base)
@@ -196,7 +196,7 @@ object DeadCode extends Phase[Root, Root] {
           case TypedAst.HandlerBinding(sym, exp) => visitExp(exp)
         }
         mapN(visitExp(exp), bindingsVal) {
-          case (ex, bi) => ex + bi.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case (ex, bi) => ex + bi.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
         mapN(visitExp(exp)) {
@@ -211,7 +211,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val argsVal = traverse(args) { case arg => visitExp(arg) }
         mapN(argsVal) {
-          case ar => ar.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case ar => ar.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         val rulesVal = traverse(rules) {
@@ -220,7 +220,7 @@ object DeadCode extends Phase[Root, Root] {
           }
         }
         mapN(visitExp(exp), rulesVal) {
-          case (ex, ru) => ex + ru.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case (ex, ru) => ex + ru.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
@@ -231,7 +231,7 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         val defVal = default match {
           case Some(ex) => visitExp(ex)
-          case None => Used(Set.empty, Set.empty).toSuccess
+          case None => Used().toSuccess
         }
         val rulesVal = traverse(rules) {
           case TypedAst.SelectChannelRule(sym, chan, exp) =>
@@ -240,7 +240,7 @@ object DeadCode extends Phase[Root, Root] {
             }
         }
         mapN(defVal, rulesVal) {
-          case (de, ru) => de + ru.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          case (de, ru) => de + ru.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
@@ -256,7 +256,7 @@ object DeadCode extends Phase[Root, Root] {
               case ex => visitExp(ex)
             }
             mapN(predVal, termsVal) {
-              case (pr, te) => pr + te.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+              case (pr, te) => pr + te.foldLeft(Used()) (_ + _)
             }
         }
         val bodyVal = traverse(c.body) {
@@ -266,7 +266,7 @@ object DeadCode extends Phase[Root, Root] {
               case ex => visitExp(ex)
             }
             mapN(termsVal) {
-              case trm => trm.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+              case trm => trm.foldLeft(Used()) (_ + _)
             }
           case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
             mapN(Used(Set(sym), Set.empty).toSuccess, visitExp(term)) {
@@ -274,7 +274,7 @@ object DeadCode extends Phase[Root, Root] {
             }
         }
         mapN(cparamsVal, headVal, bodyVal) {
-          (cp, he, bo) => cp.foldLeft(Used(Set.empty, Set.empty)) (_ + _) + he + bo.foldLeft(Used(Set.empty, Set.empty)) (_ + _)
+          (cp, he, bo) => cp.foldLeft(Used()) (_ + _) + he + bo.foldLeft(Used()) (_ + _)
         }
       case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         mapN(visitExp(exp1), visitExp(exp2)) {
@@ -289,7 +289,7 @@ object DeadCode extends Phase[Root, Root] {
         mapN(visitExp(exp1), visitExp(exp2)) {
           case (e1, e2) => e1 + e2
         }
-      case _ => Used(Set.empty, Set.empty).toSuccess
+      case _ => Used().toSuccess
     }
 
   private def patternVar(pat: TypedAst.Pattern): Set[Symbol.VarSym] =
@@ -301,10 +301,9 @@ object DeadCode extends Phase[Root, Root] {
     }
 }
 
-case class Used(vars: Set[Symbol.VarSym], tags: Set[(Symbol.EnumSym, String)]) {
-  def +(that: Used): Used = Used(vars ++ that.vars, tags ++ that.tags)
-  def +(that: Symbol.VarSym) = Used(vars + that, tags)
-  //def -(that: Used): Used = Used(vars -- that.vars, tags -- that.tags)
-  def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags)
-  def empty(): Used = Used(Set.empty, Set.empty)
+case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty) {
+  def +(that: Used): Used = Used(vars ++ that.vars, tags ++ that.tags, defs ++ that.defs)
+  def +(that: Symbol.VarSym) = Used(vars + that, tags, defs)
+  def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags, defs)
 }
+
