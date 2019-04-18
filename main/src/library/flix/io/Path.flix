@@ -48,7 +48,7 @@ namespace Path {
     ///
     /// Checks whether the given path `p` exists
     ///
-    def exists(p: Path): Bool = {
+    pub def exists(p: Path): Bool = {
         let Path(javaPath) = p;
         native method java.nio.file.Files.exists(javaPath, [ ] : Array[##java.nio.file.LinkOption]) as Bool
     }
