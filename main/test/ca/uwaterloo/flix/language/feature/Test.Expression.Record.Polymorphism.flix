@@ -39,9 +39,9 @@ def testRecordNonPolyExtend01(): Unit =
     let p1 = { x = 0, y = 0 };
     let p2 = { x = 1, y = 2 };
     let p3 = { x = 7, y = 8 };
-    let p4 = withZ(p1, 21);
-    let p5 = withZ(p2, 42);
-    let p6 = withZ(p2, 84);
+    let _p4 = withZ(p1, 21);
+    let _p5 = withZ(p2, 42);
+    let _p6 = withZ(p3, 84);
     ()
 
 def withZ(rec: { x: Int, y: Int }, z: Int): { x: Int, y: Int, z: Int } =
@@ -52,9 +52,9 @@ def testRecordNonPolyExtend02(): Unit =
     let p1 = { fstName = "Luke", lstName = "Skywalker" };
     let p2 = { fstName = "Lucky", lstName = "Luke" };
     let p3 = { fstName = "Gandalf", lstName = "the Grey" };
-    let p4 = withAge(p1, 21);
-    let p5 = withAge(p2, 42);
-    let p6 = withAge(p2, 84);
+    let _p4 = withAge(p1, 21);
+    let _p5 = withAge(p2, 42);
+    let _p6 = withAge(p3, 84);
     ()
 
 def withAge(rec: { fstName: Str, lstName: Str }, age: Int): { fstName: Str, lstName: Str, age: Int } =
@@ -66,10 +66,10 @@ def testRecordPolyExtend01(): Unit =
     let p2 = { x = 0, y = 0, z = 0};
     let p3 = { fstName = "Luke", lstName = "Skywalker" };
     let p4 = { fstName = "Darth", lstName = "Vader" };
-    let p5 = withColor(p1, "Red");
-    let p6 = withColor(p2, "Blu");
-    let p7 = withColor(p3, "White");
-    let p8 = withColor(p4, "Black");
+    let _p5 = withColor(p1, "Red");
+    let _p6 = withColor(p2, "Blu");
+    let _p7 = withColor(p3, "White");
+    let _p8 = withColor(p4, "Black");
     ()
 
 def withColor[r](rec: r, col: Str): { color: Str | r } =
@@ -81,10 +81,10 @@ def testRecordPolyExtend02(): Unit =
     let p2 = { fstName = "Lucky", lstName = "Luke" };
     let p3 = { fstName = "Bruce", lstName = "Wayne", alias = "Batman" };
     let p4 = { name = "Cher" };
-    let p5 = withAgeAndSex(21, "m", p1);
-    let p5 = withAgeAndSex(42, "m", p2);
-    let p6 = withAgeAndSex(42, "m", p3);
-    let p7 = withAgeAndSex(42, "f", p4);
+    let _p5 = withAgeAndSex(21, "m", p1);
+    let _p5 = withAgeAndSex(42, "m", p2);
+    let _p6 = withAgeAndSex(42, "m", p3);
+    let _p7 = withAgeAndSex(42, "f", p4);
     ()
 
 def withAgeAndSex[r](age: Int, sex: Str, rec: r): { age: Int, sex: Str | r } =
