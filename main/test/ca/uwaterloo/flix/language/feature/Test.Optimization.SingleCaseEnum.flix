@@ -65,7 +65,7 @@ def testSingleCase11(): Bool = match Some(Temperature(Celsius(42))) with {
 
 @test
 def testSingleCase12(): Bool = match Wrapper(true, 42, "Hello World") with {
-    case Wrapper(x, y, z) => y == 42
+    case Wrapper(_, y, _) => y == 42
 }
 
 @test
@@ -73,5 +73,6 @@ def testSingleCase13(): Bool =
     let xs = List.map(Celsius, List.range(0, 10));
     let ys = List.map(Fahrenheit, List.range(0, 10));
     let zs = List.map(Temperature, xs);
-        List.length(zs) == 10
+    let ws = List.map(Temperature, ys);
+        List.length(zs) == 10 && List.length(ws) == 10
 
