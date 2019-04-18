@@ -60,7 +60,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         checkUnusedLattices(usedAll)(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
-    usedRes.toValidation(root)
+    usedRes.toValidation(root) // TODO: Ensure no local var symbols are floating around
   }
 
   /**
@@ -189,7 +189,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
       val us = visitExp(exp, env0)
-      checkUnused(fparam.sym, us)
+      if (unused(fparam.sym, us))
+        us - fparam.sym + UnusedFormalParam(fparam.sym)
+      else
+        us - fparam.sym
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -209,7 +212,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       if (unused(sym, us2))
-        ((us1 ++ us2) - sym) + UnusedVarSym(sym)
+        (us1 ++ us2) - sym + UnusedVarSym(sym)
       else
         (us1 ++ us2) - sym
 
@@ -572,10 +575,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def unused(tvar: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(tvar)
-
-  private def checkUnused(sym: Symbol.VarSym, used: Used) = {
-    if (unused(sym, used)) used + UnusedFormalParam(sym) else used
-  }
 
   // TODO: DOC
   private def unused(sym: Symbol.VarSym, used: Used): Boolean =
