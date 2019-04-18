@@ -15,20 +15,27 @@ object DeadCode extends Phase[Root, Root] {
     // TODO: Improve weird/terrible code below
     val defsRes = root.defs.map(x => visitDef(x._2)).toList.unzip
     val defsVal = defsRes._1
-    val usedEnums = defsRes._2.flatten.toSet
-    val enums = root.enums.values.map(x => visitEnum(x)).toSet.flatten
-    val unusedEnums = enums.diff(usedEnums)
-    val enumsVal = if (unusedEnums.size == 0) {
-      root.enums.toSuccess
-    } else {
-      val head = unusedEnums.head
-      DeadCodeError(root.enums(head._1).cases(head._2).loc, "Enum case never used").toFailure
-    }
+    val used = defsRes._2.foldLeft(Used()) (_ + _)
+    val defined = Used(Set.empty, root.enums.values.map(x => visitEnum(x)).toSet.flatten, root.defs.keySet.filter(x => x.name != "main"))
+    val unused = defined - used
+    // TODO: Improve below code
+    val usedVal =
+      if (unused.defs.size == 0) {
+        if (unused.tags.size == 0) {
+          root.toSuccess
+        } else {
+          val unusedTagsHead = unused.tags.head
+          DeadCodeError(root.enums(unusedTagsHead._1).cases(unusedTagsHead._2).loc, "Enum case never used").toFailure
+        }
+      } else {
+        val unusedDefsHead = unused.defs.head
+        println(unusedDefsHead.name); DeadCodeError(root.defs(unusedDefsHead).loc, "Def never used").toFailure
+      }
     val newDefs = traverse(defsVal) {
       case defn => defn.map(x => x.sym -> x)
     }
 
-    mapN(newDefs, enumsVal) {
+    mapN(newDefs, usedVal) {
       case (defs, enums) => root.copy(defs = defs.toMap)
     }
   }
@@ -38,7 +45,7 @@ object DeadCode extends Phase[Root, Root] {
     enumKeys.map(x => (enum.sym, x))
   }
 
-  private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, DeadCodeError], Set[(Symbol.EnumSym, String)]) = {
+  private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, DeadCodeError], Used) = {
     val expVal = visitExp(defn.exp)
     val used = expVal match {
       case Validation.Success(value) => value
@@ -49,7 +56,7 @@ object DeadCode extends Phase[Root, Root] {
     val fparamSymVal = if (unusedFParamSyms.size == 0) defn.toSuccess else DeadCodeError(unusedFParamSyms.head.loc, "Formal parameter never used.").toFailure
     (mapN(expVal, fparamSymVal) {
       case _ => defn
-    }, used.tags)
+    }, used.removeVars)
   }
 
   // TODO: Clean up variable names now that this functions returns things other than Validation
@@ -306,6 +313,8 @@ object DeadCode extends Phase[Root, Root] {
 case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty) {
   def +(that: Used): Used = Used(vars ++ that.vars, tags ++ that.tags, defs ++ that.defs)
   def +(that: Symbol.VarSym) = Used(vars + that, tags, defs)
+  def -(that: Used): Used = Used(vars -- that.vars, tags -- that.tags, defs -- that.defs)
   def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags, defs)
+  def removeVars: Used = Used(Set.empty, tags, defs)
 }
 
