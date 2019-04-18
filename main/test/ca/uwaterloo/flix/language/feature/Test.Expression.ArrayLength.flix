@@ -121,5 +121,6 @@ def testArrayLength40(): Int = let x = [[None, Some(1), None], [Some(2), Some(45
 @test
 def testArrayLength41(): Int = let x = [(1, 2), (3, 4)]; length[x]
 
+@test
 def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
 

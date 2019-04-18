@@ -834,4 +834,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // - We disallow linear patterns.
   // - We treat holes (and ???) as using all local variables (but not anything else?)
 
+  // Bugs found:
+  // - Missing @test on def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
+
 }
