@@ -68,7 +68,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitDef(defn: TypedAst.Def)(implicit root: Root): Used = {
 
-    // TODO: DOC
+    /**
+      * Checks for unused formal parameters.
+      */
     def checkUnusedFormalParameters(used: Used): Used = {
       val unusedParams = defn.fparams.collect {
         case fparam if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym)
@@ -76,7 +78,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       used ++ unusedParams
     }
 
-    // TODO: DOC
+    /**
+      * Checks for unused type parameters.
+      */
     def checkUnusedTypeParameters(used: Used): Used = {
       val unusedParams = defn.tparams.collect {
         case tparam if unused(tparam.tpe, defn.sc.base.typeVars) => UnusedTypeParam(tparam.name)
@@ -84,8 +88,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       used ++ unusedParams
     }
 
+    // Compute the used symbols inside the definition.
     val used = visitExp(defn.exp, Env.empty)
-    used ++ checkUnusedFormalParameters(used) ++ checkUnusedTypeParameters(used)
+
+    // Check for unused parameters and remove all variable symbols.
+    (used ++ checkUnusedFormalParameters(used) ++ checkUnusedTypeParameters(used)).copy(varSyms = Set.empty)
   }
 
   /**
@@ -151,7 +158,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  // TODO: Filter symbols
   private def visitExp(e0: TypedAst.Expression, env0: Env): Used = e0 match {
     case Expression.Unit(_) => Used.empty
 
@@ -208,7 +214,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       us1 ++ us2
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      // TODO: Extend env
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       if (unused(sym, us2))
@@ -217,7 +222,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         (us1 ++ us2) - sym
 
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
-      ??? // TODO
+      val us1 = visitExp(exp1, env0)
+      val us2 = visitExp(exp2, env0)
+      if (unused(sym, us1) || unused(sym, us2))
+        (us1 ++ us2) - sym + UnusedVarSym(sym)
+      else
+        (us1 ++ us2) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -247,7 +257,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           val usedBody = visitExp(body, extendedEnv)
           // TODO: Impossible pattern
 
-          val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).toList.map(UnusedVarSym)
+          val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).map(UnusedVarSym)
           (usedGuard ++ usedBody) -- fvs ++ unusedVarSyms
       }
 
@@ -264,9 +274,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us = visitExp(exp, env0)
       Used.of(sym, tag) ++ us
 
-    case Expression.Tuple(elms, _, _, _) => visitExps(elms, env0)
+    case Expression.Tuple(elms, _, _, _) =>
+      visitExps(elms, env0)
 
-    case Expression.RecordEmpty(_, _, _) => Used.empty
+    case Expression.RecordEmpty(_, _, _) =>
+      Used.empty
 
     case Expression.RecordSelect(exp, _, _, _, _) => visitExp(exp, env0)
 
@@ -337,16 +349,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Existential(fparam, exp, _, _) =>
       val us = visitExp(exp, env0)
       if (unused(fparam.sym, us))
-        us + UnusedFormalParam(fparam.sym)
+        us - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us
+        us - fparam.sym
 
     case Expression.Universal(fparam, exp, _, _) =>
       val us = visitExp(exp, env0)
       if (unused(fparam.sym, us))
-        us + UnusedFormalParam(fparam.sym)
+        us - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us
+        us - fparam.sym
 
     case Expression.Ascribe(exp, _, _, _) => visitExp(exp, env0)
 
@@ -394,14 +406,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Sleep(exp, _, _, _) => visitExp(exp, env0)
 
-    case Expression.FixpointConstraint(c, _, _, _) => visitConstraint(c, env0)
+    case Expression.FixpointConstraint(c, _, _, _) =>
+      visitConstraint(c, env0)
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 ++ us2
 
-    case Expression.FixpointSolve(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.FixpointSolve(exp, _, _, _) =>
+      visitExp(exp, env0)
 
     case Expression.FixpointProject(pred, exp, _, _, _) =>
       val us1 = visitExp(pred.exp, env0)
@@ -413,7 +427,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val used2 = visitExp(exp2, env0)
       used1 ++ used2
 
-    case Expression.UserError(_, _, _) => Used.empty
+    case Expression.UserError(_, _, _) =>
+      Used.empty
   }
 
   private def visitExps(es: List[TypedAst.Expression], env0: Env): Used =
@@ -450,9 +465,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitConstraint(c0: Constraint, env0: Env): Used = {
     val zero = visitHeadPred(c0.head, env0)
-    c0.body.foldLeft(zero) {
+    val used = c0.body.foldLeft(zero) {
       case (acc, b) => acc ++ visitBodyPred(b, env0)
     }
+    used -- c0.cparams.map(_.sym)
   }
 
   /**
@@ -618,9 +634,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Maybe this is actually a relation...
   // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
 
-  // Note the eq maps do not contain transitive closure.
-
-  // TODO: Need better name.
   object Used {
 
     /**
@@ -651,14 +664,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * A representation of symbols used within an expression, definition, or similar.
+    * A representation of used symbols.
     */
   case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], predSyms: Set[Symbol.PredSym], varSyms: Set[Symbol.VarSym], errors: Stream[RedundancyError]) {
-
-    // TODO: Sort and order.
-
     /**
-      * Returns the union of `this` and `that`.
+      * Merges `this` and `that`.
       */
     def ++(that: Used): Used =
       if (this eq Used.empty) {
@@ -680,22 +690,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def +(e: RedundancyError): Used = copy(errors = e #:: errors)
 
-    // TODO: Efficiency
+    /**
+      * Adds the given traversable of redundancy errors `es` to `this` object.
+      */
     def ++(es: Traversable[RedundancyError]): Used = copy(errors = es.toStream #::: errors)
 
-
     /**
-      * Removes the given variable symbol from this object.
+      * Marks the given variable symbol `sym` as used.
       */
     def -(sym: Symbol.VarSym): Used = copy(varSyms = varSyms - sym)
 
     /**
-      * Removes all variable symbol from this object.
+      * Marks all the given variable symbols `syms` as used.
       */
-    def --(syms: Set[Symbol.VarSym]): Used = copy(varSyms = varSyms -- syms)
+    def --(syms: Traversable[Symbol.VarSym]): Used = copy(varSyms = varSyms -- syms)
 
     /**
-      * Returns `a` wrapped in [[Success]] unless `this` has errors.
+      * Returns Successful(a) unless `this` contains errors.
       */
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors)
   }
