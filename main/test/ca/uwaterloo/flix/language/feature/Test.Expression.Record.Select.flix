@@ -21,55 +21,55 @@ def testRecordSelect04(): Bool =
 @test
 def testRecordMultiSelect01(): Unit =
     let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-    let fstName = r.fstName;
-    let lstName = r.lstName;
-    let age = r.age;
-    let cowboy = r.cowboy;
+    let _fstName = r.fstName;
+    let _lstName = r.lstName;
+    let _age = r.age;
+    let _cowboy = r.cowboy;
     ()
 
 @test
 def testRecordMultiSelect02(): Unit =
     let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-    let cowboy = r.cowboy;
-    let age = r.age;
-    let lstName = r.lstName;
-    let fstName = r.fstName;
+    let _cowboy = r.cowboy;
+    let _age = r.age;
+    let _lstName = r.lstName;
+    let _fstName = r.fstName;
     ()
 
 @test
 def testRecordMultiSelect03(): Unit =
     let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-    let fstName1 = r.fstName;
-    let fstName2 = r.fstName;
-    let lstName1 = r.lstName;
-    let lstName2 = r.lstName;
+    let _fstName1 = r.fstName;
+    let _fstName2 = r.fstName;
+    let _lstName1 = r.lstName;
+    let _lstName2 = r.lstName;
     ()
 
 @test
 def testRecordMultiSelect04(): Unit =
     let r = { fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-    let lstName1 = r.lstName;
-    let fstName1 = r.fstName;
-    let lstName2 = r.lstName;
-    let fstName2 = r.fstName;
+    let _lstName1 = r.lstName;
+    let _fstName1 = r.fstName;
+    let _lstName2 = r.lstName;
+    let _fstName2 = r.fstName;
     ()
 
 @test
 def testNestedSelect01(): Unit =
     let r = { a = { x = 1, y = 2}, b = { x = 1, y = 4 } };
-    let ax = r.a.x;
-    let ay = r.a.y;
-    let bx = r.b.x;
-    let by = r.b.y;
+    let _ax = r.a.x;
+    let _ay = r.a.y;
+    let _bx = r.b.x;
+    let _by = r.b.y;
     ()
 
 @test
 def testNestedSelect02(): Unit =
     let r = { a = { b = { c = { d = 42 } } } };
-    let a = r.a;
-    let b = r.a.b;
-    let c = r.a.b.c;
-    let d = r.a.b.c.d;
+    let _a = r.a;
+    let _b = r.a.b;
+    let _c = r.a.b.c;
+    let _d = r.a.b.c.d;
     ()
 
 @test
