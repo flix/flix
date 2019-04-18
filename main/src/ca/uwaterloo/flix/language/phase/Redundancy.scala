@@ -819,11 +819,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Should we be allowed to *use* _score names? Probably not. How to enforce?
 
+  // TODO: Treat ??? and ?hole as using all local variables.
+
+  // TODO: Is validation really the right approach here?
+
   // Notes for the paper:
   // - We disallow shadowing (because its confusing in the presence of pattern matching).
   // - We disallow both implicit widening and narrowing of integers.
   // - We disallow all forms of implicit coercions.
   // - We disallow linear patterns.
-
+  // - We treat holes (and ???) as using all local variables (but not anything else?)
 
 }

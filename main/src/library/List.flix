@@ -340,7 +340,7 @@ namespace List {
     ///
     pub def transpose[a](xs: List[List[a]]): List[List[a]] = match xs with {
         case Nil => Nil
-        case x :: rs =>
+        case x :: _ =>
             let len = length(x);
                 if (!uniformHelper(xs, len) || len == 0) xs else transposeHelper(xs, len)
     }

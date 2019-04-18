@@ -80,7 +80,7 @@ namespace Map {
     ///
     pub def memberOf[k, v](k: k, m: Map[k, v]): Bool = match m with {
         case Map(Nil) => false
-        case Map((a, b) :: rs) => if (a == k) true else memberOf(k, Map(rs))
+        case Map((a, _) :: rs) => if (a == k) true else memberOf(k, Map(rs))
     }
 
     ///
@@ -106,14 +106,14 @@ namespace Map {
     /// Updates `m` with `k -> v`.
     ///
     pub def insert[k, v](k: k, v: v, m: Map[k, v]): Map[k, v] =
-        insertWithKey((k1, v1, v2) -> v1, k, v, m)
+        insertWithKey((_, v1, _) -> v1, k, v, m)
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
     /// Otherwise, updates `m` with `k -> v`.
     ///
     pub def insertWith[k, v](f: (v, v) -> v, k: k, v: v, m: Map[k, v]): Map[k, v] =
-        insertWithKey((k1, v1, v2) -> f(v1, v2), k, v, m)
+        insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
 
     ///
     /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
@@ -134,7 +134,7 @@ namespace Map {
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
     /// Otherwise, returns `m`.
     ///
-    pub def adjust[k, v](f: v -> v, k: k, m: Map[k, v]): Map[k, v] = adjustWithKey((k1, v1) -> f(v1), k, m)
+    pub def adjust[k, v](f: v -> v, k: k, m: Map[k, v]): Map[k, v] = adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`.
@@ -148,7 +148,7 @@ namespace Map {
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1).
     /// Otherwise, returns `m`.
     ///
-    pub def update[k, v](f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] = updateWithKey((k1, v1) -> f(v1), k, m)
+    pub def update[k, v](f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] = updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1).
@@ -180,7 +180,7 @@ namespace Map {
     ///
     pub def delete[k, v](k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
-            Map(List.filter(match (key, v) -> key != k, xs))
+            Map(List.filter(match (key, _) -> key != k, xs))
 
 
 
@@ -227,7 +227,7 @@ namespace Map {
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
     ///
-    pub def filter[k, v](f: v -> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((k, v) -> f(v), m)
+    pub def filter[k, v](f: v -> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
@@ -239,7 +239,7 @@ namespace Map {
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
     ///
-    pub def map[k, v1, v2](f: v1 -> v2, m: Map[k, v1]): Map[k, v2] = mapWithKey((k, v) -> f(v), m)
+    pub def map[k, v1, v2](f: v1 -> v2, m: Map[k, v1]): Map[k, v2] = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
@@ -267,7 +267,7 @@ namespace Map {
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
-    pub def foldLeft[k, v, b](f: (b, v) -> b, s: b, m: Map[k, v]): b = foldLeftWithKey((k, b, v) -> f(b, v), s, m)
+    pub def foldLeft[k, v, b](f: (b, v) -> b, s: b, m: Map[k, v]): b = foldLeftWithKey((_, b, v) -> f(b, v), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
@@ -281,7 +281,8 @@ namespace Map {
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    pub def foldRight[k, v, b](f: (v, b) -> b, s: b, m: Map[k, v]): b = foldRightWithKey((k, v, b) -> f(v, b), s, m)
+    pub def foldRight[k, v, b](f: (v, b) -> b, s: b, m: Map[k, v]): b =
+        foldRightWithKey((_, v, b) -> f(v, b), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -372,12 +373,12 @@ namespace Map {
     /// Returns the left-biased union of `m1` and `m2`.
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def union[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((k, v1, v2) -> v1, m1, m2)
+    pub def union[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def unionWith[k, v](f: (v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((k, v1, v2) -> f(v1, v2), m1, m2)
+    pub def unionWith[k, v](f: (v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
@@ -389,25 +390,25 @@ namespace Map {
     /// Returns the left-biased intersection of `m1` and `m2`.
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def intersection[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((k, v1, v2) -> v1, m1, m2)
+    pub def intersection[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def intersectionWith[k, v](f: (v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((k, v1, v2) -> f(v1, v2), m1, m2)
+    pub def intersectionWith[k, v](f: (v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
     pub def intersectionWithKey[k, v](f: (k, v, v) -> v, m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
-        let intersect = filterWithKey((k, v) -> memberOf(k, m1), m2);
+        let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
         foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
     /// That is, returns the map `m1` with the keys removed that are in `m2`.
     ///
-    pub def difference[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((k, v1, v2) -> None, m1, m2)
+    pub def difference[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -415,7 +416,7 @@ namespace Map {
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
-    pub def differenceWith[k, v](f: (v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((k, v1, v2) -> f(v1, v2), m1, m2)
+    pub def differenceWith[k, v](f: (v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -424,7 +425,7 @@ namespace Map {
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
     pub def differenceWithKey[k, v](f: (k, v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
-        let diff = filterWithKey((k, v) -> !memberOf(k, m2), m1);
+        let diff = filterWithKey((k, _) -> !memberOf(k, m2), m1);
         let g = (k, v, m) -> if (memberOf(k, m1))
                                 match get(k, m1) with {
                                     case Some(v1) => match f(k, v1, v) with {

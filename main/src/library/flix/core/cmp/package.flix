@@ -10,22 +10,22 @@ pub enum Ordering {
 ///
 /// Returns `true` if `x` is strictly less than `y`.
 ///
-def lt[a: Ord](x: a, y: a): Bool = ??? as Bool // TODO
+def lt[a: Ord](_x: a, _y: a): Bool = ??? as Bool // TODO
 
 ///
 /// Returns `true` if `x` is less than or equal to `y`.
 ///
-def le[a: Ord](x: a, y: a): Bool = ??? as Bool // TODO
+def le[a: Ord](_x: a, _y: a): Bool = ??? as Bool // TODO
 
 ///
 /// Returns `true` if `x` is strictly greater than `y`.
 ///
-def gt[a: Ord](x: a, y: a): Bool = ??? as Bool // TODO
+def gt[a: Ord](_x: a, _y: a): Bool = ??? as Bool // TODO
 
 ///
 /// Returns `true` if `x` is greater than or equal to `y`.
 ///
-def ge[a: Ord](x: a, y: a): Bool = ??? as Bool // TODO
+def ge[a: Ord](_x: a, _y: a): Bool = ??? as Bool // TODO
 
 ///
 /// Returns the smaller of `x` and `y`.

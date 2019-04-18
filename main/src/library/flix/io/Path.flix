@@ -40,8 +40,8 @@ namespace Path {
         let dotIndex = native method java.lang.String.lastIndexOf(myString, "." : Str);
         match dotIndex with {
             case -1 => None
-            case num => let actualIndex = dotIndex + 1;
-                        Some(native method java.lang.String.substring(myString, actualIndex) as Str)
+            case _ => let actualIndex = dotIndex + 1;
+                      Some(native method java.lang.String.substring(myString, actualIndex) as Str)
         }
     }
 

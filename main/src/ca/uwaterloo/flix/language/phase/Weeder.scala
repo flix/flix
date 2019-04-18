@@ -1527,7 +1527,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     traverse(fparams) {
       case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
         case None =>
-          seen += (ident.name -> param)
+          if (!ident.name.startsWith("_")) {
+            // Wildcards cannot be duplicate.
+            seen += (ident.name -> param)
+          }
+
           visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline)) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
