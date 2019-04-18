@@ -33,33 +33,39 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
-    // Check if the redundancy checker has been disabled.
+    // Return early if the redundancy phase is disabled.
     if (flix.options.xallowredundancies) {
       return root.toSuccess
     }
 
-    // Merges used symbols for each definition together.
+    // Computes all used symbols in all defs.
     val usedDefs = root.defs.foldLeft(Used.empty) {
       case (acc, (sym, decl)) => acc ++ visitDef(decl)(root)
     }
 
-    // Check for redundancies in lattice components.
+    // Computes all used symbols in all lattices.
     val usedLats = root.latticeComponents.values.foldLeft(Used.empty) {
       case (acc, LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)) =>
         acc ++ visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
     }
 
+    // Computes all used symbols.
     val usedAll = usedLats ++ usedDefs
 
-    val usedRes = checkUnusedDefs(usedAll)(root) ++
-      checkUnusedEnumsAndTags(usedAll)(root) ++
-      checkUnusedRelations(usedAll)(root) ++
-      checkUnusedLattices(usedAll)(root)
+    // Check for unused symbols.
+    val usedRes =
+      checkUnusedDefs(usedAll)(root) ++
+        checkUnusedEnumsAndTags(usedAll)(root) ++
+        checkUnusedRelations(usedAll)(root) ++
+        checkUnusedLattices(usedAll)(root)
 
+    // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
   }
 
-  // TODO: DOC
+  /**
+    * Checks for unused symbols in the given definition and returns all used symbols.
+    */
   private def visitDef(defn: TypedAst.Def)(implicit root: Root): Used = {
 
     // TODO: DOC
@@ -82,18 +88,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     used ++ checkUnusedFormalParameters(used) ++ checkUnusedTypeParameters(used)
   }
 
-  // TODO: Test cases.
-  // TODO: Maybe this can be cleaned up.
-  // TODO: Where should all these criteria be collected.
-
+  /**
+    * Checks for unused definition symbols.
+    */
   private def checkUnusedDefs(used: Used)(implicit root: Root): Used = {
     root.defs.foldLeft(used) {
-      case (acc, (sym, decl)) if decl.mod.isPublic || decl.ann.isTest || sym.text == "main" =>
-        // Def is public. No usage requirements.
-        acc
       case (acc, (sym, decl)) if unused(sym, used) =>
-        // Def is non-public. Check if the def is used.
-        acc + UnusedDefSym(sym)
+        if (decl.mod.isPublic || decl.ann.isTest || sym.text == "main")
+          acc
+        else
+          acc + UnusedDefSym(sym)
       case (acc, _) => acc
     }
   }
@@ -147,6 +151,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
+  // TODO: Filter symbols
   private def visitExp(e0: TypedAst.Expression, env0: Env): Used = e0 match {
     case Expression.Unit(_) => Used.empty
 
