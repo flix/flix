@@ -14,8 +14,8 @@ def testSelectChannel2(): Bool = {
 
   spawn {
     select {
-      case x <- c1 => ()
-      case y <- c2 => ()
+      case _ <- c1 => ()
+      case _ <- c2 => ()
     }
   };
 
@@ -53,7 +53,7 @@ def testSelectChannel3(): Bool = {
   // Sleep to make sure the non-selected select has run
   sleep(100i64 * Duration.oneMillisecond());
   let result = select {
-    case x <- resultChannel => true
+    case _ <- resultChannel => true
     case _ => false
   };
   result `assertEq!` true
@@ -61,10 +61,10 @@ def testSelectChannel3(): Bool = {
 
 def doSelect(c: Channel[Unit]): Unit = {
   select {
-    case x <- c => ()
+    case _ <- c => ()
   }
 }
-    
+
 // TESTS FROM THE PREVIOUS GROUP
 
 /////////////////////////////////////////////////////////////////////////////
@@ -126,7 +126,7 @@ def selectChannelUnit05(): Unit =
   let ch = chan Unit 100;
   let _ = ch <- ();
   select {
-    case x <- ch => ()
+    case _ <- ch => ()
   }
 
 @test
@@ -137,7 +137,6 @@ def fUnit06(ch: Channel[Unit]): Channel[Unit] =
 
 def selectChannelUnit06(): Unit =
   let ch1 = chan Unit 100;
-  let ch2 = chan Unit 100;
   let _ = spawn fUnit06(ch1);
   select {
     case x <- ch1 => x
@@ -150,7 +149,6 @@ def fUnit07(ch: Channel[Unit]): Channel[Unit] =
   ch <- ()
 
 def selectChannelUnit07(): Unit =
-  let ch1 = chan Unit 100;
   let ch2 = chan Unit 100;
   let _ = spawn fUnit07(ch2);
   select {
@@ -264,7 +262,7 @@ def selectChannelBool09(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => true
+    case _ <- ch => true
   }
 
 @test
@@ -274,7 +272,7 @@ def selectChannelBool10(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- false;
   select {
-    case x <- ch => false
+    case _ <- ch => false
   }
 
 @test
@@ -284,7 +282,7 @@ def selectChannelBool11(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => true && true
+    case _ <- ch => true && true
   }
 
 @test
@@ -294,7 +292,7 @@ def selectChannelBool12(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => true && false
+    case _ <- ch => true && false
   }
 
 @test
@@ -304,7 +302,7 @@ def selectChannelBool13(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => false && false
+    case _ <- ch => false && false
   }
 
 @test
@@ -314,7 +312,7 @@ def selectChannelBool14(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => false && true
+    case _ <- ch => false && true
   }
 
 @test
@@ -324,7 +322,7 @@ def selectChannelBool15(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => true || true
+    case _ <- ch => true || true
   }
 
 @test
@@ -334,7 +332,7 @@ def selectChannelBool16(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => true || false
+    case _ <- ch => true || false
   }
 
 @test
@@ -344,7 +342,7 @@ def selectChannelBool17(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => false || false
+    case _ <- ch => false || false
   }
 
 @test
@@ -354,7 +352,7 @@ def selectChannelBool18(): Bool =
   let ch = chan Bool 100;
   let _ = ch <- true;
   select {
-    case x <- ch => false || true
+    case _ <- ch => false || true
   }
 
 @test
@@ -445,7 +443,6 @@ def fBool27(ch: Channel[Bool]): Channel[Bool] =
 
 def selectChannelBool27(): Bool =
   let ch1 = chan Bool 100;
-  let ch2 = chan Bool 100;
   let _ = spawn fBool27(ch1);
   select {
     case x <- ch1 => x
@@ -459,7 +456,6 @@ def fBool28(ch: Channel[Bool]): Channel[Bool] =
 
 def selectChannelBool28(): Bool =
   let ch1 = chan Bool 100;
-  let ch2 = chan Bool 100;
   let _ = spawn fBool28(ch1);
   select {
     case x <- ch1 => x
@@ -472,7 +468,6 @@ def fBool29(ch: Channel[Bool]): Channel[Bool] =
   ch <- true
 
 def selectChannelBool29(): Bool =
-  let ch1 = chan Bool 100;
   let ch2 = chan Bool 100;
   let _ = spawn fBool29(ch2);
   select {
@@ -486,7 +481,6 @@ def fBool30(ch: Channel[Bool]): Channel[Bool] =
   ch <- false
 
 def selectChannelBool30(): Bool =
-  let ch1 = chan Bool 100;
   let ch2 = chan Bool 100;
   let _ = spawn fBool30(ch2);
   select {
@@ -844,7 +838,7 @@ def selectChannelInt29(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => 0
+    case _ <- ch => 0
   }
 
 @test
@@ -854,7 +848,7 @@ def selectChannelInt30(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => 1
+    case _ <- ch => 1
   }
 
 @test
@@ -864,7 +858,7 @@ def selectChannelInt31(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => 10
+    case _ <- ch => 10
   }
 
 @test
@@ -874,7 +868,7 @@ def selectChannelInt32(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => 2147483647
+    case _ <- ch => 2147483647
   }
 
 @test
@@ -884,7 +878,7 @@ def selectChannelInt33(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => -1
+    case _ <- ch => -1
   }
 
 @test
@@ -894,7 +888,7 @@ def selectChannelInt34(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => -10
+    case _ <- ch => -10
   }
 
 @test
@@ -904,7 +898,7 @@ def selectChannelInt35(): Int =
   let ch = chan Int 100;
   let _ = ch <- 0;
   select {
-    case x <- ch => -214748
+    case _ <- ch => -214748
   }
 
 @test
@@ -915,7 +909,6 @@ def fInt36(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt36(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt36(ch1);
   select {
     case x <- ch1 => x
@@ -929,7 +922,6 @@ def fInt37(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt37(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt37(ch1);
   select {
     case x <- ch1 => x
@@ -943,7 +935,6 @@ def fInt38(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt38(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt38(ch1);
   select {
     case x <- ch1 => x
@@ -957,7 +948,6 @@ def fInt39(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt39(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt39(ch1);
   select {
     case x <- ch1 => x
@@ -971,7 +961,6 @@ def fInt40(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt40(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt40(ch1);
   select {
     case x <- ch1 => x
@@ -985,7 +974,6 @@ def fInt41(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt41(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt41(ch1);
   select {
     case x <- ch1 => x
@@ -999,7 +987,6 @@ def fInt42(ch: Channel[Int]): Channel[Int] =
 
 def selectChannelInt42(): Int =
   let ch1 = chan Int 100;
-  let ch2 = chan Int 100;
   let _ = spawn fInt42(ch1);
   select {
     case x <- ch1 => x
@@ -1229,7 +1216,7 @@ def selectChannelStr10(): Str =
   let ch = chan Str 100;
   let _ = ch <- "";
   select {
-    case x <- ch => ""
+    case _ <- ch => ""
   }
 
 @test
@@ -1239,7 +1226,7 @@ def selectChannelStr11(): Str =
   let ch = chan Str 100;
   let _ = ch <- "";
   select {
-    case x <- ch => "str"
+    case _ <- ch => "str"
   }
 
 @test
@@ -1250,7 +1237,6 @@ def fStr12(ch: Channel[Str]): Channel[Str] =
 
 def selectChannelStr12(): Str =
   let ch1 = chan Str 100;
-  let ch2 = chan Str 100;
   let _ = spawn fStr12(ch1);
   select {
     case x <- ch1 => x
@@ -1264,7 +1250,6 @@ def fStr13(ch: Channel[Str]): Channel[Str] =
 
 def selectChannelStr13(): Str =
   let ch1 = chan Str 100;
-  let ch2 = chan Str 100;
   let _ = spawn fStr13(ch1);
   select {
     case x <- ch1 => x
@@ -1406,7 +1391,7 @@ def selectChannelChar09(): Char =
   let ch = chan Char 100;
   let _ = ch <- 'z';
   select {
-    case x <- ch => 'a'
+    case _ <- ch => 'a'
   }
 
 @test
@@ -1416,7 +1401,7 @@ def selectChannelChar10(): Char =
   let ch = chan Char 100;
   let _ = ch <- 'a';
   select {
-    case x <- ch => 'c'
+    case _ <- ch => 'c'
   }
 
 @test
@@ -1427,7 +1412,6 @@ def fChar11(ch: Channel[Char]): Channel[Char] =
 
 def selectChannelChar11(): Char =
   let ch1 = chan Char 100;
-  let ch2 = chan Char 100;
   let _ = spawn fChar11(ch1);
   select {
     case x <- ch1 => x
@@ -1441,7 +1425,6 @@ def fChar12(ch: Channel[Char]): Channel[Char] =
 
 def selectChannelChar12(): Char =
   let ch1 = chan Char 100;
-  let ch2 = chan Char 100;
   let _ = spawn fChar12(ch1);
   select {
     case x <- ch1 => x
@@ -1693,7 +1676,7 @@ def selectChannelMultipleChannels01(): Int =
   let _ = spawn fMultipleChannels01(ch1);
   select {
     case x <- ch1 => x
-    case x <- ch2 => -1
+    case _ <- ch2 => -1
   }
 
 @test
@@ -1708,7 +1691,7 @@ def selectChannelMultipleChannels02(): Int =
   let _ = spawn fMultipleChannels02(ch2);
   select {
     case x <- ch1 => x
-    case x <- ch2 => -1
+    case _ <- ch2 => -1
   }
 
 @test
@@ -1722,7 +1705,7 @@ def selectChannelMultipleChannels03(): Str =
   let ch2 = chan Str 100;
   let _ = spawn fMultipleChannels03(ch1);
   select {
-    case x <- ch1 => "z"
+    case _ <- ch1 => "z"
     case x <- ch2 => x
   }
 
@@ -1737,7 +1720,7 @@ def selectChannelMultipleChannels04(): Str =
   let ch2 = chan Str 100;
   let _ = spawn fMultipleChannels04(ch2);
   select {
-    case x <- ch1 => "z"
+    case _ <- ch1 => "z"
     case x <- ch2 => x
   }
 
