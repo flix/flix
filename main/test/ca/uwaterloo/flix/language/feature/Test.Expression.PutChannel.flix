@@ -27,7 +27,7 @@ def testUnbufferedChannel03(): Bool =
   spawn {c1 <- (); c2 <- ()};
   sleep(100i64 * Duration.oneMillisecond());
   let res = select {
-    case x <- c2 => false
+    case _ <- c2 => false
     case _ => {
       <- c1;
       true
@@ -52,13 +52,13 @@ def testUnbufferedChannel05(): Unit =
   // Wait on get first
   spawn {sleep(100i64 * Duration.oneMillisecond()); c1 <- ()};
   select {
-    case x <- c1 => ()
+    case _ <- c1 => ()
   };
   // Wait on put first
   spawn c1 <- ();
   sleep(100i64 * Duration.oneMillisecond());
   select {
-    case x <- c1 => ()
+    case _ <- c1 => ()
   }
 
 

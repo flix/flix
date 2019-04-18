@@ -431,7 +431,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.FixpointSolve(exp, _, _, _) => visitExp(exp, env0)
 
-    case Expression.FixpointProject(_, exp, _, _, _) => visitExp(exp, env0) // TODO: Use predSym here?
+    case Expression.FixpointProject(pred, exp, _, _, _) =>
+      mapN(visitExp(pred.exp, env0), visitExp(exp, env0)) {
+        case (used1, used2) => Used.of(pred.sym) ++ used1 ++ used2
+      }
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -837,4 +840,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // Bugs found:
   // - Missing @test on def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
 
+  // Shadowing gone wrong:
+  //     case Expression.FixpointProject(pred, exp, _, _, _) =>
+  //      val PredicateWithParam(sym, exp) = pred
+  //      mapN(visitExp(pred.exp, env0), visitExp(exp, env0)) {
+  //        case (used1, used2) => Used.of(sym) ++ used1 ++ used2
+  //      }
 }
