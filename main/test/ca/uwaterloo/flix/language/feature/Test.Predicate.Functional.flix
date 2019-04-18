@@ -58,7 +58,6 @@ def oneOption(): Array[Option[Int]] = [None]
 def twoOption(): Array[Option[Int]] = [None, Some(123)]
 
 rel A(x: Int)
-rel B(x: Int)
 rel R(x: Int)
 
 rel F(x: Option[Int])
