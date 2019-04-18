@@ -586,7 +586,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve |
         FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
-        UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        UnaryLambda | QName | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -822,10 +822,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Wild: Rule1[ParsedAst.Expression.Wild] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
-    }
-
     def SName: Rule1[ParsedAst.Expression.SName] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.SName
     }
@@ -906,18 +902,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Literal | Tuple | Wildcard | Variable
+      FNil | Tag | Lit | Tuple | Var
     }
 
-    def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wild
-    }
-
-    def Variable: Rule1[ParsedAst.Pattern.Var] = rule {
+    def Var: Rule1[ParsedAst.Pattern.Var] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Pattern.Var
     }
 
-    def Literal: Rule1[ParsedAst.Pattern.Lit] = rule {
+    def Lit: Rule1[ParsedAst.Pattern.Lit] = rule {
       SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Pattern.Lit
     }
 
@@ -1059,7 +1051,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Schema: Rule1[ParsedAst.Type] =rule {
+    def Schema: Rule1[ParsedAst.Type] = rule {
       SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
     }
 
@@ -1161,7 +1153,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * A lowercase letter.
       */
-    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
+    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha ++ "_"
 
     /**
       * An uppercase letter.
@@ -1188,7 +1180,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
+    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "!"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.

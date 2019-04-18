@@ -370,8 +370,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given expression.
     */
   private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
-    case ParsedAst.Expression.Wild(sp1, sp2) => IllegalWildcard(mkSL(sp1, sp2)).toFailure
-
     case ParsedAst.Expression.SName(sp1, ident, sp2) =>
       val qname = Name.mkQName(ident)
       WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
@@ -1158,15 +1156,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
      * Local visitor.
      */
     def visit(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = pattern match {
-      case ParsedAst.Pattern.Wild(sp1, sp2) => WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Pattern.Var(sp1, ident, sp2) => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> ident)
-          WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
-        case Some(otherIdent) =>
-          NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
-      }
+      case ParsedAst.Pattern.Var(sp1, ident, sp2) =>
+        // Check if the identifier is a wildcard.
+        if (ident.name == "_") {
+          WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
+        } else {
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
+            case Some(otherIdent) =>
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+          }
+        }
 
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) => visitLitPat(lit)
 
@@ -1763,7 +1765,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns the left most source position in the sub-tree of the expression `e`.
     */
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
-    case ParsedAst.Expression.Wild(sp1, _) => sp1
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1

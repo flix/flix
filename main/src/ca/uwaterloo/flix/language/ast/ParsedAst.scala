@@ -406,16 +406,6 @@ object ParsedAst {
   object Expression {
 
     /**
-      * Wildcard Expression.
-      *
-      * Illegal in proper expressions, but allowed in predicates.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Simple Name Expression (either a variable or reference expression).
       *
       * @param sp1  the position of the first character in the expression.
@@ -1040,7 +1030,6 @@ object ParsedAst {
       * Returns the left most source position in sub-tree of `this` pattern.
       */
     def leftMostSourcePosition: SourcePosition = this match {
-      case Pattern.Wild(sp1, _) => sp1
       case Pattern.Var(sp1, _, _) => sp1
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _) => sp1
@@ -1063,14 +1052,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the pattern.
       */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Wildcard Pattern.
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Variable Pattern.
@@ -1260,7 +1241,7 @@ object ParsedAst {
       *
       * @param sp1    the position of the first character in the type.
       * @param fields the sequence of field types.
-      * @param base   the optional row variable.
+      * @param rest   the optional row variable.
       * @param sp2    the position of the last character in the type.
       */
     case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type

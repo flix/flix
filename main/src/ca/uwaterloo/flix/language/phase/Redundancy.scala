@@ -36,6 +36,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
+
     // Checks for redundancies in each definition and computes its used symbols.
     val defsVal = traverse(root.defs) {
       case (_, v) => visitDef(v, root)
@@ -755,9 +756,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Allow wildcards everywhere.
   // TODO: Add tests for wildcards.
 
-  // TODO: How do we want to think about shadowing? If we allow shadowing we need to augment error messages to
-  // to explain that the dead variable could have been shadowed.
-
   // TODO: In the case of predicates, do we want to assert that there are some facts? What about in the presence of
   // first-class constraints?
 
@@ -805,6 +803,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
 
+
+  // TODO: Should we be allowed to use _score names? Probably not. How to enforce?
 
   // Notes for the paper:
   // - We disallow shadowing (because its confusing in the presence of pattern matching).
