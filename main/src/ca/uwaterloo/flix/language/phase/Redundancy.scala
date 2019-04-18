@@ -29,10 +29,6 @@ import ca.uwaterloo.flix.util.collection.MultiMap
 // TODO: DOC
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
-  // TODO: DOC
-  // TODO: Remove
-  val Empty: Validation[Used, RedundancyError] = Used.empty.toSuccess
-
   /**
     * Checks the given AST `root` for redundancies.
     */
@@ -42,24 +38,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       return root.toSuccess
     }
 
+    // Merges used symbols for each definition together.
+    val usedDefs = root.defs.foldLeft(Used.empty) {
+      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root)
+    }
+
     // Check for redundancies in lattice components.
-    val usedVal1 = root.latticeComponents.values.foldLeft(Used.empty) {
+    val usedLats = root.latticeComponents.values.foldLeft(Used.empty) {
       case (acc, LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)) =>
         acc ++ visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
     }
 
-    // Merges used symbols for each definition together.
-    val usedVal2 = root.defs.foldLeft(Used.empty) {
-      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root)
-    }
+    val usedAll = usedLats ++ usedDefs
 
-    val u = usedVal1 ++ usedVal2
-
-    val usedRes =
-      checkUnusedDefs(u)(root) ++
-        checkUnusedEnumsAndTags(u)(root) ++
-        checkUnusedRelations(u)(root) ++
-        checkUnusedLattices(u)(root)
+    val usedRes = checkUnusedDefs(usedAll)(root) ++
+      checkUnusedEnumsAndTags(usedAll)(root) ++
+      checkUnusedRelations(usedAll)(root) ++
+      checkUnusedLattices(usedAll)(root)
 
     usedRes.toValidation(root)
   }
@@ -460,7 +455,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.of(pred.sym) ++ visitExp(pred.exp, env0) ++ visitExps(terms, env0)
   }
 
-  // TODO: Add test cases for predicates.
 
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
@@ -596,6 +590,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO: Add additional cases.
 
   }
+
+  // TODO: Add test cases for predicates.
 
   // TODO: Carry the local environment mapping vars to patterns
   // TODO: but also carry equality relation... which should probably be a bimap (?)
