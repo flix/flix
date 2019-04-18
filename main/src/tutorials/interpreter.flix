@@ -242,7 +242,7 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
-    case ((Branch(is1, is2)) :: rs, i :: st) =>
+    case ((Branch(is1, is2)) :: _, i :: st) =>
         if (i != 0)
             evalInst(is1, st)
         else

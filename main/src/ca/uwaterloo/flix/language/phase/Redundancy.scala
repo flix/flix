@@ -46,14 +46,24 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (_, v) => visitDef(v, root)
     }
 
+    // Check for redundancies in lattice components.
+    val usedVal1 = traverse(root.latticeComponents)({
+      case (_, LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)) =>
+        visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
+    }) map {
+      case us => us.foldLeft(Used.empty)(_ ++ _)
+    }
+
     // Merges used symbols for each definition together.
-    val usedVal = mapN(defsVal) {
+    val usedVal2 = mapN(defsVal) {
       case us => us.foldLeft(Used.empty)(_ ++ _)
     }
 
     // Check that all declarations are used.
     for {
-      u <- usedVal
+      u1 <- usedVal1
+      u2 <- usedVal2
+      u = u1 ++ u2
       _ <- checkUnusedDefs(u)(root)
       _ <- checkUnusedEnumsAndTags(u)(root)
       _ <- checkUnusedRelations(u)(root)
