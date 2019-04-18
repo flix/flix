@@ -37,7 +37,7 @@ def testMatchWildcard05(): Bool = assertEq!(f03(1), 11)
 def testMatchWildcard06(): Bool = assertEq!(f03(99999), 11)
 
 def f04(x: Int): Int = match x with {
-  case a => 1
+  case _ => 1
 }
 
 @test
@@ -402,7 +402,7 @@ enum Val25 { case Nip25, case Val25((Str, Int)) }
 def f25(x: Val25): Int = match x with {
   case Val25.Nip25 => 0
   case Val25.Val25(v) => match v with {
-    case ("x", y) => -1
+    case ("x", _) => -1
     case (_, y) => y
   }
 }
@@ -458,7 +458,7 @@ def f27(x: B27): Str = match x with {
     }
     case A27.AB27(b) => match b with {
       case 0 => "b0"
-      case z => "bbb"
+      case _ => "bbb"
     }
   }
   case B27.Bot27 => "bot"
