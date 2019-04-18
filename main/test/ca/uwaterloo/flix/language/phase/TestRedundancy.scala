@@ -449,10 +449,10 @@ class TestRedundancy extends FunSuite with TestUtils {
          |def main(): Int =
          |    let c = Red(123);
          |    match c with {
-         |        case Red(x) => x
-         |        case Blu(x) => match c with {
-         |            case Red(y) => y
-         |            case Blu(y) => y
+         |        case Red(_) => 123
+         |        case Blu(_) => match c with {
+         |            case Red(_) => 123
+         |            case Blu(_) => 123
          |        }
          |    }
          |

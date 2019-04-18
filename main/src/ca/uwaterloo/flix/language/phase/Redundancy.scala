@@ -255,10 +255,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           val usedGuard = visitExp(guard, extendedEnv)
           val usedBody = visitExp(body, extendedEnv)
-          // TODO: Impossible pattern
+
+          // TODO: Cleanup
+          val uselessMatch = stablePathOpt match {
+            case None => Used.empty // nop
+            case Some(sp) => checkUselessPatternMatch(sp, env0, pat)
+          }
 
           val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).map(UnusedVarSym)
-          (usedGuard ++ usedBody) -- fvs ++ unusedVarSyms
+          (usedGuard ++ usedBody) -- fvs ++ unusedVarSyms ++ uselessMatch
       }
 
       usedRules.foldLeft(usedMatch) {
@@ -511,21 +516,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.of(sym) ++ visitExp(term, env0)
   }
 
-  // TODO: Should prbl. not take an option.
-  private def checkImpossiblePattern(stablePathOpt: Option[StablePath], env: Env, pat: Pattern): Validation[Unit, RedundancyError] = {
-    stablePathOpt match {
-      case None => ().toSuccess
-      case Some(stablePath) => env.env.get(stablePath) match {
-        case Some(pat2) => mapN(unify(pat, pat2)) {
-          case subst =>
-            // TODO: use the subst?
-            ()
-        }
-        case None => ().toSuccess
+  // TODO: DOC
+  private def checkUselessPatternMatch(sp: StablePath, env0: Env, pat: Pattern): Used = {
+    env0.env.get(sp) match {
+      case None => Used.empty
+      case Some(pat2) => unify(pat, pat2) match {
+        case Validation.Success(subst) => Used.empty
+        case Validation.Failure(errors) => Used.empty ++ errors
       }
     }
   }
-
 
   def toStablePath(e0: Expression): Option[StablePath] = e0 match {
 
@@ -544,6 +544,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns a substitution if successful. Otherwise returns a redundancy error.
     */
   // TODO: Have to check that there is no infinite recursion here...
+  // TODO: Return something other than validation?
   private def unify(p1: Pattern, p2: Pattern): Validation[Substitution, RedundancyError] = (p1, p2) match {
     case (Pattern.Wild(_, _), _) => Substitution.empty.toSuccess
 
@@ -688,7 +689,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Merges `this` and `that`.
       */
     def ++(that: Used): Used =
-      if (this eq Used.empty) {
+      if (this eq that) {
+        this
+      } else if (this eq Used.empty) {
         that
       } else if (that eq Used.empty) {
         this
