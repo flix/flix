@@ -38,10 +38,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       return root.toSuccess
     }
 
-    // Computes all used symbols in all defs.
-    val usedDefs = root.defs.foldLeft(Used.empty) {
+    // Computes all used symbols in all defs (in parallel).
+    val usedDefs = root.defs.par.aggregate(Used.empty)({
       case (acc, (sym, decl)) => acc ++ visitDef(decl)(root)
-    }
+    }, _ ++ _)
 
     // Computes all used symbols in all lattices.
     val usedLats = root.latticeComponents.values.foldLeft(Used.empty) {
@@ -60,7 +60,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         checkUnusedLattices(usedAll)(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
-    usedRes.toValidation(root) // TODO: Ensure no local var symbols are floating around
+    usedRes.toValidation(root)
   }
 
   /**
@@ -280,14 +280,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.RecordEmpty(_, _, _) =>
       Used.empty
 
-    case Expression.RecordSelect(exp, _, _, _, _) => visitExp(exp, env0)
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp, env0)
 
     case Expression.RecordExtend(_, value, rest, _, _, _) =>
       val us1 = visitExp(value, env0)
       val us2 = visitExp(rest, env0)
       us1 ++ us2
 
-    case Expression.RecordRestrict(_, rest, _, _, _) => visitExp(rest, env0)
+    case Expression.RecordRestrict(_, rest, _, _, _) =>
+      visitExp(rest, env0)
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       visitExps(elms, env0)
@@ -331,20 +333,25 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(elm, env0)
       us1 ++ us2
 
-    case Expression.VectorLength(base, _, _, _) => visitExp(base, env0)
+    case Expression.VectorLength(base, _, _, _) =>
+      visitExp(base, env0)
 
-    case Expression.VectorSlice(base, _, _, _, _, _) => visitExp(base, env0)
+    case Expression.VectorSlice(base, _, _, _, _, _) =>
+      visitExp(base, env0)
 
-    case Expression.Ref(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.Ref(exp, _, _, _) =>
+      visitExp(exp, env0)
 
-    case Expression.Deref(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.Deref(exp, _, _, _) =>
+      visitExp(exp, env0)
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       us1 ++ us2
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+      ??? // TODO
 
     case Expression.Existential(fparam, exp, _, _) =>
       val us = visitExp(exp, env0)
@@ -360,22 +367,29 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         us - fparam.sym
 
-    case Expression.Ascribe(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.Ascribe(exp, _, _, _) =>
+      visitExp(exp, env0)
 
-    case Expression.Cast(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.Cast(exp, _, _, _) =>
+      visitExp(exp, env0)
 
-    case Expression.NativeConstructor(_, args, _, _, _) => visitExps(args, env0)
+    case Expression.NativeConstructor(_, args, _, _, _) =>
+      visitExps(args, env0)
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       ??? // TODO
 
-    case Expression.NativeField(_, _, _, _) => Used.empty
+    case Expression.NativeField(_, _, _, _) =>
+      Used.empty
 
-    case Expression.NativeMethod(_, args, _, _, _) => visitExps(args, env0)
+    case Expression.NativeMethod(_, args, _, _, _) =>
+      visitExps(args, env0)
 
-    case Expression.NewChannel(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.NewChannel(exp, _, _, _) =>
+      visitExp(exp, env0)
 
-    case Expression.GetChannel(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.GetChannel(exp, _, _, _) =>
+      visitExp(exp, env0)
 
     case Expression.PutChannel(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -431,6 +445,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.empty
   }
 
+  /**
+    * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
+    */
   private def visitExps(es: List[TypedAst.Expression], env0: Env): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0)
@@ -693,7 +710,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Adds the given traversable of redundancy errors `es` to `this` object.
       */
-    def ++(es: Traversable[RedundancyError]): Used = copy(errors = es.toStream #::: errors)
+    def ++(es: Traversable[RedundancyError]): Used =
+      if (es.isEmpty) this else copy(errors = es.toStream #::: errors)
 
     /**
       * Marks the given variable symbol `sym` as used.
@@ -703,7 +721,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Marks all the given variable symbols `syms` as used.
       */
-    def --(syms: Traversable[Symbol.VarSym]): Used = copy(varSyms = varSyms -- syms)
+    def --(syms: Traversable[Symbol.VarSym]): Used =
+      if (syms.isEmpty) this else copy(varSyms = varSyms -- syms)
 
     /**
       * Returns Successful(a) unless `this` contains errors.
