@@ -95,7 +95,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def checkUnusedDefs(used: Used)(implicit root: Root): Validation[List[Unit], RedundancyError] = {
     // TODO: Maybe this can be cleaned up.
     traverse(root.defs) {
-      case (sym, decl) if decl.mod.isPublic || sym.text == "main" =>
+      // TODO: Where should all these criteria be collected.
+      case (sym, decl) if decl.mod.isPublic || decl.ann.isTest || sym.text == "main" =>
         // Def is public. No usage requirements.
         ().toSuccess
       case (sym, decl) =>

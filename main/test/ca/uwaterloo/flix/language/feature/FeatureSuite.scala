@@ -153,6 +153,11 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix"),
   new FlixTest("Test.Term.WildVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.WildVar.flix"),
 
+  //
+  // Unused
+  //
+  new FlixTest("Test.UnusedVarSym", "main/test/ca/uwaterloo/flix/language/feature/Test.UnusedVarSym.flix"),
+
 ) with ParallelTestExecution {
   /* left empty */
 }
