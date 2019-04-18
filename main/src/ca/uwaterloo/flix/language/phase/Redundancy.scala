@@ -486,6 +486,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
   }
 
+  // TODO: Add test cases for predicates.
+
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
@@ -495,10 +497,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case usedParam => Used.of(pred.sym) ++ usedParam
       }
 
-    // TODO: Add test cases for predicates.
+    case Body.Filter(sym, terms, _) =>
+      mapN(visitExps(terms, env0)) {
+        case used => Used.of(sym) ++ used
+      }
 
-    case Body.Filter(sym, terms, loc) => ??? // TODO
-    case Body.Functional(sym, term, loc) => ??? // TODO
+    case Body.Functional(sym, term, loc) =>
+      mapN(visitExp(term, env0)) {
+        case used => Used.of(sym) ++ used
+      }
   }
 
 
