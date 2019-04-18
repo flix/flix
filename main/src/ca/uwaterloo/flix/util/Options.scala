@@ -48,7 +48,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(core = true, test = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(core = false, test = true, verbosity = Verbosity.Silent)
 }
 
 /**

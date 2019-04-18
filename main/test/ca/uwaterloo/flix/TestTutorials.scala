@@ -20,6 +20,6 @@ import ca.uwaterloo.flix.util.FlixTest
 import org.scalatest.Suites
 
 class TestTutorials extends Suites(
-  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix")(compiled = false),
-  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(compiled = false)
+  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix"),
+  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")
 )
