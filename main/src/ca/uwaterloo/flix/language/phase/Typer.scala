@@ -566,7 +566,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           tpe1 <- visitExp(exp1)
           tpe2 <- visitExp(exp2)
-        } yield tpe2
+          resultType <- unifyM(tvar, tpe2, loc)
+        } yield resultType
 
       /*
        * Let expression.

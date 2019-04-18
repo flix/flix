@@ -68,25 +68,23 @@ def testStm10(): Int =
     let y = 456;
     x + y
 
-// TODO
-//@test
-//def testStm11(): Int =
-//    let x = {
-//        f();
-//        123
-//    };
-//    x
+@test
+def testStm11(): Int =
+    let x = {
+        f();
+        123
+    };
+    x
 
-// TODO
-//@test
-//def testStm12(): Int =
-//    let x = {
-//        f();
-//        g();
-//        123
-//    };
-//    h();
-//    x
+@test
+def testStm12(): Int =
+    let x = {
+        f();
+        g();
+        123
+    };
+    h();
+    x
 
 def f(): Unit = ()
 
