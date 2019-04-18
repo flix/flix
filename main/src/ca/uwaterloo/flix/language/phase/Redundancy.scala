@@ -856,4 +856,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //      mapN(visitExp(pred.exp, env0), visitExp(exp, env0)) {
   //        case (used1, used2) => Used.of(sym) ++ used1 ++ used2
   //      }
+
+  // Count impacted test cases?
+
 }
