@@ -71,6 +71,7 @@ object Main {
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
+      xallowredundancies = cmdOpts.xallowredundancies,
       xnostratifier = cmdOpts.xnostratifier
     )
 
@@ -188,6 +189,7 @@ object Main {
                      test: Boolean = false,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
+                     xallowredundancies: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
@@ -303,6 +305,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // Xallow-redundancies.
+      opt[Unit]("Xallow-redundancies").action((_, c) => c.copy(xallowredundancies = true)).
+        text("[experimental] disables the redundancies checker.")
 
       // Xcore.
       opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).

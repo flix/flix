@@ -41,6 +41,7 @@ object Options {
     verbosity = Verbosity.Normal,
     verifier = false,
     writeClassFiles = true,
+    xallowredundancies = false,
     xnostratifier = false
   )
 
@@ -53,23 +54,24 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param core            disables loading of all non-essential namespaces.
-  * @param debug           enables the emission of debugging information.
-  * @param documentor      enables generation of flixdoc.
-  * @param evaluation      selects the evaluation strategy.
-  * @param invariants      enables checking of compiler invariants.
-  * @param mode            the compilation mode.
-  * @param monitor         enables the debugger and profiler.
-  * @param quickchecker    enables the quickchecker.
-  * @param test            enables test mode.
-  * @param target          the target JVM.
-  * @param targetDirectory the target directory for compiled code.
-  * @param timeout         selects the solver timeout.
-  * @param threads         selects the number of threads to use.
-  * @param verbosity       selects the level of verbosity.
-  * @param verifier        enables the verifier.
-  * @param writeClassFiles enables output of class files.
-  * @param xnostratifier   disables computation of stratification.
+  * @param core               disables loading of all non-essential namespaces.
+  * @param debug              enables the emission of debugging information.
+  * @param documentor         enables generation of flixdoc.
+  * @param evaluation         selects the evaluation strategy.
+  * @param invariants         enables checking of compiler invariants.
+  * @param mode               the compilation mode.
+  * @param monitor            enables the debugger and profiler.
+  * @param quickchecker       enables the quickchecker.
+  * @param test               enables test mode.
+  * @param target             the target JVM.
+  * @param targetDirectory    the target directory for compiled code.
+  * @param timeout            selects the solver timeout.
+  * @param threads            selects the number of threads to use.
+  * @param verbosity          selects the level of verbosity.
+  * @param verifier           enables the verifier.
+  * @param writeClassFiles    enables output of class files.
+  * @param xallowredundancies disables the redundancy checker.
+  * @param xnostratifier      disables computation of stratification.
   */
 case class Options(core: Boolean,
                    debug: Boolean,
@@ -88,6 +90,7 @@ case class Options(core: Boolean,
                    verbosity: Verbosity,
                    verifier: Boolean,
                    writeClassFiles: Boolean,
+                   xallowredundancies: Boolean,
                    xnostratifier: Boolean)
 
 /**

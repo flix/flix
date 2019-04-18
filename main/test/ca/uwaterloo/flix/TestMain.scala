@@ -16,11 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import java.util.concurrent.TimeUnit
-
 import org.scalatest.FunSuite
-
-import scala.concurrent.duration.Duration
 
 class TestMain extends FunSuite {
 
@@ -118,6 +114,12 @@ class TestMain extends FunSuite {
     val args = Array("--verifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.verifier)
+  }
+
+  test("--Xallow-redundancies") {
+    val args = Array("--Xallow-redundancies", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xallowredundancies)
   }
 
   test("--Xcore") {

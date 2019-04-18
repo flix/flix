@@ -36,6 +36,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks the given AST `root` for redundancies.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Redundancy") {
+    // Check if the redundancy checker has been disabled.
+    if (flix.options.xallowredundancies) {
+      return root.toSuccess
+    }
 
     // Checks for redundancies in each definition and computes its used symbols.
     val defsVal = traverse(root.defs) {
