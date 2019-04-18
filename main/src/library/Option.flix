@@ -33,7 +33,7 @@ namespace Option {
     ///
     pub def isEmpty[a](o: Option[a]): Bool = match o with {
         case None => true
-        case Some(v) => false
+        case Some(_) => false
     }
 
     ///
@@ -41,7 +41,7 @@ namespace Option {
     ///
     pub def isNone[a](o: Option[a]): Bool = match o with {
         case None => true
-        case Some(v) => false
+        case Some(_) => false
     }
 
     ///
@@ -49,7 +49,7 @@ namespace Option {
     ///
     pub def isSome[a](o: Option[a]): Bool = match o with {
         case None => false
-        case Some(v) => true
+        case Some(_) => true
     }
 
     ///
@@ -65,7 +65,7 @@ namespace Option {
     ///
     pub def withDefault[a](o1: Option[a], o2: Option[a]): Option[a] = match o1 with {
         case None => o2
-        case Some(v) => o1
+        case Some(_) => o1
     }
 
     ///

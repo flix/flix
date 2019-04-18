@@ -595,7 +595,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: DOC
   private def unused(sym: Symbol.VarSym, used: Used): Boolean =
-    !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
+    !sym.text.startsWith("_") && !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
 
   // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
   sealed trait StablePath
@@ -803,8 +803,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
 
+  // TODO: Do we want ??? to consume all arguments together with a hole perhaps??
 
-  // TODO: Should we be allowed to use _score names? Probably not. How to enforce?
+  // TODO: Should we be allowed to *use* _score names? Probably not. How to enforce?
 
   // Notes for the paper:
   // - We disallow shadowing (because its confusing in the presence of pattern matching).

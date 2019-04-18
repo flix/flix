@@ -32,16 +32,16 @@ namespace Result {
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
     pub def isOk[t, e](r: Result[t, e]): Bool = match r with {
-        case Ok(v) => true
-        case Err(w) => false
+        case Ok(_) => true
+        case Err(_) => false
     }
 
     ///
     /// Returns `true` iff `r` is `Err(w)`.
     ///
     pub def isErr[t, e](r: Result[t, e]): Bool = match r with {
-        case Ok(v) => false
-        case Err(w) => true
+        case Ok(_) => false
+        case Err(_) => true
     }
 
     ///
@@ -49,7 +49,7 @@ namespace Result {
     ///
     pub def getWithDefault[t, e](r: Result[t, e], d: t): t = match r with {
         case Ok(v) => v
-        case Err(w) => d
+        case Err(_) => d
     }
 
     ///
@@ -57,7 +57,7 @@ namespace Result {
     ///
     pub def withDefault[t, e1, e2](r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 with {
         case Ok(v) => Ok(v)
-        case Err(w) => r2
+        case Err(_) => r2
     }
 
     ///
@@ -65,7 +65,7 @@ namespace Result {
     ///
     pub def replace[t, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r with {
         case Ok(v) => Ok(if (v == x) y else v)
-        case Err(w) => r
+        case Err(_) => r
     }
 
     ///
@@ -100,7 +100,7 @@ namespace Result {
     ///
     pub def count[t, e](f: t -> Bool, r: Result[t, e]): Int32 = match r with {
         case Ok(v) => if (f(v)) 1 else 0
-        case Err(w) => 0
+        case Err(_) => 0
     }
 
     ///
@@ -108,7 +108,7 @@ namespace Result {
     ///
     pub def find[t, e](f: t -> Bool, r: Result[t, e]): Option[t] = match r with {
         case Ok(v) => if (f(v)) Some(v) else None
-        case Err(w) => None
+        case Err(_) => None
     }
 
     ///
@@ -116,7 +116,7 @@ namespace Result {
     ///
     pub def foldLeft[t, e, a](f: (a, t) -> a, z: a, r: Result[t, e]): a = match r with {
         case Ok(v) => f(z, v)
-        case Err(w) => z
+        case Err(_) => z
     }
 
     ///
@@ -124,7 +124,7 @@ namespace Result {
     ///
     pub def foldRight[t, e, a](f: (t, a) -> a, r: Result[t, e], z: a): a = match r with {
         case Ok(v) => f(v, z)
-        case Err(w) => z
+        case Err(_) => z
     }
 
     ///
@@ -132,7 +132,7 @@ namespace Result {
     ///
     pub def toList[t, e](r: Result[t, e]): List[t] = match r with {
         case Ok(v) => v :: Nil
-        case Err(w) => Nil
+        case Err(_) => Nil
     }
 
     ///
@@ -140,7 +140,7 @@ namespace Result {
     ///
     pub def toSet[t, e](r: Result[t, e]): Set[t] = match r with {
         case Ok(v) => #{v}
-        case Err(w) => #{}
+        case Err(_) => #{}
     }
 
     ///
@@ -148,7 +148,7 @@ namespace Result {
     ///
     pub def toMap[k, v, e](r: Result[(k, v), e]): Map[k, v] = match r with {
         case Ok((k, v)) => Map.singleton(k, v)
-        case Err(w) => @{}
+        case Err(_) => @{}
     }
 
     ///
@@ -156,7 +156,7 @@ namespace Result {
     ///
     pub def toOption[t, e](r: Result[t, e]): Option[t] = match r with {
         case Ok(v) => Some(v)
-        case Err(w) => None
+        case Err(_) => None
     }
 
 

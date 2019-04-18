@@ -18,7 +18,7 @@ namespace Console {
     ///
     /// Alias for `Console.StdIn.readLine`.
     ///
-    pub def readLine(u: Unit): Str @ IO = Console/StdIn.readLine(())
+    pub def readLine(): Str @ IO = Console/StdIn.readLine(())
 
     ///
     /// Alias for `Console.StdOut.print`.
@@ -38,7 +38,7 @@ namespace Console {
         ///
         /// Returns the next line read from the standard input stream.
         ///
-        pub def readLine(u: Unit): Str @ IO = native method flix.runtime.library.Console.readLine() as Str @ IO
+        pub def readLine(): Str @ IO = native method flix.runtime.library.Console.readLine() as Str @ IO
 
     }
 
@@ -60,12 +60,12 @@ namespace Console {
         ///
         /// Prints a newline to the standard output stream.
         ///
-        pub def newLine(u: Unit): Unit @ IO = native method flix.runtime.library.Console.newLineStdOut() as Unit @ IO
+        pub def newLine(): Unit @ IO = native method flix.runtime.library.Console.newLineStdOut() as Unit @ IO
 
         ///
         /// Flushes the standard output stream.
         ///
-        pub def flush(u: Unit): Unit @ IO = native method flix.runtime.library.Console.flushStdOut() as Unit @ IO
+        pub def flush(): Unit @ IO = native method flix.runtime.library.Console.flushStdOut() as Unit @ IO
 
     }
 
@@ -87,12 +87,12 @@ namespace Console {
         ///
         /// Prints a newline to the standard error stream.
         ///
-        pub def newLine(u: Unit): Unit @ IO  = native method flix.runtime.library.Console.newLineStdErr() as Unit @ IO
+        pub def newLine(): Unit @ IO  = native method flix.runtime.library.Console.newLineStdErr() as Unit @ IO
 
         ///
         /// Flushes the standard error stream.
         ///
-        pub def flush(u: Unit): Unit @ IO  = native method flix.runtime.library.Console.flushStdErr() as Unit @ IO
+        pub def flush(): Unit @ IO  = native method flix.runtime.library.Console.flushStdErr() as Unit @ IO
 
     }
 

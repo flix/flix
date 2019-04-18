@@ -22,7 +22,7 @@ def identity[a](x: a): a = x
 /// Returns the constant function with return value `y`.
 /// That is, returns `f` such that `f(x) = y` for all inputs `x`.
 ///
-def constant[a, b](y: a): b -> a = x -> y
+def constant[a, b](y: a): b -> a = _ -> y
 
 ///
 /// Returns the function `f` with input arguments swapped.
@@ -46,14 +46,14 @@ def uncurry[a, b, c](f: a -> b -> c): (a, b) -> c = (x, y) -> (y |> f(x))
 /// Returns the first component of `t`.
 ///
 def fst[a, b](p: (a, b)): a =
-    let (x, y) = p;
+    let (x, _) = p;
         x
 
 ///
 /// Returns the second component of `t`.
 ///
 def snd[a, b](p: (a, b)): b =
-    let (x, y) = p;
+    let (_, y) = p;
         y
 
 ///

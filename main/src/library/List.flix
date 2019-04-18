@@ -51,7 +51,7 @@ namespace List {
     pub def last[a](xs: List[a]): Option[a] = match xs with {
         case Nil => None
         case x :: Nil => Some(x)
-        case x :: rs => last(rs)
+        case _ :: rs => last(rs)
     }
 
     ///
@@ -59,7 +59,7 @@ namespace List {
     ///
     pub def length[a](xs: List[a]): Int32 = match xs with {
         case Nil => 0
-        case x :: rs => 1 + length(rs)
+        case _ :: rs => 1 + length(rs)
     }
 
     ///
@@ -236,7 +236,7 @@ namespace List {
     ///
     pub def update[a](i: Int32, a: a, xs: List[a]): List[a] = match (i, xs) with {
         case (_, Nil) => xs
-        case (0, x :: rs) => a :: rs
+        case (0, _ :: rs) => a :: rs
         case (p, x :: rs) => x :: update(p-1, a, rs)
     }
 
@@ -283,7 +283,7 @@ namespace List {
     ///
     def at[a](i: Int32, xs: List[a]): a = match (i, xs) with {
         case (0, x :: _) => x
-        case (p, x :: rs) => at(p - 1, rs)
+        case (p, _ :: rs) => at(p - 1, rs)
         case _ => ??? // never happens
     }
 
@@ -292,7 +292,7 @@ namespace List {
     ///
     def removeIndex[a](i: Int32, xs: List[a]): List[a] = match (i, xs) with {
         case (_, Nil) => xs
-        case (0, x :: rs) => rs
+        case (0, _ :: rs) => rs
         case (p, x :: rs) => x :: removeIndex(p - 1, rs)
     }
 
@@ -390,7 +390,7 @@ namespace List {
     pub def isInfixOf[a](xs: List[a], ys: List[a]): Bool = match (xs, ys) with {
         case (Nil, _) => true
         case (_, Nil) => false
-        case (_, y :: rs) => if (isPrefixOf(xs, ys)) true else isInfixOf(xs, rs)
+        case (_, _ :: rs) => if (isPrefixOf(xs, ys)) true else isInfixOf(xs, rs)
     }
 
     ///
@@ -560,7 +560,7 @@ namespace List {
     pub def drop[a](n: Int32, xs: List[a]): List[a] = if (n < 0) xs else match (n, xs) with {
         case (_, Nil) => Nil
         case (0, _) => xs
-        case (i, x :: rs) => drop(i-1, rs)
+        case (i, _ :: rs) => drop(i - 1, rs)
     }
 
     ///
