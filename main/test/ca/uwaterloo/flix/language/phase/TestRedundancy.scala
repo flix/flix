@@ -64,11 +64,26 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |enum Color {
          |  case Red,
-         |  case Green,
          |  case Blue
          |}
          |
          |def main(): Color = Red
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedEnumTag](result)
+  }
+
+  test("UnusedEnumTag.02") {
+    val input =
+      s"""
+         |enum Color {
+         |  case Red,
+         |  case Green,
+         |  case Blue
+         |}
+         |
+         |def main(): Color = Green
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -183,7 +198,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedTypeVar.01") {
+  test("UnusedTypeParam.Def.01") {
     val input =
       s"""
          |pub def f[a](): Int = 123
@@ -193,7 +208,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeVar.02") {
+  test("UnusedTypeParam.Def.02") {
     val input =
       s"""
          |pub def f[a, b](x: a): a = x
@@ -203,7 +218,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeVar.03") {
+  test("UnusedTypeParam.Def.03") {
     val input =
       s"""
          |pub def f[a, b](x: b): b = x
@@ -213,10 +228,81 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeVar.04") {
+  test("UnusedTypeParam.Def.04") {
     val input =
       s"""
          |pub def f[a, b, c](x: a, y: c): (a, c) = (x, y)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Enum.01") {
+    val input =
+      s"""
+         |enum Box[a] {
+         |    case Box
+         |}
+         |
+         |def main(): Box[Int] = Box
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Enum.02") {
+    val input =
+      s"""
+         |enum Box[a, b] {
+         |    case Box(a)
+         |}
+         |
+         |def main(): Box[Int, Int] = Box(123)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Enum.03") {
+    val input =
+      s"""
+         |enum Box[a, b] {
+         |    case Box(b)
+         |}
+         |
+         |def main(): Box[Int, Int] = Box(123)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Enum.04") {
+    val input =
+      s"""
+         |enum Box[a, b, c] {
+         |    case Box(a, c)
+         |}
+         |
+         |def main(): Box[Int, Int, Int] = Box(123, 456)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnusedTypeParam](result)
+  }
+
+  test("UnusedTypeParam.Enum.05") {
+    val input =
+      s"""
+         |enum Box[a, b, c] {
+         |    case A(a),
+         |    case B(c)
+         |}
+         |
+         |def main(): (Box[Int, Int, Int], Box[Int, Int, Int]) = (A(123), B(456))
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)

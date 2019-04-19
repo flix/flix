@@ -190,7 +190,7 @@ object RedundancyError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused type parameter '" << Red(ident.name) << "'. The parameter is not referenced in any signature." << NewLine
+      vt << ">> Unused type parameter '" << Red(ident.name) << "'. The parameter is not referenced anywhere." << NewLine
       vt << NewLine
       vt << Code(ident.loc, "unused type parameter.") << NewLine
       vt << NewLine
@@ -198,7 +198,7 @@ object RedundancyError {
       vt << NewLine
       vt << "  (1)  Use the type parameter." << NewLine
       vt << "  (2)  Remove type parameter." << NewLine
-      vt << "  (3)  Prefix the type parameter name with an underscore.." << NewLine
+      vt << "  (3)  Prefix the type parameter name with an underscore." << NewLine
       vt << NewLine
       vt
     }
