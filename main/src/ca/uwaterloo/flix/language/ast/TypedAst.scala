@@ -43,9 +43,9 @@ object TypedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation)
 
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[TypedAst.Attribute], loc: SourceLocation)
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[TypedAst.TypeParam], attr: List[TypedAst.Attribute], loc: SourceLocation)
 
-  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[TypedAst.Attribute], loc: SourceLocation)
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[TypedAst.TypeParam], attr: List[TypedAst.Attribute], loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation)
 

@@ -58,7 +58,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         checkUnusedEnumsAndTags(usedAll)(root) ++
         checkUnusedRelations(usedAll)(root) ++
         checkUnusedLattices(usedAll)(root) ++
-        checkUnusedTypeParamsEnums()(root)
+        checkUnusedTypeParamsEnums()(root) ++
+        checkUnusedTypeParamsRelations()(root) ++
+        checkUnusedTypeParamsLattices()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -141,9 +143,37 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def checkUnusedTypeParamsEnums()(implicit root: Root): Used = {
     root.enums.foldLeft(Used.empty) {
-      case (acc, (sym, decl)) =>
+      case (acc, (_, decl)) =>
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
           case (sacc, (_, Case(_, _, tpe, _))) => sacc ++ tpe.typeVars
+        }
+        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
+        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
+    }
+  }
+
+  /**
+    * Checks for unused type parameters in relations.
+    */
+  private def checkUnusedTypeParamsRelations()(implicit root: Root): Used = {
+    root.relations.foldLeft(Used.empty) {
+      case (acc, (_, decl)) =>
+        val usedTypeVars = decl.attr.foldLeft(Set.empty[Type.Var]) {
+          case (sacc, Attribute(_, tpe, _)) => sacc ++ tpe.typeVars
+        }
+        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
+        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
+    }
+  }
+
+  /**
+    * Checks for unused type parameters in lattices.
+    */
+  private def checkUnusedTypeParamsLattices()(implicit root: Root): Used = {
+    root.lattices.foldLeft(Used.empty) {
+      case (acc, (_, decl)) =>
+        val usedTypeVars = decl.attr.foldLeft(Set.empty[Type.Var]) {
+          case (sacc, Attribute(_, tpe, _)) => sacc ++ tpe.typeVars
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))

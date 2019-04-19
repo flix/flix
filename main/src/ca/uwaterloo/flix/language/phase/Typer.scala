@@ -331,10 +331,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckRel(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-    case ResolvedAst.Relation(doc, mod, sym, tparams, attr, sc, loc) =>
+    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc, loc) =>
+      val tparams = getTypeParams(tparams0)
       for {
-        typedAttributes <- Result.sequence(attr.map(a => typeCheckAttribute(a)))
-      } yield sym -> TypedAst.Relation(doc, mod, sym, typedAttributes, loc)
+        attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
+      } yield sym -> TypedAst.Relation(doc, mod, sym, tparams, attr, loc)
   }
 
   /**
@@ -343,10 +344,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckLat(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-    case ResolvedAst.Lattice(doc, mod, sym, tparams, attr, sc, loc) =>
+    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc, loc) =>
+      val tparams = getTypeParams(tparams0)
       for {
-        typedAttributes <- Result.sequence(attr.map(a => typeCheckAttribute(a)))
-      } yield sym -> TypedAst.Lattice(doc, mod, sym, typedAttributes, loc)
+        attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
+      } yield sym -> TypedAst.Lattice(doc, mod, sym, tparams, attr, loc)
   }
 
   /**
