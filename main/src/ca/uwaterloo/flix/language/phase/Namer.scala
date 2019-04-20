@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
+import ca.uwaterloo.flix.language.errors.NameError.ShadowedVar
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -565,10 +566,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
-      val fparam = visitFormalParam(fparam0, tenv0)
-      val env1 = Map(fparam.sym.text -> fparam.sym)
-      visitExp(exp, env0 ++ env1, tenv0) map {
-        case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
+      // check if the formal parameter is shadowing.
+      env0.get(fparam0.ident.name) match {
+        case None =>
+          // check if the formal parameter is a wildcard.
+          val fparam = visitFormalParam(fparam0, tenv0)
+          val env1 = if (fparam0.ident.isWild()) env0 else env0 + (fparam.sym.text -> fparam.sym)
+          visitExp(exp, env1, tenv0) map {
+            case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
+          }
+        case Some(otherSym) => ShadowedVar(fparam0.ident.name, fparam0.ident.loc, otherSym.loc).toFailure
       }
 
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, tenv0) map {
@@ -596,6 +603,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
+      // check if the variable is shadowing.
       env0.get(ident.name) match {
         case None =>
           // make a fresh variable symbol for the local variable.
@@ -1451,7 +1459,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns a variable environment constructed from the given formal parameters `fparams0`.
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
-    fparams0.map(p => p.sym.text -> p.sym).toMap
+    fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
+      case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
+        if (sym.isWild()) macc else macc + (sym.text -> sym)
+    }
   }
 
   /**

@@ -187,7 +187,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateClass](result)
   }
 
-  test("ShadowedVar.01") {
+  test("ShadowedVar.Let.01") {
     val input =
       """
         |def main(): Int =
@@ -200,7 +200,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.ShadowedVar](result)
   }
 
-  test("ShadowedVar.02") {
+  test("ShadowedVar.Let.02") {
     val input =
       """
         |def main(): Int =
@@ -208,6 +208,74 @@ class TestNamer extends FunSuite with TestUtils {
         |    let y = 456;
         |    let x = 789;
         |    x
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Def.01") {
+    val input =
+      """
+        |def f(x: Int): Int =
+        |    let x = 123;
+        |    x
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Def.02") {
+    val input =
+      """
+        |def f(x: Int): Int =
+        |    let y = 123;
+        |    let x = 456;
+        |    x
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Lambda.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let f = x -> x + 1;
+        |    f(x)
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Lambda.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = x -> {
+        |        let x = 456;
+        |        x + 1
+        |    };
+        |    f(123)
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Lambda.03") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = x -> {
+        |        let g = x -> 123;
+        |        g(456)
+        |    };
+        |    f(123)
         |
       """.stripMargin
     val result = new Flix().addStr(input).compile()

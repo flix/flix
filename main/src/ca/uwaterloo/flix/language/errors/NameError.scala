@@ -190,12 +190,13 @@ object NameError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Variable shadowed '" << Red(name) << "'." << NewLine
+      vt << ">> Shadowed variable: '" << Red(name) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc1, "current (shadowing) variable.") << NewLine
+      vt << Code(loc1, "shadowing variable.") << NewLine
       vt << NewLine
+      vt << "The shadowed variable was declared here:" << NewLine
       vt << NewLine
-      vt << Code(loc2, "previous (shadowed) variable.") << NewLine
+      vt << Code(loc2, "shadowed variable.") << NewLine
       vt << NewLine
     }
   }
