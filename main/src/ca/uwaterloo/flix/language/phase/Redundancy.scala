@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.util.{InternalRuntimeException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
@@ -306,7 +306,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedRules = rules map {
         case MatchRule(pat, guard, body) =>
           val fvs = freeVars(pat)
-          val stablePathOpt = toStablePath(exp)
+          val stablePathOpt = getStablePath(exp)
 
           val extendedEnv = stablePathOpt match {
             case None => env0
@@ -612,15 +612,21 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // TODO: DOC
-  def toStablePath(e0: Expression): Option[StablePath] = e0 match {
-
+  /**
+    * Optionally returns the given expression `e0` as a stable path.
+    */
+  private def getStablePath(e0: Expression): Option[StablePath] = e0 match {
+    // Variables are always stable.
     case Expression.Var(sym, _, _, _) =>
       Some(StablePath.Var(sym))
 
+    // Record selections is stable if the underlying expression is stable.
     case Expression.RecordSelect(exp, label, _, _, _) =>
-      toStablePath(exp).map(sp => StablePath.RecordSelect(sp, label))
+      for {
+        sp <- getStablePath(exp)
+      } yield StablePath.RecordSelect(sp, label)
 
+    // Nothing else is stable.
     case _ => None
   }
 
@@ -629,13 +635,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns a substitution if successful. Otherwise returns a redundancy error.
     */
-  // TODO: Have to check that there is no infinite recursion here...
-  // TODO: Return something other than validation?
   private def unify(p1: Pattern, p2: Pattern): Result[Substitution, RedundancyError] = (p1, p2) match {
     case (Pattern.Wild(_, _), _) => Ok(Substitution.empty)
 
     case (_, Pattern.Wild(_, _)) => Ok(Substitution.empty)
 
+    // TODO: Have to check that there is no infinite recursion here...
     case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Ok(Substitution(Map(sym1 -> p2))) // TODO: Is this safe?
 
     case (Pattern.Var(sym, _, _), _) => Ok(Substitution(Map(sym -> p2)))
@@ -668,15 +673,21 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Pattern.Tag(_, tag1, pat1, _, _), Pattern.Tag(_, tag2, pat2, _, _)) if tag1 == tag2 => unify(pat1, pat2)
 
-    case (Pattern.Tuple(elms1, _, _), Pattern.Tuple(elms2, _, _)) => ??? // TODO
+    case (Pattern.Tuple(elms1, _, _), Pattern.Tuple(elms2, _, _)) => unifyAll(elms1, elms2)
 
     case _ => Err(RedundancyError.UselessPatternMatch(p1, p2))
   }
 
-  // TODO: DOC
+  /**
+    * Attempts to unify the two given list of patterns `ps1` and `ps2`.
+    */
   private def unifyAll(ps1: List[Pattern], ps2: List[Pattern]): Result[Substitution, RedundancyError] = (ps1, ps2) match {
     case (Nil, Nil) => Ok(Substitution.empty)
-    case _ => ??? // TODO
+    case (x :: xs, y :: ys) =>
+      unify(x, y) flatMap {
+        case subst => unifyAll(subst(xs), subst(ys))
+      }
+    case _ => throw InternalRuntimeException(s"Unexpected patterns: '$ps1' and '$ps2'.")
   }
 
   // TODO: Refactor all of these unused, maybe call them them used?
