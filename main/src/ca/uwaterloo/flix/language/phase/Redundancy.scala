@@ -981,4 +981,22 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // Count impacted test cases?
 
+  // thm \forall f: List.filter(f, Nil) = Nil
+  // false <= List.isEmpty(xs), List.nonEmpty(xs).
+
+  // Ideas from: Using Redundancies to Find Errors
+
+  // [Idempotent operations]: (1) Assign to self, (2) divide by itself, (3) bitwise xord, (4) bitwise and,
+  // (Assignment to self could account for record update), there are also refs.
+
+  // [Redundant Assignments]
+
+  // [Dead Code] (early returns, so not really relevant).
+
+  // [Redundant Conditionals]: Detects branches that are always dead.
+  // Implemented as a combination of (1) integer propagation, (2) set of known predicates, and (3) bounds on integers.
+
+
+
+
 }
