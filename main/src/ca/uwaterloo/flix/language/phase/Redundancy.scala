@@ -89,7 +89,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkUnusedFormalParameters(used: Used): Used = {
       val unusedParams = defn.fparams.collect {
-        case fparam if unused(fparam.sym, used) => UnusedFormalParam(fparam.sym)
+        case fparam if dead(fparam.sym, used) => UnusedFormalParam(fparam.sym)
       }
       used ++ unusedParams
     }
@@ -99,7 +99,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkUnusedTypeParameters(used: Used): Used = {
       val unusedParams = defn.tparams.collect {
-        case tparam if unused(tparam.tpe, defn.sc.base.typeVars) => UnusedTypeParam(tparam.name)
+        case tparam if dead(tparam.tpe, defn.sc.base.typeVars) => UnusedTypeParam(tparam.name)
       }
       used ++ unusedParams
     }
@@ -116,11 +116,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def checkUnusedDefs(used: Used)(implicit root: Root): Used = {
     root.defs.foldLeft(used) {
-      case (acc, (sym, decl)) if unused(sym, used) =>
-        if (decl.mod.isPublic || decl.ann.isTest || sym.text == "main")
-          acc
-        else
-          acc + UnusedDefSym(sym)
+      case (acc, (_, decl)) if dead(decl, used) => acc + UnusedDefSym(decl.sym)
       case (acc, _) => acc
     }
   }
@@ -198,7 +194,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def checkUnusedRelations(used: Redundancy.Used)(implicit root: Root): Used = {
     val unusedRelSyms = root.relations.collect {
-      case (sym, decl) if unused(sym, decl, used) => UnusedRelSym(sym)
+      case (sym, decl) if dead(decl, used) => UnusedRelSym(sym)
     }
     used ++ unusedRelSyms
   }
@@ -208,7 +204,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def checkUnusedLattices(used: Redundancy.Used)(implicit root: Root): Used = {
     val unusedLatSyms = root.lattices.collect {
-      case (sym, decl) if unused(sym, decl, used) => UnusedLatSym(sym)
+      case (sym, decl) if dead(decl, used) => UnusedLatSym(sym)
     }
     used ++ unusedLatSyms
   }
@@ -253,7 +249,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
       val us = visitExp(exp, env0)
-      if (unused(fparam.sym, us))
+      if (dead(fparam.sym, us))
         us - fparam.sym + UnusedFormalParam(fparam.sym)
       else
         us - fparam.sym
@@ -274,7 +270,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
-      if (unused(sym, us2))
+      if (dead(sym, us2))
         (us1 ++ us2) - sym + UnusedVarSym(sym)
       else
         (us1 ++ us2) - sym
@@ -282,7 +278,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
-      if (unused(sym, us1) || unused(sym, us2))
+      if (dead(sym, us1) || dead(sym, us2))
         (us1 ++ us2) - sym + UnusedVarSym(sym)
       else
         (us1 ++ us2) - sym
@@ -322,7 +318,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
             case Some(sp) => checkUselessPatternMatch(sp, env0, pat)
           }
 
-          val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuardAndBody)).map(UnusedVarSym)
+          val unusedVarSyms = fvs.filter(sym => dead(sym, usedGuardAndBody)).map(UnusedVarSym)
           usedGuardAndBody -- fvs ++ unusedVarSyms ++ uselessMatch
       }
 
@@ -424,14 +420,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Existential(fparam, exp, _, _) =>
       val us = visitExp(exp, env0)
-      if (unused(fparam.sym, us))
+      if (dead(fparam.sym, us))
         us - fparam.sym + UnusedFormalParam(fparam.sym)
       else
         us - fparam.sym
 
     case Expression.Universal(fparam, exp, _, _) =>
       val us = visitExp(exp, env0)
-      if (unused(fparam.sym, us))
+      if (dead(fparam.sym, us))
         us - fparam.sym + UnusedFormalParam(fparam.sym)
       else
         us - fparam.sym
@@ -450,7 +446,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, CatchRule(sym, _, body)) =>
           val usedBody = visitExp(body, env0)
-          if (unused(sym, usedBody))
+          if (dead(sym, usedBody))
             acc ++ usedBody + UnusedVarSym(sym)
           else
             acc ++ usedBody
@@ -484,7 +480,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case SelectChannelRule(sym, chan, body) =>
           val chanUsed = visitExp(chan, env0)
           val bodyUsed = visitExp(body, env0)
-          if (unused(sym, bodyUsed))
+          if (dead(sym, bodyUsed))
             (chanUsed ++ bodyUsed) - sym + UnusedVarSym(sym)
           else
             (chanUsed ++ bodyUsed) - sym
@@ -613,22 +609,43 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Optionally returns the given expression `e0` as a stable path.
+    * Returns `true` if the given definition `decl` is unused according to `used`.
     */
-  private def getStablePath(e0: Expression): Option[StablePath] = e0 match {
-    // Variables are always stable.
-    case Expression.Var(sym, _, _, _) =>
-      Some(StablePath.Var(sym))
+  private def dead(decl: Def, used: Used): Boolean =
+    !decl.ann.isTest &&
+      !decl.mod.isPublic &&
+      !decl.sym.name.equals("main") &&
+      !decl.sym.name.startsWith("_") &&
+      !used.defSyms.contains(decl.sym)
 
-    // Record selections is stable if the underlying expression is stable.
-    case Expression.RecordSelect(exp, label, _, _, _) =>
-      for {
-        sp <- getStablePath(exp)
-      } yield StablePath.RecordSelect(sp, label)
+  /**
+    * Returns `true` if the given relation `decl` is unused according to `used`.
+    */
+  private def dead(decl: Relation, used: Used): Boolean =
+    !decl.mod.isPublic &&
+      !decl.sym.name.startsWith("_") &&
+      !used.predSyms.contains(decl.sym)
 
-    // Nothing else is stable.
-    case _ => None
-  }
+  /**
+    * Returns `true` if the given lattice `decl` is unused according to `used`.
+    */
+  private def dead(decl: Lattice, used: Used): Boolean =
+    !decl.mod.isPublic &&
+      !decl.sym.name.startsWith("_") &&
+      !used.predSyms.contains(decl.sym)
+
+  /**
+    * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
+    */
+  private def dead(tvar: Type.Var, used: Set[Type.Var]): Boolean =
+    !used.contains(tvar)
+
+  /**
+    * Returns `true` if the local variable `tvar` is unused according to the argument `used`.
+    */
+  private def dead(sym: Symbol.VarSym, used: Used): Boolean =
+    !sym.text.startsWith("_") &&
+      !used.varSyms.contains(sym)
 
   /**
     * Attempts to unify the two given patterns `p1` and `p2`.
@@ -690,28 +707,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => throw InternalRuntimeException(s"Unexpected patterns: '$ps1' and '$ps2'.")
   }
 
-  // TODO: Refactor all of these unused, maybe call them them used?
-
-  // TODO: DOC
-  private def unused(sym: Symbol.DefnSym, used: Used): Boolean =
-    !used.defSyms.contains(sym)
-
-  // TODO: DOC
-  private def unused(sym: Symbol.RelSym, decl: Relation, used: Used): Boolean =
-    !decl.mod.isPublic && !used.predSyms.contains(sym)
-
-  // TODO: DOC
-  private def unused(sym: Symbol.LatSym, decl: Lattice, used: Used): Boolean =
-    !decl.mod.isPublic && !used.predSyms.contains(sym)
-
   /**
-    * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
+    * Optionally returns the given expression `e0` as a stable path.
     */
-  private def unused(tvar: Type.Var, used: Set[Type.Var]): Boolean = !used.contains(tvar)
+  private def getStablePath(e0: Expression): Option[StablePath] = e0 match {
+    // Variables are always stable.
+    case Expression.Var(sym, _, _, _) =>
+      Some(StablePath.Var(sym))
 
-  // TODO: DOC
-  private def unused(sym: Symbol.VarSym, used: Used): Boolean =
-    !sym.text.startsWith("_") && !used.varSyms.contains(sym) && sym.loc != SourceLocation.Unknown // TODO: Need better mechanism.
+    // Record selections is stable if the underlying expression is stable.
+    case Expression.RecordSelect(exp, label, _, _, _) =>
+      for {
+        sp <- getStablePath(exp)
+      } yield StablePath.RecordSelect(sp, label)
+
+    // Nothing else is stable.
+    case _ => None
+  }
 
   // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
   sealed trait StablePath
@@ -964,6 +976,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // - We disallow all forms of implicit coercions.
   // - We disallow linear patterns.
   // - We treat holes (and ???) as using all local variables (but not anything else?)
+  // - We implement the checker using a fork-join style monoid thingy.
+
 
   // Bugs found:
   // - Missing @test on def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
@@ -995,8 +1009,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // [Redundant Conditionals]: Detects branches that are always dead.
   // Implemented as a combination of (1) integer propagation, (2) set of known predicates, and (3) bounds on integers.
-
-
 
 
 }
