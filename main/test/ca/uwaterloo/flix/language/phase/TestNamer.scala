@@ -187,6 +187,33 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateClass](result)
   }
 
+  test("ShadowedVar.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let x = 456;
+        |    x
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let y = 456;
+        |    let x = 789;
+        |    x
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
   test("UndefinedNativeClass.01") {
     val input = "def f(): Int = native field java.lang.Foo"
     val result = new Flix().addStr(input).compile()

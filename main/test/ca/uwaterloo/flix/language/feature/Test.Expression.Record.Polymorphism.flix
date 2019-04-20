@@ -82,9 +82,9 @@ def testRecordPolyExtend02(): Unit =
     let p3 = { fstName = "Bruce", lstName = "Wayne", alias = "Batman" };
     let p4 = { name = "Cher" };
     let _p5 = withAgeAndSex(21, "m", p1);
-    let _p5 = withAgeAndSex(42, "m", p2);
-    let _p6 = withAgeAndSex(42, "m", p3);
-    let _p7 = withAgeAndSex(42, "f", p4);
+    let _p6 = withAgeAndSex(42, "m", p2);
+    let _p7 = withAgeAndSex(42, "m", p3);
+    let _p8 = withAgeAndSex(42, "f", p4);
     ()
 
 def withAgeAndSex[r](age: Int, sex: Str, rec: r): { age: Int, sex: Str | r } =

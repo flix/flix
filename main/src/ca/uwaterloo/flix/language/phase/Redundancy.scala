@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
+// TODO: Refactor namer to eliminate all forms of shadowing.
+
 // TODO: DOC
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -892,6 +894,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Is validation really the right approach here?
 
+  // TODO: Ensure that we cannot refer to _ variables.
+
   // Notes for the paper:
   // - We disallow shadowing (because its confusing in the presence of pattern matching).
   // - We disallow both implicit widening and narrowing of integers.
@@ -908,6 +912,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //      mapN(visitExp(pred.exp, env0), visitExp(exp, env0)) {
   //        case (used1, used2) => Used.of(sym) ++ used1 ++ used2
   //      }
+
+  // Shadowing in action:
+  // let childList : List[Path] = Nil;
+  // let childList = childrenHelper(dirIterator, childList);
 
   // Count impacted test cases?
 

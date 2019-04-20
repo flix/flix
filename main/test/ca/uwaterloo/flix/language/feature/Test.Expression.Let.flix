@@ -158,18 +158,18 @@ def f22(): Float64 =
 def testLet22(): Bool = assertEq!(f22(), 3.4f64)
 
 def f23(x: Int): Int32 =
-  let x = x + 1;
-  let x = x + 2;
-    x + 3
+  let y = x + 1;
+  let z = y + 2;
+    z + 3
 
 @test
 def testLet23(): Bool = assertEq!(f23(0), 6)
 
 def f24(x: Int): Int64 =
   let _ = x + 1;
-  let x = 40i64;
-  let x = x + 2i64;
-    x
+  let y = 40i64;
+  let z = y + 2i64;
+    z
 
 @test
 def testLet24(): Bool = assertEq!(f24(0), 42i64)

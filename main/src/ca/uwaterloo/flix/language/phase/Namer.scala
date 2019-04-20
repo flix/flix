@@ -596,10 +596,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
-      // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident)
-      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
+      env0.get(ident.name) match {
+        case None =>
+          // make a fresh variable symbol for the local variable.
+          val sym = Symbol.freshVarSym(ident)
+          mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), tenv0)) {
+            case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
+          }
+        case Some(otherSym) =>
+          NameError.ShadowedVar(ident.name, ident.loc, otherSym.loc).toFailure
       }
 
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) =>

@@ -67,8 +67,7 @@ namespace Path {
             case Ok(true) => let Path(javaPath) = path;
                              let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
                              let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
-                             let childList : List[Path] = Nil;
-                             let childList = childrenHelper(dirIterator, childList);
+                             let childList = childrenHelper(dirIterator, Nil);
                              //let _ = native method java.nio.file.DirectoryStream.close(dirStream); TODO: Have this line compile
                              k(Ok(childList))
             case Ok(false) => k(Err(IOError("The provided path is not a directory. Children is only available for directories")))
@@ -79,8 +78,7 @@ namespace Path {
     def childrenHelper(dirIterator: ##java.util.Iterator, childList: List[Path]): List[Path] = {
         if (native method java.util.Iterator.hasNext(dirIterator))
             let fetchedPath = native method java.util.Iterator.next(dirIterator);
-            let childList = Path(fetchedPath) :: childList;
-            childrenHelper(dirIterator, childList)
+            childrenHelper(dirIterator, Path(fetchedPath) :: childList)
         else
             List.reverse(childList)
     }
@@ -339,8 +337,7 @@ namespace Path {
         match isRegularFileResponse with {
             case Ok(true)  => let Path(javaPath) = p;
                               let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
-                              let flixList: List[Str] = Nil;
-                              let flixList = readLinesHelper(flixList, reader);
+                              let flixList = readLinesHelper(Nil, reader);
                               let _ = native method java.io.BufferedReader.close(reader);
                               k(Ok(flixList))
             case Ok(false) => k(Err(IOError("Argument 'p' is not a regular file")))
@@ -353,8 +350,7 @@ namespace Path {
         if (native method java.util.Objects.isNull(readLine))
             List.reverse(fList)
         else
-            let fList = readLine :: fList;
-            readLinesHelper(fList, reader)
+            readLinesHelper(readLine :: fList, reader)
     }
 
     ///

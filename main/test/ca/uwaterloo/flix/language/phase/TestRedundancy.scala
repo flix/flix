@@ -374,7 +374,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |pub def f(): Int =
          |  let x = 123;
-         |  let x = 456;
+         |  let y = 456;
          |  x
          |
        """.stripMargin
