@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -744,17 +744,24 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
-  // TODO: Carry the local environment mapping vars to patterns
-  // TODO: but also carry equality relation... which should probably be a bimap (?)
-  // TODO: Introduce bimap class?
+  /**
+    * Companion object for the [[Env]] class.
+    */
   object Env {
-    val empty: Env = Env(Map.empty, MultiMap.empty, MultiMap.empty)
+    /**
+      * Represents the empty environment.
+      */
+    val empty: Env = Env(Map.empty)
   }
 
-  // TODO: Env should probably allow stable paths.
-  case class Env(env: Map[StablePath, Pattern], eq1: MultiMap[StablePath, StablePath], eq2: MultiMap[StablePath, StablePath]) {
+  /**
+    * Represents an environment mapping stable paths to patterns.
+    */
+  case class Env(env: Map[StablePath, Pattern]) {
 
-    // TODO: Should take a stable path.
+    /**
+      * Updates `this` environment with a new pattern for the given stable path.
+      */
     def +(p: (StablePath, Pattern)): Env = {
       val (stablePath, pattern) = p
       copy(env = env + (stablePath -> pattern))
