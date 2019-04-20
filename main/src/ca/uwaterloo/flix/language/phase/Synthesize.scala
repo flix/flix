@@ -1243,12 +1243,12 @@ object Synthesize extends Phase[Root, Root] {
      */
     // TODO: Need to deal with polymorphic attributes.
     val typesInRels = root.relations.flatMap {
-      case (_, Relation(_, _, _, attributes, _)) => attributes.map {
+      case (_, Relation(_, _, _, _, attributes, _)) => attributes.map {
         case Attribute(_, tpe, _) => tpe
       }
     }
     val typesInLats = root.lattices.flatMap {
-      case (_, Lattice(_, _, _, attributes, _)) =>
+      case (_, Lattice(_, _, _, _, attributes, _)) =>
         attributes.map {
           case Attribute(_, tpe, _) => tpe
         }

@@ -22,13 +22,24 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
-// TODO: Refactor namer to eliminate all forms of shadowing.
-
-// TODO: DOC
+/**
+  * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
+  *
+  * For example, the redundancy phase ensures that there are no:
+  *
+  * - unused local variables.
+  * - unused enums, definitions, relations, lattices, ...
+  * - useless expressions.
+  *
+  * and so on.
+  *
+  * The phase performs no AST rewrites; it can be disabled without affecting the runtime semantics.
+  */
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
@@ -296,21 +307,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case MatchRule(pat, guard, body) =>
           val fvs = freeVars(pat)
           val stablePathOpt = toStablePath(exp)
+
           val extendedEnv = stablePathOpt match {
             case None => env0
             case Some(stablePath) => env0 + (stablePath -> pat)
           }
+
           val usedGuard = visitExp(guard, extendedEnv)
           val usedBody = visitExp(body, extendedEnv)
+          val usedGuardAndBody = usedGuard ++ usedBody
 
-          // TODO: Cleanup
           val uselessMatch = stablePathOpt match {
             case None => Used.empty // nop
             case Some(sp) => checkUselessPatternMatch(sp, env0, pat)
           }
 
-          val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuard) && unused(sym, usedBody)).map(UnusedVarSym)
-          (usedGuard ++ usedBody) -- fvs ++ unusedVarSyms ++ uselessMatch
+          val unusedVarSyms = fvs.filter(sym => unused(sym, usedGuardAndBody)).map(UnusedVarSym)
+          usedGuardAndBody -- fvs ++ unusedVarSyms ++ uselessMatch
       }
 
       usedRules.foldLeft(usedMatch) {
@@ -402,8 +415,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(exp2, env0)
       us1 ++ us2
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-      ??? // TODO
+    case Expression.HandleWith(exp, bindings, _, _, _) =>
+      val usedExp = visitExp(exp, env0)
+      val usedBindings = bindings.foldLeft(Used.empty) {
+        case (acc, HandlerBinding(_, body)) => acc ++ visitExp(body, env0)
+      }
+      usedExp ++ usedBindings
 
     case Expression.Existential(fparam, exp, _, _) =>
       val us = visitExp(exp, env0)
@@ -428,8 +445,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.NativeConstructor(_, args, _, _, _) =>
       visitExps(args, env0)
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
-      ??? // TODO
+    case Expression.TryCatch(exp, rules, _, _, _) =>
+      val usedExp = visitExp(exp, env0)
+      val usedRules = rules.foldLeft(Used.empty) {
+        case (acc, CatchRule(sym, _, body)) =>
+          val usedBody = visitExp(body, env0)
+          if (unused(sym, usedBody))
+            acc ++ usedBody + UnusedVarSym(sym)
+          else
+            acc ++ usedBody
+      }
+      usedExp ++ usedRules
 
     case Expression.NativeField(_, _, _, _) =>
       Used.empty
@@ -563,17 +589,30 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.of(sym) ++ visitExp(term, env0)
   }
 
-  // TODO: DOC
-  private def checkUselessPatternMatch(sp: StablePath, env0: Env, pat: Pattern): Used = {
-    env0.env.get(sp) match {
-      case None => Used.empty
-      case Some(pat2) => unify(pat, pat2) match {
-        case Validation.Success(subst) => Used.empty
-        case Validation.Failure(errors) => Used.empty ++ errors
-      }
+  /**
+    * Checks whether the given stable path `sp0` under the environment `env0` is useless when matched against the pattern `pat0`.
+    */
+  private def checkUselessPatternMatch(sp0: StablePath, env0: Env, pat0: Pattern): Used = {
+    env0.env.get(sp0) match {
+      case None =>
+        // The stable path is free. The pattern match is never useless.
+        Used.empty
+      case Some(pat2) =>
+        // The stable path a pattern, check if `pat0` and `pat2` are compatible.
+        unify(pat0, pat2) match {
+          case Ok(subst) =>
+            // TODO: Should the subst not be applied to env0?
+            // The patterns unify, the pattern match is not useless.
+            Used.empty
+
+          case Err(error) =>
+            // The patterns do not unify, the pattern match is useless.
+            Used.empty + error
+        }
     }
   }
 
+  // TODO: DOC
   def toStablePath(e0: Expression): Option[StablePath] = e0 match {
 
     case Expression.Var(sym, _, _, _) =>
@@ -592,51 +631,51 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   // TODO: Have to check that there is no infinite recursion here...
   // TODO: Return something other than validation?
-  private def unify(p1: Pattern, p2: Pattern): Validation[Substitution, RedundancyError] = (p1, p2) match {
-    case (Pattern.Wild(_, _), _) => Substitution.empty.toSuccess
+  private def unify(p1: Pattern, p2: Pattern): Result[Substitution, RedundancyError] = (p1, p2) match {
+    case (Pattern.Wild(_, _), _) => Ok(Substitution.empty)
 
-    case (_, Pattern.Wild(_, _)) => Substitution.empty.toSuccess
+    case (_, Pattern.Wild(_, _)) => Ok(Substitution.empty)
 
-    case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Substitution(Map(sym1 -> p2)).toSuccess // TODO: Is this safe?
+    case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Ok(Substitution(Map(sym1 -> p2))) // TODO: Is this safe?
 
-    case (Pattern.Var(sym, _, _), _) => Substitution(Map(sym -> p2)).toSuccess
+    case (Pattern.Var(sym, _, _), _) => Ok(Substitution(Map(sym -> p2)))
 
-    case (_, Pattern.Var(sym, _, _)) => Substitution(Map(sym -> p1)).toSuccess
+    case (_, Pattern.Var(sym, _, _)) => Ok(Substitution(Map(sym -> p1)))
 
-    case (Pattern.Unit(_), Pattern.Unit(_)) => Substitution.empty.toSuccess
+    case (Pattern.Unit(_), Pattern.Unit(_)) => Ok(Substitution.empty)
 
-    case (Pattern.True(_), Pattern.True(_)) => Substitution.empty.toSuccess
+    case (Pattern.True(_), Pattern.True(_)) => Ok(Substitution.empty)
 
-    case (Pattern.False(_), Pattern.False(_)) => Substitution.empty.toSuccess
+    case (Pattern.False(_), Pattern.False(_)) => Ok(Substitution.empty)
 
-    case (Pattern.Char(lit1, _), Pattern.Char(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Char(lit1, _), Pattern.Char(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Float32(lit1, _), Pattern.Float32(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Float32(lit1, _), Pattern.Float32(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Float64(lit1, _), Pattern.Float64(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Float64(lit1, _), Pattern.Float64(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Int8(lit1, _), Pattern.Int8(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Int8(lit1, _), Pattern.Int8(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Int16(lit1, _), Pattern.Int16(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Int16(lit1, _), Pattern.Int16(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Int32(lit1, _), Pattern.Int32(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Int32(lit1, _), Pattern.Int32(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Int64(lit1, _), Pattern.Int64(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Int64(lit1, _), Pattern.Int64(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.BigInt(lit1, _), Pattern.BigInt(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.BigInt(lit1, _), Pattern.BigInt(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
-    case (Pattern.Str(lit1, _), Pattern.Str(lit2, _)) if lit1 == lit2 => Substitution.empty.toSuccess
+    case (Pattern.Str(lit1, _), Pattern.Str(lit2, _)) if lit1 == lit2 => Ok(Substitution.empty)
 
     case (Pattern.Tag(_, tag1, pat1, _, _), Pattern.Tag(_, tag2, pat2, _, _)) if tag1 == tag2 => unify(pat1, pat2)
 
     case (Pattern.Tuple(elms1, _, _), Pattern.Tuple(elms2, _, _)) => ??? // TODO
 
-    case _ => RedundancyError.UselessPatternMatch(p1, p2).toFailure
+    case _ => Err(RedundancyError.UselessPatternMatch(p1, p2))
   }
 
   // TODO: DOC
-  private def unifyAll(ps1: List[Pattern], ps2: List[Pattern]): Validation[Substitution, RedundancyError] = (ps1, ps2) match {
-    case (Nil, Nil) => Substitution.empty.toSuccess
+  private def unifyAll(ps1: List[Pattern], ps2: List[Pattern]): Result[Substitution, RedundancyError] = (ps1, ps2) match {
+    case (Nil, Nil) => Ok(Substitution.empty)
     case _ => ??? // TODO
   }
 
@@ -646,9 +685,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def unused(sym: Symbol.DefnSym, used: Used): Boolean =
     !used.defSyms.contains(sym)
 
+  // TODO: DOC
   private def unused(sym: Symbol.RelSym, decl: Relation, used: Used): Boolean =
     !decl.mod.isPublic && !used.predSyms.contains(sym)
 
+  // TODO: DOC
   private def unused(sym: Symbol.LatSym, decl: Lattice, used: Used): Boolean =
     !decl.mod.isPublic && !used.predSyms.contains(sym)
 
@@ -825,6 +866,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  // TODOs
+  /////////////////////////////////////////////////////////////////////////////
+
   // TODO: Check unused type parameters in enums, relations, and lattices.
 
   // TODO: What counts as a use of an enum? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
@@ -895,6 +940,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Is validation really the right approach here?
 
   // TODO: Ensure that we cannot refer to _ variables.
+
+  // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select, (3) existential/universal.
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Paper Notes
+  /////////////////////////////////////////////////////////////////////////////
 
   // Notes for the paper:
   // - We disallow shadowing (because its confusing in the presence of pattern matching).

@@ -743,7 +743,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `relation0` to the SimplifiedAst.
       */
     def visitRelation(relation0: TypedAst.Relation): SimplifiedAst.Relation = relation0 match {
-      case TypedAst.Relation(doc, mod, sym, attributes, loc) =>
+      case TypedAst.Relation(doc, mod, sym, tparams, attributes, loc) =>
         SimplifiedAst.Relation(mod, sym, attributes.map(visitAttribute), loc)
     }
 
@@ -751,7 +751,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `lattice0` to the SimplifiedAst.
       */
     def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
-      case TypedAst.Lattice(doc, mod, sym, attributes, loc) =>
+      case TypedAst.Lattice(doc, mod, sym, tparams, attributes, loc) =>
         SimplifiedAst.Lattice(mod, sym, attributes.map(visitAttribute), loc)
     }
 
@@ -1075,7 +1075,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
     val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(doc, mod, sym, cases0, enumType, loc)) =>
+      case (k, TypedAst.Enum(doc, mod, sym, tparams, cases0, enumType, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
