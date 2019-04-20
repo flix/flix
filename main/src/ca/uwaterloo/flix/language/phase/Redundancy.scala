@@ -930,36 +930,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODOs
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Check unused type parameters in enums, relations, and lattices.
-
-  // TODO: What counts as a use of an enum? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
-  // TODO: The pattern matching is difficult, because you could have a default match onsomething just of that type.
-  // TODO: What about the void enum? How would you deal with that? What about the singleton. The above choices start to seem more false in the presence of those.
-  // TODO: Add appropriate cases once a definition has been decided.
-  // And if you just require it to be used in a type, should that type then be used?
-
-  // TODO: Type Parameters: When is a type parameter considered to be used?
-
-  // TODO: Allow wildcards everywhere.
-  // TODO: Add tests for wildcards.
-
-  // TODO: In the case of predicates, do we want to assert that there are some facts? What about in the presence of
-  // first-class constraints?
-
-  // TODO: Maybe this is actually a relation...
-  // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
-
-  // TODO: Add test cases for predicates.
-
-
-  // TODO: Does new channel have a side-effect or not? Is it allowed to be discarded?
-  // TODO: How do we want to deal with expressions that have side-effects and a return value that must be used.
-  // E.g. like the above.
-
-  // TODO: Add more tests for useless expressions ones the effect system is implemented.
-
-  // TODO: Rewrite tests to not use Option, but some other new type.
-
   // TODO: Should we also consider tricky cases such as:
   // match s with {
   // case Circle(Red) =>
@@ -976,19 +946,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //        case _ => Square(Blu)
   //    }
 
-
-  // TODO: We could store an upper, lower bound, and equal. At least for integers.
-  // TODO: For other types it would just be equal and not equal.
-  // TODO: Might even be for entire expressions, like xs.length > 0, xs.length == 0, and not just variables.
-
-
   // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
   // TODO: Maybe we need a measure on physical code size?
 
-
   // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
-
-  // TODO: Parallel execution
 
   // TODO: Define a notion of contradiction:
   // P(x) and Q(x) cannot be true at the same time.
@@ -997,13 +958,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
 
-  // TODO: Do we want ??? to consume all arguments together with a hole perhaps??
-
   // TODO: Should we be allowed to *use* _score names? Probably not. How to enforce?
 
-  // TODO: Treat ??? and ?hole as using all local variables.
-
-  // TODO: Is validation really the right approach here?
+  // TODO: Rewrite UserError to be a hole? or a panic? or remove it?
 
   // TODO: Ensure that we cannot refer to _ variables.
 
@@ -1021,6 +978,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // - We treat holes (and ???) as using all local variables (but not anything else?)
   // - We implement the checker using a fork-join style monoid thingy.
 
+  // Questions:
+  // - When is an enum used? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
+  //     (What if you match on a value of that type, but use a wildcard?)
+  //     (What is consistent with the Void enum and the singleton enum?)
+  // - When is a predicate used? Is it enough to use it in a rule, or must it also appear in a head predicate?
+  // - How do we appropriately distinguish between the effect of NewChannel and e.g. PutChannel?
+  //     (How do we deal with return values that must be used, e.g. deleteFile?)
 
   // Bugs found:
   // - Missing @test on def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
