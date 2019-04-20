@@ -658,7 +658,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case (_, Pattern.Wild(_, _)) => Ok(Substitution.empty)
 
     // TODO: Have to check that there is no infinite recursion here...
-    case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Ok(Substitution(Map(sym1 -> p2))) // TODO: Is this safe?
+    case (Pattern.Var(sym1, _, _), Pattern.Var(sym2, _, _)) => Ok(Substitution(Map(sym1 -> p2)))
 
     case (Pattern.Var(sym, _, _), _) => Ok(Substitution(Map(sym -> p2)))
 
@@ -725,22 +725,24 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case _ => None
   }
 
-  // TODO: Need notion of stable expression which should be used instead of variable symbol., but also need to take purity into account.
+  /**
+    * Represents stable paths.
+    */
   sealed trait StablePath
 
   object StablePath {
 
-    // TODO: What should be considered a stable path?
-
+    /**
+      * A variable expression is a stable path.
+      */
     case class Var(sym: Symbol.VarSym) extends StablePath
 
+    /**
+      * A record select expression is a stable path.
+      */
     case class RecordSelect(sp: StablePath, label: String) extends StablePath
 
-    // TODO: Add additional cases.
-
   }
-
-  // TODO: Add test cases for predicates.
 
   // TODO: Carry the local environment mapping vars to patterns
   // TODO: but also carry equality relation... which should probably be a bimap (?)
@@ -757,11 +759,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val (stablePath, pattern) = p
       copy(env = env + (stablePath -> pattern))
     }
-
   }
-
-  // TODO: Maybe this is actually a relation...
-  // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
 
   object Used {
 
@@ -855,19 +853,38 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * TODO: A substitution is a map from type variables to types.
+    * A substitution is a map from variable symbols to patterns.
     */
   case class Substitution(m: Map[Symbol.VarSym, Pattern]) {
+    /**
+      * Applies `this` substitution to the given pattern `pat0`.
+      */
+    def apply(pat0: Pattern): Pattern = pat0 match {
+      case Pattern.Wild(_, _) => pat0
+      case Pattern.Var(sym, _, _) => m.get(sym) match {
+        case None => pat0
+        case Some(pat) => pat
+      }
+      case Pattern.Unit(_) => pat0
+      case Pattern.True(_) => pat0
+      case Pattern.False(_) => pat0
+      case Pattern.Char(_, _) => pat0
+      case Pattern.Float32(_, _) => pat0
+      case Pattern.Float64(_, _) => pat0
+      case Pattern.Int8(_, _) => pat0
+      case Pattern.Int16(_, _) => pat0
+      case Pattern.Int32(_, _) => pat0
+      case Pattern.Int64(_, _) => pat0
+      case Pattern.BigInt(_, _) => pat0
+      case Pattern.Str(_, _) => pat0
+      case Pattern.Tag(sym, tag, pat, tpe, loc) => Pattern.Tag(sym, tag, apply(pat), tpe, loc)
+      case Pattern.Tuple(elms, tpe, loc) => Pattern.Tuple(apply(elms), tpe, loc)
+    }
 
     /**
-      * Applies `this` substitution to the given type `tpe`.
+      * Applies `this` substitution to the given patterns `ps`.
       */
-    def apply(tpe: Pattern): Pattern = ??? // TODO: Check for occurs check.
-
-    /**
-      * Applies `this` substitution to the given types `ts`.
-      */
-    def apply(ts: List[Pattern]): List[Pattern] = ts map apply
+    def apply(ps: List[Pattern]): List[Pattern] = ps map apply
 
     /**
       * Returns the left-biased composition of `this` substitution with `that` substitution.
@@ -885,7 +902,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       Substitution(m) ++ this
     }
-
   }
 
 
@@ -908,6 +924,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: In the case of predicates, do we want to assert that there are some facts? What about in the presence of
   // first-class constraints?
+
+  // TODO: Maybe this is actually a relation...
+  // TODO: Then, when we see a constraint x == 1, we can check if that is compatible with the values of x is mapped.
+
+  // TODO: Add test cases for predicates.
+
 
   // TODO: Does new channel have a side-effect or not? Is it allowed to be discarded?
   // TODO: How do we want to deal with expressions that have side-effects and a return value that must be used.
