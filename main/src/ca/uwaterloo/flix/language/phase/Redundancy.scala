@@ -105,10 +105,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute the used symbols inside the definition.
-    val used = visitExp(defn.exp, Env.empty)
+    val usedExp = visitExp(defn.exp, Env.empty)
 
     // Check for unused parameters and remove all variable symbols.
-    (used ++ checkUnusedFormalParameters(used) ++ checkUnusedTypeParameters(used)).copy(varSyms = Set.empty)
+    val usedAll = (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
+
+    // Check if the used symbols contains holes. If so, strip out all error messages.
+    if (usedAll.holeSyms.isEmpty) usedAll else usedAll.copy(errors = Stream.empty)
   }
 
   /**
@@ -245,7 +248,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Eff(sym, _, _, _) => Used.empty
 
-    case Expression.Hole(sym, _, _, _) => Used.empty
+    case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
       val us = visitExp(exp, env0)
@@ -773,7 +776,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an object where no symbol is marked as used.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Stream.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Stream.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -784,6 +787,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns an object where the given defn symbol `sym` is marked as used.
       */
     def of(sym: Symbol.DefnSym): Used = empty.copy(defSyms = Set(sym))
+
+    /**
+      * Returns an object where the given hole symbol `sym` is marked as used.
+      */
+    def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
 
     /**
       * Returns an object where the given predicate symbol `sym` is marked as used.
@@ -800,7 +808,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * A representation of used symbols.
     */
-  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String], defSyms: Set[Symbol.DefnSym], predSyms: Set[Symbol.PredSym], varSyms: Set[Symbol.VarSym], errors: Stream[RedundancyError]) {
+  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
+                  defSyms: Set[Symbol.DefnSym],
+                  predSyms: Set[Symbol.PredSym],
+                  holeSyms: Set[Symbol.HoleSym],
+                  varSyms: Set[Symbol.VarSym],
+                  errors: Stream[RedundancyError]) {
     /**
       * Merges `this` and `that`.
       */
@@ -816,6 +829,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
           this.predSyms ++ that.predSyms,
+          this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.errors #::: that.errors
         )

@@ -516,6 +516,28 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
+  test("UnusedVarSym.Hole.01") {
+    val input =
+      s"""
+         |pub def f(): Int =
+         |    let x = 123;
+         |    ?foo
+         |
+       """.stripMargin
+    compile(input, DefaultOptions).get
+  }
+
+  test("UnusedVarSym.Hole.02") {
+    val input =
+      s"""
+         |pub def f(): Int =
+         |    let (x, y) = (123, 456);
+         |    ?foo
+         |
+       """.stripMargin
+    compile(input, DefaultOptions).get
+  }
+
   test("UselessExpression.01") {
     val input =
       s"""
