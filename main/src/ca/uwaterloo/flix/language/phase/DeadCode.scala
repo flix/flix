@@ -136,7 +136,16 @@ object DeadCode extends Phase[Root, Root] {
         mapN(matchVal, rulesVal) {
           case (m, r) => m + (r.foldLeft(Used()) (_ + _))
         }
-      case TypedAst.Expression.Switch(rules, tpe, eff, loc) => Used().toSuccess // TODO
+      case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
+        val rulesVal = traverse(rules) {
+          case (elm1, elm2) =>
+            mapN(visitExp(elm1), visitExp(elm2)) {
+              case (e1, e2) => e1 + e2
+            }
+        }
+        mapN(rulesVal) {
+          case ru => ru.foldLeft(Used()) (_ + _)
+        }
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val expVal = visitExp(exp)
         val newTagVal = Used(Set.empty, Set((sym, tag)), Set.empty).toSuccess
@@ -275,7 +284,7 @@ object DeadCode extends Phase[Root, Root] {
               case ex => visitExp(ex)
             }
             mapN(termsVal) {
-              case trm => trm.foldLeft(Used()) (_ + _)
+              case trm => (trm.foldLeft(Used()) (_ + _)) + sym
             }
           case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
             mapN(Used(Set(sym), Set.empty, Set.empty).toSuccess, visitExp(term)) {
@@ -313,6 +322,7 @@ object DeadCode extends Phase[Root, Root] {
 case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty) {
   def +(that: Used): Used = Used(vars ++ that.vars, tags ++ that.tags, defs ++ that.defs)
   def +(that: Symbol.VarSym) = Used(vars + that, tags, defs)
+  def +(that: Symbol.DefnSym) = Used(vars, tags, defs + that)
   def -(that: Used): Used = Used(vars -- that.vars, tags -- that.tags, defs -- that.defs)
   def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags, defs)
   def removeVars: Used = Used(Set.empty, tags, defs)
