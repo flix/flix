@@ -157,6 +157,7 @@ object DeadCode extends Phase[Root, Root] {
         mapN(elmsVal) {
           case ex => ex.foldLeft(Used()) (_ + _)
         }
+      case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
         mapN(visitExp(value), visitExp(rest)) {
           case (v, r) => v + r
