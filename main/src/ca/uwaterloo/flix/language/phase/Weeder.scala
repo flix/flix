@@ -60,10 +60,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
     val declarationsVal = traverse(root.decls)(visitDecl)
     val propertiesVal = visitAllProperties(root)
+    val loc = mkSL(root.sp1, root.sp2)
 
     mapN(declarationsVal, propertiesVal) {
       case (decls1, decls2) =>
-        WeededAst.Root(decls1.flatten ++ decls2)
+        WeededAst.Root(decls1.flatten ++ decls2, loc)
     }
   }
 
@@ -1949,7 +1950,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
-    WeededAst.Root(List(decl))
+    WeededAst.Root(List(decl), SourceLocation.Unknown)
   }
 
 }

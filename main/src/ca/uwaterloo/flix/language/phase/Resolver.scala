@@ -147,7 +147,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       properties <- propertiesVal
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
-      relations.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable
+      relations.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 

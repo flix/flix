@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -41,6 +42,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     implicit val _ = flix.genSym
 
+    // compute all the source locations
+    val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
+      case (macc, root) => macc + (root.loc.source -> root.loc)
+    }
+
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       defs = Map.empty,
@@ -54,7 +60,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       latticeComponents = Map.empty,
       named = Map.empty,
       properties = Map.empty,
-      reachable = program.reachable
+      reachable = program.reachable,
+      sources = locations
     )
 
     // collect all the declarations.

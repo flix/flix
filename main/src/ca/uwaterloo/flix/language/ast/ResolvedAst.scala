@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
 import scala.collection.immutable.List
 
@@ -34,7 +35,8 @@ object ResolvedAst {
                      lattices: Map[Symbol.LatSym, ResolvedAst.Lattice],
                      latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
                      properties: List[ResolvedAst.Property],
-                     reachable: Set[Symbol.DefnSym]) {
+                     reachable: Set[Symbol.DefnSym],
+                     sources: Map[Source, SourceLocation]) {
     /**
       * Returns all predicate symbols in the program.
       */

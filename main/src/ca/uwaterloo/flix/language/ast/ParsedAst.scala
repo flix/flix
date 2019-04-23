@@ -35,10 +35,12 @@ object ParsedAst {
   /**
     * Root. A collection of imports and declarations.
     *
+    * @param sp1     the position of the first character in the source.
     * @param imports the imports declared in the abstract syntax tree.
     * @param decls   the declarations in the abstract syntax tree.
+    * @param sp2     the position of the last character in the source.
     */
-  case class Root(imports: Seq[ParsedAst.Import], decls: Seq[ParsedAst.Declaration]) extends ParsedAst
+  case class Root(sp1: SourcePosition, imports: Seq[ParsedAst.Import], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Imports.

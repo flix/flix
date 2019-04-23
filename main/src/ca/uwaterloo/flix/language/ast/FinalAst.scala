@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
+import ca.uwaterloo.flix.language.ast.Ast.Source
+
 object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
@@ -29,7 +31,8 @@ object FinalAst {
                   latticeComponents: Map[MonoType, FinalAst.LatticeComponents],
                   properties: List[FinalAst.Property],
                   specialOps: Map[SpecialOperator, Map[MonoType, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym])
+                  reachable: Set[Symbol.DefnSym],
+                  sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) {
     var method: Method = null
