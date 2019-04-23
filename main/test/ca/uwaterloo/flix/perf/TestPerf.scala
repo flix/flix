@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.util.{Validation, Verbosity}
 
 object TestPerf {
 
-  val Limit = 1
+  val Limit = 25
 
   def main(args: Array[String]): Unit = {
 

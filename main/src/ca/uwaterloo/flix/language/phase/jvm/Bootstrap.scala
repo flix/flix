@@ -28,6 +28,14 @@ object Bootstrap {
     }
 
     //
+    // Computes a map from classes and method names to method objects.
+    //
+    // TODO: We should not load all method objects here. Only a subset. Need some notion of entry points.
+    val allMethods = loadedClasses.foldLeft(Map.empty[Class[_], Map[String, Method]]) {
+      case (macc, (_, clazz)) => macc + (clazz -> methodsOf(clazz))
+    }
+
+    //
     // Decorate each defn in the ast with its method object.
     //
     for ((sym, defn) <- root.defs; if JvmOps.nonLaw(defn)) {
@@ -44,8 +52,13 @@ object Bootstrap {
       val methodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
 
       // Retrieve the method object.
-      // TODO: Magnus: This has O(n^2) complexity. We should fix that.
-      val method = findMethod(methodName, nsClass.getMethods)
+      val method = allMethods.get(nsClass) match {
+        case None => throw InternalCompilerException(s"Class not found: '$nsClass'.")
+        case Some(m) => m.get(methodName) match {
+          case None => throw InternalCompilerException(s"Method not found: '$methodName'.")
+          case Some(r) => r
+        }
+      }
 
       // And finally assign the method object to the definition.
       defn.method = method
@@ -54,13 +67,15 @@ object Bootstrap {
   }
 
   /**
-    * Returns the method named `needle` in the `haystack`.
+    * Returns a map from names to method objects for the given class `clazz`.
     */
-  private def findMethod(needle: String, haystack: Array[Method]): Method = {
-    haystack.find(_.getName == needle) match {
-      case None =>
-        throw InternalCompilerException(s"Method not found: '$needle'.")
-      case Some(m) => m
+  private def methodsOf(clazz: Class[_]): Map[String, Method] = {
+    clazz.getMethods.foldLeft(Map.empty[String, Method]) {
+      case (macc, method) =>
+        if (method.isSynthetic)
+          macc
+        else
+          macc + (method.getName -> method)
     }
   }
 
