@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace TestList {
+
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -1708,3 +1710,5 @@ def toMap03(): Bool = assert!(Map.eq(List.toMap((1, true) :: (2, false) :: Nil),
 
 @test
 def toMap04(): Bool = assert!(Map.eq(List.toMap((1, true) :: (1, false) :: Nil), @{1 -> true}))
+
+}

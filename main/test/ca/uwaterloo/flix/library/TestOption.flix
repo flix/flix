@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace TestOption {
+
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -308,3 +310,5 @@ def unzip01(): Bool = Option.unzip(None) `assertEq!` (None, None)
 
 @test
 def unzip02(): Bool = Option.unzip(Some((1, true))) `assertEq!` (Some(1), Some(true))
+
+}
