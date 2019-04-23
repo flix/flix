@@ -147,10 +147,8 @@ object Main {
             case Some(m) =>
               val evalTimer = new Timer(compilationResult.evalToString("main"))
               options.verbosity match {
-                case Verbosity.Normal =>
-                  Console.println(evalTimer.getResult)
-                case Verbosity.Verbose =>
-                  Console.println(s"main returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+                case Verbosity.Normal => Console.println(evalTimer.getResult)
+                case Verbosity.Verbose => Console.println(evalTimer.getResult)
                 case Verbosity.Silent => // nop
               }
           }
