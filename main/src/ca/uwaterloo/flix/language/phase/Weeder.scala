@@ -973,15 +973,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (rs, d) => WeededAst.Expression.SelectChannel(rs, d, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
+    case ParsedAst.Expression.ProcessSpawn(sp1, exp, sp2) =>
       visitExp(exp) map {
-        case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.ProcessSpawn(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Sleep(sp1, exp, sp2) =>
+    case ParsedAst.Expression.ProcessSleep(sp1, exp, sp2) =>
       visitExp(exp) map {
-        case e => WeededAst.Expression.Sleep(e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.ProcessSleep(e, mkSL(sp1, sp2))
       }
+
+    case ParsedAst.Expression.ProcessPanic(sp1, msg, sp2) =>
+      WeededAst.Expression.ProcessPanic(msg.lit, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs0, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1823,8 +1826,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
-    case ParsedAst.Expression.Sleep(sp1, _, _) => sp1
+    case ParsedAst.Expression.ProcessSpawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.ProcessSleep(sp1, _, _) => sp1
+    case ParsedAst.Expression.ProcessPanic(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1

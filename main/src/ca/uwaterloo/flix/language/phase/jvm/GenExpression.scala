@@ -1074,7 +1074,7 @@ object GenExpression {
     case Expression.ProcessPanic(msg, tpe, loc) =>
       // TODO: Throw a more specific exception?
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.mk("java/lang/RuntimeException"), loc)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
       // Add source line numbers for debugging.

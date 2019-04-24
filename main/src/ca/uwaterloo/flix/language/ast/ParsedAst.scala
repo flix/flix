@@ -949,22 +949,31 @@ object ParsedAst {
     case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Spawn Expression.
+      * Process Spawn Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ProcessSpawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Sleep Expression.
+      * Process Sleep Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Sleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ProcessSleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Process Panic Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param msg the panic error message.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ProcessPanic(sp1: SourcePosition, msg: ParsedAst.Literal.Str, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint Sequence expression.

@@ -583,7 +583,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
+        GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve |
         FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
@@ -684,12 +684,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    def ProcessSpawn: Rule1[ParsedAst.Expression.ProcessSpawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ProcessSpawn
     }
 
-    def Sleep: Rule1[ParsedAst.Expression.Sleep] = rule {
-      SP ~ atomic("sleep") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Sleep
+    def ProcessSleep: Rule1[ParsedAst.Expression.ProcessSleep] = rule {
+      SP ~ atomic("sleep") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.ProcessSleep
+    }
+
+    def ProcessPanic: Rule1[ParsedAst.Expression.ProcessPanic] = rule {
+      SP ~ atomic("panic") ~ WS ~ Literals.Str ~ SP ~> ParsedAst.Expression.ProcessPanic
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {

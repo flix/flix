@@ -738,15 +738,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             d <- defaultVal
           } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
-        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+        case NamedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
 
-        case NamedAst.Expression.Sleep(exp, tvar, loc) =>
+        case NamedAst.Expression.ProcessSleep(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.ProcessSleep(e, tvar, loc)
+
+        case NamedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+          ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
 
         case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           Constraints.resolve(cons, tenv0, ns0, prog0) map {

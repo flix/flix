@@ -889,15 +889,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.Spawn(exp, loc) =>
+    case WeededAst.Expression.ProcessSpawn(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.Sleep(exp, loc) =>
+    case WeededAst.Expression.ProcessSleep(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Sleep(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), loc)
       }
+
+    case WeededAst.Expression.ProcessPanic(msg, loc) =>
+      NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.FixpointConstraint(con, loc) =>
       visitConstraint(con, env0, tenv0) map {
@@ -1187,8 +1190,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
-    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Sleep(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ProcessSpawn(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

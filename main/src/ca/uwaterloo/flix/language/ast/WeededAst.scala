@@ -184,9 +184,11 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ProcessSpawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Sleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ProcessSleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ProcessPanic(msg: String, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointConstraint(c: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
@@ -197,6 +199,7 @@ object WeededAst {
     case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
   }
 
   sealed trait Pattern {
