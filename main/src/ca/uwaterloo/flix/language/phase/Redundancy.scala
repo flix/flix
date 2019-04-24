@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{InternalRuntimeException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.{InternalRuntimeException, Result, Validation}
 
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
@@ -963,6 +963,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Rewrite UserError to be a hole? or a panic? or remove it?
 
   // TODO: Ensure that we cannot refer to _ variables.
+
+  // TODO: Introduce an annotation or modifier: isEntryPoint?
+
+  // TODO: Fix the repl to work with the redundancy thingy.
 
   // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select, (3) existential/universal.
 
