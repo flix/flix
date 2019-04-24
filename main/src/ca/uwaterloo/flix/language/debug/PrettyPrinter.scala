@@ -433,13 +433,16 @@ object PrettyPrinter {
           }
           vt << Dedent << "}"
 
-        case Expression.Spawn(exp, tpe, loc) =>
+        case Expression.ProcessSpawn(exp, tpe, loc) =>
           vt.text("spawn ")
           visitExp(exp)
 
-        case Expression.Sleep(exp, tpe, loc) =>
+        case Expression.ProcessSleep(exp, tpe, loc) =>
           vt.text("sleep ")
           visitExp(exp)
+
+        case Expression.ProcessPanic(msg, tpe, loc) =>
+          vt.text("!!! " + msg)
 
         case Expression.FixpointConstraint(c, tpe, loc) =>
           vt.text("<constraint>")

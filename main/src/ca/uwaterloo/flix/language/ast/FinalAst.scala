@@ -220,9 +220,11 @@ object FinalAst {
 
     case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Spawn(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class ProcessSpawn(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Sleep(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class ProcessSleep(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
+    case class ProcessPanic(msg: String, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointConstraint(c: FinalAst.Constraint, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 

@@ -238,9 +238,11 @@ object SimplifiedAst {
 
     case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ProcessSpawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Sleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ProcessSleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class ProcessPanic(msg: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointConstraint(c: SimplifiedAst.Constraint, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

@@ -312,13 +312,16 @@ object ClosureConv extends Phase[Root, Root] {
 
       Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.ProcessSpawn(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
+      Expression.ProcessSpawn(e, tpe, loc)
 
-    case Expression.Sleep(exp, tpe, loc) =>
+    case Expression.ProcessSleep(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.Sleep(e, tpe, loc)
+      Expression.ProcessSleep(e, tpe, loc)
+
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      Expression.ProcessPanic(msg, tpe, loc)
 
     case Expression.FixpointConstraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
@@ -507,8 +510,12 @@ object ClosureConv extends Phase[Root, Root] {
       val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
 
       rs ++ d
-    case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
-    case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessSpawn(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessSleep(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
@@ -818,17 +825,20 @@ object ClosureConv extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Spawn(e, tpe, loc)
+        Expression.ProcessSpawn(e, tpe, loc)
 
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Sleep(e, tpe, loc)
+        Expression.ProcessSleep(e, tpe, loc)
+
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        Expression.ProcessPanic(msg, tpe, loc)
 
       case Expression.FixpointConstraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con

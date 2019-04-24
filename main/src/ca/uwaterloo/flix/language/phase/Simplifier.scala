@@ -537,7 +537,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SimplifiedAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
@@ -547,11 +547,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
-        SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
+        SimplifiedAst.Expression.ProcessSpawn(lambda, newTpe, loc)
 
       case TypedAst.Expression.ProcessSleep(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Sleep(e, tpe, loc)
+        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
+
+      case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
+        SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
       case TypedAst.Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
@@ -1232,17 +1235,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SimplifiedAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Spawn(e, tpe, loc)
+        SimplifiedAst.Expression.ProcessSpawn(e, tpe, loc)
 
-      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Sleep(e, tpe, loc)
+        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
+
+      case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
+        SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0)

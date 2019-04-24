@@ -295,14 +295,14 @@ object Interpreter {
       // Evaluate the expression of the selected rule
       eval(selectedRule._3, newEnv, henv0, lenv0, root)
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.ProcessSpawn(exp, tpe, loc) =>
       Channel.spawn(() => {
         val e = eval(exp, env0, henv0, lenv0, root)
         invokeClo(e, List(), env0, henv0, lenv0, root)
       })
       Value.Unit
 
-    case Expression.Sleep(exp, tpe, loc) =>
+    case Expression.ProcessSleep(exp, tpe, loc) =>
       val duration = cast2int64(eval(exp, env0, henv0, lenv0, root))
       if (duration < 0) {
         throw InternalRuntimeException(s"Duration $duration must be non-negative.")
@@ -312,6 +312,9 @@ object Interpreter {
       val ns = (duration % 1000000).toInt
       Thread.sleep(ms, ns)
       Value.Unit
+
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      throw new RuntimeException(msg)
 
     case Expression.FixpointConstraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0)(flix, root)

@@ -457,17 +457,23 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // Spawn.
+      // ProcessSpawn.
       //
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
-      // Sleep.
+      // ProcessSleep.
       //
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // ProcessPanic.
+      //
+      case Expression.ProcessPanic(msg, tpe, loc) =>
         checkType(tpe)
 
       //
