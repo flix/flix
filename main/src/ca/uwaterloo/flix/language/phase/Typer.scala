@@ -1190,9 +1190,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield resultType
 
       /*
-       * Spawn Expression.
+       * ProcessSpawn Expression.
        */
-      case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         //
         //  exp: t
         //  ------------------
@@ -1205,9 +1205,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield resultType
 
       /*
-       * Sleep expression.
+       * ProcessSleep expression.
        */
-      case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSleep(exp, tvar, loc) =>
         //
         // exp: Int
         // ------------------
@@ -1218,6 +1218,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           _ <- unifyM(e, Type.Cst(TypeConstructor.Int64), loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
         } yield resultType
+
+      /*
+       * ProcessPanic expression.
+       */
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+        liftM(tvar)
 
       /*
        * Constraint expression.
@@ -1714,18 +1720,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Empty, loc)
 
       /*
-       * Spawn expression.
+       * ProcessSpawn expression.
        */
-      case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.ProcessSpawn(e, subst0(tvar), Eff.Empty, loc)
 
       /*
-       * Sleep expression.
+       * ProcessSleep expression.
        */
-      case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSleep(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.ProcessSleep(e, subst0(tvar), Eff.Empty, loc)
+
+      /*
+       * ProcessPanic expression.
+       */
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+        TypedAst.Expression.ProcessPanic(msg, subst0(tvar), Eff.Empty, loc)
 
       /*
        * Constraint expression.

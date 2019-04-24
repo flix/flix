@@ -741,12 +741,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.Spawn(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+          } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
 
         case NamedAst.Expression.Sleep(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Sleep(e, tvar, loc)
+          } yield ResolvedAst.Expression.ProcessSleep(e, tvar, loc)
 
         case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           Constraints.resolve(cons, tenv0, ns0, prog0) map {
