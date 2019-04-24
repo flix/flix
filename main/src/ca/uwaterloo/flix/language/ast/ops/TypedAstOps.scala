@@ -211,9 +211,11 @@ object TypedAstOps {
 
         rs ++ d
 
-      case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
+      case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+      case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+
+      case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
       case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
 

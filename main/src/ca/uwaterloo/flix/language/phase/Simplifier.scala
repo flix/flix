@@ -541,7 +541,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
         val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e.tpe)
@@ -549,7 +549,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
 
-      case TypedAst.Expression.Sleep(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.ProcessSleep(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Sleep(e, tpe, loc)
 

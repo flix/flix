@@ -309,17 +309,20 @@ object Synthesize extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 
-      case Expression.Spawn(exp, tpe, eff, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.Spawn(e, tpe, eff, loc)
+        Expression.ProcessSpawn(e, tpe, eff, loc)
 
-      case Expression.Sleep(exp, tpe, eff, loc) =>
+      case Expression.ProcessSleep(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.Sleep(e, tpe, eff, loc)
+        Expression.ProcessSleep(e, tpe, eff, loc)
+
+      case Expression.ProcessPanic(msg, tpe, eff, loc) =>
+        Expression.ProcessPanic(msg, tpe, eff, loc)
 
       case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)

@@ -500,9 +500,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (acc, used) => acc ++ used
       }
 
-    case Expression.Spawn(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, env0)
 
-    case Expression.Sleep(exp, _, _, _) => visitExp(exp, env0)
+    case Expression.ProcessSleep(exp, _, _, _) => visitExp(exp, env0)
+
+    case Expression.ProcessPanic(msg, _, _, _) => Used.empty
 
     case Expression.FixpointConstraint(c, _, _, _) =>
       visitConstraint(c, env0)

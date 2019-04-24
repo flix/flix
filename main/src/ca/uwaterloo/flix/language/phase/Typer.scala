@@ -1718,14 +1718,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        */
       case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Empty, loc)
+        TypedAst.Expression.ProcessSpawn(e, subst0(tvar), Eff.Empty, loc)
 
       /*
        * Sleep expression.
        */
       case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Sleep(e, subst0(tvar), Eff.Empty, loc)
+        TypedAst.Expression.ProcessSleep(e, subst0(tvar), Eff.Empty, loc)
 
       /*
        * Constraint expression.

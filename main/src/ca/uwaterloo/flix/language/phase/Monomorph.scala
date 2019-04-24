@@ -451,13 +451,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
 
-        case Expression.Spawn(exp, tpe, eff, loc) =>
+        case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Spawn(e, subst0(tpe), eff, loc)
+          Expression.ProcessSpawn(e, subst0(tpe), eff, loc)
 
-        case Expression.Sleep(exp, tpe, eff, loc) =>
+        case Expression.ProcessSleep(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Sleep(e, subst0(tpe), eff, loc)
+          Expression.ProcessSleep(e, subst0(tpe), eff, loc)
+
+        case Expression.ProcessPanic(msg, tpe, eff, loc) =>
+          Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
           val Constraint(cparams0, head0, body0, loc) = c0
