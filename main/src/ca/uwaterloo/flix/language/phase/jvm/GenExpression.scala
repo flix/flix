@@ -1133,10 +1133,6 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.UserError(_, loc) =>
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
-
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowHoleError(visitor, sym.toString, loc)

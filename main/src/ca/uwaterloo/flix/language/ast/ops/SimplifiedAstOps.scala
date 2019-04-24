@@ -510,7 +510,6 @@ object SimplifiedAstOps {
       //
       // Error Expressions.
       //
-      case Expression.UserError(tpe, loc) => checkType(tpe)
       case Expression.HoleError(sym, tpe, loc) => checkType(tpe)
       case Expression.MatchError(tpe, loc) => checkType(tpe)
       case Expression.SwitchError(tpe, loc) => checkType(tpe)

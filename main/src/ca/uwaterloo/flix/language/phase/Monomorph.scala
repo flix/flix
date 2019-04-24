@@ -164,7 +164,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeEffSym(sym, subst0(tpe))
           Expression.Eff(newSym, subst0(tpe), eff, loc)
 
-        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc)
+        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
         case Expression.True(loc) => Expression.True(loc)
@@ -485,8 +485,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.FixpointEntails(e1, e2, tpe, eff, loc)
-
-        case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }
 
       /**

@@ -773,7 +773,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
 
-        case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
+        case NamedAst.Expression.UserError(tvar, loc) =>
+          ResolvedAst.Expression.Hole(Symbol.freshHoleSym(loc), tvar, loc).toSuccess
       }
 
       /**

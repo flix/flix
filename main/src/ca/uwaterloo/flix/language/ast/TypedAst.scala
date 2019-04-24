@@ -253,8 +253,6 @@ object TypedAst {
 
     case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class UserError(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-
   }
 
   sealed trait Pattern {

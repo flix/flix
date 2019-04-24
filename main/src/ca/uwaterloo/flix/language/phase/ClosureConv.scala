@@ -346,7 +346,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.FixpointEntails(e1, e2, tpe, loc)
 
-    case Expression.UserError(tpe, loc) => exp0
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
     case Expression.SwitchError(tpe, loc) => exp0
@@ -520,7 +519,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(pred.exp) ++ freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -862,7 +860,6 @@ object ClosureConv extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.UserError(tpe, loc) => e
       case Expression.HoleError(sym, tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e

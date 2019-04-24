@@ -465,10 +465,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointEntails(e1, e2, t, loc)
 
-      case SimplifiedAst.Expression.UserError(tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expression.UserError(t, loc)
-
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.HoleError(sym, t, loc)

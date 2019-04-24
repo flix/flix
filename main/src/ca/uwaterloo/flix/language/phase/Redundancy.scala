@@ -517,9 +517,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val used1 = visitExp(exp1, env0)
       val used2 = visitExp(exp2, env0)
       used1 ++ used2
-
-    case Expression.UserError(_, _, _) =>
-      Used.empty
   }
 
   /**
@@ -969,6 +966,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Fix the repl to work with the redundancy thingy.
 
   // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select, (3) existential/universal.
+
+  // TODO: Refactor Spawn into ProcessSpawn, add ProcessPanic, and ProcessSleep
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes

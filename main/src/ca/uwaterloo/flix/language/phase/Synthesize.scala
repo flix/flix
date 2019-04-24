@@ -344,9 +344,6 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.UserError(tpe, eff, loc) =>
-        Expression.UserError(tpe, eff, loc)
-
     }
 
     /**

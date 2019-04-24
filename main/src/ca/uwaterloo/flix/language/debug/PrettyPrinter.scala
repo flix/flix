@@ -464,7 +464,6 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
-        case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
         case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")

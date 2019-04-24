@@ -891,11 +891,6 @@ object SymbolicEvaluator {
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
-        * User Error.
-        */
-      case Expression.UserError(tpe, loc) => throw new NotImplementedError(loc.reified)
-
-      /**
         * Hole Error.
         */
       case Expression.HoleError(sym, tpe, loc) => throw new HoleError(sym.toString, loc.reified)

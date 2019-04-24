@@ -219,8 +219,6 @@ object ResolvedAst {
 
     case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
   }
 
   sealed trait Pattern {

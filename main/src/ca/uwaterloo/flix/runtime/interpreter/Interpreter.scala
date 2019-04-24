@@ -338,8 +338,6 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
-    case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
-
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)
 
     case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)

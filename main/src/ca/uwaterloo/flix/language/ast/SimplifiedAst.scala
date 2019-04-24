@@ -252,8 +252,6 @@ object SimplifiedAst {
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

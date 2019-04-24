@@ -252,7 +252,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0

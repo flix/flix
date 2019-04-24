@@ -411,8 +411,6 @@ object ControlFlowAnalysis {
         val v2 = visitExp(exp2, env0, lenv0)
         AbstractValue.AnyPrimitive
 
-      case Expression.UserError(tpe, loc) => AbstractValue.Bot
-
       case Expression.HoleError(sym, tpe, loc) => AbstractValue.Bot
 
       case Expression.MatchError(tpe, loc) => AbstractValue.Bot

@@ -665,7 +665,6 @@ object JvmOps {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
@@ -950,7 +949,6 @@ object JvmOps {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
       case Expression.MatchError(tpe, loc) => Set(tpe)
       case Expression.SwitchError(tpe, loc) => Set(tpe)

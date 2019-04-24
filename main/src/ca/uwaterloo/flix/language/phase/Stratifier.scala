@@ -365,9 +365,6 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, loc)
       }
 
-    case Expression.UserError(tpe, loc) =>
-      Expression.UserError(tpe, loc).toSuccess
-
     case Expression.HoleError(sym, tpe, loc) =>
       Expression.HoleError(sym, tpe, loc).toSuccess
 

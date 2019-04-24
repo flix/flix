@@ -1289,11 +1289,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
         } yield resultType
 
-      /*
-       * User Error expression.
-       */
-      case ResolvedAst.Expression.UserError(tvar, loc) => liftM(tvar)
-
     }
 
     visitExp(exp0)
@@ -1785,12 +1780,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), Eff.Empty, loc)
-
-      /*
-       * User Error expression.
-       */
-      case ResolvedAst.Expression.UserError(tvar, loc) =>
-        TypedAst.Expression.UserError(subst0(tvar), Eff.Empty, loc)
     }
 
     /**

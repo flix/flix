@@ -576,9 +576,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.UserError(tpe, eff, loc) =>
-        SimplifiedAst.Expression.UserError(tpe, loc)
-
       case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
     }
@@ -1270,7 +1267,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e

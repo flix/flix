@@ -368,8 +368,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
           } yield tast
-
-        case Expression.UserError(_, _, _) => tast.toSuccess
       }
     }
 

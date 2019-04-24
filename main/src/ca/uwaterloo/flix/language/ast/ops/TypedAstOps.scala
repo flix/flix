@@ -229,8 +229,6 @@ object TypedAstOps {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.UserError(tpe, eff, loc) => Map.empty
     }
 
     /**
