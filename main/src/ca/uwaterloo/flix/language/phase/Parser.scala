@@ -586,7 +586,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve |
         FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
-        UnaryLambda | QName | Tag | SName | Hole | UserError
+        UnaryLambda | QName | Tag | SName | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -830,8 +830,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
     }
 
-    def Hole: Rule1[ParsedAst.Expression.Hole] = rule {
-      SP ~ atomic("?") ~ Names.Hole ~ SP ~> ParsedAst.Expression.Hole
+    def Hole: Rule1[ParsedAst.Expression.Hole] = {
+      def AnonymousHole: Rule1[ParsedAst.Expression.Hole] = rule {
+        SP ~ atomic("???") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, None, sp2))
+      }
+
+      def NamedHole: Rule1[ParsedAst.Expression.Hole] = rule {
+        SP ~ atomic("?") ~ Names.Hole ~ SP ~> ((sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, Some(name), sp2))
+      }
+
+      rule {
+        AnonymousHole | NamedHole
+      }
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -857,10 +867,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
-    }
-
-    def UserError: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
     }
 
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {

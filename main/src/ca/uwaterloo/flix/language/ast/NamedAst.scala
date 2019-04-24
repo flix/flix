@@ -78,7 +78,7 @@ object NamedAst {
 
     case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Hole(name: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Unit(loc: SourceLocation) extends NamedAst.Expression
 
@@ -205,9 +205,6 @@ object NamedAst {
     case class FixpointProject(pred: NamedAst.PredicateWithParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
   }
 
   sealed trait Pattern {

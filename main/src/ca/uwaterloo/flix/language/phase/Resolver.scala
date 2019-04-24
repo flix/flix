@@ -387,8 +387,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             case LookupResult.Sig(sym) => ResolvedAst.Expression.Sig(sym, tvar, loc)
           }
 
-        case NamedAst.Expression.Hole(name, tpe, loc) =>
-          val sym = Symbol.mkHoleSym(ns0, name)
+        case NamedAst.Expression.Hole(nameOpt, tpe, loc) =>
+          val sym = nameOpt match {
+            case None => Symbol.freshHoleSym(loc)
+            case Some(name) => Symbol.mkHoleSym(ns0, name)
+          }
           ResolvedAst.Expression.Hole(sym, tpe, loc).toSuccess
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
@@ -772,9 +775,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
-
-        case NamedAst.Expression.UserError(tvar, loc) =>
-          ResolvedAst.Expression.Hole(Symbol.freshHoleSym(loc), tvar, loc).toSuccess
       }
 
       /**

@@ -429,10 +429,10 @@ object ParsedAst {
       * Hole Expression.
       *
       * @param sp1   the position of the first character in the expression
-      * @param ident the name of the hole.
+      * @param ident the optional name of the hole.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Hole(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
@@ -1012,14 +1012,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * User Error Expression (an expression that immediately aborts execution).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

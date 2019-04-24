@@ -70,7 +70,7 @@ object WeededAst {
 
     case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Hole(name: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+    case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 
@@ -197,9 +197,6 @@ object WeededAst {
     case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class UserError(loc: SourceLocation) extends WeededAst.Expression
-
   }
 
   sealed trait Pattern {
