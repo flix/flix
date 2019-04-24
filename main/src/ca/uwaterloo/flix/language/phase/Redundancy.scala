@@ -967,6 +967,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  // TODO: Might be better to do the opposite: Parse an exression into a pattern. If succesfull then check
+  // the non context-free variables to see if there is a problem or not.
+
   private def checkExp(r: RedundantPat, e0: TypedAst.Expression): Boolean = r match {
     case RedundantPat.Wildcard => true
     case RedundantPat.Identity => e0 match {
