@@ -610,7 +610,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
-      // check if the variable is shadowing.
+      // check for variable shadowing.
       env0.get(ident.name) match {
         case None =>
           // make a fresh variable symbol for the local variable.
@@ -779,17 +779,29 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Existential(param, exp, loc) =>
-      val p = visitFormalParam(param, tenv0)
-      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-        case e =>
-          NamedAst.Expression.Existential(p, e, loc)
+      // check for variable shadowing.
+      env0.get(param.ident.name) match {
+        case None =>
+          val p = visitFormalParam(param, tenv0)
+          visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
+            case e =>
+              NamedAst.Expression.Existential(p, e, loc)
+          }
+        case Some(otherSym) =>
+          NameError.ShadowedVar(param.ident.name, param.ident.loc, otherSym.loc).toFailure
       }
 
     case WeededAst.Expression.Universal(param, exp, loc) =>
-      val p = visitFormalParam(param, tenv0)
-      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-        case e =>
-          NamedAst.Expression.Universal(p, e, loc)
+      // check for variable shadowing.
+      env0.get(param.ident.name) match {
+        case None =>
+          val p = visitFormalParam(param, tenv0)
+          visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
+            case e =>
+              NamedAst.Expression.Universal(p, e, loc)
+          }
+        case Some(otherSym) =>
+          NameError.ShadowedVar(param.ident.name, param.ident.loc, otherSym.loc).toFailure
       }
 
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp, env0, tenv0) map {

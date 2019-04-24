@@ -965,7 +965,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Introduce an annotation or modifier: isEntryPoint?
 
-  // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select, (3) existential/universal.
+  // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select
 
   // TODO: Refactor Spawn into ProcessSpawn, add ProcessPanic, and ProcessSleep
 
@@ -980,6 +980,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // - We disallow linear patterns.
   // - We treat holes (and ???) as using all local variables (but not anything else?)
   // - We implement the checker using a fork-join style monoid thingy.
+  // - If we allow shadowing then that might lead to "mysterious" unused variable warnings.
 
   // Questions:
   // - When is an enum used? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.

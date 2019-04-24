@@ -282,6 +282,30 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.ShadowedVar](result)
   }
 
+  test("ShadowedVar.Existential.01") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let x = 123;
+        |    \exists (x: Int). x == 0
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Universal.01") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let x = 123;
+        |    \forall (x: Int). x == 0
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
   test("UndefinedNativeClass.01") {
     val input = "def f(): Int = native field java.lang.Foo"
     val result = new Flix().addStr(input).compile()
