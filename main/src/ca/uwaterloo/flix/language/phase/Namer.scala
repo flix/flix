@@ -574,11 +574,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
       // check if the formal parameter is shadowing.
-      env0.get(fparam0.ident.name) match {
+      env0.get(fparam0.ident.name).filterNot(_.isWild()) match {
         case None =>
           // check if the formal parameter is a wildcard.
           val fparam = visitFormalParam(fparam0, tenv0)
-          val env1 = if (fparam0.ident.isWild()) env0 else env0 + (fparam.sym.text -> fparam.sym)
+          val env1 = env0 + (fparam.sym.text -> fparam.sym)
           visitExp(exp, env1, tenv0) map {
             case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
           }
@@ -611,7 +611,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
       // check for variable shadowing.
-      env0.get(ident.name) match {
+      env0.get(ident.name).filterNot(_.isWild()) match {
         case None =>
           // make a fresh variable symbol for the local variable.
           val sym = Symbol.freshVarSym(ident)
@@ -780,7 +780,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Existential(param, exp, loc) =>
       // check for variable shadowing.
-      env0.get(param.ident.name) match {
+      env0.get(param.ident.name).filterNot(_.isWild()) match {
         case None =>
           val p = visitFormalParam(param, tenv0)
           visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
@@ -793,7 +793,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Universal(param, exp, loc) =>
       // check for variable shadowing.
-      env0.get(param.ident.name) match {
+      env0.get(param.ident.name).filterNot(_.isWild()) match {
         case None =>
           val p = visitFormalParam(param, tenv0)
           visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
@@ -1280,7 +1280,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitFormalParam(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.FormalParam = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
-      val freshSym = Symbol.freshVarSym(ident)
+      val freshSym = if (ident.name == "_")
+        Symbol.freshVarSym("_")
+      else
+        Symbol.freshVarSym(ident)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpe = optType match {

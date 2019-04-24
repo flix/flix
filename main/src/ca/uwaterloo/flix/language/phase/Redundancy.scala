@@ -245,7 +245,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Wild(_, _, _) => Used.empty
 
-    case Expression.Var(sym, _, _, _) => Used.of(sym)
+    case Expression.Var(sym, _, _, loc) =>
+      if (!sym.isWild())
+        Used.of(sym)
+      else
+        Used.empty + HiddenVarSym(sym, loc)
 
     case Expression.Def(sym, _, _, _) => Used.of(sym)
 
@@ -958,10 +962,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // But isEmpty(r.l) and nonEmpty(r.l) cannot be true at the same time.
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
-
-  // TODO: Should we be allowed to *use* _score names? Probably not. How to enforce?
-
-  // TODO: Ensure that we cannot refer to _ variables.
 
   // TODO: Introduce an annotation or modifier: isEntryPoint?
 

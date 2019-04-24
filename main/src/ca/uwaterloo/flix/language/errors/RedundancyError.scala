@@ -32,6 +32,30 @@ trait RedundancyError extends CompilationError {
 object RedundancyError {
 
   /**
+    * An error raised to indicate that the variable symbol `sym` is hidden.
+    *
+    * @param sym the hidden variable symbol.
+    * @param loc the source location of the use.
+    */
+  case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
+    val source: Source = sym.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Hidden variable symbol '" << Red(sym.text) << "'. The symbol is marked as unused." << NewLine
+      vt << NewLine
+      vt << Code(loc, "hidden symbol.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Don't use the variable symbol." << NewLine
+      vt << "  (2)  Rename the underscore prefix from the variable symbol name." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the def with the symbol `sym` is not used.
     *
     * @param sym the unused enum symbol.
@@ -48,7 +72,7 @@ object RedundancyError {
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the definition." << NewLine
-      vt << "  (1)  Remove the definition." << NewLine
+      vt << "  (2)  Remove the definition." << NewLine
       vt << "  (3)  Mark the definition as public." << NewLine
       vt << "  (4)  Prefix the definition name with an underscore." << NewLine
       vt << NewLine
@@ -73,7 +97,7 @@ object RedundancyError {
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the enum." << NewLine
-      vt << "  (1)  Remove the enum." << NewLine
+      vt << "  (2)  Remove the enum." << NewLine
       vt << "  (3)  Mark the enum as public." << NewLine
       vt << "  (4)  Prefix the enum name with an underscore." << NewLine
       vt << NewLine
@@ -147,7 +171,7 @@ object RedundancyError {
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the relation." << NewLine
-      vt << "  (1)  Remove the relation." << NewLine
+      vt << "  (2)  Remove the relation." << NewLine
       vt << "  (3)  Mark the relation as public." << NewLine
       vt << "  (4)  Prefix the relation name with an underscore." << NewLine
       vt << NewLine
@@ -172,7 +196,7 @@ object RedundancyError {
       vt << "Possible fixes:" << NewLine
       vt << NewLine
       vt << "  (1)  Use the lattice." << NewLine
-      vt << "  (1)  Remove the lattice." << NewLine
+      vt << "  (2)  Remove the lattice." << NewLine
       vt << "  (3)  Mark the lattice as public." << NewLine
       vt << "  (4)  Prefix the lattice name with an underscore." << NewLine
       vt << NewLine

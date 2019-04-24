@@ -9,14 +9,75 @@ class TestRedundancy extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
-  test("UnusedDefSym.01") {
+  test("HiddenVarSym.Let.01") {
     val input =
       s"""
-         |def f(): Int = 123
+         |def main(): Int =
+         |    let _x = 123;
+         |    _x
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedDefSym](result)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.Lambda.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    let f = _x -> _x;
+         |    f(123)
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.Match.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    match (123, 456) with {
+         |        case (_x, _y) => _x + _y
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.Select.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    let c = chan Int 1;
+         |    select {
+         |        case _x <- c => _x
+         |    }
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.Existential.01") {
+    val input =
+      s"""
+         |def main(): Bool = \\exists (_x: Int). _x == 123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.HiddenVarSym](result)
+  }
+
+  test("HiddenVarSym.Universal.01") {
+    val input =
+      s"""
+         |def main(): Bool = \\forall (_x: Int). _x == 123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.HiddenVarSym](result)
   }
 
   test("UnusedEnumSym.01") {
