@@ -65,9 +65,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // Computes all used symbols.
     val usedAll = usedLats ++ usedDefs
 
-    // TODO: We cannot just concatenate Used like this, since it will duplicate errors.
-    //  Then we need to change errors to a set, but then we need equality.
-
     // Check for unused symbols.
     val usedRes =
       checkUnusedDefs(usedAll)(root) ++
@@ -114,7 +111,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedAll = (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
 
     // Check if the used symbols contains holes. If so, strip out all error messages.
-    if (usedAll.holeSyms.isEmpty) usedAll else usedAll.copy(errors = Stream.empty)
+    if (usedAll.holeSyms.isEmpty) usedAll else usedAll.copy(errors = Set.empty)
   }
 
   /**
@@ -783,7 +780,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an object where no symbol is marked as used.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Stream.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -820,7 +817,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
                   predSyms: Set[Symbol.PredSym],
                   holeSyms: Set[Symbol.HoleSym],
                   varSyms: Set[Symbol.VarSym],
-                  errors: Stream[RedundancyError]) {
+                  errors: Set[RedundancyError]) {
     /**
       * Merges `this` and `that`.
       */
@@ -838,20 +835,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           this.predSyms ++ that.predSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
-          this.errors #::: that.errors
+          this.errors ++ that.errors
         )
       }
 
     /**
       * Adds the given redundancy error `e` to `this` object.
       */
-    def +(e: RedundancyError): Used = copy(errors = e #:: errors)
+    def +(e: RedundancyError): Used = copy(errors = errors + e)
 
     /**
       * Adds the given traversable of redundancy errors `es` to `this` object.
       */
     def ++(es: Traversable[RedundancyError]): Used =
-      if (es.isEmpty) this else copy(errors = es.toStream #::: errors)
+      if (es.isEmpty) this else copy(errors = errors ++ es)
 
     /**
       * Marks the given variable symbol `sym` as used.
@@ -867,7 +864,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns Successful(a) unless `this` contains errors.
       */
-    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors)
+    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.toStream)
   }
 
   /**
@@ -969,7 +966,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select
 
-  // TODO: Refactor Spawn into ProcessSpawn, add ProcessPanic, and ProcessSleep
+  // TODO: UselessPatternMatch relies on equality of patterns.
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
