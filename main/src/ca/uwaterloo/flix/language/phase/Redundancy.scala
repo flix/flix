@@ -65,6 +65,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // Computes all used symbols.
     val usedAll = usedLats ++ usedDefs
 
+    // TODO: We cannot just concatenate Used like this, since it will duplicate errors.
+    //  Then we need to change errors to a set, but then we need equality.
+
     // Check for unused symbols.
     val usedRes =
       checkUnusedDefs(usedAll)(root) ++
@@ -611,12 +614,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
-  private def dead(decl: Def, used: Used): Boolean =
+  private def dead(decl: Def, used: Used)(implicit root: Root): Boolean =
     !decl.ann.isTest &&
       !decl.mod.isPublic &&
       !decl.sym.name.equals("main") &&
       !decl.sym.name.startsWith("_") &&
-      !used.defSyms.contains(decl.sym)
+      !used.defSyms.contains(decl.sym) &&
+      !root.reachable.contains(decl.sym)
 
   /**
     * Returns `true` if the given relation `decl` is unused according to `used`.
@@ -957,13 +961,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Should we be allowed to *use* _score names? Probably not. How to enforce?
 
-  // TODO: Rewrite UserError to be a hole? or a panic? or remove it?
-
   // TODO: Ensure that we cannot refer to _ variables.
 
   // TODO: Introduce an annotation or modifier: isEntryPoint?
-
-  // TODO: Fix the repl to work with the redundancy thingy.
 
   // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select, (3) existential/universal.
 

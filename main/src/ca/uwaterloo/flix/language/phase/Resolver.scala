@@ -84,9 +84,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           // Introduce a synthetic definition for the expression.
           val doc = Ast.Doc(Nil, SourceLocation.Unknown)
           val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers.Empty
+          val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
           val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Eff.Empty
