@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
+import ca.uwaterloo.flix.language.phase.Redundancy.RedundantPat.Identity
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -106,6 +107,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.exp, Env.empty)
+
+    // TODO: Check the expression for redundant patterns:
+    val flaf = checkExp(RedundantPatternsCatalog.Id, defn.exp)
+    if (flaf) {
+      println("Found redundancy!")
+    }
 
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
@@ -934,6 +941,46 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODOs
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Compile to automaton or similar?
+
+  sealed trait RedundantPat
+
+  object RedundantPat {
+
+    case object Wildcard extends RedundantPat
+
+    case object Identity extends RedundantPat
+
+    case class Def(sym: Symbol.VarSym) extends RedundantPat
+
+    case class Apply(pat1: RedundantPat, pat2: RedundantPat) extends RedundantPat
+
+  }
+
+  object RedundantPatternsCatalog {
+
+    import RedundantPat._
+
+    val Id: RedundantPat = Identity
+
+    val ApplyId: RedundantPat = Apply(Identity, Wildcard)
+
+  }
+
+  private def checkExp(r: RedundantPat, e0: TypedAst.Expression): Boolean = r match {
+    case RedundantPat.Wildcard => true
+    case RedundantPat.Identity => e0 match {
+      case Expression.Lambda(fparam, exp, _, _, _) =>
+        exp match {
+          case Expression.Var(sym, _, _, _) => fparam.sym == sym
+          case _ => false
+        }
+      case _ => false
+    }
+    case RedundantPat.Def(sym) => false
+    case RedundantPat.Apply(pat1, pat2) => false
+  }
+
   // TODO: Should we also consider tricky cases such as:
   // match s with {
   // case Circle(Red) =>
@@ -961,6 +1008,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // But isEmpty(r.l) and nonEmpty(r.l) cannot be true at the same time.
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
+
+  // TODO: How would we find e.g. List.map(x -> x, xs)?
 
   // TODO: Introduce an annotation or modifier: isEntryPoint?
 
