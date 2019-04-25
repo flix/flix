@@ -298,7 +298,7 @@ class Flix {
       Console.println(emojiPart + phasePart + timePart)
 
       // Print information about each subphase.
-      for ((subphase, e) <- currentPhase.subphases) {
+      for ((subphase, e) <- currentPhase.subphases.reverse) {
         val d = new Duration(e)
         val emojiPart = "    "
         val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")
