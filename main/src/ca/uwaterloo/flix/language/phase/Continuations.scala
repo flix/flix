@@ -38,7 +38,6 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val newDefs2: Map[Symbol.DefnSym, Def] = root.defs map {
       case (sym, defn) => defSymMap(sym)._1 -> defToCPS(defn, defSymMap)
     }
-
     root.copy(defs = newDefs1 ++ newDefs2).toSuccess
   }
 
@@ -64,7 +63,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val defnPrime = Expression.Def(defnPrimeName, Type.mkUncurriedArrow(List(fparam.tpe, Type.mkArrow(getReturnType(defn.tpe), getReturnType(defn.tpe))), getReturnType(defn.tpe)), defn.eff, defn.loc)
 
     // the new body of f is to call f' with the arguments of f and a continuation (which is id)
-    val body = Expression.ApplyWithKont(defnPrime, arg, id, defnPrime.tpe, defn.eff, defn.loc)
+    val body = Expression.ApplyWithKont(defnPrime, arg, id, getReturnType(defnPrime.tpe), defn.eff, defn.loc)
 
     defn.copy(exp = body)
   }
