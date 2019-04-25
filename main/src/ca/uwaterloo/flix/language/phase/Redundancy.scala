@@ -984,6 +984,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case RedundantPat.Apply(pat1, pat2) => false
   }
 
+  // TODO: Use cases to find:
+  // TODO:  - List.map(x -> x, _)
+  // TODO:  - List.map(_, Nil)
+  // TODO:  - List.length(Nil)
+
   // TODO: Should we also consider tricky cases such as:
   // match s with {
   // case Circle(Red) =>
@@ -1000,9 +1005,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //        case _ => Square(Blu)
   //    }
 
-  // TODO: Report an error if all arguments are known to a function call that is pure. but a function could be helping by constructing some large structure.
-  // TODO: Maybe we need a measure on physical code size?
-
   // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
 
   // TODO: Define a notion of contradiction:
@@ -1012,15 +1014,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Question is how to deal with the grammar. And how to represent these things.
   // TODO: How to deal with conjunctions and disjunctions?
 
-  // TODO: How would we find e.g. List.map(x -> x, xs)?
+  // TODO: We want to find computations that are always true or always false.
 
   // TODO: Introduce an annotation or modifier: isEntryPoint?
 
-  // TODO: Refactor namer to eliminate all forms of shadowing: (1) patterns, (2) select
-
-  // TODO: UselessPatternMatch relies on equality of patterns.
+  // TODO: Refactor namer to eliminate all forms of shadowing:  (1) select
 
   // TODO: Why not move shadowing checks in here?
+
+  // TODO: UselessPatternMatch relies on equality of patterns.
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
