@@ -61,7 +61,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // create f' as Def
     val (defnPrimeName, genericTypeParam) = defSymMap(defn.sym)
-    val defnPrime = Expression.Def(defnPrimeName, Type.mkUncurriedArrow(List(fparam.tpe, Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)), genericTypeParam.tpe), defn.eff, defn.loc)
+    val defnPrime = Expression.Def(defnPrimeName, Type.mkUncurriedArrow(List(fparam.tpe, Type.mkArrow(getReturnType(defn.tpe), getReturnType(defn.tpe))), getReturnType(defn.tpe)), defn.eff, defn.loc)
 
     // the new body of f is to call f' with the arguments of f and a continuation (which is id)
     val body = Expression.ApplyWithKont(defnPrime, arg, id, defnPrime.tpe, defn.eff, defn.loc)
@@ -82,9 +82,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val kontVar = Expression.Var(kontSym, kontTpe, empEff(), defn.loc)
 
     // Body = visitExp(f.exp, k)
-    val defnTpe = Type.mkUncurriedArrow(List(defn.fparams.head.tpe, Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)), genericTypeParam.tpe)
+    val defnTpe = Type.mkUncurriedArrow(List(defn.fparams.head.tpe, kontTpe), genericTypeParam.tpe)
 
-    Type.mkUncurriedArrow(List(Type.Int32, Type.mkArrow(Type.Int32, Type.Int32)), Type.Int32)
     val body = visitExp(defn.exp, kontVar, kontTpe)
 
     defn.copy(exp = body, fparams = defn.fparams :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = defnTpe)
@@ -243,9 +242,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   private def mkLambda(sym: Symbol.VarSym, argType: Type, exp: Expression): Expression.Lambda = {
     val loc = exp.loc
     val fparam = FormalParam(sym, Modifiers.Empty, argType, loc)
-    val res = Expression.Lambda(fparam, exp, Type.mkArrow(argType, exp.tpe), empEff(), loc)
-    val e = "test"
-    res
+    Expression.Lambda(fparam, exp, Type.mkArrow(argType, exp.tpe), empEff(), loc)
   }
 
   /**
