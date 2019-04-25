@@ -214,6 +214,64 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.ShadowedVar](result)
   }
 
+  test("ShadowedVar.Match.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (x, _) => x
+        |    }
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (_, x) => x
+        |    }
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.03") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (u, v) => u + v
+        |        case (x, y) => x + y
+        |    }
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.04") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (u, v) => u + v
+        |        case (y, x) => x + y
+        |    }
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
   test("ShadowedVar.Def.01") {
     val input =
       """

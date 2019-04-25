@@ -637,9 +637,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           // extend the environment with every variable occurring in the pattern
           // and perform naming on the rule guard and body under the extended environment.
           val (p, env1) = visitPattern(pat)
-          val extendedEnv = env0 ++ env1
-          mapN(visitExp(guard, extendedEnv, tenv0), visitExp(body, extendedEnv, tenv0)) {
-            case (g, b) => NamedAst.MatchRule(p, g, b)
+
+          // check for shadowing.
+          env1.find(kv => env0.contains(kv._1)) match {
+            case None =>
+              // no shadowing.
+              val extendedEnv = env0 ++ env1
+              mapN(visitExp(guard, extendedEnv, tenv0), visitExp(body, extendedEnv, tenv0)) {
+                case (g, b) => NamedAst.MatchRule(p, g, b)
+              }
+            case Some((name, otherSym)) =>
+              // shadowed variable.
+              ShadowedVar(name, otherSym.loc, env0(name).loc).toFailure
           }
       }
       mapN(expVal, rulesVal) {

@@ -26,7 +26,7 @@ namespace Domain/Interval {
     ///
     /// Returns the canonical representation of the given interval `e`.
     ///
-    def norm(e: Interval): Interval = match e with {
+    def norm(x: Interval): Interval = match x with {
         case Bot            => Bot
         case Range(b, e)    => if (b <= e) Range(b, e) else Bot
         case Top            => Top
@@ -36,7 +36,7 @@ namespace Domain/Interval {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Interval, e2: Interval): Bool = match (e1, e2) with {
+    def leq(x: Interval, y: Interval): Bool = match (x, y) with {
         case (Bot, _)                       => true
         case (Range(b1, e1), Range(b2, e2)) => b2 <= b1 && e1 <= e2
         case (_, Top)                       => true
@@ -47,9 +47,9 @@ namespace Domain/Interval {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound
-    def lub(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Bot, x)                       => x
-        case (x, Bot)                       => x
+    def lub(x: Interval, y: Interval): Interval = match (x, y) with {
+        case (Bot, _)                       => y
+        case (_, Bot)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.min(b1, b2), BigInt.max(e1, e2)))
         case _                              => Top
     }
@@ -58,9 +58,9 @@ namespace Domain/Interval {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound
-    def glb(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
-        case (Top, x)                       => x
-        case (x, Top)                       => x
+    def glb(x: Interval, y: Interval): Interval = match (x, y) with {
+        case (Top, _)                       => y
+        case (_, Top)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
         case _                              => Bot
     }
@@ -75,7 +75,7 @@ namespace Domain/Interval {
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    pub def inc(e: Interval): Interval = match e with {
+    pub def inc(x: Interval): Interval = match x with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b + 1ii, e + 1ii))
         case Top            => Top
@@ -86,7 +86,7 @@ namespace Domain/Interval {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    pub def dec(e: Interval): Interval = match e with {
+    pub def dec(x: Interval): Interval = match x with {
         case Bot            => Bot
         case Range(b, e)    => norm(Range(b - 1ii, e - 1ii))
         case Top            => Top
@@ -97,7 +97,7 @@ namespace Domain/Interval {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2
-    pub def plus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+    pub def plus(x: Interval, y: Interval): Interval = match (x, y) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 + b2, e1 + e2))
@@ -109,7 +109,7 @@ namespace Domain/Interval {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    pub def minus(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+    pub def minus(x: Interval, y: Interval): Interval = match (x, y) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(b1 - e2, e1 - b2))
@@ -121,7 +121,7 @@ namespace Domain/Interval {
     ///
     #safe2((x, y) -> x * y)
     #strict2 /* undecidable #monotone2 */
-    pub def times(e1: Interval, e2: Interval): Interval = match (e1, e2) with {
+    pub def times(x: Interval, y: Interval): Interval = match (x, y) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (Range(b1, e1), Range(b2, e2)) =>
@@ -136,7 +136,7 @@ namespace Domain/Interval {
       */
     #safeBelnap2((x, y) -> x == y)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 #commutativeBelnap
-    pub def eq(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(x: Interval, y: Interval): Belnap.Belnap = match (x, y) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   => switch {
@@ -152,14 +152,14 @@ namespace Domain/Interval {
       */
     #safeBelnap2((x, y) -> x != y)
     // NB: Strictness and monotonicity follows from the properties of `not` and `eq`.
-    pub def neq(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(x: Interval, y: Interval): Belnap.Belnap = Belnap.not(eq(x, y))
 
     /**
       * Over-approximates `less than`.
       */
    #safeBelnap2((x, y) -> x < y)
    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2
-   pub def less(e1: Interval, e2: Interval): Belnap.Belnap = match (e1, e2) with {
+   pub def less(x: Interval, y: Interval): Belnap.Belnap = match (x, y) with {
         case (Bot, _)                                  => Belnap/Belnap.Bot
         case (_, Bot)                                  => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2))   =>
@@ -179,7 +179,7 @@ namespace Domain/Interval {
       */
     #safeBelnap2((x, y) -> x <= y)
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
-    pub def lessEqual(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(x: Interval, y: Interval): Belnap.Belnap = Belnap.or(x `less` y, x `eq` y)
 
     let Interval<> = (Bot, Top, leq, equ, lub, glb)
 

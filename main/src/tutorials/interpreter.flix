@@ -69,7 +69,7 @@ def evalAExp(e: AExp): Int = match e with {
 def evalBExp(e: BExp): Bool = match e with {
     case True           => true
     case False          => false
-    case Not(e)         => !evalBExp(e)
+    case Not(e1)        => !evalBExp(e1)
     case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
     case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
     case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
@@ -183,8 +183,8 @@ def compileAExp(e: AExp): List[Inst] = match e with {
 def compileBExp(e: BExp): List[Inst] = match e with {
     case True           => Push(1) :: Nil
     case False          => Push(0) :: Nil
-    case Not(e)         =>
-        let is = compileBExp(e);
+    case Not(e1)         =>
+        let is = compileBExp(e1);
             is ::: Neg :: Nil
     case Conj(e1, e2)   =>
         let is1 = compileBExp(e1);

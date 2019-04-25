@@ -67,7 +67,7 @@ def evalAExp(e: AExp): Int = match e with {
 def evalBExp(e: BExp): Bool = match e with {
     case True           => true
     case False          => false
-    case Not(e)         => !evalBExp(e)
+    case Not(e1)        => !evalBExp(e1)
     case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
     case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
     case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)

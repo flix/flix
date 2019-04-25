@@ -501,7 +501,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
          |pub def f(x: Option[Int]): Int =
          |    match x with {
-         |        case x => 123
+         |        case y => 123
          |    }
          |
        """.stripMargin
@@ -520,7 +520,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |pub def f(x: Option[Int]): Int =
          |    match x with {
          |        case None    => 123
-         |        case Some(x) => 456
+         |        case Some(y) => 456
          |    }
          |
        """.stripMargin
@@ -539,7 +539,7 @@ class TestRedundancy extends FunSuite with TestUtils {
          |pub def f(x: Option[(Int, Int)]): Int =
          |    match x with {
          |        case None         => 123
-         |        case Some((x, y)) => y
+         |        case Some((y, z)) => z
          |    }
          |
        """.stripMargin

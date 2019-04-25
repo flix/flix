@@ -33,14 +33,14 @@
     case _ => false
   }
   def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
-    case (SULattice.Bottom, e2) => e2
-    case (e1, SULattice.Bottom) => e1
+    case (SULattice.Bottom, _) => e2
+    case (_, SULattice.Bottom) => e1
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
     case _ => SULattice.Top
   }
   def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
-    case (SULattice.Top, e2) => e2
-    case (e1, SULattice.Top) => e1
+    case (SULattice.Top, _) => e2
+    case (_, SULattice.Top) => e1
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
     case _ => SULattice.Bottom
   }
