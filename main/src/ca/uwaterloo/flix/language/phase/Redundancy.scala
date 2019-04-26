@@ -1165,5 +1165,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // [Redundant Conditionals]: Detects branches that are always dead.
   // Implemented as a combination of (1) integer propagation, (2) set of known predicates, and (3) bounds on integers.
 
+  // Compile the theorems/bugpatterns to an automaton. Union could be fast.
 
 }
