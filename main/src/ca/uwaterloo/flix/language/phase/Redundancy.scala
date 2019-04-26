@@ -105,7 +105,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute the used symbols inside the definition.
-    val usedExp = visitExp(defn.exp, Env.empty)
+    val usedExp = visitExp(defn.exp, Env.of(defn.fparams.map(_.sym)))
 
     // TODO: Check the expression for redundant patterns:
     val flaf = checkExp(RedundantPatternsCatalog.Id, defn.exp)
@@ -261,11 +261,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
-      val us = visitExp(exp, env0)
-      if (dead(fparam.sym, us))
-        us - fparam.sym + UnusedFormalParam(fparam.sym)
+      // Extend the environment with the variable symbol.
+      val env1 = env0 + fparam.sym
+
+      // Visit the expression with the extended environment.
+      val innerUsed = visitExp(exp, env1)
+
+      // Check if the formal parameter is shadowing.
+      val shadowedVar = shadowing(fparam.sym, env0)
+
+      // Check if the lambda parameter symbol is dead.
+      if (dead(fparam.sym, innerUsed))
+        innerUsed ++ shadowedVar - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us - fparam.sym
+        innerUsed ++ shadowedVar - fparam.sym
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -281,20 +290,38 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       us1 ++ us2
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0)
-      val us2 = visitExp(exp2, env0)
-      if (dead(sym, us2))
-        (us1 ++ us2) - sym + UnusedVarSym(sym)
+      // Extend the environment with the variable symbol.
+      val env1 = env0 + sym
+
+      // Visit the two expressions under the extended environment.
+      val innerUsed1 = visitExp(exp1, env1)
+      val innerUsed2 = visitExp(exp2, env1)
+
+      // Check for shadowing.
+      val shadowedVar = shadowing(sym, env0)
+
+      // Check if the let-bound variable symbol is dead in exp2.
+      if (dead(sym, innerUsed2))
+        (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
-        (us1 ++ us2) - sym
+        (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0)
-      val us2 = visitExp(exp2, env0)
-      if (dead(sym, us1) || dead(sym, us2))
-        (us1 ++ us2) - sym + UnusedVarSym(sym)
+      // Extend the environment with the variable symbol.
+      val env1 = env0 + sym
+
+      // Visit the two expressions under the extended environment.
+      val innerUsed1 = visitExp(exp1, env1)
+      val innerUsed2 = visitExp(exp2, env1)
+
+      // Check for shadowing.
+      val shadowedVar = shadowing(sym, env0)
+
+      // Check if the let-bound variable symbol is dead in exp1 and exp2.
+      if (dead(sym, innerUsed1 ++ innerUsed2))
+        (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym + UnusedVarSym(sym)
       else
-        (us1 ++ us2) - sym
+        (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0)
@@ -311,28 +338,40 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         us1 ++ us2
 
     case Expression.Match(exp, rules, _, _, _) =>
+      // Visit the match expression.
       val usedMatch = visitExp(exp, env0)
+
+      // Determine if the match expression is a stable path.
+      val stablePath = getStablePath(exp)
+
+      // Visit each match rule.
       val usedRules = rules map {
         case MatchRule(pat, guard, body) =>
+          // Compute the free variables in the pattern.
           val fvs = freeVars(pat)
-          val stablePathOpt = getStablePath(exp)
 
-          val extendedEnv = stablePathOpt match {
-            case None => env0
-            case Some(stablePath) => env0 + (stablePath -> pat)
-          }
+          // Extend the environment with the free variables and the stable path.
+          val extendedEnv = env0 ++ fvs + (stablePath -> pat)
 
+          // Visit the guard and body.
           val usedGuard = visitExp(guard, extendedEnv)
           val usedBody = visitExp(body, extendedEnv)
           val usedGuardAndBody = usedGuard ++ usedBody
 
-          val uselessMatch = stablePathOpt match {
+          // Check for a useless pattern match.
+          val uselessMatch = stablePath match {
             case None => Used.empty // nop
             case Some(sp) => checkUselessPatternMatch(sp, env0, pat)
           }
 
+          // Check for unused variable symbols.
           val unusedVarSyms = fvs.filter(sym => dead(sym, usedGuardAndBody)).map(UnusedVarSym)
-          usedGuardAndBody -- fvs ++ unusedVarSyms ++ uselessMatch
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+
+          // Combine everything together.
+          usedGuardAndBody -- fvs ++ uselessMatch ++ unusedVarSyms ++ shadowedVarSyms
       }
 
       usedRules.foldLeft(usedMatch) {
@@ -432,18 +471,30 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       usedExp ++ usedBindings
 
     case Expression.Existential(fparam, exp, _, _) =>
-      val us = visitExp(exp, env0)
-      if (dead(fparam.sym, us))
-        us - fparam.sym + UnusedFormalParam(fparam.sym)
+      // Check for variable shadowing.
+      val us1 = shadowing(fparam.sym, env0)
+
+      // Visit the expression under an extended environment.
+      val us2 = visitExp(exp, env0 + fparam.sym)
+
+      // Check if the quantified variable is dead.
+      if (dead(fparam.sym, us2))
+        us1 ++ us2 - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us - fparam.sym
+        us1 ++ us2 - fparam.sym
 
     case Expression.Universal(fparam, exp, _, _) =>
-      val us = visitExp(exp, env0)
-      if (dead(fparam.sym, us))
-        us - fparam.sym + UnusedFormalParam(fparam.sym)
+      // Check for variable shadowing.
+      val us1 = shadowing(fparam.sym, env0)
+
+      // Visit the expression under an extended environment.
+      val us2 = visitExp(exp, env0 + fparam.sym)
+
+      // Check if the quantified variable is dead.
+      if (dead(fparam.sym, us2))
+        us1 ++ us2 - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us - fparam.sym
+        us1 ++ us2 - fparam.sym
 
     case Expression.Ascribe(exp, _, _, _) =>
       visitExp(exp, env0)
@@ -491,12 +542,21 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       val rulesUsed = rules map {
         case SelectChannelRule(sym, chan, body) =>
-          val chanUsed = visitExp(chan, env0)
-          val bodyUsed = visitExp(body, env0)
+          // Extend the environment with the symbol.
+          val env1 = env0 + sym
+
+          // Check for shadowing.
+          val shadowedVar = shadowing(sym, env0)
+
+          // Visit the channel and body expressions.
+          val chanUsed = visitExp(chan, env1)
+          val bodyUsed = visitExp(body, env1)
+
+          // Check if the variable symbol is dead in the body.
           if (dead(sym, bodyUsed))
-            (chanUsed ++ bodyUsed) - sym + UnusedVarSym(sym)
+            (chanUsed ++ bodyUsed ++ shadowedVar) - sym + UnusedVarSym(sym)
           else
-            (chanUsed ++ bodyUsed) - sym
+            (chanUsed ++ bodyUsed ++ shadowedVar) - sym
       }
 
       rulesUsed.foldLeft(defaultUsed) {
@@ -582,7 +642,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.of(pred.sym) ++ visitExp(pred.exp, env0) ++ visitExps(terms, env0)
   }
 
-
   /**
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
@@ -601,7 +660,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks whether the given stable path `sp0` under the environment `env0` is useless when matched against the pattern `pat0`.
     */
   private def checkUselessPatternMatch(sp0: StablePath, env0: Env, pat0: Pattern): Used = {
-    env0.env.get(sp0) match {
+    env0.pats.get(sp0) match {
       case None =>
         // The stable path is free. The pattern match is never useless.
         Used.empty
@@ -619,6 +678,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         }
     }
   }
+
+  /**
+    * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
+    */
+  private def shadowing(sym: Symbol.VarSym, env: Env): Used =
+    env.varSyms.get(sym.text) match {
+      case None =>
+        Used.empty
+      case Some(shadowingVar) =>
+        if (sym.isWild())
+          Used.empty
+        else
+          Used.empty + ShadowedVar(shadowingVar, sym)
+    }
 
   /**
     * Returns `true` if the given definition `decl` is unused according to `used`.
@@ -764,20 +837,40 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty environment.
       */
-    val empty: Env = Env(Map.empty)
+    val empty: Env = Env(Map.empty, Map.empty)
+
+    /**
+      * Returns an environment with the given variable symbols `varSyms` in it.
+      */
+    def of(varSyms: Traversable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
+      case (acc, sym) => acc + sym
+    }
   }
 
   /**
-    * Represents an environment mapping stable paths to patterns.
+    * Represents an environment.
     */
-  case class Env(env: Map[StablePath, Pattern]) {
+  case class Env(varSyms: Map[String, Symbol.VarSym], pats: Map[StablePath, Pattern]) {
+    /**
+      * Updates `this` environment with a new variable symbol `sym`.
+      */
+    def +(sym: Symbol.VarSym): Env = {
+      copy(varSyms = varSyms + (sym.text -> sym))
+    }
 
     /**
       * Updates `this` environment with a new pattern for the given stable path.
       */
-    def +(p: (StablePath, Pattern)): Env = {
-      val (stablePath, pattern) = p
-      copy(env = env + (stablePath -> pattern))
+    def +(p: (Option[StablePath], Pattern)): Env = p match {
+      case (None, _) => this
+      case (Some(sp), pat) => copy(pats = pats + (sp -> pat))
+    }
+
+    /**
+      * Updates `this` environment with a set of new variable symbols `varSyms`.
+      */
+    def ++(vs: Traversable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
+      case (acc, sym) => acc + sym
     }
   }
 
@@ -1015,11 +1108,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Why not move shadowing checks in here?
 
-  // TODO: UselessPatternMatch relies on equality of patterns.
-
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
   /////////////////////////////////////////////////////////////////////////////
+
+  // Papers:
+  // - Finding Application Errors and Security Flaws Using PQL: a Program Query Language
+  // - Using SCL to Specify and Check Design Intent in Source Code
+  // - A Framework for Source Code Search using Program Patterns
 
   // Notes for the paper:
   // - We disallow shadowing (because its confusing in the presence of pattern matching).

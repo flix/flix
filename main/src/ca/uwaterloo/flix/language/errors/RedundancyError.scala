@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -52,6 +52,28 @@ object RedundancyError {
       vt << "  (2)  Rename the underscore prefix from the variable symbol name." << NewLine
       vt << NewLine
       vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that a variable has been shadowed.
+    *
+    * @param sym1 the shadowed variable.
+    * @param sym2 the shadowing variable.
+    */
+  case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
+    val source: Source = sym1.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Shadowed variable: '" << Red(sym1.text) << "'." << NewLine
+      vt << NewLine
+      vt << Code(sym2.loc, "shadowing variable.") << NewLine
+      vt << NewLine
+      vt << "The shadowed variable was declared here:" << NewLine
+      vt << NewLine
+      vt << Code(sym1.loc, "shadowed variable.") << NewLine
+      vt << NewLine
     }
   }
 

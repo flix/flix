@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
-import ca.uwaterloo.flix.language.errors.NameError.ShadowedVar
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -573,16 +572,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
-      // check if the formal parameter is shadowing.
-      env0.get(fparam0.ident.name).filterNot(_.isWild()) match {
-        case None =>
-          // check if the formal parameter is a wildcard.
-          val fparam = visitFormalParam(fparam0, tenv0)
-          val env1 = env0 + (fparam.sym.text -> fparam.sym)
-          visitExp(exp, env1, tenv0) map {
-            case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
-          }
-        case Some(otherSym) => ShadowedVar(fparam0.ident.name, fparam0.ident.loc, otherSym.loc).toFailure
+      val fparam = visitFormalParam(fparam0, tenv0)
+      val env1 = env0 + (fparam.sym.text -> fparam.sym)
+      visitExp(exp, env1, tenv0) map {
+        case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, tenv0) map {
@@ -610,16 +603,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
-      // check for variable shadowing.
-      env0.get(ident.name).filterNot(_.isWild()) match {
-        case None =>
-          // make a fresh variable symbol for the local variable.
-          val sym = Symbol.freshVarSym(ident)
-          mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), tenv0)) {
-            case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
-          }
-        case Some(otherSym) =>
-          NameError.ShadowedVar(ident.name, ident.loc, otherSym.loc).toFailure
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident)
+      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), tenv0)) {
+        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) =>
@@ -637,18 +624,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           // extend the environment with every variable occurring in the pattern
           // and perform naming on the rule guard and body under the extended environment.
           val (p, env1) = visitPattern(pat)
-
-          // check for shadowing.
-          env1.find(kv => env0.contains(kv._1)) match {
-            case None =>
-              // no shadowing.
-              val extendedEnv = env0 ++ env1
-              mapN(visitExp(guard, extendedEnv, tenv0), visitExp(body, extendedEnv, tenv0)) {
-                case (g, b) => NamedAst.MatchRule(p, g, b)
-              }
-            case Some((name, otherSym)) =>
-              // shadowed variable.
-              ShadowedVar(name, otherSym.loc, env0(name).loc).toFailure
+          val extendedEnv = env0 ++ env1
+          mapN(visitExp(guard, extendedEnv, tenv0), visitExp(body, extendedEnv, tenv0)) {
+            case (g, b) => NamedAst.MatchRule(p, g, b)
           }
       }
       mapN(expVal, rulesVal) {
@@ -788,29 +766,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Existential(param, exp, loc) =>
-      // check for variable shadowing.
-      env0.get(param.ident.name).filterNot(_.isWild()) match {
-        case None =>
-          val p = visitFormalParam(param, tenv0)
-          visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-            case e =>
-              NamedAst.Expression.Existential(p, e, loc)
-          }
-        case Some(otherSym) =>
-          NameError.ShadowedVar(param.ident.name, param.ident.loc, otherSym.loc).toFailure
+      val p = visitFormalParam(param, tenv0)
+      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
+        case e =>
+          NamedAst.Expression.Existential(p, e, loc)
       }
 
     case WeededAst.Expression.Universal(param, exp, loc) =>
-      // check for variable shadowing.
-      env0.get(param.ident.name).filterNot(_.isWild()) match {
-        case None =>
-          val p = visitFormalParam(param, tenv0)
-          visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-            case e =>
-              NamedAst.Expression.Universal(p, e, loc)
-          }
-        case Some(otherSym) =>
-          NameError.ShadowedVar(param.ident.name, param.ident.loc, otherSym.loc).toFailure
+      val p = visitFormalParam(param, tenv0)
+      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
+        case e =>
+          NamedAst.Expression.Universal(p, e, loc)
       }
 
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp, env0, tenv0) map {
@@ -879,19 +845,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
         case WeededAst.SelectChannelRule(ident, chan, body) =>
-          // check for shadowing.
-          env0.get(ident.name) match {
-            case None =>
-              // no shadowing.
-              // make a fresh variable symbol for the local recursive variable.
-              val sym = Symbol.freshVarSym(ident)
-              val env1 = env0 + (ident.name -> sym)
-              mapN(visitExp(chan, env0, tenv0), visitExp(body, env1, tenv0)) {
-                case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
-              }
-            case Some(otherSym) =>
-              // variable shadowed.
-              ShadowedVar(ident.name, ident.loc, otherSym.loc).toFailure
+          // make a fresh variable symbol for the local recursive variable.
+          val sym = Symbol.freshVarSym(ident)
+          val env1 = env0 + (ident.name -> sym)
+          mapN(visitExp(chan, env0, tenv0), visitExp(body, env1, tenv0)) {
+            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
           }
       }
 

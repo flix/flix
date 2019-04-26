@@ -40,9 +40,10 @@ trait TestUtils {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
-      val actual = errors.head.getClass
-      if (expected != actual)
-        fail(s"Expected an error of type ${expected.getSimpleName}, but got ${actual.getSimpleName}.")
+      val actuals = errors.map(_.getClass)
+
+      if (!actuals.contains(expected))
+        fail(s"Expected an error of type ${expected.getSimpleName}, but found ${actuals.mkString(", ")}.")
   }
 
 }

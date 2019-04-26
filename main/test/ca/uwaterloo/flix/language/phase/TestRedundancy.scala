@@ -80,6 +80,215 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
+  test("ShadowedVar.Def.01") {
+    val input =
+      """
+        |def f(x: Int): Int =
+        |    let x = 123;
+        |    x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Def.02") {
+    val input =
+      """
+        |def f(x: Int): Int =
+        |    let y = 123;
+        |    let x = 456;
+        |    x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Let.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let x = 456;
+        |    x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Let.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let y = 456;
+        |    let x = 789;
+        |    x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Lambda.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let f = x -> x + 1;
+        |    f(x)
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Lambda.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = x -> {
+        |        let x = 456;
+        |        x + 1
+        |    };
+        |    f(123)
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Lambda.03") {
+    val input =
+      """
+        |def main(): Int =
+        |    let f = x -> {
+        |        let g = x -> 123;
+        |        g(456)
+        |    };
+        |    f(123)
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (x, _) => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (_, x) => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.03") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (u, v) => u + v
+        |        case (x, y) => x + y
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Match.04") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (u, v) => u + v
+        |        case (y, x) => x + y
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Existential.01") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let x = 123;
+        |    \exists (x: Int). x == 0
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Universal.01") {
+    val input =
+      """
+        |def main(): Bool =
+        |    let x = 123;
+        |    \forall (x: Int). x == 0
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Select.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (u, v) => u + v
+        |        case (y, x) => x + y
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Select.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let c = chan Int 1;
+        |    c <- 456;
+        |    select {
+        |        case y <- c => y
+        |        case x <- c => x
+        |    }
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.ShadowedVar](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""

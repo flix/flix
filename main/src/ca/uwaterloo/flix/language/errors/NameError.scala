@@ -179,29 +179,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that a variable has been shadowed.
-    *
-    * @param name the name of the variable.
-    * @param loc1 the location of the shadowing variable.
-    * @param loc2 the location of the shadowed variable.
-    */
-  case class ShadowedVar(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source: Source = loc1.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Shadowed variable: '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "shadowing variable.") << NewLine
-      vt << NewLine
-      vt << "The shadowed variable was declared here:" << NewLine
-      vt << NewLine
-      vt << Code(loc2, "shadowed variable.") << NewLine
-      vt << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
