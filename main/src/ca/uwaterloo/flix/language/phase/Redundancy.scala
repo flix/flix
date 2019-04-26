@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.language.phase.Redundancy.RedundantPat.Identity
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -706,7 +705,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Pattern.Tuple(elms1, _, _), Pattern.Tuple(elms2, _, _)) => unifyAll(elms1, elms2)
 
-    case _ => Err(RedundancyError.UselessPatternMatch(p1, p2))
+    case _ => Err(RedundancyError.UselessPatternMatch(p2.toString, p1.loc, p2.loc))
   }
 
   /**
@@ -1005,8 +1004,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   //        case _ => Square(Blu)
   //    }
 
-  // TODO: Code like f(x), and f(x) is redundant if both are pure... This is just common sub-expression elimination.
-
   // TODO: Define a notion of contradiction:
   // P(x) and Q(x) cannot be true at the same time.
   // E.g. x == 0 and x == 1, or isEmpty(xs) and nonEmpty(xs).
@@ -1015,8 +1012,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: How to deal with conjunctions and disjunctions?
 
   // TODO: We want to find computations that are always true or always false.
-
-  // TODO: Introduce an annotation or modifier: isEntryPoint?
 
   // TODO: Why not move shadowing checks in here?
 

@@ -279,23 +279,24 @@ object RedundancyError {
   /**
     * An error raised to indicate that a pattern match is useless, i.e. cannot match because of a prior pattern match.
     *
-    * @param pat1 the useless pattern.
-    * @param pat2 the previous pattern.
+    * @param pat  the useless pattern.
+    * @param loc1 the source location of the useless pattern.
+    * @param loc2 the source location of the previous pattern.
     */
-  case class UselessPatternMatch(pat1: TypedAst.Pattern, pat2: TypedAst.Pattern) extends RedundancyError {
-    val source: Source = pat2.loc.source
+  case class UselessPatternMatch(pat: String, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
+    val source: Source = loc2.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
       vt << ">> Useless pattern match due to prior pattern match." << NewLine
       vt << NewLine
-      vt << Code(pat1.loc, "useless match.") << NewLine
+      vt << Code(loc1, "useless match.") << NewLine
       vt << NewLine
-      vt << s"The match value is: '" << Cyan(pat2.toString) << "' which is incompatible with current pattern." << NewLine
+      vt << s"The match value is: '" << Cyan(pat) << "' which is incompatible with current pattern." << NewLine
       vt << NewLine
       vt << "The previous pattern match was here:" << NewLine
       vt << NewLine
-      vt << Code(pat2.loc, "previous match.") << NewLine
+      vt << Code(loc2, "previous match.") << NewLine
       vt << NewLine
       vt
     }
