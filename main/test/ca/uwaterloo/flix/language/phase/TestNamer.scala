@@ -272,6 +272,38 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.ShadowedVar](result)
   }
 
+  test("ShadowedVar.Select.01") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    match (456, 789) with {
+        |        case (u, v) => u + v
+        |        case (y, x) => x + y
+        |    }
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
+  test("ShadowedVar.Select.02") {
+    val input =
+      """
+        |def main(): Int =
+        |    let x = 123;
+        |    let c = chan Int 1;
+        |    c <- 456;
+        |    select {
+        |        case y <- c => y
+        |        case x <- c => x
+        |    }
+        |
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.ShadowedVar](result)
+  }
+
   test("ShadowedVar.Def.01") {
     val input =
       """

@@ -879,11 +879,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
         case WeededAst.SelectChannelRule(ident, chan, body) =>
-          // make a fresh variable symbol for the local recursive variable.
-          val sym = Symbol.freshVarSym(ident)
-          val env1 = env0 + (ident.name -> sym)
-          mapN(visitExp(chan, env0, tenv0), visitExp(body, env1, tenv0)) {
-            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
+          // check for shadowing.
+          env0.get(ident.name) match {
+            case None =>
+              // no shadowing.
+              // make a fresh variable symbol for the local recursive variable.
+              val sym = Symbol.freshVarSym(ident)
+              val env1 = env0 + (ident.name -> sym)
+              mapN(visitExp(chan, env0, tenv0), visitExp(body, env1, tenv0)) {
+                case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
+              }
+            case Some(otherSym) =>
+              // variable shadowed.
+              ShadowedVar(ident.name, ident.loc, otherSym.loc).toFailure
           }
       }
 

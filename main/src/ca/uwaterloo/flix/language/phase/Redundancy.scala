@@ -1018,8 +1018,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Introduce an annotation or modifier: isEntryPoint?
 
-  // TODO: Refactor namer to eliminate all forms of shadowing:  (1) select
-
   // TODO: Why not move shadowing checks in here?
 
   // TODO: UselessPatternMatch relies on equality of patterns.
