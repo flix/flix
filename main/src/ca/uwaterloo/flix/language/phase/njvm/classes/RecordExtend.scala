@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
@@ -11,7 +26,6 @@ import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 
 import scala.reflect.runtime.universe._
-
 
 class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
@@ -153,24 +167,7 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     * }
     */
   val toStringMethod: Method0[JString.type] =
-    cg.mkMethod0("toString",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
-    )
-
-  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
-    * Despite this in order to stay in line with our format we still store the capability to call the method
-    * The `hashCode` method is always the following:
-    *
-    * public int hashCode() throws Exception {
-    * throw new Exception("hashCode method shouldn't be called");
-    * }
-    */
-  val hashCodeMethod: Method0[PrimInt] =
-    cg.mkMethod0("hashCode",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
-    )
+    cg.mkMethod0("toString", _ => toStringNotImplemented)
 
   /**
     * Generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
@@ -183,16 +180,25 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     *
     */
   val equalsMethod: Method1[Object.type, PrimBool] =
-    cg.mkMethod1("equal",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
-    )
+    cg.mkMethod1("equal", _ => equalsNotImplemented)
+
+  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
+    * Despite this in order to stay in line with our format we still store the capability to call the method
+    * The `hashCode` method is always the following:
+    *
+    * public int hashCode() throws Exception {
+    * throw new Exception("hashCode method shouldn't be called");
+    * }
+    */
+  val hashCodeMethod: Method0[PrimInt] =
+    cg.mkMethod0("hashCode", _ => hashCodeNotImplemented)
 
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
     */
   private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
 
+  // TODO: Miguel: Why do we need a getter here?
   def getJvmClass: JvmClass = jvmClass
 
   def getClassMapping: (JvmName, MnemonicsClass) =

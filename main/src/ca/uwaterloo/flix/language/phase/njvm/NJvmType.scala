@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2019 Miguel Fialho
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
@@ -42,6 +41,8 @@ sealed trait NJvmType {
 }
 
 object NJvmType {
+
+  // TODO: Miguel: Ultimately all of these will be removed and replaced by a generic-typed Reference.
 
   /**
     * The Flix Context class.
