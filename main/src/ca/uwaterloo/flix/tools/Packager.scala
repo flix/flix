@@ -109,6 +109,40 @@ object Packager {
   }
 
   /**
+    * Type checks the source files for the given project path `p`.
+    */
+  def check(p: Path, o: Options)(implicit tc: TerminalContext): Unit = {
+    // Check that the path is a project path.
+    if (!isProjectPath(p))
+      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
+
+    // Configure a new Flix object.
+    val flix = new Flix()
+    flix.setOptions(o)
+
+    // Add all source files.
+    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+      if (sourceFile.getFileName.toString.endsWith(".flix")) {
+        flix.addPath(sourceFile)
+      }
+    }
+
+    // Add all test files.
+    for (testFile <- getAllFiles(getTestDirectory(p))) {
+      if (testFile.getFileName.toString.endsWith(".flix")) {
+        flix.addPath(testFile)
+      }
+    }
+
+    flix.check() match {
+      case Validation.Success(_) => ()
+      case Validation.Failure(errors) =>
+        implicit val _ = TerminalContext.AnsiTerminal
+        errors.foreach(e => println(e.message.fmt))
+    }
+  }
+
+  /**
     * Builds (compiles) the source files for the given project path `p`.
     */
   def build(p: Path, o: Options)(implicit tc: TerminalContext): Option[CompilationResult] = {

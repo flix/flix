@@ -86,6 +86,10 @@ object Main {
           Packager.init(cwd, options)
           System.exit(0)
 
+        case Command.Check =>
+          Packager.check(cwd, options)
+          System.exit(0)
+
         case Command.Build =>
           Packager.build(cwd, options)
           System.exit(0)
@@ -201,6 +205,8 @@ object Main {
 
     case object Init extends Command
 
+    case object Check extends Command
+
     case object Build extends Command
 
     case object BuildJar extends Command
@@ -228,6 +234,8 @@ object Main {
 
       // Command
       cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  create a new project in the current directory.")
+
+      cmd("check").action((_, c) => c.copy(command = Command.Check)).text("  type checks the current project.")
 
       cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  build the current project.")
 
