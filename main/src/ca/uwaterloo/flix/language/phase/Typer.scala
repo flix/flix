@@ -1073,10 +1073,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        * Native Method expression.
        */
       case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, loc) =>
-        // TODO: Check types.
-        for (
+        // TODO: Check argument types.
+        val returnType = getGenericFlixType(method.getGenericReturnType)
+        for {
           inferredArgumentTypes <- seqM(actuals.map(visitExp))
-        ) yield tvar
+          resultType <- unifyM(tvar, returnType, loc)
+        } yield resultType
 
       /*
      * New Channel expression.
@@ -2079,6 +2081,70 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val sym = Symbol.mkRelSym("True")
     val tpe = Type.Relation(sym, Nil, Kind.Star)
     Type.SchemaExtend(sym, tpe, Type.freshTypeVar())
+  }
+
+  /**
+    * Returns the Flix Type of a Java Type
+    */
+  private def getGenericFlixType(t: java.lang.reflect.Type)(implicit genSym: GenSym): Type = {
+    t match {
+      case arrayType: java.lang.reflect.GenericArrayType =>
+        val comp = arrayType.getGenericComponentType
+        val elmType = getGenericFlixType(comp)
+        Type.mkArray(elmType)
+      case c: Class[_] =>
+        getFlixType(c)
+      case _ =>
+        // TODO: Can we do better than this for Parametric Types?
+        Type.freshTypeVar()
+    }
+  }
+
+  /**
+    * Returns the Flix Type of a Java Class
+    */
+  private def getFlixType(c: Class[_]): Type = {
+    // handle primitive types first
+    if (c == java.lang.Boolean.TYPE) {
+      Type.Cst(TypeConstructor.Bool)
+    }
+    else if (c == java.lang.Byte.TYPE) {
+      Type.Cst(TypeConstructor.Int8)
+    }
+    else if (c == java.lang.Short.TYPE) {
+      Type.Cst(TypeConstructor.Int16)
+    }
+    else if (c == java.lang.Integer.TYPE) {
+      Type.Cst(TypeConstructor.Int32)
+    }
+    else if (c == java.lang.Long.TYPE) {
+      Type.Cst(TypeConstructor.Int64)
+    }
+    else if (c == java.lang.Character.TYPE) {
+      Type.Cst(TypeConstructor.Char)
+    }
+    else if (c == java.lang.Float.TYPE) {
+      Type.Cst(TypeConstructor.Float32)
+    }
+    else if (c == java.lang.Double.TYPE) {
+      Type.Cst(TypeConstructor.Float64)
+    }
+    else if (c == classOf[java.lang.String]) {
+      Type.Cst(TypeConstructor.Str)
+    }
+    else if (c == java.lang.Void.TYPE) {
+      Type.Cst(TypeConstructor.Unit)
+    }
+    // handle arrays of types
+    else if (c.isArray) {
+      val comp = c.getComponentType
+      val elmType = getFlixType(comp)
+      Type.mkArray(elmType)
+    }
+    // otherwise native type
+    else {
+      Type.Cst(TypeConstructor.Native(c))
+    }
   }
 
 }
