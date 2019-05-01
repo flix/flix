@@ -808,7 +808,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     compile(input, DefaultOptions).get
   }
 
-  test("UselessExpression.01") {
+  test("UselessExpression.Literal.01") {
     val input =
       s"""
          |def main(): Int = (); 123
@@ -818,7 +818,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.02") {
+  test("UselessExpression.Literal.02") {
     val input =
       s"""
          |def main(): Int = 123; 123
@@ -828,13 +828,98 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.03") {
+  test("UselessExpression.ArrayLit.01") {
     val input =
       s"""
          |def main(): Int =
-         |  let x = 123;
-         |  456;
-         |  x
+         |  [1, 2, 3];
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.ArrayNew.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  ["Hello World"; 10];
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.ArraySlice.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  let a = ["Hello World"; 10];
+         |  a[3..5];
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.VectorLit.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  [|1, 2, 3|];
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.VectorNew.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  [|"Hello World"; 10|];
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.VectorSlice.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  let a = [|"Hello World"; 10|];
+         |  a[|3..5|];
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.Ref.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  ref 123;
+         |  123
+         |
+       """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.NewChannel.01") {
+    val input =
+      s"""
+         |def main(): Int =
+         |  chan Int 0;
+         |  123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)

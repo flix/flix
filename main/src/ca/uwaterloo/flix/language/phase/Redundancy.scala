@@ -410,12 +410,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO: Need observable distinction?
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      Used.Impure ++ visitExps(elms, env0)
+      Used.Ephemeral ++ visitExps(elms, env0)
 
     case Expression.ArrayNew(elm, len, _, _, _) =>
       val us1 = visitExp(elm, env0)
       val us2 = visitExp(len, env0)
-      Used.Impure ++ us1 ++ us2
+      Used.Ephemeral ++ us1 ++ us2
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
       val us1 = visitExp(base, env0)
@@ -435,13 +435,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us1 = visitExp(base, env0)
       val us2 = visitExp(begin, env0)
       val us3 = visitExp(end, env0)
-      Used.Impure ++ us1 ++ us2 ++ us3
+      Used.Ephemeral ++ us1 ++ us2 ++ us3
 
     case Expression.VectorLit(elms, _, _, _) =>
-      Used.Impure ++ visitExps(elms, env0)
+      Used.Ephemeral ++ visitExps(elms, env0)
 
     case Expression.VectorNew(elm, _, _, _, _) =>
-      Used.Impure ++ visitExp(elm, env0)
+      Used.Ephemeral ++ visitExp(elm, env0)
 
     case Expression.VectorLoad(base, _, _, _, _) =>
       Used.Impure ++ visitExp(base, env0)
@@ -455,10 +455,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.Impure ++ visitExp(base, env0)
 
     case Expression.VectorSlice(base, _, _, _, _, _) =>
-      Used.Impure ++ visitExp(base, env0)
+      Used.Ephemeral ++ visitExp(base, env0)
 
     case Expression.Ref(exp, _, _, _) =>
-      Used.Impure ++ visitExp(exp, env0)
+      Used.Ephemeral ++ visitExp(exp, env0)
 
     case Expression.Deref(exp, _, _, _) =>
       Used.Impure ++ visitExp(exp, env0)
@@ -528,9 +528,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.NativeMethod(_, args, _, _, _) =>
       Used.Impure ++ visitExps(args, env0)
 
-    // TODO: Observerable?
     case Expression.NewChannel(exp, _, _, _) =>
-      Used.Impure ++ visitExp(exp, env0)
+      Used.Ephemeral ++ visitExp(exp, env0)
 
     case Expression.GetChannel(exp, _, _, _) =>
       Used.Impure ++ visitExp(exp, env0)
@@ -890,6 +889,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       * Represents something pure that has no uses.
       */
     val Pure: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Purity.Pure, Set.empty)
+
+    /**
+      * Represents something ephemeral that has no uses.
+      */
+    val Ephemeral: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Purity.Ephemeral, Set.empty)
 
     /**
       * Represents something impure that has no uses.
