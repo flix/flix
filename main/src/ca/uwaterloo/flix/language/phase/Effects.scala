@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol._
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.errors.EffectError
 import ca.uwaterloo.flix.util.Validation._
@@ -36,7 +37,200 @@ object Effects extends Phase[Root, Root] {
 
     // TODO: Need not only effects, but also whether a result must be used or not.
 
+
+
+//    root.defs.map {
+//      case (sym, defn) => visitDef(defn)(flix, root)
+//    }
+
     return root.toSuccess
 
   }
+
+  private def visitDef(defn: Def)(implicit flix: Flix, root: Root): Def = {
+    inferExp(defn.exp)
+    defn
+  }
+
+  private def inferExp(exp0: Expression)(implicit flix: Flix, root: Root): InferMonad[TypeAndEffect] = exp0 match {
+
+    case Expression.Unit(_) => point(freshEffVar())
+
+    case Expression.True(_) => point(freshEffVar())
+
+    case Expression.False(_) => point(freshEffVar())
+
+    case Expression.Char(lit, loc) => ???
+
+    case Expression.Float32(lit, loc) => ???
+
+    case Expression.Float64(lit, loc) => ???
+
+    case Expression.Int8(lit, loc) => ???
+
+    case Expression.Int16(lit, loc) => ???
+
+    case Expression.Int32(lit, loc) => ???
+
+    case Expression.Int64(lit, loc) => ???
+
+    case Expression.BigInt(lit, loc) => ???
+
+    case Expression.Str(lit, loc) => ???
+
+    case Expression.Wild(tpe, eff, loc) => ???
+
+    case Expression.Var(sym, tpe, eff, loc) => ???
+
+    case Expression.Def(sym, tpe, eff, loc) => ???
+
+    case Expression.Eff(sym, tpe, eff, loc) => ???
+
+    case Expression.Hole(sym, tpe, eff, loc) => ???
+
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) => ???
+
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.Unary(op, exp, tpe, eff, loc) => ???
+
+    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, effvar, _) =>
+      // TODO: Need effvar?
+      for {
+        eff1 <- inferExp(exp1)
+        eff2 <- inferExp(exp2)
+        eff3 <- inferExp(exp3)
+        effResult <- unify(eff1, eff2, eff3)
+      } yield effResult
+
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.Match(exp, rules, tpe, eff, loc) => ???
+
+    case Expression.Switch(rules, tpe, eff, loc) => ???
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
+
+    case Expression.Tuple(elms, tpe, eff, loc) => ???
+
+    case Expression.RecordEmpty(tpe, eff, loc) => ???
+
+    case Expression.RecordSelect(exp, label, tpe, eff, loc) => ???
+
+    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ???
+
+    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ???
+
+    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+
+    case Expression.ArrayLength(base, tpe, eff, loc) => ???
+
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
+
+    case Expression.VectorLit(elms, tpe, eff, loc) => ???
+
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+
+    case Expression.VectorLength(base, tpe, eff, loc) => ???
+
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+
+    case Expression.Ref(exp, tpe, eff, loc) => ???
+
+    case Expression.Deref(exp, tpe, eff, loc) => ???
+
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+
+    case Expression.Existential(fparam, exp, eff, loc) => ???
+
+    case Expression.Universal(fparam, exp, eff, loc) => ???
+
+    case Expression.Ascribe(exp, tpe, eff, loc) => ???
+
+    case Expression.Cast(exp, tpe, eff, loc) => ???
+
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+
+    case Expression.NativeField(field, tpe, eff, loc) => ???
+
+    case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+
+    case Expression.NewChannel(exp, tpe, eff, loc) => ???
+
+    case Expression.GetChannel(exp, tpe, eff, loc) => ???
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+
+    case Expression.ProcessSpawn(exp, tpe, eff, loc) => ???
+
+    case Expression.ProcessSleep(exp, tpe, eff, loc) => ???
+
+    case Expression.ProcessPanic(msg, tpe, eff, loc) => ???
+
+    case Expression.FixpointConstraint(c, tpe, eff, loc) => ???
+
+    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
+  }
+
+  private def freshEffVar(): TypeAndEffect = ???
+
+  private def reassembleExp(e: Expression): Expression = ???
+
+  private def point(eff: TypeAndEffect): InferMonad[TypeAndEffect] = ???
+
+  private def unify(eff1: TypeAndEffect, eff2: TypeAndEffect): InferMonad[TypeAndEffect] = ???
+
+  private def unify(eff1: TypeAndEffect, eff2: TypeAndEffect, eff3: TypeAndEffect): InferMonad[TypeAndEffect] = ???
+
+
+  private sealed trait TypeAndEffect
+
+  private object TypeAndEffect {
+
+    case class Var() extends TypeAndEffect
+
+    case object Pure extends TypeAndEffect
+
+  }
+
+  private case class Substitution() {
+
+  }
+
+  private class InferMonad[T] {
+
+    def map[B](f: T => B): InferMonad[B] = ???
+
+    def flatMap[B](f: T => InferMonad[B]): InferMonad[B] = ???
+
+  }
+
 }
