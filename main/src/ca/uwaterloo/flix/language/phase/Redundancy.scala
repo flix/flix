@@ -984,6 +984,18 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.toStream)
   }
 
+  sealed trait Purity
+
+  object Purity {
+
+    case object Pure extends Purity
+
+    case object Ephemeral extends Purity
+
+    case object Impure extends Purity
+
+  }
+
   /**
     * Companion object of the [[Substitution]] class.
     */
