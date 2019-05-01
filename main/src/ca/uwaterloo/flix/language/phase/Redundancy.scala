@@ -280,7 +280,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
       // TODO: Check the effect of exp1
-      us1 ++ us2
+      // TODO: For now all applys are impure
+      Used.Impure ++ us1 ++ us2
 
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0)
@@ -333,7 +334,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
-      if (us1.pure)
+      if (us1.purity.isPure || us1.purity.isEphemeral)
         us1 ++ us2 + UselessExpression(exp1.loc)
       else
         us1 ++ us2
@@ -564,7 +565,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
             (chanUsed ++ bodyUsed ++ shadowedVar) - sym
       }
 
-      rulesUsed.foldLeft(defaultUsed) {
+      rulesUsed.foldLeft(Used.Impure ++ defaultUsed) {
         case (acc, used) => acc ++ used
       }
 
@@ -645,6 +646,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
     case Head.Atom(pred, terms, _, _) =>
+      // TODO: Check for purity.
       Used.of(pred.sym) ++ visitExp(pred.exp, env0) ++ visitExps(terms, env0)
   }
 
@@ -656,9 +658,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       Used.of(pred.sym) ++ visitExp(pred.exp, env0)
 
     case Body.Filter(sym, terms, _) =>
+      // TODO: Check for purity
       Used.of(sym) ++ visitExps(terms, env0)
 
     case Body.Functional(sym, term, _) =>
+      // TODO: Check for purity
       Used.of(sym) ++ visitExp(term, env0)
   }
 
@@ -885,12 +889,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents something pure that has no uses.
       */
-    val Pure: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, pure = true, Set.empty)
+    val Pure: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Purity.Pure, Set.empty)
 
     /**
       * Represents something impure that has no uses.
       */
-    val Impure: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, pure = false, Set.empty)
+    val Impure: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, Purity.Impure, Set.empty)
 
     /**
       * The neutral element.
@@ -932,7 +936,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
                   predSyms: Set[Symbol.PredSym],
                   holeSyms: Set[Symbol.HoleSym],
                   varSyms: Set[Symbol.VarSym],
-                  pure: Boolean,
+                  purity: Purity,
                   errors: Set[RedundancyError]) {
     /**
       * Merges `this` and `that`.
@@ -945,13 +949,21 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       } else if (that eq Used.Pure) {
         this
       } else {
+        val purity = (this.purity, that.purity) match {
+          case (Purity.Pure, Purity.Pure) => Purity.Pure
+          case (Purity.Ephemeral, Purity.Ephemeral) => Purity.Ephemeral
+          case (Purity.Ephemeral, Purity.Pure) => Purity.Ephemeral
+          case (Purity.Pure, Purity.Ephemeral) => Purity.Ephemeral
+          case (Purity.Impure, _) => Purity.Impure
+          case (_, Purity.Impure) => Purity.Impure
+        }
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
           this.predSyms ++ that.predSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
-          this.pure && that.pure,
+          purity,
           this.errors ++ that.errors
         )
       }
@@ -984,14 +996,43 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.toStream)
   }
 
-  sealed trait Purity
+  /**
+    * A common super-type for purity.
+    */
+  sealed trait Purity {
+
+    /**
+      * Returns `true` if `this` is pure.
+      */
+    def isPure: Boolean = this == Purity.Pure
+
+    /**
+      * Returns `true` if `this` is ephemeral.
+      */
+    def isEphemeral: Boolean = this == Purity.Ephemeral
+
+    /**
+      * Returns `true` if `this` is impure.
+      */
+    def isImpure: Boolean = this == Purity.Impure
+
+  }
 
   object Purity {
 
+    /**
+      * Represents something that is referentially transparent.
+      */
     case object Pure extends Purity
 
+    /**
+      * Represents something that is not referentially transparent, but not observable if omitted.
+      */
     case object Ephemeral extends Purity
 
+    /**
+      * Represents something that is neither pure nor ephemeral.
+      */
     case object Impure extends Purity
 
   }
@@ -1141,6 +1182,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Add more test cases for UselessExpression
 
   // TODO: How to deal with ArrayNew and ArrayLoad as these are impure, but should still have their result observed.
+
+  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
