@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -108,13 +108,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedExp = visitExp(defn.exp, Env.of(defn.fparams.map(_.sym)))
 
     // TODO: Check the expression for redundant patterns:
-    val flaf = checkExp(RedundantPatternsCatalog.Id, defn.exp)
-    if (flaf) {
-      println("Found redundancy!")
-    }
+    val FOOOO = checkExp(defn.exp)
 
     // Check for unused parameters and remove all variable symbols.
-    val usedAll = (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
+    val usedAll = FOOOO ++ (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
 
     // Check if the used symbols contains holes. If so, strip out all error messages.
     if (usedAll.holeSyms.isEmpty) usedAll else usedAll.copy(errors = Set.empty)
@@ -1114,41 +1111,53 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object RedundantPat {
 
-    case object Wildcard extends RedundantPat
+    case object Wild extends RedundantPat
 
-    case object Identity extends RedundantPat
+    case object Id extends RedundantPat
 
-    case class Def(sym: Symbol.VarSym) extends RedundantPat
+    case class Int32(lit: Int) extends RedundantPat
 
-    case class Apply(pat1: RedundantPat, pat2: RedundantPat) extends RedundantPat
+    case class Def(sym: Symbol.DefnSym) extends RedundantPat
+
+    case class Bin(op: BinaryOperator, pat1: RedundantPat, pat2: RedundantPat) extends RedundantPat
+
+    case class App(pat1: RedundantPat, pat2: RedundantPat) extends RedundantPat
 
   }
 
-  object RedundantPatternsCatalog {
+  object BugPatternCatalog {
 
     import RedundantPat._
 
-    val Id: RedundantPat = Identity
+    val ApplyId: RedundantPat = App(Id, Wild)
 
-    val ApplyId: RedundantPat = Apply(Identity, Wildcard)
+    val DivideByOne: RedundantPat = Bin(BinaryOperator.Divide, Wild, Int32(1))
+
+    val AllPatterns: List[RedundantPat] = List(
+      ApplyId,
+      DivideByOne
+    )
 
   }
+
+  private def checkExp(e0: TypedAst.Expression): Used =
+    BugPatternCatalog.AllPatterns.foldLeft(Used.Neutral) {
+      case (acc, x) if unifyPatExp(e0, x) => acc + UselessExpression(e0.loc)
+      case (acc, x) => acc
+    }
 
   // TODO: Might be better to do the opposite: Parse an exression into a pattern. If succesfull then check
   // the non context-free variables to see if there is a problem or not.
 
-  private def checkExp(r: RedundantPat, e0: TypedAst.Expression): Boolean = r match {
-    case RedundantPat.Wildcard => true
-    case RedundantPat.Identity => e0 match {
-      case Expression.Lambda(fparam, exp, _, _, _) =>
-        exp match {
-          case Expression.Var(sym, _, _, _) => fparam.sym == sym
-          case _ => false
-        }
-      case _ => false
-    }
-    case RedundantPat.Def(sym) => false
-    case RedundantPat.Apply(pat1, pat2) => false
+  private def unifyPatExp(e: TypedAst.Expression, r: RedundantPat): Boolean = (r, e) match {
+    case (RedundantPat.Wild, _) => true
+    case (RedundantPat.Int32(lit1), Expression.Int32(lit2, _)) if lit1 == lit2 => true
+    case (RedundantPat.Id, Expression.Lambda(fparam, Expression.Var(sym, _, _, _), _, _, _)) if fparam.sym == sym => true
+    case (RedundantPat.App(pat1, pat2), Expression.Apply(exp1, exp2, _, _, _)) => unifyPatExp(exp1, pat1) && unifyPatExp(exp2, pat2)
+    case (RedundantPat.Bin(op1, pat1, pat2), Expression.Binary(op2, exp1, exp2, _, _, _)) if op1 == op2 =>
+      unifyPatExp(exp1, pat1) && unifyPatExp(exp2, pat2)
+
+    case _ => false
   }
 
   // TODO: Use cases to find:
