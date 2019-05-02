@@ -3,17 +3,19 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps._
+import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getJvmType, getRecordInterfaceType, getRefClassType, getTupleInterfaceType, stringify, _}
 import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.Api.Java
+import ca.uwaterloo.flix.language.phase.njvm.Api.Java.Lang.{Object, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 import org.objectweb.asm.Opcodes._
-
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.classes._
+import ca.uwaterloo.flix.language.phase.njvm.interfaces._
 
 object Mnemonics {
 
@@ -121,7 +123,7 @@ object Mnemonics {
     * It contains methods in an ad-hoc manner. The class and its underlying methods don't serve to enforce the
     * type safety because of this all of them simply cast in the to correct stack type
     */
-  class F[T](mv: MethodVisitor, ct: Reference) {
+  class F[T](mv: MethodVisitor, ct: NJvmType.Reference) {
 
     /**
       * Emits the correct Jvm load instruction give the localType
@@ -217,7 +219,7 @@ object Mnemonics {
       * Emits a 'new' instruction which creates a new instance of the provided JvmType.Reference
       *
       */
-    def emitNew[S](jt: Reference): F[S] = {
+    def emitNew[S](jt: NJvmType.Reference): F[S] = {
       mv.visitTypeInsn(NEW, jt.name.toInternalName)
       this.asInstanceOf[F[S]]
     }
@@ -285,7 +287,7 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
-    def emitCheckCast[S](jt: Reference): F[S] = {
+    def emitCheckCast[S](jt: NJvmType.Reference): F[S] = {
       mv.visitTypeInsn(CHECKCAST, jt.name.toInternalName)
       this.asInstanceOf[F[S]]
     }
@@ -299,6 +301,26 @@ object Mnemonics {
     def |>>[C <: Stack](g: F[B] => F[C]): F[A] => F[C] = (x: F[A]) => g(f(x))
   }
 
+  trait MnemonicsTypes
+
+  trait MObject
+  trait MString extends MObject
+
+  object MnemonicsTypes {
+    case class MVoid() extends MnemonicsTypes
+
+    case class MBool() extends MnemonicsTypes
+    case class MChar() extends MnemonicsTypes
+    case class MByte() extends MnemonicsTypes
+
+    case class MShort() extends MnemonicsTypes
+    case class MInt() extends MnemonicsTypes
+    case class MLong() extends MnemonicsTypes
+    case class MFloat() extends MnemonicsTypes
+    case class MDouble() extends MnemonicsTypes
+    class Ref[+ T <: MObject] extends MnemonicsTypes
+  }
+
   /**
     * This function allows to create Runtime values by using a compile time value.
     * It takes a type parameter T and maps it to the correct runtime JvmType value
@@ -306,21 +328,106 @@ object Mnemonics {
     * This is used to circumvent the use of dependent types which are not supported by scala.
     * It allows us to have a framework which more type-safe compared to a version which doesn't use this features
     */
-  def getJvmType[T: TypeTag](implicit root: Root, flix: Flix): NJvmType = typeOf[T] match {
-    case t if t =:= typeOf[Void] => Void()
-    case t if t =:= typeOf[PrimBool] => PrimBool()
-    case t if t =:= typeOf[PrimChar] => PrimChar()
-    case t if t =:= typeOf[PrimByte] => PrimByte()
-    case t if t =:= typeOf[PrimShort] => PrimShort()
-    case t if t =:= typeOf[PrimInt] => PrimInt()
-    case t if t =:= typeOf[PrimLong] => PrimLong()
-    case t if t =:= typeOf[PrimFloat] => PrimFloat()
-    case t if t =:= typeOf[PrimDouble] => PrimDouble()
+  def getJvmType[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): NJvmType = typeOf[T] match {
+//    case t if t =:= typeOf[Void] => NJvmType.Void
+    case t if t =:= typeOf[MBool] => PrimBool
+    case t if t =:= typeOf[MChar] => PrimChar
+    case t if t =:= typeOf[MByte] => PrimByte
+    case t if t =:= typeOf[MShort] => PrimShort
+    case t if t =:= typeOf[MInt] => PrimInt
+    case t if t =:= typeOf[MLong] => PrimLong
+    case t if t =:= typeOf[MFloat] => PrimFloat
+    case t if t =:= typeOf[MDouble] => PrimDouble
 
-    case t if t =:= typeOf[JString.type] => JString
-    case t if t =:= typeOf[Object.type] => Object
+    case t if t =:= typeOf[Ref[MString]] => NJvmType.String
+    case t if t =:= typeOf[Ref[MObject]] => NJvmType.Object
+    case t if t =:= typeOf[Ref[RecordInterface]] =>
+      val name = "IRecord"
 
-    case t if t =:= typeOf[Reference] => Object
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+
+    case t if t =:= typeOf[Ref[RecordEmpty]] =>
+      val name = "RecordEmpty"
+
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+
+    case t if t =:= typeOf[Ref[RecordExtend[MBool]]] =>
+      val name = "RecordExtend$" + stringify(PrimBool)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MChar]]] =>
+      val name = "RecordExtend$" + stringify(PrimChar)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MByte]]] =>
+      val name = "RecordExtend$" + stringify(PrimByte)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MShort]]] =>
+      val name = "RecordExtend$" + stringify(PrimShort)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MInt]]] =>
+      val name = "RecordExtend$" + stringify(PrimInt)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MLong]]] =>
+      val name = "RecordExtend$" + stringify(PrimLong)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MFloat]]] =>
+      val name = "RecordExtend$" + stringify(PrimFloat)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[MDouble]]] =>
+      val name = "RecordExtend$" + stringify(PrimDouble)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RecordExtend[Ref[MObject]]]] =>
+      val name = "RecordExtend$" + stringify(Reference(JvmName.Object))
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+
+    case t if t =:= typeOf[Ref[RefClass[MBool]]] =>
+      val name = "Ref$" + stringify(PrimBool)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MChar]]] =>
+      val name = "Ref$" + stringify(PrimChar)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MByte]]] =>
+      val name = "Ref$" + stringify(PrimByte)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MShort]]] =>
+      val name = "Ref$" + stringify(PrimShort)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MInt]]] =>
+      val name = "Ref$" + stringify(PrimInt)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MLong]]] =>
+      val name = "Ref$" + stringify(PrimLong)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MFloat]]] =>
+      val name = "Ref$" + stringify(PrimFloat)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[MDouble]]] =>
+      val name = "Ref$" + stringify(PrimDouble)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[RefClass[Ref[MObject]]]] =>
+      val name = "Ref$" + stringify(Reference(JvmName.Object))
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case _ => NJvmType.Object
+
   }
 
   /**
@@ -333,7 +440,7 @@ object Mnemonics {
     /**
       * Polymorphic return.
       */
-    def RETURN[T: TypeTag](implicit root: Root, flix: Flix): F[StackNil ** T] => F[StackNil] = {
+    def RETURN[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): F[StackNil ** T] => F[StackNil] = {
       val jvmType = getJvmType[T]
       t => t.emitReturn(jvmType)
     }
@@ -346,42 +453,41 @@ object Mnemonics {
     /**
       * Pushes the result of adding the two top-most ints.
       */
-    def IADD[R <: Stack]: F[R ** PrimInt ** PrimInt] => F[R ** PrimInt] = ???
+    def IADD[S <: Stack]: F[S ** MInt ** MInt] => F[S ** MInt] = ???
 
     /**
       * Creates a new instance of the type parameter T which should be a subtype of JvmType.Reference and puts
       * it on top of the stack
       */
-    //TODO: T should be a subtype of JvmType.Reference not MnemonicsType
-    def NEW[R <: Stack](jt: Reference)(implicit root: Root, flix: Flix): F[R] => F[R ** Reference] =
+    def NEW[S <: Stack](jt: Reference)(implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MObject]] =
       t => t.emitNew(jt)
 
     /**
       * Duplicates whatever is on Top of the stack
       */
-    def DUP[R <: Stack, T: TypeTag]: F[R ** T] => F[R ** T ** T] =
+    def DUP[S <: Stack, T: TypeTag]: F[S ** T] => F[S ** T ** T] =
       t => t.emitDup()
 
     /**
       * Loads a constant string onto the stack
       */
-    def LDC_STRING[R <: Stack](value: String): F[R] => F[R ** JString.type] =
+    def LDC_STRING[S <: Stack](value: String): F[S] => F[S ** Ref[MString]] =
       t => t.emitLdc(value)
 
     /**
       * Throws the exception which is currently on top of the stack
       */
-    def THROW: F[StackNil ** Reference] => F[StackNil] =
+    def THROW: F[StackNil ** Ref[MObject]] => F[StackNil] =
       t => t.emitThrow()
 
-    def IFEQ[S <: Stack](f: F[S] => F[S]): F[S ** PrimBool] => F[S] = {
+    def IFEQ[S <: Stack](f: F[S] => F[S]): F[S ** MBool] => F[S] = {
       val skipLabel = new Label
-      ((t: F[S ** PrimBool]) => t.emitIfeq[S](skipLabel)) |>>
+      ((t: F[S ** MBool]) => t.emitIfeq[S](skipLabel)) |>>
         f |>>
         (t => t.emitLabel(skipLabel))
     }
 
-    def CHECK_CAST[S <: Stack](jt: Reference): F[S ** Reference] => F[S ** Reference] =
+    def CHECK_CAST[S <: Stack](jt: Reference): F[S ** Ref[MObject]] => F[S ** Ref[MObject]] =
       t => t.emitCheckCast(jt)
 
     def POP[S <: Stack, T](): F[S ** T] => F[S] = ???
@@ -391,25 +497,25 @@ object Mnemonics {
   /**
     * Capability which allows to load/store a local variable
     */
-  class Local[T: TypeTag](location: Int)(implicit root: Root, flix: Flix) {
+  class Local[T <: MnemonicsTypes : TypeTag](location: Integer)(implicit root: Root, flix: Flix) {
 
     private val localType = getJvmType[T]
 
-    def LOAD[R <: Stack]: F[R] => F[R ** T] = t => t.emitLoad(localType, location)
+    def LOAD[S <: Stack]: F[S] => F[S ** T] = t => t.emitLoad(localType, location)
 
-    def STORE[R <: Stack]: F[R ** T] => F[R] = t => t.emitLoad(localType, location)
+    def STORE[S <: Stack]: F[S ** T] => F[S] = t => t.emitLoad(localType, location)
   }
 
   /**
     * Capability which allows to get/put a field
     */
-  class Field[T: TypeTag](fieldName: String)(implicit root: Root, flix: Flix) {
+  class Field[T <: MnemonicsTypes : TypeTag](fieldName: String)(implicit root: Root, flix: Flix) {
 
     private val fieldType = getJvmType[T]
 
-    def GET_FIELD[R <: Stack]: F[R ** Reference] => F[R ** T] = t => t.emitGetField(fieldName, fieldType)
+    def GET_FIELD[S <: Stack, T1 <: Ref[MObject]]: F[S ** T1] => F[S ** T] = t => t.emitGetField(fieldName, fieldType)
 
-    def PUT_FIELD[R <: Stack]: F[R ** Reference ** T] => F[R] = t => t.emitPutField(fieldName, fieldType)
+    def PUT_FIELD[S <: Stack, T1 <: Ref[MObject]]: F[S ** T1 ** T] => F[S] = t => t.emitPutField(fieldName, fieldType)
   }
 
   /**
@@ -417,48 +523,83 @@ object Mnemonics {
     */
   //TODO: Maybe need to have different types for signatures of static method as the 1st local (0 index) of static
   //TODO: functions isn't a local of type JvmType.Reference
-  class FunSig0[R: TypeTag]() {
-    def getArg0(implicit root: Root, flix: Flix): Local[Reference] = new Local(0)
+  class FunSig0[R<: MnemonicsTypes : TypeTag]() {
   }
 
   /**
     * Capability which allows acess the function locals in this case a function with 1 argument
     */
   //TODO: Same as FunSig0
-  class FunSig1[T1: TypeTag, R: TypeTag] {
+  class FunSig1[T1<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag] {
 
-    def getArg0(implicit root: Root, flix: Flix): Local[Reference] = new Local(0)
-
-    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(1)
+    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(0)
   }
 
   /**
     * Capability which allows acess the function locals in this case a function with 2 arguments
     */
   //TODO: Same as FunSig0
-  class FunSig2[T1: TypeTag, T2: TypeTag, R: TypeTag] {
+  class FunSig2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag] {
 
-    def getArg0(implicit root: Root, flix: Flix): Local[Reference] = new Local(0)
+    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(0)
 
-    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(1)
-
-    def getArg2(implicit root: Root, flix: Flix): Local[T2] = new Local(2)
+    def getArg2(implicit root: Root, flix: Flix): Local[T2] = new Local(1)
   }
 
   /**
     * Capability which allows acess the function locals in this case a function with 3 arguments
     */
   //TODO: Same as FunSig0
-  class FunSig3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag] {
+  class FunSig3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag] {
 
-    def getArg0(implicit root: Root, flix: Flix): Local[Reference] = new Local(0)
+    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(0)
 
-    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(1)
+    def getArg2(implicit root: Root, flix: Flix): Local[T2] = new Local(1)
 
-    def getArg2(implicit root: Root, flix: Flix): Local[T2] = new Local(2)
+    def getArg3(implicit root: Root, flix: Flix): Local[T3] = new Local(2)
 
-    def getArg3(implicit root: Root, flix: Flix): Local[T3] = new Local(3)
+  }
 
+  /**
+    * Capability which allows acess the function locals in this case a function with 4 arguments
+    */
+  //TODO: Same as FunSig0
+  class FunSig4[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, T4<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag] {
+
+    def getArg1(implicit root: Root, flix: Flix): Local[T1] = new Local(0)
+
+    def getArg2(implicit root: Root, flix: Flix): Local[T2] = new Local(1)
+
+    def getArg3(implicit root: Root, flix: Flix): Local[T3] = new Local(2)
+
+    def getArg4(implicit root: Root, flix: Flix): Local[T4] = new Local(3)
+  }
+
+  /**
+    * Capability which allows acess the function locals in this case a function with 4 arguments
+    */
+  //TODO: Same as FunSig0
+  class UncheckedFunSig(args : List[NJvmType], returnType : NJvmType)(implicit root: Root, flix: Flix) {
+
+    val locals = List()
+    for((arg, index) <- args.zipWithIndex) {
+      locals:+ (arg match {
+        case PrimBool => new Local[MBool](index)
+        case PrimChar => new Local[MChar](index)
+        case PrimByte => new Local[MShort](index)
+        case PrimShort => new Local[MShort](index)
+        case PrimInt => new Local[MInt](index)
+        case PrimLong => new Local[MLong](index)
+        case PrimFloat => new Local[MFloat](index)
+        case PrimDouble => new Local[MDouble](index)
+        case Reference(_) => new Local[Ref[MObject]](index)
+        case _ => ???
+    })
+    }
+
+    def getArg(index : Int): Local[MnemonicsTypes] ={
+      locals(index)
+    }
   }
 
   /**
@@ -466,54 +607,90 @@ object Mnemonics {
     */
   //TODO: Similar to FunSig might need to have different types in order to ensure the type safety with
   //TODO: Static methods, interface methods, etc.
-  class Method0[R: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+  class Method0[R<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
 
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference] => F[S ** R] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(), getJvmType[R])
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S] => F[S ** R] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List()
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => ???
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
+    }
   }
 
   /**
     * Capability which allows to invoke a (void) method with 0 arguments
     */
   class VoidMethod0(invokeCode: JvmModifier, ct: Reference, methodName: String) {
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference] => F[S] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(), Void())
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S] => F[S] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List()
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => ???
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
+    }
   }
 
   /**
     * Capability which allows to invoke a (non-void) method with 1 argument
     */
   //TODO: Similar to Method0
-  class Method1[T1: TypeTag, R: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+  class Method1[T1<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
 
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference ** T1] => F[S ** R] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1]), getJvmType[R])
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S **  T1] => F[S ** R] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List()
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
+    }
   }
 
   /**
     * Capability which allows to invoke a (void) method with 1 argument
     */
-  class VoidMethod1[T1: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference ** T1] => F[S] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1]), Void())
+  class VoidMethod1[T1<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+    def INVOKE[S <: Stack, T <: T1](implicit root: Root, flix: Flix): F[S ** T] => F[S] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List()
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
+    }
   }
 
   /**
     * Capability which allows to invoke a (non-void) method with 2 arguments
     */
   //TODO: Similar to Method0
-  class Method2[T1: TypeTag, T2: TypeTag, R: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+  class Method2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
 
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference ** T1 ** T2] => F[S ** R] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2]), getJvmType[R])
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2] => F[S ** R] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2])
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
+    }
   }
 
   /**
     * Capability which allows to invoke a (void) method with 2 arguments
     */
-  class VoidMethod2[T1: TypeTag, T2: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference ** T1 ** T2] => F[S] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2]), Void())
+  class VoidMethod2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2] => F[S] =  {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2])
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
+    }
   }
 
 
@@ -521,19 +698,85 @@ object Mnemonics {
     * Capability which allows to invoke a method with 3 arguments
     */
   //TODO: Similar to Method0
-  class Method3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+  class Method3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
 
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference ** T1 ** T2 ** T3] => F[S ** R] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2], getJvmType[T3]), getJvmType[R])
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2 ** T3] => F[S ** R] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3])
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
+    }
   }
 
   /**
-    * Capability which allows to invoke a (void) method with 2 arguments
+    * Capability which allows to invoke a (void) method with 3 arguments
     */
-  class VoidMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
-    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** Reference ** T1 ** T2 ** T3] => F[S] =
-      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, List(getJvmType[T1], getJvmType[T2], getJvmType[T3]), Void())
+  class VoidMethod3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2 ** T3] => F[S] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3])
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
+    }
   }
+
+
+  /**
+    * Capability which allows to invoke a method with 4 arguments
+    */
+  //TODO: Similar to Method0
+  class Method4[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, T4<: MnemonicsTypes :TypeTag, R<: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2 ** T3 ** T4] => F[S ** R] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3], getJvmType[T4])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3], getJvmType[T4])
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
+    }
+  }
+
+  /**
+    * Capability which allows to invoke a (void) method with 4 arguments
+    */
+  class VoidMethod4[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, T4 <: MnemonicsTypes : TypeTag ](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2 ** T3 ** T4] => F[S] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3], getJvmType[T4])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3], getJvmType[T4])
+        case _ => ???
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
+    }
+  }
+
+  /**
+    * Unchecked Capability which allows to invoke a method
+    */
+  class UncheckedMethod(invokeCode: JvmModifier, ct: Reference, methodName: String, args : List[NJvmType], returnType : NJvmType) {
+
+    def INVOKE[S1 <: Stack, S2 <: Stack](implicit root: Root, flix: Flix): F[S1] => F[S2] = {
+
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, args, returnType)
+    }
+  }
+
+  /**
+    * Unchecked Capability which allows to invoke a void method
+    */
+  class UncheckedVoidMethod(invokeCode: JvmModifier, ct: Reference, methodName: String, args : List[NJvmType]) {
+
+    def INVOKE[S1 <: Stack, S2 <: Stack](implicit root: Root, flix: Flix): F[S1] => F[S2] = {
+
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, args, Void)
+    }
+  }
+
 
   /**
     * This class allows to generate classes. It includes support to generate(CompileField) and methods
@@ -549,7 +792,7 @@ object Mnemonics {
     //Create the class writer and initialize, by providing the correct params.
     //The modifiers, superclass, implementedInterfaces
     private val cw: ClassWriter = {
-      val superClassName = Object.name.toInternalName
+      val superClassName = NJvmType.Object.name.toInternalName
       val interfacesNames = interfaces.map(interface => interface.name.toInternalName).toArray
 
       val cw = AsmOps.mkClassWriter()
@@ -559,8 +802,8 @@ object Mnemonics {
       cw
     }
 
-    def SUPER: F[StackNil ** Reference] => F[StackNil] =
-      Java.Lang.Object.constructor.INVOKE
+    def SUPER[T <: Ref[MObject]]: F[StackNil ** T] => F[StackNil] =
+      Object.constructor.INVOKE
 
     /**
       * This method generates in the current class we are generating a (non-void) method with 0 arguments
@@ -573,20 +816,20 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a Method0 capability allows now the possibility to invoke this new (non-void)  method with 0 arguments
       */
-    def mkMethod0[R: TypeTag](methodName: String, f: FunSig0[R] => F[StackNil] => F[StackNil],
+    def mkMethod0[R<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig0[R] => F[StackNil] => F[StackNil],
                               modifiers: List[JvmModifier] = List(Public, Final)): Method0[R] = {
 
       val returnType = getJvmType[R]
       val funSig = new FunSig0[R]()
 
-      emitVirtualMethod(modifiers, methodName, List(), returnType, f(funSig))
+      emitClassMethod(modifiers, methodName, List(), returnType, f(funSig))
 
-      new Method0(JvmModifier.InvokeVirtual, ct, methodName)
+      new Method0(JvmModifier.InvokeStatic, ct, methodName)
     }
 
     /**
       * This method generates in the current class we are generating a (void) method with 0 arguments
-      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
+      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods4
       * we've generated bytecode for.
       *
       * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
@@ -595,32 +838,17 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 0 arguments
       */
-    def mkVoidMethod0(methodName: String, f: FunSig0[Void] => F[StackNil] => F[StackNil],
+    def mkVoidMethod0(methodName: String, f: FunSig0[MVoid] => F[StackNil] => F[StackNil],
                       modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod0 = {
 
-      val returnType = Void()
-      val funSig = new FunSig0[Void]()
+      val returnType = Void
+      val funSig = new FunSig0[MVoid]()
 
-      emitVirtualMethod(modifiers, methodName, List(), returnType, f(funSig))
+      emitClassMethod(modifiers, methodName, List(), returnType, f(funSig))
 
-      new VoidMethod0(JvmModifier.InvokeVirtual, ct, methodName)
+      new VoidMethod0(JvmModifier.InvokeStatic, ct, methodName)
     }
 
-    /**
-      * This method generates in the current class we are generating a constructor with 0 arguments
-      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
-      * we've generated bytecode for.
-      *
-      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
-      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
-      *                  will describe what instruction the constructor we are generating will execute.
-      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 0 arguments
-      */
-    def mkConstructor0(f: FunSig0[Void] => F[StackNil] => F[StackNil],
-                       modifiers: List[JvmModifier] = List(Public)): VoidMethod0 = {
-
-      mkVoidMethod0("<init>", f, modifiers)
-    }
 
     /**
       * This method generates in the current class we are generating a (non-void) method with 1 argument
@@ -633,15 +861,17 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a Method1 capability allows now the possibility to invoke this new (non-void) method with 1 argument
       */
-    def mkMethod1[T1: TypeTag, R: TypeTag](methodName: String, f: FunSig1[T1, R] => F[StackNil] => F[StackNil],
-                                           modifiers: List[JvmModifier] = List(Public, Final)): Method1[T1, R] = {
+    def mkMethod1[T1<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig1[T1, R] => F[StackNil] => F[StackNil],
+                                           modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): Method1[T1, R] = {
       val arg1Type = getJvmType[T1]
       val returnType = getJvmType[R]
       val funSig = new FunSig1[T1, R]()
 
-      emitVirtualMethod(modifiers, methodName, List(arg1Type), returnType, f(funSig))
+      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type)) else (JvmModifier.InvokeVirtual, List())
 
-      new Method1(JvmModifier.InvokeVirtual, ct, methodName)
+      emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+      new Method1(invokeCode, ct, methodName)
     }
 
     /**
@@ -655,16 +885,18 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 1 argument
       */
-    def mkVoidMethod1[T1: TypeTag](methodName: String, f: FunSig1[T1, Void] => F[StackNil] => F[StackNil],
-                                   modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod1[T1] = {
+    def mkVoidMethod1[T1<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig1[T1, MVoid] => F[StackNil] => F[StackNil],
+                                   modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): VoidMethod1[T1] = {
 
       val arg1Type = getJvmType[T1]
-      val returnType = Void()
-      val funSig = new FunSig1[T1, Void]()
+      val returnType = Void
+      val funSig = new FunSig1[T1, MVoid]()
 
-      emitVirtualMethod(modifiers, methodName, List(arg1Type), returnType, f(funSig))
+      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type)) else (JvmModifier.InvokeVirtual, List())
 
-      new VoidMethod1(JvmModifier.InvokeVirtual, ct, methodName)
+      emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+      new VoidMethod1(invokeCode, ct, methodName)
     }
 
     /**
@@ -677,10 +909,14 @@ object Mnemonics {
       *                  will describe what instruction the constructor we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 1 argument
       */
-    def mkConstructor1[T1: TypeTag](f: FunSig1[T1, Void] => F[StackNil] => F[StackNil],
+    def mkConstructor1[T1<: MnemonicsTypes : TypeTag](f: FunSig1[T1, MVoid] => F[StackNil] => F[StackNil],
                                     modifiers: List[JvmModifier] = List(Public)): VoidMethod1[T1] = {
 
-      mkVoidMethod1("<init>", f, modifiers)
+      val funSig = new FunSig1[T1, MVoid]()
+
+      emitClassMethod(modifiers, "<init>", List(), Void, f(funSig))
+
+      new VoidMethod1(JvmModifier.InvokeSpecial, ct, "<init>")
     }
 
     /**
@@ -694,17 +930,19 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a Method2 capability allows now the possibility to invoke this new  (non-void) method with 2 arguments
       */
-    def mkMethod2[T1: TypeTag, T2: TypeTag, R: TypeTag](methodName: String, f: FunSig2[T1, T2, R] => F[StackNil] => F[StackNil],
-                                                        modifiers: List[JvmModifier] = List(Public, Final)): Method2[T1, T2, R] = {
+    def mkMethod2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig2[T1, T2, R] => F[StackNil] => F[StackNil],
+                                                        modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): Method2[T1, T2, R] = {
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val returnType = getJvmType[R]
 
       val funSig = new FunSig2[T1, T2, R]()
 
-      emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type), returnType, f(funSig))
+      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type, arg2Type)) else (JvmModifier.InvokeVirtual, List(arg2Type))
 
-      new Method2(JvmModifier.InvokeVirtual, ct, methodName)
+      emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+      new Method2(invokeCode, ct, methodName)
     }
 
     /**
@@ -718,18 +956,21 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 2 arguments
       */
-    def mkVoidMethod2[T1: TypeTag, T2: TypeTag](methodName: String, f: FunSig2[T1, T2, Void] => F[StackNil] => F[StackNil],
-                                                modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod2[T1, T2] = {
+    def mkVoidMethod2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig2[T1, T2, MVoid] => F[StackNil] => F[StackNil],
+                                                modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): VoidMethod2[T1, T2] = {
 
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
 
-      val returnType = Void()
-      val funSig = new FunSig2[T1, T2, Void]()
+      val returnType = Void
+      val funSig = new FunSig2[T1, T2, MVoid]()
 
-      emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type), returnType, f(funSig))
 
-      new VoidMethod2(JvmModifier.InvokeVirtual, ct, methodName)
+      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type, arg2Type)) else (JvmModifier.InvokeVirtual, List(arg2Type))
+
+      emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+      new VoidMethod2(invokeCode, ct, methodName)
     }
 
     /**
@@ -742,10 +983,14 @@ object Mnemonics {
       *                  will describe what instruction the constructor we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 2 arguments
       */
-    def mkConstructor2[T1: TypeTag, T2: TypeTag](f: FunSig2[T1, T2, Void] => F[StackNil] => F[StackNil],
+    def mkConstructor2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag](f: FunSig2[T1, T2, MVoid] => F[StackNil] => F[StackNil],
                                                  modifiers: List[JvmModifier] = List(Public)): VoidMethod2[T1, T2] = {
 
-      mkVoidMethod2("<init>", f, modifiers)
+      val funSig = new FunSig2[T1, T2, MVoid]()
+
+      emitClassMethod(modifiers, "<init>", List(getJvmType[T2]), Void, f(funSig))
+
+      new VoidMethod2(JvmModifier.InvokeSpecial, ct, "<init>")
     }
 
     /**
@@ -759,8 +1004,8 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a Method3 capability allows now the possibility to invoke this new (non-void) method with 3 arguments
       */
-    def mkMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag](methodName: String, f: FunSig3[T1, T2, T3, R] => F[StackNil] => F[StackNil],
-                                                                     modifiers: List[JvmModifier] = List(Public, Final)): Method3[T1, T2, T3, R] = {
+    def mkMethod3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig3[T1, T2, T3, R] => F[StackNil] => F[StackNil],
+                                                                     modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): Method3[T1, T2, T3, R] = {
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val arg3Type = getJvmType[T3]
@@ -768,8 +1013,10 @@ object Mnemonics {
 
       val funSig = new FunSig3[T1, T2, T3, R]()
 
-      emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType, f(funSig))
-      new Method3(JvmModifier.InvokeVirtual, ct, methodName)
+      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type, arg2Type, arg3Type)) else (JvmModifier.InvokeVirtual, List(arg2Type, arg3Type))
+
+      emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+      new Method3(invokeCode, ct, methodName)
     }
 
     /**
@@ -783,19 +1030,21 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 3 arguments
       */
-    def mkVoidMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag](methodName: String, f: FunSig3[T1, T2, T3, Void] => F[StackNil] => F[StackNil],
-                                                             modifiers: List[JvmModifier] = List(Public, Final)): VoidMethod3[T1, T2, T3] = {
+    def mkVoidMethod3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig3[T1, T2, T3, MVoid] => F[StackNil] => F[StackNil],
+                                                             modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): VoidMethod3[T1, T2, T3] = {
 
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val arg3Type = getJvmType[T3]
 
-      val returnType = Void()
-      val funSig = new FunSig3[T1, T2, T3, Void]()
+      val returnType = Void
+      val funSig = new FunSig3[T1, T2, T3, MVoid]()
 
-      emitVirtualMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType, f(funSig))
+      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type, arg2Type, arg3Type)) else (JvmModifier.InvokeVirtual, List(arg2Type, arg3Type))
 
-      new VoidMethod3(JvmModifier.InvokeVirtual, ct, methodName)
+      emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+      new VoidMethod3(invokeCode, ct, methodName)
     }
 
     /**
@@ -808,11 +1057,59 @@ object Mnemonics {
       *                  will describe what instruction the constructor we are generating will execute.
       * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 3 arguments
       */
-    def mkConstructor3[T1: TypeTag, T2: TypeTag, T3: TypeTag](f: FunSig3[T1, T2, T3, Void] => F[StackNil] => F[StackNil],
+    def mkConstructor3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag](f: FunSig3[T1, T2, T3, MVoid] => F[StackNil] => F[StackNil],
                                                               modifiers: List[JvmModifier] = List(Public)): VoidMethod3[T1, T2, T3] = {
 
-      mkVoidMethod3("<init>", f, modifiers)
+      val funSig = new FunSig3[T1, T2, T3, MVoid]()
+
+      emitClassMethod(modifiers, "<init>", List(getJvmType[T2], getJvmType[T3]), Void, f(funSig))
+
+      new VoidMethod3(JvmModifier.InvokeSpecial, ct, "<init>")
     }
+
+
+    /**
+      * This method generates in the current class we are generating a constructor with 4 arguments
+      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
+      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                  will describe what instruction the constructor we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 4 arguments
+      */
+    def mkConstructor4[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, T4<: MnemonicsTypes  : TypeTag](f: FunSig4[T1, T2, T3, T4, MVoid] => F[StackNil] => F[StackNil],
+                                                              modifiers: List[JvmModifier] = List(Public)): VoidMethod4[T1, T2, T3, T4] = {
+
+      val funSig = new FunSig4[T1, T2, T3, T4, MVoid]()
+
+      emitClassMethod(modifiers, "<init>", List(getJvmType[T2], getJvmType[T3], getJvmType[T4]), Void, f(funSig))
+
+      new VoidMethod4(JvmModifier.InvokeSpecial, ct, "<init>")
+    }
+
+
+    /**
+      * This method generates in the current class we are generating a constructor with 4 arguments
+      * given the provided params. It returns the capability to invoke the constructor. This way we ensure we only call methods
+      * we've generated bytecode for.
+      *
+      * @param modifiers list of modififers which we want to generate the constructor with (public, abstract, etc..)
+      * @param f         , transformer which receives a funSig and return a frame transformer. This returned frame transfomer
+      *                  will describe what instruction the constructor we are generating will execute.
+      * @return returns a VoidMethod0 capability allows now the possibility to invoke this new constructor with 4 arguments
+      */
+    def mkUncheckedConstructor(args : List[NJvmType], f: UncheckedFunSig => F[StackNil] => F[StackNil],
+                               modifiers: List[JvmModifier] = List(Public)): UncheckedVoidMethod = {
+
+
+      val funSig = new UncheckedFunSig(args, Void)
+      val argsList = if(args.length <= 1) Nil else args.tail
+      emitClassMethod(modifiers, "<init>",  argsList , Void, f(funSig))
+
+      new UncheckedVoidMethod(JvmModifier.InvokeSpecial, ct, "<init>", args)
+    }
+
 
     /**
       * Auxiliary method which actually emits the method bytecode onto the current class.
@@ -824,7 +1121,7 @@ object Mnemonics {
       * @param returnType the JvmType of the return type of the function we are generating code for
       * @param f          is a frame transfomer  it will describe what instruction the method we are generating will execute.
       */
-    private def emitVirtualMethod(modifiers: List[JvmModifier], methodName: String,
+    private def emitClassMethod(modifiers: List[JvmModifier], methodName: String,
                                   args: List[NJvmType], returnType: NJvmType, f: F[StackNil] => F[StackNil]): Unit = {
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       val mv = cw.visitMethod(modifierVal, methodName,
@@ -846,7 +1143,7 @@ object Mnemonics {
       * @return returns the capability to acess the created field. Similar to the methods this ensure we only
       *         acess field we've generated
       */
-    def mkField[T: TypeTag](fieldName: String, modifiers: List[JvmModifier] = List(Private)): Field[T] = {
+    def mkField[T <: MnemonicsTypes : TypeTag](fieldName: String, modifiers: List[JvmModifier] = List(Private)): Field[T] = {
 
       val fieldType = getJvmType[T]
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
@@ -881,7 +1178,7 @@ object Mnemonics {
     //The modifiers, superclass, implementedInterfaces
     private val cw: ClassWriter = {
 
-      val superClassName = Object.name.toInternalName
+      val superClassName = NJvmType.Object.name.toInternalName
       val interfacesNames = interfaces.map(interface => interface.name.toInternalName).toArray
 
       val cw = AsmOps.mkClassWriter()
@@ -889,42 +1186,6 @@ object Mnemonics {
       cw.visit(AsmOps.JavaVersion, modifierVal, it.name.toInternalName, null,
         superClassName, interfacesNames)
       cw
-    }
-
-    /**
-      * This method generates in the current interface we are generating a (non-void) method with 0 arguments
-      * given the provided params. It returns the capability to invoke the (non-void) method. This way we ensure we only call methods
-      * we've generated bytecode for.
-      *
-      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
-      * @param methodName name which we want to give to the method we are generating
-      * @return returns a Method0 capability allows now the possibility to invoke this new (non-void) method with 0 arguments
-      */
-    def mkMethod0[R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method0[R] = {
-
-      val returnType = getJvmType[R]
-
-      emitInterfaceMethod(modifiers, methodName, List(), returnType)
-
-      new Method0(JvmModifier.InvokeInterface, it, methodName)
-    }
-
-    /**
-      * This method generates in the current interface we are generating a (void) method with 0 arguments
-      * given the provided params. It returns the capability to invoke the (void) method. This way we ensure we only call methods
-      * we've generated bytecode for.
-      *
-      * @param modifiers  list of modififers which we want to generate the method with (public, abstract, etc..)
-      * @param methodName name which we want to give to the method we are generating
-      * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 0 arguments
-      */
-    def mkVoidMethod0(methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod0 = {
-
-      val returnType = Void()
-
-      emitInterfaceMethod(modifiers, methodName, List(), returnType)
-
-      new VoidMethod0(JvmModifier.InvokeInterface, it, methodName)
     }
 
     /**
@@ -936,12 +1197,11 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @return returns a Method1 capability allows now the possibility to invoke this new (non-void) method with arguments
       */
-    def mkMethod1[T1: TypeTag, R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method1[T1, R] = {
+    def mkMethod1[T1<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method1[T1, R] = {
 
-      val arg1Type = getJvmType[T1]
       val returnType = getJvmType[R]
 
-      emitInterfaceMethod(modifiers, methodName, List(arg1Type), returnType)
+      emitInterfaceMethod(modifiers, methodName, List(), returnType)
 
       new Method1(JvmModifier.InvokeInterface, it, methodName)
     }
@@ -955,12 +1215,11 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 1 argument
       */
-    def mkVoidMethod1[T1: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod1[T1] = {
+    def mkVoidMethod1[T1<: MnemonicsTypes : TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod1[T1] = {
 
-      val arg1Type = getJvmType[T1]
-      val returnType = Void()
+      val returnType = Void
 
-      emitInterfaceMethod(modifiers, methodName, List(arg1Type), returnType)
+      emitInterfaceMethod(modifiers, methodName, List(), returnType)
 
       new VoidMethod1(JvmModifier.InvokeInterface, it, methodName)
     }
@@ -974,13 +1233,12 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @return returns a Method2 capability allows now the possibility to invoke this new (non-void) method with 2 arguments
       */
-    def mkMethod2[T1: TypeTag, T2: TypeTag, R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method2[T1, T2, R] = {
+    def mkMethod2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method2[T1, T2, R] = {
 
-      val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val returnType = getJvmType[R]
 
-      emitInterfaceMethod(modifiers, methodName, List(arg1Type, arg2Type), returnType)
+      emitInterfaceMethod(modifiers, methodName, List(arg2Type), returnType)
 
       new Method2(JvmModifier.InvokeInterface, it, methodName)
     }
@@ -994,13 +1252,12 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 2 arguments
       */
-    def mkVoidMethod2[T1: TypeTag, T2: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod2[T1, T2] = {
+    def mkVoidMethod2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod2[T1, T2] = {
 
-      val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
-      val returnType = Void()
+      val returnType = Void
 
-      emitInterfaceMethod(modifiers, methodName, List(arg1Type, arg2Type), returnType)
+      emitInterfaceMethod(modifiers, methodName, List(arg2Type), returnType)
 
       new VoidMethod2(JvmModifier.InvokeInterface, it, methodName)
     }
@@ -1014,14 +1271,13 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @return returns a Method3 capability allows now the possibility to invoke this new (non-void) method with 3 arguments
       */
-    def mkMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag, R: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method3[T1, T2, T3, R] = {
+    def mkMethod3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): Method3[T1, T2, T3, R] = {
 
-      val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val arg3Type = getJvmType[T3]
       val returnType = getJvmType[R]
 
-      emitInterfaceMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType)
+      emitInterfaceMethod(modifiers, methodName, List(arg2Type, arg3Type), returnType)
       new Method3(JvmModifier.InvokeInterface, it, methodName)
     }
 
@@ -1034,15 +1290,14 @@ object Mnemonics {
       * @param methodName name which we want to give to the method we are generating
       * @return returns a Method0 capability allows now the possibility to invoke this new (void) method with 2 arguments
       */
-    def mkVoidMethod3[T1: TypeTag, T2: TypeTag, T3: TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod3[T1, T2, T3] = {
+    def mkVoidMethod3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag](methodName: String, modifiers: List[JvmModifier] = List(Public, Abstract)): VoidMethod3[T1, T2, T3] = {
 
-      val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
       val arg3Type = getJvmType[T2]
 
-      val returnType = Void()
+      val returnType = Void
 
-      emitInterfaceMethod(modifiers, methodName, List(arg1Type, arg2Type, arg3Type), returnType)
+      emitInterfaceMethod(modifiers, methodName, List(arg2Type, arg3Type), returnType)
 
       new VoidMethod3(JvmModifier.InvokeInterface, it, methodName)
     }
@@ -1086,7 +1341,7 @@ object Mnemonics {
     Instructions.NEW[StackNil](Reference(JvmName.UnsupportedOperationException)) |>>
       Instructions.DUP |>>
       Instructions.LDC_STRING(message) |>>
-      Java.Lang.UnsupportedOperationException.constructor.INVOKE |>>
+      UnsupportedOperationException.constructor.INVOKE |>>
       Instructions.THROW
   }
 
@@ -1094,11 +1349,11 @@ object Mnemonics {
     * Returns the load instruction for the value of the type specified by `tpe`
     */
   def getLoadInstruction(tpe: NJvmType): Int = tpe match {
-    case Void() => throw InternalCompilerException(s"Unexpected type $tpe")
-    case PrimBool() | PrimChar() | PrimByte() | PrimShort() | PrimInt() => ILOAD
-    case PrimLong() => LLOAD
-    case PrimFloat() => FLOAD
-    case PrimDouble() => DLOAD
+    case Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case PrimBool | PrimChar | PrimByte | PrimShort | PrimInt => ILOAD
+    case PrimLong => LLOAD
+    case PrimFloat => FLOAD
+    case PrimDouble => DLOAD
     case Reference(_) => ALOAD
   }
 
@@ -1106,11 +1361,11 @@ object Mnemonics {
     * Returns the load instruction corresponding to the given type `tpe`
     */
   def getReturnInstruction(tpe: NJvmType): Int = tpe match {
-    case Void() => throw InternalCompilerException(s"Unexpected type $tpe")
-    case PrimBool() | PrimChar() | PrimByte() | PrimShort() | PrimInt() => IRETURN
-    case PrimLong() => LRETURN
-    case PrimFloat() => FRETURN
-    case PrimDouble() => DRETURN
+    case Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case PrimBool | PrimChar | PrimByte | PrimShort | PrimInt => IRETURN
+    case PrimLong => LRETURN
+    case PrimFloat => FRETURN
+    case PrimDouble => DRETURN
     case Reference(_) => ARETURN
   }
 
@@ -1134,16 +1389,69 @@ object Mnemonics {
     * The stringified name is short hand used for generation of interface and class names.
     */
   def stringify(tpe: NJvmType): String = tpe match {
-    case Void() => "Void"
-    case PrimBool() => "Bool"
-    case PrimChar() => "Char"
-    case PrimFloat() => "Float32"
-    case PrimDouble() => "Float64"
-    case PrimByte() => "Int8"
-    case PrimShort() => "Int16"
-    case PrimInt() => "Int32"
-    case PrimLong() => "Int64"
+    case Void => "Void"
+    case PrimBool => "Bool"
+    case PrimChar => "Char"
+    case PrimFloat => "Float32"
+    case PrimDouble => "Float64"
+    case PrimByte => "Int8"
+    case PrimShort => "Int16"
+    case PrimInt => "Int32"
+    case PrimLong => "Int64"
     case Reference(_) => "Obj"
+  }
+
+
+  /**
+    * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * (Int, Int)              =>    T2$Int$Int
+    * (Int, Int, Int)         =>    T3$Int$Int$Int
+    * (Bool, Char, Int)       =>    T3$Bool$Char$Int
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getTupleInterfaceType(elms: List[NJvmType])(implicit root: Root, flix: Flix): Reference = {
+      // Compute the arity of the tuple.
+      val arity = elms.length
+
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(tpe))
+
+      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+      val name = "ITuple" + arity + "$" + args.mkString("$")
+
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * (Int, Int)              =>    Tuple2$Int$Int
+    * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
+    * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
+    * (Bool, List[Int])       =>    Tuple2$Bool$Obj
+    * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getTupleClassType(elms: List[NJvmType])(implicit root: Root, flix: Flix): Reference = {
+      // Compute the arity of the tuple.
+      val arity = elms.length
+
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(tpe))
+
+      // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
+      val name = "Tuple" + arity + "$" + args.mkString("$")
+
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -1155,13 +1463,8 @@ object Mnemonics {
     * {x : Int}           =>    IRecord
     * {x : Str, y : Int}  =>    IRecord
     */
-  def getRecordInterfaceType()(implicit root: Root, flix: Flix): Reference = {
-
-    // The JVM name is of the form IRecord
-    val name = "IRecord"
-
-    // The type resides in the root package.
-    Reference(JvmName(RootPackage, name))
+  def getRecordInterfaceType(implicit root: Root, flix: Flix): Reference = {
+    getJvmType[Ref[RecordInterface]].asInstanceOf[Reference]
   }
 
   /**
@@ -1172,14 +1475,11 @@ object Mnemonics {
     * {}         =>    RecordEmpty
     *
     */
-  def getRecordEmptyClassType()(implicit root: Root, flix: Flix): Reference = {
+  def getRecordEmptyClassType(implicit root: Root, flix: Flix): Reference = {
+    getJvmType[Ref[RecordEmpty]].asInstanceOf[Reference]
 
-    // The JVM name is of the form RecordEmpty
-    val name = "RecordEmpty"
-
-    // The type resides in the root package.
-    Reference(JvmName(RootPackage, name))
   }
+
 
   /**
     * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
@@ -1192,16 +1492,10 @@ object Mnemonics {
     *
     * NB: The given type `tpe` must be a Record type
     */
-  def getRecordExtendClassType(jt: NJvmType)(implicit root: Root, flix: Flix): Reference = {
-    // Compute the stringified erased type of value.
-    val valueType = stringify(jt)
-
-    // The JVM name is of the form RecordExtend
-    val name = "RecordExtend$" + valueType
-
-    // The type resides in the root package.
-    Reference(JvmName(RootPackage, name))
+  def getRecordExtendClassType[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): Reference = {
+    getJvmType[Ref[RecordExtend[T]]].asInstanceOf[Reference]
   }
+
 
   /**
     * Returns reference class type for the given type `tpe`.
@@ -1211,16 +1505,36 @@ object Mnemonics {
     *
     * NB: The type must be a reference type.
     */
-  def getRefClassType(jt: NJvmType)(implicit root: Root, flix: Flix): Reference = {
-
-    val arg = stringify(jt)
-
-    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-    val name = "Ref" + "$" + arg
-
-    // The type resides in the ca.uwaterloo.flix.api.cell package.
-    Reference(JvmName(Nil, name))
+  def getRefClassType[T<: MnemonicsTypes  : TypeTag](implicit root: Root, flix: Flix): Reference = {
+    getJvmType[Ref[RefClass[T]]].asInstanceOf[Reference]
   }
+
+
+  /**
+    * Returns the erased JvmType of the given Flix type `tpe`.
+    */
+  def getErasedJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): NJvmType = {
+    /**
+      * Returns the erased JvmType of the given JvmType `tpe`.
+      *
+      * Every primitive type is mapped to itself and every other type is mapped to Object.
+      */
+    def erase(tpe: JvmType): NJvmType = tpe match {
+      case JvmType.Void => NJvmType.Void
+      case JvmType.PrimBool => NJvmType.PrimBool
+      case JvmType.PrimChar => NJvmType.PrimChar
+      case JvmType.PrimByte => NJvmType.PrimByte
+      case JvmType.PrimShort => NJvmType.PrimShort
+      case JvmType.PrimInt => NJvmType.PrimInt
+      case JvmType.PrimLong => NJvmType.PrimLong
+      case JvmType.PrimFloat => NJvmType.PrimFloat
+      case JvmType.PrimDouble => NJvmType.PrimDouble
+      case JvmType.Reference(_) => NJvmType.Object
+    }
+
+    erase(JvmOps.getJvmType(tpe))
+  }
+
 
 
   /**
@@ -1229,7 +1543,7 @@ object Mnemonics {
     * MnemonicClass to the proper class we can acess the capabilities to call the methods in the class
     * which we are sure we have generated as the class is in the Map
     */
-  trait MnemonicsClass {
+  trait MnemonicsClass extends MObject {
     def getJvmClass: JvmClass
 
     def getClassMapping: (JvmName, MnemonicsClass)

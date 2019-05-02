@@ -4,15 +4,17 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
 
 
 class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
-  private val ct: Reference = getRecordEmptyClassType()
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType()))
+  private val ct: Reference = getRecordEmptyClassType
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(getJvmType[Ref[RecordInterface]].asInstanceOf[Reference]))
 
   //Fields
   //Class with no fields
@@ -27,11 +29,11 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     *
     * public RecordEmpty() {}
     */
-  val defaultConstructor: VoidMethod0 = {
+  val defaultConstructor: VoidMethod1[Ref[RecordEmpty]] = {
 
-    cg.mkConstructor0(
+    cg.mkConstructor1(
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           cg.SUPER |>>
           RETURN_VOID)
   }
@@ -46,8 +48,8 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("lookupField method shouldn't be called");
     * }
     */
-  val lookupFieldMethod: Method1[JString.type, Reference] =
-    cg.mkMethod1("lookupField",
+  val lookupFieldMethod: Method2[Ref[RecordEmpty], Ref[MString], Ref[RecordInterface]] =
+    cg.mkMethod2("lookupField",
       _ =>
         newUnsupportedOperationExceptionInstructions("lookupField shouldn't be called")
     )
@@ -61,8 +63,8 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("restrictField method shouldn't be called");
     * }
     */
-  val restrictFieldMethod: Method1[JString.type, Reference] =
-    cg.mkMethod1("restrictField",
+  val restrictFieldMethod: Method2[Ref[RecordEmpty], Ref[MString], Ref[RecordInterface]] =
+    cg.mkMethod2("restrictField",
       _ =>
         newUnsupportedOperationExceptionInstructions("restrictField shouldn't be called")
     )
@@ -76,8 +78,8 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[JString.type] =
-    cg.mkMethod0("toString",
+  val toStringMethod: Method1[Ref[RecordEmpty], Ref[MString]] =
+    cg.mkMethod1("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
     )
@@ -90,8 +92,8 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  val hashCodeMethod: Method0[PrimInt] =
-    cg.mkMethod0("hashCode",
+  val hashCodeMethod: Method1[Ref[RecordEmpty], MInt] =
+    cg.mkMethod1("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
     )
@@ -106,8 +108,8 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * }
     *
     */
-  val equalsMethod: Method1[Object.type, PrimBool] =
-    cg.mkMethod1("equal",
+  val equalsMethod: Method2[Ref[RecordEmpty],Ref[MObject], MBool] =
+    cg.mkMethod2("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )

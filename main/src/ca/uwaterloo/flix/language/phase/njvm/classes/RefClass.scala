@@ -5,14 +5,15 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 import scala.reflect.runtime.universe._
 
-class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
+class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
-  private val ct: Reference = getRefClassType(getJvmType[T])
+  private val ct: Reference = getRefClassType[T]
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
   //Fields each variable represents a field which can be acessed
@@ -33,14 +34,14 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val defaultConstructor: VoidMethod1[T] = {
+  val defaultConstructor: VoidMethod2[Ref[RefClass[T]], T] = {
 
-    cg.mkConstructor1(
+    cg.mkConstructor2(
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           cg.SUPER |>>
-          sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
+          sig.getArg2.LOAD |>>
           field0.PUT_FIELD |>>
           RETURN_VOID)
   }
@@ -56,10 +57,10 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val getValueMethod: Method0[T] =
-    cg.mkMethod0("getValue",
+  val getValueMethod: Method1[Ref[RefClass[T]], T] =
+    cg.mkMethod1("getValue",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
           RETURN
     )
@@ -75,11 +76,11 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val setValueMethod: Method1[T, Void] =
-    cg.mkMethod1("setValue",
+  val setValueMethod: VoidMethod2[Ref[RefClass[T]], T] =
+    cg.mkVoidMethod2("setValue",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
-          sig.getArg1.LOAD |>>
+        sig.getArg1.LOAD[StackNil] |>>
+          sig.getArg2.LOAD |>>
           field0.PUT_FIELD |>>
           RETURN_VOID
     )
@@ -93,8 +94,8 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[JString.type] =
-    cg.mkMethod0("toString",
+  val toStringMethod: Method1[Ref[RefClass[T]],Ref[MString]] =
+    cg.mkMethod1("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
     )
@@ -107,8 +108,8 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  val hashCodeMethod: Method0[PrimInt] =
-    cg.mkMethod0("hashCode",
+  val hashCodeMethod: Method1[Ref[RefClass[T]], MInt] =
+    cg.mkMethod1("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
     )
@@ -123,8 +124,8 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val equalsMethod: Method1[Object.type, PrimBool] =
-    cg.mkMethod1("equal",
+  val equalsMethod: Method2[Ref[RefClass[T]], Ref[MObject], MBool] =
+    cg.mkMethod2("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )

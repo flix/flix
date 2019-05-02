@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.classes.RecordExtend
-import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 
 /**
@@ -33,14 +33,14 @@ object GenRecordExtend extends MnemonicsGenerator {
   def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
 
     map + (
-      new RecordExtend[PrimBool](map).getClassMapping,
-      new RecordExtend[PrimChar](map).getClassMapping,
-      new RecordExtend[PrimFloat](map).getClassMapping,
-      new RecordExtend[PrimDouble](map).getClassMapping,
-      new RecordExtend[PrimByte](map).getClassMapping,
-      new RecordExtend[PrimShort](map).getClassMapping,
-      new RecordExtend[PrimInt](map).getClassMapping,
-      new RecordExtend[PrimLong](map).getClassMapping,
-      new RecordExtend[Object.type](map).getClassMapping)
+      new RecordExtend[MBool](map).getClassMapping,
+      new RecordExtend[MChar](map).getClassMapping,
+      new RecordExtend[MFloat](map).getClassMapping,
+      new RecordExtend[MDouble](map).getClassMapping,
+      new RecordExtend[MByte](map).getClassMapping,
+      new RecordExtend[MShort](map).getClassMapping,
+      new RecordExtend[MInt](map).getClassMapping,
+      new RecordExtend[MLong](map).getClassMapping,
+      new RecordExtend[Ref[MObject]](map).getClassMapping)
   }
 }

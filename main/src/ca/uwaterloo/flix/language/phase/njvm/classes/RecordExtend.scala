@@ -6,24 +6,24 @@ import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
-
 
 import scala.reflect.runtime.universe._
 
 
-class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
+class RecordExtend[T <: MnemonicsTypes : TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Setup
-  private val ct: Reference = getRecordExtendClassType(getJvmType[T])
-  private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType()))
+  private val ct: Reference = getRecordExtendClassType[T]
+  private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType))
 
   //Fields each variable represents a field which can be accessed
   //while generating code for this class
-  private val field0: Field[JString.type] = cg.mkField("field0")
+  private val field0: Field[Ref[MString]] = cg.mkField("field0")
   private val field1: Field[T] = cg.mkField("field1")
-  private val field2: Field[Reference] = cg.mkField("field2")
+  private val field2: Field[Ref[RecordInterface]] = cg.mkField("field2")
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
@@ -41,21 +41,21 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     * }
     *
     */
-  val defaultConstructor: VoidMethod3[JString.type, T, Reference] = {
-    cg.mkConstructor3(
+  val defaultConstructor: VoidMethod4[Ref[RecordExtend[T]], Ref[MString], T, Ref[RecordInterface]] = {
+    cg.mkConstructor4(
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           cg.SUPER |>>
-          sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
+          sig.getArg2.LOAD |>>
           field0.PUT_FIELD |>>
 
-          sig.getArg0.LOAD |>>
-          sig.getArg2.LOAD |>>
+          sig.getArg1.LOAD |>>
+          sig.getArg3.LOAD |>>
           field1.PUT_FIELD |>>
 
-          sig.getArg0.LOAD |>>
-          sig.getArg3.LOAD |>>
+          sig.getArg1.LOAD |>>
+          sig.getArg4.LOAD |>>
           field2.PUT_FIELD |>>
           RETURN_VOID
     )
@@ -67,10 +67,10 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     *
     * We store the capability to call getField in getFieldMethod
     */
-  val getFieldMethod: Method0[T] = {
-    cg.mkMethod0("getField",
+  val getFieldMethod: Method1[Ref[RecordExtend[T]], T] = {
+    cg.mkMethod1("getField",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           field1.GET_FIELD |>>
           RETURN
     )
@@ -85,23 +85,22 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     *
     * We store the capability to call lookupField in lookupFieldMethod
     */
-  val lookupFieldMethod: Method1[JString.type, Reference] = {
+  val lookupFieldMethod: Method2[Ref[RecordExtend[T]], Ref[MString], Ref[RecordInterface]] = {
     val recordInterface: RecordInterface =
-      map.getOrElse(getRecordInterfaceType().name, null).asInstanceOf[RecordInterface]
+      map(getRecordInterfaceType.name).asInstanceOf[RecordInterface]
 
-    cg.mkMethod1("lookupField",
+    cg.mkMethod2("lookupField",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
-          sig.getArg1.LOAD |>>
+          sig.getArg2.LOAD |>>
           Java.Lang.String.equals.INVOKE |>>
           IFEQ(
-            sig.getArg0.LOAD[StackNil] |>>
+            sig.getArg1.LOAD[StackNil] |>>
               RETURN) |>>
-          sig.getArg0.LOAD |>>
-          field2.GET_FIELD |>>
-          CHECK_CAST(getRecordInterfaceType()) |>>
           sig.getArg1.LOAD |>>
+          field2.GET_FIELD |>>
+          sig.getArg2.LOAD |>>
           recordInterface.lookupFieldMethod.INVOKE |>>
           RETURN
     )
@@ -117,28 +116,27 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     *
     * We store the capability to call restrictField in restrictFieldMethod
     */
-  val restrictFieldMethod: Method1[JString.type, Reference] = {
+  val restrictFieldMethod: Method2[Ref[RecordExtend[T]], Ref[MString], Ref[RecordInterface]] = {
     val recordInterface: RecordInterface =
-      map.getOrElse(getRecordInterfaceType().name, null).asInstanceOf[RecordInterface]
+      map(getRecordInterfaceType.name).asInstanceOf[RecordInterface]
 
-    cg.mkMethod1("restrictField",
+    cg.mkMethod2("restrictField",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
-          sig.getArg1.LOAD |>>
+          sig.getArg2.LOAD |>>
           Java.Lang.String.equals.INVOKE |>>
           IFEQ(
-            sig.getArg0.LOAD[StackNil] |>>
+            sig.getArg1.LOAD[StackNil] |>>
               field2.GET_FIELD |>>
               RETURN) |>>
-          sig.getArg0.LOAD |>>
+          sig.getArg1.LOAD |>>
           DUP |>>
           field2.GET_FIELD |>>
-          CHECK_CAST(getRecordInterfaceType()) |>>
-          sig.getArg1.LOAD |>>
+          sig.getArg2.LOAD |>>
           recordInterface.restrictFieldMethod.INVOKE |>>
           field2.PUT_FIELD |>>
-          sig.getArg0.LOAD |>>
+          sig.getArg1.LOAD |>>
           RETURN
     )
   }
@@ -152,8 +150,8 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[JString.type] =
-    cg.mkMethod0("toString",
+  val toStringMethod: Method1[Ref[RecordExtend[T]], Ref[MString]] =
+    cg.mkMethod1("toString",
       _ =>
         newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
     )
@@ -166,8 +164,8 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     * throw new Exception("hashCode method shouldn't be called");
     * }
     */
-  val hashCodeMethod: Method0[PrimInt] =
-    cg.mkMethod0("hashCode",
+  val hashCodeMethod: Method1[Ref[RecordExtend[T]], MInt] =
+    cg.mkMethod1("hashCode",
       _ =>
         newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
     )
@@ -182,8 +180,8 @@ class RecordExtend[T: TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root:
     * }
     *
     */
-  val equalsMethod: Method1[Object.type, PrimBool] =
-    cg.mkMethod1("equal",
+  val equalsMethod: Method2[Ref[RecordExtend[T]],Ref[MObject], MBool] =
+    cg.mkMethod2("equal",
       _ =>
         newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
     )

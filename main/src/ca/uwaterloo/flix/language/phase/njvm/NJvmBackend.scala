@@ -132,25 +132,29 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate tuple interfaces for each tuple type in the program.
     //
-    val tupleInterfaces = GenTupleInterfaces.gen(types)
+//    import ca.uwaterloo.flix.language.phase.jvm.GenTupleInterfaces
+//    val tupleInterfaces = GenTupleInterfaces.gen(types)
 
     //
     // Generate tuple classes for each tuple type in the program.
     //
-    val tupleClasses = GenTupleClasses.gen(types)
+//    import ca.uwaterloo.flix.language.phase.jvm.GenTupleClasses
+//    val tupleClasses = GenTupleClasses.gen(types)
 
     /** Generated classes using NJVM */
     val map: Map[JvmName, MnemonicsClass] = Map()
     val classes: List[MnemonicsGenerator] =
     //Generate interfaces first
       List(
+        GenTupleInterfaces,
         GenRecordInterface,
         GenRecordEmpty,
         GenRecordExtend,
-        GenRefClasses
+        GenRefClasses,
+        GenTupleClasses
       )
 
-    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, Set()) }
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types) }
       .map(f => (f._1, f._2.getJvmClass))
 
     //
@@ -166,8 +170,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       closureClasses,
       enumInterfaces,
       tagClasses,
-      tupleInterfaces,
-      tupleClasses,
+//      tupleClasses,
       njvmClasses
     ).reduce(_ ++ _)
 
