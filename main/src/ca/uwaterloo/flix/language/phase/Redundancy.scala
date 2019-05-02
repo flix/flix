@@ -54,7 +54,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Computes all used symbols in all defs (in parallel).
     val usedDefs = root.defs.par.aggregate(Used.Neutral)({
-      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root)
+      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root, flix)
     }, _ ++ _)
 
     // Computes all used symbols in all lattices.
@@ -83,7 +83,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Checks for unused symbols in the given definition and returns all used symbols.
     */
-  private def visitDef(defn: TypedAst.Def)(implicit root: Root): Used = {
+  private def visitDef(defn: TypedAst.Def)(implicit root: Root, flix: Flix): Used = {
 
     /**
       * Checks for unused formal parameters.
@@ -1121,31 +1121,60 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val Zer: Expression = Expression.Int32(0, SL)
     val One: Expression = Expression.Int32(1, SL)
 
+    def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym()(flix.genSym), TInt32, Pure, SL)
+
     def add(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Plus, e1, e2, TInt32, Pure, SL)
 
     def sub(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Minus, e1, e2, TInt32, Pure, SL)
 
+    def mul(e1: Expression, e2: Expression): Expression =
+      Binary(BinaryOperator.Times, e1, e2, TInt32, Pure, SL)
+
     def div(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Divide, e1, e2, TInt32, Pure, SL)
 
-    val AddZeroLeft: Expression = add(Wild, Zer)
+    def additionByZero(): Expression = add(Wild, Zer)
 
-    val AddZeroRight: Expression = add(Zer, Wild)
+    def additionToZero(): Expression = add(Zer, Wild)
 
-    val DivideByOne: Expression = div(Wild, One)
+    def subtractionByZero(): Expression = sub(Wild, Zer)
 
-    val AllPatterns: List[Expression] = List(
-      AddZeroLeft,
-      AddZeroRight,
-      DivideByOne
+    def multiplicationByZero(): Expression = mul(Wild, Zer)
+
+    def multiplicationByOne(): Expression = mul(Wild, One)
+
+    def divideByOne(): Expression = div(Wild, One)
+
+    def divideBySelf()(implicit flix: Flix): Expression = {
+      val varX = mkVar()
+      div(varX, varX)
+    }
+
+
+    // TODO: String concat.
+
+    // TODO: Use cases to find:
+    // TODO:  - List.map(x -> x, _)
+    // TODO:  - List.map(_, Nil)
+    // TODO:  - List.length(Nil)
+
+    def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
+      additionByZero(),
+      additionToZero(),
+      subtractionByZero(),
+      multiplicationByZero(),
+      multiplicationByOne(),
+      divideByOne(),
+      divideBySelf()
     )
 
   }
 
-  private def checkExp(e0: TypedAst.Expression): Used =
-    BugPatternCatalog.AllPatterns.foldLeft(Used.Neutral) {
+  // TODO: Recursively check for these.
+  private def checkExp(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
+    BugPatternCatalog.allPatterns.foldLeft(Used.Neutral) {
       case (acc, x) if unify(e0, x).nonEmpty => acc + UselessExpression(e0.loc)
       case (acc, x) => acc
     }
@@ -1158,6 +1187,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Wild(_, _, _), _) => Some(())
 
     case (_, Expression.Wild(_, _, _)) => Some(())
+
+    case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) =>
+      if (sym1 != sym2)
+        Some(()) // TODO
+      else
+        Some(())
 
     case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) =>
       if (lit1 != lit2)
@@ -1176,11 +1211,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case _ => None
   }
-
-  // TODO: Use cases to find:
-  // TODO:  - List.map(x -> x, _)
-  // TODO:  - List.map(_, Nil)
-  // TODO:  - List.length(Nil)
 
   // TODO: Should we also consider tricky cases such as:
   // match s with {
