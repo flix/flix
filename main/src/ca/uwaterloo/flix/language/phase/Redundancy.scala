@@ -17,9 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -1107,34 +1108,37 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Compile to automaton or similar?
 
-  sealed trait RedundantPat
-
-  object RedundantPat {
-
-    case object Wild extends RedundantPat
-
-    case object Id extends RedundantPat
-
-    case class Int32(lit: Int) extends RedundantPat
-
-    case class Def(sym: Symbol.DefnSym) extends RedundantPat
-
-    case class Bin(op: BinaryOperator, pat1: RedundantPat, pat2: RedundantPat) extends RedundantPat
-
-    case class App(pat1: RedundantPat, pat2: RedundantPat) extends RedundantPat
-
-  }
-
   object BugPatternCatalog {
 
-    import RedundantPat._
+    val TInt32: Type = Type.Cst(TypeConstructor.Int32)
 
-    val ApplyId: RedundantPat = App(Id, Wild)
+    import SourceLocation.{Unknown => SL}
+    import ast.Eff.{Pure => Pure}
 
-    val DivideByOne: RedundantPat = Bin(BinaryOperator.Divide, Wild, Int32(1))
+    import Expression._
 
-    val AllPatterns: List[RedundantPat] = List(
-      ApplyId,
+    val Wild: Expression = Expression.Wild(TInt32, Pure, SL)
+    val Zer: Expression = Expression.Int32(0, SL)
+    val One: Expression = Expression.Int32(1, SL)
+
+    def add(e1: Expression, e2: Expression): Expression =
+      Binary(BinaryOperator.Plus, e1, e2, TInt32, Pure, SL)
+
+    def sub(e1: Expression, e2: Expression): Expression =
+      Binary(BinaryOperator.Minus, e1, e2, TInt32, Pure, SL)
+
+    def div(e1: Expression, e2: Expression): Expression =
+      Binary(BinaryOperator.Divide, e1, e2, TInt32, Pure, SL)
+
+    val AddZeroLeft: Expression = add(Wild, Zer)
+
+    val AddZeroRight: Expression = add(Zer, Wild)
+
+    val DivideByOne: Expression = div(Wild, One)
+
+    val AllPatterns: List[Expression] = List(
+      AddZeroLeft,
+      AddZeroRight,
       DivideByOne
     )
 
@@ -1142,22 +1146,35 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def checkExp(e0: TypedAst.Expression): Used =
     BugPatternCatalog.AllPatterns.foldLeft(Used.Neutral) {
-      case (acc, x) if unifyPatExp(e0, x) => acc + UselessExpression(e0.loc)
+      case (acc, x) if unify(e0, x).nonEmpty => acc + UselessExpression(e0.loc)
       case (acc, x) => acc
     }
 
   // TODO: Might be better to do the opposite: Parse an exression into a pattern. If succesfull then check
   // the non context-free variables to see if there is a problem or not.
 
-  private def unifyPatExp(e: TypedAst.Expression, r: RedundantPat): Boolean = (r, e) match {
-    case (RedundantPat.Wild, _) => true
-    case (RedundantPat.Int32(lit1), Expression.Int32(lit2, _)) if lit1 == lit2 => true
-    case (RedundantPat.Id, Expression.Lambda(fparam, Expression.Var(sym, _, _, _), _, _, _)) if fparam.sym == sym => true
-    case (RedundantPat.App(pat1, pat2), Expression.Apply(exp1, exp2, _, _, _)) => unifyPatExp(exp1, pat1) && unifyPatExp(exp2, pat2)
-    case (RedundantPat.Bin(op1, pat1, pat2), Expression.Binary(op2, exp1, exp2, _, _, _)) if op1 == op2 =>
-      unifyPatExp(exp1, pat1) && unifyPatExp(exp2, pat2)
+  private def unify(e1: Expression, e2: Expression): Option[Unit] = (e1, e2) match {
 
-    case _ => false
+    case (Expression.Wild(_, _, _), _) => Some(())
+
+    case (_, Expression.Wild(_, _, _)) => Some(())
+
+    case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) =>
+      if (lit1 != lit2)
+        None
+      else
+        Some(())
+
+    case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) =>
+      if (op1 != op2)
+        None
+      else
+        for {
+          subst1 <- unify(exp11, exp21)
+          subst2 <- unify(exp12, exp22)
+        } yield ()
+
+    case _ => None
   }
 
   // TODO: Use cases to find:
