@@ -289,6 +289,86 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.ShadowedVar](result)
   }
 
+  test("TrivialExpression.LeftAdditionByZero") {
+    val input =
+      """
+        |def f(): Int = 0 + 123
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.RightAdditionByZero") {
+    val input =
+      """
+        |def f(): Int = 123 + 0
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.SubtractionByZero") {
+    val input =
+      """
+        |def f(): Int = 123 - 0
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.SubtractionBySelf") {
+    val input =
+      """
+        |def f(x: Int): Int = x - x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.LeftMultiplicationByZero") {
+    val input =
+      """
+        |def f(): Int = 0 * 123
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.RightMultiplicationByZero") {
+    val input =
+      """
+        |def f(): Int = 123 * 0
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.LeftMultiplicationByOne") {
+    val input =
+      """
+        |def f(): Int = 1 * 123
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.RightMultiplicationByOne") {
+    val input =
+      """
+        |def f(): Int = 123 * 1
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
@@ -1053,6 +1133,5 @@ class TestRedundancy extends FunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[RedundancyError.UselessPatternMatch](result)
   }
-
 
 }

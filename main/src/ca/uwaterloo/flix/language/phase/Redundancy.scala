@@ -1135,19 +1135,55 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def div(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Divide, e1, e2, TInt32, Pure, SL)
 
-    def additionByZero(): Expression = add(Wild, Zer)
+    /**
+      * Trivial Expression: _ + 0
+      */
+    def leftAdditionByZero(): Expression = add(Zer, Wild)
 
-    def additionToZero(): Expression = add(Zer, Wild)
+    /**
+      * Trivial Expression: 0 + _
+      */
+    def rightAdditionByZero(): Expression = add(Wild, Zer)
 
+    /**
+      * Trivial Expression: _ - 0
+      */
     def subtractionByZero(): Expression = sub(Wild, Zer)
 
-    def multiplicationByZero(): Expression = mul(Wild, Zer)
+    /**
+      * Trivial Expression: x - x
+      */
+    def subtractionBySelf()(implicit flix: Flix): Expression = {
+      val varX = mkVar()
+      sub(varX, varX)
+    }
 
-    def multiplicationByOne(): Expression = mul(Wild, One)
+    /**
+      * Trivial Expression: 0 * x
+      */
+    def leftMultiplicationByZero(): Expression = mul(Zer, Wild)
 
-    def divideByOne(): Expression = div(Wild, One)
+    /**
+      * Trivial Expression: x * 0
+      */
+    def rightMultiplicationByZero(): Expression = mul(Wild, Zer)
 
-    def divideBySelf()(implicit flix: Flix): Expression = {
+    /**
+      * Trivial Expression: 1 * x
+      */
+    def leftMultiplicationByOne(): Expression = mul(One, Wild)
+
+    /**
+      * Trivial Expression: x * 1
+      */
+    def rightMultiplicationByOne(): Expression = mul(Wild, One)
+
+    // TODO: Add more identities.
+
+
+    def divisionByOne(): Expression = div(Wild, One)
+
+    def divisionBySelf()(implicit flix: Flix): Expression = {
       val varX = mkVar()
       div(varX, varX)
     }
@@ -1161,13 +1197,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO:  - List.length(Nil)
 
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
-      additionByZero(),
-      additionToZero(),
+      rightAdditionByZero(),
+      leftAdditionByZero(),
       subtractionByZero(),
-      multiplicationByZero(),
-      multiplicationByOne(),
-      divideByOne(),
-      divideBySelf()
+      subtractionBySelf(),
+      leftMultiplicationByZero(),
+      rightMultiplicationByZero(),
+      leftMultiplicationByOne(),
+      rightMultiplicationByOne(),
+      divisionByOne(),
+      divisionBySelf()
     )
 
   }
@@ -1175,7 +1214,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Recursively check for these.
   private def checkExp(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
     BugPatternCatalog.allPatterns.foldLeft(Used.Neutral) {
-      case (acc, x) if unify(e0, x).nonEmpty => acc + UselessExpression(e0.loc)
+      case (acc, x) if unify(e0, x).nonEmpty => acc + TrivialExpression(e0.loc)
       case (acc, x) => acc
     }
 

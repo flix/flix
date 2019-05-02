@@ -78,6 +78,29 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that an expression is trivial.
+    *
+    * @param loc the location of the expression.
+    */
+  case class TrivialExpression(loc: SourceLocation) extends RedundancyError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Trivial expression: It performs a suspicious computation." << NewLine
+      vt << NewLine
+      vt << Code(loc, "trivial expression.") << NewLine
+      vt << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Ensure that there is no typo or mistake in the expression." << NewLine
+      vt << "  (2)  Simplify the expression." << NewLine
+      vt << NewLine
+      vt
+    }
+  }
+
+  /**
     * An error raised to indicate that the def with the symbol `sym` is not used.
     *
     * @param sym the unused enum symbol.
