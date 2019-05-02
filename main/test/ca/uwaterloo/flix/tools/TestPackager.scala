@@ -19,6 +19,12 @@ class TestPackager extends FunSuite {
     Packager.init(p, DefaultOptions)
   }
 
+  test("check") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Packager.init(p, DefaultOptions)
+    Packager.check(p, DefaultOptions)
+  }
+
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)

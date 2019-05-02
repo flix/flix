@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
@@ -14,6 +29,7 @@ class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) ex
 
   //Setup
   private val ct: Reference = getRefClassType[T]
+
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
   //Fields each variable represents a field which can be acessed
@@ -95,10 +111,7 @@ class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) ex
     * }
     */
   val toStringMethod: Method1[Ref[RefClass[T]],Ref[MString]] =
-    cg.mkMethod1("toString",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
-    )
+    cg.mkMethod1("toString", _ => toStringNotImplemented)
 
   /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * Despite this in order to stay in line with our format we still store the capability to call the method
@@ -109,10 +122,8 @@ class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) ex
     * }
     */
   val hashCodeMethod: Method1[Ref[RefClass[T]], MInt] =
-    cg.mkMethod1("hashCode",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
-    )
+    cg.mkMethod1("hashCode", _ => hashCodeNotImplemented)
+
 
   /**
     * Generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
@@ -125,16 +136,15 @@ class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) ex
     *
     */
   val equalsMethod: Method2[Ref[RefClass[T]], Ref[MObject], MBool] =
-    cg.mkMethod2("equal",
-      _ =>
-        newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
-    )
+    cg.mkMethod2("equal", _ => equalsNotImplemented)
 
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
     */
   private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
 
+
+  // TODO: Miguel: Why do we need a getter here?
   def getJvmClass: JvmClass = jvmClass
 
   def getClassMapping: (JvmName, MnemonicsClass) =

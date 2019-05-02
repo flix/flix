@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
@@ -5,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getJvmType, getRecordInterfaceType, getRefClassType, getTupleInterfaceType, stringify, _}
 import ca.uwaterloo.flix.language.phase.jvm._
+import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java.Lang.{Object, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
@@ -18,6 +34,8 @@ import ca.uwaterloo.flix.language.phase.njvm.classes._
 import ca.uwaterloo.flix.language.phase.njvm.interfaces._
 
 object Mnemonics {
+
+  // TODO: Miguel: Add some comments for these very critical components :)
 
   trait Stack
 
@@ -802,6 +820,7 @@ object Mnemonics {
       cw
     }
 
+    // TODO: Miguel: Should this not be in Instructions?
     def SUPER[T <: Ref[MObject]]: F[StackNil ** T] => F[StackNil] =
       Object.constructor.INVOKE
 
@@ -867,12 +886,13 @@ object Mnemonics {
       val returnType = getJvmType[R]
       val funSig = new FunSig1[T1, R]()
 
-      val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type)) else (JvmModifier.InvokeVirtual, List())
+      val (invokeCode, argsList) = if (isStatic) (JvmModifier.InvokeStatic, List(arg1Type)) else (JvmModifier.InvokeVirtual, List())
 
       emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
 
       new Method1(invokeCode, ct, methodName)
     }
+
 
     /**
       * This method generates in the current class we are generating a (void) method with 1 argument
@@ -938,6 +958,7 @@ object Mnemonics {
 
       val funSig = new FunSig2[T1, T2, R]()
 
+
       val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type, arg2Type)) else (JvmModifier.InvokeVirtual, List(arg2Type))
 
       emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
@@ -958,13 +979,11 @@ object Mnemonics {
       */
     def mkVoidMethod2[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig2[T1, T2, MVoid] => F[StackNil] => F[StackNil],
                                                 modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): VoidMethod2[T1, T2] = {
-
       val arg1Type = getJvmType[T1]
       val arg2Type = getJvmType[T2]
 
       val returnType = Void
       val funSig = new FunSig2[T1, T2, MVoid]()
-
 
       val (invokeCode, argsList) = if(isStatic) (JvmModifier.InvokeStatic, List(arg1Type, arg2Type)) else (JvmModifier.InvokeVirtual, List(arg2Type))
 
@@ -1004,6 +1023,7 @@ object Mnemonics {
       *                   will describe what instruction the method we are generating will execute.
       * @return returns a Method3 capability allows now the possibility to invoke this new (non-void) method with 3 arguments
       */
+
     def mkMethod3[T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag, T3<: MnemonicsTypes : TypeTag, R<: MnemonicsTypes : TypeTag](methodName: String, f: FunSig3[T1, T2, T3, R] => F[StackNil] => F[StackNil],
                                                                      modifiers: List[JvmModifier] = List(Public, Final), isStatic : Boolean = false): Method3[T1, T2, T3, R] = {
       val arg1Type = getJvmType[T1]
@@ -1110,7 +1130,6 @@ object Mnemonics {
       new UncheckedVoidMethod(JvmModifier.InvokeSpecial, ct, "<init>", args)
     }
 
-
     /**
       * Auxiliary method which actually emits the method bytecode onto the current class.
       * Should be used by functions which make method
@@ -1144,7 +1163,6 @@ object Mnemonics {
       *         acess field we've generated
       */
     def mkField[T <: MnemonicsTypes : TypeTag](fieldName: String, modifiers: List[JvmModifier] = List(Private)): Field[T] = {
-
       val fieldType = getJvmType[T]
       val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
       val field = cw.visitField(modifierVal, fieldName, fieldType.toDescriptor, null, null)
@@ -1278,6 +1296,7 @@ object Mnemonics {
       val returnType = getJvmType[R]
 
       emitInterfaceMethod(modifiers, methodName, List(arg2Type, arg3Type), returnType)
+
       new Method3(JvmModifier.InvokeInterface, it, methodName)
     }
 
@@ -1330,6 +1349,27 @@ object Mnemonics {
     }
   }
 
+  /**
+    * A stack transformer that throws an unsupported operation exception for toString.
+    */
+  def toStringNotImplemented(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
+    newUnsupportedOperationExceptionInstructions("toString shouldn't be called")
+  }
+
+  /**
+    * A stack transformer that throws an unsupported operation exception for equals.
+    */
+  def equalsNotImplemented(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
+    newUnsupportedOperationExceptionInstructions("equals shouldn't be called")
+  }
+
+  /**
+    * A stack transformer that throws an unsupported operation exception for hashCode.
+    */
+  def hashCodeNotImplemented(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
+    newUnsupportedOperationExceptionInstructions("hashCode shouldn't be called")
+  }
+
   //TODO: Might need to similarly to InterfaceGenerator and ClassGenerator generate a StaticGenerator
   /**
     * Auxiliary method which returns the transformer to generate the body of a function which simply throws an
@@ -1341,7 +1381,7 @@ object Mnemonics {
     Instructions.NEW[StackNil](Reference(JvmName.UnsupportedOperationException)) |>>
       Instructions.DUP |>>
       Instructions.LDC_STRING(message) |>>
-      UnsupportedOperationException.constructor.INVOKE |>>
+      Java.Lang.UnsupportedOperationException.constructor.INVOKE |>>
       Instructions.THROW
   }
 
@@ -1480,7 +1520,6 @@ object Mnemonics {
 
   }
 
-
   /**
     * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
     *
@@ -1543,6 +1582,7 @@ object Mnemonics {
     * MnemonicClass to the proper class we can acess the capabilities to call the methods in the class
     * which we are sure we have generated as the class is in the Map
     */
+
   trait MnemonicsClass extends MObject {
     def getJvmClass: JvmClass
 

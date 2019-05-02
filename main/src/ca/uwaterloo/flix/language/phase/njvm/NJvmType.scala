@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2017 Magnus Madsen
+=======
+ * Copyright 2019 Miguel Fialho
+>>>>>>> 5d64b9396446f02aea075e1a92d80ec0b219ddad
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
@@ -42,6 +45,8 @@ sealed trait NJvmType {
 }
 
 object NJvmType {
+
+  // TODO: Miguel: Ultimately all of these will be removed and replaced by a generic-typed Reference.
 
   /**
     * The Flix Context class.
@@ -84,32 +89,44 @@ object NJvmType {
   /**
     * Represents the void type.
     */
+
   case object Void extends NJvmType
+
 
   /**
     * Represents the primitive boolean type.
     */
+
   case object PrimBool extends NJvmType
+
 
   /**
     * Represents the primitive character type.
     */
+
   case object PrimChar extends NJvmType
+
 
   /**
     * Represents the primitive byte type.
     */
+
   case object PrimByte extends NJvmType
+
 
   /**
     * Represents the primitive short type.
     */
+
   case object PrimShort extends NJvmType
+
 
   /**
     * Represents the primitive int type.
     */
+
   case object PrimInt extends NJvmType
+
 
   /**
     * Represents the primitive long type.

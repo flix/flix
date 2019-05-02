@@ -18,6 +18,7 @@ package flix.runtime.fixpoint.symbol;
 
 import flix.runtime.fixpoint.Attribute;
 import flix.runtime.ProxyObject;
+import flix.runtime.value.Unit;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -110,7 +111,7 @@ public final class RelSym implements PredSym {
      */
     @Override
     public String toString() {
-        if (parameter == null)
+        if (parameter == null || parameter.getValue() == Unit.getInstance())
             return name;
         else
             return name + "<" + parameter.toString() + ">";

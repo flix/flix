@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2017 Magnus Madsen
+=======
+ * Copyright 2019 Miguel Fialho
+>>>>>>> 5d64b9396446f02aea075e1a92d80ec0b219ddad
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +36,6 @@ import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
-
 
 object NJvmBackend extends Phase[Root, CompilationResult] {
 
@@ -132,14 +135,17 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate tuple interfaces for each tuple type in the program.
     //
+
 //    import ca.uwaterloo.flix.language.phase.jvm.GenTupleInterfaces
 //    val tupleInterfaces = GenTupleInterfaces.gen(types)
 
     //
     // Generate tuple classes for each tuple type in the program.
     //
+
 //    import ca.uwaterloo.flix.language.phase.jvm.GenTupleClasses
 //    val tupleClasses = GenTupleClasses.gen(types)
+
 
     /** Generated classes using NJVM */
     val map: Map[JvmName, MnemonicsClass] = Map()
@@ -153,6 +159,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenRefClasses,
         GenTupleClasses
       )
+
 
     val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types) }
       .map(f => (f._1, f._2.getJvmClass))

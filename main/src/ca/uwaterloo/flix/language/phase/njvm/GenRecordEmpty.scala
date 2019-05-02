@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
@@ -23,12 +22,12 @@ import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.classes.RecordEmpty
 
-
 /**
   * Generates bytecode for the empty record class.
   */
 object GenRecordEmpty extends MnemonicsGenerator {
 
+  // TODO: Miguel: Is it really worth it to have these small 2line classes? Or at least we should the move them into Mnemonics.
   def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
     map + new RecordEmpty(map).getClassMapping
   }
