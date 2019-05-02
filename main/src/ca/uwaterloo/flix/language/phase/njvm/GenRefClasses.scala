@@ -20,27 +20,29 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
-import ca.uwaterloo.flix.language.phase.njvm.classes.RecordExtend
+import ca.uwaterloo.flix.language.phase.njvm.classes.RefClass
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 /**
-  * Generates bytecode for the extended record class.
+  * Generates bytecode for the ref classes.
   */
-object GenRecordExtend extends MnemonicsGenerator {
+
+object GenRefClasses extends MnemonicsGenerator {
 
   // TODO: Miguel: Is it really worth it to have these small 2line classes? Or at least we should the move them into Mnemonics.
 
   def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
-
     map + (
-      new RecordExtend[PrimBool](map).getClassMapping,
-      new RecordExtend[PrimChar](map).getClassMapping,
-      new RecordExtend[PrimFloat](map).getClassMapping,
-      new RecordExtend[PrimDouble](map).getClassMapping,
-      new RecordExtend[PrimByte](map).getClassMapping,
-      new RecordExtend[PrimShort](map).getClassMapping,
-      new RecordExtend[PrimInt](map).getClassMapping,
-      new RecordExtend[PrimLong](map).getClassMapping,
-      new RecordExtend[Object.type](map).getClassMapping)
+      new RefClass[PrimBool].getClassMapping,
+      new RefClass[PrimChar].getClassMapping,
+      new RefClass[PrimFloat].getClassMapping,
+      new RefClass[PrimDouble].getClassMapping,
+      new RefClass[PrimByte].getClassMapping,
+      new RefClass[PrimShort].getClassMapping,
+      new RefClass[PrimInt].getClassMapping,
+      new RefClass[PrimLong].getClassMapping,
+      new RefClass[Object.type].getClassMapping)
   }
+
 }
+

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -210,7 +210,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           r.sym.setStackOffset(currentOffset)
 
           // Compute the next free stack offset.
-          val elementType = Type.getChannelInnerType(r.chan.tpe)
+          val elementType = r.chan.tpe.typeArguments.head
           currentOffset = currentOffset + getStackSize(elementType)
 
           // Visit the channel expression of the rule.
@@ -293,7 +293,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Everything else uses one slot.
     */
   private def getStackSize(tpe: Type): Int = tpe match {
-    case Type.Int64 | Type.Float64 => 2
+    case Type.Cst(TypeConstructor.Int64) | Type.Cst(TypeConstructor.Float64) => 2
     case _ => 1
   }
 

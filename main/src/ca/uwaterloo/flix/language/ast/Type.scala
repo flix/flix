@@ -34,31 +34,14 @@ sealed trait Type {
     */
   def typeVars: Set[Type.Var] = this match {
     case x: Type.Var => Set(x)
-    case Type.Unit => Set.empty
-    case Type.Bool => Set.empty
-    case Type.Char => Set.empty
-    case Type.Float32 => Set.empty
-    case Type.Float64 => Set.empty
-    case Type.Int8 => Set.empty
-    case Type.Int16 => Set.empty
-    case Type.Int32 => Set.empty
-    case Type.Int64 => Set.empty
-    case Type.BigInt => Set.empty
-    case Type.Str => Set.empty
-    case Type.Channel => Set.empty
-    case Type.Array => Set.empty
-    case Type.Vector => Set.empty
-    case Type.Native(clazz) => Set.empty
-    case Type.Ref => Set.empty
+    case Type.Cst(tc) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
-    case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
-    case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, ts, _) => ts.flatMap(_.typeVars).toSet
     case Type.Lattice(_, ts, _) => ts.flatMap(_.typeVars).toSet
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -109,14 +92,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is an array type.
-    */
-  def isArray: Boolean = typeConstructor match {
-    case Type.Array => true
-    case _ => false
-  }
-
-  /**
     * Returns `true` if `this` type is an arrow type.
     */
   def isArrow: Boolean = typeConstructor match {
@@ -127,8 +102,9 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is an enum type.
     */
+  @deprecated("removed", "0.5")
   def isEnum: Boolean = typeConstructor match {
-    case Type.Enum(sym, kind) => true
+    case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
     case _ => false
   }
 
@@ -151,8 +127,9 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is a tuple type.
     */
+  @deprecated("removed", "0.5")
   def isTuple: Boolean = typeConstructor match {
-    case Type.Tuple(l) => true
+    case Type.Cst(TypeConstructor.Tuple(l)) => true
     case _ => false
   }
 
@@ -175,14 +152,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a reference type.
-    */
-  def isRef: Boolean = typeConstructor match {
-    case Type.Ref => true
-    case _ => false
-  }
-
-  /**
     * Returns `true` if `this` type does not contain type variables.
     */
   def isDeterminate: Boolean = this match {
@@ -196,29 +165,12 @@ sealed trait Type {
     */
   override def toString: String = this match {
     case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
-    case Type.Unit => "Unit"
-    case Type.Bool => "Bool"
-    case Type.Char => "Char"
-    case Type.Float32 => "Float32"
-    case Type.Float64 => "Float64"
-    case Type.Int8 => "Int8"
-    case Type.Int16 => "Int16"
-    case Type.Int32 => "Int32"
-    case Type.Int64 => "Int64"
-    case Type.BigInt => "BigInt"
-    case Type.Str => "Str"
-    case Type.Channel => "Channel"
-    case Type.Array => "Array"
-    case Type.Vector => "Vector"
+    case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Native(clazz) => "Native"
-    case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
-    case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
-    case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
@@ -270,116 +222,12 @@ object Type {
   }
 
   /**
-    * A type constructor that represents the unit value.
+    * A type represented by the type constructor `tc`.
     */
-  case object Unit extends Type {
-    def kind: Kind = Kind.Star
+  case class Cst(tc: TypeConstructor) extends Type {
+    def kind: Kind = tc.kind
   }
 
-  /**
-    * A type constructor that represent boolean values.
-    */
-  case object Bool extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent character values.
-    */
-  case object Char extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 32-bit floating point numbers.
-    */
-  case object Float32 extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 64-bit floating point numbers.
-    */
-  case object Float64 extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 8-bit signed integers.
-    */
-  case object Int8 extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 16-bit signed integers.
-    */
-  case object Int16 extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 32-bit signed integers.
-    */
-  case object Int32 extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent 64-bit signed integers.
-    */
-  case object Int64 extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent arbitrary-precision integers.
-    */
-  case object BigInt extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent strings.
-    */
-  case object Str extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent channels.
-    */
-  case object Channel extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent arrays.
-    */
-  case object Array extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent vectors.
-    */
-  case object Vector extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represent native objects.
-    */
-  case class Native(clazz: Class[_]) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represents references.
-    */
-  case object Ref extends Type {
-    def kind: Kind = Kind.Star
-  }
 
   /**
     * A type expression that represents functions.
@@ -387,14 +235,6 @@ object Type {
   case class Arrow(length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
-
-  /**
-    * A type constructor that represents enums.
-    *
-    * @param sym  the symbol of the enum.
-    * @param kind the kind of the enum.
-    */
-  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
     * A type constructor that represents a relation with attributes of the given types.
@@ -413,13 +253,6 @@ object Type {
     * @param kind the kind of the lattice.
     */
   case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
-
-  /**
-    * A type constructor that represents tuples of the given `length`.
-    */
-  case class Tuple(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
 
   /**
     * A type constructor that represents the empty record type.
@@ -534,47 +367,21 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    val tuple = Tuple(ts.length)
+    val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
     ts.foldLeft(tuple: Type) {
       case (acc, x) => Apply(acc, x)
     }
   }
 
   /**
-    * Constructs the channel type [elmType] where 'elmType' is the given type.
-    */
-  def mkChannel(elmType: Type): Type = Apply(Channel, elmType)
-
-  /**
-    * Return the inner type of the channel
-    *
-    * For example given Channel[Int] return Int.
-    */
-  def getChannelInnerType(tpe: Type): Type = {
-    tpe match {
-      case Type.Apply(Type.Channel, t) => t
-      case _ => throw InternalCompilerException(s"Excepted channel type. Actual type: '$tpe' ")
-    }
-  }
-
-  /**
     * Constructs the array type [elmType] where 'elmType' is the given type.
     */
-  def mkArray(elmType: Type): Type = Apply(Array, elmType)
+  def mkArray(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Array), elmType)
 
   /**
-    * Return the inner type of the array or vector
-    *
-    * For example given Array[Int] return Int,
-    * and given Vector[Int, 5] return Int.
+    * Constructs the channel type [elmType] where 'elmType' is the given type.
     */
-  def getArrayInnerType(tpe: Type): Type = {
-    tpe match {
-      case Type.Apply(Type.Array, t) => t
-      case Type.Apply(Type.Apply(Type.Vector, t), _) => t
-      case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
-    }
-  }
+  def mkChannel(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Channel), elmType)
 
   /**
     * Constructs the vector type [|elmType, Len|] where
@@ -584,14 +391,7 @@ object Type {
     *
     *                len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
     */
-  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Vector, elmType), len)
-
-  /**
-    * Constructs the set type of A.
-    */
-  def mkFSet(a: Type): Type = {
-    Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), a)
-  }
+  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Cst(TypeConstructor.Vector), elmType), len)
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`
@@ -607,24 +407,8 @@ object Type {
       */
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
-      case Type.Unit => Type.Unit
-      case Type.Bool => Type.Bool
-      case Type.Char => Type.Char
-      case Type.Float32 => Type.Float32
-      case Type.Float64 => Type.Float64
-      case Type.Int8 => Type.Int8
-      case Type.Int16 => Type.Int16
-      case Type.Int32 => Type.Int32
-      case Type.Int64 => Type.Int64
-      case Type.BigInt => Type.BigInt
-      case Type.Str => Type.Str
-      case Type.Channel => Type.Channel
-      case Type.Array => Type.Array
-      case Type.Vector => Type.Vector
-      case Type.Native(clazz) => Type.Native(clazz)
-      case Type.Ref => Type.Ref
+      case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(l) => Type.Arrow(l)
-      case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
@@ -632,7 +416,6 @@ object Type {
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
-      case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
     }
@@ -664,26 +447,27 @@ object Type {
           case Type.Var(id, kind) => m(id)
 
           //
+          // Enum.
+          //
+          case Type.Cst(TypeConstructor.Enum(sym, _)) =>
+            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+
+          //
+          // Tuple.
+          //
+          case Type.Cst(TypeConstructor.Tuple(l)) =>
+            "(" + args.map(visit(_, m)).mkString(", ") + ")"
+
+          //
+          // Type Constructors.
+          //
+          case Type.Cst(tc) => tc.toString
+
+          //
           // Primitive Types.
           //
-          case Type.Unit => "Unit"
-          case Type.Bool => "Bool"
-          case Type.Char => "Char"
-          case Type.Float32 => "Float32"
-          case Type.Float64 => "Float64"
-          case Type.Int8 => "Int8"
-          case Type.Int16 => "Int16"
-          case Type.Int32 => "Int32"
-          case Type.Int64 => "Int64"
-          case Type.BigInt => "BigInt"
-          case Type.Str => "String"
-          case Type.Channel => "Channel"
-          case Type.Array => "Array"
-          case Type.Vector => "Vector"
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString
-          case Type.Native(clazz) => "#" + clazz.getName
-          case Type.Ref => "Ref"
 
           //
           // Arrow.
@@ -696,12 +480,6 @@ object Type {
             } else {
               "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
             }
-
-          //
-          // Tuple.
-          //
-          case Type.Tuple(l) =>
-            "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
           //
           // RecordEmpty.
@@ -724,12 +502,6 @@ object Type {
           //
           case Type.SchemaExtend(sym, t, rest) =>
             "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
-
-          //
-          // Enum.
-          //
-          case Type.Enum(sym, _) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
           //
           // Relation.

@@ -96,3 +96,8 @@ def nativeMethod13(): Bool @ Any =
     let y = native method java.util.BitSet.set(x, 10);
     let z = native method java.util.BitSet.set(x, 3);
     assertEq!(native method java.util.BitSet.toString(x), "{3, 10}")
+
+@test
+def nativeMethod14(): Bool @ Any =
+  let n: Int = native method java.lang.Integer.parseInt("22") as Int;
+  assertEq!(n, 22)

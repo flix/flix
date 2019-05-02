@@ -585,30 +585,32 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
     base match {
       // Primitive Types.
-      case Type.Unit => MonoType.Unit
-      case Type.Bool => MonoType.Bool
-      case Type.Char => MonoType.Char
-      case Type.Float32 => MonoType.Float32
-      case Type.Float64 => MonoType.Float64
-      case Type.Int8 => MonoType.Int8
-      case Type.Int16 => MonoType.Int16
-      case Type.Int32 => MonoType.Int32
-      case Type.Int64 => MonoType.Int64
-      case Type.BigInt => MonoType.BigInt
-      case Type.Str => MonoType.Str
+      case Type.Cst(TypeConstructor.Unit) => MonoType.Unit
+      case Type.Cst(TypeConstructor.Bool) => MonoType.Bool
+      case Type.Cst(TypeConstructor.Char) => MonoType.Char
+      case Type.Cst(TypeConstructor.Float32) => MonoType.Float32
+      case Type.Cst(TypeConstructor.Float64) => MonoType.Float64
+      case Type.Cst(TypeConstructor.Int8) => MonoType.Int8
+      case Type.Cst(TypeConstructor.Int16) => MonoType.Int16
+      case Type.Cst(TypeConstructor.Int32) => MonoType.Int32
+      case Type.Cst(TypeConstructor.Int64) => MonoType.Int64
+      case Type.Cst(TypeConstructor.BigInt) => MonoType.BigInt
+      case Type.Cst(TypeConstructor.Str) => MonoType.Str
 
       // Compound Types.
-      case Type.Array => MonoType.Array(args.head)
+      case Type.Cst(TypeConstructor.Array) => MonoType.Array(args.head)
 
-      case Type.Vector => MonoType.Array(args.head)
+      case Type.Cst(TypeConstructor.Channel) => MonoType.Channel(args.head)
 
-      case Type.Channel => MonoType.Channel(args.head)
+      case Type.Cst(TypeConstructor.Enum(sym, _)) => MonoType.Enum(sym, args)
 
-      case Type.Ref => MonoType.Ref(args.head)
+      case Type.Cst(TypeConstructor.Native(clazz)) => MonoType.Native(clazz)
 
-      case Type.Tuple(l) => MonoType.Tuple(args)
+      case Type.Cst(TypeConstructor.Ref) => MonoType.Ref(args.head)
 
-      case Type.Enum(sym, _) => MonoType.Enum(sym, args)
+      case Type.Cst(TypeConstructor.Vector) => MonoType.Array(args.head)
+
+      case Type.Cst(TypeConstructor.Tuple(l)) => MonoType.Tuple(args)
 
       case Type.Arrow(l) => MonoType.Arrow(args.init, args.last)
 
@@ -623,8 +625,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Relation(sym, attr, _) => MonoType.Relation(sym, attr map visitType)
 
       case Type.Lattice(sym, attr, _) => MonoType.Lattice(sym, attr map visitType)
-
-      case Type.Native(clazz) => MonoType.Native(clazz)
 
       case Type.Zero => MonoType.Unit
 

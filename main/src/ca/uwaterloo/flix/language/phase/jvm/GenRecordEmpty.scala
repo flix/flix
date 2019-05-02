@@ -53,18 +53,18 @@ object GenRecordEmpty {
     *
     * public RecordEmpty() {}
     *
-    * First, we will generate the `getRecordWithField(String)` method which will always throws an exception,
-    * since `getRecordWithField` should not be called.
-    * The `getRecordWithField` method is always the following:
+    * First, we will generate the `lookupField(String)` method which will always throws an exception,
+    * since `lookupField` should not be called.
+    * The `lookupField` method is always the following:
     *
-    * public IRecord getRecordWithField(String var1) throws Exception {
-    * throw new Exception("getField method shouldn't be called");
+    * public IRecord lookupField(String var1) throws Exception {
+    * throw new Exception("lookupField method shouldn't be called");
     * }
     *
     * Afterwards, we will generate the `restrictField(String)` method which will always throws an exception, since `restrictField` should not be called.
     * The `restrictField` method is always the following:
     *
-    * public string getField(String var1) throws Exception {
+    * public string restrictField(String var1) throws Exception {
     * throw new Exception("restrictField method shouldn't be called");
     * }
     *
@@ -109,10 +109,10 @@ object GenRecordEmpty {
     // Emit the code for the constructor
     compileRecordEmptyConstructor(visitor, classType, targs)
 
-    // Generate 'getRecordWithField' method
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "getRecordWithField",
+    // Generate 'lookupField' method
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "lookupField",
       AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType),
-      "getField method shouldn't be called")
+      "lookupField method shouldn't be called")
 
     // Generate 'restrictField' method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "restrictField",

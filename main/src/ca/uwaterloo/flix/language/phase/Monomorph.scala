@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -75,25 +75,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Var(_, _) => Type.Unit
-        case Type.Unit => Type.Unit
-        case Type.Bool => Type.Bool
-        case Type.Char => Type.Char
-        case Type.Float32 => Type.Float32
-        case Type.Float64 => Type.Float64
-        case Type.Int8 => Type.Int8
-        case Type.Int16 => Type.Int16
-        case Type.Int32 => Type.Int32
-        case Type.Int64 => Type.Int64
-        case Type.BigInt => Type.BigInt
-        case Type.Str => Type.Str
-        case Type.Channel => Type.Channel
-        case Type.Array => Type.Array
-        case Type.Vector => Type.Vector
-        case Type.Native(clazz) => Type.Native(clazz)
-        case Type.Ref => Type.Ref
+        case Type.Cst(tc) => Type.Cst(tc)
+        case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
         case Type.Arrow(l) => Type.Arrow(l)
-        case Type.Tuple(l) => Type.Tuple(l)
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
@@ -106,7 +90,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
-        case Type.Enum(sym, kind) => Type.Enum(sym, kind)
         case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
         case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
@@ -222,7 +205,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkArrow(List(valueType, valueType), Type.Bool)
+          val eqType = Type.mkArrow(List(valueType, valueType), Type.Cst(TypeConstructor.Bool))
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -230,9 +213,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
+                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
@@ -240,14 +223,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, eqType, eff, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Bool), eff, loc)
-              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Cst(TypeConstructor.Bool)), eff, loc)
+              val outer = Expression.Apply(inner, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
                 outer
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Cst(TypeConstructor.Bool), eff, loc)
               }
           }
 
@@ -600,15 +583,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
       // Lookup the definition and its declared type.
       val defn = root.defs(sym)
-      val declaredType = defn.tpe
 
-      // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
-
-      // Check if the substitution is empty, if so there is no need for specialization.
-      if (subst.isEmpty) {
+      // Check if the function is non-polymorphic.
+      if (defn.tparams.isEmpty) {
         return sym
       }
+
+      // Unify the declared and actual type to obtain the substitution map.
+      val declaredType = defn.tpe
+      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
