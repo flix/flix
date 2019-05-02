@@ -17,7 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Symbol._
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.errors.EffectError
 import ca.uwaterloo.flix.util.Validation._
@@ -52,13 +54,16 @@ object Effects extends Phase[Root, Root] {
     defn
   }
 
-  private def inferExp(exp0: Expression)(implicit flix: Flix, root: Root): InferMonad[TypeAndEffect] = exp0 match {
 
-    case Expression.Unit(_) => point(freshEffVar())
+  private def unifyM(typ1: Typ, typ2: Typ): InferMonad[(Typ, ast.Eff)] = InferMonad(null)
 
-    case Expression.True(_) => point(freshEffVar())
+  private def inferExp(exp0: Expression)(implicit flix: Flix, root: Root): InferMonad[(Typ, ast.Eff)] = exp0 match {
 
-    case Expression.False(_) => point(freshEffVar())
+    case Expression.Unit(_) => pure(Typ.Prim)
+
+    case Expression.True(_) => pure(Typ.Prim)
+
+    case Expression.False(_) => pure(Typ.Prim)
 
     case Expression.Char(lit, loc) => ???
 
@@ -70,7 +75,7 @@ object Effects extends Phase[Root, Root] {
 
     case Expression.Int16(lit, loc) => ???
 
-    case Expression.Int32(lit, loc) => ???
+    case Expression.Int32(_, _) => pure(Typ.Prim)
 
     case Expression.Int64(lit, loc) => ???
 
@@ -80,7 +85,7 @@ object Effects extends Phase[Root, Root] {
 
     case Expression.Wild(tpe, eff, loc) => ???
 
-    case Expression.Var(sym, tpe, eff, loc) => ???
+    case Expression.Var(sym, tpe, eff, loc) => pure(Typ.Prim)
 
     case Expression.Def(sym, tpe, eff, loc) => ???
 
@@ -88,28 +93,43 @@ object Effects extends Phase[Root, Root] {
 
     case Expression.Hole(sym, tpe, eff, loc) => ???
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => ???
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      val argumentType = translate(fparam.tpe)
+      for {
+        (typ1, eff1) <- inferExp(exp)
+      } yield
+        (Typ.Lambda(argumentType, eff1, typ1), ast.Eff.Pure)
 
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Apply(exp1, exp2, _, _, _) =>
+      val freshResultType: Typ = Typ.Var()
+      val freshResultEff: ast.Eff = null
+      for {
+        (inferredLambdaType, inferredLambdaEffect) <- inferExp(exp1)
+        (inferredArgumentType, inferredArgumentEffect) <- inferExp(exp2)
+        expectedLambdaType <- unifyM(inferredLambdaType, Typ.Lambda(inferredArgumentType, freshResultEff, freshResultType))
+      }
+        yield
+          ???
 
     case Expression.Unary(op, exp, tpe, eff, loc) => ???
 
     case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => ???
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      for {
+        (typ1, eff1) <- inferExp(exp1)
+        (typ2, eff2) <- inferExp(exp2)
+      } yield ???
 
     case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ???
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, effvar, _) =>
-      // TODO: Need effvar?
-      for {
-        eff1 <- inferExp(exp1)
-        eff2 <- inferExp(exp2)
-        eff3 <- inferExp(exp3)
-        effResult <- unify(eff1, eff2, eff3)
-      } yield effResult
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => ???
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      for {
+        (typ1, eff1) <- inferExp(exp1)
+        (typ2, eff2) <- inferExp(exp2)
+      } yield ???
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ???
 
@@ -175,7 +195,10 @@ object Effects extends Phase[Root, Root] {
 
     case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => ???
+    case Expression.NewChannel(exp, _, _, _) =>
+      for {
+        (typ, eff) <- inferExp(exp)
+      } yield (Typ.Channel(typ), eff)
 
     case Expression.GetChannel(exp, tpe, eff, loc) => ???
 
@@ -200,36 +223,44 @@ object Effects extends Phase[Root, Root] {
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
   }
 
-  private def freshEffVar(): TypeAndEffect = ???
-
   private def reassembleExp(e: Expression): Expression = ???
 
-  private def point(eff: TypeAndEffect): InferMonad[TypeAndEffect] = ???
+  private def pure(typ: Typ): InferMonad[(Typ, ast.Eff)] = InferMonad((typ, ast.Eff.Pure))
 
-  private def unify(eff1: TypeAndEffect, eff2: TypeAndEffect): InferMonad[TypeAndEffect] = ???
-
-  private def unify(eff1: TypeAndEffect, eff2: TypeAndEffect, eff3: TypeAndEffect): InferMonad[TypeAndEffect] = ???
+  private def freshEffVar(): Typ = ???
 
 
-  private sealed trait TypeAndEffect
+  private sealed trait Typ
 
-  private object TypeAndEffect {
+  private object Typ {
 
-    case class Var() extends TypeAndEffect
+    case class Var() extends Typ
 
-    case object Pure extends TypeAndEffect
+    case object Prim extends Typ
+
+    case class Channel(t: Typ) extends Typ
+
+    case class Lambda(t1: Typ, eff: ast.Eff, t2: Typ) extends Typ
 
   }
+
+  private def translate(value: Type): Typ = value match {
+    case Type.Cst(TypeConstructor.Int32) => Typ.Prim
+    case _ => ???
+  }
+
 
   private case class Substitution() {
 
   }
 
-  private class InferMonad[T] {
+  private case class InferMonad[T](t: T) {
 
-    def map[B](f: T => B): InferMonad[B] = ???
+    def map[B](f: T => B): InferMonad[B] = InferMonad(f(this.t))
 
-    def flatMap[B](f: T => InferMonad[B]): InferMonad[B] = ???
+    def flatMap[B](f: T => InferMonad[B]): InferMonad[B] = f(this.t)
+
+    def withFilter(f: T => Boolean): InferMonad[T] = this // TODO
 
   }
 
