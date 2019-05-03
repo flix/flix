@@ -274,8 +274,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Apply(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0)
       val us2 = visitExp(exp2, env0)
-      // TODO: Check the effect of exp1
-      // TODO: For now all applys are impure
+      // TODO: [Effects]: Add support for effects.
       Used.Impure ++ us1 ++ us2
 
     case Expression.Unary(_, exp, _, _, _) =>
@@ -400,9 +399,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest, env0)
-
-    // TODO: Technically which of these have side-effects/are purty/referencentially transparent?
-    // TODO: Need observable distinction?
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       Used.Ephemeral ++ visitExps(elms, env0)
@@ -563,7 +559,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         case (acc, used) => acc ++ used
       }
 
-    // TODO: Observervable?
     case Expression.ProcessSpawn(exp, _, _, _) => Used.Impure ++ visitExp(exp, env0)
 
     case Expression.ProcessSleep(exp, _, _, _) => Used.Impure ++ visitExp(exp, env0)
@@ -616,7 +611,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
     case Head.Atom(pred, terms, _, _) =>
-      // TODO: Check for purity.
+      // TODO: [Effects] Enforce purity.
       Used.of(pred.sym) ++ visitExp(pred.exp, env0) ++ visitExps(terms, env0)
   }
 
@@ -625,14 +620,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
     case Body.Atom(pred, _, terms, _, _) =>
+      // TODO: [Effects] Enforce purity.
       Used.of(pred.sym) ++ visitExp(pred.exp, env0)
 
     case Body.Filter(sym, terms, _) =>
-      // TODO: Check for purity
+      // TODO: [Effects] Enforce purity.
       Used.of(sym) ++ visitExps(terms, env0)
 
     case Body.Functional(sym, term, _) =>
-      // TODO: Check for purity
+      // TODO: [Effects] Enforce purity.
       Used.of(sym) ++ visitExp(term, env0)
   }
 
@@ -648,7 +644,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         // The stable path a pattern, check if `pat0` and `pat2` are compatible.
         unify(pat0, pat2) match {
           case Ok(subst) =>
-            // TODO: Should the subst not be applied to env0?
+            // TODO: Need to apply substitution...
             // The patterns unify, the pattern match is not useless.
             Used.Neutral
 
@@ -821,6 +817,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private sealed trait StablePath
 
   private object StablePath {
+
+    // TODO: Decide on what stable paths to support?
 
     /**
       * A variable expression is a stable path.
