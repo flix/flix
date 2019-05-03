@@ -25,24 +25,28 @@ import ca.uwaterloo.flix.language.phase.Redundancy.Used
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+// TODO: Come up with better name.
 object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
-  // TODO: Dont use redundancy error
+  // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
+  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
 
+  // TODO: Introduce custom error type.
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Trivial") {
 
     // TODO: Introduce flag to disable
 
     // Check for trivial expressions.
-    val trivial: Used = flix.subphase("TrivialExp") {
-      root.defs.par.aggregate(Used.Neutral)({
-        case (acc, (sym, decl)) => acc ++ checkTrivialDef(decl)(root, flix)
-      }, _ ++ _)
-    }
+    val trivial: Used = root.defs.par.aggregate(Used.Neutral)({
+      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root, flix)
+    }, _ ++ _)
+
+    // TODO: Actually return these errors.
+
     root.toSuccess
   }
 
-  object BugPatternCatalog {
+  object Catalog {
 
     val TInt32: Type = Type.Cst(TypeConstructor.Int32)
 
@@ -206,12 +210,12 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: DOC
-  private def checkTrivialDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
-    visitTrivialExp(defn.exp)
+  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
+    visitExp(defn.exp)
   }
 
   // TODO: DOC
-  private def visitTrivialExp(exp0: Expression)(implicit root: Root, flix: Flix): Used = checkTrivial(exp0) ++ (exp0 match {
+  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Used = checkTrivial(exp0) ++ (exp0 match {
 
     // TODO: Should not call checkTrivial, just recurse.
 
@@ -250,28 +254,28 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Hole(_, _, _, _) => Used.Neutral
 
     case Expression.Lambda(_, exp, _, _, _) =>
-      visitTrivialExp(exp)
+      visitExp(exp)
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Unary(_, exp, _, _, _) =>
-      visitTrivialExp(exp)
+      visitExp(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.LetRec(_, exp1, exp2, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2) ++ visitTrivialExp(exp3)
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.Match(exp, rules, tpe, eff, loc) => Used.Neutral // TODO
 
@@ -284,21 +288,21 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.RecordEmpty(_, _, _) => Used.Neutral
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitTrivialExp(exp)
+      visitExp(exp)
 
     case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
-      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.RecordRestrict(_, exp, _, _, _) =>
-      visitTrivialExp(exp)
+      visitExp(exp)
 
     case Expression.ArrayLit(elms, _, _, _) =>
       elms.foldLeft(Used.Neutral) {
-        case (acc, e) => acc ++ visitTrivialExp(e)
+        case (acc, e) => acc ++ visitExp(e)
       }
 
     case Expression.ArrayNew(elm, len, _, _, _) =>
-      visitTrivialExp(elm) ++ visitTrivialExp(len)
+      visitExp(elm) ++ visitExp(len)
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => Used.Neutral // TODO
 
@@ -371,13 +375,10 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Recursively check for these.
   private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
-    BugPatternCatalog.allPatterns.foldLeft(Used.Neutral) {
+    Catalog.allPatterns.foldLeft(Used.Neutral) {
       case (acc, x) if unify(e0, x).nonEmpty => acc + TrivialExpression(e0.loc)
       case (acc, x) => acc
     }
-
-  // TODO: Might be better to do the opposite: Parse an exression into a pattern. If succesfull then check
-  // the non context-free variables to see if there is a problem or not.
 
   // TODO: Return ExpSubstitiotion
   private def unify(e1: Expression, e2: Expression): Option[Unit] = (e1, e2) match {
@@ -456,10 +457,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Compile to automaton or similar?
 
-  // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
-
-  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
-
   // TODO: Should we also consider tricky cases such as:
   // match s with {
   // case Circle(Red) =>
@@ -476,32 +473,11 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   //        case _ => Square(Blu)
   //    }
 
-  // TODO: Define a notion of contradiction:
-  // P(x) and Q(x) cannot be true at the same time.
-  // E.g. x == 0 and x == 1, or isEmpty(xs) and nonEmpty(xs).
-  // But isEmpty(r.l) and nonEmpty(r.l) cannot be true at the same time.
-  // TODO: Question is how to deal with the grammar. And how to represent these things.
-  // TODO: How to deal with conjunctions and disjunctions?
-
-  // TODO: We want to find computations that are always true or always false.
-
-  // TODO: Why not move shadowing checks in here?
-
-  // TODO: Add more test cases for UselessExpression
-
-  // TODO: How to deal with ArrayNew and ArrayLoad as these are impure, but should still have their result observed.
-
   // TODO: Write argument about dynamic checks/assertions and dead code.
 
   // TODO: Add while(true) java case to paper?
 
   // TODO: Ensure everything is private.
-
-  // TODO: We could move all the trivial expression computation to a separate phase?
-
-  // TODO: Need better name than trivial.
-
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes

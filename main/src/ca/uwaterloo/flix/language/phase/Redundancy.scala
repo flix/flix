@@ -41,6 +41,8 @@ import ca.uwaterloo.flix.util.{InternalRuntimeException, Result, Validation}
   */
 object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  // TODO: [Effects]: Add support for Effects to [[Redundancy]]
+
   /**
     * Checks the given AST `root` for redundancies.
     */
