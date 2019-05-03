@@ -453,6 +453,28 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.TrivialExpression](result)
   }
 
+  test("TrivialExpression.ListIsEmptyCons") {
+    val input =
+      """
+        |def f(): Bool = List.isEmpty(1 :: Nil)
+        |
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |namespace List {
+        |    pub def isEmpty[a](xs: List[a]): Bool = match xs with {
+        |        case Nil => true
+        |        case _ => false
+        |    }
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""

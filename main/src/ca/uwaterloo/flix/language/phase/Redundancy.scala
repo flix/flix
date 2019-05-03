@@ -1140,6 +1140,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     def app(e1: Expression, e2: Expression): Expression = Apply(e1, e2, TInt32, Pure, SL)
 
+    def tag(s: String, t: String, e: Expression): Expression = {
+      val sym = Symbol.mkEnumSym(s)
+      Tag(sym, t, e, TInt32, Pure, SL)
+    }
+
     def defn(s: String): Expression = {
       val sym = Symbol.mkDefnSym(s)
       Def(sym, TInt32, Pure, SL)
@@ -1221,18 +1226,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def rightAppendNil()(implicit flix: Flix): Expression = app(app(defn("List.append"), Wild), ListNil)
 
+    /**
+      * Trivial Expression: List.isEmpty(_ :: _)
+      */
+    def listIsEmptyCons()(implicit flix: Flix): Expression = app(defn("List.isEmpty"), tag("List", "Cons", Wild))
+
     // TODO: Use cases to find:
 
-    // TODO:  - List.map(x -> x, _)
-    // TODO:  - List.map(_, Nil)
-    // TODO: -  List.append(xs, Nil)
-    // TODO: -  List.append(Nil, Nil)
-    // TODO:  - List.length(Nil)
+    // TODO: - List.map(x -> x, _)
     // TODO: - List.isempty(xs) && list.nonEmpty(xs) --> false
-    // TODO: - List.isEmpty(cons ...)
     // TODO: - Option.map( => bool).getOrElse(false) --> exists
     // TODO: - Option.filter().getOrElse --> find
-
 
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
@@ -1248,7 +1252,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       leftConcatenateEmptyString(),
       rightConcatenateEmptyString(),
       leftAppendNil(),
-      rightAppendNil()
+      rightAppendNil(),
+      listIsEmptyCons()
     )
 
   }
