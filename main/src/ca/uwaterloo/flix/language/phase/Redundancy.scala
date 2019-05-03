@@ -1120,6 +1120,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val Wild: Expression = Expression.Wild(TInt32, Pure, SL)
     val Zer: Expression = Expression.Int32(0, SL)
     val One: Expression = Expression.Int32(1, SL)
+    val EmptyString: Expression = Expression.Str("", SL)
 
     def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym()(flix.genSym), TInt32, Pure, SL)
 
@@ -1159,37 +1160,47 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Trivial Expression: 0 * x
+      * Trivial Expression: 0 * _
       */
     def leftMultiplicationByZero(): Expression = mul(Zer, Wild)
 
     /**
-      * Trivial Expression: x * 0
+      * Trivial Expression: _ * 0
       */
     def rightMultiplicationByZero(): Expression = mul(Wild, Zer)
 
     /**
-      * Trivial Expression: 1 * x
+      * Trivial Expression: 1 * _
       */
     def leftMultiplicationByOne(): Expression = mul(One, Wild)
 
     /**
-      * Trivial Expression: x * 1
+      * Trivial Expression: _ * 1
       */
     def rightMultiplicationByOne(): Expression = mul(Wild, One)
 
-    // TODO: Add more identities.
-
-
+    /**
+      * Trivial Expression: _ / 1
+      */
     def divisionByOne(): Expression = div(Wild, One)
 
+    /**
+      * Trivial Expression: x / x
+      */
     def divisionBySelf()(implicit flix: Flix): Expression = {
       val varX = mkVar()
       div(varX, varX)
     }
 
+    /**
+      * Trivial Expression: "" + _
+      */
+    def leftConcatenateEmptyString()(implicit flix: Flix): Expression = add(EmptyString, Wild)
 
-    // TODO: String concat.
+    /**
+      * Trivial Expression: _ + ""
+      */
+    def rightConcatenateEmptyString()(implicit flix: Flix): Expression = add(Wild, EmptyString)
 
     // TODO: Use cases to find:
     // TODO:  - List.map(x -> x, _)
@@ -1206,7 +1217,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       leftMultiplicationByOne(),
       rightMultiplicationByOne(),
       divisionByOne(),
-      divisionBySelf()
+      divisionBySelf(),
+      leftConcatenateEmptyString(),
+      rightConcatenateEmptyString()
     )
 
   }
@@ -1230,6 +1243,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) =>
       if (sym1 != sym2)
         Some(()) // TODO
+      else
+        Some(())
+
+    case (Expression.Str(lit1, _), Expression.Str(lit2, _)) =>
+      if (lit1 != lit2)
+        None
       else
         Some(())
 

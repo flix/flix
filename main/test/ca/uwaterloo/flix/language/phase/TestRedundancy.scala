@@ -369,6 +369,46 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.TrivialExpression](result)
   }
 
+  test("TrivialExpression.DivisionByOne") {
+    val input =
+      """
+        |def f(): Int = 123 / 1
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.DivisionBySelf") {
+    val input =
+      """
+        |def f(x: Int): Int = x / x
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.LeftConcatenateEmptyString") {
+    val input =
+      """
+        |def f(): Str = "" + "Hello World"
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.RightConcatenateEmptyString") {
+    val input =
+      """
+        |def f(): Str = "Hello World" + ""
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
