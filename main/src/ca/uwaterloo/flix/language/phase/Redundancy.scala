@@ -63,8 +63,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         acc ++ visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
     }
 
+    // Check for trivial expressions.
+    val trivial: Used = flix.subphase("trivial") {
+      root.defs.par.aggregate(Used.Neutral)({
+        case (acc, (sym, decl)) => acc ++ checkTrivialDef(decl)(root, flix)
+      }, _ ++ _)
+    }
+
     // Computes all used symbols.
-    val usedAll = usedLats ++ usedDefs
+    val usedAll = usedLats ++ usedDefs ++ trivial
 
     // Check for unused symbols.
     val usedRes =
@@ -108,11 +115,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // Compute the used symbols inside the definition.
     val usedExp = visitExp(defn.exp, Env.of(defn.fparams.map(_.sym)))
 
-    // TODO: Check the expression for redundant patterns:
-    val FOOOO = checkExp(defn.exp)
-
     // Check for unused parameters and remove all variable symbols.
-    val usedAll = FOOOO ++ (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
+    val usedAll = (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
 
     // Check if the used symbols contains holes. If so, strip out all error messages.
     if (usedAll.holeSyms.isEmpty) usedAll else usedAll.copy(errors = Set.empty)
@@ -1247,17 +1251,18 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO: - Option.flatMap(x => if (f(x)) Some(x) else None))  --> Option.filter(f)
 
     // TODO: Probably need to introduce something like Theorem which holds the result too... And then the error can show the result.
+    // TODO: DOC
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
       leftAdditionByZero(),
       subtractionByZero(),
-      subtractionBySelf(),
+      //subtractionBySelf(), // TODO
       leftMultiplicationByZero(),
       rightMultiplicationByZero(),
       leftMultiplicationByOne(),
       rightMultiplicationByOne(),
       divisionByOne(),
-      divisionBySelf(),
+      // divisionBySelf(), // TODO
       leftConcatenateEmptyString(),
       rightConcatenateEmptyString(),
       leftAppendNil(),
@@ -1268,8 +1273,178 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  // TODO: DOC
+  private def checkTrivialDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
+    checkTrivial(defn.exp) ++ visitTrivialExp(defn.exp)
+  }
+
+  // TODO: DOC
+  private def visitTrivialExp(exp0: Expression)(implicit root: Root, flix: Flix): Used = exp0 match {
+
+    case Expression.Unit(_) => Used.Neutral
+
+    case Expression.True(_) => Used.Neutral
+
+    case Expression.False(_) => Used.Neutral
+
+    case Expression.Char(_, _) => Used.Neutral
+
+    case Expression.Float32(_, _) => Used.Neutral
+
+    case Expression.Float64(_, _) => Used.Neutral
+
+    case Expression.Int8(_, _) => Used.Neutral
+
+    case Expression.Int16(_, _) => Used.Neutral
+
+    case Expression.Int32(_, _) => Used.Neutral
+
+    case Expression.Int64(_, _) => Used.Neutral
+
+    case Expression.BigInt(_, _) => Used.Neutral
+
+    case Expression.Str(_, _) => Used.Neutral
+
+    case Expression.Wild(_, _, _) => Used.Neutral
+
+    case Expression.Var(_, _, _, _) => Used.Neutral
+
+    case Expression.Def(_, _, _, _) => Used.Neutral
+
+    case Expression.Eff(_, _, _, _) => Used.Neutral
+
+    case Expression.Hole(_, _, _, _) => Used.Neutral
+
+    case Expression.Lambda(_, exp, _, _, _) =>
+      val trivial = checkTrivial(exp)
+      trivial ++ visitTrivialExp(exp)
+
+    case Expression.Apply(exp1, exp2, _, _, _) =>
+      val trivial1 = checkTrivial(exp1)
+      val trivial2 = checkTrivial(exp2)
+      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+
+    case Expression.Unary(_, exp, _, _, _) =>
+      val trivial = checkTrivial(exp)
+      trivial ++ visitTrivialExp(exp)
+
+    case Expression.Binary(_, exp1, exp2, _, _, _) =>
+      val trivial1 = checkTrivial(exp1)
+      val trivial2 = checkTrivial(exp2)
+      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+
+    case Expression.Let(_, exp1, exp2, _, _, _) =>
+      val trivial1 = checkTrivial(exp1)
+      val trivial2 = checkTrivial(exp2)
+      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+
+    case Expression.LetRec(_, exp1, exp2, _, _, _) =>
+      val trivial1 = checkTrivial(exp1)
+      val trivial2 = checkTrivial(exp2)
+      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      val trivial1 = checkTrivial(exp1)
+      val trivial2 = checkTrivial(exp2)
+      val trivial3 = checkTrivial(exp3)
+      trivial1 ++ trivial2 ++ trivial3 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2) ++ visitTrivialExp(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      val trivial1 = checkTrivial(exp1)
+      val trivial2 = checkTrivial(exp2)
+      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+
+    case Expression.Match(exp, rules, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Switch(rules, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Tuple(elms, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.RecordEmpty(tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.RecordSelect(exp, label, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ArrayLit(elms, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ArrayLength(base, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.VectorLit(elms, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.VectorLength(base, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Ref(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Deref(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Existential(fparam, exp, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Universal(fparam, exp, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Ascribe(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.Cast(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.NativeField(field, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.NativeMethod(method, args, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.NewChannel(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.GetChannel(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ProcessSpawn(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ProcessSleep(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.ProcessPanic(msg, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.FixpointConstraint(c, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.FixpointSolve(exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => Used.Neutral // TODO
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+  }
+
   // TODO: Recursively check for these.
-  private def checkExp(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
+  private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
     BugPatternCatalog.allPatterns.foldLeft(Used.Neutral) {
       case (acc, x) if unify(e0, x).nonEmpty => acc + TrivialExpression(e0.loc)
       case (acc, x) => acc
@@ -1388,6 +1563,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Write argument about dynamic checks/assertions and dead code.
 
   // TODO: Add while(true) java case to paper?
+
+  // TODO: Ensure everything is private.
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
