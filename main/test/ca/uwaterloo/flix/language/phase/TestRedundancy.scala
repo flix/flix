@@ -475,6 +475,28 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.TrivialExpression](result)
   }
 
+  test("TrivialExpression.ListMapIdentity") {
+    val input =
+      """
+        |def f(): List[Int] = List.map(x -> x, 1 :: 2 :: Nil)
+        |
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |namespace List {
+        |    pub def map[a,b](f: a -> b, xs: List[a]): List[b] = match xs with {
+        |        case Nil => Nil
+        |        case x :: rs => f(x) :: map(f, rs)
+        |    }
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""

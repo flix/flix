@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -1106,16 +1106,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODOs
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Compile to automaton or similar?
-
   object BugPatternCatalog {
 
     val TInt32: Type = Type.Cst(TypeConstructor.Int32)
 
-    import SourceLocation.{Unknown => SL}
-    import ast.Eff.{Pure => Pure}
-
     import Expression._
+    import SourceLocation.{Unknown => SL}
+    import ast.Eff.Pure
 
     val Unit: Expression = Expression.Unit(SL)
     val Wild: Expression = Expression.Wild(TInt32, Pure, SL)
@@ -1148,6 +1145,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def defn(s: String): Expression = {
       val sym = Symbol.mkDefnSym(s)
       Def(sym, TInt32, Pure, SL)
+    }
+
+    def identity()(implicit flix: Flix): Expression = {
+      val sym = Symbol.freshVarSym()(flix.genSym)
+      val fparam = FormalParam(sym, Ast.Modifiers.Empty, TInt32, SL)
+      val body = Var(sym, TInt32, Pure, SL)
+      Lambda(fparam, body, TInt32, Pure, SL)
     }
 
     /**
@@ -1231,12 +1235,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def listIsEmptyCons()(implicit flix: Flix): Expression = app(defn("List.isEmpty"), tag("List", "Cons", Wild))
 
+    /**
+      * Trivial Expression: List.map(x -> x, _)
+      */
+    def listMapIdentity()(implicit flix: Flix): Expression = app(app(defn("List.map"), identity()), Wild) // TODO: Express more concisely.
+
     // TODO: Use cases to find:
 
-    // TODO: - List.map(x -> x, _)
-    // TODO: - List.isempty(xs) && list.nonEmpty(xs) --> false
+    // TODO: - List.isEmpty(xs) && List.exists(f) --> false
     // TODO: - Option.map( => bool).getOrElse(false) --> exists
-    // TODO: - Option.filter().getOrElse --> find
+    // TODO: - List.getWithDefault(List.map(f, o), false) --> exists
 
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
@@ -1253,7 +1261,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       rightConcatenateEmptyString(),
       leftAppendNil(),
       rightAppendNil(),
-      listIsEmptyCons()
+      listIsEmptyCons(),
+      listMapIdentity()
     )
 
   }
@@ -1313,6 +1322,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           subst2 <- unify(exp12, exp22)
         } yield ()
 
+    case (Expression.Lambda(fparam1, exp1, _, _, _), Expression.Lambda(fparam2, exp2, _, _, _)) =>
+      // TODO: Here we should subst.
+      for {
+        subst1 <- unify(exp1, exp2)
+      } yield ()
+
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
       for {
         subst1 <- unify(exp11, exp21)
@@ -1331,6 +1346,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case _ => None
   }
+
+  // TODO: Compile to automaton or similar?
+
 
   // TODO: Should we also consider tricky cases such as:
   // match s with {

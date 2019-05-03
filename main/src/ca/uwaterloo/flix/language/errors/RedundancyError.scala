@@ -93,8 +93,8 @@ object RedundancyError {
       vt << NewLine
       vt << "Possible fixes:" << NewLine
       vt << NewLine
-      vt << "  (1)  Ensure that there is no typo or mistake in the expression." << NewLine
-      vt << "  (2)  Simplify the expression." << NewLine
+      vt << "  (1)  Ensure that there is not a typo in the expression." << NewLine
+      vt << "  (2)  Simplify the expression to remove the redundancy." << NewLine
       vt << NewLine
       vt
     }
