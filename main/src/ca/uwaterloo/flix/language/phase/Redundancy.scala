@@ -1242,10 +1242,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // TODO: Use cases to find:
 
-    // TODO: - List.isEmpty(xs) && List.exists(f) --> false
-    // TODO: - Option.map( => bool).getOrElse(false) --> exists
-    // TODO: - List.getWithDefault(List.map(f, o), false) --> exists
+    // TODO: - List.getWithDefault(List.map(_, o), false)         --> List.exists(_)
+    // TODO: - List.isEmpty(xs) && List.exists(_, xs)             --> false
+    // TODO: - Option.flatMap(x => if (f(x)) Some(x) else None))  --> Option.filter(f)
 
+    // TODO: Probably need to introduce something like Theorem which holds the result too... And then the error can show the result.
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
       leftAdditionByZero(),
@@ -1349,6 +1350,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Compile to automaton or similar?
 
+  // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
+
+  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
 
   // TODO: Should we also consider tricky cases such as:
   // match s with {
@@ -1381,7 +1385,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: How to deal with ArrayNew and ArrayLoad as these are impure, but should still have their result observed.
 
-  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
+  // TODO: Write argument about dynamic checks/assertions and dead code.
+
+  // TODO: Add while(true) java case to paper?
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
