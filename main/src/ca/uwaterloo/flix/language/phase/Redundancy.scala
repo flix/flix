@@ -64,7 +64,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Check for trivial expressions.
-    val trivial: Used = flix.subphase("trivial") {
+    val trivial: Used = flix.subphase("TrivialExp") {
       root.defs.par.aggregate(Used.Neutral)({
         case (acc, (sym, decl)) => acc ++ checkTrivialDef(decl)(root, flix)
       }, _ ++ _)
@@ -1275,11 +1275,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: DOC
   private def checkTrivialDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
-    checkTrivial(defn.exp) ++ visitTrivialExp(defn.exp)
+    visitTrivialExp(defn.exp)
   }
 
   // TODO: DOC
-  private def visitTrivialExp(exp0: Expression)(implicit root: Root, flix: Flix): Used = exp0 match {
+  private def visitTrivialExp(exp0: Expression)(implicit root: Root, flix: Flix): Used = checkTrivial(exp0) ++ (exp0 match {
+
+    // TODO: Should not call checkTrivial, just recurse.
 
     case Expression.Unit(_) => Used.Neutral
 
@@ -1316,43 +1318,28 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Hole(_, _, _, _) => Used.Neutral
 
     case Expression.Lambda(_, exp, _, _, _) =>
-      val trivial = checkTrivial(exp)
-      trivial ++ visitTrivialExp(exp)
+      visitTrivialExp(exp)
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
-      val trivial1 = checkTrivial(exp1)
-      val trivial2 = checkTrivial(exp2)
-      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
 
     case Expression.Unary(_, exp, _, _, _) =>
-      val trivial = checkTrivial(exp)
-      trivial ++ visitTrivialExp(exp)
+      visitTrivialExp(exp)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      val trivial1 = checkTrivial(exp1)
-      val trivial2 = checkTrivial(exp2)
-      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
 
     case Expression.Let(_, exp1, exp2, _, _, _) =>
-      val trivial1 = checkTrivial(exp1)
-      val trivial2 = checkTrivial(exp2)
-      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
 
     case Expression.LetRec(_, exp1, exp2, _, _, _) =>
-      val trivial1 = checkTrivial(exp1)
-      val trivial2 = checkTrivial(exp2)
-      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val trivial1 = checkTrivial(exp1)
-      val trivial2 = checkTrivial(exp2)
-      val trivial3 = checkTrivial(exp3)
-      trivial1 ++ trivial2 ++ trivial3 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2) ++ visitTrivialExp(exp3)
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2) ++ visitTrivialExp(exp3)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
-      val trivial1 = checkTrivial(exp1)
-      val trivial2 = checkTrivial(exp2)
-      trivial1 ++ trivial2 ++ visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
 
     case Expression.Match(exp, rules, tpe, eff, loc) => Used.Neutral // TODO
 
@@ -1362,17 +1349,24 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Tuple(elms, tpe, eff, loc) => Used.Neutral // TODO
 
-    case Expression.RecordEmpty(tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.RecordEmpty(_, _, _) => Used.Neutral
 
-    case Expression.RecordSelect(exp, label, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      visitTrivialExp(exp)
 
-    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
+      visitTrivialExp(exp1) ++ visitTrivialExp(exp2)
 
-    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.RecordRestrict(_, exp, _, _, _) =>
+      visitTrivialExp(exp)
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ArrayLit(elms, _, _, _) =>
+      elms.foldLeft(Used.Neutral) {
+        case (acc, e) => acc ++ visitTrivialExp(e)
+      }
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ArrayNew(elm, len, _, _, _) =>
+      visitTrivialExp(elm) ++ visitTrivialExp(len)
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => Used.Neutral // TODO
 
@@ -1441,7 +1435,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => Used.Neutral // TODO
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
-  }
+  })
 
   // TODO: Recursively check for these.
   private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
@@ -1565,6 +1559,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Add while(true) java case to paper?
 
   // TODO: Ensure everything is private.
+
+  // TODO: We could move all the trivial expression computation to a separate phase?
+
+  // TODO: Need better name than trivial.
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
