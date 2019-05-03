@@ -1117,10 +1117,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     import Expression._
 
+    val Unit: Expression = Expression.Unit(SL)
     val Wild: Expression = Expression.Wild(TInt32, Pure, SL)
     val Zer: Expression = Expression.Int32(0, SL)
     val One: Expression = Expression.Int32(1, SL)
     val EmptyString: Expression = Expression.Str("", SL)
+    val ListNil: Expression = Expression.Tag(Symbol.mkEnumSym("List"), "Nil", Unit, TInt32, Pure, SL)
 
     def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym()(flix.genSym), TInt32, Pure, SL)
 
@@ -1135,6 +1137,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     def div(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Divide, e1, e2, TInt32, Pure, SL)
+
+    def app(e1: Expression, e2: Expression): Expression = Apply(e1, e2, TInt32, Pure, SL)
+
+    def defn(s: String): Expression = {
+      val sym = Symbol.mkDefnSym(s)
+      Def(sym, TInt32, Pure, SL)
+    }
 
     /**
       * Trivial Expression: _ + 0
@@ -1202,10 +1211,28 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def rightConcatenateEmptyString()(implicit flix: Flix): Expression = add(Wild, EmptyString)
 
+    /**
+      * Trivial Expression: Nil ::: _
+      */
+    def leftAppendNil()(implicit flix: Flix): Expression = app(app(defn("List.append"), ListNil), Wild)
+
+    /**
+      * Trivial Expression: _ ::: Nil
+      */
+    def rightAppendNil()(implicit flix: Flix): Expression = app(app(defn("List.append"), Wild), ListNil)
+
     // TODO: Use cases to find:
+
     // TODO:  - List.map(x -> x, _)
     // TODO:  - List.map(_, Nil)
+    // TODO: -  List.append(xs, Nil)
+    // TODO: -  List.append(Nil, Nil)
     // TODO:  - List.length(Nil)
+    // TODO: - List.isempty(xs) && list.nonEmpty(xs) --> false
+    // TODO: - List.isEmpty(cons ...)
+    // TODO: - Option.map( => bool).getOrElse(false) --> exists
+    // TODO: - Option.filter().getOrElse --> find
+
 
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
@@ -1219,7 +1246,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       divisionByOne(),
       divisionBySelf(),
       leftConcatenateEmptyString(),
-      rightConcatenateEmptyString()
+      rightConcatenateEmptyString(),
+      leftAppendNil(),
+      rightAppendNil()
     )
 
   }
@@ -1234,7 +1263,11 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Might be better to do the opposite: Parse an exression into a pattern. If succesfull then check
   // the non context-free variables to see if there is a problem or not.
 
+  // TODO: Return ExpSubstitiotion
   private def unify(e1: Expression, e2: Expression): Option[Unit] = (e1, e2) match {
+
+
+    // TODO: Order
 
     case (Expression.Wild(_, _, _), _) => Some(())
 
@@ -1245,6 +1278,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Some(()) // TODO
       else
         Some(())
+
+    case (Expression.Def(sym1, _, _, _), Expression.Def(sym2, _, _, _)) =>
+      if (sym1 != sym2)
+        None
+      else
+        Some(())
+
+    case (Expression.Unit(_), Expression.Unit(_)) => Some(())
 
     case (Expression.Str(lit1, _), Expression.Str(lit2, _)) =>
       if (lit1 != lit2)
@@ -1266,6 +1307,22 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           subst1 <- unify(exp11, exp21)
           subst2 <- unify(exp12, exp22)
         } yield ()
+
+    case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
+      for {
+        subst1 <- unify(exp11, exp21)
+        subst2 <- unify(exp12, exp22)
+      } yield ()
+
+    case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) =>
+      if (sym1 != sym2 || tag1 != tag2)
+        None
+      else
+        for {
+          subst <- unify(exp1, exp2)
+        } yield ()
+
+    // TODO: Add remaining cases
 
     case _ => None
   }

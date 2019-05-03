@@ -409,6 +409,50 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.TrivialExpression](result)
   }
 
+  test("TrivialExpression.LeftAppendNil") {
+    val input =
+      """
+        |def f(): List[Int] = Nil ::: (1 :: 2 :: Nil)
+        |
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |namespace List {
+        |    pub def append[a](xs: List[a], ys: List[a]): List[a] = match xs with {
+        |        case Nil => ys
+        |        case x :: rs => x :: append(rs, ys)
+        |    }
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
+  test("TrivialExpression.RightAppendNil") {
+    val input =
+      """
+        |def f(): List[Int] = (1 :: 2 :: Nil) ::: Nil
+        |
+        |enum List[t] {
+        |    case Nil,
+        |    case Cons(t, List[t])
+        |}
+        |
+        |namespace List {
+        |    pub def append[a](xs: List[a], ys: List[a]): List[a] = match xs with {
+        |        case Nil => ys
+        |        case x :: rs => x :: append(rs, ys)
+        |    }
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.TrivialExpression](result)
+  }
+
   test("UnusedEnumSym.01") {
     val input =
       s"""
