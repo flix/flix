@@ -28,6 +28,7 @@
     <!-- ======================================================== -->
     <path id="classpath">
         <pathelement location="${scala.home}/lib/scala-library.jar"/>
+        <pathelement location="${scala.home}/lib/scala-reflect.jar"/>
         <fileset dir="${lib.dir}">
             <include name="**/*.jar"/>
         </fileset>
