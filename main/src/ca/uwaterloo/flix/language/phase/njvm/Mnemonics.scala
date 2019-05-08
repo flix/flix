@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getJvmType, getRecordInterfaceType, getRefClassType, getTupleInterfaceType, stringify, _}
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
@@ -359,6 +359,9 @@ object Mnemonics {
 
     case t if t =:= typeOf[Ref[MString]] => NJvmType.String
     case t if t =:= typeOf[Ref[MObject]] => NJvmType.Object
+
+    case t if t =:= typeOf[Ref[Context]] => NJvmType.Context
+
     case t if t =:= typeOf[Ref[RecordInterface]] =>
       val name = "IRecord"
 
@@ -444,6 +447,44 @@ object Mnemonics {
       val name = "Ref$" + stringify(Reference(JvmName.Object))
       // The type resides in the root package.
       Reference(JvmName(RootPackage, name))
+
+    case t if t =:= typeOf[Ref[ContinuationInterface[MBool]]] =>
+      val name = "Cont$" + stringify(PrimBool)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MChar]]] =>
+      val name = "Cont$" + stringify(PrimChar)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MByte]]] =>
+      val name = "Cont$" + stringify(PrimByte)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MShort]]] =>
+      val name = "Cont$" + stringify(PrimShort)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MInt]]] =>
+      val name = "Cont$" + stringify(PrimInt)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MLong]]] =>
+      val name = "Cont$" + stringify(PrimLong)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MFloat]]] =>
+      val name = "Cont$" + stringify(PrimFloat)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[MDouble]]] =>
+      val name = "Cont$" + stringify(PrimDouble)
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+    case t if t =:= typeOf[Ref[ContinuationInterface[Ref[MObject]]]] =>
+      val name = "Cont$" + stringify(Reference(JvmName.Object))
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+
     case _ => NJvmType.Object
 
   }
@@ -599,24 +640,23 @@ object Mnemonics {
   //TODO: Same as FunSig0
   class UncheckedFunSig(args : List[NJvmType], returnType : NJvmType)(implicit root: Root, flix: Flix) {
 
-    val locals = List()
     for((arg, index) <- args.zipWithIndex) {
-      locals:+ (arg match {
-        case PrimBool => new Local[MBool](index)
-        case PrimChar => new Local[MChar](index)
-        case PrimByte => new Local[MShort](index)
-        case PrimShort => new Local[MShort](index)
-        case PrimInt => new Local[MInt](index)
-        case PrimLong => new Local[MLong](index)
-        case PrimFloat => new Local[MFloat](index)
-        case PrimDouble => new Local[MDouble](index)
-        case Reference(_) => new Local[Ref[MObject]](index)
-        case _ => ???
-    })
+        arg match {
+          case PrimBool => new Local[MBool](index)
+          case PrimChar => new Local[MChar](index)
+          case PrimByte => new Local[MShort](index)
+          case PrimShort => new Local[MShort](index)
+          case PrimInt => new Local[MInt](index)
+          case PrimLong => new Local[MLong](index)
+          case PrimFloat => new Local[MFloat](index)
+          case PrimDouble => new Local[MDouble](index)
+          case Reference(_) => new Local[Ref[MObject]](index)
+          case _ => ???
+      }
     }
 
-    def getArg(index : Int): Local[MnemonicsTypes] ={
-      locals(index)
+    def getArg[T1 <: MnemonicsTypes : TypeTag](index : Int): Local[T1] ={
+      new Local[T1](index)
     }
   }
 
@@ -1494,6 +1534,56 @@ object Mnemonics {
       Reference(JvmName(RootPackage, name))
   }
 
+
+  /**
+    * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Fn2$Int$Int
+    * (Int, Int) -> Int   =>  Fn3$Int$Int$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getFunctionInterfaceType(elms: List[NJvmType], returnType : NJvmType)(implicit root: Root, flix: Flix): Reference = {
+      // Compute the arity of the function interface.
+      // We subtract one since the last argument is the return type.
+      val arity = elms.length
+
+      // Compute the stringified erased type of each type argument.
+      val args = (elms:::List(returnType)).map(tpe => stringify(tpe))
+
+      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+      val name = "Fn" + arity + "$" + args.mkString("$")
+
+      // The type resides in the root package.
+      Reference(JvmName(RootPackage, name))
+  }
+
+
+  /**
+    * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * Color                 =>      IColor
+    * Option[Int]           =>      IOption$Int
+    * Result[Char, Int]     =>      IResult$Char$Int
+    *
+    * NB: The given type `tpe` must be an enum type.
+    */
+  def getEnumInterfaceType(sym : Symbol.EnumSym,elms: List[NJvmType])(implicit root: Root, flix: Flix): Reference = {
+      // Compute the stringified erased type of each type argument.
+      val args = elms.map(tpe => stringify(tpe))
+
+      // The JVM name is of the form Option$ or Option$Int
+      val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
+
+      // The enum resides in its namespace package.
+      Reference(JvmName(sym.namespace, name))
+  }
+
+
   /**
     * Returns the record interface type `IRecord`.
     *
@@ -1546,6 +1636,19 @@ object Mnemonics {
     */
   def getRefClassType[T<: MnemonicsTypes  : TypeTag](implicit root: Root, flix: Flix): Reference = {
     getJvmType[Ref[RefClass[T]]].asInstanceOf[Reference]
+  }
+
+
+  /**
+    * Returns the continuation interface type `Cont$X` for the given type `tpe`.
+    *
+    * Int -> Int          =>  Cont$Int
+    * (Int, Int) -> Int   =>  Cont$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getContinuationInterfaceType[T1 <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): Reference = {
+    getJvmType[Ref[ContinuationInterface[T1]]].asInstanceOf[Reference]
   }
 
 

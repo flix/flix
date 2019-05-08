@@ -102,15 +102,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val namespaceClasses = GenNamespaces.gen(namespaces)
 
-    //
-    // Generate continuation interfaces for each function type in the program.
-    //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types)
-
-    //
-    // Generate function interfaces for each function type in the program.
-    //
-    val functionInterfaces = GenFunctionInterfaces.gen(types)
 
     //
     // Generate function classes for each function in the program.
@@ -121,11 +112,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // Generate closure classes for each closure in the program.
     //
     val closureClasses = GenClosureClasses.gen(closures)
-
-    //
-    // Generate enum interfaces for each enum type in the program.
-    //
-    val enumInterfaces = GenEnumInterfaces.gen(types)
 
     //
     // Generate tag classes for each enum instantiation in the program.
@@ -143,8 +129,8 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // Generate tuple classes for each tuple type in the program.
     //
 
-//    import ca.uwaterloo.flix.language.phase.jvm.GenTupleClasses
-//    val tupleClasses = GenTupleClasses.gen(types)
+    import ca.uwaterloo.flix.language.phase.jvm.GenTupleClasses
+    val tupleClasses = GenTupleClasses.gen(types)
 
 
     /** Generated classes using NJVM */
@@ -152,12 +138,15 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     val classes: List[MnemonicsGenerator] =
     //Generate interfaces first
       List(
+        GenContinuationInterfaces,
+        GenFunctionInterfaces,
+        GenEnumInterfaces,
         GenTupleInterfaces,
         GenRecordInterface,
         GenRecordEmpty,
         GenRecordExtend,
         GenRefClasses,
-        GenTupleClasses
+//        GenTupleClasses
       )
 
 
@@ -171,13 +160,10 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       mainClass,
       contextClass,
       namespaceClasses,
-      continuationInterfaces,
-      functionInterfaces,
       functionClasses,
       closureClasses,
-      enumInterfaces,
       tagClasses,
-//      tupleClasses,
+      tupleClasses,
       njvmClasses
     ).reduce(_ ++ _)
 

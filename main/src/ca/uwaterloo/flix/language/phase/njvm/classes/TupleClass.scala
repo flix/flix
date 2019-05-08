@@ -20,10 +20,8 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
   private val cg: ClassGenerator = new ClassGenerator(ct, List(getTupleInterfaceType(elms)))
 
   //Fields
-  private val fields : List[Field[MnemonicsTypes]] = {
-    val fields = List()
-    for ((arg, ind) <- elms.zipWithIndex) {
-      fields :+ (arg match {
+  for ((arg, ind) <- elms.zipWithIndex) {
+      arg match {
         case PrimBool => new Field[MBool]("field" + ind)
         case PrimChar => new Field[MChar]("field" + ind)
         case PrimByte => new Field[MByte]("field" + ind)
@@ -34,91 +32,87 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
         case PrimDouble => new Field[MDouble]("field" + ind)
         case Reference(_) => new Field[Ref[MObject]]("field" + ind)
         case _ => ???
-      })
-    }
-    fields
+      }
   }
 
-//  val defaultConstrutor : UncheckedVoidMethod = {
-//
-//
-//    def setFields(ins : F[StackNil] => F[StackNil], sig : UncheckedFunSig) : F[StackNil] => F[StackNil] = {
-//      var setFields = ins
-//      for ((arg, ind) <- elms.zipWithIndex) {
-//        println("HI")
-//        setFields = setFields |>>
-//          sig.getArg(0).asInstanceOf[Local[Ref[TupleClass]]].LOAD |>>
-//          sig.getArg(ind + 1).LOAD |>>
-//          fields(ind).PUT_FIELD
-//      }
-//      setFields
-//    }
-//
-//    cg.mkUncheckedConstructor(ct+:elms,
-//      sig =>
-//        setFields(
-//          sig.getArg(0).asInstanceOf[Local[Ref[TupleClass]]].LOAD[StackNil] |>>
-//          cg.SUPER, sig) |>>
-//        RETURN_VOID)
-//  }
+  private def getField[T1 <: MnemonicsTypes : TypeTag](ind : Int) : Field[T1] =
+    new Field[T1]("field" + ind)
+
+  val defaultConstrutor : UncheckedVoidMethod = {
+
+    def setFields(ins : F[StackNil] => F[StackNil], sig : UncheckedFunSig) : F[StackNil] => F[StackNil] = {
+      var setFields = ins
+      for ((arg, ind) <- elms.zipWithIndex) {
+        setFields = setFields |>>
+          sig.getArg[Ref[TupleClass]](0).LOAD |>>
+          sig.getArg(ind + 1).LOAD |>>
+          getField(ind).PUT_FIELD
+      }
+      setFields
+    }
+
+    cg.mkUncheckedConstructor(ct+:elms,
+      sig =>
+        setFields(
+          sig.getArg(0).asInstanceOf[Local[Ref[TupleClass]]].LOAD[StackNil] |>>
+          cg.SUPER, sig) |>>
+        RETURN_VOID)
+  }
 
   /**
     * Generate the getIndex interface method. Stores the capability to call the method
     */
-  val getIndexMethod: List[Method1[Ref[TupleClass], MnemonicsTypes]] = {
-    val methods = List()
-    def ins[R <: MnemonicsTypes : TypeTag](index : Int) : FunSig1[Ref[TupleClass], R] => F[StackNil] => F[StackNil] =
+   private def getIndexIns[R <: MnemonicsTypes : TypeTag](index : Int) : FunSig1[Ref[TupleClass], R] => F[StackNil] => F[StackNil] =
       sig  =>
         sig.getArg1.LOAD[StackNil] |>>
-          fields(index).GET_FIELD |>>
+          getField(index).GET_FIELD |>>
           RETURN
 
     for ((arg, ind) <- elms.zipWithIndex) {
-      methods :+ (arg match {
-        case PrimBool => cg.mkMethod1[Ref[TupleClass], MBool]("getIndex" + ind, ins(ind))
-        case PrimChar => cg.mkMethod1[Ref[TupleClass], MChar]("getIndex" + ind, ins(ind))
-        case PrimByte => cg.mkMethod1[Ref[TupleClass], MByte]("getIndex" + ind, ins(ind))
-        case PrimShort => cg.mkMethod1[Ref[TupleClass], MShort]("getIndex" + ind, ins(ind))
-        case PrimInt => cg.mkMethod1[Ref[TupleClass], MInt]("getIndex" + ind, ins(ind))
-        case PrimLong => cg.mkMethod1[Ref[TupleClass], MLong]("getIndex" + ind, ins(ind))
-        case PrimFloat => cg.mkMethod1[Ref[TupleClass], MFloat]("getIndex" + ind, ins(ind))
-        case PrimDouble => cg.mkMethod1[Ref[TupleClass], MDouble]("getIndex" + ind, ins(ind))
-        case Reference(_) => cg.mkMethod1[Ref[TupleClass], Ref[MObject]]("getIndex" + ind, ins(ind))
+      arg match {
+        case PrimBool => cg.mkMethod1[Ref[TupleClass], MBool]("getIndex" + ind, getIndexIns(ind))
+        case PrimChar => cg.mkMethod1[Ref[TupleClass], MChar]("getIndex" + ind, getIndexIns(ind))
+        case PrimByte => cg.mkMethod1[Ref[TupleClass], MByte]("getIndex" + ind, getIndexIns(ind))
+        case PrimShort => cg.mkMethod1[Ref[TupleClass], MShort]("getIndex" + ind, getIndexIns(ind))
+        case PrimInt => cg.mkMethod1[Ref[TupleClass], MInt]("getIndex" + ind, getIndexIns(ind))
+        case PrimLong => cg.mkMethod1[Ref[TupleClass], MLong]("getIndex" + ind, getIndexIns(ind))
+        case PrimFloat => cg.mkMethod1[Ref[TupleClass], MFloat]("getIndex" + ind, getIndexIns(ind))
+        case PrimDouble => cg.mkMethod1[Ref[TupleClass], MDouble]("getIndex" + ind, getIndexIns(ind))
+        case Reference(_) => cg.mkMethod1[Ref[TupleClass], Ref[MObject]]("getIndex" + ind, getIndexIns(ind))
         case _ => ???
-      })
+      }
     }
-    methods
-  }
 
+  def getIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : Method1[Ref[TupleClass], T1] =
+    new Method1[Ref[TupleClass], T1](JvmModifier.InvokeVirtual, ct, "getIndex" + index)
   /**
     * Generate the setIndex interface method. Stores the capability to call the method
     */
-  val setIndexMethod: List[VoidMethod2[Ref[TupleClass], MnemonicsTypes]] = {
-    val methods = List()
 
-    def ins[T1 <: MnemonicsTypes : TypeTag](index: Int): FunSig2[Ref[TupleClass], T1, MVoid] => F[StackNil] => F[StackNil] =
+    private def setIndexIns[T1 <: MnemonicsTypes : TypeTag](index: Int): FunSig2[Ref[TupleClass], T1, MVoid] => F[StackNil] => F[StackNil] =
       sig =>
         sig.getArg1.LOAD[StackNil] |>>
         sig.getArg2.LOAD |>>
-        fields(index).asInstanceOf[Field[T1]].PUT_FIELD |>>
+        getField(index).PUT_FIELD |>>
         RETURN_VOID
 
     for ((arg, ind) <- elms.zipWithIndex) {
-      methods :+ (arg match {
-        case PrimBool => cg.mkVoidMethod2[Ref[TupleClass], MBool]("setIndex" + ind, ins(ind))
-        case PrimChar => cg.mkVoidMethod2[Ref[TupleClass], MChar]("setIndex" + ind, ins(ind))
-        case PrimByte => cg.mkVoidMethod2[Ref[TupleClass], MByte]("setIndex" + ind, ins(ind))
-        case PrimShort => cg.mkVoidMethod2[Ref[TupleClass], MShort]("setIndex" + ind, ins(ind))
-        case PrimInt => cg.mkVoidMethod2[Ref[TupleClass], MInt]("setIndex" + ind, ins(ind))
-        case PrimLong => cg.mkVoidMethod2[Ref[TupleClass], MLong]("setIndex" + ind, ins(ind))
-        case PrimFloat => cg.mkVoidMethod2[Ref[TupleClass], MFloat]("setIndex" + ind, ins(ind))
-        case PrimDouble => cg.mkVoidMethod2[Ref[TupleClass], MDouble]("setIndex" + ind, ins(ind))
-        case Reference(_) => cg.mkVoidMethod2[Ref[TupleClass], Ref[MObject]]("setIndex" + ind, ins(ind))
+      arg match {
+        case PrimBool => cg.mkVoidMethod2[Ref[TupleClass], MBool]("setIndex" + ind, setIndexIns(ind))
+        case PrimChar => cg.mkVoidMethod2[Ref[TupleClass], MChar]("setIndex" + ind, setIndexIns(ind))
+        case PrimByte => cg.mkVoidMethod2[Ref[TupleClass], MByte]("setIndex" + ind, setIndexIns(ind))
+        case PrimShort => cg.mkVoidMethod2[Ref[TupleClass], MShort]("setIndex" + ind, setIndexIns(ind))
+        case PrimInt => cg.mkVoidMethod2[Ref[TupleClass], MInt]("setIndex" + ind, setIndexIns(ind))
+        case PrimLong => cg.mkVoidMethod2[Ref[TupleClass], MLong]("setIndex" + ind, setIndexIns(ind))
+        case PrimFloat => cg.mkVoidMethod2[Ref[TupleClass], MFloat]("setIndex" + ind, setIndexIns(ind))
+        case PrimDouble => cg.mkVoidMethod2[Ref[TupleClass], MDouble]("setIndex" + ind, setIndexIns(ind))
+        case Reference(_) => cg.mkVoidMethod2[Ref[TupleClass], Ref[MObject]]("setIndex" + ind, setIndexIns(ind))
         case _ => ???
-      })
+      }
     }
-    methods
-  }
+    def setIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : VoidMethod2[Ref[TupleClass], T1] =
+      new VoidMethod2[Ref[TupleClass], T1](JvmModifier.InvokeVirtual, ct, "setIndex" + index)
+
   /**
     * Generate the `toString()` method which will always throws an exception, since `toString` should not be called.
     * Despite this in order to stay in line with our format we still store the capability to call the method

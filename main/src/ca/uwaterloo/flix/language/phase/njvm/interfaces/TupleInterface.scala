@@ -5,11 +5,14 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, MObject, MString, Method1, Method2, MnemonicsClass, MnemonicsTypes, VoidMethod2, getTupleInterfaceType}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, JvmModifier, MObject, MString, Method1, Method2, MnemonicsClass, MnemonicsTypes, VoidMethod2, getTupleInterfaceType}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 
-class TupleInterface(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(implicit root: Root, flix : Flix) extends MnemonicsClass {
+import scala.reflect.runtime.universe._
+
+
+class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) extends MnemonicsClass {
   //Setup
   private val it: Reference = getTupleInterfaceType(elms)
   private val ig: InterfaceGenerator = new InterfaceGenerator(it, List())
@@ -23,10 +26,8 @@ class TupleInterface(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(
   /**
     * Generate the getIndex interface method. Stores the capability to call the method
     */
-  val getIndexMethod: List[Method1[Ref[TupleInterface], MnemonicsTypes]] = {
-    val methods = List()
-    for ((arg, ind) <- elms.zipWithIndex) {
-      methods :+ (arg match {
+    elms.zipWithIndex.map{
+    case (arg,ind) => arg match {
         case PrimBool => ig.mkMethod1[Ref[TupleInterface], MBool]("getIndex" + ind)
         case PrimChar => ig.mkMethod1[Ref[TupleInterface], MChar]("getIndex" + ind)
         case PrimByte => ig.mkMethod1[Ref[TupleInterface], MByte]("getIndex" + ind)
@@ -37,18 +38,17 @@ class TupleInterface(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(
         case PrimDouble => ig.mkMethod1[Ref[TupleInterface], MDouble]("getIndex" + ind)
         case Reference(_) => ig.mkMethod1[Ref[TupleInterface], Ref[MObject]]("getIndex" + ind)
         case _ => ???
-     })
+     }
     }
-    methods
-  }
+
+  def getIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : Method1[Ref[TupleInterface], T1] =
+    new Method1[Ref[TupleInterface], T1](JvmModifier.InvokeInterface, it, "getIndex" + index)
 
   /**
     * Generate the setIndex interface method. Stores the capability to call the method
     */
-  val setIndexMethod: List[VoidMethod2[Ref[TupleInterface], MnemonicsTypes]] = {
-    val methods = List()
-    for ((arg, ind) <- elms.zipWithIndex) {
-      methods :+ (arg match {
+    elms.zipWithIndex.map{
+    case (arg,ind) => arg match {
         case PrimBool => ig.mkVoidMethod2[Ref[TupleInterface], MBool]("setIndex" + ind)
         case PrimChar => ig.mkVoidMethod2[Ref[TupleInterface], MChar]("setIndex" + ind)
         case PrimByte => ig.mkVoidMethod2[Ref[TupleInterface], MByte]("setIndex" + ind)
@@ -59,12 +59,11 @@ class TupleInterface(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(
         case PrimDouble => ig.mkVoidMethod2[Ref[TupleInterface], MDouble]("setIndex" + ind)
         case Reference(_) => ig.mkVoidMethod2[Ref[TupleInterface], Ref[MObject]]("setIndex" + ind)
         case _ => ???
-      })
-
+      }
     }
-    methods
-  }
 
+  def setIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : VoidMethod2[Ref[TupleInterface], T1] =
+    new VoidMethod2[Ref[TupleInterface], T1](JvmModifier.InvokeInterface, it, "setIndex" + index)
 
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
