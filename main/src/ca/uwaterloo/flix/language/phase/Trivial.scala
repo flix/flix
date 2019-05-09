@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, FormalParam, MatchRule, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TrivialError
 import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
@@ -209,6 +209,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  // TODO: Use set instead of list?
+
   // TODO: DOC
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): List[TrivialError] = {
     visitExp(defn.exp)
@@ -278,13 +280,27 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => Nil // TODO
+    case Expression.Match(exp, rules, _, _, _) =>
+      // Visit the match value.
+      val d = visitExp(exp)
 
-    case Expression.Switch(rules, tpe, eff, loc) => Nil // TODO
+      // Visit the match rules.
+      rules.foldLeft(d) {
+        case (acc, MatchRule(_, guard, body)) => acc ++ visitExp(guard) ++ visitExp(body)
+      }
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => Nil // TODO
+    case Expression.Switch(rules, _, _, _) =>
+      rules.foldLeft(Nil: List[TrivialError]) {
+        case (acc, (cond, body)) => acc ++ visitExp(cond) ++ visitExp(body)
+      }
 
-    case Expression.Tuple(elms, tpe, eff, loc) => Nil // TODO
+    case Expression.Tag(_, _, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.Tuple(elms, _, _, _) =>
+      elms.foldLeft(Nil: List[TrivialError]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
 
     case Expression.RecordEmpty(_, _, _) => Nil
 
@@ -299,25 +315,34 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.ArrayLit(elms, _, _, _) =>
       elms.foldLeft(Nil: List[TrivialError]) {
-        case (acc, e) => acc ::: visitExp(e)
+        case (acc, e) => acc ++ visitExp(e)
       }
 
     case Expression.ArrayNew(elm, len, _, _, _) =>
       visitExp(elm) ++ visitExp(len)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => Nil // TODO
+    case Expression.ArrayLoad(base, index, _, _, _) =>
+      visitExp(base) ++ visitExp(index)
 
-    case Expression.ArrayLength(base, tpe, eff, loc) => Nil // TODO
+    case Expression.ArrayLength(base, _, _, _) =>
+      visitExp(base)
 
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => Nil // TODO
+    case Expression.ArrayStore(base, index, elm, _, _, _) =>
+      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => Nil // TODO
+    case Expression.ArraySlice(base, begin, end, _, _, _) =>
+      visitExp(base) ++ visitExp(begin) ++ visitExp(end)
 
-    case Expression.VectorLit(elms, tpe, eff, loc) => Nil // TODO
+    case Expression.VectorLit(elms, _, _, _) =>
+      elms.foldLeft(Nil: List[TrivialError]) {
+        case (acc, e) => acc ++ visitExp(e)
+      }
 
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => Nil // TODO
+    case Expression.VectorNew(elm, _, _, _, _) =>
+      visitExp(elm)
 
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => Nil // TODO
+    case Expression.VectorLoad(base, _, _, _, _) =>
+      visitExp(base)
 
     case Expression.VectorStore(base, index, elm, tpe, eff, loc) => Nil // TODO
 
@@ -325,27 +350,40 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Ref(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.Ref(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.Deref(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.Deref(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => Nil // TODO
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
     case Expression.HandleWith(exp, bindings, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Existential(fparam, exp, eff, loc) => Nil // TODO
+    case Expression.Existential(_, exp, _, _) =>
+      visitExp(exp)
 
-    case Expression.Universal(fparam, exp, eff, loc) => Nil // TODO
+    case Expression.Universal(_, exp, _, _) =>
+      visitExp(exp)
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.Ascribe(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.Cast(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.Cast(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => Nil // TODO
+    case Expression.NativeConstructor(_, args, _, _, _) =>
+      args.foldLeft(Nil: List[TrivialError]) {
+        case (acc, e) => acc ++ visitExp(e)
+      }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => Nil // TODO
+    case Expression.TryCatch(exp, rules, _, _, _) =>
+      rules.foldLeft(visitExp(exp)) {
+        case (acc, CatchRule(_, _, body)) => acc ++ visitExp(body)
+      }
 
-    case Expression.NativeField(field, tpe, eff, loc) => Nil // TODO
+    case Expression.NativeField(_, _, _, _) => Nil
 
     case Expression.NativeMethod(_, args, _, _, _) =>
       args.foldLeft(Nil: List[TrivialError]) {
@@ -477,6 +515,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   /////////////////////////////////////////////////////////////////////////////
 
   // TODO: Compile to automaton or similar?
+
+  // TODO: !! Could this phase not run concurrently with other phases!?
 
   // TODO: Should we also consider tricky cases such as:
   // match s with {
