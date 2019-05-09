@@ -876,9 +876,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // TODO: Used should be private.
-
-  object Used {
+  private object Used {
 
     /**
       * Represents something pure that has no uses.
@@ -930,13 +928,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * A representation of used symbols.
     */
-  case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
-                  defSyms: Set[Symbol.DefnSym],
-                  predSyms: Set[Symbol.PredSym],
-                  holeSyms: Set[Symbol.HoleSym],
-                  varSyms: Set[Symbol.VarSym],
-                  purity: Purity,
-                  errors: Set[RedundancyError]) {
+  private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
+                          defSyms: Set[Symbol.DefnSym],
+                          predSyms: Set[Symbol.PredSym],
+                          holeSyms: Set[Symbol.HoleSym],
+                          varSyms: Set[Symbol.VarSym],
+                          purity: Purity,
+                          errors: Set[RedundancyError]) {
     /**
       * Merges `this` and `that`.
       */

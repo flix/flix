@@ -19,9 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.errors.RedundancyError
-import ca.uwaterloo.flix.language.errors.RedundancyError.TrivialExpression
-import ca.uwaterloo.flix.language.phase.Redundancy.Used
+import ca.uwaterloo.flix.language.errors.TrivialError
+import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -30,23 +29,24 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
   // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
+  // TODO: Where should these annotations go?
 
-  // TODO: Introduce custom error type.
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, RedundancyError] = flix.phase("Trivial") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, TrivialError] = flix.phase("Trivial") {
 
     // TODO: Introduce flag to disable
 
     // Check for trivial expressions.
-    val trivial: Used = root.defs.par.aggregate(Used.Neutral)({
-      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root, flix)
+    val trivial: List[TrivialError] = root.defs.par.aggregate(Nil: List[TrivialError])({
+      case (acc, (sym, decl)) => acc ::: visitDef(decl)(root, flix)
     }, _ ++ _)
 
-    // TODO: Actually return these errors.
-
-    root.toSuccess
+    if (trivial.isEmpty)
+      root.toSuccess
+    else
+      Validation.Failure(trivial.toStream)
   }
 
-  object Catalog {
+  private object Catalog {
 
     val TInt32: Type = Type.Cst(TypeConstructor.Int32)
 
@@ -210,48 +210,49 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: DOC
-  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
+  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): List[TrivialError] = {
     visitExp(defn.exp)
   }
 
   // TODO: DOC
-  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): Used = checkTrivial(exp0) ++ (exp0 match {
 
-    // TODO: Should not call checkTrivial, just recurse.
+  // TODO: Should not call checkTrivial, just recurse.
 
-    case Expression.Unit(_) => Used.Neutral
+  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[TrivialError] = checkTrivial(exp0) ++ (exp0 match {
 
-    case Expression.True(_) => Used.Neutral
+    case Expression.Unit(_) => Nil
 
-    case Expression.False(_) => Used.Neutral
+    case Expression.True(_) => Nil
 
-    case Expression.Char(_, _) => Used.Neutral
+    case Expression.False(_) => Nil
 
-    case Expression.Float32(_, _) => Used.Neutral
+    case Expression.Char(_, _) => Nil
 
-    case Expression.Float64(_, _) => Used.Neutral
+    case Expression.Float32(_, _) => Nil
 
-    case Expression.Int8(_, _) => Used.Neutral
+    case Expression.Float64(_, _) => Nil
 
-    case Expression.Int16(_, _) => Used.Neutral
+    case Expression.Int8(_, _) => Nil
 
-    case Expression.Int32(_, _) => Used.Neutral
+    case Expression.Int16(_, _) => Nil
 
-    case Expression.Int64(_, _) => Used.Neutral
+    case Expression.Int32(_, _) => Nil
 
-    case Expression.BigInt(_, _) => Used.Neutral
+    case Expression.Int64(_, _) => Nil
 
-    case Expression.Str(_, _) => Used.Neutral
+    case Expression.BigInt(_, _) => Nil
 
-    case Expression.Wild(_, _, _) => Used.Neutral
+    case Expression.Str(_, _) => Nil
 
-    case Expression.Var(_, _, _, _) => Used.Neutral
+    case Expression.Wild(_, _, _) => Nil
 
-    case Expression.Def(_, _, _, _) => Used.Neutral
+    case Expression.Var(_, _, _, _) => Nil
 
-    case Expression.Eff(_, _, _, _) => Used.Neutral
+    case Expression.Def(_, _, _, _) => Nil
 
-    case Expression.Hole(_, _, _, _) => Used.Neutral
+    case Expression.Eff(_, _, _, _) => Nil
+
+    case Expression.Hole(_, _, _, _) => Nil
 
     case Expression.Lambda(_, exp, _, _, _) =>
       visitExp(exp)
@@ -277,15 +278,15 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Match(exp, rules, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Switch(rules, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Switch(rules, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Tuple(elms, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Tuple(elms, tpe, eff, loc) => Nil // TODO
 
-    case Expression.RecordEmpty(_, _, _) => Used.Neutral
+    case Expression.RecordEmpty(_, _, _) => Nil
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
@@ -297,86 +298,86 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp)
 
     case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(Used.Neutral) {
-        case (acc, e) => acc ++ visitExp(e)
+      elms.foldLeft(Nil: List[TrivialError]) {
+        case (acc, e) => acc ::: visitExp(e)
       }
 
     case Expression.ArrayNew(elm, len, _, _, _) =>
       visitExp(elm) ++ visitExp(len)
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => Nil // TODO
 
-    case Expression.ArrayLength(base, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ArrayLength(base, tpe, eff, loc) => Nil // TODO
 
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => Nil // TODO
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => Nil // TODO
 
-    case Expression.VectorLit(elms, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.VectorLit(elms, tpe, eff, loc) => Nil // TODO
 
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => Nil // TODO
 
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => Nil // TODO
 
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => Nil // TODO
 
-    case Expression.VectorLength(base, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.VectorLength(base, tpe, eff, loc) => Nil // TODO
 
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Ref(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Ref(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Deref(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Deref(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => Nil // TODO
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Existential(fparam, exp, eff, loc) => Used.Neutral // TODO
+    case Expression.Existential(fparam, exp, eff, loc) => Nil // TODO
 
-    case Expression.Universal(fparam, exp, eff, loc) => Used.Neutral // TODO
+    case Expression.Universal(fparam, exp, eff, loc) => Nil // TODO
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Ascribe(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.Cast(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.Cast(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => Nil // TODO
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => Nil // TODO
 
-    case Expression.NativeField(field, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.NativeField(field, tpe, eff, loc) => Nil // TODO
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.NativeMethod(method, args, tpe, eff, loc) => Nil // TODO
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.NewChannel(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.GetChannel(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.GetChannel(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => Nil // TODO
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) => Nil // TODO
 
-    case Expression.ProcessSpawn(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ProcessSpawn(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.ProcessSleep(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ProcessSleep(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.ProcessPanic(msg, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil // TODO
 
-    case Expression.FixpointConstraint(c, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.FixpointConstraint(c, tpe, eff, loc) => Nil // TODO
 
-    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => Nil // TODO
 
-    case Expression.FixpointSolve(exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.FixpointSolve(exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => Nil // TODO
 
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => Used.Neutral // TODO
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => Nil // TODO
   })
 
   // TODO: Recursively check for these.
-  private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): Used =
-    Catalog.allPatterns.foldLeft(Used.Neutral) {
-      case (acc, x) if unify(e0, x).nonEmpty => acc + TrivialExpression(e0.loc)
+  private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): List[TrivialError] =
+    Catalog.allPatterns.foldLeft(Nil: List[TrivialError]) {
+      case (acc, x) if unify(e0, x).nonEmpty => TrivialExpression(e0.loc) :: acc
       case (acc, x) => acc
     }
 
