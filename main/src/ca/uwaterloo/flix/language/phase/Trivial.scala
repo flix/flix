@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, FormalParam, HandlerBinding, MatchRule, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TrivialError
@@ -440,8 +441,21 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   })
 
   // TODO: DOC
-  private def visitConstraint(c: TypedAst.Constraint): List[TrivialError] = Nil // TODO
+  private def visitConstraint(c: TypedAst.Constraint)(implicit root: Root, flix: Flix): List[TrivialError] =
+    c.body.foldLeft(visitHeadPred(c.head)) {
+      case (acc, body) => acc ++ visitBodyPred(body)
+    }
 
+  // TODO: DOC
+  private def visitHeadPred(h: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[TrivialError] = h match {
+    case Head.Atom(pred, terms, _, _) =>
+      terms.foldLeft(visitExp(pred.exp)) {
+        case (acc, term) => acc ++ visitExp(term)
+      }
+  }
+
+  // TODO: DOC
+  private def visitBodyPred(b: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = Nil // TODO
 
 
   // TODO: Recursively check for these.
