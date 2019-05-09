@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, FormalParam, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TrivialError
 import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
@@ -347,31 +347,51 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.NativeField(field, tpe, eff, loc) => Nil // TODO
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) => Nil // TODO
+    case Expression.NativeMethod(_, args, _, _, _) =>
+      args.foldLeft(Nil: List[TrivialError]) {
+        case (acc, exp) => acc ++ visitExp(exp)
+      }
 
-    case Expression.NewChannel(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.GetChannel(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => Nil // TODO
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.SelectChannel(rules, default, tpe, eff, loc) => Nil // TODO
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      // Visit the default expression.
+      val d = default.map(visitExp).getOrElse(Nil)
 
-    case Expression.ProcessSpawn(exp, tpe, eff, loc) => Nil // TODO
+      // Visit each select rule.
+      rules.foldLeft(d) {
+        case (acc, SelectChannelRule(_, chan, body)) => acc ++ visitExp(chan) ++ visitExp(body)
+      }
 
-    case Expression.ProcessSleep(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.ProcessSpawn(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil // TODO
+    case Expression.ProcessSleep(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expression.ProcessPanic(_, _, _, _) => Nil
 
     case Expression.FixpointConstraint(c, tpe, eff, loc) => Nil // TODO
 
-    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => Nil // TODO
+    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, tpe, eff, loc) => Nil // TODO
+    case Expression.FixpointSolve(exp, _, _, _) =>
+      visitExp(exp)
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => Nil // TODO
+    case Expression.FixpointProject(pred, exp, _, _, _) =>
+      visitExp(pred.exp) ++ visitExp(exp)
 
-    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => Nil // TODO
+    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
   })
 
   // TODO: Recursively check for these.
@@ -479,6 +499,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Add while(true) java case to paper?
 
   // TODO: Ensure everything is private.
+
+  // TODO: What about overlapping select cases?
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
