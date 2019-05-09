@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, FormalParam, MatchRule, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, FormalParam, HandlerBinding, MatchRule, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TrivialError
 import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
@@ -344,11 +344,14 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.VectorLoad(base, _, _, _, _) =>
       visitExp(base)
 
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => Nil // TODO
+    case Expression.VectorStore(base, _, elm, _, _, _) =>
+      visitExp(base) ++ visitExp(elm)
 
-    case Expression.VectorLength(base, tpe, eff, loc) => Nil // TODO
+    case Expression.VectorLength(base, _, _, _) =>
+      visitExp(base)
 
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => Nil // TODO
+    case Expression.VectorSlice(base, _, _, _, _, _) =>
+      visitExp(base)
 
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp)
@@ -359,7 +362,10 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => Nil // TODO
+    case Expression.HandleWith(exp, bindings, _, _, _) =>
+      bindings.foldLeft(visitExp(exp)) {
+        case (acc, HandlerBinding(_, e)) => acc ++ visitExp(e)
+      }
 
     case Expression.Existential(_, exp, _, _) =>
       visitExp(exp)
@@ -416,7 +422,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.ProcessPanic(_, _, _, _) => Nil
 
-    case Expression.FixpointConstraint(c, tpe, eff, loc) => Nil // TODO
+    case Expression.FixpointConstraint(c, _, _, _) =>
+      visitConstraint(c)
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -431,6 +438,11 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       visitExp(exp1) ++ visitExp(exp2)
 
   })
+
+  // TODO: DOC
+  private def visitConstraint(c: TypedAst.Constraint): List[TrivialError] = Nil // TODO
+
+
 
   // TODO: Recursively check for these.
   private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): List[TrivialError] =
