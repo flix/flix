@@ -198,13 +198,13 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       rightMultiplicationByZero(),
       leftMultiplicationByOne(),
       rightMultiplicationByOne(),
-      divisionByOne(),
+      //divisionByOne(), // TODO
       // divisionBySelf(), // TODO
       leftConcatenateEmptyString(),
       rightConcatenateEmptyString(),
-      leftAppendNil(),
-      rightAppendNil(),
-      listIsEmptyCons(),
+      // leftAppendNil(), // TODO
+      // rightAppendNil(), // TODO
+      //      listIsEmptyCons(), // TODO
       listMapIdentity()
     )
 
