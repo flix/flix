@@ -132,7 +132,7 @@ class TestTrivial extends FunSuite with TestUtils {
   test("TrivialExpression.LeftAppendNil") {
     val input =
       """
-        |def f(): List[Int] = Nil ::: (1 :: 2 :: Nil)
+        |pub def f(): List[Int] = Nil ::: (1 :: 2 :: Nil)
         |
         |enum List[t] {
         |    case Nil,
@@ -154,7 +154,7 @@ class TestTrivial extends FunSuite with TestUtils {
   test("TrivialExpression.RightAppendNil") {
     val input =
       """
-        |def f(): List[Int] = (1 :: 2 :: Nil) ::: Nil
+        |pub def f(): List[Int] = (1 :: 2 :: Nil) ::: Nil
         |
         |enum List[t] {
         |    case Nil,
@@ -176,7 +176,7 @@ class TestTrivial extends FunSuite with TestUtils {
   test("TrivialExpression.ListIsEmptyCons") {
     val input =
       """
-        |def f(): Bool = List.isEmpty(1 :: Nil)
+        |pub def f(): Bool = List.isEmpty(1 :: Nil)
         |
         |enum List[t] {
         |    case Nil,
@@ -198,7 +198,7 @@ class TestTrivial extends FunSuite with TestUtils {
   test("TrivialExpression.ListMapIdentity") {
     val input =
       """
-        |def f(): List[Int] = List.map(x -> x, 1 :: 2 :: Nil)
+        |pub def f(): List[Int] = List.map(x -> x, 1 :: 2 :: Nil)
         |
         |enum List[t] {
         |    case Nil,
