@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, FormalParam, HandlerBinding, MatchRule, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{Ast, BinaryOperator, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TrivialError
@@ -27,10 +27,6 @@ import ca.uwaterloo.flix.util.Validation._
 
 // TODO: Come up with better name.
 object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
-
-  // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
-  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
-  // TODO: Where should these annotations go?
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, TrivialError] = flix.phase("Trivial") {
 
@@ -179,16 +175,11 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Trivial Expression: List.map(x -> x, _)
       */
-    def listMapIdentity()(implicit flix: Flix): Expression = app(app(defn("List.map"), identity()), Wild) // TODO: Express more concisely.
+    def listMapIdentity()(implicit flix: Flix): Expression = app(app(defn("List.map"), identity()), Wild)
 
-    // TODO: Use cases to find:
-
-    // TODO: - List.getWithDefault(List.map(_, o), false)         --> List.exists(_)
-    // TODO: - List.isEmpty(xs) && List.exists(_, xs)             --> false
-    // TODO: - Option.flatMap(x => if (f(x)) Some(x) else None))  --> Option.filter(f)
-
-    // TODO: Probably need to introduce something like Theorem which holds the result too... And then the error can show the result.
-    // TODO: DOC
+    /**
+      * A list of trivial expression patterns.
+      */
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
       leftAdditionByZero(),
@@ -210,18 +201,19 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
-  // TODO: Use set instead of list?
+  // TODO: Use set instead of list of trivial errors?
 
-  // TODO: DOC
-  private def visitDef(defn: Def)(implicit root: Root, flix: Flix): List[TrivialError] = {
-    visitExp(defn.exp)
+  /**
+    * Finds trivial computations in the given definition `defn0`.
+    */
+  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): List[TrivialError] = {
+    visitExp(defn0.exp)
   }
 
-  // TODO: DOC
-
-  // TODO: Should not call checkTrivial, just recurse.
-
-  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[TrivialError] = checkTrivial(exp0) ++ (exp0 match {
+  /**
+    * Finds trivial computations in the given expression `exp0`.
+    */
+  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[TrivialError] = matchesTrivialTemplate(exp0) ++ (exp0 match {
 
     case Expression.Unit(_) => Nil
 
@@ -440,30 +432,48 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   })
 
-  // TODO: DOC
-  private def visitConstraint(c: TypedAst.Constraint)(implicit root: Root, flix: Flix): List[TrivialError] =
-    c.body.foldLeft(visitHeadPred(c.head)) {
+  /**
+    * Finds trivial computations in the given constraint `con0`.
+    */
+  private def visitConstraint(con0: TypedAst.Constraint)(implicit root: Root, flix: Flix): List[TrivialError] =
+    con0.body.foldLeft(visitHeadPred(con0.head)) {
       case (acc, body) => acc ++ visitBodyPred(body)
     }
 
-  // TODO: DOC
-  private def visitHeadPred(h: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[TrivialError] = h match {
+  /**
+    * Finds trivial computations in the given head predicate `head0`.
+    */
+  private def visitHeadPred(head0: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[TrivialError] = head0 match {
     case Head.Atom(pred, terms, _, _) =>
       terms.foldLeft(visitExp(pred.exp)) {
         case (acc, term) => acc ++ visitExp(term)
       }
   }
 
-  // TODO: DOC
-  private def visitBodyPred(b: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = Nil // TODO
+  /**
+    * Finds trivial computations in the given body predicate `body0`.
+    */
+  private def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
+    case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
 
+    case Body.Filter(_, terms, _) =>
+      terms.foldLeft(Nil: List[TrivialError]) {
+        case (acc, term) => acc ++ visitExp(term)
+      }
 
-  // TODO: Recursively check for these.
-  private def checkTrivial(e0: TypedAst.Expression)(implicit root: Root, flix: Flix): List[TrivialError] =
+    case Body.Functional(_, term, _) => visitExp(term)
+  }
+
+  /**
+    * Determines if given expression `exp0` is trivial.
+    */
+  private def matchesTrivialTemplate(exp0: TypedAst.Expression)(implicit root: Root, flix: Flix): List[TrivialError] = {
+    // Check if the expression unifies with any of the trivial patterns.
     Catalog.allPatterns.foldLeft(Nil: List[TrivialError]) {
-      case (acc, x) if unify(e0, x).nonEmpty => TrivialExpression(e0.loc) :: acc
-      case (acc, x) => acc
+      case (acc, template) if unify(exp0, template).nonEmpty => TrivialExpression(exp0.loc) :: acc
+      case (acc, _) => acc
     }
+  }
 
   // TODO: Return ExpSubstitiotion
   private def unify(e1: Expression, e2: Expression): Option[Unit] = (e1, e2) match {
@@ -540,9 +550,29 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODOs
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: Introduce appropriate theorem type, probably something that holds a rewrite rule like:
+  // TODO:
+  // TODO: thm listIsEmptyCons[a](): Bool = \forall (x: a, xs: List[a]). List.isEmpty(x :: xs) ~~> false
+  // TODO: thm leftConcatenateEmptyString(): Bool = \forall (s: Str). "" + s ~~> s
+  // TODO: thm listFilterEmpty[a, b](): Bool = \forall (f: a -> b, xs: List[a]). List.isEmpty(xs) => (List.filter(f, xs) ~~> Nil)
+  // TODO: law reflexive[e](⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
+
+  // TODO: Asger had some interesting patterns, e.g. x != 'a' || x != 'b'
+
+  // TODO: Use cases to find:
+
+  // TODO: - List.getWithDefault(List.map(_, o), false)         --> List.exists(_)
+  // TODO: - List.isEmpty(xs) && List.exists(_, xs)             --> false
+  // TODO: - Option.flatMap(x => if (f(x)) Some(x) else None))  --> Option.filter(f)
+
   // TODO: Compile to automaton or similar?
 
-  // TODO: !! Could this phase not run concurrently with other phases!?
+  // TODO: !! Could this phase not run concurrently with other phases!? We should just run all such checker phase concurrent with the rest of the entire compiler.
+  // TODO: We could even start codegen while this is running.
+
+  // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
+  // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
+  // TODO: Where should these annotations go?
 
   // TODO: Should we also consider tricky cases such as:
   // match s with {
