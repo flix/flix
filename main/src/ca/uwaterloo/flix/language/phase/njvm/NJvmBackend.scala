@@ -89,11 +89,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
 
 
     //
-    // Generate the Context class.
-    //
-    val contextClass = GenContext.gen(namespaces)
-
-    //
     // Generate the namespace classes.
     //
     val namespaceClasses = GenNamespaces.gen(namespaces)
@@ -124,18 +119,18 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenRefClasses,
         GenTagClasses,
         GenTupleClasses,
+        GenContextClass,
         GenMainClass
       )
 
 
-    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types, tags) }
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types, tags, namespaces) }
       .map(f => (f._1, f._2.getJvmClass))
 
     //
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
-      contextClass,
       namespaceClasses,
       functionClasses,
       closureClasses,

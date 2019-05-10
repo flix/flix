@@ -746,6 +746,17 @@ object Mnemonics {
   /**
     * Capability which allows to get/put a field
     */
+  class UncheckedField(fieldName: String, fieldType : NJvmType)(implicit root: Root, flix: Flix) {
+
+    def GET_FIELD[S <: Stack, T1 <: Ref[MObject], T2 <: MnemonicsTypes]: F[S ** T1] => F[S ** T2] = t => t.emitGetField(fieldName, fieldType)
+
+    def PUT_FIELD[S <: Stack, T1 <: Ref[MObject], T2 <: MnemonicsTypes]: F[S ** T1 ** T2] => F[S]  = t => t.emitPutField(fieldName, fieldType)
+  }
+
+
+  /**
+    * Capability which allows to get/put a field
+    */
   class UncheckedStaticField(fieldName: String, fieldType : NJvmType)(implicit root: Root, flix: Flix) {
 
     def GET_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S] => F[S ** T] = t => t.emitGetStatic(fieldName, fieldType)
@@ -1431,6 +1442,23 @@ object Mnemonics {
         * @return returns the capability to acess the created field. Similar to the methods this ensure we only
         *         acess field we've generated
         */
+      def mkUncheckedField(fieldName: String, fieldType : NJvmType, modifiers: List[JvmModifier] = List(Private)): UncheckedField = {
+        val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+        val field = cw.visitField(modifierVal, fieldName, fieldType.toDescriptor, null, null)
+        field.visitEnd()
+
+        new UncheckedField(fieldName, fieldType)
+      }
+
+      /**
+        * Method which receives a list of JvmModifiers and fieldName. It will emit code to generate a field
+        * with the correspoding type parameter T.
+        *
+        * @param modifiers list of modififers which we want to generate the field with (public, private, final, etc..)
+        * @param fieldName name which we want to give to the field we are generating
+        * @return returns the capability to acess the created field. Similar to the methods this ensure we only
+        *         acess field we've generated
+        */
       def mkUncheckedStaticField(fieldName: String, fieldType: NJvmType, modifiers: List[JvmModifier] = List(Private)): UncheckedStaticField = {
         val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
         val field = cw.visitField(modifierVal, fieldName, fieldType.toDescriptor, null, null)
@@ -1773,6 +1801,22 @@ object Mnemonics {
     Reference(JvmName(pkg, name))
   }
 
+  /**
+    * Returns the field name of a namespace as used in the Context class.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns$Root$
+    * Foo         =>  Foo$Ns
+    * Foo.Bar     =>  Foo$Bar$Ns
+    * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
+    */
+  def getNamespaceFieldNameInContextClass(ns: NamespaceInfo): String =
+    if (ns.isRoot)
+      "ns$Root$"
+    else
+      "ns$" + ns.ns.mkString("$")
+
     /**
       * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
       *
@@ -1799,6 +1843,25 @@ object Mnemonics {
       // The type resides in the root package.
       Reference(JvmName(RootPackage, name))
     }
+
+
+  /**
+    * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * (Int, Int)              =>    Tuple2$Int$Int
+    * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
+    * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
+    * (Bool, List[Int])       =>    Tuple2$Bool$Obj
+    * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getContextClassType(implicit root: Root, flix: Flix): Reference = {
+    getJvmType[Ref[Context]].asInstanceOf[Reference]
+  }
+
 
 
 
@@ -2010,7 +2073,7 @@ object Mnemonics {
         * @param tags  set of tags
         * @return update map with new generated classes
         */
-      def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
+      def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo], ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
     }
 
   }

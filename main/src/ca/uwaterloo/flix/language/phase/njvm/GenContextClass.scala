@@ -19,18 +19,24 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.{JvmName, NamespaceInfo, TagInfo}
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
-import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.classes.{Context, RecordEmpty}
 
 /**
-  * Generates bytecode for the record interface.
+  * Generates bytecode for the empty record class.
   */
-object GenRecordInterface extends MnemonicsGenerator {
+object GenContextClass extends MnemonicsGenerator {
 
-  // TODO: Miguel: Is it really worth it to have these small 2line classes? Or at least we should the move them into Mnemonics.
-
+  /**
+    * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+    * and return an updated map with the new generated classes.
+    *
+    * @param map of all the generated classes so far.
+    * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+    * @return update map with new generated classes
+    */
   def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo], ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
-    map + new RecordInterface().getClassMapping
+    map + new Context(ns).getClassMapping
   }
 
 }

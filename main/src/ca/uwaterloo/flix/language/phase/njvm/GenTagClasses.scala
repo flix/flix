@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType}
-import ca.uwaterloo.flix.language.phase.jvm.{JvmName, TagInfo}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmName, NamespaceInfo, TagInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsGenerator, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
@@ -18,7 +18,7 @@ object GenTagClasses extends MnemonicsGenerator{
     * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
     * @return update map with new generated classes
     */
-  def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo])(implicit root: FinalAst.Root, flix: Flix): Map[JvmName, Mnemonics.MnemonicsClass] = {
+  def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo], ns: Set[NamespaceInfo])(implicit root: FinalAst.Root, flix: Flix): Map[JvmName, Mnemonics.MnemonicsClass] = {
     tags.foldLeft(map) {
       case (macc, tag) =>
         macc + (getErasedJvmType(tag.tagType) match {
