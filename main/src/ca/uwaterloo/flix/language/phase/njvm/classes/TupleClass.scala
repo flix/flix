@@ -3,8 +3,8 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes.{MArray, _}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType.{PrimBool, PrimByte, PrimChar, PrimDouble, PrimFloat, PrimInt, PrimLong, PrimShort, Reference}
@@ -22,14 +22,14 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
   //Fields
   for ((arg, ind) <- elms.zipWithIndex) {
       arg match {
-        case PrimBool => new Field[MBool]("field" + ind)
-        case PrimChar => new Field[MChar]("field" + ind)
-        case PrimByte => new Field[MByte]("field" + ind)
-        case PrimShort => new Field[MShort]("field" + ind)
-        case PrimInt => new Field[MInt]("field" + ind)
-        case PrimLong => new Field[MLong]("field" + ind)
-        case PrimFloat => new Field[MFloat]("field" + ind)
-        case PrimDouble => new Field[MDouble]("field" + ind)
+        case PrimBool => new PrimField[MBool]("field" + ind)
+        case PrimChar => new PrimField[MChar]("field" + ind)
+        case PrimByte => new PrimField[MByte]("field" + ind)
+        case PrimShort => new PrimField[MShort]("field" + ind)
+        case PrimInt => new PrimField[MInt]("field" + ind)
+        case PrimLong => new PrimField[MLong]("field" + ind)
+        case PrimFloat => new PrimField[MFloat]("field" + ind)
+        case PrimDouble => new PrimField[MDouble]("field" + ind)
         case Reference(_) => new Field[Ref[MObject]]("field" + ind)
         case _ => ???
       }
@@ -38,25 +38,30 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
   private def getField[T1 <: MnemonicsTypes : TypeTag](ind : Int) : Field[T1] =
     new Field[T1]("field" + ind)
 
+  private def getPrimField[T1 <: MnemonicsPrimTypes : TypeTag](ind : Int) : PrimField[T1] =
+    new PrimField[T1]("field" + ind)
+
   val defaultConstrutor : UncheckedVoidMethod = {
 
-    def setFields(ins : F[StackNil] => F[StackNil], sig : UncheckedFunSig) : F[StackNil] => F[StackNil] = {
-      var setFields = ins
-      for ((arg, ind) <- elms.zipWithIndex) {
-        setFields = setFields |>>
+    val setFields =
+      (sig : UncheckedFunSig)  =>{
+        var ins = NO_OP[StackNil]
+        for ((_, ind) <- elms.zipWithIndex) {
+          ins = ins |>>
           sig.getArg[Ref[TupleClass]](0).LOAD |>>
           sig.getArg(ind + 1).LOAD |>>
           getField(ind).PUT_FIELD
+        }
+        ins
       }
-      setFields
-    }
 
     cg.mkUncheckedConstructor(ct+:elms,
       sig =>
-        setFields(
           sig.getArg(0).asInstanceOf[Local[Ref[TupleClass]]].LOAD[StackNil] |>>
-          cg.SUPER, sig) |>>
-        RETURN_VOID)
+          cg.SUPER |>>
+          setFields(sig) |>>
+        RETURN_VOID
+    )
   }
 
   /**
@@ -112,6 +117,36 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
     }
     def setIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : VoidMethod2[Ref[TupleClass], T1] =
       new VoidMethod2[Ref[TupleClass], T1](JvmModifier.InvokeVirtual, ct, "setIndex" + index)
+
+
+  val getBoxedValueMethod : Method1[Ref[TupleClass], MArray[MObject]] = {
+
+    cg.mkMethod1("getBoxedValue",
+      sig =>
+        {
+          var ins  =  LDC_INT[StackNil](elms.length) |>> NEWARRAY[StackNil, MObject]
+          for ((arg, ind) <- elms.zipWithIndex) {
+            ins = ins |>>
+              DUP |>>
+              LDC_INT(ind) |>>
+              (arg match {
+                case PrimBool => getPrimField[MBool](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimChar => getPrimField[MChar](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimByte => getPrimField[MByte](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimShort => getPrimField[MShort](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimInt => getPrimField[MInt](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimLong => getPrimField[MLong](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimFloat => getPrimField[MFloat](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case PrimDouble => getPrimField[MDouble](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
+                case Reference(_) =>  sig.getArg1.LOAD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt] |>>
+                  getField[Ref[MObject]](ind).GET_FIELD|>> AASTORE
+                case _ => ???
+              })
+          }
+          ins |>> RETURN
+        }
+    )
+  }
 
   /**
     * Generate the `toString()` method which will always throws an exception, since `toString` should not be called.

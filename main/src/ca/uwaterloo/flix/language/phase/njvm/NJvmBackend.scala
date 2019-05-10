@@ -125,12 +125,12 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
 //    import ca.uwaterloo.flix.language.phase.jvm.GenTupleInterfaces
 //    val tupleInterfaces = GenTupleInterfaces.gen(types)
 
-    //
-    // Generate tuple classes for each tuple type in the program.
-    //
-
-    import ca.uwaterloo.flix.language.phase.jvm.GenTupleClasses
-    val tupleClasses = GenTupleClasses.gen(types)
+//    //
+//    // Generate tuple classes for each tuple type in the program.
+//    //
+//
+//    import ca.uwaterloo.flix.language.phase.jvm.GenTupleClasses
+//    val tupleClasses = GenTupleClasses.gen(types)
 
 
     /** Generated classes using NJVM */
@@ -146,7 +146,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenRecordEmpty,
         GenRecordExtend,
         GenRefClasses,
-//        GenTupleClasses
+        GenTupleClasses
       )
 
 
@@ -163,7 +163,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       functionClasses,
       closureClasses,
       tagClasses,
-      tupleClasses,
+//      tupleClasses,
       njvmClasses
     ).reduce(_ ++ _)
 

@@ -41,6 +41,8 @@ sealed trait NJvmType {
     case NJvmType.PrimFloat => "F"
     case NJvmType.PrimDouble => "D"
     case NJvmType.Reference(name) => name.toDescriptor
+    case NJvmType.JArray(jt) => "[" + jt.toDescriptor
+
   }
 }
 
@@ -148,4 +150,5 @@ object NJvmType {
     */
   case class Reference(name: JvmName) extends NJvmType
 
+  case class JArray(jt: NJvmType) extends NJvmType
 }
