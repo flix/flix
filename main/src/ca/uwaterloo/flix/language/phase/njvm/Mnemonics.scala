@@ -354,6 +354,11 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+    def emitConstNull[S]: F[S] = {
+      mv.visitInsn(ACONST_NULL)
+      this.asInstanceOf[F[S]]
+    }
+
     def boxPrim[S](jt: NJvmType): F[S] = {
       jt match {
         case PrimBool => emitInvoke(JvmModifier.InvokeStatic, JvmName.Boolean.toInternalName, "valueOf", Nil, Reference(JvmName.Boolean))
@@ -453,7 +458,7 @@ object Mnemonics {
 
     case t if t =:= typeOf[Ref[Context]] => NJvmType.Context
 
-    case t if t =:= typeOf[Ref[Main]] => Reference(JvmName(RootPackage, "Main"))
+    case t if t =:= typeOf[Ref[Main[_]]] => Reference(JvmName(RootPackage, "Main"))
 
     case t if t =:= typeOf[Ref[RecordInterface]] =>
       val name = "IRecord"
@@ -603,6 +608,14 @@ object Mnemonics {
     def RETURN_VOID: F[StackNil] => F[StackNil] = t => t.emitReturnVoid()
 
     /**
+      * Returns without value
+      */
+    def RETURN_VOID[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): F[StackNil ** T] => F[StackNil] = {
+      t => t.emitReturnVoid()
+    }
+
+
+    /**
       * Pushes the result of adding the two top-most ints.
       */
     def IADD[S <: Stack]: F[S ** MInt ** MInt] => F[S ** MInt] = ???
@@ -632,6 +645,11 @@ object Mnemonics {
     def LDC_INT[S <: Stack](value: Int): F[S] => F[S ** MInt] =
       t => t.emitLdc(value.asInstanceOf[Object])
 
+    /**
+      * Loads a constant int onto the stack
+      */
+    def CONST_NULL[S <: Stack, T <: Ref[MObject]]: F[S] => F[S ** T] =
+      t => t.emitConstNull
 
     /**
       * Loads a constant int onto the stack
@@ -1674,6 +1692,22 @@ object Mnemonics {
       Reference(JvmName(RootPackage, name))
     }
 
+  /**
+    * Returns the namespace type for the given namespace `ns`.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo.Ns
+    * Foo.Bar     =>  Foo.Bar.Ns
+    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
+    */
+  def getNamespaceClassType(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Reference = {
+    val pkg = ns.ns
+    val name = "Ns"
+    Reference(JvmName(pkg, name))
+  }
+
     /**
       * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
       *
@@ -1708,7 +1742,7 @@ object Mnemonics {
     */
   def getMainClassType(implicit root: Root, flix: Flix): Reference = {
 
-    getJvmType[Ref[Main]].asInstanceOf[Reference]
+    getJvmType[Ref[Main[_]]].asInstanceOf[Reference]
   }
 
     /**

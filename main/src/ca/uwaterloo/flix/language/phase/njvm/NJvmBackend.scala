@@ -90,7 +90,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate the main class.
     //
-    val mainClass = GenMainClass.gen()
+//    val mainClass = GenMainClass.gen()
 
     //
     // Generate the Context class.
@@ -132,7 +132,8 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenRecordEmpty,
         GenRecordExtend,
         GenRefClasses,
-        GenTupleClasses
+        GenTupleClasses,
+        GenMainClass
       )
 
 
@@ -143,7 +144,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
-      mainClass,
+//      mainClass,
       contextClass,
       namespaceClasses,
       functionClasses,
