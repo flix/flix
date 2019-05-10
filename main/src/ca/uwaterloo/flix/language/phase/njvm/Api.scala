@@ -29,6 +29,13 @@ object Api {
 
   object Java {
 
+    object Runtime{
+      object Value {
+        object Unit {
+          val getInstance : Method0[Ref[MUnit]] = new Method0(JvmModifier.InvokeStatic,  NJvmType.Unit, "getInstance")
+        }
+      }
+    }
     object Lang {
 
       object Object {

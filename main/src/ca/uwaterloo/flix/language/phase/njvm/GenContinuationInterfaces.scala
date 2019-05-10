@@ -14,7 +14,7 @@ object GenContinuationInterfaces extends MnemonicsGenerator{
     * and return an updated map with the new generated classes.
     *
     * @param map of all the generated classes so far.
-    * @param ts  set of Monotypes this will be used to generate certain classes such as Enum.
+    * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
     * @return update map with new generated classes
     */
   def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo])(implicit root: FinalAst.Root, flix: Flix): Map[JvmName, Mnemonics.MnemonicsClass] = {

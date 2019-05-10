@@ -5,6 +5,8 @@ import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType}
 import ca.uwaterloo.flix.language.phase.jvm.{JvmName, TagInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsGenerator, _}
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.classes.TagClass
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.ContinuationInterface
 
 object GenTagClasses extends MnemonicsGenerator{
@@ -17,6 +19,22 @@ object GenTagClasses extends MnemonicsGenerator{
     * @return update map with new generated classes
     */
   def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo])(implicit root: FinalAst.Root, flix: Flix): Map[JvmName, Mnemonics.MnemonicsClass] = {
+    tags.foldLeft(map) {
+      case (macc, tag) =>
+        macc + (getErasedJvmType(tag.tagType) match {
+          case PrimBool => new TagClass[MBool](tag).getClassMapping
+          case PrimChar =>  new TagClass[MChar](tag).getClassMapping
+          case PrimByte =>  new TagClass[MByte](tag).getClassMapping
+          case PrimShort =>  new TagClass[MShort](tag).getClassMapping
+          case PrimInt =>  new TagClass[MInt](tag).getClassMapping
+          case PrimLong =>  new TagClass[MLong](tag).getClassMapping
+          case PrimFloat =>  new TagClass[MFloat](tag).getClassMapping
+          case PrimDouble =>  new TagClass[MDouble](tag).getClassMapping
+          case Reference(_) => new TagClass[Ref[MObject]](tag).getClassMapping
+          case _ => ???
+        })
+    }
+
     map
   }
 }

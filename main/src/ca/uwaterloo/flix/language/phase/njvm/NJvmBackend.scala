@@ -109,13 +109,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val closureClasses = GenClosureClasses.gen(closures)
 
-    //
-    // Generate tag classes for each enum instantiation in the program.
-    //
-    import ca.uwaterloo.flix.language.phase.jvm.GenTagClasses
-    val tagClasses = GenTagClasses.gen(tags)
-
-
     /** Generated classes using NJVM */
     val map: Map[JvmName, MnemonicsClass] = Map()
     val classes: List[MnemonicsGenerator] =
@@ -129,6 +122,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenRecordEmpty,
         GenRecordExtend,
         GenRefClasses,
+        GenTagClasses,
         GenTupleClasses,
         GenMainClass
       )
@@ -145,7 +139,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       namespaceClasses,
       functionClasses,
       closureClasses,
-      tagClasses,
       njvmClasses
     ).reduce(_ ++ _)
 
@@ -155,7 +148,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
-        for ((jvmName, jvmClass) <- allClasses) {
+        for ((_, jvmClass) <- allClasses) {
           JvmOps.writeClass(TargetDirectory, jvmClass)
         }
       }

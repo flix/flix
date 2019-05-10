@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getJvmType, getRecordInterfaceType, getRefClassType, getTupleInterfaceType, stringify, _}
+import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getErasedJvmType, getJvmType, getRecordInterfaceType, getRefClassType, getTupleInterfaceType, stringify, _}
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java.Lang.{Object, _}
@@ -169,6 +169,34 @@ object Mnemonics {
       mv.visitFieldInsn(GETFIELD, ct.name.toInternalName, fieldName, fieldType.toDescriptor)
       this.asInstanceOf[F[S]]
     }
+
+    /**
+      * Emits a getStatic instruction given the fieldName and it's type
+      *
+      * @param fieldName the of the field
+      * @param fieldType the jvmType of the field we want to get
+      * @pre This method should only be called if field with the specified fieldName matches the jvmType,
+      *      to avoid verifier errors
+      */
+    def emitGetStatic[S](fieldName: String, fieldType: NJvmType): F[S] = {
+      mv.visitFieldInsn(GETSTATIC, ct.name.toInternalName, fieldName, fieldType.toDescriptor)
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Emits a getStatic instruction given the fieldName and it's type
+      *
+      * @param fieldName the of the field
+      * @param fieldType the jvmType of the field we want to get
+      * @pre This method should only be called if field with the specified fieldName matches the jvmType,
+      *      to avoid verifier errors
+      */
+    def emitPutStatic[S](fieldName: String, fieldType: NJvmType): F[S] = {
+      mv.visitFieldInsn(PUTSTATIC, ct.name.toInternalName, fieldName, fieldType.toDescriptor)
+      this.asInstanceOf[F[S]]
+    }
+
+
 
 
     /**
@@ -397,6 +425,8 @@ object Mnemonics {
 
   trait MString extends MObject
 
+  trait MUnit extends MObject
+
   object MnemonicsTypes {
 
     case class MVoid() extends MnemonicsPrimTypes
@@ -443,6 +473,7 @@ object Mnemonics {
 
     case t if t =:= typeOf[Ref[MString]] => NJvmType.String
     case t if t =:= typeOf[Ref[MObject]] => NJvmType.Object
+    case t if t =:= typeOf[Ref[MUnit]] => NJvmType.Unit
 
     case t if t =:= typeOf[Ref[MBool]] => Reference(JvmName.Boolean)
     case t if t =:= typeOf[Ref[MChar]] => Reference(JvmName.Character)
@@ -712,8 +743,18 @@ object Mnemonics {
     def GET_BOXED_FIELD[S <: Stack]: F[S] => F[S ** Ref[T]] = t => t.emitGetBoxedField(fieldName, fieldType)
   }
 
+  /**
+    * Capability which allows to get/put a field
+    */
+  class UncheckedStaticField(fieldName: String, fieldType : NJvmType)(implicit root: Root, flix: Flix) {
 
-    /**
+    def GET_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S] => F[S ** T] = t => t.emitGetStatic(fieldName, fieldType)
+
+    def PUT_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S ** T ** T] => F[S]  = t => t.emitPutStatic(fieldName, fieldType)
+  }
+
+
+  /**
       * Capability which allows acess the function locals in this case a function with 0 arguments
       */
     //TODO: Maybe need to have different types for signatures of static method as the 1st local (0 index) of static
@@ -999,6 +1040,12 @@ object Mnemonics {
       // TODO: Miguel: Should this not be in Instructions?
       def SUPER[T <: Ref[MObject]]: F[StackNil ** T] => F[StackNil] =
         Object.constructor.INVOKE
+
+      def UncheckedStaticFieldInit(field: UncheckedStaticField, f : F[StackNil] => F[StackNil]) = {
+
+        emitClassMethod(List(JvmModifier.Static), "<clinit>", List(), Void, f)
+      }
+
 
       /**
         * This method generates in the current class we are generating a (non-void) method with 0 arguments
@@ -1374,6 +1421,24 @@ object Mnemonics {
 
         new Field(fieldName)
       }
+
+      /**
+        * Method which receives a list of JvmModifiers and fieldName. It will emit code to generate a field
+        * with the correspoding type parameter T.
+        *
+        * @param modifiers list of modififers which we want to generate the field with (public, private, final, etc..)
+        * @param fieldName name which we want to give to the field we are generating
+        * @return returns the capability to acess the created field. Similar to the methods this ensure we only
+        *         acess field we've generated
+        */
+      def mkUncheckedStaticField(fieldName: String, fieldType: NJvmType, modifiers: List[JvmModifier] = List(Private)): UncheckedStaticField = {
+        val modifierVal = modifiers.map(modifier => modifier.toInternal).sum
+        val field = cw.visitField(modifierVal, fieldName, fieldType.toDescriptor, null, null)
+        field.visitEnd()
+
+        new UncheckedStaticField(fieldName, fieldType)
+      }
+
 
 
       /**
@@ -1860,6 +1925,33 @@ object Mnemonics {
     def getContinuationInterfaceType[T1 <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): Reference = {
       getJvmType[Ref[ContinuationInterface[T1]]].asInstanceOf[Reference]
     }
+
+  /**
+    * Returns the tag class `Tag$X$Y$Z` for the given tag.
+    *
+    * For example,
+    *
+    * None: Option[Int]         =>    None
+    * Some: Option[Char]        =>    Some$Char
+    * Some: Option[Int]         =>    Some$Int
+    * Some: Option[String]      =>    Some$Obj
+    * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
+    * Err: Result[Bool, Char]   =>    Err$Bool$Char
+    */
+  // TODO: Magnus: Can we improve the representation w.r.t. unused type variables?
+  def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): Reference = {
+    // Retrieve the tag name.
+    val tagName = tag.tag
+
+    // Retrieve the type arguments.
+    val args = tag.tparams.map(tpe => stringify(getErasedJvmType(tpe)))
+
+    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
+    val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
+
+    // The tag class resides in its namespace package.
+    Reference(JvmName(tag.sym.namespace, name))
+  }
 
 
     /**

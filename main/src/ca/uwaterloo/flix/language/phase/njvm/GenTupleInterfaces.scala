@@ -19,11 +19,11 @@ object GenTupleInterfaces extends MnemonicsGenerator{
     */
   def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo])(implicit root: FinalAst.Root, flix: Flix): Map[JvmName, Mnemonics.MnemonicsClass] = {
     types.foldLeft(map) {
-      case (macc, tpe@MonoType.Tuple(elms)) =>
+      case (macc, MonoType.Tuple(elms)) =>
         val targs = elms.map(getErasedJvmType)
 
         macc + new TupleInterface(targs).getClassMapping
-      case (macc, tpe) =>
+      case (macc, _) =>
         // Case 2: The type constructor is a non-tuple.
         // Nothing to be done. Return the map.
         macc

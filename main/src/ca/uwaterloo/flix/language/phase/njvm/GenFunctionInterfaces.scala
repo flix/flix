@@ -21,12 +21,12 @@ object GenFunctionInterfaces extends MnemonicsGenerator{
     // Generate a function interface for each type and collect the results in a map.
     //
     types.foldLeft(map) {
-      case (macc, tpe@MonoType.Arrow(targs, tresult)) =>
+      case (macc, MonoType.Arrow(targs, tresult)) =>
         val elms = targs.map(getErasedJvmType)
 
         val returnType = getErasedJvmType(tresult)
         macc + new FunctionInterface(elms, returnType).getClassMapping
-      case (macc, tpe) =>
+      case (macc, _) =>
         // Case 2: The type constructor is a non-tuple.
         // Nothing to be done. Return the map.
         macc
