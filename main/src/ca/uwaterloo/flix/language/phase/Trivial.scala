@@ -485,67 +485,46 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.False(_), Expression.False(_)) => Substitution.emptyOpt
 
     case (Expression.Char(lit1, _), Expression.Char(lit2, _)) =>
-      if (lit1 != lit2)
-        None
-      else
-        Substitution.emptyOpt
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Float32(lit1, _), Expression.Float32(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Float64(lit1, _), Expression.Float64(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Int8(lit1, _), Expression.Int8(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Int16(lit1, _), Expression.Int16(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Int64(lit1, _), Expression.Int64(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.BigInt(lit1, _), Expression.BigInt(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Str(lit1, _), Expression.Str(lit2, _)) =>
+      if (lit1 != lit2) None else Substitution.emptyOpt
+
+    case (Expression.Wild(_, _, _), _) => Substitution.emptyOpt
+
+    case (_, Expression.Wild(_, _, _)) => Substitution.emptyOpt
+
+    case (Expression.Var(sym, _, _, _), _) =>
+      ??? // TODO: Call unifyVar
+
+    case (_, Expression.Var(sym, _, _, _)) =>
+      ??? // TODO: call unifyFar
+
 
 
 
     // TODO: All cases to consider:
-    //
-    //    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Float32)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Float64)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Int8)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Int16)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Int32)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Int64)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.BigInt)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Str)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Wild(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Var(sym: Symbol.VarSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
     //    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class Eff(sym: Symbol.EffSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
