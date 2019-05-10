@@ -22,15 +22,15 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
   //Fields
   for ((arg, ind) <- elms.zipWithIndex) {
       arg match {
-        case PrimBool => new PrimField[MBool]("field" + ind)
-        case PrimChar => new PrimField[MChar]("field" + ind)
-        case PrimByte => new PrimField[MByte]("field" + ind)
-        case PrimShort => new PrimField[MShort]("field" + ind)
-        case PrimInt => new PrimField[MInt]("field" + ind)
-        case PrimLong => new PrimField[MLong]("field" + ind)
-        case PrimFloat => new PrimField[MFloat]("field" + ind)
-        case PrimDouble => new PrimField[MDouble]("field" + ind)
-        case Reference(_) => new Field[Ref[MObject]]("field" + ind)
+        case PrimBool => cg.mkPrimField[MBool]("field" + ind)
+        case PrimChar => cg.mkPrimField[MChar]("field" + ind)
+        case PrimByte => cg.mkPrimField[MByte]("field" + ind)
+        case PrimShort => cg.mkPrimField[MShort]("field" + ind)
+        case PrimInt => cg.mkPrimField[MInt]("field" + ind)
+        case PrimLong => cg.mkPrimField[MLong]("field" + ind)
+        case PrimFloat => cg.mkPrimField[MFloat]("field" + ind)
+        case PrimDouble => cg.mkPrimField[MDouble]("field" + ind)
+        case Reference(_) => cg.mkField[Ref[MObject]]("field" + ind)
         case _ => ???
       }
   }
@@ -46,11 +46,30 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
     val setFields =
       (sig : UncheckedFunSig)  =>{
         var ins = NO_OP[StackNil]
-        for ((_, ind) <- elms.zipWithIndex) {
+        for ((arg, ind) <- elms.zipWithIndex) {
           ins = ins |>>
           sig.getArg[Ref[TupleClass]](0).LOAD |>>
-          sig.getArg(ind + 1).LOAD |>>
-          getField(ind).PUT_FIELD
+          (arg match {
+            case PrimBool => sig.getArg[MBool](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+                getPrimField(ind).PUT_FIELD
+            case PrimChar =>  sig.getArg[MChar](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case PrimByte =>   sig.getArg[MByte](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case PrimShort => sig.getArg[MShort](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case PrimInt =>   sig.getArg[MInt](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case PrimLong =>   sig.getArg[MLong](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case PrimFloat =>  sig.getArg[MFloat](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case PrimDouble =>   sig.getArg[MDouble](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getPrimField(ind).PUT_FIELD
+            case Reference(_) =>   sig.getArg[Ref[MObject]](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+              getField(ind).PUT_FIELD
+            case _ => ???
+          })
         }
         ins
       }
