@@ -476,7 +476,19 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: DOC
-  private def unify(e1: Expression, e2: Expression): Option[Substitution] = (e1, e2) match {
+  // TODO Cleanup
+  private def unifyVar(sym: Symbol.VarSym, exp0: Expression): Option[Substitution] = {
+    exp0 match {
+      case Expression.Var(sym2, _, _, _) if sym == sym2 =>
+        Substitution.emptyOpt
+      case _ =>
+        // TODO: Occurs check
+        Some(Substitution.of(sym, exp0))
+    }
+  }
+
+  // TODO: DOC
+  private def unify(exp1: Expression, exp2: Expression): Option[Substitution] = (exp1, exp2) match {
 
     case (Expression.Unit(_), Expression.Unit(_)) => Substitution.emptyOpt
 
@@ -515,14 +527,11 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (_, Expression.Wild(_, _, _)) => Substitution.emptyOpt
 
-    case (Expression.Var(sym, _, _, _), _) =>
-      ??? // TODO: Call unifyVar
+    case (Expression.Var(sym, _, _, _), e2) =>
+      unifyVar(sym, e2)
 
-    case (_, Expression.Var(sym, _, _, _)) =>
-      ??? // TODO: call unifyFar
-
-
-
+    case (e1, Expression.Var(sym, _, _, _)) =>
+      unifyVar(sym, e1)
 
     // TODO: All cases to consider:
     //    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -716,6 +725,9 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * The empty substitution wrapped in [[Some]].
       */
     val emptyOpt: Option[Substitution] = Some(Substitution.empty)
+
+    // TODO: DOC
+    def of(sym: Symbol.VarSym, exp: Expression): Substitution = Substitution(Map(sym -> exp))
   }
 
   /**
@@ -756,6 +768,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   /////////////////////////////////////////////////////////////////////////////
   // TODOs
   /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Ensure consistent parameter names.
 
   // TODO: Introduce appropriate theorem type, probably something that holds a rewrite rule like:
   // TODO:
