@@ -1786,6 +1786,30 @@ object Mnemonics {
     }
 
   /**
+    * Returns the field name of a defn as used in a namespace class.
+    *
+    * For example:
+    *
+    * find      =>  f_find
+    * length    =>  f_length
+    */
+  def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
+
+  /**
+    * Returns the function definition class for the given symbol.
+    *
+    * For example:
+    *
+    * print         =>  Def$print
+    * List.length   =>  List.Def$length
+    */
+  def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): Reference = {
+    val pkg = sym.namespace
+    val name = "Def$" + mangle(sym.name)
+    Reference(JvmName(pkg, name))
+  }
+
+  /**
     * Returns the namespace type for the given namespace `ns`.
     *
     * For example:
