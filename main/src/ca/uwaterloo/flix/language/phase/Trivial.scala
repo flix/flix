@@ -476,40 +476,232 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: Return ExpSubstitiotion
-  private def unify(e1: Expression, e2: Expression): Option[Unit] = (e1, e2) match {
+  private def unify(e1: Expression, e2: Expression): Option[Substitution] = (e1, e2) match {
 
+
+    // TODO: All cases to consider:
+    //
+    //    case class Unit(loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Unit)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class True(loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Bool)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class False(loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Bool)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Char)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Float32)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Float64)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Int8)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Int16)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Int32)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Int64)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.BigInt)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
+    //  final def tpe: Type = Type.Cst(TypeConstructor.Str)
+    //
+    //  final def eff: ast.Eff = ast.Eff.Pure
+    //  }
+    //
+    //    case class Wild(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Var(sym: Symbol.VarSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Eff(sym: Symbol.EffSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Apply(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class RecordEmpty(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Ref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Deref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class HandleWith(exp: TypedAst.Expression, bindings: List[TypedAst.HandlerBinding], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression {
+    //  def tpe: Type = Type.Cst(TypeConstructor.Bool)
+    //  }
+    //
+    //    case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression {
+    //  def tpe: Type = Type.Cst(TypeConstructor.Bool)
+    //  }
+    //
+    //    case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Cast(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NativeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NativeField(field: Field, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NativeMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NewChannel(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ProcessSleep(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ProcessPanic(msg: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class FixpointConstraint(c: TypedAst.Constraint, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class FixpointSolve(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class FixpointProject(pred: TypedAst.PredicateWithParam, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     // TODO: Order
 
-    case (Expression.Wild(_, _, _), _) => Some(())
+    case (Expression.Wild(_, _, _), _) => Some(Substitution.empty)
 
-    case (_, Expression.Wild(_, _, _)) => Some(())
+    case (_, Expression.Wild(_, _, _)) => Some(Substitution.empty)
 
     case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) =>
       if (sym1 != sym2)
-        Some(()) // TODO
+        Some(Substitution.empty) // TODO
       else
-        Some(())
+        Some(Substitution.empty)
 
     case (Expression.Def(sym1, _, _, _), Expression.Def(sym2, _, _, _)) =>
       if (sym1 != sym2)
         None
       else
-        Some(())
+        Some(Substitution.empty)
 
-    case (Expression.Unit(_), Expression.Unit(_)) => Some(())
+    case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
 
     case (Expression.Str(lit1, _), Expression.Str(lit2, _)) =>
       if (lit1 != lit2)
         None
       else
-        Some(())
+        Some(Substitution.empty)
 
     case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) =>
       if (lit1 != lit2)
         None
       else
-        Some(())
+        Some(Substitution.empty)
 
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) =>
       if (op1 != op2)
@@ -518,19 +710,19 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         for {
           subst1 <- unify(exp11, exp21)
           subst2 <- unify(exp12, exp22)
-        } yield ()
+        } yield Substitution.empty // TODO
 
     case (Expression.Lambda(fparam1, exp1, _, _, _), Expression.Lambda(fparam2, exp2, _, _, _)) =>
       // TODO: Here we should subst.
       for {
         subst1 <- unify(exp1, exp2)
-      } yield ()
+      } yield Substitution.empty // TODO
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
       for {
         subst1 <- unify(exp11, exp21)
         subst2 <- unify(exp12, exp22)
-      } yield ()
+      } yield Substitution.empty // TODO
 
     case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) =>
       if (sym1 != sym2 || tag1 != tag2)
@@ -538,11 +730,51 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         for {
           subst <- unify(exp1, exp2)
-        } yield ()
-
-    // TODO: Add remaining cases
+        } yield Substitution.empty // TODO
 
     case _ => None
+  }
+
+  /**
+    * Companion object of the [[Substitution]] class.
+    */
+  private object Substitution {
+    /**
+      * The empty substitution.
+      */
+    val empty: Substitution = Substitution(Map.empty)
+  }
+
+  /**
+    * A substitution is a map from variable symbols to expressions.
+    */
+  private case class Substitution(m: Map[Symbol.VarSym, Expression]) {
+    /**
+      * Applies `this` substitution to the given expression `exp0`.
+      */
+    def apply(exp0: Expression): Expression = exp0 // TODO: Incorrect
+
+    /**
+      * Applies `this` substitution to the given expressions `es`.
+      */
+    def apply(es: List[Expression]): List[Expression] = es map apply
+
+    /**
+      * Returns the left-biased composition of `this` substitution with `that` substitution.
+      */
+    def ++(that: Substitution): Substitution = {
+      Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
+    }
+
+    /**
+      * Returns the composition of `this` substitution with `that` substitution.
+      */
+    def @@(that: Substitution): Substitution = {
+      val m = that.m.foldLeft(Map.empty[Symbol.VarSym, Expression]) {
+        case (macc, (x, t)) => macc.updated(x, this.apply(t))
+      }
+      Substitution(m) ++ this
+    }
   }
 
 
@@ -597,6 +829,14 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Ensure everything is private.
 
   // TODO: What about overlapping select cases?
+
+  // TODO: A good story to tell is that in a large codebase, if you discover a bug, you can add it to the
+  // TODO: repository of bug patterns and recompile everything.
+
+  // TODO: To what extend should these patterns be imported? It seems a bit insafe if they are not available by default
+  // TODO: even so, do we want some notion of scoping?
+
+  // TODO: Maybe invite someone onboard the project to write these theorems?
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
