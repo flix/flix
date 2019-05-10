@@ -470,20 +470,9 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   private def matchesTrivialTemplate(exp0: TypedAst.Expression)(implicit root: Root, flix: Flix): List[TrivialError] = {
     // Check if the expression unifies with any of the trivial patterns.
     Catalog.allPatterns.foldLeft(Nil: List[TrivialError]) {
-      case (acc, template) if unify(exp0, template).nonEmpty => TrivialExpression(exp0.loc) :: acc
+      case (acc, template) if unify(exp0, template).nonEmpty =>
+        TrivialExpression(exp0.loc) :: acc
       case (acc, _) => acc
-    }
-  }
-
-  // TODO: DOC
-  // TODO Cleanup
-  private def unifyVar(sym: Symbol.VarSym, exp0: Expression): Option[Substitution] = {
-    exp0 match {
-      case Expression.Var(sym2, _, _, _) if sym == sym2 =>
-        Substitution.emptyOpt
-      case _ =>
-        // TODO: Occurs check
-        Some(Substitution.of(sym, exp0))
     }
   }
 
@@ -527,11 +516,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (_, Expression.Wild(_, _, _)) => Substitution.emptyOpt
 
-    case (Expression.Var(sym, _, _, _), e2) =>
-      unifyVar(sym, e2)
-
-    case (e1, Expression.Var(sym, _, _, _)) =>
-      unifyVar(sym, e1)
+    // TODO: How to deal with variables? We dont have meta variables?
+    case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
 
     // TODO: All cases to consider:
     //    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
