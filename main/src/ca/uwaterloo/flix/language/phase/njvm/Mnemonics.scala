@@ -738,7 +738,7 @@ object Mnemonics {
   /**
     * Capability which allows to get/put a field
     */
-  class PrimField[T <: MnemonicsPrimTypes : TypeTag](fieldName: String)(implicit root: Root, flix: Flix) extends Field(fieldName) {
+  class PrimField[T <: MnemonicsPrimTypes : TypeTag](fieldName: String)(implicit root: Root, flix: Flix) extends Field[T](fieldName) {
 
     def GET_BOXED_FIELD[S <: Stack]: F[S] => F[S ** Ref[T]] = t => t.emitGetBoxedField(fieldName, fieldType)
   }
@@ -1976,6 +1976,34 @@ object Mnemonics {
       getJvmType[Ref[RefClass[T]]].asInstanceOf[Reference]
     }
 
+  /**
+    * Returns the closure class `Clo$Name` for the given closure.
+    *
+    * String.charAt     =>    String/Clo$charAt
+    * List.length       =>    List/Clo$length
+    * List.map          =>    List/Clo$map
+    */
+  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): Reference = closure.tpe match {
+    case MonoType.Arrow(targs, tresult) =>
+      // Compute the arity of the function interface.
+      // We subtract one since the last argument is the return type.
+      val arity = targs.length
+
+      // Compute the stringified erased type of each type argument.
+      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
+
+      // The JVM name is of the form Clo$sym.name
+      val name = "Clo" + "$" + mangle(closure.sym.name)
+
+      // The JVM package is the namespace of the symbol.
+      val pkg = closure.sym.namespace
+
+      // The result type.
+      Reference(JvmName(pkg, name))
+
+    case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
+
 
     /**
       * Returns the continuation interface type `Cont$X` for the given type `tpe`.
@@ -2073,7 +2101,9 @@ object Mnemonics {
         * @param tags  set of tags
         * @return update map with new generated classes
         */
-      def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo], ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
+      def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+              ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+             (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
     }
 
   }

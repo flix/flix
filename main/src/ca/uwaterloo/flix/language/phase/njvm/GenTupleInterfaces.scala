@@ -1,9 +1,10 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType}
 import ca.uwaterloo.flix.language.phase.jvm.GenTupleInterfaces.genByteCode
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, JvmOps, NamespaceInfo, TagInfo}
+import ca.uwaterloo.flix.language.phase.jvm.{ClosureInfo, JvmClass, JvmName, JvmOps, NamespaceInfo, TagInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsGenerator
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.TupleInterface
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
@@ -17,7 +18,9 @@ object GenTupleInterfaces extends MnemonicsGenerator{
     * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
     * @return update map with new generated classes
     */
-  def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo], ns: Set[NamespaceInfo])(implicit root: FinalAst.Root, flix: Flix): Map[JvmName, Mnemonics.MnemonicsClass] = {
+  def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+          ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+         (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
     types.foldLeft(map) {
       case (macc, MonoType.Tuple(elms)) =>
         val targs = elms.map(getErasedJvmType)

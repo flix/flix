@@ -2,12 +2,15 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType}
-import ca.uwaterloo.flix.language.phase.jvm.{ClosureInfo, JvmName, NamespaceInfo, TagInfo}
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator, getErasedJvmType}
-import ca.uwaterloo.flix.language.phase.njvm.classes.TupleClass
+import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.GenClosureClasses.genByteCode
+import ca.uwaterloo.flix.language.phase.jvm.{ClosureInfo, JvmClass, JvmName, JvmOps, NamespaceInfo, TagInfo}
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsGenerator, _}
+import ca.uwaterloo.flix.language.phase.njvm.classes.Closure
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.ContinuationInterface
 
-object GenTupleClasses extends MnemonicsGenerator{
+object GenClosuresClasses extends MnemonicsGenerator{
   /**
     * Method should receive a Map of all the generated classes so far. It should generate all the new classes
     * and return an updated map with the new generated classes.
@@ -19,15 +22,9 @@ object GenTupleClasses extends MnemonicsGenerator{
   def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
           ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
          (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
-    types.foldLeft(map) {
-      case (macc, MonoType.Tuple(elms)) =>
-        val targs = elms.map(getErasedJvmType)
-
-        macc + new TupleClass(macc, targs).getClassMapping
-      case (macc, _) =>
-        // Case 2: The type constructor is a non-tuple.
-        // Nothing to be done. Return the map.
-        macc
+    closures.foldLeft(map) {
+      case (macc, closure) =>
+        macc + new Closure(closure).getClassMapping
     }
   }
 }

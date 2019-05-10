@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm.{JvmName, NamespaceInfo, TagInfo}
+import ca.uwaterloo.flix.language.phase.jvm.{ClosureInfo, JvmName, NamespaceInfo, TagInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{MnemonicsClass, MnemonicsGenerator}
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
 
@@ -29,7 +29,9 @@ object GenRecordInterface extends MnemonicsGenerator {
 
   // TODO: Miguel: Is it really worth it to have these small 2line classes? Or at least we should the move them into Mnemonics.
 
-  def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo], ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
+  def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+          ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+         (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
     map + new RecordInterface().getClassMapping
   }
 

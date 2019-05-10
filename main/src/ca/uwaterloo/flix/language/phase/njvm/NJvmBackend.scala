@@ -124,7 +124,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       )
 
 
-    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types, tags, namespaces) }
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types, tags, namespaces, closures) }
       .map(f => (f._1, f._2.getJvmClass))
 
     //
