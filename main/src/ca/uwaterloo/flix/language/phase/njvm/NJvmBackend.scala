@@ -87,10 +87,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val types = JvmOps.typesOf(root)
 
-    //
-    // Generate the main class.
-    //
-//    val mainClass = GenMainClass.gen()
 
     //
     // Generate the Context class.
@@ -116,6 +112,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     // Generate tag classes for each enum instantiation in the program.
     //
+    import ca.uwaterloo.flix.language.phase.jvm.GenTagClasses
     val tagClasses = GenTagClasses.gen(tags)
 
 
@@ -137,14 +134,13 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
       )
 
 
-    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types) }
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types, tags) }
       .map(f => (f._1, f._2.getJvmClass))
 
     //
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
-//      mainClass,
       contextClass,
       namespaceClasses,
       functionClasses,

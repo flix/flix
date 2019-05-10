@@ -43,33 +43,39 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
 
   val defaultConstrutor : UncheckedVoidMethod = {
 
+
     val setFields =
       (sig : UncheckedFunSig)  =>{
         var ins = NO_OP[StackNil]
-        for ((arg, ind) <- elms.zipWithIndex) {
+        var ind: Int = 1
+        for (arg <- elms) {
           ins = ins |>>
           sig.getArg[Ref[TupleClass]](0).LOAD |>>
           (arg match {
-            case PrimBool => sig.getArg[MBool](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimBool => sig.getArg[MBool](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
                 getPrimField(ind).PUT_FIELD
-            case PrimChar =>  sig.getArg[MChar](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimChar =>  sig.getArg[MChar](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimByte =>   sig.getArg[MByte](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimByte =>   sig.getArg[MByte](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimShort => sig.getArg[MShort](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimShort => sig.getArg[MShort](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimInt =>   sig.getArg[MInt](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimInt =>   sig.getArg[MInt](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimLong =>   sig.getArg[MLong](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimLong =>   sig.getArg[MLong](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimFloat =>  sig.getArg[MFloat](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimFloat =>  sig.getArg[MFloat](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimDouble =>   sig.getArg[MDouble](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimDouble =>   sig.getArg[MDouble](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case Reference(_) =>   sig.getArg[Ref[MObject]](ind + 1).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case Reference(_) =>   sig.getArg[Ref[MObject]](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
               getField(ind).PUT_FIELD
             case _ => ???
           })
+          arg match {
+            case PrimLong | PrimDouble => ind += 2
+            case _ => ind += 1
+          }
         }
         ins
       }

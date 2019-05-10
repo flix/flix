@@ -1914,10 +1914,11 @@ object Mnemonics {
         * and return an updated map with the new generated classes.
         *
         * @param map of all the generated classes so far.
-        * @param ts  set of Monotypes this will be used to generate certain classes such as Enum.
+        * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+        * @param tags  set of tags
         * @return update map with new generated classes
         */
-      def gen(map: Map[JvmName, MnemonicsClass], ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
+      def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo])(implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
     }
 
   }
