@@ -475,35 +475,24 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // TODO: Return ExpSubstitiotion
+  // TODO: DOC
   private def unify(e1: Expression, e2: Expression): Option[Substitution] = (e1, e2) match {
+
+    case (Expression.Unit(_), Expression.Unit(_)) => Substitution.emptyOpt
+
+    case (Expression.True(_), Expression.True(_)) => Substitution.emptyOpt
+
+    case (Expression.False(_), Expression.False(_)) => Substitution.emptyOpt
+
+    case (Expression.Char(lit1, _), Expression.Char(lit2, _)) =>
+      if (lit1 != lit2)
+        None
+      else
+        Substitution.emptyOpt
+
 
 
     // TODO: All cases to consider:
-    //
-    //    case class Unit(loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Unit)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class True(loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Bool)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class False(loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Bool)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
-    //
-    //    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
-    //  final def tpe: Type = Type.Cst(TypeConstructor.Char)
-    //
-    //  final def eff: ast.Eff = ast.Eff.Pure
-    //  }
     //
     //    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
     //  final def tpe: Type = Type.Cst(TypeConstructor.Float32)
@@ -743,12 +732,19 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * The empty substitution.
       */
     val empty: Substitution = Substitution(Map.empty)
+
+    /**
+      * The empty substitution wrapped in [[Some]].
+      */
+    val emptyOpt: Option[Substitution] = Some(Substitution.empty)
   }
 
   /**
     * A substitution is a map from variable symbols to expressions.
     */
   private case class Substitution(m: Map[Symbol.VarSym, Expression]) {
+    // TODO: Optimize for empty subst?
+
     /**
       * Applies `this` substitution to the given expression `exp0`.
       */
