@@ -519,16 +519,25 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     // TODO: How to deal with variables? We dont have meta variables?
     case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
 
+    case (Expression.Def(sym1, _, _, _), Expression.Def(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+
+    case (Expression.Eff(sym1, _, _, _), Expression.Eff(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+
+    case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+
+    case (Expression.Lambda(fparam1, exp1, _, _, _), Expression.Lambda(fparam2, exp2, _, _, _)) =>
+      // TODO: How to handle params?
+      unify(exp1, exp2)
+
+    case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
+      for {
+        subst1 <- unify(exp11, exp21)
+        subst2 <- unify(subst1(exp12), subst1(exp22))
+      } yield subst2 @@ subst1
+
+
+
     // TODO: All cases to consider:
-    //    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Eff(sym: Symbol.EffSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Apply(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
     //
@@ -636,36 +645,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // TODO: Order
 
-    case (Expression.Wild(_, _, _), _) => Some(Substitution.empty)
-
-    case (_, Expression.Wild(_, _, _)) => Some(Substitution.empty)
-
-    case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) =>
-      if (sym1 != sym2)
-        Some(Substitution.empty) // TODO
-      else
-        Some(Substitution.empty)
-
-    case (Expression.Def(sym1, _, _, _), Expression.Def(sym2, _, _, _)) =>
-      if (sym1 != sym2)
-        None
-      else
-        Some(Substitution.empty)
-
-    case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
-
-    case (Expression.Str(lit1, _), Expression.Str(lit2, _)) =>
-      if (lit1 != lit2)
-        None
-      else
-        Some(Substitution.empty)
-
-    case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) =>
-      if (lit1 != lit2)
-        None
-      else
-        Some(Substitution.empty)
-
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) =>
       if (op1 != op2)
         None
@@ -675,17 +654,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
           subst2 <- unify(exp12, exp22)
         } yield Substitution.empty // TODO
 
-    case (Expression.Lambda(fparam1, exp1, _, _, _), Expression.Lambda(fparam2, exp2, _, _, _)) =>
-      // TODO: Here we should subst.
-      for {
-        subst1 <- unify(exp1, exp2)
-      } yield Substitution.empty // TODO
-
-    case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
-      for {
-        subst1 <- unify(exp11, exp21)
-        subst2 <- unify(exp12, exp22)
-      } yield Substitution.empty // TODO
 
     case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) =>
       if (sym1 != sym2 || tag1 != tag2)
@@ -771,6 +739,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: - List.getWithDefault(List.map(_, o), false)         --> List.exists(_)
   // TODO: - List.isEmpty(xs) && List.exists(_, xs)             --> false
   // TODO: - Option.flatMap(x => if (f(x)) Some(x) else None))  --> Option.filter(f)
+  // TODO - x == x or equalities that are always or never true.
 
   // TODO: Compile to automaton or similar?
 
