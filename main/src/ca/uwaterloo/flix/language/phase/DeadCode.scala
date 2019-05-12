@@ -20,8 +20,8 @@ object DeadCode extends Phase[Root, Root] {
     val unused = defined - used
     // TODO: Improve below code
     val usedVal =
-      if (unused.defs.size == 0) {
-        if (unused.tags.size == 0) {
+      if (unused.defs.isEmpty) {
+        if (unused.tags.isEmpty) {
           root.toSuccess
         } else {
           val unusedTagsHead = unused.tags.head
@@ -50,7 +50,7 @@ object DeadCode extends Phase[Root, Root] {
     val expVal = expU.getTraversedVal
     val declSyms = (for (fparam <- defn.fparams if fparam.sym.text != "_unit") yield fparam.sym).toSet
     val unusedSyms = declSyms -- expU.vars
-    val fparamSymVal = if (unusedSyms.size == 0) defn.toSuccess else DeadCodeError(unusedSyms.head.loc, "Formal parameter never used.").toFailure
+    val fparamSymVal = if (unusedSyms.isEmpty) defn.toSuccess else DeadCodeError(unusedSyms.head.loc, "Formal parameter never used.").toFailure
     (mapN(expVal, fparamSymVal) {
       case _ => defn
     }, expU)
@@ -96,7 +96,7 @@ object DeadCode extends Phase[Root, Root] {
           val expU = visitExp(r.exp)
           val patRes = patternVar(r.pat)
           val unusedSyms = patRes -- expU.vars
-          if(unusedSyms.size == 0) {
+          if(unusedSyms.isEmpty) {
             guardU + expU
           } else {
             guardU + expU + DeadCodeError(unusedSyms.head.loc, "Matching variable(s) not used in expression.").toFailure
@@ -109,8 +109,7 @@ object DeadCode extends Phase[Root, Root] {
         }).foldLeft(Used()) (_ + _) // TODO: Improve
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp) + (sym, tag)
-      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
-        elms.foldLeft(Used()) ((u, e) => u + visitExp(e))
+      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms.foldLeft(Used()) ((u, e) => u + visitExp(e))
       case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
         visitExp(value) + visitExp(rest)
@@ -212,6 +211,84 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Pattern.Tuple(elms, tpe, loc) => (for (e <- elms) yield patternVar(e)).flatten.toSet
       case _ => Set.empty
     }
+
+  // TODO: Confirm which expressions have side effects
+  private def isPure(e: TypedAst.Expression): Boolean =
+    e match {
+      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isPure(exp1) && isPure(exp2) && isPure(exp3)
+      case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) =>
+        isPure(exp) && (for (r <- rules) yield {
+          isPure(r.guard) && isPure(r.exp)
+        }).foldLeft(true) (_ && _)
+      case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
+        (for (r <- rules) yield {
+          isPure(r._1) && isPure(r._2)
+        }).foldLeft(true) (_ && _)
+      case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
+      case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) => isPure(value) && isPure(rest)
+      case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) => isPure(rest)
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
+      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => isPure(elm) && isPure(len)
+      case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => isPure(base) && isPure(index)
+      case TypedAst.Expression.ArrayLength(base, tpe, eff, loc) => isPure(base)
+      case TypedAst.Expression.ArrayStore(base, index, elm, tpe, eff, loc) => false
+      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => isPure(base) && isPure(beginIndex) && isPure(endIndex)
+      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
+      case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => isPure(elm)
+      case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => isPure(base)
+      case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) => isPure(base) && isPure(elm) // TODO: Is VectorStore impure?
+      case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => isPure(base) && isPure(endIndex)
+      case TypedAst.Expression.Ref(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Deref(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) => isPure(exp) && bindings.foldLeft(true) ((p, b) => p && isPure(b.exp))
+      case TypedAst.Expression.Existential(fparam, exp, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Universal(fparam, exp, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.Cast(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) => args.foldLeft(true) ((p, e) => p && isPure(e))
+      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => isPure(exp) && rules.foldLeft(true) ((p, r) => p && isPure(r.exp))
+      case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) => args.foldLeft(true) ((p, e) => p && isPure(e))
+      case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) => false
+      case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val rulesP = rules.foldLeft(true) ((p, r) => p && isPure(r.chan) && isPure(r.exp))
+        val defaultP = default match {
+          case Some(ex) => isPure(ex)
+          case None => true
+        }
+        rulesP && defaultP
+      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) => false
+      case TypedAst.Expression.Sleep(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.FixpointConstraint(c, tpe, eff, loc) =>
+        val headP = c.head match {
+          case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+            isPure(pred.exp) && terms.foldLeft(true) ((p, e) => p && isPure(e))
+        }
+        val bodyP = for (b <- c.body) yield {
+          b match {
+            case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => isPure(pred.exp)
+            case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
+              terms.foldLeft(true) ((p, e) => p && isPure(e))
+            case TypedAst.Predicate.Body.Functional(sym, term, loc) => isPure(term)
+          }
+        }
+        headP && bodyP.foldLeft(true) (_ && _)
+      case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.FixpointSolve(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => isPure(pred.exp) && isPure(exp)
+      case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case _ => true
+    }
 }
 
 case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty, vals: List[Validation[TypedAst.Expression, DeadCodeError]] = List.empty) {
@@ -221,6 +298,7 @@ case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym,
   def +(that: (Symbol.EnumSym, String)) = Used(vars, tags + that, defs, vals)
   def +(that: Symbol.DefnSym) = Used(vars, tags, defs + that, vals)
   def +(that: Validation[TypedAst.Expression, DeadCodeError]) = Used(vars, tags, defs, vals ::: List(that))
+  def +(that: List[Validation[TypedAst.Expression, DeadCodeError]]) = Used(vars, tags, defs, vals ::: that)
   def -(that: Used): Used = Used(vars -- that.vars, tags -- that.tags, defs -- that.defs, vals)
   def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags, defs, vals)
   def removeVars: Used = Used(Set.empty, tags, defs, vals)
