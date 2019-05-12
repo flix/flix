@@ -180,6 +180,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * A list of trivial expression patterns.
       */
+    // TODO: To test performance it might be worth duplicating this list many times.
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
       leftAdditionByZero(),
@@ -476,6 +477,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
+  // TODO: Often we should be able to use types to quickly check if a pattern is potentially relevant
+
   // TODO: DOC
   private def unify(exp1: Expression, exp2: Expression): Option[Substitution] = (exp1, exp2) match {
 
@@ -688,12 +691,91 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     * A substitution is a map from variable symbols to expressions.
     */
   private case class Substitution(m: Map[Symbol.VarSym, Expression]) {
-    // TODO: Optimize for empty subst?
 
     /**
       * Applies `this` substitution to the given expression `exp0`.
       */
-    def apply(exp0: Expression): Expression = exp0 // TODO: Incorrect
+    def apply(exp0: Expression): Expression = {
+      /**
+        * Applies the substitution to the expression `e0`.
+        */
+      def visitExp(e0: Expression): Expression = e0 match {
+
+        case Expression.Unit(_) => e0
+        case Expression.True(_) => e0
+        case Expression.False(_) => e0
+        case Expression.Char(_, _) => e0
+        case Expression.Float32(_, _) => e0
+        case Expression.Float64(_, _) => e0
+        case Expression.Int8(_, _) => e0
+        case Expression.Int16(_, _) => e0
+
+        case Expression.Int32(lit, loc) => ???
+        case Expression.Int64(lit, loc) => ???
+        case Expression.BigInt(lit, loc) => ???
+        case Expression.Str(lit, loc) => ???
+        case Expression.Wild(tpe, eff, loc) => ???
+        case Expression.Var(sym, tpe, eff, loc) => ???
+        case Expression.Def(sym, tpe, eff, loc) => ???
+        case Expression.Eff(sym, tpe, eff, loc) => ???
+        case Expression.Hole(sym, tpe, eff, loc) => ???
+        case Expression.Lambda(fparam, exp, tpe, eff, loc) => ???
+        case Expression.Apply(exp1, exp2, tpe, eff, loc) => ???
+        case Expression.Unary(op, exp, tpe, eff, loc) => ???
+        case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => ???
+        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ???
+        case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ???
+        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
+        case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+        case Expression.Match(exp, rules, tpe, eff, loc) => ???
+        case Expression.Switch(rules, tpe, eff, loc) => ???
+        case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
+        case Expression.Tuple(elms, tpe, eff, loc) => ???
+        case Expression.RecordEmpty(tpe, eff, loc) => ???
+        case Expression.RecordSelect(exp, label, tpe, eff, loc) => ???
+        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ???
+        case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ???
+        case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+        case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+        case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+        case Expression.ArrayLength(base, tpe, eff, loc) => ???
+        case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
+        case Expression.VectorLit(elms, tpe, eff, loc) => ???
+        case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+        case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+        case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+        case Expression.VectorLength(base, tpe, eff, loc) => ???
+        case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+        case Expression.Ref(exp, tpe, eff, loc) => ???
+        case Expression.Deref(exp, tpe, eff, loc) => ???
+        case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+        case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+        case Expression.Existential(fparam, exp, eff, loc) => ???
+        case Expression.Universal(fparam, exp, eff, loc) => ???
+        case Expression.Ascribe(exp, tpe, eff, loc) => ???
+        case Expression.Cast(exp, tpe, eff, loc) => ???
+        case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+        case Expression.NativeField(field, tpe, eff, loc) => ???
+        case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+        case Expression.NewChannel(exp, tpe, eff, loc) => ???
+        case Expression.GetChannel(exp, tpe, eff, loc) => ???
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+        case Expression.ProcessSpawn(exp, tpe, eff, loc) => ???
+        case Expression.ProcessSleep(exp, tpe, eff, loc) => ???
+        case Expression.ProcessPanic(msg, tpe, eff, loc) => ???
+        case Expression.FixpointConstraint(c, tpe, eff, loc) => ???
+        case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
+        case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+        case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
+      }
+
+      // Check if the substitution is empty.
+      if (m.isEmpty) exp0 else visitExp(exp0)
+    }
 
     /**
       * Applies `this` substitution to the given expressions `es`.
@@ -703,10 +785,13 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
+    // TODO: Optimize for empty subst?Why not do this for other substs too?
+
     def ++(that: Substitution): Substitution = {
       Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
     }
 
+    // TODO: Optimize for empty subst? Why not do this for other substs too?
     /**
       * Returns the composition of `this` substitution with `that` substitution.
       */
