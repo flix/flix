@@ -3,15 +3,15 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.errors.DeadCodeError
+import ca.uwaterloo.flix.language.errors.RedundancyError
+import ca.uwaterloo.flix.language.errors.RedundancyError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 
 object DeadCode extends Phase[Root, Root] {
 
-  def run(root: Root)(implicit flix: Flix): Validation[Root, DeadCodeError] = flix.phase("DeadCode") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, RedundancyError] = flix.phase("DeadCode") {
     // TODO: Improve weird/terrible code below
     val defsRes = root.defs.map(x => visitDef(x._2)).toList.unzip
     val defsVal = defsRes._1
@@ -25,11 +25,11 @@ object DeadCode extends Phase[Root, Root] {
           root.toSuccess
         } else {
           val unusedTagsHead = unused.tags.head
-          DeadCodeError(root.enums(unusedTagsHead._1).cases(unusedTagsHead._2).loc, "Enum case never used").toFailure
+          UnusedEnumError(root.enums(unusedTagsHead._1).cases(unusedTagsHead._2).loc).toFailure
         }
       } else {
         val unusedDefsHead = unused.defs.head
-        println(unusedDefsHead.name); DeadCodeError(root.defs(unusedDefsHead).loc, "Def never used").toFailure
+        DeadCodeError(root.defs(unusedDefsHead).loc, "Def never used").toFailure
       }
     val newDefs = traverse(defsVal) {
       case defn => defn.map(x => x.sym -> x)
@@ -45,7 +45,7 @@ object DeadCode extends Phase[Root, Root] {
     enumKeys.map(x => (enum.sym, x))
   }
 
-  private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, DeadCodeError], Used) = { // TODO: Check
+  private def visitDef(defn: TypedAst.Def): (Validation[TypedAst.Def, RedundancyError], Used) = { // TODO: Check
     val expU = visitExp(defn.exp)
     val expVal = expU.getTraversedVal
     val declSyms = (for (fparam <- defn.fparams if fparam.sym.text != "_unit") yield fparam.sym).toSet
@@ -223,13 +223,9 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
       case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isPure(exp1) && isPure(exp2) && isPure(exp3)
       case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) =>
-        isPure(exp) && (for (r <- rules) yield {
-          isPure(r.guard) && isPure(r.exp)
-        }).foldLeft(true) (_ && _)
+        isPure(exp) && rules.foldLeft(true) ((p, r) => p && isPure(r.guard) && isPure(r.exp))
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
-        (for (r <- rules) yield {
-          isPure(r._1) && isPure(r._2)
-        }).foldLeft(true) (_ && _)
+        rules.foldLeft(true) ((p, r) => p && isPure(r._1) && isPure(r._2))
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => isPure(exp)
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
       case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => isPure(exp)
@@ -289,20 +285,25 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
       case _ => true
     }
+
+    private def isPure(d: TypedAst.Def): Boolean = {
+      val expP = isPure(d.exp)
+      expP
+    }
 }
 
-case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty, vals: List[Validation[TypedAst.Expression, DeadCodeError]] = List.empty) {
+case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty, vals: List[Validation[TypedAst.Expression, RedundancyError]] = List.empty) {
   def +(that: Used): Used = Used(vars ++ that.vars, tags ++ that.tags, defs ++ that.defs, vals ::: that.vals)
   def +(that: Symbol.VarSym) = Used(vars + that, tags, defs, vals)
   def +(that: Set[Symbol.VarSym]) = Used(vars ++ that, tags, defs, vals)
   def +(that: (Symbol.EnumSym, String)) = Used(vars, tags + that, defs, vals)
   def +(that: Symbol.DefnSym) = Used(vars, tags, defs + that, vals)
-  def +(that: Validation[TypedAst.Expression, DeadCodeError]) = Used(vars, tags, defs, vals ::: List(that))
-  def +(that: List[Validation[TypedAst.Expression, DeadCodeError]]) = Used(vars, tags, defs, vals ::: that)
+  def +(that: Validation[TypedAst.Expression, RedundancyError]) = Used(vars, tags, defs, vals ::: List(that))
+  def +(that: List[Validation[TypedAst.Expression, RedundancyError]]) = Used(vars, tags, defs, vals ::: that)
   def -(that: Used): Used = Used(vars -- that.vars, tags -- that.tags, defs -- that.defs, vals)
   def -(sym: Symbol.VarSym): Used = Used(vars - sym, tags, defs, vals)
   def removeVars: Used = Used(Set.empty, tags, defs, vals)
-  def getTraversedVal: Validation[List[TypedAst.Expression], DeadCodeError] = traverse(this.vals) {
+  def getTraversedVal: Validation[List[TypedAst.Expression], RedundancyError] = traverse(this.vals) {
     case exp => exp
   }
 }
