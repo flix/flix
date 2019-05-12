@@ -871,7 +871,16 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: To what extend should these patterns be imported? It seems a bit insafe if they are not available by default
   // TODO: even so, do we want some notion of scoping?
 
-  // TODO: Maybe invite someone onboard the project to write these theorems?
+  //
+  //thm listIsEmptyCons[a](): Bool = \forall (x: a, xs: List[a]). List.isEmpty(x :: xs) ~~> false
+  //
+  //thm leftConcatenateEmptyString(): Bool = \forall (s: Str). "" + s ~~> s
+  //
+  //thm listFilterEmpty[a, b](): Bool = \forall (f: a -> b, xs: List[a]). List.isEmpty(xs) => (List.filter(f, xs) ~~> Nil)
+  //
+  //law reflexive[e](⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
+  //
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
