@@ -881,6 +881,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   //law reflexive[e](⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
   //
 
+  // TODO: JvmBackend should not always load classes
+  // TODO: JvmBackend should run in parallel.
 
   /////////////////////////////////////////////////////////////////////////////
   // Paper Notes
