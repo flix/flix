@@ -29,7 +29,7 @@ object DeadCode extends Phase[Root, Root] {
         }
       } else {
         val unusedDefsHead = unused.defs.head
-        DeadCodeError(root.defs(unusedDefsHead).loc, "Def never used").toFailure
+        DeadCodeError(root.defs(unusedDefsHead).loc, "Function never called.").toFailure
       }
     val newDefs = traverse(defsVal) {
       case defn => defn.map(x => x.sym -> x)
@@ -76,10 +76,19 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
         val letU = visitExp(exp1)
         val expU = visitExp(exp2)
-        if(sym.text == "_temp" || expU.vars.contains(sym)) { // TODO: Consider alternatives
-          letU + expU
+        val letP = isPure(exp1)
+        if(sym.text == "_temp") { // TODO: Improve code
+          if(!letP) {
+            letU + expU
+          } else {
+            letU + expU + DeadCodeError(exp1.loc, "Expression is pure, i.e. it has no side effects, and its result is never used.").toFailure
+          }
         } else {
-          letU + expU + DeadCodeError(sym.loc, "Variable never used.").toFailure
+          if(expU.vars.contains(sym)) {
+            letU + expU
+          } else {
+            letU + expU + DeadCodeError(sym.loc, "Variable never used.").toFailure
+          }
         }
       case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
         val used = visitExp(exp1) + visitExp(exp2)
