@@ -808,6 +808,12 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODOs
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: AlwaysTrue/AlwaysFalse/AlwaysConst custom errors?
+
+  // TODO: Think about distinguishing executions?
+
+  // TODO: What about whole expressions divided by themselves, e.g. (x + 1) / (x + 1)?
+
   // TODO: Ensure consistent parameter names.
 
   // TODO: Introduce appropriate theorem type, probably something that holds a rewrite rule like:
