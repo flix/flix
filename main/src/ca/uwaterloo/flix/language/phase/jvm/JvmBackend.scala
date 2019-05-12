@@ -194,15 +194,24 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       }
     }
 
-    //
-    // Loads all the generated classes into the JVM and decorates the AST.
-    //
-    Bootstrap.bootstrap(allClasses)
+    val loadClasses = true // TODO: Add an option to disable class loading.
 
-    //
-    // Return the compilation result.
-    //
-    new CompilationResult(root, getCompiledDefs(root)).toSuccess
+    if (!loadClasses) {
+      //
+      // Do not load any classes.
+      //
+      new CompilationResult(root, Map.empty).toSuccess
+    } else {
+      //
+      // Loads all the generated classes into the JVM and decorates the AST.
+      //
+      Bootstrap.bootstrap(allClasses)
+
+      //
+      // Return the compilation result.
+      //
+      new CompilationResult(root, getCompiledDefs(root)).toSuccess
+    }
   }
 
   /**
