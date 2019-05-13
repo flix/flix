@@ -32,9 +32,12 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // TODO: Introduce flag to disable
 
+    // Find the patterns
+    val pats = Catalog.allPatterns(root, flix)
+
     // Check for trivial expressions.
     val trivial: List[TrivialError] = root.defs.par.aggregate(Nil: List[TrivialError])({
-      case (acc, (sym, decl)) => acc ::: visitDef(decl)(root, flix)
+      case (acc, (sym, decl)) => acc ::: visitDef(decl, pats)(root, flix)
     }, _ ++ _)
 
     if (trivial.isEmpty)
@@ -208,275 +211,283 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  // TODO: Rename patterns to something more appropriate.
+
   // TODO: Use set instead of list of trivial errors?
 
   /**
     * Finds trivial computations in the given definition `defn0`.
     */
-  private def visitDef(defn0: Def)(implicit root: Root, flix: Flix): List[TrivialError] = {
-    visitExp(defn0.exp)
+  private def visitDef(defn0: Def, patterns: List[Expression])(implicit root: Root, flix: Flix): List[TrivialError] = {
+    checkExp(defn0.exp, patterns)
   }
 
-  /**
-    * Finds trivial computations in the given expression `exp0`.
-    */
-  private def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[TrivialError] = matchesTrivialTemplate(exp0) ++ (exp0 match {
+  // TODO: DOC
+  private def checkExp(exp0: Expression, patterns: List[Expression])(implicit root: Root, flix: Flix): List[TrivialError] = {
 
-    case Expression.Unit(_) => Nil
+    /**
+      * Finds trivial computations in the given expression `exp0`.
+      */
+    def visitExp(exp0: Expression)(implicit root: Root, flix: Flix): List[TrivialError] = matchesTrivialTemplate(exp0, patterns) ++ (exp0 match {
 
-    case Expression.True(_) => Nil
+      case Expression.Unit(_) => Nil
 
-    case Expression.False(_) => Nil
+      case Expression.True(_) => Nil
 
-    case Expression.Char(_, _) => Nil
+      case Expression.False(_) => Nil
 
-    case Expression.Float32(_, _) => Nil
+      case Expression.Char(_, _) => Nil
 
-    case Expression.Float64(_, _) => Nil
+      case Expression.Float32(_, _) => Nil
 
-    case Expression.Int8(_, _) => Nil
+      case Expression.Float64(_, _) => Nil
 
-    case Expression.Int16(_, _) => Nil
+      case Expression.Int8(_, _) => Nil
 
-    case Expression.Int32(_, _) => Nil
+      case Expression.Int16(_, _) => Nil
 
-    case Expression.Int64(_, _) => Nil
+      case Expression.Int32(_, _) => Nil
 
-    case Expression.BigInt(_, _) => Nil
+      case Expression.Int64(_, _) => Nil
 
-    case Expression.Str(_, _) => Nil
+      case Expression.BigInt(_, _) => Nil
 
-    case Expression.Wild(_, _, _) => Nil
+      case Expression.Str(_, _) => Nil
 
-    case Expression.Var(_, _, _, _) => Nil
+      case Expression.Wild(_, _, _) => Nil
 
-    case Expression.Def(_, _, _, _) => Nil
+      case Expression.Var(_, _, _, _) => Nil
 
-    case Expression.Eff(_, _, _, _) => Nil
+      case Expression.Def(_, _, _, _) => Nil
 
-    case Expression.Hole(_, _, _, _) => Nil
+      case Expression.Eff(_, _, _, _) => Nil
 
-    case Expression.Lambda(_, exp, _, _, _) =>
-      visitExp(exp)
+      case Expression.Hole(_, _, _, _) => Nil
 
-    case Expression.Apply(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Lambda(_, exp, _, _, _) =>
+        visitExp(exp)
 
-    case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp)
+      case Expression.Apply(exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Unary(_, exp, _, _, _) =>
+        visitExp(exp)
 
-    case Expression.Let(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Binary(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.LetRec(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Let(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.LetRec(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
 
-    case Expression.Stm(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expression.Match(exp, rules, _, _, _) =>
-      // Visit the match value.
-      val d = visitExp(exp)
+      case Expression.Stm(exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
 
-      // Visit the match rules.
-      rules.foldLeft(d) {
-        case (acc, MatchRule(_, guard, body)) => acc ++ visitExp(guard) ++ visitExp(body)
+      case Expression.Match(exp, rules, _, _, _) =>
+        // Visit the match value.
+        val d = visitExp(exp)
+
+        // Visit the match rules.
+        rules.foldLeft(d) {
+          case (acc, MatchRule(_, guard, body)) => acc ++ visitExp(guard) ++ visitExp(body)
+        }
+
+      case Expression.Switch(rules, _, _, _) =>
+        rules.foldLeft(Nil: List[TrivialError]) {
+          case (acc, (cond, body)) => acc ++ visitExp(cond) ++ visitExp(body)
+        }
+
+      case Expression.Tag(_, _, exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.Tuple(elms, _, _, _) =>
+        elms.foldLeft(Nil: List[TrivialError]) {
+          case (acc, exp) => acc ++ visitExp(exp)
+        }
+
+      case Expression.RecordEmpty(_, _, _) => Nil
+
+      case Expression.RecordSelect(exp, _, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.RecordRestrict(_, exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.ArrayLit(elms, _, _, _) =>
+        elms.foldLeft(Nil: List[TrivialError]) {
+          case (acc, e) => acc ++ visitExp(e)
+        }
+
+      case Expression.ArrayNew(elm, len, _, _, _) =>
+        visitExp(elm) ++ visitExp(len)
+
+      case Expression.ArrayLoad(base, index, _, _, _) =>
+        visitExp(base) ++ visitExp(index)
+
+      case Expression.ArrayLength(base, _, _, _) =>
+        visitExp(base)
+
+      case Expression.ArrayStore(base, index, elm, _, _, _) =>
+        visitExp(base) ++ visitExp(index) ++ visitExp(elm)
+
+      case Expression.ArraySlice(base, begin, end, _, _, _) =>
+        visitExp(base) ++ visitExp(begin) ++ visitExp(end)
+
+      case Expression.VectorLit(elms, _, _, _) =>
+        elms.foldLeft(Nil: List[TrivialError]) {
+          case (acc, e) => acc ++ visitExp(e)
+        }
+
+      case Expression.VectorNew(elm, _, _, _, _) =>
+        visitExp(elm)
+
+      case Expression.VectorLoad(base, _, _, _, _) =>
+        visitExp(base)
+
+      case Expression.VectorStore(base, _, elm, _, _, _) =>
+        visitExp(base) ++ visitExp(elm)
+
+      case Expression.VectorLength(base, _, _, _) =>
+        visitExp(base)
+
+      case Expression.VectorSlice(base, _, _, _, _, _) =>
+        visitExp(base)
+
+      case Expression.Ref(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.Deref(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.Assign(exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.HandleWith(exp, bindings, _, _, _) =>
+        bindings.foldLeft(visitExp(exp)) {
+          case (acc, HandlerBinding(_, e)) => acc ++ visitExp(e)
+        }
+
+      case Expression.Existential(_, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Universal(_, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Ascribe(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.Cast(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.NativeConstructor(_, args, _, _, _) =>
+        args.foldLeft(Nil: List[TrivialError]) {
+          case (acc, e) => acc ++ visitExp(e)
+        }
+
+      case Expression.TryCatch(exp, rules, _, _, _) =>
+        rules.foldLeft(visitExp(exp)) {
+          case (acc, CatchRule(_, _, body)) => acc ++ visitExp(body)
+        }
+
+      case Expression.NativeField(_, _, _, _) => Nil
+
+      case Expression.NativeMethod(_, args, _, _, _) =>
+        args.foldLeft(Nil: List[TrivialError]) {
+          case (acc, exp) => acc ++ visitExp(exp)
+        }
+
+      case Expression.NewChannel(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.GetChannel(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.SelectChannel(rules, default, _, _, _) =>
+        // Visit the default expression.
+        val d = default.map(visitExp).getOrElse(Nil)
+
+        // Visit each select rule.
+        rules.foldLeft(d) {
+          case (acc, SelectChannelRule(_, chan, body)) => acc ++ visitExp(chan) ++ visitExp(body)
+        }
+
+      case Expression.ProcessSpawn(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.ProcessSleep(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.ProcessPanic(_, _, _, _) => Nil
+
+      case Expression.FixpointConstraint(c, _, _, _) =>
+        visitConstraint(c)
+
+      case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.FixpointSolve(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.FixpointProject(pred, exp, _, _, _) =>
+        visitExp(pred.exp) ++ visitExp(exp)
+
+      case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+    })
+
+    /**
+      * Finds trivial computations in the given constraint `con0`.
+      */
+    def visitConstraint(con0: TypedAst.Constraint)(implicit root: Root, flix: Flix): List[TrivialError] =
+      con0.body.foldLeft(visitHeadPred(con0.head)) {
+        case (acc, body) => acc ++ visitBodyPred(body)
       }
 
-    case Expression.Switch(rules, _, _, _) =>
-      rules.foldLeft(Nil: List[TrivialError]) {
-        case (acc, (cond, body)) => acc ++ visitExp(cond) ++ visitExp(body)
-      }
-
-    case Expression.Tag(_, _, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Tuple(elms, _, _, _) =>
-      elms.foldLeft(Nil: List[TrivialError]) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
-
-    case Expression.RecordEmpty(_, _, _) => Nil
-
-    case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.RecordRestrict(_, exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(Nil: List[TrivialError]) {
-        case (acc, e) => acc ++ visitExp(e)
-      }
-
-    case Expression.ArrayNew(elm, len, _, _, _) =>
-      visitExp(elm) ++ visitExp(len)
-
-    case Expression.ArrayLoad(base, index, _, _, _) =>
-      visitExp(base) ++ visitExp(index)
-
-    case Expression.ArrayLength(base, _, _, _) =>
-      visitExp(base)
-
-    case Expression.ArrayStore(base, index, elm, _, _, _) =>
-      visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-
-    case Expression.ArraySlice(base, begin, end, _, _, _) =>
-      visitExp(base) ++ visitExp(begin) ++ visitExp(end)
-
-    case Expression.VectorLit(elms, _, _, _) =>
-      elms.foldLeft(Nil: List[TrivialError]) {
-        case (acc, e) => acc ++ visitExp(e)
-      }
-
-    case Expression.VectorNew(elm, _, _, _, _) =>
-      visitExp(elm)
-
-    case Expression.VectorLoad(base, _, _, _, _) =>
-      visitExp(base)
-
-    case Expression.VectorStore(base, _, elm, _, _, _) =>
-      visitExp(base) ++ visitExp(elm)
-
-    case Expression.VectorLength(base, _, _, _) =>
-      visitExp(base)
-
-    case Expression.VectorSlice(base, _, _, _, _, _) =>
-      visitExp(base)
-
-    case Expression.Ref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Deref(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Assign(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.HandleWith(exp, bindings, _, _, _) =>
-      bindings.foldLeft(visitExp(exp)) {
-        case (acc, HandlerBinding(_, e)) => acc ++ visitExp(e)
-      }
-
-    case Expression.Existential(_, exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Universal(_, exp, _, _) =>
-      visitExp(exp)
-
-    case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      args.foldLeft(Nil: List[TrivialError]) {
-        case (acc, e) => acc ++ visitExp(e)
-      }
-
-    case Expression.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(visitExp(exp)) {
-        case (acc, CatchRule(_, _, body)) => acc ++ visitExp(body)
-      }
-
-    case Expression.NativeField(_, _, _, _) => Nil
-
-    case Expression.NativeMethod(_, args, _, _, _) =>
-      args.foldLeft(Nil: List[TrivialError]) {
-        case (acc, exp) => acc ++ visitExp(exp)
-      }
-
-    case Expression.NewChannel(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.GetChannel(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.SelectChannel(rules, default, _, _, _) =>
-      // Visit the default expression.
-      val d = default.map(visitExp).getOrElse(Nil)
-
-      // Visit each select rule.
-      rules.foldLeft(d) {
-        case (acc, SelectChannelRule(_, chan, body)) => acc ++ visitExp(chan) ++ visitExp(body)
-      }
-
-    case Expression.ProcessSpawn(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.ProcessSleep(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.ProcessPanic(_, _, _, _) => Nil
-
-    case Expression.FixpointConstraint(c, _, _, _) =>
-      visitConstraint(c)
-
-    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-    case Expression.FixpointSolve(exp, _, _, _) =>
-      visitExp(exp)
-
-    case Expression.FixpointProject(pred, exp, _, _, _) =>
-      visitExp(pred.exp) ++ visitExp(exp)
-
-    case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
-  })
-
-  /**
-    * Finds trivial computations in the given constraint `con0`.
-    */
-  private def visitConstraint(con0: TypedAst.Constraint)(implicit root: Root, flix: Flix): List[TrivialError] =
-    con0.body.foldLeft(visitHeadPred(con0.head)) {
-      case (acc, body) => acc ++ visitBodyPred(body)
+    /**
+      * Finds trivial computations in the given head predicate `head0`.
+      */
+    def visitHeadPred(head0: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[TrivialError] = head0 match {
+      case Head.Atom(pred, terms, _, _) =>
+        terms.foldLeft(visitExp(pred.exp)) {
+          case (acc, term) => acc ++ visitExp(term)
+        }
     }
 
-  /**
-    * Finds trivial computations in the given head predicate `head0`.
-    */
-  private def visitHeadPred(head0: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[TrivialError] = head0 match {
-    case Head.Atom(pred, terms, _, _) =>
-      terms.foldLeft(visitExp(pred.exp)) {
-        case (acc, term) => acc ++ visitExp(term)
-      }
-  }
+    /**
+      * Finds trivial computations in the given body predicate `body0`.
+      */
+    def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
+      case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
 
-  /**
-    * Finds trivial computations in the given body predicate `body0`.
-    */
-  private def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
-    case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
+      case Body.Filter(_, terms, _) =>
+        terms.foldLeft(Nil: List[TrivialError]) {
+          case (acc, term) => acc ++ visitExp(term)
+        }
 
-    case Body.Filter(_, terms, _) =>
-      terms.foldLeft(Nil: List[TrivialError]) {
-        case (acc, term) => acc ++ visitExp(term)
-      }
+      case Body.Functional(_, term, _) => visitExp(term)
+    }
 
-    case Body.Functional(_, term, _) => visitExp(term)
+    visitExp(exp0)
   }
 
   /**
     * Determines if given expression `exp0` is trivial.
     */
-  private def matchesTrivialTemplate(exp0: TypedAst.Expression)(implicit root: Root, flix: Flix): List[TrivialError] = {
+  private def matchesTrivialTemplate(exp0: TypedAst.Expression, patterns: List[Expression])(implicit root: Root, flix: Flix): List[TrivialError] = {
     // Check if the expression unifies with any of the trivial patterns.
-    Catalog.allPatterns.foldLeft(Nil: List[TrivialError]) {
+    patterns.foldLeft(Nil: List[TrivialError]) {
       case (acc, template) if unify(exp0, template).nonEmpty =>
         TrivialExpression(exp0.loc) :: acc
       case (acc, _) => acc
