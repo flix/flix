@@ -24,12 +24,9 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
-
 import scala.reflect.runtime.universe._
 
-
 class RecordExtend[T <: MnemonicsTypes : TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
-
   //Setup
   private val ct: Reference = getRecordExtendClassType[T]
   private val cg: ClassGenerator = new ClassGenerator(ct, List(getRecordInterfaceType))

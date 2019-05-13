@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2019 Miguel Fialho
  *
@@ -23,12 +22,12 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
 
 class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
-
   private val it: Reference = getFunctionInterfaceType(elms, returnType)
   private val ig: InterfaceGenerator = {
     val continuationInterfaceType = returnType match {
@@ -41,7 +40,7 @@ class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit r
       case PrimFloat => getContinuationInterfaceType[MFloat]
       case PrimDouble => getContinuationInterfaceType[MDouble]
       case Reference(_) => getContinuationInterfaceType[Ref[MObject]]
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected type $returnType")
     }
     new InterfaceGenerator(it, List(continuationInterfaceType, NJvmType.Function))
   }
@@ -51,7 +50,6 @@ class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit r
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-
   /**
     * Generate the setArg interface method
     */
@@ -66,7 +64,7 @@ class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit r
       case PrimFloat => ig.mkVoidMethod2[Ref[FunctionInterface], MFloat]("setArg" + ind)
       case PrimDouble => ig.mkVoidMethod2[Ref[FunctionInterface], MDouble]("setArg" + ind)
       case Reference(_) => ig.mkVoidMethod2[Ref[FunctionInterface], Ref[MObject]]("setArg" + ind)
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected type $arg")
     }
   }
 

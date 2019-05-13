@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright 2017 Magnus Madsen
-=======
  * Copyright 2019 Miguel Fialho
->>>>>>> 5d64b9396446f02aea075e1a92d80ec0b219ddad
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.njvm
 
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Path, Paths}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.Api.Java
+import ca.uwaterloo.flix.language.phase.jvm.{Bootstrap, GenClosureClasses, GenFunctionClasses, GenNamespaces, JvmName, JvmOps}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter

@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2019 Miguel Fialho
  *
@@ -20,14 +19,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 class EnumInterface(sym : Symbol.EnumSym, elms: List[NJvmType])(implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
-
   private val it: Reference = getEnumInterfaceType(sym, elms)
   private val ig: InterfaceGenerator = new InterfaceGenerator(it, List())
 

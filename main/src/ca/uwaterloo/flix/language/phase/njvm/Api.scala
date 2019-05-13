@@ -32,7 +32,7 @@ object Api {
     object Runtime{
       object Value {
         object Unit {
-          val getInstance : Method0[Ref[MUnit]] = new Method0(JvmModifier.InvokeStatic,  NJvmType.Unit, "getInstance")
+          val getInstance : Method0[Ref[MObject]] = new Method0(JvmModifier.InvokeStatic,  NJvmType.Unit, "getInstance")
         }
       }
     }

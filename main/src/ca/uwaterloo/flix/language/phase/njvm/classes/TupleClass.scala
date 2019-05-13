@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
@@ -8,13 +23,11 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType.{PrimBool, PrimByte, PrimChar, PrimDouble, PrimFloat, PrimInt, PrimLong, PrimShort, Reference}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
 
-
 class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(implicit root: Root, flix : Flix) extends MnemonicsClass {
-
-
   //Setup
   private val ct: Reference = getTupleClassType(elms)
   private val cg: ClassGenerator = new ClassGenerator(ct, List(getTupleInterfaceType(elms)))
@@ -31,7 +44,7 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
         case PrimFloat => cg.mkPrimField[MFloat]("field" + ind)
         case PrimDouble => cg.mkPrimField[MDouble]("field" + ind)
         case Reference(_) => cg.mkField[Ref[MObject]]("field" + ind)
-        case _ => ???
+        case _ => throw InternalCompilerException(s"Unexpected type $arg")
       }
   }
 
@@ -42,39 +55,37 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
     new PrimField[T1]("field" + ind)
 
   val defaultConstrutor : UncheckedVoidMethod = {
-
-
     val setFields =
       (sig : UncheckedFunSig)  =>{
         var ins = NO_OP[StackNil]
-        var ind: Int = 1
-        for (arg <- elms) {
+        var offset: Int = 1
+        for ((arg,ind) <- elms.zipWithIndex) {
           ins = ins |>>
           sig.getArg[Ref[TupleClass]](0).LOAD |>>
           (arg match {
-            case PrimBool => sig.getArg[MBool](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimBool => sig.getArg[MBool](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
                 getPrimField(ind).PUT_FIELD
-            case PrimChar =>  sig.getArg[MChar](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimChar =>  sig.getArg[MChar](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimByte =>   sig.getArg[MByte](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimByte =>   sig.getArg[MByte](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimShort => sig.getArg[MShort](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimShort => sig.getArg[MShort](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimInt =>   sig.getArg[MInt](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimInt =>   sig.getArg[MInt](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimLong =>   sig.getArg[MLong](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimLong =>   sig.getArg[MLong](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimFloat =>  sig.getArg[MFloat](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimFloat =>  sig.getArg[MFloat](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case PrimDouble =>   sig.getArg[MDouble](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case PrimDouble =>   sig.getArg[MDouble](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getPrimField(ind).PUT_FIELD
-            case Reference(_) =>   sig.getArg[Ref[MObject]](ind).LOAD[StackNil ** Ref[TupleClass]] |>>
+            case Reference(_) =>   sig.getArg[Ref[MObject]](offset).LOAD[StackNil ** Ref[TupleClass]] |>>
               getField(ind).PUT_FIELD
-            case _ => ???
+            case _ => throw InternalCompilerException(s"Unexpected type $arg")
           })
           arg match {
-            case PrimLong | PrimDouble => ind += 2
-            case _ => ind += 1
+            case PrimLong | PrimDouble => offset += 2
+            case _ => offset += 1
           }
         }
         ins
@@ -109,7 +120,7 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
         case PrimFloat => cg.mkMethod1[Ref[TupleClass], MFloat]("getIndex" + ind, getIndexIns(ind))
         case PrimDouble => cg.mkMethod1[Ref[TupleClass], MDouble]("getIndex" + ind, getIndexIns(ind))
         case Reference(_) => cg.mkMethod1[Ref[TupleClass], Ref[MObject]]("getIndex" + ind, getIndexIns(ind))
-        case _ => ???
+        case _ => throw InternalCompilerException(s"Unexpected type $arg")
       }
     }
 
@@ -137,7 +148,7 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
         case PrimFloat => cg.mkVoidMethod2[Ref[TupleClass], MFloat]("setIndex" + ind, setIndexIns(ind))
         case PrimDouble => cg.mkVoidMethod2[Ref[TupleClass], MDouble]("setIndex" + ind, setIndexIns(ind))
         case Reference(_) => cg.mkVoidMethod2[Ref[TupleClass], Ref[MObject]]("setIndex" + ind, setIndexIns(ind))
-        case _ => ???
+        case _ => throw InternalCompilerException(s"Unexpected type $arg")
       }
     }
     def setIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : VoidMethod2[Ref[TupleClass], T1] =
@@ -165,7 +176,7 @@ class TupleClass(map : Map[JvmName, MnemonicsClass], elms : List[NJvmType])(impl
                 case PrimDouble => getPrimField[MDouble](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt]|>> AASTORE
                 case Reference(_) =>  sig.getArg1.LOAD[StackNil ** MArray[Ref[MObject]]  ** MArray[Ref[MObject]] ** MInt] |>>
                   getField[Ref[MObject]](ind).GET_FIELD|>> AASTORE
-                case _ => ???
+                case _ => throw InternalCompilerException(s"Unexpected type $arg")
               })
           }
           ins |>> RETURN

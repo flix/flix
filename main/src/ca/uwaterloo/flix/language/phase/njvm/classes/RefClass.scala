@@ -22,11 +22,9 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
-
 import scala.reflect.runtime.universe._
 
 class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
-
   //Setup
   private val ct: Reference = getRefClassType[T]
 
@@ -38,7 +36,6 @@ class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) ex
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-
   /**
     * Generate the constructor for the current RefClass(depends on the type paramater)
     * we are generating. Stotring the capability to invoke the constructor

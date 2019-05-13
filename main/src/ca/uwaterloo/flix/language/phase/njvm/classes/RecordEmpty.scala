@@ -24,9 +24,7 @@ import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
-
 class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
-
   //Setup
   private val ct: Reference = getRecordEmptyClassType
   private val cg: ClassGenerator = new ClassGenerator(ct, List(getJvmType[Ref[RecordInterface]].asInstanceOf[Reference]))
@@ -45,7 +43,6 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * public RecordEmpty() {}
     */
   val defaultConstructor: VoidMethod1[Ref[RecordEmpty]] = {
-
     cg.mkConstructor1(
       sig =>
         sig.getArg1.LOAD[StackNil] |>>

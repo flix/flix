@@ -1,25 +1,35 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName, NamespaceInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier.Public
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
-import ca.uwaterloo.flix.language.phase.njvm.NJvmType
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
-import scala.reflect.runtime.universe._
-
-
 class Context(ns : Set[NamespaceInfo])(implicit root: Root, flix : Flix) extends MnemonicsClass {
-
-
   //Setup
   private val ct: Reference = getContextClassType
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
-  private val continuation : Field[Ref[MObject]] = cg.mkField("continuation")
+  private val continuation : Field[Ref[MObject]] = cg.mkField("continuation", List(Public))
 
   // Adding field for each namespace
   for (namespace <- ns) {
@@ -30,7 +40,7 @@ class Context(ns : Set[NamespaceInfo])(implicit root: Root, flix : Flix) extends
     val fieldName = getNamespaceFieldNameInContextClass(namespace)
 
     // Adding the field
-    cg.mkUncheckedField(fieldName, namespaceRef)
+    cg.mkUncheckedField(fieldName, namespaceRef, List(Public))
   }
 
   def getUncheckedField(namespace: NamespaceInfo): UncheckedField ={

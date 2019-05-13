@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2019 Miguel Fialho
  *
@@ -23,13 +22,10 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 import ca.uwaterloo.flix.language.phase.njvm.classes.Context
-
 import scala.reflect.runtime.universe._
-
 
 class ContinuationInterface[T1 <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
-
   private val it: Reference = getContinuationInterfaceType[T1]
   private val ig: InterfaceGenerator = new InterfaceGenerator(it, List())
 

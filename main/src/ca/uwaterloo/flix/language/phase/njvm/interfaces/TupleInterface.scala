@@ -1,5 +1,19 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm.interfaces
-
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
@@ -8,9 +22,9 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, JvmModifier, MObject, MString, Method1, Method2, MnemonicsClass, MnemonicsTypes, VoidMethod2, getTupleInterfaceType}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
-
 
 class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) extends MnemonicsClass {
   //Setup
@@ -37,7 +51,7 @@ class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) ex
         case PrimFloat => ig.mkMethod1[Ref[TupleInterface], MFloat]("getIndex" + ind)
         case PrimDouble => ig.mkMethod1[Ref[TupleInterface], MDouble]("getIndex" + ind)
         case Reference(_) => ig.mkMethod1[Ref[TupleInterface], Ref[MObject]]("getIndex" + ind)
-        case _ => ???
+        case _ => throw InternalCompilerException(s"Unexpected type $arg")
      }
     }
 
@@ -58,7 +72,7 @@ class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) ex
         case PrimFloat => ig.mkVoidMethod2[Ref[TupleInterface], MFloat]("setIndex" + ind)
         case PrimDouble => ig.mkVoidMethod2[Ref[TupleInterface], MDouble]("setIndex" + ind)
         case Reference(_) => ig.mkVoidMethod2[Ref[TupleInterface], Ref[MObject]]("setIndex" + ind)
-        case _ => ???
+        case _ => throw InternalCompilerException(s"Unexpected type $arg")
       }
     }
 

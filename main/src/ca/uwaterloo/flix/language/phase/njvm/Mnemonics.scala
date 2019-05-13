@@ -16,16 +16,15 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.FinalAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{getErasedJvmType, getJvmType, getRecordInterfaceType, getRefClassType, getTupleInterfaceType, stringify, _}
+import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{RootPackage, mangle}
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java.Lang.{Object, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.util.InternalCompilerException
-
 import scala.reflect.runtime.universe._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 import org.objectweb.asm.Opcodes.{DUP, NEW, _}
@@ -207,7 +206,7 @@ object Mnemonics {
       * @pre This method should only be called if field with the specified fieldName matches the jvmType,
       *      to avoid verifier errors
       */
-    def emitGetBoxedField[S](fieldName: String, fieldType: NJvmType): F[S] = {
+    def emitGetFieldAndBox[S](fieldName: String, fieldType: NJvmType): F[S] = {
 
       /**
         * This method will box the primitive on top of the stack
@@ -222,7 +221,6 @@ object Mnemonics {
 
       // based on the type of the field, we pick the appropriate class that boxes the primitive
       fieldType match {
-        case Void => throw InternalCompilerException(s"Unexpected type $fieldType")
         case PrimBool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(PrimBool), Void))
         case PrimChar => box(JvmName.Character.toInternalName, getMethodDescriptor(List(PrimChar), Void))
         case PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(PrimByte), Void))
@@ -231,7 +229,7 @@ object Mnemonics {
         case PrimLong => box(JvmName.Long.toInternalName, getMethodDescriptor(List(PrimLong), Void))
         case PrimFloat => box(JvmName.Float.toInternalName, getMethodDescriptor(List(PrimFloat), Void))
         case PrimDouble => box(JvmName.Double.toInternalName, getMethodDescriptor(List(PrimDouble), Void))
-        case _ => ???
+        case _ => throw InternalCompilerException(s"Unexpected type $fieldType")
       }
       this.asInstanceOf[F[S]]
     }
@@ -655,13 +653,13 @@ object Mnemonics {
       * Creates a new instance of the type parameter T which should be a subtype of JvmType.Reference and puts
       * it on top of the stack
       */
-    def NEW[S <: Stack](jt: Reference)(implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MObject]] =
+    def NEW[S <: Stack, T <: Ref[MObject]](jt: Reference)(implicit root: Root, flix: Flix): F[S] => F[S ** T] =
       t => t.emitNew(jt)
 
     /**
       * Duplicates whatever is on Top of the stack
       */
-    def DUP[S <: Stack, T: TypeTag]: F[S ** T] => F[S ** T ** T] =
+    def DUP[S <: Stack, T <: MnemonicsTypes : TypeTag]: F[S ** T] => F[S ** T ** T] =
       t => t.emitDup()
 
     /**
@@ -740,7 +738,7 @@ object Mnemonics {
     */
   class PrimField[T <: MnemonicsPrimTypes : TypeTag](fieldName: String)(implicit root: Root, flix: Flix) extends Field[T](fieldName) {
 
-    def GET_BOXED_FIELD[S <: Stack]: F[S] => F[S ** Ref[T]] = t => t.emitGetBoxedField(fieldName, fieldType)
+    def GET_BOXED_FIELD[S <: Stack]: F[S] => F[S ** Ref[T]] = t => t.emitGetFieldAndBox(fieldName, fieldType)
   }
 
   /**
@@ -761,7 +759,7 @@ object Mnemonics {
 
     def GET_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S] => F[S ** T] = t => t.emitGetStatic(fieldName, fieldType)
 
-    def PUT_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S ** T ** T] => F[S]  = t => t.emitPutStatic(fieldName, fieldType)
+    def PUT_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S ** T] => F[S]  = t => t.emitPutStatic(fieldName, fieldType)
   }
 
 
@@ -839,7 +837,7 @@ object Mnemonics {
           case PrimFloat => new Local[MFloat](index)
           case PrimDouble => new Local[MDouble](index)
           case Reference(_) => new Local[Ref[MObject]](index)
-          case _ => ???
+          case _ => throw InternalCompilerException(s"Unexpected type $arg")
         }
       }
 
@@ -858,8 +856,7 @@ object Mnemonics {
       def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S] => F[S ** R] = {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List()
-          case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => ???
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
       }
@@ -872,8 +869,7 @@ object Mnemonics {
       def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S] => F[S] = {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List()
-          case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => ???
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
       }
@@ -889,7 +885,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List()
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
       }
@@ -903,7 +899,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List()
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
       }
@@ -919,7 +915,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2])
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
       }
@@ -933,7 +929,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2])
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
       }
@@ -950,7 +946,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3])
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
       }
@@ -964,7 +960,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3])
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
       }
@@ -981,7 +977,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3], getJvmType[T4])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3], getJvmType[T4])
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, getJvmType[R])
       }
@@ -995,7 +991,7 @@ object Mnemonics {
         val argsList = invokeCode match {
           case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3], getJvmType[T4])
           case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3], getJvmType[T4])
-          case _ => ???
+          case _ => throw InternalCompilerException("Unexpected instruction")
         }
         t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
       }
@@ -1694,7 +1690,7 @@ object Mnemonics {
       * @param message which we want to display when the exception is thrown
       */
     def newUnsupportedOperationExceptionInstructions(message: String)(implicit root: Root, flix: Flix): F[StackNil] => F[StackNil] = {
-      Instructions.NEW[StackNil](Reference(JvmName.UnsupportedOperationException)) |>>
+      Instructions.NEW[StackNil, Ref[MObject]](Reference(JvmName.UnsupportedOperationException)) |>>
         Instructions.DUP |>>
         Instructions.LDC_STRING(message) |>>
         Java.Lang.UnsupportedOperationException.constructor.INVOKE |>>
@@ -1705,13 +1701,12 @@ object Mnemonics {
       * Returns the load instruction for the value of the type specified by `tpe`
       */
     def getLoadInstruction(tpe: NJvmType): Int = tpe match {
-      case Void => throw InternalCompilerException(s"Unexpected type $tpe")
       case PrimBool | PrimChar | PrimByte | PrimShort | PrimInt => ILOAD
       case PrimLong => LLOAD
       case PrimFloat => FLOAD
       case PrimDouble => DLOAD
       case Reference(_) => ALOAD
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected type $tpe")
     }
 
     /**
@@ -1756,7 +1751,7 @@ object Mnemonics {
       case PrimInt => "Int32"
       case PrimLong => "Int64"
       case Reference(_) => "Obj"
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected type $tpe")
     }
 
 
@@ -2113,7 +2108,6 @@ object Mnemonics {
       * Trait which allows to have a bunch of MnemonicsGenerator objects. This way we can do a nice foldLeft on a List
       * of MnemonicsGenerator in order to generate all the required classes.
       */
-    //TODO: better naming?
     trait MnemonicsGenerator {
 
       /**
@@ -2130,4 +2124,361 @@ object Mnemonics {
              (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
     }
 
+  //Generators
+  object GenClosuresClasses extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      closures.foldLeft(map) {
+        case (macc, closure) =>
+          macc + new Closure(closure).getClassMapping
+      }
+    }
   }
+
+  object GenContextClass extends MnemonicsGenerator {
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      map + new Context(ns).getClassMapping
+    }
+
+  }
+
+  object GenContinuationInterfaces extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      map + (
+        new ContinuationInterface[MBool].getClassMapping,
+        new ContinuationInterface[MChar].getClassMapping,
+        new ContinuationInterface[MFloat].getClassMapping,
+        new ContinuationInterface[MDouble].getClassMapping,
+        new ContinuationInterface[MByte].getClassMapping,
+        new ContinuationInterface[MShort].getClassMapping,
+        new ContinuationInterface[MInt].getClassMapping,
+        new ContinuationInterface[MLong].getClassMapping,
+        new ContinuationInterface[Ref[MObject]].getClassMapping)
+    }
+  }
+
+  object GenEnumInterfaces extends MnemonicsGenerator {
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      types.foldLeft(map) {
+        case (macc, MonoType.Enum(sym, elms)) =>
+          // Case 1: The type constructor is an enum.
+          // Construct enum interface.
+          val args = elms.map(getErasedJvmType)
+
+          macc + new EnumInterface(sym, args).getClassMapping
+        case (macc, _) =>
+          // Case 2: The type constructor is a non-tuple.
+          // Nothing to be done. Return the map.
+          macc
+      }
+    }
+  }
+
+  object GenFunctionInterfaces extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+
+      //
+      // Generate a function interface for each type and collect the results in a map.
+      //
+      types.foldLeft(map) {
+        case (macc, MonoType.Arrow(targs, tresult)) =>
+          val elms = targs.map(getErasedJvmType)
+
+          val returnType = getErasedJvmType(tresult)
+          macc + new FunctionInterface(elms, returnType).getClassMapping
+        case (macc, _) =>
+          // Case 2: The type constructor is a non-tuple.
+          // Nothing to be done. Return the map.
+          macc
+      }
+    }
+  }
+
+  object GenMainClass extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  =
+      getMain(root) match{
+        case None => map
+        case Some(defn) =>
+          map + (getErasedJvmType(defn.tpe) match {
+            case PrimBool => new Main[MBool](map).getClassMapping
+            case PrimChar =>  new Main[MChar](map).getClassMapping
+            case PrimByte =>  new Main[MByte](map).getClassMapping
+            case PrimShort =>  new Main[MShort](map).getClassMapping
+            case PrimInt =>  new Main[MInt](map).getClassMapping
+            case PrimLong =>  new Main[MLong](map).getClassMapping
+            case PrimFloat =>  new Main[MFloat](map).getClassMapping
+            case PrimDouble =>  new Main[MDouble](map).getClassMapping
+            case Reference(_) => new Main[Ref[MObject]](map).getClassMapping
+            case _ => throw InternalCompilerException(s"Unexpected type $defn.tpe")
+          })
+      }
+
+    /**
+      * Optionally returns the main definition in the given AST `root`.
+      */
+    private def getMain(root: Root): Option[Def] = {
+      // The main function must be called `main` and occur in the root namespace.
+      val sym = Symbol.mkDefnSym("main")
+
+      // Check if the main function exists.
+      root.defs.get(sym) flatMap {
+        case defn =>
+          // The main function must take zero arguments.
+          Some(defn)
+      }
+    }
+  }
+
+  object GenNamespaceClasses extends MnemonicsGenerator {
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      ns.foldLeft(map){
+        case (macc, namespace) =>
+          macc + new Namespace(namespace).getClassMapping
+      }
+    }
+  }
+
+  object GenRecordEmpty extends MnemonicsGenerator {
+
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      map + new RecordEmpty(map).getClassMapping
+    }
+
+  }
+
+  object GenRecordExtend extends MnemonicsGenerator {
+
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+
+      map + (
+        new RecordExtend[MBool](map).getClassMapping,
+        new RecordExtend[MChar](map).getClassMapping,
+        new RecordExtend[MFloat](map).getClassMapping,
+        new RecordExtend[MDouble](map).getClassMapping,
+        new RecordExtend[MByte](map).getClassMapping,
+        new RecordExtend[MShort](map).getClassMapping,
+        new RecordExtend[MInt](map).getClassMapping,
+        new RecordExtend[MLong](map).getClassMapping,
+        new RecordExtend[Ref[MObject]](map).getClassMapping)
+    }
+  }
+
+  object GenRecordInterface extends MnemonicsGenerator {
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
+      map + new RecordInterface().getClassMapping
+    }
+  }
+
+
+  object GenRefClasses extends MnemonicsGenerator {
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      map + (
+        new RefClass[MBool].getClassMapping,
+        new RefClass[MChar].getClassMapping,
+        new RefClass[MFloat].getClassMapping,
+        new RefClass[MDouble].getClassMapping,
+        new RefClass[MByte].getClassMapping,
+        new RefClass[MShort].getClassMapping,
+        new RefClass[MInt].getClassMapping,
+        new RefClass[MLong].getClassMapping,
+        new RefClass[Ref[MObject]].getClassMapping)
+    }
+
+  }
+
+  object GenTagClasses extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      tags.foldLeft(map) {
+        case (macc, tag) =>
+          macc + (getErasedJvmType(tag.tagType) match {
+            case PrimBool => new TagClass[MBool](tag).getClassMapping
+            case PrimChar =>  new TagClass[MChar](tag).getClassMapping
+            case PrimByte =>  new TagClass[MByte](tag).getClassMapping
+            case PrimShort =>  new TagClass[MShort](tag).getClassMapping
+            case PrimInt => new TagClass[MInt](tag).getClassMapping
+            case PrimLong =>  new TagClass[MLong](tag).getClassMapping
+            case PrimFloat =>  new TagClass[MFloat](tag).getClassMapping
+            case PrimDouble =>  new TagClass[MDouble](tag).getClassMapping
+            case Reference(_) => new TagClass[Ref[MObject]](tag).getClassMapping
+            case _ => throw InternalCompilerException(s"Unexpected type $tag.tagType")
+          })
+      }
+    }
+  }
+
+  object GenTupleClasses extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      types.foldLeft(map) {
+        case (macc, MonoType.Tuple(elms)) =>
+          val targs = elms.map(getErasedJvmType)
+
+          macc + new TupleClass(macc, targs).getClassMapping
+        case (macc, _) =>
+          // Case 2: The type constructor is a non-tuple.
+          // Nothing to be done. Return the map.
+          macc
+      }
+    }
+  }
+
+  object GenTupleInterfaces extends MnemonicsGenerator{
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      types.foldLeft(map) {
+        case (macc, MonoType.Tuple(elms)) =>
+          val targs = elms.map(getErasedJvmType)
+
+          macc + new TupleInterface(targs).getClassMapping
+        case (macc, _) =>
+          // Case 2: The type constructor is a non-tuple.
+          // Nothing to be done. Return the map.
+          macc
+      }
+    }
+  }
+
+}

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Miguel Fialho
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
@@ -9,9 +24,9 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
-
 
 class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends MnemonicsClass {
 
@@ -22,7 +37,6 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
   //Setup
   private val ct: Reference = getClosureClassType(closure)
   private val cg: ClassGenerator = new ClassGenerator(ct, List(getFunctionInterfaceType(elms, returnType), NJvmType.Spawnable))
-
 
   private val creationContext : Field[Ref[MObject]] = cg.mkField("creationContext")
 
@@ -38,7 +52,7 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
       case PrimFloat => cg.mkPrimField[MFloat]("clo" + ind)
       case PrimDouble => cg.mkPrimField[MDouble]("clo" + ind)
       case Reference(_) => cg.mkField[Ref[MObject]]("clo" + ind)
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected type $arg")
     }
   }
 
@@ -47,7 +61,6 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
 
   private def getCloPrimField[T1 <: MnemonicsPrimTypes : TypeTag](ind : Int) : PrimField[T1] =
     new PrimField[T1]("clo" + ind)
-
 
   for ((arg, ind) <- elms.zipWithIndex) {
     arg match {
@@ -132,7 +145,7 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
               field.PUT_FIELD |>>
               RETURN_VOID
         )
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected type $arg")
     }
   }
 
@@ -218,7 +231,7 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
             field.GET_FIELD |>>
             RETURN
       )
-    case _ => ???
+    case _ => throw InternalCompilerException(s"Unexpected type $returnType")
   }
 
   private def getResultField[T1 <: MnemonicsTypes : TypeTag]: Field[T1] =
@@ -229,7 +242,6 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
 
   private def getResultMethod[T1 <: MnemonicsPrimTypes : TypeTag] : Method1[Ref[Closure], T1] =
     new Method1(JvmModifier.InvokeVirtual,ct, "getResult")
-
 
   val defaultConstructor : UncheckedVoidMethod = {
     val setCloFields =
@@ -258,7 +270,7 @@ class Closure(closure : ClosureInfo)(implicit root: Root, flix : Flix) extends M
                 getCloPrimField(ind).PUT_FIELD
               case Reference(_) =>   sig.getArg[Ref[MObject]](ind).LOAD[StackNil ** Ref[Closure]] |>>
                 getCloField(ind).PUT_FIELD
-              case _ => ???
+              case _ => throw InternalCompilerException(s"Unexpected type $arg")
             })
           arg match {
             case PrimLong | PrimDouble => ind += 2

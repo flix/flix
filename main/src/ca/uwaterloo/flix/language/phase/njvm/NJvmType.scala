@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright 2017 Magnus Madsen
-=======
  * Copyright 2019 Miguel Fialho
->>>>>>> 5d64b9396446f02aea075e1a92d80ec0b219ddad
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
