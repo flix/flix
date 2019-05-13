@@ -34,6 +34,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Find the patterns
     val pats = Catalog.allPatterns(root, flix)
+    println(s"Loaded: ${pats.length} patterns.")
 
     // Check for trivial expressions.
     val trivial: List[TrivialError] = root.defs.par.aggregate(Nil: List[TrivialError])({
@@ -187,6 +188,14 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     def allPatterns(implicit root: Root, flix: Flix): List[Expression] =
     // Duplicate patterns
       availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
         availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
         availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns
 
@@ -537,13 +546,17 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     case (_, Expression.Wild(_, _, _)) => Substitution.emptyOpt
 
     // TODO: How to deal with variables? We dont have meta variables?
-    case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+    case (Expression.Var(sym1, _, _, _), Expression.Var(sym2, _, _, _)) =>
+      if (sym1 != sym2) None else Substitution.emptyOpt
 
-    case (Expression.Def(sym1, _, _, _), Expression.Def(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+    case (Expression.Def(sym1, _, _, _), Expression.Def(sym2, _, _, _)) =>
+      if (sym1 != sym2) None else Substitution.emptyOpt
 
-    case (Expression.Eff(sym1, _, _, _), Expression.Eff(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+    case (Expression.Eff(sym1, _, _, _), Expression.Eff(sym2, _, _, _)) =>
+      if (sym1 != sym2) None else Substitution.emptyOpt
 
-    case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Substitution.emptyOpt
+    case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) =>
+      if (sym1 != sym2) None else Substitution.emptyOpt
 
     case (Expression.Lambda(fparam1, exp1, _, _, _), Expression.Lambda(fparam2, exp2, _, _, _)) =>
       // TODO: How to handle params?
@@ -717,7 +730,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         * Applies the substitution to the expression `e0`.
         */
       def visitExp(e0: Expression): Expression = e0 match {
-
         case Expression.Unit(_) => e0
         case Expression.True(_) => e0
         case Expression.False(_) => e0
@@ -732,38 +744,105 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Str(_, _) => e0
         case Expression.Wild(_, _, _) => e0
 
-        case Expression.Var(sym, tpe, eff, loc) => ???
-        case Expression.Def(sym, tpe, eff, loc) => ???
-        case Expression.Eff(sym, tpe, eff, loc) => ???
-        case Expression.Hole(sym, tpe, eff, loc) => ???
-        case Expression.Lambda(fparam, exp, tpe, eff, loc) => ???
-        case Expression.Apply(exp1, exp2, tpe, eff, loc) => ???
-        case Expression.Unary(op, exp, tpe, eff, loc) => ???
-        case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => ???
-        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => ???
-        case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ???
-        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
-        case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
-        case Expression.Match(exp, rules, tpe, eff, loc) => ???
-        case Expression.Switch(rules, tpe, eff, loc) => ???
-        case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
-        case Expression.Tuple(elms, tpe, eff, loc) => ???
-        case Expression.RecordEmpty(tpe, eff, loc) => ???
-        case Expression.RecordSelect(exp, label, tpe, eff, loc) => ???
-        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ???
-        case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ???
-        case Expression.ArrayLit(elms, tpe, eff, loc) => ???
-        case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+        case Expression.Var(sym, tpe, eff, loc) => ??? // TODO
+
+        case Expression.Def(_, _, _, _) => e0
+        case Expression.Eff(_, _, _, _) => e0
+        case Expression.Hole(_, _, _, _) => e0
+
+        case Expression.Lambda(fparam, exp, tpe, eff, loc) => ??? // TODO
+
+        case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.Apply(e1, e2, tpe, eff, loc)
+
+        case Expression.Unary(op, exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.Unary(op, e, tpe, eff, loc)
+
+        case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.Binary(op, e1, e2, tpe, eff, loc)
+
+        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.Let(sym, e1, e2, tpe, eff, loc)
+
+        case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.LetRec(sym, exp1, exp2, tpe, eff, loc)
+
+        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          val e3 = visitExp(exp3)
+          Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+        case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.Stm(e1, e2, tpe, eff, loc)
+
+        case Expression.Match(exp, rules, tpe, eff, loc) => ??? // TODO
+
+        case Expression.Switch(rules, tpe, eff, loc) => ??? // TODO
+
+        case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.Tag(sym, tag, e, tpe, eff, loc)
+
+        case Expression.Tuple(elms, tpe, eff, loc) =>
+          val es = elms.map(visitExp)
+          Expression.Tuple(es, tpe, eff, loc)
+
+        case Expression.RecordEmpty(tpe, eff, loc) => e0
+
+        case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
+          val e = Expression.RecordSelect(exp, label, tpe, eff, loc)
+          Expression.RecordSelect(e, label, tpe, eff, loc)
+
+        case Expression.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.RecordExtend(label, e1, e2, tpe, eff, loc)
+
+        case Expression.RecordRestrict(label, exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.RecordRestrict(label, e, tpe, eff, loc)
+
+        case Expression.ArrayLit(elms, tpe, eff, loc) =>
+          val es = elms.map(visitExp)
+          Expression.ArrayLit(es, tpe, eff, loc)
+
+        case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+          val e = visitExp(elm)
+          val l = visitExp(len)
+          Expression.ArrayNew(e, l, tpe, eff, loc)
+
         case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+
         case Expression.ArrayLength(base, tpe, eff, loc) => ???
+
         case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+
         case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
+
         case Expression.VectorLit(elms, tpe, eff, loc) => ???
+
         case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+
         case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+
         case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+
         case Expression.VectorLength(base, tpe, eff, loc) => ???
+
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+
         case Expression.Ref(exp, tpe, eff, loc) => ???
         case Expression.Deref(exp, tpe, eff, loc) => ???
         case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
