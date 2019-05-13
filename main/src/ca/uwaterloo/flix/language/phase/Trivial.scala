@@ -823,13 +823,25 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
           val l = visitExp(len)
           Expression.ArrayNew(e, l, tpe, eff, loc)
 
-        case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+        case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+          val b = visitExp(base)
+          val i = visitExp(index)
+          Expression.ArrayLoad(b, i, tpe, eff, loc)
 
-        case Expression.ArrayLength(base, tpe, eff, loc) => ???
+        case Expression.ArrayLength(base, tpe, eff, loc) =>
+          val b = visitExp(base)
+          Expression.ArrayLength(b, tpe, eff, loc)
 
-        case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+        case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+          val b = visitExp(base)
+          val i = visitExp(index)
+          Expression.ArrayStore(b, i, elm, tpe, eff, loc)
 
-        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
+        case Expression.ArraySlice(base, begin, end, tpe, eff, loc) =>
+          val e1 = visitExp(base)
+          val e2 = visitExp(begin)
+          val e3 = visitExp(end)
+          Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
 
         case Expression.VectorLit(elms, tpe, eff, loc) => ???
 
@@ -843,29 +855,70 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
 
-        case Expression.Ref(exp, tpe, eff, loc) => ???
-        case Expression.Deref(exp, tpe, eff, loc) => ???
-        case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+        case Expression.Ref(exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.Ref(e, tpe, eff, loc)
+
+        case Expression.Deref(exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.Deref(e, tpe, eff, loc)
+
+        case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.Assign(e1, e2, tpe, eff, loc)
+
         case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+
         case Expression.Existential(fparam, exp, eff, loc) => ???
+
         case Expression.Universal(fparam, exp, eff, loc) => ???
+
         case Expression.Ascribe(exp, tpe, eff, loc) => ???
+
         case Expression.Cast(exp, tpe, eff, loc) => ???
+
         case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+
         case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+
         case Expression.NativeField(field, tpe, eff, loc) => ???
+
         case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
-        case Expression.NewChannel(exp, tpe, eff, loc) => ???
-        case Expression.GetChannel(exp, tpe, eff, loc) => ???
-        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
-        case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
-        case Expression.ProcessSpawn(exp, tpe, eff, loc) => ???
-        case Expression.ProcessSleep(exp, tpe, eff, loc) => ???
-        case Expression.ProcessPanic(msg, tpe, eff, loc) => ???
+
+        case Expression.NewChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.NewChannel(e, tpe, eff, loc)
+
+        case Expression.GetChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.GetChannel(e, tpe, eff, loc)
+
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1)
+          val e2 = visitExp(exp2)
+          Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? // TODO
+
+        case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.ProcessSpawn(e, tpe, eff, loc)
+
+        case Expression.ProcessSleep(exp, tpe, eff, loc) =>
+          val e = visitExp(exp)
+          Expression.ProcessSleep(e, tpe, eff, loc)
+
+        case Expression.ProcessPanic(msg, tpe, eff, loc) => e0
+
         case Expression.FixpointConstraint(c, tpe, eff, loc) => ???
+
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
+
         case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+
         case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
       }
 
