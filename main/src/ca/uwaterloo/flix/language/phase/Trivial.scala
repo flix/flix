@@ -181,23 +181,29 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * A list of trivial expression patterns.
       */
     // TODO: To test performance it might be worth duplicating this list many times.
-    def allPatterns(implicit root: Root, flix: Flix): List[Expression] = List(
+    def allPatterns(implicit root: Root, flix: Flix): List[Expression] =
+    // Duplicate patterns
+      availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
+        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns
+
+    def availablePatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
       leftAdditionByZero(),
       subtractionByZero(),
-      //subtractionBySelf(), // TODO
       leftMultiplicationByZero(),
       rightMultiplicationByZero(),
       leftMultiplicationByOne(),
       rightMultiplicationByOne(),
-      //divisionByOne(), // TODO
-      // divisionBySelf(), // TODO
       leftConcatenateEmptyString(),
       rightConcatenateEmptyString(),
+      listMapIdentity(),
+      //divisionByOne(), // TODO
+      // divisionBySelf(), // TODO
       // leftAppendNil(), // TODO
       // rightAppendNil(), // TODO
       //      listIsEmptyCons(), // TODO
-      listMapIdentity()
+      //subtractionBySelf(), // TODO
     )
 
   }
