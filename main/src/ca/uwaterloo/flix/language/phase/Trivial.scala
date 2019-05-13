@@ -709,12 +709,12 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Float64(_, _) => e0
         case Expression.Int8(_, _) => e0
         case Expression.Int16(_, _) => e0
+        case Expression.Int32(_, _) => e0
+        case Expression.Int64(_, _) => e0
+        case Expression.BigInt(_, _) => e0
+        case Expression.Str(_, _) => e0
+        case Expression.Wild(_, _, _) => e0
 
-        case Expression.Int32(lit, loc) => ???
-        case Expression.Int64(lit, loc) => ???
-        case Expression.BigInt(lit, loc) => ???
-        case Expression.Str(lit, loc) => ???
-        case Expression.Wild(tpe, eff, loc) => ???
         case Expression.Var(sym, tpe, eff, loc) => ???
         case Expression.Def(sym, tpe, eff, loc) => ???
         case Expression.Eff(sym, tpe, eff, loc) => ???
