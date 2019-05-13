@@ -506,7 +506,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Often we should be able to use types to quickly check if a pattern is potentially relevant
 
   // TODO: DOC
-  private def unify(exp1: Expression, exp2: Expression): Option[Substitution] = (exp1, exp2) match {
+  private def unify(x: Expression, y: Expression): Option[Substitution] = (x, y) match {
 
     case (Expression.Unit(_), Expression.Unit(_)) => Substitution.emptyOpt
 
@@ -568,14 +568,23 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         subst2 <- unify(subst1(exp12), subst1(exp22))
       } yield subst2 @@ subst1
 
+    case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) =>
+      if (op1 != op2)
+        None
+      else
+        unify(exp1, exp2)
 
+    case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) =>
+      if (op1 != op2)
+        None
+      else
+        for {
+          subst1 <- unify(exp11, exp21)
+          subst2 <- unify(subst1(exp12), subst1(exp22))
+        } yield subst2 @@ subst1
 
     // TODO: All cases to consider:
-    //
-    //    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
+
     //    case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -588,7 +597,12 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
     //
-    //    case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) =>
+      if (sym1 != sym2 || tag1 != tag2)
+        None
+      else
+        unify(exp1, exp2)
+
     //
     //    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
     //
@@ -676,25 +690,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //    case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    // TODO: Order
-
-    case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) =>
-      if (op1 != op2)
-        None
-      else
-        for {
-          subst1 <- unify(exp11, exp21)
-          subst2 <- unify(exp12, exp22)
-        } yield Substitution.empty // TODO
-
-
-    case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) =>
-      if (sym1 != sym2 || tag1 != tag2)
-        None
-      else
-        for {
-          subst <- unify(exp1, exp2)
-        } yield Substitution.empty // TODO
 
     case _ => None
   }
