@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.{Api, NJvmType}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 import scala.reflect.runtime.universe._
 
 class TagClass[T <: MnemonicsTypes : TypeTag](tag : TagInfo)(implicit root: Root, flix : Flix) extends MnemonicsClass {
@@ -40,6 +42,9 @@ class TagClass[T <: MnemonicsTypes : TypeTag](tag : TagInfo)(implicit root: Root
   }
 
   private val field0  : Field[T] = cg.mkField("field0")
+
+  private def getPrimField[T1 <: MnemonicsPrimTypes : TypeTag] : PrimField[T1] =
+    new PrimField[T1]("field0")
 
   val defaultConstructor : VoidMethod2[Ref[TagClass[T]],T] =
     cg.mkConstructor2(
@@ -60,7 +65,7 @@ class TagClass[T <: MnemonicsTypes : TypeTag](tag : TagInfo)(implicit root: Root
         NEW[StackNil, Ref[TagClass[MObject]]](ct) |>>
         DUP|>>
         Api.Java.Runtime.Value.Unit.getInstance.INVOKE|>>
-        defaultConstructor.asInstanceOf[VoidMethod2[Ref[TagClass[MObject]], Ref[MObject]]].INVOKE |>>
+        defaultConstructor.asInstanceOf[VoidMethod2[Ref[TagClass[MObject]], Ref[MUnit]]].INVOKE |>>
         unitInstance.PUT_STATIC |>>
         RETURN_VOID
       )
@@ -68,6 +73,32 @@ class TagClass[T <: MnemonicsTypes : TypeTag](tag : TagInfo)(implicit root: Root
     }
     else
       None
+
+  val getValueMethod: Method1[Ref[TagClass[T]], T] =
+    cg.mkMethod1("getValue",
+      sig =>
+        sig.getArg1.LOAD[StackNil] |>>
+          field0.GET_FIELD |>>
+          RETURN
+    )
+
+  val getBoxedValueMethod : Method1[Ref[TagClass[T]], Ref[T]] = {
+
+    cg.mkMethod1("getBoxedTagValue",
+      sig =>
+        typeOf[T] match {
+          case t if t =:= typeOf[MBool] => getPrimField[MBool].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MChar] => getPrimField[MChar].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MByte] => getPrimField[MByte].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MShort] => getPrimField[MShort].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MInt] => getPrimField[MInt].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MLong] => getPrimField[MLong].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MFloat] => getPrimField[MFloat].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case t if t =:= typeOf[MDouble] => getPrimField[MDouble].GET_BOXED_FIELD[StackNil] |>> RETURN
+          case _ => sig.getArg1.LOAD[StackNil] |>> field0.GET_FIELD |>> RETURN
+        }
+    )
+  }
 
   val getTagMethod : Method1[Ref[TagClass[T]], Ref[MString]] =
     cg.mkMethod1("getTag",
