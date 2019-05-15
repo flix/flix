@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.{AsmOps, JvmClass, JvmName, JvmOps, JvmType, NamespaceInfo}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName,NamespaceInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
@@ -26,14 +26,11 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.Opcodes.{ALOAD, INVOKEVIRTUAL}
 
 class Namespace(ns : NamespaceInfo)(implicit root: Root, flix : Flix) extends MnemonicsClass {
   //Setup
   private val ct: Reference = getNamespaceClassType(ns)
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
-
-  private val continuation : Field[Ref[MObject]] = cg.mkField("continuation")
 
   for ((sym, defn) <- ns.defs) {
     // JvmType of `defn`
@@ -42,13 +39,14 @@ class Namespace(ns : NamespaceInfo)(implicit root: Root, flix : Flix) extends Mn
     // Name of the field on namespace
     val fieldName = getDefFieldNameInNamespaceClass(sym)
 
-    cg.mkUncheckedField(fieldName, fieldType)
+    cg.mkUncheckedField(fieldName, fieldType, List(Public))
 
     val methodName = getDefMethodNameInNamespaceClass(defn.sym)
     val MonoType.Arrow(targs, tresult) = defn.tpe
 
     // Erased argument and result type.
     val erasedArgs = targs map getErasedJvmType
+    val erasedResult = getErasedJvmType(tresult)
     val contextConstructor = new VoidMethod1[Ref[Context]](JvmModifier.InvokeSpecial, NJvmType.Context, "<init>")
     // Length of args in local
     val stackSize = erasedArgs.map(getStackSize).sum
@@ -59,9 +57,9 @@ class Namespace(ns : NamespaceInfo)(implicit root: Root, flix : Flix) extends Mn
     val ifoLocal = new Local[Ref[MObject]](stackSize + 1)
     val nsFieldName = getNamespaceFieldNameInContextClass(ns)
     val defnFieldName = getDefFieldNameInNamespaceClass(defn.sym)
-    val nsField = new Field[Ref[Context]](nsFieldName)
-    val nsIfoField = new UncheckedField(defnFieldName, namespaceClassType)
-    val continuationField = new Field[Ref[MObject]]("continuation")
+    val nsField = new UncheckedClassField(nsFieldName, NJvmType.Context, namespaceClassType)
+    val nsIfoField = new UncheckedClassField(defnFieldName, namespaceClassType, fieldType)
+    val continuationField = new ClassField[Ref[MObject]]("continuation", NJvmType.Context)
     val functionInterface = getFunctionInterfaceType(erasedArgs, getErasedJvmType(tresult))
 
     val continuationType = getErasedJvmType(tresult) match {
@@ -74,19 +72,20 @@ class Namespace(ns : NamespaceInfo)(implicit root: Root, flix : Flix) extends Mn
       case PrimFloat => getContinuationInterfaceType[MFloat]
       case PrimDouble => getContinuationInterfaceType[MDouble]
       case Reference(_) => getContinuationInterfaceType[Ref[MObject]]
-      case _ => throw InternalCompilerException(s"Unexpected type " +  getErasedJvmType(tresult))
+      case _ => throw InternalCompilerException(s"Unexpected type " +  erasedResult)
     }
     val invokeMethod = new UncheckedVoidMethod(InvokeInterface, continuationType, "invoke", List(NJvmType.Context))
-    val getResultMethod = new UncheckedMethod(InvokeInterface, continuationType, "getResult", Nil, getErasedJvmType(tresult))
+    val getResultMethod = new UncheckedMethod(InvokeInterface, continuationType, "getResult", Nil, erasedResult)
+
     // Compile the shim method.
-    cg.mkUncheckedVoidMethod(methodName,
+    cg.mkUncheckedMethod(methodName,
       sig =>
         NEW[StackNil, Ref[Context]](NJvmType.Context) |>>
         DUP |>>
         contextConstructor.INVOKE |>>
         DUP |>>
         contextLocal.STORE |>>
-        nsField.GET_FIELD |>>
+        nsField.GET_FIELD[StackNil, Ref[Context], Ref[Context]] |>>
         nsIfoField.GET_FIELD[StackNil, Ref[Context], Ref[MObject]] |>>
         ifoLocal.STORE |>> {
           var ins = NO_OP[StackNil]
@@ -107,25 +106,36 @@ class Namespace(ns : NamespaceInfo)(implicit root: Root, flix : Flix) extends Mn
           ifoLocal.LOAD |>>
           CHECK_CAST(functionInterface) |>>
           continuationField.PUT_FIELD |>>
-          CONST_NULL |>>
-//          ifoLocal.STORE |>>
-//          IFNONNULL(
-//            contextLocal.LOAD[StackNil ** Ref[MObject]] |>>
-//            continuationField.GET_FIELD[StackNil ** Ref[MObject] , Ref[Context]] |>>
-//            contextLocal.LOAD[StackNil ** Ref[MObject]] |>>
-//            CONST_NULL[StackNil** Ref[MObject], Ref[MObject]] |>>
-//            continuationField.PUT_FIELD[StackNil** Ref[MObject], Ref[Context]] |>>
-//            CHECK_CAST[StackNil](continuationType) |>>
-//            DUP[StackNil, Ref[MObject]] |>>
-//            ifoLocal.STORE[StackNil** Ref[MObject], Ref[MObject]] |>>
-//            contextLocal.LOAD[[StackNil** Ref[MObject]] |>>
-//            invokeMethod.INVOKE[StackNil** Ref[MObject], StackNil] |>>
-//            continuationField.GET_FIELD[StackNil]
-//          ) |>>
-//          ifoLocal.LOAD |>>
-//          getResultMethod.INVOKE |>>
-          RETURN
-      , erasedArgs, List(Public, Static, Final), true)
+          CONST_NULL[StackNil, Ref[MObject]] |>>
+          ifoLocal.STORE |>>
+          IFNONNULL(
+            contextLocal.LOAD[StackNil] |>>
+            continuationField.GET_FIELD[StackNil, Ref[Context]]|>>
+            contextLocal.LOAD[StackNil ** Ref[MObject]]|>>
+            CONST_NULL[StackNil ** Ref[MObject] ** Ref[Context], Ref[MObject]] |>>
+            continuationField.PUT_FIELD[StackNil ** Ref[MObject], Ref[Context]]|>>
+            CHECK_CAST[StackNil](continuationType) |>>
+            DUP[StackNil, Ref[MObject]] |>>
+            ifoLocal.STORE[StackNil ** Ref[MObject]] |>>
+            contextLocal.LOAD[StackNil ** Ref[MObject]] |>>
+            invokeMethod.INVOKE[StackNil ** Ref[MObject] ** Ref[Context], StackNil] |>>
+            contextLocal.LOAD[StackNil] |>>
+            continuationField.GET_FIELD[StackNil, Ref[Context]]
+          ) |>>
+          ifoLocal.LOAD[StackNil] |>>
+          (erasedResult match {
+            case PrimBool => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MBool] |>> RETURN
+            case PrimChar => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MChar] |>> RETURN
+            case PrimByte => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MByte] |>> RETURN
+            case PrimShort=> getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MShort] |>> RETURN
+            case PrimInt => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MInt] |>> RETURN
+            case PrimLong => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MLong] |>> RETURN
+            case PrimFloat => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MFloat] |>> RETURN
+            case PrimDouble => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** MDouble] |>> RETURN
+            case Reference(_) => getResultMethod.INVOKE[StackNil ** Ref[MObject], StackNil ** Ref[MObject]] |>> RETURN
+            case _ => throw InternalCompilerException(s"Unexpected type " + getErasedJvmType(tresult))
+          } )
+      , erasedArgs, erasedResult, List(Public, Static, Final), true)
   }
 
   def getUncheckedField(sym:  Symbol.DefnSym): UncheckedField ={

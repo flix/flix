@@ -80,13 +80,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val types = JvmOps.typesOf(root)
 
-
-    //
-    // Generate the namespace classes.
-    //
-    val namespaceClasses = GenNamespaces.gen(namespaces)
-
-
     //
     // Generate function classes for each function in the program.
     //
@@ -113,6 +106,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenTagClasses,
         GenTupleClasses,
         GenContextClass,
+        GenNamespacesClasses,
         GenMainClass
       )
 
@@ -124,7 +118,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
-      namespaceClasses,
       functionClasses,
       closureClasses,
       njvmClasses

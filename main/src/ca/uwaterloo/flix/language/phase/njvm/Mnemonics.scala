@@ -183,6 +183,11 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+    def emitGetField[S](fieldName: String, ct : Reference, fieldType: NJvmType): F[S] = {
+      mv.visitFieldInsn(GETFIELD, ct.name.toInternalName, fieldName, fieldType.toDescriptor)
+      this.asInstanceOf[F[S]]
+    }
+
     /**
       * Emits a getStatic instruction given the fieldName and it's type
       *
@@ -261,6 +266,11 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+
+    def emitPutField[S](fieldName: String, ct: Reference, fieldType: NJvmType): F[S] = {
+      mv.visitFieldInsn(PUTFIELD, ct.name.toInternalName, fieldName, fieldType.toDescriptor)
+      this.asInstanceOf[F[S]]
+    }
     /**
       * Emits a invoke instruction given the invokeCode, className, methodName, args and returnType
       *
@@ -770,9 +780,9 @@ object Mnemonics {
         (t => t.emitLabel(skipLabel))
     }
 
-    def IFNONNULL[S <: Stack](f: F[S ** Ref[MObject]] => F[S ** Ref[MObject]]): F[S**Ref[MObject]] => F[S] = {
+    def IFNONNULL[S <: Stack](f: F[S] => F[S ** Ref[MObject]]): F[S] => F[S] = {
       val loop = new Label
-      ((t: F[S**Ref[MObject]]) => t.emitLabel[S ** Ref[MObject]](loop)) |>>
+      ((t: F[S]) => t.emitLabel[S](loop)) |>>
         f |>>
         (t => t.emitIfNonNull[S](loop))
     }
@@ -828,6 +838,15 @@ object Mnemonics {
     def GET_BOXED_FIELD[S <: Stack]: F[S] => F[S ** Ref[T]] = t => t.emitGetFieldAndBox(fieldName, fieldType)
   }
 
+
+  class ClassField[T <: MnemonicsTypes : TypeTag](fieldName: String, ct: Reference)(implicit root: Root, flix: Flix) {
+
+    protected val fieldType : NJvmType = getJvmType[T]
+
+    def GET_FIELD[S <: Stack, T1 <: Ref[MObject]]: F[S ** T1] => F[S ** T] = t => t.emitGetField(fieldName,ct, fieldType)
+
+    def PUT_FIELD[S <: Stack, T1 <: Ref[MObject]]: F[S ** T1 ** T] => F[S] = t => t.emitPutField(fieldName,ct, fieldType)
+  }
   /**
     * Capability which allows to get/put a field
     */
@@ -836,6 +855,14 @@ object Mnemonics {
     def GET_FIELD[S <: Stack, T1 <: Ref[MObject], T2 <: MnemonicsTypes]: F[S ** T1] => F[S ** T2] = t => t.emitGetField(fieldName, fieldType)
 
     def PUT_FIELD[S <: Stack, T1 <: Ref[MObject], T2 <: MnemonicsTypes]: F[S ** T1 ** T2] => F[S]  = t => t.emitPutField(fieldName, fieldType)
+  }
+
+
+  class UncheckedClassField(fieldName: String, ct : Reference, fieldType : NJvmType)(implicit root: Root, flix: Flix) {
+
+    def GET_FIELD[S <: Stack, T1 <: Ref[MObject], T2 <: MnemonicsTypes]: F[S ** T1] => F[S ** T2] = t => t.emitGetField(fieldName, ct, fieldType)
+
+    def PUT_FIELD[S <: Stack, T1 <: Ref[MObject], T2 <: MnemonicsTypes]: F[S ** T1 ** T2] => F[S]  = t => t.emitPutField(fieldName,ct, fieldType)
   }
 
 
@@ -1418,11 +1445,24 @@ object Mnemonics {
         val returnType = Void
         val funSig = new UncheckedFunSig(args, returnType)
 
-        val (invokeCode, argsList) = if (isStatic) (JvmModifier.InvokeStatic, args.tail) else (JvmModifier.InvokeVirtual, args)
+        val (invokeCode, argsList) = if (isStatic) (JvmModifier.InvokeStatic, args) else (JvmModifier.InvokeVirtual, args.tail)
 
         emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
 
         new UncheckedVoidMethod(invokeCode, ct, methodName, args)
+      }
+
+
+      def mkUncheckedMethod(methodName: String, f: UncheckedFunSig=> F[StackNil] => F[StackNil], args : List[NJvmType], returnType : NJvmType,
+                                modifiers: List[JvmModifier] = List(Public, Final), isStatic: Boolean = false): UncheckedMethod = {
+
+        val funSig = new UncheckedFunSig(args, returnType)
+
+        val (invokeCode, argsList) = if (isStatic) (JvmModifier.InvokeStatic, args) else (JvmModifier.InvokeVirtual, args.tail)
+
+        emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+        new UncheckedMethod(invokeCode, ct, methodName, args, returnType)
       }
 
       /**
@@ -2283,6 +2323,30 @@ object Mnemonics {
       }
     }
   }
+
+  object GenNamespacesClasses extends MnemonicsGenerator {
+
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map of all the generated classes so far.
+      * @param types  set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]  = {
+      map + new Context(ns).getClassMapping
+
+      ns.foldLeft(map) {
+        case (macc, namespace) =>
+          macc + new Namespace(namespace).getClassMapping
+      }
+    }
+
+  }
+
 
   object GenContextClass extends MnemonicsGenerator {
 
