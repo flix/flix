@@ -42,13 +42,12 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     *
     * public RecordEmpty() {}
     */
-  val defaultConstructor: VoidMethod1[Ref[RecordEmpty]] = {
+  val defaultConstructor: VoidMethod1[Ref[RecordEmpty]] =
     cg.mkConstructor1(
       sig =>
         sig.getArg1.LOAD[StackNil] |>>
           cg.SUPER |>>
           RETURN_VOID)
-  }
 
   /**
     * Generate the `lookupField(String)` method which will always throws an exception,

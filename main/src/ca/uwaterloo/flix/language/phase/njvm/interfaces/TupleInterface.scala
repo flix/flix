@@ -40,8 +40,8 @@ class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) ex
   /**
     * Generate the getIndex interface method. Stores the capability to call the method
     */
-    elms.zipWithIndex.map{
-    case (arg,ind) => arg match {
+    for((arg,ind) <- elms.zipWithIndex){
+      arg match {
         case PrimBool => ig.mkMethod1[Ref[TupleInterface], MBool]("getIndex" + ind)
         case PrimChar => ig.mkMethod1[Ref[TupleInterface], MChar]("getIndex" + ind)
         case PrimByte => ig.mkMethod1[Ref[TupleInterface], MByte]("getIndex" + ind)
@@ -52,8 +52,8 @@ class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) ex
         case PrimDouble => ig.mkMethod1[Ref[TupleInterface], MDouble]("getIndex" + ind)
         case Reference(_) => ig.mkMethod1[Ref[TupleInterface], Ref[MObject]]("getIndex" + ind)
         case _ => throw InternalCompilerException(s"Unexpected type $arg")
+      }
      }
-    }
 
   def getIndexMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : Method1[Ref[TupleInterface], T1] =
     new Method1[Ref[TupleInterface], T1](JvmModifier.InvokeInterface, it, "getIndex" + index)
@@ -61,8 +61,8 @@ class TupleInterface(elms : List[NJvmType])(implicit root: Root, flix : Flix) ex
   /**
     * Generate the setIndex interface method. Stores the capability to call the method
     */
-    elms.zipWithIndex.map{
-    case (arg,ind) => arg match {
+  for((arg,ind) <- elms.zipWithIndex){
+    arg match {
         case PrimBool => ig.mkVoidMethod2[Ref[TupleInterface], MBool]("setIndex" + ind)
         case PrimChar => ig.mkVoidMethod2[Ref[TupleInterface], MChar]("setIndex" + ind)
         case PrimByte => ig.mkVoidMethod2[Ref[TupleInterface], MByte]("setIndex" + ind)

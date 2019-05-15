@@ -157,6 +157,20 @@ object Mnemonics {
     }
 
     /**
+      * Emits the correct Jvm load instruction give the localType
+      *
+      * @param localType the jvmType of the local we want to load
+      * @param location  the of the local
+      * @pre This method should only be called if local in the specified location matches the jvmType,
+      *      to avoid verifier errors
+      */
+    def emitStore[S](localType: NJvmType, location: Int): F[S] = {
+      val storeIns = getStoreInstruction(localType)
+      mv.visitVarInsn(storeIns, location)
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
       * Emits a getField instruction given the fieldName and it's type
       *
       * @param fieldName the of the field
@@ -346,6 +360,10 @@ object Mnemonics {
       mv.visitJumpInsn(IFEQ, label)
       this.asInstanceOf[F[S]]
     }
+    def emitIfNonNull[S](label: Label): F[S] = {
+      mv.visitJumpInsn(IFNONNULL, label)
+      this.asInstanceOf[F[S]]
+    }
 
     /**
       * Emits a goto instruction which jumps to the provided label unconditionally
@@ -458,162 +476,215 @@ object Mnemonics {
     * This is used to circumvent the use of dependent types which are not supported by scala.
     * It allows us to have a framework which more type-safe compared to a version which doesn't use this features
     */
-  def getJvmType[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): NJvmType = typeOf[T] match {
-    //    case t if t =:= typeOf[Void] => NJvmType.Void
-    case t if t =:= typeOf[MBool] => PrimBool
-    case t if t =:= typeOf[MChar] => PrimChar
-    case t if t =:= typeOf[MByte] => PrimByte
-    case t if t =:= typeOf[MShort] => PrimShort
-    case t if t =:= typeOf[MInt] => PrimInt
-    case t if t =:= typeOf[MLong] => PrimLong
-    case t if t =:= typeOf[MFloat] => PrimFloat
-    case t if t =:= typeOf[MDouble] => PrimDouble
 
-    case t if t =:= typeOf[Ref[MString]] => NJvmType.String
-    case t if t =:= typeOf[Ref[MObject]] => NJvmType.Object
-    case t if t =:= typeOf[Ref[MUnit]] => NJvmType.Unit
+  private val tPrimBool = typeOf[MBool]
+  private val tPrimChar = typeOf[MChar]
+  private val tPrimByte = typeOf[MByte]
+  private val tPrimShort = typeOf[MShort]
+  private val tPrimInt = typeOf[MInt]
+  private val tPrimLong = typeOf[MLong]
+  private val tPrimFloat = typeOf[MFloat]
+  private val tPrimDouble = typeOf[MDouble]
+  private val tString = typeOf[Ref[MString]]
+  private val tObject = typeOf[Ref[MObject]]
+  private val tUnit = typeOf[Ref[MUnit]]
+  private val tBoolean = typeOf[Ref[MBool]]
+  private val tCharacter = typeOf[Ref[MChar]]
+  private val tByte = typeOf[Ref[MByte]]
+  private val tShort = typeOf[Ref[MShort]]
+  private val tInteger = typeOf[Ref[MInt]]
+  private val tLong = typeOf[Ref[MLong]]
+  private val tFloat = typeOf[Ref[MFloat]]
+  private val tDouble = typeOf[Ref[MDouble]]
+  private val tArrayString = typeOf[MArray[MString]]
+  private val tArrayObject = typeOf[MArray[MObject]]
+  private val tContext = typeOf[Ref[Context]]
+  private val tMain = typeOf[Ref[Main[_]]]
+  private val tRecordInterface = typeOf[Ref[RecordInterface]]
+  private val tRecordEmpty = typeOf[Ref[RecordEmpty]]
+  private val tRecordExtendBool = typeOf[Ref[RecordExtend[MBool]]]
+  private val tRecordExtendChar = typeOf[Ref[RecordExtend[MChar]]]
+  private val tRecordExtendByte = typeOf[Ref[RecordExtend[MByte]]]
+  private val tRecordExtendShort = typeOf[Ref[RecordExtend[MShort]]]
+  private val tRecordExtendInt = typeOf[Ref[RecordExtend[MInt]]]
+  private val tRecordExtendLong = typeOf[Ref[RecordExtend[MLong]]]
+  private val tRecordExtendFloat = typeOf[Ref[RecordExtend[MFloat]]]
+  private val tRecordExtendDouble = typeOf[Ref[RecordExtend[MDouble]]]
+  private val tRecordExtendObj = typeOf[Ref[RecordExtend[Ref[MObject]]]]
 
-    case t if t =:= typeOf[Ref[MBool]] => Reference(JvmName.Boolean)
-    case t if t =:= typeOf[Ref[MChar]] => Reference(JvmName.Character)
-    case t if t =:= typeOf[Ref[MByte]] =>  Reference(JvmName.Byte)
-    case t if t =:= typeOf[Ref[MShort]] =>  Reference(JvmName.Short)
-    case t if t =:= typeOf[Ref[MInt]] => Reference(JvmName.Integer)
-    case t if t =:= typeOf[Ref[MLong]] =>  Reference(JvmName.Long)
-    case t if t =:= typeOf[Ref[MFloat]] => Reference(JvmName.Float)
-    case t if t =:= typeOf[Ref[MDouble]] =>  Reference(JvmName.Double)
+  private val tRefBool = typeOf[Ref[RefClass[MBool]]]
+  private val tRefChar = typeOf[Ref[RefClass[MChar]]]
+  private val tRefByte = typeOf[Ref[RefClass[MByte]]]
+  private val tRefShort = typeOf[Ref[RefClass[MShort]]]
+  private val tRefInt = typeOf[Ref[RefClass[MInt]]]
+  private val tRefLong = typeOf[Ref[RefClass[MLong]]]
+  private val tRefFloat = typeOf[Ref[RefClass[MFloat]]]
+  private val tRefDouble = typeOf[Ref[RefClass[MDouble]]]
+  private val tRefObj = typeOf[Ref[RefClass[Ref[MObject]]]]
 
-    case t if t =:= typeOf[MArray[MString]] => JArray(NJvmType.String)
-    case t if t =:= typeOf[MArray[MObject]] => JArray(NJvmType.Object)
+  private val tContIfaceBool = typeOf[Ref[ContinuationInterface[MBool]]]
+  private val tContIfaceChar = typeOf[Ref[ContinuationInterface[MChar]]]
+  private val tContIfaceByte = typeOf[Ref[ContinuationInterface[MByte]]]
+  private val tContIfaceShort = typeOf[Ref[ContinuationInterface[MShort]]]
+  private val tContIfaceInt = typeOf[Ref[ContinuationInterface[MInt]]]
+  private val tContIfaceLong = typeOf[Ref[ContinuationInterface[MLong]]]
+  private val tContIfaceFloat = typeOf[Ref[ContinuationInterface[MFloat]]]
+  private val tContIfaceDouble = typeOf[Ref[ContinuationInterface[MDouble]]]
+  private val tContIfaceObj = typeOf[Ref[ContinuationInterface[Ref[MObject]]]]
 
-    case t if t =:= typeOf[Ref[Context]] => NJvmType.Context
+  final def getJvmType[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): NJvmType = {
+    typeOf[T] match {
+      //    case t if t =:= typeOf[Void] => NJvmType.Void
+      case t if t =:= tPrimBool => PrimBool
+      case t if t =:= tPrimChar => PrimChar
+      case t if t =:= tPrimByte => PrimByte
+      case t if t =:= tPrimShort => PrimShort
+      case t if t =:= tPrimInt => PrimInt
+      case t if t =:= tPrimLong => PrimLong
+      case t if t =:= tPrimFloat => PrimFloat
+      case t if t =:= tPrimDouble => PrimDouble
 
-    case t if t =:= typeOf[Ref[Main[_]]] => Reference(JvmName(RootPackage, "Main"))
+      case t if t =:= tString => NJvmType.String
+      case t if t =:= tObject => NJvmType.Object
+      case t if t =:= tUnit => NJvmType.Unit
 
-    case t if t =:= typeOf[Ref[RecordInterface]] =>
-      val name = "IRecord"
+      case t if t == tBoolean => Reference(JvmName.Boolean)
+      case t if t == tCharacter => Reference(JvmName.Character)
+      case t if t == tByte => Reference(JvmName.Byte)
+      case t if t == tShort => Reference(JvmName.Short)
+      case t if t == tInteger => Reference(JvmName.Integer)
+      case t if t == tLong => Reference(JvmName.Long)
+      case t if t == tFloat => Reference(JvmName.Float)
+      case t if t == tDouble => Reference(JvmName.Double)
 
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
+      case t if t == tArrayString => JArray(NJvmType.String)
+      case t if t == tArrayObject => JArray(NJvmType.Object)
 
-    case t if t =:= typeOf[Ref[RecordEmpty]] =>
-      val name = "RecordEmpty"
+      case t if t =:= tContext => NJvmType.Context
 
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
+      case t if t =:= tMain => Reference(JvmName(RootPackage, "Main"))
 
-    case t if t =:= typeOf[Ref[RecordExtend[MBool]]] =>
-      val name = "RecordExtend$" + stringify(PrimBool)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MChar]]] =>
-      val name = "RecordExtend$" + stringify(PrimChar)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MByte]]] =>
-      val name = "RecordExtend$" + stringify(PrimByte)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MShort]]] =>
-      val name = "RecordExtend$" + stringify(PrimShort)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MInt]]] =>
-      val name = "RecordExtend$" + stringify(PrimInt)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MLong]]] =>
-      val name = "RecordExtend$" + stringify(PrimLong)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MFloat]]] =>
-      val name = "RecordExtend$" + stringify(PrimFloat)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[MDouble]]] =>
-      val name = "RecordExtend$" + stringify(PrimDouble)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RecordExtend[Ref[MObject]]]] =>
-      val name = "RecordExtend$" + stringify(Reference(JvmName.Object))
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordInterface =>
+        val name = "IRecord"
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordEmpty =>
+        val name = "RecordEmpty"
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendBool =>
+        val name = "RecordExtend$" + stringify(PrimBool)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendChar =>
+        val name = "RecordExtend$" + stringify(PrimChar)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendByte =>
+        val name = "RecordExtend$" + stringify(PrimByte)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendShort =>
+        val name = "RecordExtend$" + stringify(PrimShort)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendInt =>
+        val name = "RecordExtend$" + stringify(PrimInt)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendLong =>
+        val name = "RecordExtend$" + stringify(PrimLong)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendFloat =>
+        val name = "RecordExtend$" + stringify(PrimFloat)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendDouble =>
+        val name = "RecordExtend$" + stringify(PrimDouble)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRecordExtendObj =>
+        val name = "RecordExtend$" + stringify(Reference(JvmName.Object))
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
 
-    case t if t =:= typeOf[Ref[RefClass[MBool]]] =>
-      val name = "Ref$" + stringify(PrimBool)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MChar]]] =>
-      val name = "Ref$" + stringify(PrimChar)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MByte]]] =>
-      val name = "Ref$" + stringify(PrimByte)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MShort]]] =>
-      val name = "Ref$" + stringify(PrimShort)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MInt]]] =>
-      val name = "Ref$" + stringify(PrimInt)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MLong]]] =>
-      val name = "Ref$" + stringify(PrimLong)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MFloat]]] =>
-      val name = "Ref$" + stringify(PrimFloat)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[MDouble]]] =>
-      val name = "Ref$" + stringify(PrimDouble)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[RefClass[Ref[MObject]]]] =>
-      val name = "Ref$" + stringify(Reference(JvmName.Object))
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefBool =>
+        val name = "Ref$" + stringify(PrimBool)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefChar =>
+        val name = "Ref$" + stringify(PrimChar)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefByte =>
+        val name = "Ref$" + stringify(PrimByte)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefShort =>
+        val name = "Ref$" + stringify(PrimShort)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefInt =>
+        val name = "Ref$" + stringify(PrimInt)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefLong =>
+        val name = "Ref$" + stringify(PrimLong)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefFloat =>
+        val name = "Ref$" + stringify(PrimFloat)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefDouble =>
+        val name = "Ref$" + stringify(PrimDouble)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tRefObj =>
+        val name = "Ref$" + stringify(Reference(JvmName.Object))
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
 
-    case t if t =:= typeOf[Ref[ContinuationInterface[MBool]]] =>
-      val name = "Cont$" + stringify(PrimBool)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MChar]]] =>
-      val name = "Cont$" + stringify(PrimChar)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MByte]]] =>
-      val name = "Cont$" + stringify(PrimByte)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MShort]]] =>
-      val name = "Cont$" + stringify(PrimShort)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MInt]]] =>
-      val name = "Cont$" + stringify(PrimInt)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MLong]]] =>
-      val name = "Cont$" + stringify(PrimLong)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MFloat]]] =>
-      val name = "Cont$" + stringify(PrimFloat)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[MDouble]]] =>
-      val name = "Cont$" + stringify(PrimDouble)
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
-    case t if t =:= typeOf[Ref[ContinuationInterface[Ref[MObject]]]] =>
-      val name = "Cont$" + stringify(Reference(JvmName.Object))
-      // The type resides in the root package.
-      Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceBool =>
+        val name = "Cont$" + stringify(PrimBool)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceChar =>
+        val name = "Cont$" + stringify(PrimChar)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceByte =>
+        val name = "Cont$" + stringify(PrimByte)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceShort =>
+        val name = "Cont$" + stringify(PrimShort)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceInt =>
+        val name = "Cont$" + stringify(PrimInt)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceLong =>
+        val name = "Cont$" + stringify(PrimLong)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceFloat =>
+        val name = "Cont$" + stringify(PrimFloat)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceDouble =>
+        val name = "Cont$" + stringify(PrimDouble)
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
+      case t if t =:= tContIfaceObj =>
+        val name = "Cont$" + stringify(Reference(JvmName.Object))
+        // The type resides in the root package.
+        Reference(JvmName(RootPackage, name))
 
-    case _ => NJvmType.Object
-
+      case _ => NJvmType.Object
+    }
   }
 
   /**
@@ -699,6 +770,13 @@ object Mnemonics {
         (t => t.emitLabel(skipLabel))
     }
 
+    def IFNONNULL[S <: Stack](f: F[S ** Ref[MObject]] => F[S ** Ref[MObject]]): F[S**Ref[MObject]] => F[S] = {
+      val loop = new Label
+      ((t: F[S**Ref[MObject]]) => t.emitLabel[S ** Ref[MObject]](loop)) |>>
+        f |>>
+        (t => t.emitIfNonNull[S](loop))
+    }
+
     def CHECK_CAST[S <: Stack](jt: Reference): F[S ** Ref[MObject]] => F[S ** Ref[MObject]] =
       t => t.emitCheckCast(jt)
 
@@ -718,8 +796,17 @@ object Mnemonics {
 
       def LOAD[S <: Stack]: F[S] => F[S ** T] = t => t.emitLoad(localType, location)
 
-      def STORE[S <: Stack]: F[S ** T] => F[S] = t => t.emitLoad(localType, location)
+      def STORE[S <: Stack]: F[S ** T] => F[S] = t => t.emitStore(localType, location)
     }
+
+
+  class UncheckedLocal(localType : NJvmType ,location: Integer)(implicit root: Root, flix: Flix) {
+
+
+    def LOAD[S <: Stack, T <: MnemonicsTypes ]: F[S] => F[S ** T] = t => t.emitLoad(localType, location)
+
+    def STORE[S <: Stack, T <: MnemonicsTypes ]: F[S ** T] => F[S] = t => t.emitStore(localType, location)
+  }
 
     /**
       * Capability which allows to get/put a field
@@ -1048,7 +1135,7 @@ object Mnemonics {
       def SUPER[T <: Ref[MObject]]: F[StackNil ** T] => F[StackNil] =
         Object.constructor.INVOKE
 
-      def UncheckedStaticFieldInit(field: UncheckedStaticField, f : F[StackNil] => F[StackNil]) = {
+      def UncheckedStaticFieldInit(field: UncheckedStaticField, f : F[StackNil] => F[StackNil]):Unit = {
 
         emitClassMethod(List(JvmModifier.Static), "<clinit>", List(), Void, f)
       }
@@ -1309,7 +1396,7 @@ object Mnemonics {
         * @return returns a VoidMethod0 capability allows now the possibility to invoke this new (void) method with 3 arguments
         */
       def mkVoidMethod3[T1 <: MnemonicsTypes : TypeTag, T2 <: MnemonicsTypes : TypeTag, T3 <: MnemonicsTypes : TypeTag](methodName: String, f: FunSig3[T1, T2, T3, MVoid] => F[StackNil] => F[StackNil],
-                                                                                                                        modifiers: List[JvmModifier] = List(Public, Final), isStatic: Boolean = false): VoidMethod3[T1, T2, T3] = {
+        modifiers: List[JvmModifier] = List(Public, Final), isStatic: Boolean = false): VoidMethod3[T1, T2, T3] = {
 
         val arg1Type = getJvmType[T1]
         val arg2Type = getJvmType[T2]
@@ -1323,6 +1410,19 @@ object Mnemonics {
         emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
 
         new VoidMethod3(invokeCode, ct, methodName)
+      }
+
+      def mkUncheckedVoidMethod(methodName: String, f: UncheckedFunSig=> F[StackNil] => F[StackNil], args : List[NJvmType],
+                                modifiers: List[JvmModifier] = List(Public, Final), isStatic: Boolean = false): UncheckedVoidMethod = {
+
+        val returnType = Void
+        val funSig = new UncheckedFunSig(args, returnType)
+
+        val (invokeCode, argsList) = if (isStatic) (JvmModifier.InvokeStatic, args.tail) else (JvmModifier.InvokeVirtual, args)
+
+        emitClassMethod(modifiers, methodName, argsList, returnType, f(funSig))
+
+        new UncheckedVoidMethod(invokeCode, ct, methodName, args)
       }
 
       /**
@@ -1365,6 +1465,7 @@ object Mnemonics {
 
         new VoidMethod4(JvmModifier.InvokeSpecial, ct, "<init>")
       }
+
 
 
       /**
@@ -1709,6 +1810,19 @@ object Mnemonics {
       case _ => throw InternalCompilerException(s"Unexpected type $tpe")
     }
 
+
+  /**
+    * Returns the store instruction for the value of the type specified by `tpe`
+    */
+  def getStoreInstruction(tpe: NJvmType): Int = tpe match {
+    case PrimBool | PrimChar | PrimByte | PrimShort | PrimInt => ISTORE
+    case PrimLong => LSTORE
+    case PrimFloat => FSTORE
+    case PrimDouble => DSTORE
+    case Reference(_) => ASTORE
+    case _ => throw InternalCompilerException(s"Unexpected type $tpe")
+
+  }
     /**
       * Returns the load instruction corresponding to the given type `tpe`
       */
@@ -1789,6 +1903,16 @@ object Mnemonics {
     * length    =>  f_length
     */
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
+
+  /**
+    * Returns the method name of a defn as used in a namespace class.
+    *
+    * For example:
+    *
+    * find      =>  m_find
+    * length    =>  m_length
+    */
+  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
   /**
     * Returns the function definition class for the given symbol.
@@ -2089,8 +2213,24 @@ object Mnemonics {
       erase(JvmOps.getJvmType(tpe))
     }
 
+  /**
+    * Returns the stack size of a variable of type `tpe` in jvm.
+    */
+  def getStackSize(tpe: NJvmType): Int = tpe match {
+    case PrimBool => 1
+    case PrimChar => 1
+    case PrimFloat => 1
+    case PrimDouble => 2
+    case PrimByte => 1
+    case PrimShort => 1
+    case PrimInt => 1
+    case PrimLong => 2
+    case Reference(_) => 1
+    case _ => throw InternalCompilerException(s"Unexpected type: $tpe")
+  }
 
-    /**
+
+  /**
       * Trait which represents a MnemonicClass. This way we can have a Map of JvmName -> MnemonicsClass
       * Allowing us to get the Class we want with the JvmName (which should be unique). Then if we cast the
       * MnemonicClass to the proper class we can acess the capabilities to call the methods in the class
