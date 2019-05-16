@@ -150,13 +150,13 @@ object Mnemonics {
       * Emits the correct Jvm load instruction give the localType
       *
       * @param localType the jvmType of the local we want to load
-      * @param location  the of the local
-      * @pre This method should only be called if local in the specified location matches the jvmType,
+      * @param offset  the of the local
+      * @pre This method should only be called if local in the specified offset matches the jvmType,
       *      to avoid verifier errors
       */
-    def emitLoad[S](localType: NJvmType, location: Int): F[S] = {
+    def emitLoad[S](localType: NJvmType, offset: Int): F[S] = {
       val loadIns = getLoadInstruction(localType)
-      mv.visitVarInsn(loadIns, location)
+      mv.visitVarInsn(loadIns, offset)
       this.asInstanceOf[F[S]]
     }
 
@@ -164,13 +164,13 @@ object Mnemonics {
       * Emits the correct Jvm load instruction give the localType
       *
       * @param localType the jvmType of the local we want to load
-      * @param location  the of the local
-      * @pre This method should only be called if local in the specified location matches the jvmType,
+      * @param offset  the of the local
+      * @pre This method should only be called if local in the specified offset matches the jvmType,
       *      to avoid verifier errors
       */
-    def emitStore[S](localType: NJvmType, location: Int): F[S] = {
+    def emitStore[S](localType: NJvmType, offset: Int): F[S] = {
       val storeIns = getStoreInstruction(localType)
-      mv.visitVarInsn(storeIns, location)
+      mv.visitVarInsn(storeIns, offset)
       this.asInstanceOf[F[S]]
     }
 
