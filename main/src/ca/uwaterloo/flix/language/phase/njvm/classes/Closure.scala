@@ -365,7 +365,8 @@ class Closure(closure: ClosureInfo)(implicit root: Root, flix: Flix) extends Mne
       }
 
     //Create an unchecked construstor, specify the argument list. The first agurment is the class type
-    //As this is in scope, however this is not present in the final signature/
+    //As this is in scope, however this is not present in the final signature
+    //The constructor calls super and initiliazes each of the classes fields
     cg.mkUncheckedConstructor(ct +: NJvmType.Object +: cloFreevarsTpes,
       sig =>
         sig.getArg[Ref[Closure]](0).LOAD[StackNil] |>>
