@@ -25,22 +25,29 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 import scala.reflect.runtime.universe._
 
-class Main[T <: MnemonicsTypes : TypeTag](map : Map[JvmName, MnemonicsClass])(implicit root: Root, flix : Flix) extends MnemonicsClass {
-  //Setup
+/**
+  * Generate a main class of a given return type, which is specified in the type parameter
+  * @pre this class should only be called if there is a main definition
+  */
+class Main[T <: MnemonicsTypes : TypeTag](map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix) extends MnemonicsClass {
+  //Initiliaze the main reference and the class generator
   private val ct: Reference = getMainClassType
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
-  val mainMethod : VoidMethod1[MArray[MString]] = {
+  //The class has only one method with the following signature public static void main(String[] args)
+  val mainMethod: VoidMethod1[MArray[MString]] = {
     //Get the root namespace in order to get the class type when invoking m_main
-    val ns = JvmOps.getNamespace(Symbol.mkDefnSym("main"))
+    val ns = getNamespace(Symbol.mkDefnSym("main"))
 
-    val m_main_method = new Method1[Ref[MObject], T](JvmModifier.InvokeStatic, getNamespaceClassType(ns), "m_main" )
+    //generate the capability to call the m_main method in the root namespace
+    val m_main_method = new Method1[Ref[MObject], T](JvmModifier.InvokeStatic, getNamespaceClassType(ns), "m_main")
 
     cg.mkStaticVoidMethod1("main",
       _ =>
+        //TODO: actually apss in the console arguments
         CONST_NULL[StackNil, Ref[MObject]] |>>
-        m_main_method.INVOKE |>>
-        RETURN_VOID[T]
+          m_main_method.INVOKE |>>
+          RETURN_VOID[T]
     )
   }
 
