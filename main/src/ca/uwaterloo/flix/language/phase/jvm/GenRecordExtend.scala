@@ -248,7 +248,6 @@ object GenRecordExtend {
 
     //create new labels
     val falseCase = new Label
-    val ret = new Label
 
     //if the strings are equal ...
     getRecordWithField.visitJumpInsn(IFEQ, falseCase)
@@ -259,8 +258,8 @@ object GenRecordExtend {
     //Load 'this' onto the stack
     getRecordWithField.visitVarInsn(ALOAD, 0)
 
-    //Jump into the return label
-    getRecordWithField.visitJumpInsn(GOTO,ret)
+    getRecordWithField.visitInsn(ARETURN)
+
 
     //Emit false case label
     getRecordWithField.visitLabel(falseCase)
@@ -282,8 +281,6 @@ object GenRecordExtend {
     getRecordWithField.visitMethodInsn(INVOKEINTERFACE, JvmOps.getRecordInterfaceType().name.toInternalName,
       "lookupField", AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
 
-    //Emit ret label
-    getRecordWithField.visitLabel(ret)
 
     getRecordWithField.visitInsn(ARETURN)
 
@@ -321,8 +318,6 @@ object GenRecordExtend {
 
     //create new labels
     val falseCase = new Label
-    val ret = new Label
-
 
     //if the strings are equal ...
     restrictField.visitJumpInsn(IFEQ, falseCase)
@@ -336,8 +331,8 @@ object GenRecordExtend {
     //Push this.field2 onto the stack
     restrictField.visitFieldInsn(GETFIELD, classType.name.toInternalName, "field2", JvmOps.getRecordInterfaceType().toDescriptor)
 
-    //Jump into the return label
-    restrictField.visitJumpInsn(GOTO,ret)
+    restrictField.visitInsn(ARETURN)
+
 
     //Emit false case label
     restrictField.visitLabel(falseCase)
@@ -368,8 +363,6 @@ object GenRecordExtend {
     //push this onto the stack in order to return it.
     restrictField.visitVarInsn(ALOAD, 0)
 
-    //Emit return label
-    restrictField.visitLabel(ret)
 
     restrictField.visitInsn(ARETURN)
 

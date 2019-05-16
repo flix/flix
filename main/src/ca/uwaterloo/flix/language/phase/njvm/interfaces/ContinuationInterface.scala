@@ -19,12 +19,14 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.classes.Context
+import scala.reflect.runtime.universe._
 
-class RecordInterface(implicit root: Root, flix: Flix) extends MnemonicsClass {
+class ContinuationInterface[T1 <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
-  private val it: Reference = getRecordInterfaceType
+  private val it: Reference = getContinuationInterfaceType[T1]
   private val ig: InterfaceGenerator = new InterfaceGenerator(it, List())
 
   //Fields
@@ -32,16 +34,17 @@ class RecordInterface(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-  /**
-    * Generate the lookupField interface method. Stores the capability to call the method
-    */
-
-  val lookupFieldMethod: Method2[Ref[RecordInterface], Ref[MString], Ref[RecordInterface]] = ig.mkMethod2("lookupField")
 
   /**
-    * Generate the restrictField interface method. Stores the capability to call the method
+    * Generate the getResult interface method. Stores the capability to call the method
     */
-  val restrictFieldMethod: Method2[Ref[RecordInterface], Ref[MString], Ref[RecordInterface]] = ig.mkMethod2("restrictField")
+  val getResultMethod: Method1[Ref[ContinuationInterface[T1]], T1] = ig.mkMethod1("getResult")
+
+
+  /**
+    * Generate the invoke interface method. Stores the capability to call the method
+    */
+  val invokeMethod: VoidMethod2[Ref[ContinuationInterface[T1]], Ref[Context]] = ig.mkVoidMethod2("invoke")
 
   private val jvmClass: JvmClass = JvmClass(it.name, ig.compile())
 

@@ -27,16 +27,18 @@ sealed trait NJvmType {
     * Returns the type descriptor of `this` Java name.
     */
   def toDescriptor: String = this match {
-    case NJvmType.Void() => "V"
-    case NJvmType.PrimBool() => "Z"
-    case NJvmType.PrimChar() => "C"
-    case NJvmType.PrimByte() => "B"
-    case NJvmType.PrimShort() => "S"
-    case NJvmType.PrimInt() => "I"
-    case NJvmType.PrimLong() => "J"
-    case NJvmType.PrimFloat() => "F"
-    case NJvmType.PrimDouble() => "D"
+    case NJvmType.Void => "V"
+    case NJvmType.PrimBool => "Z"
+    case NJvmType.PrimChar => "C"
+    case NJvmType.PrimByte => "B"
+    case NJvmType.PrimShort => "S"
+    case NJvmType.PrimInt => "I"
+    case NJvmType.PrimLong => "J"
+    case NJvmType.PrimFloat => "F"
+    case NJvmType.PrimDouble => "D"
     case NJvmType.Reference(name) => name.toDescriptor
+    case NJvmType.JArray(jt) => "[" + jt.toDescriptor
+
   }
 }
 
@@ -67,7 +69,7 @@ object NJvmType {
   /**
     * The `java.lang.String` type.
     */
-  val JString: Reference = Reference(JvmName.String)
+  val String: Reference = Reference(JvmName.String)
   /**
     * The `ca.uwaterloo.flix.runtime.interpreter.Spawnable` type.
     */
@@ -85,51 +87,65 @@ object NJvmType {
   /**
     * Represents the void type.
     */
-  case class Void() extends NJvmType
+
+  case object Void extends NJvmType
+
 
   /**
     * Represents the primitive boolean type.
     */
-  case class PrimBool() extends NJvmType
+
+  case object PrimBool extends NJvmType
+
 
   /**
     * Represents the primitive character type.
     */
-  case class PrimChar() extends NJvmType
+
+  case object PrimChar extends NJvmType
+
 
   /**
     * Represents the primitive byte type.
     */
-  case class PrimByte() extends NJvmType
+
+  case object PrimByte extends NJvmType
+
 
   /**
     * Represents the primitive short type.
     */
-  case class PrimShort() extends NJvmType
+
+  case object PrimShort extends NJvmType
+
 
   /**
     * Represents the primitive int type.
     */
-  case class PrimInt() extends NJvmType
+
+  case object PrimInt extends NJvmType
+
 
   /**
     * Represents the primitive long type.
     */
-  case class PrimLong() extends NJvmType
+  case object PrimLong extends NJvmType
 
   /**
     * Represents the primitive float type.
     */
-  case class PrimFloat() extends NJvmType
+  case object PrimFloat extends NJvmType
 
   /**
     * Represents the primitive double type.
     */
-  case class PrimDouble() extends NJvmType
+  case object PrimDouble extends NJvmType
 
   /**
     * Represents a reference type of the given `name`.
     */
   case class Reference(name: JvmName) extends NJvmType
+
+  case class JArray(jt: NJvmType) extends NJvmType
 
 }

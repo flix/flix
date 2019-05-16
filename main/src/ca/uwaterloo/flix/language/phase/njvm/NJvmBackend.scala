@@ -17,14 +17,12 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Path, Paths}
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.language.phase.jvm._
-import ca.uwaterloo.flix.language.phase.njvm.Api.Java
+import ca.uwaterloo.flix.language.phase.jvm.{Bootstrap, GenClosureClasses, GenFunctionClasses, GenNamespaces, JvmName, JvmOps}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
@@ -83,31 +81,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     val types = JvmOps.typesOf(root)
 
     //
-    // Generate the main class.
-    //
-    val mainClass = GenMainClass.gen()
-
-    //
-    // Generate the Context class.
-    //
-    val contextClass = GenContext.gen(namespaces)
-
-    //
-    // Generate the namespace classes.
-    //
-    val namespaceClasses = GenNamespaces.gen(namespaces)
-
-    //
-    // Generate continuation interfaces for each function type in the program.
-    //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types)
-
-    //
-    // Generate function interfaces for each function type in the program.
-    //
-    val functionInterfaces = GenFunctionInterfaces.gen(types)
-
-    //
     // Generate function classes for each function in the program.
     //
     val functionClasses = GenFunctionClasses.gen(root.defs)
@@ -117,55 +90,36 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val closureClasses = GenClosureClasses.gen(closures)
 
-    //
-    // Generate enum interfaces for each enum type in the program.
-    //
-    val enumInterfaces = GenEnumInterfaces.gen(types)
-
-    //
-    // Generate tag classes for each enum instantiation in the program.
-    //
-    val tagClasses = GenTagClasses.gen(tags)
-
-    //
-    // Generate tuple interfaces for each tuple type in the program.
-    //
-    val tupleInterfaces = GenTupleInterfaces.gen(types)
-
-    //
-    // Generate tuple classes for each tuple type in the program.
-    //
-    val tupleClasses = GenTupleClasses.gen(types)
-
     /** Generated classes using NJVM */
     val map: Map[JvmName, MnemonicsClass] = Map()
     val classes: List[MnemonicsGenerator] =
     //Generate interfaces first
       List(
+        GenContinuationInterfaces,
+        GenFunctionInterfaces,
+        GenEnumInterfaces,
+        GenTupleInterfaces,
         GenRecordInterface,
         GenRecordEmpty,
         GenRecordExtend,
-        GenRefClasses
+        GenRefClasses,
+        GenTagClasses,
+        GenTupleClasses,
+        GenContextClass,
+        GenNamespacesClasses,
+        GenMainClass
       )
 
-    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, Set()) }
+
+    val njvmClasses = classes.foldLeft(map) { (acc, i) => i.gen(acc, types, tags, namespaces, closures) }
       .map(f => (f._1, f._2.getJvmClass))
 
     //
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
-      mainClass,
-      contextClass,
-      namespaceClasses,
-      continuationInterfaces,
-      functionInterfaces,
       functionClasses,
       closureClasses,
-      enumInterfaces,
-      tagClasses,
-      tupleInterfaces,
-      tupleClasses,
       njvmClasses
     ).reduce(_ ++ _)
 
@@ -175,7 +129,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // NB: In interactive and test mode we skip writing the files to disk.
     if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
-        for ((jvmName, jvmClass) <- allClasses) {
+        for ((_, jvmClass) <- allClasses) {
           JvmOps.writeClass(TargetDirectory, jvmClass)
         }
       }

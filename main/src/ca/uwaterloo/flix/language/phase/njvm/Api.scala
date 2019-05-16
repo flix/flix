@@ -16,8 +16,9 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
-import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.NJvmType.Reference
 
 /**
   * This singleton will contain a bunch of capabilities to invoke methods which we
@@ -28,25 +29,36 @@ object Api {
 
   object Java {
 
+    object Runtime {
+
+      object Value {
+
+        object Unit {
+          val getInstance: Method0[Ref[MUnit]] = new Method0(JvmModifier.InvokeStatic, NJvmType.Unit, "getInstance")
+        }
+
+      }
+
+    }
+
     object Lang {
 
       object Object {
-        val constructor: VoidMethod0 = new VoidMethod0(JvmModifier.InvokeSpecial, NJvmType.Object, "<init>")
+        val constructor: VoidMethod1[Ref[MObject]] = new VoidMethod1(JvmModifier.InvokeSpecial, NJvmType.Object, "<init>")
       }
 
       object String {
 
         object equals {
-          def INVOKE[S <: Stack]: F[S ** JString.type ** JString.type] => F[S ** NJvmType.PrimBool] =
-            t => t.emitInvoke(JvmModifier.InvokeVirtual, JString.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool())
+          def INVOKE[S <: Stack]: F[S ** Ref[MString] ** Ref[MString]] => F[S ** MBool] =
+            t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool)
         }
 
       }
 
       object UnsupportedOperationException {
-        val constructor: VoidMethod1[JString.type] =
-          new VoidMethod1(JvmModifier.InvokeSpecial, Reference(JvmName.UnsupportedOperationException), "<init>")
-
+        val constructor: VoidMethod2[Ref[MObject], Ref[MString]] =
+          new VoidMethod2(JvmModifier.InvokeSpecial, Reference(JvmName.UnsupportedOperationException), "<init>")
       }
 
     }

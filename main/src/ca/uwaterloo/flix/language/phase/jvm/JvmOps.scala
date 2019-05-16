@@ -344,6 +344,7 @@ object JvmOps {
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
   }
 

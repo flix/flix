@@ -20,14 +20,14 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
-
 import scala.reflect.runtime.universe._
 
-class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
-
+class RefClass[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
-  private val ct: Reference = getRefClassType(getJvmType[T])
+  private val ct: Reference = getRefClassType[T]
+
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
   //Fields each variable represents a field which can be acessed
@@ -36,7 +36,6 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
 
   //Methods each variable represents a method which can be called
   //there each of them holds the capability to call the corresponding method
-
   /**
     * Generate the constructor for the current RefClass(depends on the type paramater)
     * we are generating. Stotring the capability to invoke the constructor
@@ -48,13 +47,14 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val defaultConstructor: VoidMethod1[T] = {
-    cg.mkConstructor1(
+  val defaultConstructor: VoidMethod2[Ref[RefClass[T]], T] = {
+
+    cg.mkConstructor2(
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           cg.SUPER |>>
-          sig.getArg0.LOAD |>>
           sig.getArg1.LOAD |>>
+          sig.getArg2.LOAD |>>
           field0.PUT_FIELD |>>
           RETURN_VOID)
   }
@@ -70,10 +70,10 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val getValueMethod: Method0[T] =
-    cg.mkMethod0("getValue",
+  val getValueMethod: Method1[Ref[RefClass[T]], T] =
+    cg.mkMethod1("getValue",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
+        sig.getArg1.LOAD[StackNil] |>>
           field0.GET_FIELD |>>
           RETURN
     )
@@ -89,11 +89,11 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val setValueMethod: Method1[T, Void] =
-    cg.mkMethod1("setValue",
+  val setValueMethod: VoidMethod2[Ref[RefClass[T]], T] =
+    cg.mkVoidMethod2("setValue",
       sig =>
-        sig.getArg0.LOAD[StackNil] |>>
-          sig.getArg1.LOAD |>>
+        sig.getArg1.LOAD[StackNil] |>>
+          sig.getArg2.LOAD |>>
           field0.PUT_FIELD |>>
           RETURN_VOID
     )
@@ -107,8 +107,20 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method0[JString.type] =
-    cg.mkMethod0("toString", _ => toStringNotImplemented)
+  val toStringMethod: Method1[Ref[RefClass[T]], Ref[MString]] =
+    cg.mkMethod1("toString", _ => toStringNotImplemented)
+
+  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
+    * Despite this in order to stay in line with our format we still store the capability to call the method
+    * The `hashCode` method is always the following:
+    *
+    * public int hashCode() throws Exception {
+    * throw new Exception("hashCode method shouldn't be called");
+    * }
+    */
+  val hashCodeMethod: Method1[Ref[RefClass[T]], MInt] =
+    cg.mkMethod1("hashCode", _ => hashCodeNotImplemented)
+
 
   /**
     * Generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
@@ -120,24 +132,14 @@ class RefClass[T: TypeTag](implicit root: Root, flix: Flix) extends MnemonicsCla
     * }
     *
     */
-  val equalsMethod: Method1[Object.type, PrimBool] =
-    cg.mkMethod1("equal", _ => equalsNotImplemented)
-
-  /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
-    * Despite this in order to stay in line with our format we still store the capability to call the method
-    * The `hashCode` method is always the following:
-    *
-    * public int hashCode() throws Exception {
-    * throw new Exception("hashCode method shouldn't be called");
-    * }
-    */
-  val hashCodeMethod: Method0[PrimInt] =
-    cg.mkMethod0("hashCode", _ => hashCodeNotImplemented)
+  val equalsMethod: Method2[Ref[RefClass[T]], Ref[MObject], MBool] =
+    cg.mkMethod2("equal", _ => equalsNotImplemented)
 
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
     */
   private val jvmClass: JvmClass = JvmClass(ct.name, cg.compile())
+
 
   // TODO: Miguel: Why do we need a getter here?
   def getJvmClass: JvmClass = jvmClass
