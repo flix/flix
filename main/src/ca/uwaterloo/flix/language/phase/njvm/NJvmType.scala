@@ -147,4 +147,5 @@ object NJvmType {
   case class Reference(name: JvmName) extends NJvmType
 
   case class JArray(jt: NJvmType) extends NJvmType
+
 }

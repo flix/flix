@@ -113,7 +113,7 @@ class RecordEmpty(map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: 
     * }
     *
     */
-  val equalsMethod: Method2[Ref[RecordEmpty],Ref[MObject], MBool] =
+  val equalsMethod: Method2[Ref[RecordEmpty], Ref[MObject], MBool] =
     cg.mkMethod2("equal", _ => equalsNotImplemented)
 
   /**

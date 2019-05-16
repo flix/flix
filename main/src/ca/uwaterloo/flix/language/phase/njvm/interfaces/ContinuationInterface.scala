@@ -36,13 +36,13 @@ class ContinuationInterface[T1 <: MnemonicsTypes : TypeTag](implicit root: Root,
   //there each of them holds the capability to call the corresponding method
 
   /**
-    * Generate the lookupField interface method. Stores the capability to call the method
+    * Generate the getResult interface method. Stores the capability to call the method
     */
   val getResultMethod: Method1[Ref[ContinuationInterface[T1]], T1] = ig.mkMethod1("getResult")
 
 
   /**
-    * Generate the restrictField interface method. Stores the capability to call the method
+    * Generate the invoke interface method. Stores the capability to call the method
     */
   val invokeMethod: VoidMethod2[Ref[ContinuationInterface[T1]], Ref[Context]] = ig.mkVoidMethod2("invoke")
 

@@ -269,24 +269,24 @@ class Namespace(ns: NamespaceInfo)(implicit root: Root, flix: Flix) extends Mnem
   //It call the super constructor and
   //initializes each of definitions in the name space
   val defaultConstructor: VoidMethod1[Ref[Namespace]] =
-    cg.mkConstructor1(
-      sig =>
-        sig.getArg1.LOAD[StackNil] |>>
-          cg.SUPER |>>
-          ns.defs.foldLeft(NO_OP[StackNil]) {
-            case (ins, (sym, _)) =>
-              val field = getUncheckedField(sym)
-              val classType = getFunctionDefinitionClassType(sym)
-              val fieldConstructor = new VoidMethod1[Ref[Namespace]](JvmModifier.InvokeSpecial, classType, "<init>")
-              ins |>>
+  cg.mkConstructor1(
+    sig =>
+      sig.getArg1.LOAD[StackNil] |>>
+        cg.SUPER |>>
+        ns.defs.foldLeft(NO_OP[StackNil]) {
+          case (ins, (sym, _)) =>
+            val field = getUncheckedField(sym)
+            val classType = getFunctionDefinitionClassType(sym)
+            val fieldConstructor = new VoidMethod1[Ref[Namespace]](JvmModifier.InvokeSpecial, classType, "<init>")
+            ins |>>
               sig.getArg1.LOAD |>>
               NEW(classType) |>>
               DUP |>>
               fieldConstructor.INVOKE |>>
               field.PUT_FIELD
-          } |>>
-          RETURN_VOID
-    )
+        } |>>
+        RETURN_VOID
+  )
 
   /**
     * Variable which generates the JvmClass (contains the class bytecode)

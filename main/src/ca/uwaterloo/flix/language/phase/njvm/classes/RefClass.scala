@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 import scala.reflect.runtime.universe._
 
-class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
+class RefClass[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
   private val ct: Reference = getRefClassType[T]
 
@@ -107,7 +107,7 @@ class RefClass[T <:MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix) ex
     * throw new Exception("toString method shouldn't be called");
     * }
     */
-  val toStringMethod: Method1[Ref[RefClass[T]],Ref[MString]] =
+  val toStringMethod: Method1[Ref[RefClass[T]], Ref[MString]] =
     cg.mkMethod1("toString", _ => toStringNotImplemented)
 
   /** Generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.

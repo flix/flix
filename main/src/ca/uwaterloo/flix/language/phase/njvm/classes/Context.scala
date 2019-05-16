@@ -25,17 +25,18 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
 /**
-  *  This class generates code for the context class, according to the namespace information
-  *  @param ns is the set of all the namespace information
+  * This class generates code for the context class, according to the namespace information
+  *
+  * @param ns is the set of all the namespace information
   */
-class Context(ns : Set[NamespaceInfo])(implicit root: Root, flix : Flix) extends MnemonicsClass {
+class Context(ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Initialize the class reference and the generator
   private val ct: Reference = getContextClassType
   //The class doesn't implement any interfaces
   private val cg: ClassGenerator = new ClassGenerator(ct, List())
 
   //Generate the continuation field, which is a public field of type object
-  private val continuation : Field[Ref[MObject]] = cg.mkField("continuation", List(Public))
+  private val continuation: Field[Ref[MObject]] = cg.mkField("continuation", List(Public))
 
   //For each namespace generate code for a field
   for (namespace <- ns) {
@@ -52,9 +53,10 @@ class Context(ns : Set[NamespaceInfo])(implicit root: Root, flix : Flix) extends
 
   /**
     * Method which generates the capability to LOAD/STORE a namespace field
+    *
     * @param namespace of the field we want to obtain
     */
-  private def getUncheckedField(namespace: NamespaceInfo): UncheckedField ={
+  private def getUncheckedField(namespace: NamespaceInfo): UncheckedField = {
     // JvmType of the namespace
     val namespaceRef = getNamespaceClassType(namespace)
 
@@ -65,24 +67,24 @@ class Context(ns : Set[NamespaceInfo])(implicit root: Root, flix : Flix) extends
 
   //Generate code for the Context constructor.
   //The constructor simply calls super and initializes each of the namespace fields
-  val defaultConstrutor : VoidMethod1[Ref[Context]] = {
+  val defaultConstrutor: VoidMethod1[Ref[Context]] = {
     //We need initialize each of the namespaces in the context
     //Therefore we need to accumulate the instructions
     //To do this we use a foldleft.
     val initNamespaces =
-      (sig : FunSig1[Ref[Context], MVoid])  => {
-        ns.foldLeft(NO_OP[StackNil]) {
-          case (ins, namespace) => {}
-            val namespaceRef = getNamespaceClassType(namespace)
-            val namespaceConstructor = new VoidMethod1[Ref[MObject]](JvmModifier.InvokeSpecial, namespaceRef, "<init>")
-           ins |>>
-             sig.getArg1.LOAD |>>
-             NEW(namespaceRef) |>>
-             DUP |>>
-             namespaceConstructor.INVOKE |>>
-             getUncheckedField(namespace).PUT_FIELD
-        }
+    (sig: FunSig1[Ref[Context], MVoid]) => {
+      ns.foldLeft(NO_OP[StackNil]) {
+        case (ins, namespace) => {}
+          val namespaceRef = getNamespaceClassType(namespace)
+          val namespaceConstructor = new VoidMethod1[Ref[MObject]](JvmModifier.InvokeSpecial, namespaceRef, "<init>")
+          ins |>>
+            sig.getArg1.LOAD |>>
+            NEW(namespaceRef) |>>
+            DUP |>>
+            namespaceConstructor.INVOKE |>>
+            getUncheckedField(namespace).PUT_FIELD
       }
+    }
 
     //Generate the constructor
     cg.mkConstructor1(

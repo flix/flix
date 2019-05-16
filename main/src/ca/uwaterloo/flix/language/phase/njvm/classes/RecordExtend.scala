@@ -186,7 +186,7 @@ class RecordExtend[T <: MnemonicsTypes : TypeTag](map: Map[JvmName, MnemonicsCla
     * }
     *
     */
-  val equalsMethod: Method2[Ref[RecordExtend[T]],Ref[MObject], MBool] =
+  val equalsMethod: Method2[Ref[RecordExtend[T]], Ref[MObject], MBool] =
     cg.mkMethod2("equal", _ => equalsNotImplemented)
 
   /**

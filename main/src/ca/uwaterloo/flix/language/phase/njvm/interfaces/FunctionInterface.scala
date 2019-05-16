@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.reflect.runtime.universe._
 
-class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit root: Root, flix: Flix) extends MnemonicsClass {
+class FunctionInterface(elms: List[NJvmType], returnType: NJvmType)(implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
   private val it: Reference = getFunctionInterfaceType(elms, returnType)
   private val ig: InterfaceGenerator = {
@@ -53,8 +53,8 @@ class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit r
   /**
     * Generate the setArg interface method
     */
-  elms.zipWithIndex.map{
-    case (arg,ind) => arg match {
+  elms.zipWithIndex.map {
+    case (arg, ind) => arg match {
       case PrimBool => ig.mkVoidMethod2[Ref[FunctionInterface], MBool]("setArg" + ind)
       case PrimChar => ig.mkVoidMethod2[Ref[FunctionInterface], MChar]("setArg" + ind)
       case PrimByte => ig.mkVoidMethod2[Ref[FunctionInterface], MByte]("setArg" + ind)
@@ -68,7 +68,10 @@ class FunctionInterface(elms : List[NJvmType], returnType : NJvmType)(implicit r
     }
   }
 
-  def setArgMethod[T1 <: MnemonicsTypes : TypeTag](index : Int) : VoidMethod2[Ref[FunctionInterface], T1] =
+  /**
+    * Generate the capability to invoke setArg interface method
+    */
+  def setArgMethod[T1 <: MnemonicsTypes : TypeTag](index: Int): VoidMethod2[Ref[FunctionInterface], T1] =
     new VoidMethod2[Ref[FunctionInterface], T1](JvmModifier.InvokeInterface, it, "setArg" + index)
 
   private val jvmClass: JvmClass = JvmClass(it.name, ig.compile())

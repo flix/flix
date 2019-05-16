@@ -232,36 +232,36 @@ class TupleClass(map: Map[JvmName, MnemonicsClass], elms: List[NJvmType])(implic
               DUP |>>
               LDC_INT(ind) |>>
               (arg match {
-              case PrimBool =>
+                case PrimBool =>
                   getPrimField[MBool](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimChar =>
+                    AASTORE
+                case PrimChar =>
                   getPrimField[MChar](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimByte =>
+                    AASTORE
+                case PrimByte =>
                   getPrimField[MByte](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimShort =>
+                    AASTORE
+                case PrimShort =>
                   getPrimField[MShort](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimInt =>
+                    AASTORE
+                case PrimInt =>
                   getPrimField[MInt](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimLong =>
+                    AASTORE
+                case PrimLong =>
                   getPrimField[MLong](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimFloat =>
+                    AASTORE
+                case PrimFloat =>
                   getPrimField[MFloat](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case PrimDouble =>
+                    AASTORE
+                case PrimDouble =>
                   getPrimField[MDouble](ind).GET_BOXED_FIELD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  AASTORE
-              case Reference(_) =>
+                    AASTORE
+                case Reference(_) =>
                   sig.getArg1.LOAD[StackNil ** MArray[Ref[MObject]] ** MArray[Ref[MObject]] ** MInt] |>>
-                  getField[Ref[MObject]](ind).GET_FIELD |>>
-                  AASTORE
-              case _ => throw InternalCompilerException(s"Unexpected type $arg")
-            })
+                    getField[Ref[MObject]](ind).GET_FIELD |>>
+                    AASTORE
+                case _ => throw InternalCompilerException(s"Unexpected type $arg")
+              })
         } |>> RETURN
     )
   }

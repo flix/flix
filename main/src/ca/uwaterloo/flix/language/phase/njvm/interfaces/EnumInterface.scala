@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{InterfaceGenerator, _}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
 
-class EnumInterface(sym : Symbol.EnumSym, elms: List[NJvmType])(implicit root: Root, flix: Flix) extends MnemonicsClass {
+class EnumInterface(sym: Symbol.EnumSym, elms: List[NJvmType])(implicit root: Root, flix: Flix) extends MnemonicsClass {
   //Setup
   private val it: Reference = getEnumInterfaceType(sym, elms)
   private val ig: InterfaceGenerator = new InterfaceGenerator(it, List())
