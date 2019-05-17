@@ -211,24 +211,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalUniversal](result)
   }
 
-  test("IllegalWildcard.01") {
-    val input = "def f(): Int = _"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalWildcard](result)
-  }
-
-  test("IllegalWildcard.02") {
-    val input = "def f(): Int = 42 + _"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalWildcard](result)
-  }
-
-  test("IllegalWildcard.03") {
-    val input = "def f(): Set[Int] = #{1, 2, _}"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalWildcard](result)
-  }
-
   test("NonLinearPattern.01") {
     val input =
       """def f(): Bool = match (21, 42) with {

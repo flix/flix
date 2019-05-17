@@ -33,14 +33,14 @@
     case _ => false
   }
   def lub(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
-    case (SULattice.Bottom, e2) => e2
-    case (e1, SULattice.Bottom) => e1
+    case (SULattice.Bottom, _) => e2
+    case (_, SULattice.Bottom) => e1
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Top
     case _ => SULattice.Top
   }
   def glb(e1: SULattice, e2: SULattice): SULattice = match (e1, e2) with {
-    case (SULattice.Top, e2) => e2
-    case (e1, SULattice.Top) => e1
+    case (SULattice.Top, _) => e2
+    case (_, SULattice.Top) => e1
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
     case _ => SULattice.Bottom
   }
@@ -102,15 +102,5 @@ SU(l,a,f(b)) :- Clear(l), PtH(a,b).
 
 // Kill
 // ---------
-def top(e: Int): SULattice = SULattice.Top
 Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).
 Kill(l, Top) :- Phi(l).
-
-// uncomment to introduce an error delta debugging
-//def isTop(e: SULattice): Bool = match e with {
-//   case SULattice.Bottom => false
-//   case SULattice.Single(s) => false
-//   case SULattice.Top => true // (1 / 0) == 0
-//}
-
-//false :- isTop(x), SU("431", "212 hbMakeCodeLengths:freq_addr<mem>", x).

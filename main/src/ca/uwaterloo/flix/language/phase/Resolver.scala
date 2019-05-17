@@ -84,9 +84,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           // Introduce a synthetic definition for the expression.
           val doc = Ast.Doc(Nil, SourceLocation.Unknown)
           val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers.Empty
+          val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
           val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Eff.Empty
@@ -147,7 +147,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       properties <- propertiesVal
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
-      relations.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable
+      relations.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -387,8 +387,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             case LookupResult.Sig(sym) => ResolvedAst.Expression.Sig(sym, tvar, loc)
           }
 
-        case NamedAst.Expression.Hole(name, tpe, loc) =>
-          val sym = Symbol.mkHoleSym(ns0, name)
+        case NamedAst.Expression.Hole(nameOpt, tpe, loc) =>
+          val sym = nameOpt match {
+            case None => Symbol.freshHoleSym(loc)
+            case Some(name) => Symbol.mkHoleSym(ns0, name)
+          }
           ResolvedAst.Expression.Hole(sym, tpe, loc).toSuccess
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
@@ -445,6 +448,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
             e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.IfThenElse(e1, e2, e3, tvar, loc)
+
+        case NamedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Stm(e1, e2, tvar, loc)
 
         case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
           for {
@@ -729,15 +738,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             d <- defaultVal
           } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
-        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+        case NamedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+          } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, loc)
 
-        case NamedAst.Expression.Sleep(exp, tvar, loc) =>
+        case NamedAst.Expression.ProcessSleep(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Sleep(e, tvar, loc)
+          } yield ResolvedAst.Expression.ProcessSleep(e, tvar, loc)
+
+        case NamedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+          ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
 
         case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           Constraints.resolve(cons, tenv0, ns0, prog0) map {
@@ -766,8 +778,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
-
-        case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
       }
 
       /**

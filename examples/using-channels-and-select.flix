@@ -1,19 +1,19 @@
  /// Mooo's `n` times on channel `c`.
 def mooo(c: Channel[Str], n: Int): Unit = match n with {
     case 0 => ()
-    case n => c <- "Mooo!"; mooo(c, n - 1)
+    case x => c <- "Mooo!"; mooo(c, x - 1)
 }
 
 /// Meow's `n` times on channel `c`.
 def meow(c: Channel[Str], n: Int): Unit = match n with {
     case 0 => ()
-    case n => c <- "Meow!"; meow(c, n - 1)
+    case x => c <- "Meow!"; meow(c, x - 1)
 }
 
 /// Hiss'es `n` times on channel `c`.
 def hiss(c: Channel[Str], n: Int): Unit = match n with {
     case 0 => ()
-    case n => c <- "Hiss!"; hiss(c, n - 1)
+    case x => c <- "Hiss!"; hiss(c, x - 1)
 }
 
 /// Start the animal farm...

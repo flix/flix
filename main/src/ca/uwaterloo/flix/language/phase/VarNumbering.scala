@@ -221,11 +221,14 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         visitExp(exp, i0)
+
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        i0
 
       case Expression.FixpointConstraint(c, tpe, loc) =>
         // Assign a number to each constraint parameters.
@@ -252,7 +255,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0

@@ -331,15 +331,18 @@ object Stratifier extends Phase[Root, Root] {
         case (rs, d) => Expression.SelectChannel(rs, d, tpe, loc)
       }
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.ProcessSpawn(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Spawn(e, tpe, loc)
+        case e => Expression.ProcessSpawn(e, tpe, loc)
       }
 
-    case Expression.Sleep(exp, tpe, loc) =>
+    case Expression.ProcessSleep(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Sleep(e, tpe, loc)
+        case e => Expression.ProcessSleep(e, tpe, loc)
       }
+
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      Expression.ProcessPanic(msg, tpe, loc).toSuccess
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
       Expression.FixpointConstraint(con, tpe, loc).toSuccess
@@ -364,9 +367,6 @@ object Stratifier extends Phase[Root, Root] {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, loc)
       }
-
-    case Expression.UserError(tpe, loc) =>
-      Expression.UserError(tpe, loc).toSuccess
 
     case Expression.HoleError(sym, tpe, loc) =>
       Expression.HoleError(sym, tpe, loc).toSuccess

@@ -22,7 +22,7 @@ object WeededAst {
 
   case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym])
 
-  case class Root(decls: List[WeededAst.Declaration])
+  case class Root(decls: List[WeededAst.Declaration], loc: SourceLocation)
 
   sealed trait Declaration {
     def loc: SourceLocation
@@ -70,7 +70,7 @@ object WeededAst {
 
     case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Hole(name: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+    case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 
@@ -105,6 +105,8 @@ object WeededAst {
     case class Binary(op: BinaryOperator, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class IfThenElse(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Stm(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Let(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -182,9 +184,11 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ProcessSpawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Sleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class ProcessSleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ProcessPanic(msg: String, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointConstraint(c: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
@@ -195,8 +199,6 @@ object WeededAst {
     case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }
 

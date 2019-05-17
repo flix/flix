@@ -357,6 +357,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), tpe, loc)
+
+      case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.Let(Symbol.freshVarSym(), visitExp(e1), visitExp(e2), tpe, loc)
+
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
         val zero = SimplifiedAst.Expression.SwitchError(tpe, loc)
         rules.foldRight(zero: SimplifiedAst.Expression) {
@@ -365,6 +369,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val body = visitExp(e2)
             SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
         }
+
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
@@ -532,21 +537,24 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SimplifiedAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
         val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
-        SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
+        SimplifiedAst.Expression.ProcessSpawn(lambda, newTpe, loc)
 
-      case TypedAst.Expression.Sleep(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.ProcessSleep(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Sleep(e, tpe, loc)
+        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
+
+      case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
+        SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
       case TypedAst.Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
@@ -570,9 +578,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
-
-      case TypedAst.Expression.UserError(tpe, eff, loc) =>
-        SimplifiedAst.Expression.UserError(tpe, loc)
 
       case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
@@ -738,7 +743,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `relation0` to the SimplifiedAst.
       */
     def visitRelation(relation0: TypedAst.Relation): SimplifiedAst.Relation = relation0 match {
-      case TypedAst.Relation(doc, mod, sym, attributes, loc) =>
+      case TypedAst.Relation(doc, mod, sym, tparams, attributes, loc) =>
         SimplifiedAst.Relation(mod, sym, attributes.map(visitAttribute), loc)
     }
 
@@ -746,7 +751,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `lattice0` to the SimplifiedAst.
       */
     def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
-      case TypedAst.Lattice(doc, mod, sym, attributes, loc) =>
+      case TypedAst.Lattice(doc, mod, sym, tparams, attributes, loc) =>
         SimplifiedAst.Lattice(mod, sym, attributes.map(visitAttribute), loc)
     }
 
@@ -1070,7 +1075,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
     val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(doc, mod, sym, cases0, enumType, loc)) =>
+      case (k, TypedAst.Enum(doc, mod, sym, tparams, cases0, enumType, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
@@ -1083,7 +1088,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   /**
@@ -1230,17 +1235,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SimplifiedAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Spawn(e, tpe, loc)
+        SimplifiedAst.Expression.ProcessSpawn(e, tpe, loc)
 
-      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.Sleep(e, tpe, loc)
+        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
+
+      case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
+        SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0)
@@ -1265,7 +1273,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e

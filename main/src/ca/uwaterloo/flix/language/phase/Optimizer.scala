@@ -438,18 +438,24 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.SelectChannel(rs, d, tpe, loc)
 
       //
-      // Spawn.
+      // ProcessSpawn.
       //
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Spawn(e, tpe, loc)
+        Expression.ProcessSpawn(e, tpe, loc)
 
       //
-      // Sleep.
+      // ProcessSleep.
       //
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Sleep(e, tpe, loc)
+        Expression.ProcessSleep(e, tpe, loc)
+
+      //
+      // ProcessPanic.
+      //
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        Expression.ProcessPanic(msg, tpe, loc)
 
       //
       // Constraint.
@@ -492,7 +498,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Error Expressions.
       //
-      case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)
       case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
       case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)

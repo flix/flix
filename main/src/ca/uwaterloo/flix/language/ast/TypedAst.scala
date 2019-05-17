@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 
 object TypedAst {
 
@@ -31,19 +33,21 @@ object TypedAst {
                   latticeComponents: Map[Type, TypedAst.LatticeComponents],
                   properties: List[TypedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym])
+                  reachable: Set[Symbol.DefnSym],
+                  sources: Map[Source, SourceLocation])
 
-  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation)
+  // TODO: Remove .tpe from here.
+  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, sc: Scheme, tpe: Type, eff: ast.Eff, loc: SourceLocation)
 
   case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], tpe: Type, eff: ast.Eff, loc: SourceLocation)
 
   case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation)
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation)
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation)
 
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[TypedAst.Attribute], loc: SourceLocation)
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[TypedAst.TypeParam], attr: List[TypedAst.Attribute], loc: SourceLocation)
 
-  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[TypedAst.Attribute], loc: SourceLocation)
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[TypedAst.TypeParam], attr: List[TypedAst.Attribute], loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation)
 
@@ -55,6 +59,8 @@ object TypedAst {
     def eff: ast.Eff
 
     def loc: SourceLocation
+
+    final override def toString: String = FormatExpression.format(this)
   }
 
   object Expression {
@@ -62,73 +68,73 @@ object TypedAst {
     case class Unit(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Unit)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class True(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class False(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Char)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Float32)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Float64)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int8)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int16)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int32)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int64)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.BigInt)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Str)
 
-      final def eff: ast.Eff = ast.Eff.Empty
+      final def eff: ast.Eff = ast.Eff.Pure
     }
 
     case class Wild(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -154,6 +160,8 @@ object TypedAst {
     case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -231,9 +239,11 @@ object TypedAst {
 
     case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Spawn(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Sleep(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class ProcessSleep(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ProcessPanic(msg: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointConstraint(c: TypedAst.Constraint, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -245,14 +255,14 @@ object TypedAst {
 
     case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class UserError(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-
   }
 
   sealed trait Pattern {
     def tpe: Type
 
     def loc: SourceLocation
+
+    final override def toString: String = FormatPattern.format(this)
   }
 
   object Pattern {
@@ -373,6 +383,6 @@ object TypedAst {
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation)
+  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
 }

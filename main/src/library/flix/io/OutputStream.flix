@@ -1,4 +1,4 @@
-type OutputStream = OutputStream(##java.io.OutputStream)
+pub type OutputStream = OutputStream(##java.io.OutputStream)
 
 namespace OutputStream {
 

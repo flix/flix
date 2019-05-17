@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace TestMap {
+
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
 /////////////////////////////////////////////////////////////////////////////
@@ -696,7 +698,7 @@ def map05(): Bool = assert!(Map.eq(Map.map(v -> 3*v, @{2 -> -1, 5 -> 15, 11 -> -
 // mapWithKey                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def mapWithKey01(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> v, @{}), @{}))
+def mapWithKey01(): Bool = assert!(Map.eq(Map.mapWithKey((_, v) -> v, @{}), @{}))
 
 @test
 def mapWithKey02(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> k + v, @{1 -> 4}), @{1 -> 5}))
@@ -1568,3 +1570,5 @@ def eq24(): Bool = assert!(Map.eq(@{1 -> 2, 3 -> 4, 5 -> 6}, @{5 -> 6, 3 -> 4, 1
 
 @test
 def eq25(): Bool = assert!(Map.eq(@{1 -> 2, 3 -> 4, 5 -> 6, 7 -> 8, 9 -> 10}, @{7 -> 8, 1 -> 2, 3 -> 4, 9 -> 10, 5 -> 6}))
+
+}

@@ -31,8 +31,6 @@ class VirtualTerminal() {
     */
   def <<(i: Int): VirtualTerminal = <<(Text(i.toString))
 
-  // TODO: Support booleans, chars, floats, doubles, etc.
-
   /**
     * Appends the given string to this terminal.
     */

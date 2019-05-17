@@ -14,13 +14,13 @@ def ∈(): Bool = true
 def ⊗(): Bool = true
 def ↪(): Bool = true
 
-def ++(x: Int, y: Int): Bool = true
-def --(x: Int, y: Int): Bool = true
-def <*>(x: Int, y: Int): Bool = true
-def <**>(x: Int, y: Int): Bool = true
-def *>(x: Int, y: Int): Bool = true
-def <*(x: Int, y: Int): Bool = true
-def |+|(x: Int, y: Int): Bool = true
+def ++(x: Int, y: Int): Bool = x == y
+def --(x: Int, y: Int): Bool = x == y
+def <*>(x: Int, y: Int): Bool = x == y
+def <**>(x: Int, y: Int): Bool = x == y
+def *>(x: Int, y: Int): Bool = x == y
+def <*(x: Int, y: Int): Bool = x == y
+def |+|(x: Int, y: Int): Bool = x == y
 
 @test
 def testDefAscii01(): Bool = f(123)
@@ -65,25 +65,23 @@ def testDefMath10(): Bool = ⊗()
 @test
 def testDefMath11(): Bool = ↪()
 
+@test
+def testDefOperator01(): Bool = 1 ++ 1
 
 @test
-def testDefOperator01(): Bool = 1 ++ 2
+def testDefOperator02(): Bool = 1 -- 1
 
 @test
-def testDefOperator02(): Bool = 1 -- 2
+def testDefOperator03(): Bool = 1 <*> 1
 
 @test
-def testDefOperator03(): Bool = 1 <*> 2
+def testDefOperator04(): Bool = 1 <**> 1
 
 @test
-def testDefOperator04(): Bool = 1 <**> 2
+def testDefOperator05(): Bool = 1 *> 1
 
 @test
-def testDefOperator05(): Bool = 1 *> 2
+def testDefOperator06(): Bool = 1 <* 1
 
 @test
-def testDefOperator06(): Bool = 1 <* 2
-
-@test
-def testDefOperator07(): Bool = 1 |+| 2
-
+def testDefOperator07(): Bool = 1 |+| 1

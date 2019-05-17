@@ -83,7 +83,7 @@ namespace Ticker {
         sleep(ns);
         
         select {
-          case stop <- stopChannel => ()
+          case _stop <- stopChannel => ()
           case _ => {
             tickChannel <- count;
             sleepSendAndRepeat(ns, ticker, count + 1)
@@ -98,13 +98,13 @@ namespace Ticker {
 
     pub def stop(ticker: Ticker): Unit = {
       match ticker with {
-        case Ticker(tickChannel, stopChannel) => stopChannel <- (); ()
+        case Ticker(_tickChannel, stopChannel) => stopChannel <- (); ()
       }
     }
 
     pub def tick(ticker: Ticker): Channel[Int] = {
       match ticker with {
-        case Ticker(tickChannel, stopChannel) => tickChannel
+        case Ticker(tickChannel, _stopChannel) => tickChannel
       }
     }
 }

@@ -1,33 +1,33 @@
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.FlixTest
+import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class TestExamples extends Suites(
 
   // Webpage Examples
-  new FlixTest("algebraic-data-types-and-pattern-matching", "examples/algebraic-data-types-and-pattern-matching.flix"),
-  new FlixTest("lists-and-list-processing", "examples/lists-and-list-processing.flix"),
-  new FlixTest("higher-order-functions.flix", "examples/higher-order-functions.flix"),
-  new FlixTest("enums-and-parametric-polymorphism", "examples/enums-and-parametric-polymorphism.flix"),
-  new FlixTest("record-construction-and-use", "examples/record-construction-and-use.flix"),
-  new FlixTest("polymorphic-record-update", "examples/polymorphic-record-update.flix"),
-  new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix"),
-  new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix"),
-  new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix"),
-  new FlixTest("type-safe-builders-with-ufcs-and-records", "examples/type-safe-builders-with-ufcs-and-records.flix"),
-  new FlixTest("mutual-recursion-with-full-tail-call-elimination", "examples/mutual-recursion-with-full-tail-call-elimination.flix"),
-  new FlixTest("sending-and-receiving-on-channels", "examples/sending-and-receiving-on-channels.flix"),
-  new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix"),
-  new FlixTest("select-with-defaults-and-timers", "examples/select-with-defaults-and-timers.flix"),
-  new FlixTest("fixpoint-computations-on-relations", "examples/fixpoint-computations-on-relations.flix"),
-  new FlixTest("fixpoint-computations-on-lattices", "examples/fixpoint-computations-on-lattices.flix"),
-  new FlixTest("fixpoint-computations-with-stratified-negation", "examples/fixpoint-computations-with-stratified-negation.flix"),
-  new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix"),
-  new FlixTest("polymorphic-first-class-constraints", "examples/polymorphic-first-class-constraints.flix"),
-  new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix"),
-  new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix"),
-  new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix"),
+  new FlixTest("algebraic-data-types-and-pattern-matching", "examples/algebraic-data-types-and-pattern-matching.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("lists-and-list-processing", "examples/lists-and-list-processing.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("higher-order-functions.flix", "examples/higher-order-functions.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("enums-and-parametric-polymorphism", "examples/enums-and-parametric-polymorphism.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("record-construction-and-use", "examples/record-construction-and-use.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("polymorphic-record-update", "examples/polymorphic-record-update.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("polymorphic-record-extension-and-restriction", "examples/polymorphic-record-extension-and-restriction.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("function-composition-pipelines-and-currying", "examples/function-composition-pipelines-and-currying.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("uniform-function-call-syntax", "examples/uniform-function-call-syntax.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("type-safe-builders-with-ufcs-and-records", "examples/type-safe-builders-with-ufcs-and-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("mutual-recursion-with-full-tail-call-elimination", "examples/mutual-recursion-with-full-tail-call-elimination.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("sending-and-receiving-on-channels", "examples/sending-and-receiving-on-channels.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("using-channels-and-select", "examples/using-channels-and-select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("select-with-defaults-and-timers", "examples/select-with-defaults-and-timers.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("fixpoint-computations-on-relations", "examples/fixpoint-computations-on-relations.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("fixpoint-computations-on-lattices", "examples/fixpoint-computations-on-lattices.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("fixpoint-computations-with-stratified-negation", "examples/fixpoint-computations-with-stratified-negation.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("first-class-constraints-and-fixpoints", "examples/first-class-constraints-and-fixpoints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("polymorphic-first-class-constraints", "examples/polymorphic-first-class-constraints.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("pipelines-of-fixpoint-computations", "examples/pipelines-of-fixpoint-computations.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("an-interpreter-for-a-trivial-expression-language", "examples/an-interpreter-for-a-trivial-expression-language.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // TODO: Cleanup
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix"),

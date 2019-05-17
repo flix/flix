@@ -378,9 +378,11 @@ object ControlFlowAnalysis {
 
       case Expression.SelectChannel(rules, default, tpe, loc) => AbstractValue.Bot
 
-      case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
+      case Expression.ProcessSpawn(exp, tpe, loc) => AbstractValue.Bot
 
-      case Expression.Sleep(exp, tpe, loc) => AbstractValue.Bot
+      case Expression.ProcessSleep(exp, tpe, loc) => AbstractValue.Bot
+
+      case Expression.ProcessPanic(msg, tpe, loc) => AbstractValue.Bot
 
       case Expression.FixpointConstraint(con, tpe, loc) =>
         val g = visitConstraint(con)
@@ -410,8 +412,6 @@ object ControlFlowAnalysis {
         val v1 = visitExp(exp1, env0, lenv0)
         val v2 = visitExp(exp2, env0, lenv0)
         AbstractValue.AnyPrimitive
-
-      case Expression.UserError(tpe, loc) => AbstractValue.Bot
 
       case Expression.HoleError(sym, tpe, loc) => AbstractValue.Bot
 

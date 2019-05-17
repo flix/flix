@@ -136,7 +136,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |   case Lst(Int32, IntList),
         |   case Empty
         |}
-        |def f(xs: IntList, ys: IntList): Int32 = match (xs, ys) with {
+        |def f(l1: IntList, l2: IntList): Int32 = match (l1, l2) with {
         |  case (Empty, Empty) => 0
         |  case (Lst(x,xs), Lst(y,ys)) => 1
         |}

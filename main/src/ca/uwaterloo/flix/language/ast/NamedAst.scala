@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
 import scala.collection.immutable.List
 
@@ -35,7 +36,8 @@ object NamedAst {
                   latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
                   named: Map[Symbol.DefnSym, NamedAst.Expression],
                   properties: Map[Name.NName, List[NamedAst.Property]],
-                  reachable: Set[Symbol.DefnSym])
+                  reachable: Set[Symbol.DefnSym],
+                  sources: Map[Source, SourceLocation])
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation)
 
@@ -76,7 +78,7 @@ object NamedAst {
 
     case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Hole(name: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Unit(loc: SourceLocation) extends NamedAst.Expression
 
@@ -111,6 +113,8 @@ object NamedAst {
     case class Binary(op: BinaryOperator, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class IfThenElse(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Stm(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Let(sym: Symbol.VarSym, exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -188,9 +192,11 @@ object NamedAst {
 
     case class SelectChannel(rules: List[NamedAst.SelectChannelRule], default: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ProcessSpawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Sleep(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ProcessSleep(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class ProcessPanic(msg: String, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointConstraint(c: NamedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -201,8 +207,6 @@ object NamedAst {
     case class FixpointProject(pred: NamedAst.PredicateWithParam, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
 

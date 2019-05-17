@@ -15,13 +15,13 @@ def testStratification01(): Schema { A, B, R } = solve {
 }
 
 //@test // TODO
-def testStratification02(): Schema { A, B, R } = solve {
-    A(1). A(2). A(3).
-
-    B(3).
-
-    R(x) :- not A(x), B(x).
-}
+//def testStratification02(): Schema { A, B, R } = solve {
+//    A(1). A(2). A(3).
+//
+//    B(3).
+//
+//    R(x) :- not A(x), B(x).
+//}
 
 @test
 def testStratification03(): Schema { A, B, C, R } = solve {
@@ -35,15 +35,15 @@ def testStratification03(): Schema { A, B, C, R } = solve {
 }
 
 //@test // TODO
-def testStratification04(): Schema { A, B, C, R } = solve {
-    A(1). A(2). A(3).
-
-    B(3).
-
-    C(3).
-
-    R(x) :- not A(x), B(x), not C(x).
-}
+//def testStratification04(): Schema { A, B, C, R } = solve {
+//    A(1). A(2). A(3).
+//
+//    B(3).
+//
+//    C(3).
+//
+//    R(x) :- not A(x), B(x), not C(x).
+//}
 
 @test
 def testStratification05(): Schema { A, B, C, R } = solve {

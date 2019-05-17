@@ -4,32 +4,28 @@
 rel A(x: Int, y: Int, z: Str)
 
 @test
-def testLit01(): Unit =
+def testLit01(): Schema { A } =
     let x = A(1, 2, "hello").;
     let y = A(3, 4, "world!").;
-    let r = solve x <+> y;
-    ()
+    solve x <+> y
 
 @test
-def testLit02(): Unit =
+def testLit02(): Schema { A } =
     let x = A(1, 1, "hello").;
     let y = A(1, 1, "world!").;
-    let r = solve x <+> y;
-    ()
+    solve x <+> y
 
 @test
-def testLit03(): Unit =
+def testLit03(): Schema { A } =
     let x = A(1, 1, "hello world").;
     let y = A(1, 1, v) :- A(1, 1, v).;
-    let r = solve x <+> y;
-    ()
+    solve x <+> y
 
 @test
-def testLit04(): Unit =
+def testLit04(): Schema { A } =
     let x = A(1, 1, "abc").;
     let y = A(w, w, "abc") :- A(w, w, "abc").;
-    let r = solve x <+> y;
-    ()
+    solve x <+> y
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Unit                                                                    ///
@@ -37,10 +33,9 @@ def testLit04(): Unit =
 rel UnitRel(x: Unit)
 
 @test
-def testUnitLit01(): Unit =
+def testUnitLit01(): Schema { UnitRel } =
     let x = UnitRel(()).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,16 +44,14 @@ def testUnitLit01(): Unit =
 rel BoolRel(x: Bool)
 
 @test
-def testBoolLit01(): Unit =
+def testBoolLit01(): Schema { BoolRel } =
     let x = BoolRel(true).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testBoolLit02(): Unit =
+def testBoolLit02(): Schema { BoolRel } =
     let x = BoolRel(false).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -67,22 +60,19 @@ def testBoolLit02(): Unit =
 rel CharRel(x: Char)
 
 @test
-def testCharLit01(): Unit =
+def testCharLit01(): Schema { CharRel } =
     let x = CharRel(' ').;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testCharLit02(): Unit =
+def testCharLit02(): Schema { CharRel } =
     let x = CharRel('a').;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testCharLit03(): Unit =
+def testCharLit03(): Schema { CharRel } =
     let x = CharRel('x').;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,23 +81,19 @@ def testCharLit03(): Unit =
 rel Float32Rel(x: Float32)
 
 @test
-def testFloat32Lit01(): Unit =
+def testFloat32Lit01(): Schema { Float32Rel } =
     let x = Float32Rel(0.0f32).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testFloat32Lit02(): Unit =
+def testFloat32Lit02(): Schema { Float32Rel } =
     let x = Float32Rel(-123.456f32).;
-    let r = solve x;
-    ()
-
+    solve x
 
 @test
-def testFloat32Lit03(): Unit =
+def testFloat32Lit03(): Schema { Float32Rel } =
     let x = Float32Rel(123.567f32).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,23 +102,20 @@ def testFloat32Lit03(): Unit =
 rel Float64Rel(x: Float64)
 
 @test
-def testFloat64Lit01(): Unit =
+def testFloat64Lit01(): Schema { Float64Rel } =
     let x = Float64Rel(0.0f64).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testFloat64Lit02(): Unit =
+def testFloat64Lit02(): Schema { Float64Rel } =
     let x = Float64Rel(-123.456f64).;
-    let r = solve x;
-    ()
+    solve x
 
 
 @test
-def testFloat64Lit03(): Unit =
+def testFloat64Lit03(): Schema { Float64Rel } =
     let x = Float64Rel(123.567f64).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -141,22 +124,19 @@ def testFloat64Lit03(): Unit =
 rel Int8Rel(x: Int8)
 
 @test
-def testInt8Lit01(): Unit =
+def testInt8Lit01(): Schema { Int8Rel } =
     let x = Int8Rel(0i8).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt8Lit02(): Unit =
+def testInt8Lit02(): Schema { Int8Rel } =
     let x = Int8Rel(123i8).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt8Lit03(): Unit =
+def testInt8Lit03(): Schema { Int8Rel } =
     let x = Int8Rel(-123i8).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,22 +145,19 @@ def testInt8Lit03(): Unit =
 rel Int16Rel(x: Int16)
 
 @test
-def testInt16Lit01(): Unit =
+def testInt16Lit01(): Schema { Int16Rel } =
     let x = Int16Rel(0i16).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt16Lit02(): Unit =
+def testInt16Lit02(): Schema { Int16Rel } =
     let x = Int16Rel(123i16).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt16Lit03(): Unit =
+def testInt16Lit03(): Schema { Int16Rel } =
     let x = Int16Rel(-123i16).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -189,22 +166,19 @@ def testInt16Lit03(): Unit =
 rel Int32Rel(x: Int32)
 
 @test
-def testInt32Lit01(): Unit =
+def testInt32Lit01(): Schema { Int32Rel } =
     let x = Int32Rel(0i32).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt32Lit02(): Unit =
+def testInt32Lit02(): Schema { Int32Rel } =
     let x = Int32Rel(123i32).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt32Lit03(): Unit =
+def testInt32Lit03(): Schema { Int32Rel } =
     let x = Int32Rel(-123i32).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -213,22 +187,19 @@ def testInt32Lit03(): Unit =
 rel Int64Rel(x: Int64)
 
 @test
-def testInt64Lit01(): Unit =
+def testInt64Lit01(): Schema { Int64Rel } =
     let x = Int64Rel(0i64).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt64Lit02(): Unit =
+def testInt64Lit02(): Schema { Int64Rel } =
     let x = Int64Rel(123i64).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testInt64Lit03(): Unit =
+def testInt64Lit03(): Schema { Int64Rel } =
     let x = Int64Rel(-123i64).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -237,22 +208,19 @@ def testInt64Lit03(): Unit =
 rel BigIntRel(x: BigInt)
 
 @test
-def testBigIntLit01(): Unit =
+def testBigIntLit01(): Schema { BigIntRel } =
     let x = BigIntRel(0ii).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testBigIntLit02(): Unit =
+def testBigIntLit02(): Schema { BigIntRel } =
     let x = BigIntRel(123ii).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testBigIntLit03(): Unit =
+def testBigIntLit03(): Schema { BigIntRel } =
     let x = BigIntRel(-123ii).;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -261,22 +229,19 @@ def testBigIntLit03(): Unit =
 rel StrRel(x: Str)
 
 @test
-def testStrLit01(): Unit =
+def testStrLit01(): Schema { StrRel } =
     let x = StrRel("").;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testStrLit02(): Unit =
+def testStrLit02(): Schema { StrRel } =
     let x = StrRel("hello").;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testStrLit03(): Unit =
+def testStrLit03(): Schema { StrRel } =
     let x = StrRel("hello world!").;
-    let r = solve x;
-    ()
+    solve x
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -285,31 +250,27 @@ def testStrLit03(): Unit =
 rel OptionRel(x: Option[Int])
 
 @test
-def testOptionLit01(): Unit =
+def testOptionLit01(): Schema { OptionRel } =
     let x = OptionRel(None).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testOptionLit02(): Unit =
+def testOptionLit02(): Schema { OptionRel } =
     let x = OptionRel(Some(123)).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testOptionLit03(): Unit =
+def testOptionLit03(): Schema { OptionRel } =
     let x = OptionRel(None).;
     let y = OptionRel(Some(123)).;
-    let r = solve x <+> y;
-    ()
+    solve x <+> y
 
 @test
-def testOptionLit04(): Unit =
+def testOptionLit04(): Schema { OptionRel } =
     let x = OptionRel(None).;
     let y = OptionRel(Some(123)).;
     let z = OptionRel(Some(456)).;
-    let r = solve x <+> y <+> z;
-    ()
+    solve x <+> y <+> z
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Result                                                                  ///
@@ -317,48 +278,42 @@ def testOptionLit04(): Unit =
 rel ResultRel(x: Result[Int, Str])
 
 @test
-def testResultLit01(): Unit =
+def testResultLit01(): Schema { ResultRel } =
     let x = ResultRel(Ok(123)).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testResultLit02(): Unit =
+def testResultLit02(): Schema { ResultRel } =
     let x = ResultRel(Err("hello world!")).;
-    let r = solve x;
-    ()
+    solve x
 
 @test
-def testResultLit03(): Unit =
+def testResultLit03(): Schema { ResultRel } =
     let x = ResultRel(Ok(123)).;
     let y = ResultRel(Err("hello world!")).;
-    let r = solve x <+> y;
-    ()
+    solve x <+> y
 
 @test
-def testResultLit04(): Unit =
+def testResultLit04(): Schema { ResultRel } =
     let x = ResultRel(Ok(123)).;
     let y = ResultRel(Ok(456)).;
     let z = ResultRel(Err("hello world!")).;
-    let r = solve x <+> y <+> z;
-    ()
+    solve x <+> y <+> z
 
 @test
-def testResultLit05(): Unit =
+def testResultLit05(): Schema { ResultRel } =
     let x = ResultRel(Ok(123)).;
     let y = ResultRel(Err("hello world!")).;
     let z = ResultRel(Err("Goodbye world!")).;
-    let r = solve x <+> y <+> z;
-    ()
+    solve x <+> y <+> z
 
 @test
-def testResultLit06(): Unit =
+def testResultLit06(): Schema { ResultRel } =
     let x = ResultRel(Ok(123)).;
     let y = ResultRel(Ok(456)).;
     let z = ResultRel(Err("hello world!")).;
     let w = ResultRel(Err("Goodbye world!")).;
-    let r = solve x <+> y <+> z <+> w;
-    ()
+    solve x <+> y <+> z <+> w
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -389,17 +344,17 @@ def testResultLit06(): Unit =
 ///////////////////////////////////////////////////////////////////////////////
 /// Tuple                                                                   ///
 ///////////////////////////////////////////////////////////////////////////////
-rel TupleRel(x: (Bool, Char, Int))
-
-// @test // TODO
-def testTupleLit01(): Unit =
-    let x = TupleRel((true, 'a', 123)).;
-    let r = solve x;
-    ()
-
-// @test // TODO
-def testTupleLit02(): Unit =
-    let x = TupleRel((false, 'x', 789)).;
-    let r = solve x;
-    ()
-
+//rel TupleRel(x: (Bool, Char, Int))
+//
+//@test
+//def testTupleLit01(): Unit =
+//    let x = TupleRel((true, 'a', 123)).;
+//    let r = solve x;
+//    ()
+//
+//@test
+//def testTupleLit02(): Unit =
+//    let x = TupleRel((false, 'x', 789)).;
+//    let r = solve x;
+//    ()
+//

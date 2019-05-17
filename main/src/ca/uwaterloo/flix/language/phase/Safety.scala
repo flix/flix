@@ -81,6 +81,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
 
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)
@@ -190,9 +192,11 @@ object Safety extends Phase[Root, Root] {
 
       rs ++ d
 
-    case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil
 
     case Expression.FixpointConstraint(con, tpe, eff, loc) => checkConstraint(con)
 
@@ -203,8 +207,6 @@ object Safety extends Phase[Root, Root] {
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitPredicateWithParam(pred) ::: visitExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
-
-    case Expression.UserError(tpe, eff, loc) => Nil
 
   }
 

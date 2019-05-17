@@ -29,7 +29,7 @@ def testPatternList04(): Bool = match 1 :: Nil with {
 @test
 def testPatternList05(): Bool = match 1 :: 2 :: Nil with {
     case Nil      => false
-    case x :: xs  => true
+    case _ :: _   => true
 }
 
 @test

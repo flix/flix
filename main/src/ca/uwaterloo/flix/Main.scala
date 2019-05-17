@@ -71,6 +71,7 @@ object Main {
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
+      xallowredundancies = cmdOpts.xallowredundancies,
       xnostratifier = cmdOpts.xnostratifier
     )
 
@@ -147,7 +148,7 @@ object Main {
               val evalTimer = new Timer(compilationResult.evalToString("main"))
               options.verbosity match {
                 case Verbosity.Normal => Console.println(evalTimer.getResult)
-                case Verbosity.Verbose => Console.println(s"main returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+                case Verbosity.Verbose => Console.println(evalTimer.getResult)
                 case Verbosity.Silent => // nop
               }
           }
@@ -161,7 +162,9 @@ object Main {
             Console.println(results.output.fmt)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message.fmt))
+          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+          println()
+          println(s"Compilation failed with ${errors.length} errors.")
           System.exit(1)
       }
     } catch {
@@ -186,6 +189,7 @@ object Main {
                      test: Boolean = false,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
+                     xallowredundancies: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
@@ -301,6 +305,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // Xallow-redundancies.
+      opt[Unit]("Xallow-redundancies").action((_, c) => c.copy(xallowredundancies = true)).
+        text("[experimental] disables the redundancies checker.")
 
       // Xcore.
       opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).

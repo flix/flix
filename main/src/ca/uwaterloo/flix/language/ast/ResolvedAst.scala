@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
 import scala.collection.immutable.List
 
@@ -34,7 +35,8 @@ object ResolvedAst {
                      lattices: Map[Symbol.LatSym, ResolvedAst.Lattice],
                      latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
                      properties: List[ResolvedAst.Property],
-                     reachable: Set[Symbol.DefnSym]) {
+                     reachable: Set[Symbol.DefnSym],
+                     sources: Map[Source, SourceLocation]) {
     /**
       * Returns all predicate symbols in the program.
       */
@@ -125,6 +127,8 @@ object ResolvedAst {
 
     case class IfThenElse(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Stm(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Let(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class LetRec(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
@@ -201,9 +205,11 @@ object ResolvedAst {
 
     case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], default: Option[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ProcessSpawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Sleep(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ProcessSleep(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ProcessPanic(msg: String, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointConstraint(c: ResolvedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -214,8 +220,6 @@ object ResolvedAst {
     case class FixpointProject(pred: ResolvedAst.PredicateWithParam, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

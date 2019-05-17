@@ -35,10 +35,12 @@ object ParsedAst {
   /**
     * Root. A collection of imports and declarations.
     *
+    * @param sp1     the position of the first character in the source.
     * @param imports the imports declared in the abstract syntax tree.
     * @param decls   the declarations in the abstract syntax tree.
+    * @param sp2     the position of the last character in the source.
     */
-  case class Root(imports: Seq[ParsedAst.Import], decls: Seq[ParsedAst.Declaration]) extends ParsedAst
+  case class Root(sp1: SourcePosition, imports: Seq[ParsedAst.Import], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Imports.
@@ -406,16 +408,6 @@ object ParsedAst {
   object Expression {
 
     /**
-      * Wildcard Expression.
-      *
-      * Illegal in proper expressions, but allowed in predicates.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Simple Name Expression (either a variable or reference expression).
       *
       * @param sp1  the position of the first character in the expression.
@@ -437,10 +429,10 @@ object ParsedAst {
       * Hole Expression.
       *
       * @param sp1   the position of the first character in the expression
-      * @param ident the name of the hole.
+      * @param ident the optional name of the hole.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Hole(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
@@ -534,6 +526,15 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class IfThenElse(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Statement Expression.
+      *
+      * @param exp1 the first expression.
+      * @param exp2 the second expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * LetMatch Expression (let-binding with pattern match).
@@ -948,31 +949,31 @@ object ParsedAst {
     case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Spawn Expression.
+      * Process Spawn Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ProcessSpawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Sleep Expression.
+      * Process Sleep Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Sleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ProcessSleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Statement Expression.
+      * Process Panic Expression.
       *
-      * @param exp1 the first expression.
-      * @param exp2 the second expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1 the position of the first character in the expression.
+      * @param msg the panic error message.
+      * @param sp2 the position of the last character in the expression.
       */
-    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ProcessPanic(sp1: SourcePosition, msg: ParsedAst.Literal.Str, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint Sequence expression.
@@ -1021,14 +1022,6 @@ object ParsedAst {
       */
     case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
-    /**
-      * User Error Expression (an expression that immediately aborts execution).
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
   }
 
   /**
@@ -1040,7 +1033,6 @@ object ParsedAst {
       * Returns the left most source position in sub-tree of `this` pattern.
       */
     def leftMostSourcePosition: SourcePosition = this match {
-      case Pattern.Wild(sp1, _) => sp1
       case Pattern.Var(sp1, _, _) => sp1
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _) => sp1
@@ -1063,14 +1055,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the pattern.
       */
     case class Lit(sp1: SourcePosition, lit: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Wildcard Pattern.
-      *
-      * @param sp1 the position of the first character in the pattern.
-      * @param sp2 the position of the last character in the pattern.
-      */
-    case class Wild(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Variable Pattern.
@@ -1260,7 +1244,7 @@ object ParsedAst {
       *
       * @param sp1    the position of the first character in the type.
       * @param fields the sequence of field types.
-      * @param base   the optional row variable.
+      * @param rest   the optional row variable.
       * @param sp2    the position of the last character in the type.
       */
     case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type

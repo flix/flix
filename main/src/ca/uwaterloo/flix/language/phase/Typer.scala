@@ -44,7 +44,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       properties <- typeProperties(program)
     } yield {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, program.reachable)
+      TypedAst.Root(defs, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, program.reachable, program.sources)
     }
 
     result match {
@@ -117,12 +117,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitEnum(enum: ResolvedAst.Enum): Result[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
       case ResolvedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, loc) =>
+        val tparams = getTypeParams(enum.tparams)
         val cases = cases0 map {
           case (name, ResolvedAst.Case(_, tagName, tagType)) =>
             name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
         }
 
-        Ok(enumSym -> TypedAst.Enum(doc, mod, enumSym, cases, enum.tpe, loc))
+        Ok(enumSym -> TypedAst.Enum(doc, mod, enumSym, tparams, cases, enum.tpe, loc))
     }
 
     // Visit every enum in the program.
@@ -272,8 +273,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
-            // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly.
-            Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, resultType, defn0.eff, defn0.loc))
+            // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
+            Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, resultType, defn0.eff, defn0.loc))
 
           case Err(e) => Err(e)
         }
@@ -330,10 +331,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckRel(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-    case ResolvedAst.Relation(doc, mod, sym, tparams, attr, sc, loc) =>
+    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc, loc) =>
+      val tparams = getTypeParams(tparams0)
       for {
-        typedAttributes <- Result.sequence(attr.map(a => typeCheckAttribute(a)))
-      } yield sym -> TypedAst.Relation(doc, mod, sym, typedAttributes, loc)
+        attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
+      } yield sym -> TypedAst.Relation(doc, mod, sym, tparams, attr, loc)
   }
 
   /**
@@ -342,10 +344,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckLat(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-    case ResolvedAst.Lattice(doc, mod, sym, tparams, attr, sc, loc) =>
+    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc, loc) =>
+      val tparams = getTypeParams(tparams0)
       for {
-        typedAttributes <- Result.sequence(attr.map(a => typeCheckAttribute(a)))
-      } yield sym -> TypedAst.Lattice(doc, mod, sym, typedAttributes, loc)
+        attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
+      } yield sym -> TypedAst.Lattice(doc, mod, sym, tparams, attr, loc)
   }
 
   /**
@@ -548,6 +551,28 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       /*
+       * If-then-else expression.
+       */
+      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
+        for (
+          tpe1 <- visitExp(exp1);
+          tpe2 <- visitExp(exp2);
+          tpe3 <- visitExp(exp3);
+          ____ <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc);
+          rtpe <- unifyM(tvar, tpe2, tpe3, loc)
+        ) yield rtpe
+
+      /*
+       * Stm expression.
+       */
+      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+        for {
+          tpe1 <- visitExp(exp1)
+          tpe2 <- visitExp(exp2)
+          resultType <- unifyM(tvar, tpe2, loc)
+        } yield resultType
+
+      /*
        * Let expression.
        */
       case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
@@ -569,18 +594,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           boundVar <- unifyM(sym.tvar, tpe1, loc);
           resultVar <- unifyM(tvar, tpe2, loc)
         ) yield resultVar
-
-      /*
-       * If-then-else expression.
-       */
-      case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
-        for (
-          tpe1 <- visitExp(exp1);
-          tpe2 <- visitExp(exp2);
-          tpe3 <- visitExp(exp3);
-          ____ <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc);
-          rtpe <- unifyM(tvar, tpe2, tpe3, loc)
-        ) yield rtpe
 
       /*
        * Match expression.
@@ -1177,9 +1190,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield resultType
 
       /*
-       * Spawn Expression.
+       * ProcessSpawn Expression.
        */
-      case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         //
         //  exp: t
         //  ------------------
@@ -1192,9 +1205,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield resultType
 
       /*
-       * Sleep expression.
+       * ProcessSleep expression.
        */
-      case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSleep(exp, tvar, loc) =>
         //
         // exp: Int
         // ------------------
@@ -1205,6 +1218,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           _ <- unifyM(e, Type.Cst(TypeConstructor.Int64), loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
         } yield resultType
+
+      /*
+       * ProcessPanic expression.
+       */
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+        liftM(tvar)
 
       /*
        * Constraint expression.
@@ -1275,11 +1294,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           schemaType <- unifyM(tpe1, tpe2, mkAnySchemaType(), loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
         } yield resultType
-
-      /*
-       * User Error expression.
-       */
-      case ResolvedAst.Expression.UserError(tvar, loc) => liftM(tvar)
 
     }
 
@@ -1384,6 +1398,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         val e3 = visitExp(exp3, subst0)
         TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), Eff.Empty, loc)
+
+      /*
+       * Stm expression.
+       */
+      case ResolvedAst.Expression.Stm(exp1, exp2, tvar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        TypedAst.Expression.Stm(e1, e2, subst0(tvar), Eff.Empty, loc)
 
       /*
        * Let expression.
@@ -1644,7 +1666,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        * Native Constructor expression.
        */
       case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, loc) =>
-        val es = actuals.map(e => reassembleExp(e, program, subst0))
+        val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), Eff.Empty, loc)
 
       /*
@@ -1657,7 +1679,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        * Native Method expression.
        */
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
-        val es = actuals.map(e => reassembleExp(e, program, subst0))
+        val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Empty, loc)
 
       /*
@@ -1698,18 +1720,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Empty, loc)
 
       /*
-       * Spawn expression.
+       * ProcessSpawn expression.
        */
-      case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Empty, loc)
+        TypedAst.Expression.ProcessSpawn(e, subst0(tvar), Eff.Empty, loc)
 
       /*
-       * Sleep expression.
+       * ProcessSleep expression.
        */
-      case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
+      case ResolvedAst.Expression.ProcessSleep(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Sleep(e, subst0(tvar), Eff.Empty, loc)
+        TypedAst.Expression.ProcessSleep(e, subst0(tvar), Eff.Empty, loc)
+
+      /*
+       * ProcessPanic expression.
+       */
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
+        TypedAst.Expression.ProcessPanic(msg, subst0(tvar), Eff.Empty, loc)
 
       /*
        * Constraint expression.
@@ -1738,15 +1766,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        * ConstraintUnion expression.
        */
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
-        val e1 = reassembleExp(exp1, program, subst0)
-        val e2 = reassembleExp(exp2, program, subst0)
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointCompose(e1, e2, subst0(tvar), Eff.Empty, loc)
 
       /*
        * FixpointSolve expression.
        */
       case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
-        val e = reassembleExp(exp, program, subst0)
+        val e = visitExp(exp, subst0)
         TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Empty, loc)
 
       /*
@@ -1754,22 +1782,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        */
       case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, loc) =>
         val p = visitPredicateWithParam(pred)
-        val e = reassembleExp(exp, program, subst0)
+        val e = visitExp(exp, subst0)
         TypedAst.Expression.FixpointProject(p, e, subst0(tvar), Eff.Empty, loc)
 
       /*
        * ConstraintUnion expression.
        */
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
-        val e1 = reassembleExp(exp1, program, subst0)
-        val e2 = reassembleExp(exp2, program, subst0)
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), Eff.Empty, loc)
-
-      /*
-       * User Error expression.
-       */
-      case ResolvedAst.Expression.UserError(tvar, loc) =>
-        TypedAst.Expression.UserError(subst0(tvar), Eff.Empty, loc)
     }
 
     /**
@@ -1783,7 +1805,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitPredicateWithParam(pred: ResolvedAst.PredicateWithParam): TypedAst.PredicateWithParam = pred match {
       case ResolvedAst.PredicateWithParam(sym, exp) =>
-        val e = reassembleExp(exp, program, subst0)
+        val e = visitExp(exp, subst0)
         TypedAst.PredicateWithParam(sym, e)
     }
 

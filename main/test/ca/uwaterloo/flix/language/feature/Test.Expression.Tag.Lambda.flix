@@ -10,22 +10,23 @@ def tagLambda03(): Result[Int, Int] = (Err)(42)
 @test
 def tagLambda04(): Option[Int] =
     let f = Some;
-    let g = Ok;
-    let h = Err;
-        None
+        f(123)
 
 @test
-def tagLambda05(): Option[Int] =
-    let f = Some;
-    let g = Ok;
-    let h = Err;
+def tagLambda05(): Result[Int, Int] =
+    let f = Ok;
         f(42)
 
 @test
-def tagLambda06(): List[Option[Int]] = List.map(Some, 1 :: 2 :: 3 :: Nil)
+def tagLambda06(): Result[Int, Int] =
+    let f = Err;
+        f(42)
 
 @test
-def tagLambda07(): List[Result[Int, Int]] = List.map(Ok, 1 :: 2 :: 3 :: Nil)
+def tagLambda07(): List[Option[Int]] = List.map(Some, 1 :: 2 :: 3 :: Nil)
 
 @test
-def tagLambda08(): List[Result[Int, Int]] = List.map(Err, 1 :: 2 :: 3 :: Nil)
+def tagLambda08(): List[Result[Int, Int]] = List.map(Ok, 1 :: 2 :: 3 :: Nil)
+
+@test
+def tagLambda09(): List[Result[Int, Int]] = List.map(Err, 1 :: 2 :: 3 :: Nil)

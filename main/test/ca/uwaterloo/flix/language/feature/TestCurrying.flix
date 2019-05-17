@@ -93,8 +93,3 @@ def j(x: Int): Int -> Int -> Int = y -> z -> x + y + z
 /// A curried higher-order function.
 ///
 def k(f: Int -> Int): Int -> Int = x -> f(x)
-
-///
-/// A curried higher-order function.
-///
-def l(f: (Int, Int) -> Int): (Int, Int) -> Int = (x, y) -> f(x)(y) + f(x, y)

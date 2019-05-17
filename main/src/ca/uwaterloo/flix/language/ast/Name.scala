@@ -52,6 +52,11 @@ object Name {
     */
   case class Ident(sp1: SourcePosition, name: String, sp2: SourcePosition) {
     /**
+      * Returns `true`if `this` identifier is a wildcard.
+      */
+    def isWild(): Boolean = name.startsWith("_")
+
+    /**
       * The source location of the identifier.
       */
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)

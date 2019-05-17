@@ -28,9 +28,8 @@ class TestSafety extends FunSuite with TestUtils {
       """
         |rel A(x: Int)
         |rel B(x: Int)
-        |rel R(k: Int)
         |
-        |def main(): Schema { A, B, R } = solve {
+        |def main(): Schema { A, B } = solve {
         |    A(x) :- not B(x).
         |}
         |
