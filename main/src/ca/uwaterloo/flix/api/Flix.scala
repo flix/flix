@@ -255,7 +255,7 @@ class Flix {
       Stratifier |>
       QuickChecker |>
       Verifier |>
-      NJvmBackend |>
+      JvmBackend |>
       Finish
 
     // Apply the pipeline to the parsed AST.

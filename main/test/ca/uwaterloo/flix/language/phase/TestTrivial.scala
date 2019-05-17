@@ -39,7 +39,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.SubtractionBySelf") {
+  ignore("TrivialExpression.SubtractionBySelf") {
     val input =
       """
         |pub def f(x: Int): Int = x - x
@@ -89,7 +89,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.DivisionByOne") {
+  ignore("TrivialExpression.DivisionByOne") {
     val input =
       """
         |pub def f(): Int = 123 / 1
@@ -99,7 +99,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.DivisionBySelf") {
+  ignore("TrivialExpression.DivisionBySelf") {
     val input =
       """
         |pub def f(x: Int): Int = x / x
@@ -109,7 +109,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.LeftConcatenateEmptyString") {
+  ignore("TrivialExpression.LeftConcatenateEmptyString") {
     val input =
       """
         |pub def f(): Str = "" + "Hello World"
@@ -119,7 +119,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.RightConcatenateEmptyString") {
+  ignore("TrivialExpression.RightConcatenateEmptyString") {
     val input =
       """
         |pub def f(): Str = "Hello World" + ""
@@ -129,7 +129,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.LeftAppendNil") {
+  ignore("TrivialExpression.LeftAppendNil") {
     val input =
       """
         |pub def f(): List[Int] = Nil ::: (1 :: 2 :: Nil)
@@ -151,7 +151,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.RightAppendNil") {
+  ignore("TrivialExpression.RightAppendNil") {
     val input =
       """
         |pub def f(): List[Int] = (1 :: 2 :: Nil) ::: Nil
@@ -173,7 +173,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.ListIsEmptyCons") {
+  ignore("TrivialExpression.ListIsEmptyCons") {
     val input =
       """
         |pub def f(): Bool = List.isEmpty(1 :: Nil)
@@ -195,7 +195,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.ListMapIdentity") {
+  ignore("TrivialExpression.ListMapIdentity") {
     val input =
       """
         |pub def f(): List[Int] = List.map(x -> x, 1 :: 2 :: Nil)

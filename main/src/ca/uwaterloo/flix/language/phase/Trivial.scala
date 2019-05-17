@@ -207,15 +207,15 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       rightMultiplicationByZero(),
       leftMultiplicationByOne(),
       rightMultiplicationByOne(),
-      leftConcatenateEmptyString(),
-      rightConcatenateEmptyString(),
       listMapIdentity(),
-      //divisionByOne(), // TODO
+      // leftConcatenateEmptyString(), // TODO
+      // rightConcatenateEmptyString(), // TODO
+      // divisionByOne(), // TODO
       // divisionBySelf(), // TODO
       // leftAppendNil(), // TODO
       // rightAppendNil(), // TODO
-      //      listIsEmptyCons(), // TODO
-      //subtractionBySelf(), // TODO
+      // listIsEmptyCons(), // TODO
+      // subtractionBySelf(), // TODO
     )
 
   }
