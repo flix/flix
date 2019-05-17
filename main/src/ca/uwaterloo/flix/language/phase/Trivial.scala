@@ -917,7 +917,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
     // TODO: Optimize for empty subst?Why not do this for other substs too?
-
     def ++(that: Substitution): Substitution = {
       Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
     }
@@ -954,7 +953,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: thm listFilterEmpty[a, b](): Bool = \forall (f: a -> b, xs: List[a]). List.isEmpty(xs) => (List.filter(f, xs) ~~> Nil)
   // TODO: law reflexive[e](⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
 
-  // TODO: Asger had some interesting patterns, e.g. x != 'a' || x != 'b'
+  // TODO: A. had some interesting patterns, e.g. x != 'a' || x != 'b'
 
   // TODO: Use cases to find:
 
@@ -971,6 +970,9 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   // TODO: Introduce annotated expression, e.g. @trivial 0 + 0
   // TODO: Introduce annotated expression: @unreachable 2 + 1, or 2 + 3 @ dead.
   // TODO: Where should these annotations go?
+
+  // TODO: JvmBackend should not always load classes
+  // TODO: JvmBackend should run in parallel.
 
   // TODO: Should we also consider tricky cases such as:
   // match s with {
@@ -994,14 +996,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Ensure everything is private.
 
-  // TODO: What about overlapping select cases?
-
-  // TODO: A good story to tell is that in a large codebase, if you discover a bug, you can add it to the
-  // TODO: repository of bug patterns and recompile everything.
-
-  // TODO: To what extend should these patterns be imported? It seems a bit insafe if they are not available by default
-  // TODO: even so, do we want some notion of scoping?
-
   //
   //thm listIsEmptyCons[a](): Bool = \forall (x: a, xs: List[a]). List.isEmpty(x :: xs) ~~> false
   //
@@ -1011,67 +1005,5 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
   //
   //law reflexive[e](⊑: (e, e) -> Bool): Bool = ∀(x: e). x ⊑ x
   //
-
-  // TODO: JvmBackend should not always load classes
-  // TODO: JvmBackend should run in parallel.
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Paper Notes
-  /////////////////////////////////////////////////////////////////////////////
-
-  // Papers:
-  // - Finding Application Errors and Security Flaws Using PQL: a Program Query Language
-  // - Using SCL to Specify and Check Design Intent in Source Code
-  // - A Framework for Source Code Search using Program Patterns
-
-  // Notes for the paper:
-  // - We disallow shadowing (because its confusing in the presence of pattern matching).
-  // - We disallow both implicit widening and narrowing of integers.
-  // - We disallow all forms of implicit coercions.
-  // - We disallow linear patterns.
-  // - We treat holes (and ???) as using all local variables (but not anything else?)
-  // - We implement the checker using a fork-join style monoid thingy.
-  // - If we allow shadowing then that might lead to "mysterious" unused variable warnings.
-
-  // Questions:
-  // - When is an enum used? Is it enough to (a) mention its type, (b) to use it in a pat match, or (c) to actually construct a value.
-  //     (What if you match on a value of that type, but use a wildcard?)
-  //     (What is consistent with the Void enum and the singleton enum?)
-  // - When is a predicate used? Is it enough to use it in a rule, or must it also appear in a head predicate?
-  // - How do we appropriately distinguish between the effect of NewChannel and e.g. PutChannel?
-  //     (How do we deal with return values that must be used, e.g. deleteFile?)
-
-  // Bugs found:
-  // - Missing @test on def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
-
-  // Shadowing gone wrong:
-  //     case Expression.FixpointProject(pred, exp, _, _, _) =>
-  //      val PredicateWithParam(sym, exp) = pred
-  //      mapN(visitExp(pred.exp, env0), visitExp(exp, env0)) {
-  //        case (used1, used2) => Used.of(sym) ++ used1 ++ used2
-  //      }
-
-  // Shadowing in action:
-  // let childList : List[Path] = Nil;
-  // let childList = childrenHelper(dirIterator, childList);
-
-  // Count impacted test cases?
-
-  // thm \forall f: List.filter(f, Nil) = Nil
-  // false <= List.isEmpty(xs), List.nonEmpty(xs).
-
-  // Ideas from: Using Redundancies to Find Errors
-
-  // [Idempotent operations]: (1) Assign to self, (2) divide by itself, (3) bitwise xord, (4) bitwise and,
-  // (Assignment to self could account for record update), there are also refs.
-
-  // [Redundant Assignments]
-
-  // [Dead Code] (early returns, so not really relevant).
-
-  // [Redundant Conditionals]: Detects branches that are always dead.
-  // Implemented as a combination of (1) integer propagation, (2) set of known predicates, and (3) bounds on integers.
-
-  // Compile the theorems/bugpatterns to an automaton. Union could be fast.
 
 }
