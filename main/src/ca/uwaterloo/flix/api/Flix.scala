@@ -224,7 +224,6 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
-        Effects |>
         PatternExhaustiveness |>
         Redundancy |>
         Trivial |>

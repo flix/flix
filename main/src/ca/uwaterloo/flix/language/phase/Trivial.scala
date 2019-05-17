@@ -34,7 +34,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Find the patterns
     val pats = Catalog.allPatterns(root, flix)
-    println(s"Loaded: ${pats.length} patterns.")
 
     // Check for trivial expressions.
     val trivial: List[TrivialError] = root.defs.par.aggregate(Nil: List[TrivialError])({
@@ -185,19 +184,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * A list of trivial expression patterns.
       */
     // TODO: To test performance it might be worth duplicating this list many times.
-    def allPatterns(implicit root: Root, flix: Flix): List[Expression] =
-    // Duplicate patterns
-      availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns :::
-        availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns ::: availablePatterns
+    def allPatterns(implicit root: Root, flix: Flix): List[Expression] = availablePatterns
 
     def availablePatterns(implicit root: Root, flix: Flix): List[Expression] = List(
       rightAdditionByZero(),
