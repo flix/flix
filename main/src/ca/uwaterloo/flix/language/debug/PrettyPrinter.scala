@@ -538,12 +538,22 @@ object PrettyPrinter {
     def fmtRoot(root: TypedAst.Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
-        vt << Bold("def") << " " << Blue(sym.toString) << "("
+        vt << Bold("def") << " " << Blue(sym.toString)
+        if (defn.tparams.nonEmpty) vt << "["
+        for (tparam <- defn.tparams) {
+          fmtTParam(tparam, vt)
+        }
+        if (defn.tparams.nonEmpty) vt << "]"
+        vt << "("
         for (fparam <- defn.fparams) {
           fmtParam(fparam, vt)
           if (fparam != defn.fparams.last) vt << ", "
         }
-        vt << s"): ${defn.tpe.show} = "
+        vt << s"): "
+        if (defn.tpe.isArrow) {
+          vt << defn.tpe.typeArguments.last.show
+        }
+        vt << " = "
         vt << Indent << NewLine
         fmtExp(defn, vt)
         vt << Dedent << NewLine << NewLine
@@ -892,6 +902,10 @@ object PrettyPrinter {
     def fmtParam(p: TypedAst.FormalParam, vt: VirtualTerminal): Unit = {
       fmtSym(p.sym, vt)
       vt.text(": ")
+      vt.text(p.tpe.show)
+    }
+
+    def fmtTParam(p: TypedAst.TypeParam, vt: VirtualTerminal): Unit = {
       vt.text(p.tpe.show)
     }
 
