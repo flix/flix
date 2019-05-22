@@ -691,11 +691,7 @@ object Type {
           case Type.Arrow(l) =>
             val argumentTypes = args.init
             val resultType = args.last
-            if (argumentTypes.length == 1) {
-              visit(argumentTypes.head, m) + " -> " + visit(resultType, m)
-            } else {
               "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
-            }
 
           //
           // Tuple.

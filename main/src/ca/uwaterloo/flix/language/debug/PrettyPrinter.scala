@@ -534,6 +534,7 @@ object PrettyPrinter {
   }
 
   object Typed {
+    val moreTypes = false
 
     def fmtRoot(root: TypedAst.Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -589,9 +590,12 @@ object PrettyPrinter {
         case TypedAst.Expression.Lambda(fparam, body, tpe, eff, loc) =>
           vt.text("(")
           vt.text(fparam.sym.toString)
-          vt.text(")")
-          vt.text(" -> ")
+          if (moreTypes) vt << ": " << fparam.tpe.show
+          vt << ")" << " -> " << Indent << NewLine << "("
           visitExp(body)
+          vt << ")"
+          if (moreTypes) vt << "[" << tpe.show << "]"
+          vt << Dedent << NewLine
 
         case TypedAst.Expression.Apply(exp, arg, tpe, eff, loc) =>
           visitExp(exp)
@@ -874,11 +878,17 @@ object PrettyPrinter {
         case TypedAst.Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) =>
           vt.text("(")
           vt.text(fparam1.sym.toString)
+          if (moreTypes) vt << ": " << fparam1.tpe.show
           vt.text(", ")
           vt.text(fparam2.sym.toString)
+          if (moreTypes) vt << ": " << fparam2.tpe.show
           vt.text(")")
           vt.text(" -> ")
+          vt << Indent << NewLine << "("
           visitExp(exp)
+          vt << ")"
+          if (moreTypes) vt << "[" << tpe.show << "]"
+          vt << Dedent << NewLine
 
         case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => ???
         case TypedAst.Expression.CPSReset(exp, tpe, eff, loc) => ???
