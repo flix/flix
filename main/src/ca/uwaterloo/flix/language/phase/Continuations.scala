@@ -227,6 +227,10 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         out
       }
 
+      case Expression.Sleep(exp, tpe, eff, loc) => {
+        visitExps(List(exp), kont0, kont0ReturnType, l => mkApplyCont(kont0, Expression.Sleep(l.head, tpe, eff, loc), eff, loc), defSymMap)
+      }
+
       //case Expression.State
 
       case _ => exp0
