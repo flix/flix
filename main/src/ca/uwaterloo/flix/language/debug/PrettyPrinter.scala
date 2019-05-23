@@ -869,11 +869,11 @@ object PrettyPrinter {
 
         case TypedAst.Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) =>
           visitExp(exp1)
-          vt.text("(")
+          vt << "(" << Indent << NewLine
           visitExp(exp2)
-          vt.text(", ")
+          vt << NewLine << ", " << NewLine
           visitExp(exp3)
-          vt.text(")")
+          vt << Dedent << NewLine << ")"
 
         case TypedAst.Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) =>
           vt.text("(")
@@ -890,20 +890,20 @@ object PrettyPrinter {
           if (moreTypes) vt << "[" << tpe.show << "]"
           vt << Dedent << NewLine
 
-        case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => ???
-        case TypedAst.Expression.CPSReset(exp, tpe, eff, loc) => ???
-        case TypedAst.Expression.CPSShift(exp, tpe, eff, loc) => ???
-        case TypedAst.Expression.Cast(exp, tpe, eff, loc) => ???
-        case TypedAst.Expression.Hole(sym, tpe, eff, loc) => ???
-        case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => ???
-        case TypedAst.Expression.Switch(rules, tpe, eff, loc) => ???
-        case TypedAst.Expression.VectorLength(base, tpe, eff, loc) => ???
-        case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => ???
-        case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => ???
-        case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => ???
-        case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
-        case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
-        case TypedAst.Expression.Wild(tpe, eff, loc) => ???
+        case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.CPSReset(exp, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.CPSShift(exp, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.Cast(exp, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.Hole(sym, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.Switch(rules, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.VectorLength(base, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.Wild(tpe, eff, loc) => vt << "?"
       }
 
       visitExp(exp0)

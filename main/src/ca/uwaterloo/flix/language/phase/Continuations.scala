@@ -109,7 +109,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   // todo sjj rename cps transform, only add to one visitDefn
   def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Expression = exp0 match {
 
-      case Expression.Wild(tpe, eff, loc) => ???
+      case Expression.Wild(tpe, eff, loc) => exp0 //todo sjj
       case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
       case Expression.Def(sym, tpe, eff, loc) => {
@@ -119,12 +119,12 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
           return mkApplyCont(kont0, Expression.Def(defnPrimeName, fixFuncType(tpe, kont0ReturnType), eff, loc), eff, loc)
         }
         //todo sjj: Can this ever be reached?
-        ???
+        ??? //exp0
       }
 
-      case Expression.Eff(sym, tpe, eff, loc) => ???
+      case Expression.Eff(sym, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Hole(sym, tpe, eff, loc) => ???
+      case Expression.Hole(sym, tpe, eff, loc) => exp0 //todo sjj
 
       case Expression.Unit(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
       case Expression.True(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
@@ -143,12 +143,12 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         // make a new lambda with type exp.tpe -> generic
         //val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), exp.loc)
         val freshKontSym = Symbol.freshVarSym("k")
-        val freshKontTpe = Type.mkArrow(getReturnType(exp.tpe), kont0ReturnType)
+        val freshKontTpe = Type.mkArrow(getReturnType(tpe), kont0ReturnType)
         val freshKontParam = FormalParam(freshKontSym, Modifiers.Empty, freshKontTpe, exp.loc)
         val freshKontVar = Expression.Var(freshKontSym, freshKontTpe, empEff(), exp.loc)
 
         // kont0(x -> e) becomes kont0((x,k) -> visitExp(e, k))
-        val e = visitExp(exp, freshKontVar, freshKontTpe, defSymMap)
+        val e = visitExp(exp, freshKontVar, kont0ReturnType, defSymMap)
         val lambda = Expression.LambdaWithKont(fparam, freshKontParam, e, fixFuncType(tpe, kont0ReturnType), eff, loc)
         mkApplyCont(kont0, lambda, eff, loc)
       }
@@ -190,7 +190,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         visitExp(exp1, kont1, kont0ReturnType, defSymMap)
       }
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ???
+      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => exp0 //todo sjj
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) => {
         //
@@ -215,95 +215,99 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         visitExp(exp1, lambda, kont0ReturnType, defSymMap)
       }
 
-      case Expression.Match(exp, rules, tpe, eff, loc) => ???
+      case Expression.Match(exp, rules, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Switch(rules, tpe, eff, loc) => ???
+      case Expression.Switch(rules, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
+      case Expression.Tag(sym, tag, exp, tpe, eff, loc) => exp0 //todo sjj
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
         visitExps(elms, kont0, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, tpe, eff, loc), eff, loc), defSymMap)
 
-      case Expression.RecordEmpty(tpe, eff, loc) => ???
+      case Expression.RecordEmpty(tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.RecordSelect(base, label, tpe, eff, loc) => ???
+      case Expression.RecordSelect(base, label, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ???
+      case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ???
+      case Expression.RecordRestrict(label, rest, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+      case Expression.ArrayLit(elms, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+      case Expression.ArrayNew(elm, len, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.ArrayLength(base, tpe, eff, loc) => ???
+      case Expression.ArrayLength(base, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.VectorLit(elms, tpe, eff, loc) => ???
+      case Expression.VectorLit(elms, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+      case Expression.VectorNew(elm, len, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+      case Expression.VectorLoad(base, index, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+      case Expression.VectorStore(base, index, elm, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.VectorLength(base, tpe, eff, loc) => ???
+      case Expression.VectorLength(base, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+      case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Ref(exp, tpe, eff, loc) => ???
+      case Expression.Ref(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Deref(exp, tpe, eff, loc) => ???
+      case Expression.Deref(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+      case Expression.Assign(exp1, exp2, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+      case Expression.HandleWith(exp, bindings, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Existential(fparam, exp, eff, loc) => ???
+      case Expression.Existential(fparam, exp, eff, loc) => exp0 //todo sjj
 
-      case Expression.Universal(fparam, exp, eff, loc) => ???
+      case Expression.Universal(fparam, exp, eff, loc) => exp0 //todo sjj
 
-      case Expression.Ascribe(exp, tpe, eff, loc) => ???
+      case Expression.Ascribe(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Cast(exp, tpe, eff, loc) => ???
+      case Expression.Cast(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+      case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.NativeField(field, tpe, eff, loc) => ???
+      case Expression.NativeField(field, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+      case Expression.NativeMethod(method, args, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.NewChannel(exp, tpe, eff, loc) => ???
+      case Expression.NewChannel(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.GetChannel(exp, tpe, eff, loc) => ???
+      case Expression.GetChannel(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.Spawn(exp, tpe, eff, loc) => ???
+      case Expression.Spawn(exp, tpe, eff, loc) => exp0 //todo sjj
 
       case Expression.Sleep(exp, tpe, eff, loc) =>
         visitExps(List(exp), kont0, kont0ReturnType, l => mkApplyCont(kont0, Expression.Sleep(l.head, tpe, eff, loc), eff, loc), defSymMap)
 
-      case Expression.FixpointConstraint(c0, tpe, eff, loc) => ???
+      case Expression.FixpointConstraint(c0, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+      case Expression.FixpointSolve(exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
+      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => exp0 //todo sjj
 
-      case Expression.UserError(tpe, eff, loc) => ???
+      case Expression.UserError(tpe, eff, loc) => exp0 //todo sjj
+
+      case Expression.CPSShift(exp, tpe, eff, loc) => exp0 //todo sjj
+
+      case Expression.CPSReset(exp, tpe, eff, loc) => exp0 //todo sjj
     }
 
   /**
