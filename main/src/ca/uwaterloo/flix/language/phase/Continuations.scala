@@ -76,7 +76,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // create f' as Def
     val (defnPrimeName, genericTypeParam) = defSymMap(defn.sym)
-    val defnPrime = Expression.Def(defnPrimeName, fixFuncType(defn.tpe, getReturnType(defn.tpe))/*Type.mkUncurriedArrow(List(fparam.tpe, Type.mkArrow(getReturnType(defn.tpe), getReturnType(defn.tpe))), getReturnType(defn.tpe))*/, defn.eff, defn.loc)
+    val defnPrime = Expression.Def(defnPrimeName, fixFuncType(defn.tpe, getReturnType(defn.tpe)), defn.eff, defn.loc)
 
     // the new body of f is to call f' with the arguments of f and a continuation (which is id)
     val body = Expression.ApplyWithKont(defnPrime, arg, id, getReturnType(defnPrime.tpe), defn.eff, defn.loc)
@@ -92,7 +92,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Add generic continuation as formal parameter to f'
     val kontSym = Symbol.freshVarSym("k")
-    val kontTpe = Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)
+//    val kontTpe = Type.mkArrow(getReturnType(defn.tpe), genericTypeParam.tpe)
+    val kontTpe = Type.mkArrow(fixFuncType(getReturnType(defn.tpe), genericTypeParam.tpe), genericTypeParam.tpe)
     val kontParam = FormalParam(kontSym, Modifiers.Empty, kontTpe, defn.loc)
     val kontVar = Expression.Var(kontSym, kontTpe, empEff(), defn.loc)
 
@@ -199,15 +200,15 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Lambda(fparam, exp, tpe, eff, loc) => {
         // make a new lambda with type exp.tpe -> generic
-        val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), exp.loc)
+        //val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), exp.loc)
         val freshKontSym = Symbol.freshVarSym("k")
-        val freshKontTpe = Type.mkArrow(getReturnType(exp.tpe), genericTypeParam.tpe)
+        val freshKontTpe = Type.mkArrow(getReturnType(exp.tpe), kont0ReturnType)
         val freshKontParam = FormalParam(freshKontSym, Modifiers.Empty, freshKontTpe, exp.loc)
         val freshKontVar = Expression.Var(freshKontSym, freshKontTpe, empEff(), exp.loc)
 
         // kont0(x -> e) becomes kont0((x,k) -> visitExp(e, k))
         val e = visitExp(exp, freshKontVar, freshKontTpe, defSymMap)
-        val lambda = Expression.LambdaWithKont(fparam, freshKontParam, e, tpe, eff, loc)
+        val lambda = Expression.LambdaWithKont(fparam, freshKontParam, e, fixFuncType(tpe, kont0ReturnType), eff, loc)
         mkApplyCont(kont0, lambda, eff, loc)
       }
 
@@ -221,10 +222,12 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       case Expression.Apply(exp1, exp2, tpe, eff, loc) => {
-        val f = (l: List[Expression]) => Expression.ApplyWithKont(l.head, l.last, kont0, tpe, eff, loc)
+        val f = (l: List[Expression]) => Expression.ApplyWithKont(l.head, l.last, kont0, kont0ReturnType, eff, loc)
         val out = visitExps(List(exp1, exp2), kont0, kont0ReturnType, f, defSymMap)
         out
       }
+
+      //case Expression.State
 
       case _ => exp0
     }
@@ -264,7 +267,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
   private def fixFuncType(tpe: Type, kont0ReturnType: Type): Type = {
     if (tpe.isArrow) {
-      val kType = Type.mkArrow(getReturnType(tpe), kont0ReturnType)
+      val kType = Type.mkArrow(fixFuncType(getReturnType(tpe), kont0ReturnType), kont0ReturnType)
       val lst: List[Type] = tpe.typeArguments.init :+ kType
       Type.mkUncurriedArrow(lst, kont0ReturnType)
     } else {

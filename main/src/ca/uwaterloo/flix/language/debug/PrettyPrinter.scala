@@ -33,7 +33,7 @@ object PrettyPrinter {
           fmtParam(fparam, vt)
           if (fparam != defn.fparams.last) vt << ", "
         }
-        vt << s"): ${defn.tpe.show} = "
+        vt << s"): ${defn.tpe.typeArguments.last.show} = "
         vt << Indent << NewLine
         fmtExp(defn, vt)
         vt << Dedent << NewLine << NewLine
