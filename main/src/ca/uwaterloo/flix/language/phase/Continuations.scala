@@ -29,11 +29,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     implicit val _ = flix.genSym
 
     // Create a map for each def from sym -> sym'
-    val defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)] = root.defs map {
-      case (sym, defn) => {
-        val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), defn.loc)
-        sym -> (Symbol.freshDefnSym(sym), genericTypeParam)
-      }
+    val defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym] = root.defs map {
+      case (sym, defn) => sym -> Symbol.freshDefnSym(sym)
     }
 
     // Rewrite f(...) = ... to f(...) = f'(..., id)
@@ -43,7 +40,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // For each function f(...), make an f'(..., k) with visit(f.body, k)
     val newDefs2: Map[Symbol.DefnSym, Def] = root.defs map {
-      case (sym, defn) => defSymMap(sym)._1 -> defToCPS(defn, defSymMap)
+      case (sym, defn) => defSymMap(sym) -> defToCPS(defn, defSymMap)
     }
 
     val result = root.copy(defs = newDefs1 ++ newDefs2)
@@ -60,7 +57,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Rewrite the body of each def to call a new def, which takes a continuation as parameter
     */
-  def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Def = {
+  def visitDefn(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
 
     // todo sjj: aux help
     // todo sjj: should we make the id function polymorphic in its type (x: t -> x: t) rather than (x: defn.tpe -> defn.tpe)
@@ -75,7 +72,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val arg = Expression.Var(fparam.sym, fparam.tpe, empEff(), fparam.loc)
 
     // create f' as Def
-    val (defnPrimeName, genericTypeParam) = defSymMap(defn.sym)
+    val defnPrimeName = defSymMap(defn.sym)
     val defnPrime = Expression.Def(defnPrimeName, fixFuncType(defn.tpe, getReturnType(defn.tpe)), defn.eff, defn.loc)
 
     // the new body of f is to call f' with the arguments of f and a continuation (which is id)
@@ -87,8 +84,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Perform CPS transformation of each function
     */
-  def defToCPS(defn: Def, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Def = {
-    val genericTypeParam: TypeParam = defSymMap(defn.sym)._2
+  def defToCPS(defn: Def, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Def = {
+    val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), defn.loc)
 
     // Add generic continuation as formal parameter to f'
     val kontSym = Symbol.freshVarSym("k")
@@ -107,14 +104,14 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // todo sjj: check subtree for shift/reset (dyr funktion til start)
   // todo sjj rename cps transform, only add to one visitDefn
-  def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Expression = exp0 match {
+  def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Expression = exp0 match {
 
       case Expression.Wild(tpe, eff, loc) => exp0 //todo sjj
       case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
       case Expression.Def(sym, tpe, eff, loc) => {
         if (defSymMap.contains(sym)) {
-          val (defnPrimeName, genericTypeParam) = defSymMap(sym)
+          val defnPrimeName = defSymMap(sym)
           //Expression.Def(defnPrimeName, )
           return mkApplyCont(kont0, Expression.Def(defnPrimeName, fixFuncType(tpe, kont0ReturnType), eff, loc), eff, loc)
         }
@@ -320,7 +317,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param f function to specialize the final Expression (i.e. the Expression of the caller)
     * @return Expression with the list converted to CPS
     */
-  private def visitExps(exps: List[Expression], kont0: Expression, kont0ReturnType: Type, f: List[Expression] => Expression, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Expression = {
+  private def visitExps(exps: List[Expression], kont0: Expression, kont0ReturnType: Type, f: List[Expression] => Expression, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Expression = {
     // TODO SJJ: Handle CPure expressions
     val loc = SourceLocation.Generated
 
