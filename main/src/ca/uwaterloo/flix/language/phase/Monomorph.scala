@@ -205,7 +205,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) =>
           val (p1, env1) = specializeFormalParam(fparam1, subst0)
-          val (p2, env2) = specializeFormalParam(fparam1, subst0)
+          val (p2, env2) = specializeFormalParam(fparam2, subst0)
           val e = visitExp(exp, env0 ++ env1 ++ env2)
           Expression.LambdaWithKont(p1, p2, e, subst0(tpe), eff, loc)
 
