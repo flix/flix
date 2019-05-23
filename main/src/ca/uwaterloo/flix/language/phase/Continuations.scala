@@ -332,11 +332,6 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Placeholder method for when control effects are supported.
-    */
-  private def isCPure(exp: Expression): Boolean = false
-
-  /**
     * Returns a lambda expression with the given symbol `sym` as a formal parameter,
     * the given type `argType` as its argument type and the given body `exp`.
     */
@@ -366,5 +361,143 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   private def empEff(): ca.uwaterloo.flix.language.ast.Eff = ca.uwaterloo.flix.language.ast.Eff.Empty
+
+  /**
+    * Placeholder method for when control effects are supported.
+    */
+  private def isCPure(exp0: Expression): Boolean = exp0 match {
+    case Expression.Var(sym, tpe, eff, loc) => true
+
+    case Expression.Def(sym, tpe, eff, loc) => true
+
+//    case Expression.Eff(sym, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Hole(sym, tpe, eff, loc) => ??? //todo sjj
+
+    case Expression.Unit(loc) => true
+    case Expression.True(loc) => true
+    case Expression.False(loc) => true
+    case Expression.Char(lit, loc) => true
+    case Expression.Float32(lit, loc) => true
+    case Expression.Float64(lit, loc) => true
+    case Expression.Int8(lit, loc) => true
+    case Expression.Int16(lit, loc) => true
+    case Expression.Int32(lit, loc) => true
+    case Expression.Int64(lit, loc) => true
+    case Expression.BigInt(lit, loc) => true
+    case Expression.Str(lit, loc) => true
+
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) => isCPure(exp)
+
+    case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) => isCPure(exp)
+
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
+
+    case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2) && isCPure(exp3)
+
+    case Expression.Unary(op, exp, tpe, eff, loc) => isCPure(exp)
+
+    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
+
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
+
+//    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? //todo sjj
+
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2) && isCPure(exp3)
+
+//    case Expression.Match(exp, rules, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Switch(rules, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? //todo sjj
+
+    case Expression.Tuple(elms, tpe, eff, loc) => elms.map(isCPure).forall(b => b)
+
+//    case Expression.RecordEmpty(tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.RecordSelect(base, label, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.ArrayLit(elms, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.ArrayLength(base, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.VectorLit(elms, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.VectorNew(elm, len, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.VectorLoad(base, index, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.VectorLength(base, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Ref(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Deref(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Existential(fparam, exp, eff, loc) => ??? //todo sjj
+
+//    case Expression.Universal(fparam, exp, eff, loc) => ??? //todo sjj
+
+//    case Expression.Ascribe(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.Cast(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.NativeField(field, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.NativeMethod(method, args, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.NewChannel(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.GetChannel(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? //todo sjj
+
+    case Expression.Spawn(exp, tpe, eff, loc) => isCPure(exp)
+
+    case Expression.Sleep(exp, tpe, eff, loc) => isCPure(exp)
+
+//    case Expression.FixpointConstraint(c0, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.UserError(tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.CPSShift(exp, tpe, eff, loc) => ??? //todo sjj
+
+//    case Expression.CPSReset(exp, tpe, eff, loc) => ??? //todo sjj
+
+    case _ => true
+  }
 
 }
