@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, SourcePosition, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Name, SourceLocation, SourcePosition, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
@@ -107,45 +107,64 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // todo sjj: check subtree for shift/reset (dyr funktion til start)
   // todo sjj rename cps transform, only add to one visitDefn
-  def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Expression = {
-    exp0 match {
+  def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, (Symbol.DefnSym, TypeParam)])(implicit genSym: GenSym): Expression = exp0 match {
 
-      //
-      // Unit. Apply `kont0` to the value.
-      //
-      case Expression.Unit(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      //
-      // True. Apply `kont0` to the value.
-      //
-      case Expression.True(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.False(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Char(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Float32(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Float64(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Int8(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Int16(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Int32(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Int64(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.BigInt(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
-      case Expression.Str(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
-
+      case Expression.Wild(tpe, eff, loc) => ???
       case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
 
-      // todo sjj: make cases
+      case Expression.Def(sym, tpe, eff, loc) => {
+        if (defSymMap.contains(sym)) {
+          val (defnPrimeName, genericTypeParam) = defSymMap(sym)
+          //Expression.Def(defnPrimeName, )
+          return mkApplyCont(kont0, Expression.Def(defnPrimeName, fixFuncType(tpe, kont0ReturnType), eff, loc), eff, loc)
+        }
+        //todo sjj: Can this ever be reached?
+        ???
+      }
+
+      case Expression.Eff(sym, tpe, eff, loc) => ???
+
+      case Expression.Hole(sym, tpe, eff, loc) => ???
+
+      case Expression.Unit(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.True(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.False(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Char(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Float32(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Float64(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Int8(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Int16(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Int32(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Int64(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.BigInt(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Str(lit, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+
+      case Expression.Lambda(fparam, exp, tpe, eff, loc) => {
+        // make a new lambda with type exp.tpe -> generic
+        //val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), exp.loc)
+        val freshKontSym = Symbol.freshVarSym("k")
+        val freshKontTpe = Type.mkArrow(getReturnType(exp.tpe), kont0ReturnType)
+        val freshKontParam = FormalParam(freshKontSym, Modifiers.Empty, freshKontTpe, exp.loc)
+        val freshKontVar = Expression.Var(freshKontSym, freshKontTpe, empEff(), exp.loc)
+
+        // kont0(x -> e) becomes kont0((x,k) -> visitExp(e, k))
+        val e = visitExp(exp, freshKontVar, freshKontTpe, defSymMap)
+        val lambda = Expression.LambdaWithKont(fparam, freshKontParam, e, fixFuncType(tpe, kont0ReturnType), eff, loc)
+        mkApplyCont(kont0, lambda, eff, loc)
+      }
+
+      case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
+      case Expression.Apply(exp1, exp2, tpe, eff, loc) => {
+        val f = (l: List[Expression]) => Expression.ApplyWithKont(l.head, l.last, kont0, kont0ReturnType, eff, loc)
+        val out = visitExps(List(exp1, exp2), kont0, kont0ReturnType, f, defSymMap)
+        out
+      }
+
+      case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
       case Expression.Unary(op, exp, tpe, _, loc) => {
-        val freshOperandSym = Symbol.freshVarSym() // TODO SJJ: What does the text do?
+        val freshOperandSym = Symbol.freshVarSym()
         val freshOperandVar = Expression.Var(freshOperandSym, exp.tpe, empEff(), loc)
         val body = Expression.Unary(op, freshOperandVar, tpe, empEff(), loc)
         val kont1 = mkLambda(freshOperandSym, freshOperandVar.tpe, mkApplyCont(kont0, body, empEff(), loc))
@@ -154,17 +173,24 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Binary(op, exp1, exp2, tpe, _, loc) => {
         // Introduce a fresh variable symbol for the lambda.
-        val freshOperand1Sym = Symbol.freshVarSym() // TODO SJJ: What does the text do?
+        val freshOperand1Sym = Symbol.freshVarSym()
         val freshOperand1Var = Expression.Var(freshOperand1Sym, exp1.tpe, empEff(), loc)
         val freshOperand2Sym = Symbol.freshVarSym()
         val freshOperand2Var = Expression.Var(freshOperand2Sym, exp2.tpe, empEff(), loc)
 
         val body = mkApplyCont(kont0, Expression.Binary(op, freshOperand1Var, freshOperand2Var, tpe, empEff(), loc), empEff(), loc)
         val kont2 = mkLambda(freshOperand2Sym, freshOperand2Var.tpe, body)
-        val kont15 = visitExp(exp2, kont2, kont0ReturnType, defSymMap) // TODO SJJ: Is kont0type the return type of the kont0 lambda?
+        val kont15 = visitExp(exp2, kont2, kont0ReturnType, defSymMap)
         val kont1 = mkLambda(freshOperand1Sym, freshOperand1Var.tpe, kont15)
         visitExp(exp1, kont1, kont0ReturnType, defSymMap)
       }
+
+      case Expression.Let(sym, exp1, exp2, tpe, _, loc) => {
+        val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0ReturnType, defSymMap))
+        visitExp(exp1, kont1, kont0ReturnType, defSymMap)
+      }
+
+      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ???
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) => {
         //
@@ -189,53 +215,96 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         visitExp(exp1, lambda, kont0ReturnType, defSymMap)
       }
 
-      case Expression.Let(sym, exp1, exp2, tpe, _, loc) => {
-        val kont1 = mkLambda(sym, exp1.tpe, visitExp(exp2, kont0, kont0ReturnType, defSymMap))
-        visitExp(exp1, kont1, kont0ReturnType, defSymMap)
-      }
+      case Expression.Match(exp, rules, tpe, eff, loc) => ???
 
-      case Expression.Tuple(elms, tpe, eff, loc) => {
+      case Expression.Switch(rules, tpe, eff, loc) => ???
+
+      case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
+
+      case Expression.Tuple(elms, tpe, eff, loc) =>
         visitExps(elms, kont0, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, tpe, eff, loc), eff, loc), defSymMap)
-      }
 
-      case Expression.Lambda(fparam, exp, tpe, eff, loc) => {
-        // make a new lambda with type exp.tpe -> generic
-        //val genericTypeParam = TypeParam(Name.Ident(SourcePosition.Unknown, "Generic Type", SourcePosition.Unknown), Type.freshTypeVar(), exp.loc)
-        val freshKontSym = Symbol.freshVarSym("k")
-        val freshKontTpe = Type.mkArrow(getReturnType(exp.tpe), kont0ReturnType)
-        val freshKontParam = FormalParam(freshKontSym, Modifiers.Empty, freshKontTpe, exp.loc)
-        val freshKontVar = Expression.Var(freshKontSym, freshKontTpe, empEff(), exp.loc)
+      case Expression.RecordEmpty(tpe, eff, loc) => ???
 
-        // kont0(x -> e) becomes kont0((x,k) -> visitExp(e, k))
-        val e = visitExp(exp, freshKontVar, freshKontTpe, defSymMap)
-        val lambda = Expression.LambdaWithKont(fparam, freshKontParam, e, fixFuncType(tpe, kont0ReturnType), eff, loc)
-        mkApplyCont(kont0, lambda, eff, loc)
-      }
+      case Expression.RecordSelect(base, label, tpe, eff, loc) => ???
 
-      case Expression.Def(sym, tpe, eff, loc) => {
-        if (defSymMap.contains(sym)) {
-          val (defnPrimeName, genericTypeParam) = defSymMap(sym)
-          //Expression.Def(defnPrimeName, )
-          return mkApplyCont(kont0, Expression.Def(defnPrimeName, fixFuncType(tpe, kont0ReturnType), eff, loc), eff, loc)
-        }
-        ???
-      }
+      case Expression.RecordExtend(label, value, rest, tpe, eff, loc) => ???
 
-      case Expression.Apply(exp1, exp2, tpe, eff, loc) => {
-        val f = (l: List[Expression]) => Expression.ApplyWithKont(l.head, l.last, kont0, kont0ReturnType, eff, loc)
-        val out = visitExps(List(exp1, exp2), kont0, kont0ReturnType, f, defSymMap)
-        out
-      }
+      case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ???
 
-      case Expression.Sleep(exp, tpe, eff, loc) => {
+      case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+
+      case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+
+      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+
+      case Expression.ArrayLength(base, tpe, eff, loc) => ???
+
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+
+      case Expression.VectorLit(elms, tpe, eff, loc) => ???
+
+      case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+
+      case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+
+      case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+
+      case Expression.VectorLength(base, tpe, eff, loc) => ???
+
+      case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+
+      case Expression.Ref(exp, tpe, eff, loc) => ???
+
+      case Expression.Deref(exp, tpe, eff, loc) => ???
+
+      case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+
+      case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+
+      case Expression.Existential(fparam, exp, eff, loc) => ???
+
+      case Expression.Universal(fparam, exp, eff, loc) => ???
+
+      case Expression.Ascribe(exp, tpe, eff, loc) => ???
+
+      case Expression.Cast(exp, tpe, eff, loc) => ???
+
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+
+      case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+
+      case Expression.NativeField(field, tpe, eff, loc) => ???
+
+      case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+
+      case Expression.NewChannel(exp, tpe, eff, loc) => ???
+
+      case Expression.GetChannel(exp, tpe, eff, loc) => ???
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) => ???
+
+      case Expression.Spawn(exp, tpe, eff, loc) => ???
+
+      case Expression.Sleep(exp, tpe, eff, loc) =>
         visitExps(List(exp), kont0, kont0ReturnType, l => mkApplyCont(kont0, Expression.Sleep(l.head, tpe, eff, loc), eff, loc), defSymMap)
-      }
 
-      //case Expression.State
+      case Expression.FixpointConstraint(c0, tpe, eff, loc) => ???
 
-      case _ => exp0
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
+
+      case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
+
+      case Expression.UserError(tpe, eff, loc) => ???
     }
-  }
 
   /**
     * Convert a List of Expressions to CPS.
