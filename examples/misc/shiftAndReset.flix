@@ -1,8 +1,8 @@
-def main(): Int = f(1, 2)
+def main(): Int = f(1)
 
-def f(a: Int, b: Int): Int =
+def f(a: Int): Int =
     let g = (x, y) -> two(add(add(x,y), inc(y)));
-    twice(g(2))(add(a, b))
+    twice(g(2))(add(a, a))
 
 /// Returns the sum of x and y.
 def add(x: Int, y: Int): Int = x + y
@@ -16,3 +16,9 @@ def twice(f: Int -> Int): Int -> Int = x -> f(f(x))
 /// Returns x plus two.
 def two(x: Int): Int = twice(inc)(x)
 
+
+
+//def main(): Int = f(1)
+//def f(x: Int): Int =
+//    let y = 1;
+//    x+y
