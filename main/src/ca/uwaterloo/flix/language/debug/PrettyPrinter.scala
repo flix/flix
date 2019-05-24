@@ -598,8 +598,9 @@ object PrettyPrinter {
           vt << Dedent << NewLine
 
         case TypedAst.Expression.Apply(exp, arg, tpe, eff, loc) =>
+          vt << "("
           visitExp(exp)
-          vt.text("(")
+          vt.text(") (")
           visitExp(arg)
           vt.text(")")
 
@@ -892,7 +893,11 @@ object PrettyPrinter {
 
         case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.CPSReset(exp, tpe, eff, loc) => vt << "?"
-        case TypedAst.Expression.CPSShift(exp, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.CPSShift(exp, tpe, eff, loc) =>
+          vt << "shift("
+          visitExp(exp)
+          vt << ")"
+          if (moreTypes) vt <<"[" << tpe.show << "]"
         case TypedAst.Expression.Cast(exp, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.Hole(sym, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => vt << "?"
