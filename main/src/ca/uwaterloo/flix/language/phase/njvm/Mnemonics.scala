@@ -652,7 +652,7 @@ object Mnemonics {
 
   trait MProxyObject extends MObject
 
-
+  trait MFunction extends MObject
 
   object MnemonicsTypes {
 
@@ -691,6 +691,7 @@ object Mnemonics {
   private val tString = typeOf[Ref[MString]]
   private val tObject = typeOf[Ref[MObject]]
   private val tProxy = typeOf[Ref[MProxyObject]]
+  private val tFunction = typeOf[Ref[MFunction]]
 
 
   private val tUnit = typeOf[Ref[MUnit]]
@@ -763,6 +764,7 @@ object Mnemonics {
       case t if t =:= tObject => NJvmType.Object
       case t if t =:= tUnit => NJvmType.Unit
       case t if t =:= tProxy => Reference(JvmName.ProxyObject)
+      case t if t =:= tFunction => Reference(JvmName.Function)
 
       case t if t =:= tBoolean => Reference(JvmName.Boolean)
       case t if t =:= tCharacter => Reference(JvmName.Character)

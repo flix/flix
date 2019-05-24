@@ -17,13 +17,14 @@ package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.language.phase.njvm.{Api, GenExpression, NJvmType}
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.ContinuationInterface
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Label
 
@@ -384,7 +385,200 @@ class FunctionClass(map: Map[JvmName, MnemonicsClass], sym: Symbol.DefnSym, defn
     )
   }
 
-  val evalMethod : Method2[Ref[FunctionClass], Ref[Context], Ref[MObject]] = ???
+  val evalMethod : Method2[Ref[FunctionClass], Ref[Context], Ref[MObject]] = {
+    val contextLocal = new Local[Ref[Context]](1)
+    val continuationField = new UncheckedClassField("continuation", getContextClassType, NJvmType.Object)
+
+    // Type of the function
+    val fnType = root.defs(defn.sym).tpe
+
+    // Type of the continuation interface
+    val cont =
+      retTpe match {
+        case PrimBool =>
+          getContinuationInterfaceType[MBool]
+        case PrimChar =>
+          getContinuationInterfaceType[MChar]
+        case PrimByte =>
+          getContinuationInterfaceType[MByte]
+        case PrimShort =>
+          getContinuationInterfaceType[MShort]
+        case PrimInt =>
+          getContinuationInterfaceType[MInt]
+        case PrimLong =>
+          getContinuationInterfaceType[MLong]
+        case PrimFloat =>
+          getContinuationInterfaceType[MFloat]
+        case PrimDouble =>
+          getContinuationInterfaceType[MDouble]
+        case Reference(_) =>
+          getContinuationInterfaceType[Ref[MObject]]
+        case _ => throw InternalCompilerException(s"Unexpected type $fnType")
+      }
+
+    cg.mkMethod2("eval",
+      sig =>
+        sig.getArg2.LOAD[StackNil] |>>
+          sig.getArg1.LOAD |>>
+          continuationField.PUT_FIELD |>>
+          IFNONNULL(
+            contextLocal.LOAD[StackNil] |>>
+              continuationField.GET_FIELD[StackNil,Ref[Context], Ref[MObject]] |>>
+
+              contextLocal.LOAD[StackNil ** Ref[MObject]] |>>
+              CONST_NULL[StackNil ** Ref[MObject] ** Ref[Context], Ref[MObject]] |>>
+              continuationField.PUT_FIELD[StackNil ** Ref[MObject], Ref[Context], Ref[MObject]] |>>
+              (retTpe match {
+
+                case PrimBool =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MBool]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimChar =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MChar]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimByte =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].invokeMethod
+                  CHECK_CAST2[StackNil, Ref[MObject], Ref[ContinuationInterface[MByte]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimShort =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MShort]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimInt =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MInt]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimLong =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MLong]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimFloat =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MFloat]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimDouble =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[MDouble]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case Reference(_) =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].invokeMethod
+                  CHECK_CAST2[StackNil , Ref[MObject], Ref[ContinuationInterface[Ref[MObject]]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+              }) |>>
+
+              contextLocal.LOAD |>>
+              continuationField.GET_FIELD
+          ) |>>
+
+          (retTpe match {
+            case PrimBool =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Boolean.valueOf.INVOKE |>>
+                RETURN
+
+            case PrimChar =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Character.valueOf.INVOKE |>>
+                RETURN
+            case PrimByte =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Byte.valueOf.INVOKE |>>
+                RETURN
+            case PrimShort =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Short.valueOf.INVOKE |>>
+                RETURN
+            case PrimInt =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Integer.valueOf.INVOKE |>>
+                RETURN
+            case PrimLong =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Long.valueOf.INVOKE |>>
+                RETURN
+            case PrimFloat =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Float.valueOf.INVOKE |>>
+                RETURN
+
+            case PrimDouble =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Double.valueOf.INVOKE |>>
+                RETURN
+
+            case Reference(_) =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].getResultMethod
+              ifoLocal.LOAD[StackNil] |>>
+                getResultMethod.INVOKE |>>
+                RETURN
+            case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+          })
+    )
+  }
 
   val applyMethod : Method2[Ref[FunctionClass], Ref[MObject], Ref[MObject]] = {
 
@@ -492,65 +686,172 @@ class FunctionClass(map: Map[JvmName, MnemonicsClass], sym: Symbol.DefnSym, defn
           contextLocal.STORE |>>
           evalMethod.INVOKE |>>
           // Construct a proxy object.
-//          (tresult match {
-//          case arrayType: MonoType.Array => newProxyArray
-//          case nonArrayType => newProxyObject(retTpe)
-//          }) |>>
-
-        RETURN[Ref[MObject]]
+          (tresult match {
+            case arrayType: MonoType.Array =>
+              val jvmTpe = getErasedJvmType(arrayType.tpe)
+              (jvmTpe match{
+                case PrimBool => newProxyArray[StackNil, MBool](arrayType)
+                case PrimChar => newProxyArray[StackNil, MChar](arrayType)
+                case PrimByte => newProxyArray[StackNil, MByte](arrayType)
+                case PrimShort => newProxyArray[StackNil, MShort](arrayType)
+                case PrimInt => newProxyArray[StackNil, MInt](arrayType)
+                case PrimLong => newProxyArray[StackNil, MLong](arrayType)
+                case PrimFloat => newProxyArray[StackNil, MFloat](arrayType)
+                case PrimDouble => newProxyArray[StackNil, MDouble](arrayType)
+                case Reference(_) => newProxyArray[StackNil, Ref[MObject]](arrayType)
+                case _ => throw InternalCompilerException(s"Unexpected type $tresult")
+              }).asInstanceOf[F[StackNil ** Ref[MObject]] => F[StackNil ** Ref[MProxyObject]]]
+            case _ =>
+              newProxyObject[StackNil](tresult)
+          }) |>>
+        RETURN
     )
   }
-  private def newProxyArray[S <: Stack, T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): F[S ** Ref[MObject]] => F[S ** MArray[Ref[MProxyObject]]] = {
+  private def newProxyArray[S <: Stack, T <: MnemonicsTypes : TypeTag](tpe: MonoType.Array)(implicit root: Root, flix: Flix): F[S ** Ref[MObject]] => F[S ** MArray[Ref[MProxyObject]]] = {
 
+    val elementType = tpe.tpe
+
+    val jvmTpe = getJvmType[T]
     // The local variable index of the original array.
-    val arrayLocal = new ArrayLocal[T](2)
 
     // The local variable index of the new array.
     val resultArray = new ArrayLocal[Ref[MProxyObject]](3)
 
     // The local variable index of the loop counter.
     val loopCounter = new Local[MInt](4)
+    jvmTpe match{
+      case Reference(_) =>
+        val arrayLocal = new ArrayLocal[Ref[MObject]](2)
+        CHECK_CAST_ARRAY2[S, Ref[MObject], MArray[Ref[MObject]]](getArrayType(jvmTpe)) |>>
+          arrayLocal.STORE_ARRAY |>>
+          arrayLocal.LOAD_ARRAY |>>
+          ARRAYLENGTH |>>
+          NEWARRAY[S, MProxyObject] |>>
+          resultArray.STORE_ARRAY |>>
+          FOR_GE(
+            //Loop init
+            ICONST[S](0) |>>
+              loopCounter.STORE,
+            //Loop test
+            loopCounter.LOAD[S] |>>
+              resultArray.LOAD_ARRAY |>>
+              ARRAYLENGTH,
+            //Loop body
+            resultArray.LOAD_ARRAY[S] |>>
+              loopCounter.LOAD |>>
+              arrayLocal.LOAD_ARRAY |>>
+              loopCounter.LOAD |>>
+              arrayLocal.LOAD_ARRAY_ELEMENT |>>
+              newProxyObject(elementType) |>>
+              resultArray.STORE_ARRAY_ELEMENT |>>
+              loopCounter.LOAD |>>
+              ICONST(1) |>>
+              IADD |>>
+              loopCounter.STORE
+          ) |>>
+          resultArray.LOAD_ARRAY
+      case _ =>
+        val arrayLocal = new ArrayLocal[T](2)
+        CHECK_CAST_ARRAY2[S, Ref[MObject], MArray[T]](getArrayType(jvmTpe)) |>>
+        arrayLocal.STORE_ARRAY |>>
+        arrayLocal.LOAD_ARRAY |>>
+        ARRAYLENGTH |>>
+        NEWARRAY[S, MProxyObject] |>>
+        resultArray.STORE_ARRAY |>>
+        FOR_GE(
+          //Loop init
+          ICONST[S](0) |>>
+            loopCounter.STORE,
+          //Loop test
+          loopCounter.LOAD[S] |>>
+            resultArray.LOAD_ARRAY |>>
+            ARRAYLENGTH,
+          //Loop body
+          resultArray.LOAD_ARRAY[S] |>>
+            loopCounter.LOAD |>>
+            arrayLocal.LOAD_ARRAY |>>
+            loopCounter.LOAD |>>
+            arrayLocal.LOAD_ARRAY_ELEMENT |>>
+            box[S ** MArray[Ref[MProxyObject]] ** MInt, T, Ref[MObject]] |>>
+            newProxyObject(elementType) |>>
+            resultArray.STORE_ARRAY_ELEMENT |>>
+            loopCounter.LOAD |>>
+            ICONST(1) |>>
+            IADD |>>
+            loopCounter.STORE
+        ) |>>
+        resultArray.LOAD_ARRAY
+    }
 
-    CHECK_CAST_ARRAY2[S, Ref[MObject], MArray[T]](getArrayType(getJvmType[T])) |>>
-    arrayLocal.STORE_ARRAY |>>
-    arrayLocal.LOAD_ARRAY |>>
-    ARRAYLENGTH |>>
-    NEWARRAY[S, MProxyObject] |>>
-    resultArray.STORE_ARRAY |>>
-    FOR_GE(
-      //Loop init
-      ICONST[S](0) |>>
-      loopCounter.STORE,
-      //Loop test
-      loopCounter.LOAD[S] |>>
-      resultArray.LOAD_ARRAY |>>
-      ARRAYLENGTH,
-      //Loop body
-      resultArray.LOAD_ARRAY[S] |>>
-      loopCounter.LOAD |>>
-      arrayLocal.LOAD_ARRAY |>>
-      loopCounter.LOAD |>>
-      arrayLocal.LOAD_ARRAY_ELEMENT |>>
-      boxIfPrim[S ** MArray[Ref[MProxyObject]] ** MInt, T, Ref[T]] |>>
-      newProxyObject |>>
-      resultArray.STORE_ARRAY_ELEMENT |>>
-      loopCounter.LOAD |>>
-      ICONST(1) |>>
-      IADD |>>
-      loopCounter.STORE
-  ) |>>
-    resultArray.LOAD_ARRAY
   }
 
+  private def newProxyObject[S <: Stack](tpe: MonoType)(implicit root: Root, flix: Flix): F[S ** Ref[MObject]] => F[S ** Ref[MProxyObject]] = {
+    // Construct the equal function object.
+    (root.specialOps(SpecialOperator.Equality).get(tpe) match {
+        case None => CONST_NULL[S ** Ref[MObject] ,Ref[MFunction]]
+        case Some(hashSym) => compileDefSymbol[S**Ref[MObject]](hashSym)
+    })|>>
+    // Construct the hash function object.
+    (root.specialOps(SpecialOperator.HashCode).get(tpe) match {
+        case None => CONST_NULL[S ** Ref[MObject]**Ref[MFunction] ,Ref[MFunction]]
+        case Some(hashSym) => compileDefSymbol[S ** Ref[MObject]**Ref[MFunction]](hashSym)
+    })|>>
+    // Construct the toStr function object.
+    (root.specialOps(SpecialOperator.ToString).get(tpe) match {
+      case None => CONST_NULL[S ** Ref[MObject]**Ref[MFunction] ** Ref[MFunction] ,Ref[MFunction]]
+      case Some(hashSym) => compileDefSymbol[S ** Ref[MObject]**Ref[MFunction] ** Ref[MFunction]](hashSym)
+    })|>>
+    Api.Java.Runtime.ProxyObject.of.INVOKE
+  }
 
-  private def newProxyObject[S <: Stack, T1 <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): F[S ** T1] => F[S ** Ref[MProxyObject]] =  ???
+  private def compileDefSymbol[S <: Stack](sym: Symbol.DefnSym)(implicit root: Root, flix: Flix):
+  F[S] => F[S ** Ref[MFunction]] = {
+    // Retrieve the namespace of the def symbol.
+    val ns = getNamespace(sym)
 
-  private def boxIfPrim[S <: Stack, T1 <: MnemonicsTypes : TypeTag, T2 <: Ref[_]](implicit root: Root, flix: Flix): F[S ** T1] => F[S ** T2] = {
+    // Retrieve the JVM type of the namespace.
+    val nsJvmType = getNamespaceClassType(ns)
 
-    (getJvmType[T1] match {
+    // Retrieve the name of the namespace field on the context object.
+    val nsFieldName = getNamespaceFieldNameInContextClass(ns)
+
+    // Retrieve the name of the def on the namespace object.
+    val defFieldName = getDefFieldNameInNamespaceClass(sym)
+
+    // Retrieve the type of the function def class.
+    val defJvmType = getFunctionDefinitionClassType(sym)
+
+    val contextLocal = new Local[Ref[Context]](1)
+    val namespaceObjField = new UncheckedClassField(nsFieldName, NJvmType.Context, nsJvmType)
+    val defObjField = new UncheckedClassField(defFieldName, nsJvmType, defJvmType)
+
+    // Load the current context.
+    contextLocal.LOAD[S] |>>
+    namespaceObjField.GET_FIELD[S, Ref[Context], Ref[MObject]] |>>
+    defObjField.GET_FIELD[S, Ref[MObject], Ref[MFunction]]
+
+  }
+
+  private def box[S <: Stack, T1 <: MnemonicsTypes : TypeTag, T2 <: Ref[_]](implicit root: Root, flix: Flix): F[S ** T1] => F[S ** T2] = {
+    val jvmTpe = getJvmType[T1]
+    (jvmTpe match {
       case PrimBool =>
         Api.Java.Lang.Boolean.valueOf.INVOKE[S]
-      case _ => ???
+      case PrimChar =>
+        Api.Java.Lang.Character.valueOf.INVOKE[S]
+      case PrimByte =>
+        Api.Java.Lang.Byte.valueOf.INVOKE[S]
+      case PrimShort =>
+        Api.Java.Lang.Short.valueOf.INVOKE[S]
+      case PrimInt =>
+        Api.Java.Lang.Integer.valueOf.INVOKE[S]
+      case PrimLong =>
+        Api.Java.Lang.Long.valueOf.INVOKE[S]
+      case PrimFloat =>
+        Api.Java.Lang.Float.valueOf.INVOKE[S]
+      case PrimDouble =>
+        Api.Java.Lang.Double.valueOf.INVOKE[S]
+      case _ => throw InternalCompilerException(s"Unexpected type $jvmTpe")
     }).asInstanceOf
   }
 

@@ -34,6 +34,9 @@ object Api {
       }
     }
     object Runtime {
+      object ProxyObject {
+        val of : Method4[Ref[MObject], Ref[MFunction], Ref[MFunction], Ref[MFunction] , Ref[MProxyObject]] = new Method4(JvmModifier.InvokeStatic, Reference(JvmName.ProxyObject), "of")
+      }
       object Value {
         object Unit {
           val getInstance: Method0[Ref[MUnit]] = new Method0(JvmModifier.InvokeStatic, NJvmType.Unit, "getInstance")
