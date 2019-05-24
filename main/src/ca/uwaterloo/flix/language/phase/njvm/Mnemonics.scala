@@ -17,14 +17,15 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{RootPackage, mangle}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.JvmOps.{RootPackage, getTagsOf, mangle}
 import ca.uwaterloo.flix.language.phase.jvm._
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java
 import ca.uwaterloo.flix.language.phase.njvm.Api.Java.Lang.{Object, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.JvmModifier._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.util.InternalCompilerException
+
 import scala.reflect.runtime.universe._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 import org.objectweb.asm.Opcodes.{DUP, NEW, _}
@@ -173,6 +174,21 @@ object Mnemonics {
       mv.visitVarInsn(storeIns, offset)
       this.asInstanceOf[F[S]]
     }
+
+
+    def emitArrayLoad[S](localType: NJvmType): F[S] = {
+      val arrayLoadIns = getArrayLoadInstruction(localType)
+      mv.visitInsn(arrayLoadIns)
+      this.asInstanceOf[F[S]]
+    }
+
+
+    def emitArrayStore[S](localType: NJvmType): F[S] = {
+      val arrayStoreIns = getArrayStoreInstruction(localType)
+      mv.visitInsn(arrayStoreIns)
+      this.asInstanceOf[F[S]]
+    }
+
 
     /**
       * Emits a getField instruction given the fieldName and it's type
@@ -341,6 +357,12 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+
+
+    def emitIadd[S]: F[S] = {
+      mv.visitInsn(IADD)
+      this.asInstanceOf[F[S]]
+    }
     /**
       * Emits a 'new' instruction which creates a new instance of the provided JvmType.Reference
       *
@@ -354,8 +376,13 @@ object Mnemonics {
       * Emits a 'dup'  which duplicates whatever is on top of stack
       *
       */
-    def emitDup[S](): F[S] = {
+    def emitDup[S]: F[S] = {
       mv.visitInsn(DUP)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitInstanceOf[S](jt : Reference): F[S] = {
+      mv.visitTypeInsn(INSTANCEOF, jt.name.toInternalName)
       this.asInstanceOf[F[S]]
     }
 
@@ -388,6 +415,16 @@ object Mnemonics {
       */
     def emitIfeq[S](label: Label): F[S] = {
       mv.visitJumpInsn(IFEQ, label)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitIfICmpGe[S](label: Label): F[S] = {
+      mv.visitJumpInsn(IF_ICMPGE, label)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitIfACmpEq[S](label: Label): F[S] = {
+      mv.visitJumpInsn(IF_ACMPEQ, label)
       this.asInstanceOf[F[S]]
     }
 
@@ -430,6 +467,46 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+    def emitCheckCastArray[S](jt: NJvmType.Reference): F[S] = {
+      mv.visitTypeInsn(CHECKCAST, "[" + jt.name.toInternalName)
+      this.asInstanceOf[F[S]]
+    }
+
+
+    def emitArrayLength[S]: F[S] = {
+      mv.visitInsn(ARRAYLENGTH)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitCheckCastArray2[S](jt:String): F[S] = {
+      mv.visitTypeInsn(CHECKCAST, jt)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitSwap[S]: F[S] = {
+      mv.visitInsn(SWAP)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitPop[S]: F[S] = {
+      mv.visitInsn(POP)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitDupX2[S]: F[S] = {
+      mv.visitInsn(DUP2_X2)
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Emits a i2l instruction
+      *
+      */
+    def emitI2L[S]: F[S] = {
+      mv.visitInsn(I2L)
+      this.asInstanceOf[F[S]]
+    }
+
     /**
       * Emits a new array instruction to the provided jt
       *
@@ -457,6 +534,100 @@ object Mnemonics {
       mv.visitInsn(AASTORE)
       this.asInstanceOf[F[S]]
     }
+
+    def emitAALOAD[S]: F[S] = {
+      mv.visitInsn(AALOAD)
+      this.asInstanceOf[F[S]]
+    }
+
+
+    /**
+      * Emits a ICONST
+      *
+      */
+    def emitICONST[S](i : Int): F[S] = {
+      i match {
+        case -1 => mv.visitInsn(ICONST_M1)
+        case 0 => mv.visitInsn(ICONST_0)
+        case 1 => mv.visitInsn(ICONST_1)
+        case 2 => mv.visitInsn(ICONST_2)
+        case 3 => mv.visitInsn(ICONST_3)
+        case 4 => mv.visitInsn(ICONST_4)
+        case 5 => mv.visitInsn(ICONST_5)
+        case _ => throw InternalCompilerException("Unexpected integer constant " + i)
+      }
+      this.asInstanceOf[F[S]]
+    }
+
+
+    /**
+      * Emits a ICONST
+      *
+      */
+    def emitLCONST[S](l : Long): F[S] = {
+      l match {
+        case 0 => mv.visitInsn(LCONST_0)
+        case 1 => mv.visitInsn(LCONST_1)
+        case _ => throw InternalCompilerException("Unexpected integer constant " + l)
+      }
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Emits a FCONST
+      *
+      */
+    def emitFCONST[S](f : Float): F[S] = {
+      f match {
+        case 0f => mv.visitInsn(FCONST_0)
+        case 1f => mv.visitInsn(FCONST_1)
+        case 2f => mv.visitInsn(FCONST_2)
+        case _ => throw InternalCompilerException("Unexpected integer constant " + f)
+      }
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Emits a DCONST
+      *
+      */
+    def emitDCONST[S](d : Double): F[S] = {
+      d match {
+        case 0d => mv.visitInsn(DCONST_0)
+        case 1d => mv.visitInsn(DCONST_1)
+        case _ => throw InternalCompilerException("Unexpected integer constant " + d)
+      }
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Emits a BIPUSH
+      *
+      */
+    def emitBIPUSH[S](b : Byte): F[S] = {
+      mv.visitIntInsn(BIPUSH, b)
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Emits a SIPUSH
+      *
+      */
+    def emitSIPUSH[S](s : Short): F[S] = {
+      mv.visitIntInsn(SIPUSH, s)
+      this.asInstanceOf[F[S]]
+    }
+
+    /**
+      * Adds source line for debugging
+      *
+      */
+    def addSourceLine[S](loc: SourceLocation): F[S] = {
+      val label = new Label()
+      mv.visitLabel(label)
+      mv.visitLineNumber(loc.beginLine, label)
+      this.asInstanceOf[F[S]]
+    }
   }
 
   /**
@@ -476,6 +647,12 @@ object Mnemonics {
   trait MString extends MObject
 
   trait MUnit extends MObject
+
+  trait MBigInt extends MObject
+
+  trait MProxyObject extends MObject
+
+
 
   object MnemonicsTypes {
 
@@ -513,6 +690,9 @@ object Mnemonics {
   private val tPrimDouble = typeOf[MDouble]
   private val tString = typeOf[Ref[MString]]
   private val tObject = typeOf[Ref[MObject]]
+  private val tProxy = typeOf[Ref[MProxyObject]]
+
+
   private val tUnit = typeOf[Ref[MUnit]]
   private val tBoolean = typeOf[Ref[MBool]]
   private val tCharacter = typeOf[Ref[MChar]]
@@ -524,6 +704,8 @@ object Mnemonics {
   private val tDouble = typeOf[Ref[MDouble]]
   private val tArrayString = typeOf[MArray[MString]]
   private val tArrayObject = typeOf[MArray[MObject]]
+  private val tArrayProxy = typeOf[MArray[MProxyObject]]
+
   private val tContext = typeOf[Ref[Context]]
   private val tMain = typeOf[Ref[Main[_]]]
   private val tRecordInterface = typeOf[Ref[RecordInterface]]
@@ -580,18 +762,21 @@ object Mnemonics {
       case t if t =:= tString => NJvmType.String
       case t if t =:= tObject => NJvmType.Object
       case t if t =:= tUnit => NJvmType.Unit
+      case t if t =:= tProxy => Reference(JvmName.ProxyObject)
 
-      case t if t == tBoolean => Reference(JvmName.Boolean)
-      case t if t == tCharacter => Reference(JvmName.Character)
-      case t if t == tByte => Reference(JvmName.Byte)
-      case t if t == tShort => Reference(JvmName.Short)
-      case t if t == tInteger => Reference(JvmName.Integer)
-      case t if t == tLong => Reference(JvmName.Long)
-      case t if t == tFloat => Reference(JvmName.Float)
-      case t if t == tDouble => Reference(JvmName.Double)
+      case t if t =:= tBoolean => Reference(JvmName.Boolean)
+      case t if t =:= tCharacter => Reference(JvmName.Character)
+      case t if t =:= tByte => Reference(JvmName.Byte)
+      case t if t =:= tShort => Reference(JvmName.Short)
+      case t if t =:= tInteger => Reference(JvmName.Integer)
+      case t if t =:= tLong => Reference(JvmName.Long)
+      case t if t =:= tFloat => Reference(JvmName.Float)
+      case t if t =:= tDouble => Reference(JvmName.Double)
 
-      case t if t == tArrayString => JArray(NJvmType.String)
-      case t if t == tArrayObject => JArray(NJvmType.Object)
+      case t if t =:= tArrayString => JArray(NJvmType.String)
+      case t if t =:= tArrayObject => JArray(NJvmType.Object)
+      case t if t =:= tArrayProxy => JArray(NJvmType.ProxyObject)
+
 
       case t if t =:= tContext => NJvmType.Context
 
@@ -720,6 +905,37 @@ object Mnemonics {
     }
   }
 
+  def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): NJvmType = tpe match {
+    // Primitives
+    case MonoType.Unit => Unit
+    case MonoType.Bool => PrimBool
+    case MonoType.Char => PrimChar
+    case MonoType.Float32 => PrimFloat
+    case MonoType.Float64 => PrimDouble
+    case MonoType.Int8 => PrimByte
+    case MonoType.Int16 => PrimShort
+    case MonoType.Int32 => PrimInt
+    case MonoType.Int64 => PrimLong
+    case MonoType.BigInt => BigInteger
+    case MonoType.Str => NJvmType.String
+
+    // Compound
+    case MonoType.Array(_) => NJvmType.Object
+    case MonoType.Channel(_) => NJvmType.Object
+    case MonoType.Ref(_) => getRefClassType(tpe)
+    case MonoType.Tuple(elms) => getTupleInterfaceType(elms.map(getErasedJvmType))
+    case MonoType.RecordEmpty() => getRecordInterfaceType
+    case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType
+    case MonoType.Enum(sym, elms) => getEnumInterfaceType(sym, elms.map(getErasedJvmType))
+    case MonoType.Arrow(targs, tresult) => getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+    case MonoType.Relation(sym, attr) => Reference(JvmName.PredSym)
+    case MonoType.Native(clazz) => NJvmType.Object
+    case MonoType.SchemaEmpty() => Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+    case MonoType.SchemaExtend(_, _, _) => Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
+
   /**
     * Singleton which contains the operations which compose the core of how we keep track of the JvmStack at compile.
     * Each of the functions in this object return a function which maps a stack state to another according to the
@@ -748,10 +964,15 @@ object Mnemonics {
     }
 
 
+    def RETURN_VOID2[S<: Stack](implicit root: Root, flix: Flix): F[S] => F[StackNil] = {
+      t => t.emitReturnVoid()
+    }
+
     /**
       * Pushes the result of adding the two top-most ints.
       */
-    def IADD[S <: Stack]: F[S ** MInt ** MInt] => F[S ** MInt] = ???
+    def IADD[S <: Stack]: F[S ** MInt ** MInt] => F[S ** MInt] =
+      t => t.emitIadd
 
     /**
       * Creates a new instance of the type parameter T which should be a subtype of JvmType.Reference and puts
@@ -764,7 +985,10 @@ object Mnemonics {
       * Duplicates whatever is on Top of the stack
       */
     def DUP[S <: Stack, T <: MnemonicsTypes : TypeTag]: F[S ** T] => F[S ** T ** T] =
-      t => t.emitDup()
+      t => t.emitDup
+
+    def INSTANCE_OF[S <: Stack, T <: MnemonicsTypes : TypeTag](jt : Reference): F[S ** T] => F[S ** MBool] =
+      t => t.emitInstanceOf(jt)
 
     /**
       * Loads a constant string onto the stack
@@ -776,6 +1000,32 @@ object Mnemonics {
       * Loads a constant int onto the stack
       */
     def LDC_INT[S <: Stack](value: Int): F[S] => F[S ** MInt] =
+      t => t.emitLdc(value.asInstanceOf[Object])
+
+
+    /**
+      * Loads a constant int onto the stack
+      */
+    def LDC_LONG[S <: Stack](value: Long): F[S] => F[S ** MLong] =
+      t => t.emitLdc(value.asInstanceOf[Object])
+
+
+    /**
+      * Transform an integer into a long
+      */
+    def I2L[S <: Stack]: F[S ** MInt] => F[S ** MLong] =
+      t => t.emitI2L
+
+    /**
+      * Loads a constant float onto the stack
+      */
+    def LDC_FLOAT[S <: Stack](value: Float): F[S] => F[S ** MFloat] =
+      t => t.emitLdc(value.asInstanceOf[Object])
+
+    /**
+      * Loads a constant double onto the stack
+      */
+    def LDC_DOUBLE[S <: Stack](value: Double): F[S] => F[S ** MDouble] =
       t => t.emitLdc(value.asInstanceOf[Object])
 
     /**
@@ -807,6 +1057,41 @@ object Mnemonics {
         (t => t.emitLabel(skipLabel))
     }
 
+    def IF_ACMPEQ[S <: Stack, T1 <: Ref[MObject], T2 <: Ref[MObject]](f: F[S] => F[S]): F[S ** T1 ** T2 ] => F[S] = {
+      val skipLabel = new Label
+      ((t: F[S ** T1 ** T2]) => t.emitIfACmpEq[S](skipLabel)) |>>
+        f |>>
+        (t => t.emitLabel(skipLabel))
+    }
+
+
+    def FOR_GE[S <: Stack](init: F[S] => F[S], test : F[S] => F[S ** MInt ** MInt], body : F[S] => F[S] ): F[S] => F[S] = {
+      val loopEntry = new Label()
+      val loopExit = new Label()
+
+      init |>>
+        (t => t.emitLabel[S](loopEntry)) |>>
+        test |>>
+        ((t : F[S**MInt ** MInt]) => t.emitIfICmpGe[S](loopExit)) |>>
+        body |>>
+        (t => t.emitGoto[S](loopEntry)) |>>
+        (t => t.emitLabel[S](loopExit))
+
+    }
+
+    def IFEQ_ELSE[S <: Stack, T1 <: MnemonicsTypes](f1: F[S] => F[S**T1], f2 : F[S] => F[S**T1]): F[S ** MBool] => F[S ** T1] = {
+      val ifElse = new Label
+      val ifEnd = new Label
+
+      ((t: F[S ** MBool]) => t.emitIfeq[S](ifElse)) |>>
+        f1 |>>
+        (t => t.emitGoto[S](ifEnd)) |>>
+        (t => t.emitLabel[S](ifElse)) |>>
+        f2 |>>
+        (t => t.emitLabel(ifEnd))
+
+    }
+
     /**
       * Instruction which allows us to do , do while loops
       */
@@ -823,8 +1108,35 @@ object Mnemonics {
     def CHECK_CAST[S <: Stack](jt: Reference): F[S ** Ref[MObject]] => F[S ** Ref[MObject]] =
       t => t.emitCheckCast(jt)
 
-    def POP[S <: Stack, T](): F[S ** T] => F[S] = ???
+    def CHECK_CAST2[S <: Stack, T1 <: MnemonicsTypes, T2 <: MnemonicsTypes](jt: NJvmType.Reference): F[S ** T1] => F[S ** T2] =
+      t => t.emitCheckCast(jt)
 
+    def CHECK_CAST_ARRAY[S <: Stack, T1 <: MnemonicsTypes, T2 <: MnemonicsTypes](jt: NJvmType.Reference): F[S ** T1] => F[S ** T2] = {
+      t => t.emitCheckCastArray(jt)
+    }
+
+
+    def ARRAYLENGTH[S <: Stack, T1 <: MArray[_]]: F[S ** T1] => F[S ** MInt] = {
+      t => t.emitArrayLength
+    }
+    def CHECK_CAST_ARRAY2[S <: Stack, T1 <: MnemonicsTypes, T2 <: MnemonicsTypes](jt: String): F[S ** T1] => F[S ** T2] = {
+      t => t.emitCheckCastArray2(jt)
+    }
+
+    def SWAP[S <: Stack, T1 <: MnemonicsTypes, T2 <: MnemonicsTypes]: F[S ** T1 ** T2] => F[S ** T2 ** T1] =
+      t => t.emitSwap
+
+    def POP[S <: Stack, T <: MnemonicsTypes]: F[S ** T] => F[S] =
+      t => t.emitPop
+
+    def DUP_X2_1[S <: Stack, T1 <: MnemonicsTypes,  T2 <: MnemonicsTypes,  T3 <: MnemonicsTypes]: F[S ** T1 ** T2 ** T3] => F[S** T3 ** T1 ** T2 ** T3] =
+      t => t.emitDupX2
+
+    def DUP_X2_2[T1 <: MnemonicsTypes,  T2 <: MnemonicsTypes]: F[StackNil ** T1 ** T2 ] => F[StackNil ** T2 ** T1 ** T2] =
+      t => t.emitDupX2
+
+    def Unchecked_DUP_X2[S1 <: Stack, S2 <: Stack]: F[S1] => F[S2] =
+      t => t.emitDupX2
 
     /**
       * Instruction which is a NO_OP, usefull when we need to accumulate instructions this can be the initial one.
@@ -836,6 +1148,24 @@ object Mnemonics {
       * Instruction which store an object in an array
       */
     def AASTORE[S <: Stack, T <: Ref[MObject], T1 <: Ref[_]]: F[S ** MArray[T] ** MInt ** T1] => F[S] = t => t.emitAAStore
+
+    def AALOAD[S <: Stack, T <: Ref[MObject], T1 <: Ref[_]]: F[S ** MArray[T] ** MInt ] => F[S ** T1] = t => t.emitAAStore
+
+    def ADD_SOURCE_LINE[S <: Stack](loc : SourceLocation): F[S] => F[S] = t => t.addSourceLine(loc)
+
+    def TRUE[S <: Stack] : F[S] => F[S ** MBool] = t => t.emitICONST(1)
+    def FALSE[S <: Stack] : F[S] => F[S ** MBool] = t => t.emitICONST(0)
+
+    def ICONST[S <: Stack](i : Int) : F[S] => F[S ** MInt] = t => t.emitICONST(i)
+    def LCONST[S <: Stack](l : Long) : F[S] => F[S ** MLong] = t => t.emitLCONST(l)
+
+
+    def FCONST[S <: Stack](f : Float) : F[S] => F[S ** MFloat] = t => t.emitFCONST(f)
+    def DCONST[S <: Stack](d : Double) : F[S] => F[S ** MDouble] = t => t.emitDCONST(d)
+
+
+    def BIPUSH[S <: Stack](b : Byte) : F[S] => F[S ** MByte] = t => t.emitBIPUSH(b)
+    def SIPUSH[S <: Stack](s : Short) : F[S] => F[S ** MShort] = t => t.emitSIPUSH(s)
   }
 
   /**
@@ -848,6 +1178,23 @@ object Mnemonics {
     def LOAD[S <: Stack]: F[S] => F[S ** T] = t => t.emitLoad(localType, offset)
 
     def STORE[S <: Stack]: F[S ** T] => F[S] = t => t.emitStore(localType, offset)
+  }
+
+  class ArrayLocal[T <: MnemonicsTypes : TypeTag](offset: Integer)(implicit root: Root, flix: Flix) {
+
+    private val elementType = getJvmType[T]
+
+    def LOAD_ARRAY[S <: Stack]: F[S] => F[S ** MArray[T]] = t => t.emitLoad(Reference(JvmName.Object), offset)
+
+    def STORE_ARRAY[S <: Stack]: F[S ** MArray[T]] => F[S] = t => t.emitStore(Reference(JvmName.Object), offset)
+
+    def LOAD_ARRAY_ELEMENT[S <: Stack]: F[S ** MArray[T] ** MInt] => F[S ** T] = t => t.emitArrayLoad(elementType)
+
+    def STORE_ARRAY_ELEMENT[S <: Stack]: F[S ** MArray[T] ** MInt ** T] => F[S] = t => t.emitArrayStore(elementType)
+
+  }
+  class PrimArrayLocal[T <: MnemonicsPrimTypes : TypeTag](offset: Integer)(implicit root: Root, flix: Flix) {
+
   }
 
   /**
@@ -931,6 +1278,12 @@ object Mnemonics {
     def GET_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S] => F[S ** T] = t => t.emitGetStatic(fieldName, fieldType)
 
     def PUT_STATIC[S <: Stack, T <: MnemonicsTypes]: F[S ** T] => F[S] = t => t.emitPutStatic(fieldName, fieldType)
+  }
+
+  class MLabel(label: Label){
+    def GOTO[S <: Stack] : F[S] => F[S] = t => t.emitGoto(label)
+
+    def EMIT_LABEL[S <: Stack] :  F[S] => F[S] = t => t.emitLabel(label)
   }
 
 
@@ -1960,6 +2313,41 @@ object Mnemonics {
   }
 
   /**
+    * Returns the array load instruction for arrays of the given JvmType tpe
+    */
+  def getArrayLoadInstruction(tpe: NJvmType): Int = tpe match {
+    case PrimBool => BALOAD
+    case PrimChar => CALOAD
+    case PrimByte => BALOAD
+    case PrimShort => SALOAD
+    case PrimInt => IALOAD
+    case PrimLong => LALOAD
+    case PrimFloat => FALOAD
+    case PrimDouble => DALOAD
+    case Reference(_) => AALOAD
+    case _=> throw InternalCompilerException(s"Unexpected type $tpe")
+
+  }
+
+  /**
+    * Returns the array store instruction for arrays of the given JvmType tpe
+    */
+  def getArrayStoreInstruction(tpe: NJvmType): Int = tpe match {
+    case PrimBool => BASTORE
+    case PrimChar => CASTORE
+    case PrimByte => BASTORE
+    case PrimShort => SASTORE
+    case PrimInt => IASTORE
+    case PrimLong => LASTORE
+    case PrimFloat => FASTORE
+    case PrimDouble => DASTORE
+    case Reference(_) => AASTORE
+    case _=> throw InternalCompilerException(s"Unexpected type $tpe")
+
+
+  }
+
+  /**
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
   def getMethodDescriptor(argumentTypes: List[NJvmType], resultType: NJvmType): String = {
@@ -2236,7 +2624,6 @@ object Mnemonics {
     getJvmType[Ref[RecordExtend[T]]].asInstanceOf[Reference]
   }
 
-
   /**
     * Returns reference class type for the given type `tpe`.
     *
@@ -2247,6 +2634,33 @@ object Mnemonics {
     */
   def getRefClassType[T <: MnemonicsTypes : TypeTag](implicit root: Root, flix: Flix): Reference = {
     getJvmType[Ref[RefClass[T]]].asInstanceOf[Reference]
+  }
+
+  def getRefClassType(tpe : MonoType)(implicit root: Root, flix: Flix): Reference = {
+    val jvmType = getErasedJvmType(tpe)
+    jvmType  match {
+      case PrimBool =>
+        getJvmType[Ref[RefClass[MBool]]].asInstanceOf[Reference]
+      case PrimChar =>
+        getJvmType[Ref[RefClass[MChar]]].asInstanceOf[Reference]
+      case PrimByte =>
+        getJvmType[Ref[RefClass[MByte]]].asInstanceOf[Reference]
+      case PrimShort =>
+        getJvmType[Ref[RefClass[MShort]]].asInstanceOf[Reference]
+      case PrimInt =>
+        getJvmType[Ref[RefClass[MInt]]].asInstanceOf[Reference]
+      case PrimLong =>
+        getJvmType[Ref[RefClass[MLong]]].asInstanceOf[Reference]
+      case PrimFloat =>
+        getJvmType[Ref[RefClass[MFloat]]].asInstanceOf[Reference]
+      case PrimDouble =>
+        getJvmType[Ref[RefClass[MDouble]]].asInstanceOf[Reference]
+      case Reference(_) =>
+        getJvmType[Ref[RefClass[Ref[MObject]]]].asInstanceOf[Reference]
+      case _ => throw InternalCompilerException(s"Unexpected type " + jvmType)
+
+    }
+
   }
 
   /**
@@ -2361,6 +2775,34 @@ object Mnemonics {
 
 
   /**
+    * Returns the tag info for the given `tpe` and `tag`
+    */
+  // TODO: Magnus: Should use getTags and then just find the correct tag.
+  def getTagInfo(tpe: MonoType, tag: String)(implicit root: Root, flix: Flix): TagInfo = tpe match {
+    case MonoType.Enum(_, _) =>
+      val tags = getTagsOf(tpe)
+      tags.find(_.tag == tag).get
+    case _ => throw InternalCompilerException(s"Unexpected type: $tpe")
+  }
+
+  /**
+    * Returns the CheckCast type for the value of the type specified by `tpe`
+    */
+  def getArrayType(tpe: NJvmType): String = tpe match {
+    case PrimBool => "[Z"
+    case PrimChar => "[C"
+    case PrimByte => "[B"
+    case PrimShort => "[S"
+    case PrimInt => "[I"
+    case PrimLong => "[J"
+    case PrimFloat => "[F"
+    case PrimDouble => "[D"
+    case NJvmType.String => "[Ljava/lang/String;"
+    case Reference(_) => "[Ljava/lang/Object;"
+    case _ => throw InternalCompilerException(s"Unexpected type $tpe")
+  }
+
+  /**
     * Trait which represents a MnemonicClass. This way we can have a Map of JvmName -> MnemonicsClass
     * Allowing us to get the Class we want with the JvmName (which should be unique). Then if we cast the
     * MnemonicClass to the proper class we can acess the capabilities to call the methods in the class
@@ -2390,7 +2832,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass]
   }
 
@@ -2405,11 +2847,11 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       closures.foldLeft(map) {
         case (macc, closure) =>
-          macc + new Closure(closure).getClassMapping
+          macc + new Closure(map, closure).getClassMapping
       }
     }
   }
@@ -2425,7 +2867,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + new Context(ns).getClassMapping
 
@@ -2446,7 +2888,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + new Context(ns).getClassMapping
     }
@@ -2462,7 +2904,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + (
         new ContinuationInterface[MBool].getClassMapping,
@@ -2487,7 +2929,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       types.foldLeft(map) {
         case (macc, MonoType.Enum(sym, elms)) =>
@@ -2514,7 +2956,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
 
       //
@@ -2544,7 +2986,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] =
       getMain(root) match {
         case None => map
@@ -2590,7 +3032,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       ns.foldLeft(map) {
         case (macc, namespace) =>
@@ -2609,7 +3051,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + new RecordEmpty(map).getClassMapping
     }
@@ -2626,7 +3068,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + (
         new RecordExtend[MBool](map).getClassMapping,
@@ -2652,7 +3094,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + new RecordInterface().getClassMapping
     }
@@ -2669,7 +3111,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       map + (
         new RefClass[MBool].getClassMapping,
@@ -2695,7 +3137,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       tags.foldLeft(map) {
         case (macc, tag) =>
@@ -2725,7 +3167,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       types.foldLeft(map) {
         case (macc, MonoType.Tuple(elms)) =>
@@ -2750,7 +3192,7 @@ object Mnemonics {
       * @return update map with new generated classes
       */
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
-            ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
       types.foldLeft(map) {
         case (macc, MonoType.Tuple(elms)) =>
@@ -2761,6 +3203,27 @@ object Mnemonics {
           // Case 2: The type constructor is a non-tuple.
           // Nothing to be done. Return the map.
           macc
+      }
+    }
+  }
+
+  object GenFunctionClasses extends MnemonicsGenerator {
+    /**
+      * Method should receive a Map of all the generated classes so far. It should generate all the new classes
+      * and return an updated map with the new generated classes.
+      *
+      * @param map   of all the generated classes so far.
+      * @param types set of Monotypes this will be used to generate certain classes such as Enum.
+      * @return update map with new generated classes
+      */
+    def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
+            ns: Set[NamespaceInfo], closures: Set[ClosureInfo], defs: Map[Symbol.DefnSym, Def])
+           (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
+      defs.foldLeft(map) {
+        case (macc, (sym, defn)) if !defn.ann.isLaw =>
+
+          macc + new FunctionClass(map, sym, defn).getClassMapping
+        case (macc, _) => macc
       }
     }
   }
