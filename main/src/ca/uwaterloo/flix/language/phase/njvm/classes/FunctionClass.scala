@@ -531,7 +531,7 @@ class FunctionClass(map: Map[JvmName, MnemonicsClass], sym: Symbol.DefnSym, defn
       arrayLocal.LOAD_ARRAY |>>
       loopCounter.LOAD |>>
       arrayLocal.LOAD_ARRAY_ELEMENT |>>
-      boxIfPrim |>>
+      boxIfPrim[S ** MArray[Ref[MProxyObject]] ** MInt, T, Ref[T]] |>>
       newProxyObject |>>
       resultArray.STORE_ARRAY_ELEMENT |>>
       loopCounter.LOAD |>>
