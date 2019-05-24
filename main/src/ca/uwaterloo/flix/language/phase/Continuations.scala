@@ -61,8 +61,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Make an id function, x -> x, to pass as continuation argument
     val freshSym = Symbol.freshVarSym()
-    val freshSymVar = Expression.Var(freshSym, getReturnType(defn.tpe), defn.eff, defn.loc)
-    val id = mkLambda(freshSym, getReturnType(defn.tpe), freshSymVar)
+    val returnType = getReturnType(defn.tpe)
+    val freshSymVar = Expression.Var(freshSym, returnType, defn.eff, defn.loc)
+    val id = mkLambda(freshSym, returnType, freshSymVar)
 
     // find the arguments of f, which should be used to call f'
     assert(defn.fparams.length == 1)
@@ -71,7 +72,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // create f' as Def
     val defnPrimeName = defSymMap(defn.sym)
-    val defnPrime = Expression.Def(defnPrimeName, fixArrowType(defn.tpe, getReturnType(defn.tpe)), defn.eff, defn.loc)
+    val defnPrime = Expression.Def(defnPrimeName, fixArrowType(defn.tpe, returnType), defn.eff, defn.loc)
 
     // the new body of f is to call f' with the arguments of f and a continuation (which is id)
     val body = Expression.ApplyWithKont(defnPrime, arg, id, getReturnType(defnPrime.tpe), defn.eff, defn.loc)
@@ -96,7 +97,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     val defnTpe = fixArrowType(defn.tpe, genericTypeParam.tpe)
     val body = visitExp(defn.exp, kontVar, genericTypeParam.tpe, defSymMap)
 
-    defn.copy(exp = body, fparams = defn.fparams :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = defnTpe)
+    defn.copy(exp = body, fparams = defn.fparams.map(fp => fp.copy(tpe = fixArrowType(fp.tpe, genericTypeParam.tpe))) :+ kontParam, tparams = defn.tparams :+ genericTypeParam, tpe = defnTpe)
   }
 
   // todo sjj: check subtree for shift/reset (dyr funktion til start)
@@ -104,7 +105,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Expression = exp0 match {
 
       case Expression.Wild(tpe, eff, loc) => ??? //todo sjj
-      case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, exp0, empEff(), loc)
+      case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, Expression.Var(sym, fixArrowType(tpe, kont0ReturnType), eff, loc), empEff(), loc)
 
       case Expression.Def(sym, tpe, eff, loc) => {
         if (defSymMap.contains(sym)) {
@@ -158,11 +159,12 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       case Expression.Binary(op, exp1, exp2, tpe, _, loc) => {
-        visitExps(List(exp1, exp2), kont0ReturnType, l => mkApplyCont(kont0, Expression.Binary(op, l.head, l.last, tpe, empEff(), loc), empEff(), loc), defSymMap)
+        visitExps(List(exp1, exp2), kont0ReturnType, l => mkApplyCont(kont0, Expression.Binary(op, l.head, l.last, fixArrowType(tpe, kont0ReturnType), empEff(), loc), empEff(), loc), defSymMap)
       }
 
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => {
-        visitExps(List(exp1), kont0ReturnType, l => Expression.Let(sym, l.head, visitExp(exp2,kont0,kont0ReturnType, defSymMap),kont0ReturnType, eff, loc), defSymMap)
+        //todo sjj: could/should let be transformed into a lambda?
+        visitExps(List(exp1), kont0ReturnType, l => Expression.Let(sym, l.head, visitExp(exp2, kont0, kont0ReturnType, defSymMap), kont0ReturnType, eff, loc), defSymMap)
       }
 
       case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? //todo sjj
@@ -175,7 +177,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Introduce a fresh variable symbol for the lambda.
         val freshCondSym = Symbol.freshVarSym()
-        val freshCondVar = Expression.Var(freshCondSym, Type.Bool, empEff(), loc)
+        val freshCondVar = if (!isCPure(exp1)) Expression.Var(freshCondSym, Type.Bool, empEff(), loc) else exp1
 
         // Construct an expression that branches on the variable symbol and
         // continues execution in the CPS converted version of one of the two branches.
@@ -187,7 +189,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         val lambda = mkLambda(freshCondSym, Type.Bool, e)
 
         // Recurse on the conditional.
-        visitExp(exp1, lambda, kont0ReturnType, defSymMap)
+        visitExp(exp1, if (!isCPure(exp1)) lambda else e, kont0ReturnType, defSymMap)
       }
 
       case Expression.Match(exp, rules, tpe, eff, loc) => ??? //todo sjj
@@ -197,7 +199,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? //todo sjj
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
-        visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, tpe, eff, loc), eff, loc), defSymMap)
+        visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.RecordEmpty(tpe, eff, loc) => ??? //todo sjj
 
@@ -266,7 +268,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Spawn(exp, tpe, eff, loc) => ??? //todo sjj
 
       case Expression.Sleep(exp, tpe, eff, loc) =>
-        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Sleep(l.head, tpe, eff, loc), eff, loc), defSymMap)
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Sleep(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.FixpointConstraint(c0, tpe, eff, loc) => ??? //todo sjj
 
@@ -301,18 +303,22 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     // create new symbols for the lambdas
     val freshSyms = exps map { exp =>
       val freshSym = Symbol.freshVarSym()
-      (exp, freshSym)
+      (exp, isCPure(exp), freshSym)
     }
 
     // in the base case, we apply the continuation with f("parameters")
-    val baseCase: Expression = f(freshSyms.map(x => Expression.Var(x._2, fixArrowType(x._1.tpe, kont0ReturnType), empEff(), loc)))
+    val baseCase: Expression = f(freshSyms.map(x => if (!x._2) Expression.Var(x._3, fixArrowType(x._1.tpe, kont0ReturnType), empEff(), loc) else x._1))
 
     // process all elements of the list
     freshSyms.foldRight(baseCase) {(syms, kont) =>
-      val (exp, freshSym) = syms
-      val freshSymVar = Expression.Var(freshSym, fixArrowType(exp.tpe, kont0ReturnType), empEff(), loc)
-      val kont1 = mkLambda(freshSymVar.sym, freshSymVar.tpe, kont)
-      visitExp(exp, kont1, kont0ReturnType, defSymMap)
+      val (exp, pure, freshSym) = syms
+      if (!pure) {
+        val freshSymVar = Expression.Var(freshSym, fixArrowType(exp.tpe, kont0ReturnType), empEff(), loc)
+        val kont1 = mkLambda(freshSymVar.sym, freshSymVar.tpe, kont)
+        visitExp(exp, kont1, kont0ReturnType, defSymMap)
+      } else {
+        kont
+      }
     }
   }
 
@@ -361,9 +367,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     * Placeholder method for when control effects are supported.
     */
   private def isCPure(exp0: Expression): Boolean = exp0 match {
-    case Expression.Var(sym, tpe, eff, loc) => true
+//    case Expression.Var(sym, tpe, eff, loc) => true
 
-    case Expression.Def(sym, tpe, eff, loc) => true
+//    case Expression.Def(sym, tpe, eff, loc) => true
 
 //    case Expression.Eff(sym, tpe, eff, loc) => ??? //todo sjj
 
@@ -382,23 +388,23 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.BigInt(lit, loc) => true
     case Expression.Str(lit, loc) => true
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => isCPure(exp)
+//    case Expression.Lambda(fparam, exp, tpe, eff, loc) => isCPure(exp)
+//
+//    case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) => isCPure(exp)
+//
+//    case Expression.Apply(exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
+//
+//    case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2) && isCPure(exp3)
+//
+//    case Expression.Unary(op, exp, tpe, eff, loc) => isCPure(exp)
+//
+//    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
 
-    case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) => isCPure(exp)
-
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
-
-    case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2) && isCPure(exp3)
-
-    case Expression.Unary(op, exp, tpe, eff, loc) => isCPure(exp)
-
-    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
-
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
+//    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2)
 
 //    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? //todo sjj
 
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2) && isCPure(exp3)
+//    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isCPure(exp1) && isCPure(exp2) && isCPure(exp3)
 
 //    case Expression.Match(exp, rules, tpe, eff, loc) => ??? //todo sjj
 
@@ -406,7 +412,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
 //    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? //todo sjj
 
-    case Expression.Tuple(elms, tpe, eff, loc) => elms.map(isCPure).forall(b => b)
+//    case Expression.Tuple(elms, tpe, eff, loc) => elms.map(isCPure).forall(b => b)
 
 //    case Expression.RecordEmpty(tpe, eff, loc) => ??? //todo sjj
 
@@ -472,9 +478,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
 //    case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? //todo sjj
 
-    case Expression.Spawn(exp, tpe, eff, loc) => isCPure(exp)
+//    case Expression.Spawn(exp, tpe, eff, loc) => isCPure(exp)
 
-    case Expression.Sleep(exp, tpe, eff, loc) => isCPure(exp)
+//    case Expression.Sleep(exp, tpe, eff, loc) => isCPure(exp)
 
 //    case Expression.FixpointConstraint(c0, tpe, eff, loc) => ??? //todo sjj
 
@@ -492,7 +498,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
 //    case Expression.CPSReset(exp, tpe, eff, loc) => ??? //todo sjj
 
-    case _ => true
+    case _ => false
   }
 
 }
