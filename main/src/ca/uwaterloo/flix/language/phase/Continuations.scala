@@ -148,26 +148,21 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
       case Expression.Apply(exp1, exp2, tpe, eff, loc) => {
-        val f = (l: List[Expression]) => Expression.ApplyWithKont(l.head, l.last, kont0, kont0ReturnType, eff, loc)
-        val out = visitExps(List(exp1, exp2), kont0ReturnType, f, defSymMap)
-        out
+        visitExps(List(exp1, exp2), kont0ReturnType, l => Expression.ApplyWithKont(l.head, l.last, kont0, kont0ReturnType, eff, loc), defSymMap)
       }
 
       case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
       case Expression.Unary(op, exp, tpe, eff, loc) => {
-        val f: List[Expression] => Expression = l => mkApplyCont(kont0, Expression.Unary(op, l.head, tpe, eff, loc), eff, loc)
-        visitExps(List(exp), kont0ReturnType, f, defSymMap)
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Unary(op, l.head, tpe, eff, loc), eff, loc), defSymMap)
       }
 
       case Expression.Binary(op, exp1, exp2, tpe, _, loc) => {
-        val f: List[Expression] => Expression = l => mkApplyCont(kont0, Expression.Binary(op, l.head, l.last, tpe, empEff(), loc), empEff(), loc)
-        visitExps(List(exp1, exp2), kont0ReturnType, f, defSymMap)
+        visitExps(List(exp1, exp2), kont0ReturnType, l => mkApplyCont(kont0, Expression.Binary(op, l.head, l.last, tpe, empEff(), loc), empEff(), loc), defSymMap)
       }
 
       case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => {
-        val f: List[Expression] => Expression = l => Expression.Let(sym, l.head, visitExp(exp2,kont0,kont0ReturnType, defSymMap),kont0ReturnType, eff, loc)
-        visitExps(List(exp1), kont0ReturnType, f, defSymMap)
+        visitExps(List(exp1), kont0ReturnType, l => Expression.Let(sym, l.head, visitExp(exp2,kont0,kont0ReturnType, defSymMap),kont0ReturnType, eff, loc), defSymMap)
       }
 
       case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? //todo sjj
