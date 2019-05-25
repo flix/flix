@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName
+import ca.uwaterloo.flix.language.phase.jvm.{JvmName, TagInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
@@ -71,8 +71,51 @@ object GenExpression {
       case Expression.Let(sym, exp1, exp2, _, loc) => ???
       case Expression.LetRec(sym, exp1, exp2, _, _) => ???
 
-      case Expression.Is(_, _, _, _) | Expression.Tag(_, _, _, _, _) |
-           Expression.Untag(_, _, _, _, _) => compileTagExpression(exp0, map, lenv0, entryPoint)
+      case Expression.Is(_, tag, exp1, loc) =>
+        val tagInfo = getTagInfo(exp1.tpe, tag)
+        val tagTpe = getErasedJvmType(tagInfo.tagType)
+        tagTpe match{
+          case PrimBool =>  compileIs[S, MBool](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimChar => compileIs[S, MChar](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimByte => compileIs[S, MByte](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimShort => compileIs[S, MShort](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimInt => compileIs[S, MInt](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimLong => compileIs[S, MLong](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileIs[S, MFloat](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileIs[S, MDouble](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileIs[S, Ref[MObject]](tagInfo, exp1, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + tagTpe)
+        }
+      case Expression.Tag(_, tag, exp, tpe, loc) =>
+        val tagInfo = getTagInfo(tpe, tag)
+        val tagTpe = getErasedJvmType(tagInfo.tagType)
+        tagTpe match{
+          case PrimBool =>  compileTag[S, MBool](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimChar => compileTag[S, MChar](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimByte => compileTag[S, MByte](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimShort => compileTag[S, MShort](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimInt => compileTag[S, MInt](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimLong => compileTag[S, MLong](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileTag[S, MFloat](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileTag[S, MDouble](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileTag[S, Ref[MObject]](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + tagTpe)
+        }
+      case Expression.Untag(_, tag, exp, tpe, loc) =>
+        val tagInfo = getTagInfo(exp.tpe, tag)
+        val jvmTpe = getJvmType(tpe)
+        jvmTpe match{
+          case PrimBool =>  compileUntagPrim[S, MBool](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimChar => compileUntagPrim[S, MChar](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimByte => compileUntagPrim[S, MByte](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimShort => compileUntagPrim[S, MShort](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimInt => compileUntagPrim[S, MInt](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimLong => compileUntagPrim[S, MLong](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileUntagPrim[S, MFloat](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileUntagPrim[S, MDouble](tagInfo, exp, loc, map, lenv0, entryPoint)
+          case Reference(name) => compileUntagNonPrim[S](tagInfo, exp, Reference(name),loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
+        }
 
       case Expression.Index(base, offset, tpe, _) => ???
 
@@ -259,38 +302,62 @@ object GenExpression {
     ADD_SOURCE_LINE[S](loc) |>>
       new MLabel(label).GOTO
 
-  def compileTagExpression[S <: Stack, T1 <: MnemonicsTypes]
-  (exp: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
-  F[S] => F[S ** T1] =
-    (exp match {
-      case Expression.Is(enum, tag, exp1, loc) =>
-        val tagInfo = getTagInfo(exp.tpe, tag)
-        val tagTpe = getTagClassType(tagInfo)
-        ADD_SOURCE_LINE[S](loc) |>>
-          compileExpression(exp1, map, lenv0, entryPoint) |>>
-          INSTANCE_OF(tagTpe)
 
-      case Expression.Tag(enum, tag, exp, tpe, loc) =>
+  def compileIs[S <: Stack, T <: MnemonicsTypes : TypeTag]
+  (tagInfo: TagInfo, exp: FinalAst.Expression, loc: SourceLocation, map: Map[JvmName, Mnemonics.MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):
+  F[S] => F[S ** MBool] = {
+    val tagTpe = getTagClassType(tagInfo)
+      ADD_SOURCE_LINE[S](loc) |>>
+        compileExpression[S, Ref[TagClass[T]]](exp, map, lenv0, entryPoint) |>>
+        INSTANCE_OF(tagTpe)
+  }
 
-        val tagInfo = getTagInfo(tpe, tag)
+
+  def compileTag[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
+  (tagInfo : TagInfo, exp: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  F[S] => F[S ** Ref[TagClass[T1]]] = {
+
         val classType = getTagClassType(tagInfo)
-        val tagClass = map(classType.name).asInstanceOf[TagClass[_]]
+        val tagClass = map(classType.name).asInstanceOf[TagClass[T1]]
 
-      //        ADD_SOURCE_LINE(loc) |>>
-      //          (tagClass.instance match {
-      //          case Some(field) => field.GET_STATIC
-      //          case None =>
-      //              NEW[S, Ref[TupleClass[_]]](classType) |>>
-      //              DUP |>>
-      //              compileExpression(exp, map, lenv0, entryPoint)|>>
-      //              tagClass.defaultConstructor.INVOKE
-      //          })
+        ADD_SOURCE_LINE[S](loc) |>>
+        (tagClass.instance match {
+        case Some(field) => field.GET_STATIC[S, Ref[TagClass[T1]]]
+        case None =>
+          NEW[S, Ref[TagClass[T1]]](classType) |>>
+          DUP |>>
+          compileExpression[S** Ref[TagClass[T1]] **  Ref[TagClass[T1]], T1](exp, map, lenv0, entryPoint)|>>
+          tagClass.defaultConstructor.INVOKE
+        })
+    }
 
-      case Expression.Untag(enum, tag, exp, tpe, loc) => ???
-      case _ => throw InternalCompilerException(s"Unexpected expression " + exp)
+  def compileUntagPrim[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
+  (tagInfo : TagInfo, exp: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S**T1] = {
 
-    }).asInstanceOf[F[S] => F[S ** T1]]
+    val classType = getTagClassType(tagInfo)
+    val tagClass = map(classType.name).asInstanceOf[TagClass[T1]]
 
+    ADD_SOURCE_LINE[S](loc) |>>
+    compileExpression[S, Ref[TagClass[T1]]](exp, map, lenv0, entryPoint) |>>
+    CHECK_CAST2[S, Ref[TagClass[T1]], Ref[TagClass[T1]]](classType) |>>
+    tagClass.getValueMethod.INVOKE
+  }
+
+  def compileUntagNonPrim[S <: Stack]
+  (tagInfo : TagInfo, exp: Expression, tpe : Reference, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S**Ref[MObject]] = {
+
+    val classType = getTagClassType(tagInfo)
+    val tagClass = map(classType.name).asInstanceOf[TagClass[Ref[MObject]]]
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, Ref[TagClass[Ref[MObject]]]](exp, map, lenv0, entryPoint) |>>
+      CHECK_CAST2[S, Ref[TagClass[Ref[MObject]]], Ref[TagClass[Ref[MObject]]]](classType) |>>
+      tagClass.getValueMethod.INVOKE |>>
+      CHECK_CAST[S](tpe)
+  }
 
   def compileTuple[S <: Stack](elms: List[Expression], tpe: MonoType, loc: SourceLocation,
                                map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
