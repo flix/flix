@@ -24,8 +24,8 @@ import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
-import ca.uwaterloo.flix.language.phase.njvm.classes.{RecordEmpty, RecordExtend, TagClass, TupleClass}
-import ca.uwaterloo.flix.language.phase.njvm.interfaces.RecordInterface
+import ca.uwaterloo.flix.language.phase.njvm.classes.{RecordEmpty, RecordExtend, RefClass, TagClass, TupleClass}
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.{RecordInterface, TupleInterface}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Label
 
@@ -130,7 +130,20 @@ object GenExpression {
           case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
         }
 
-      case Expression.Index(base, offset, tpe, loc) => ???
+      case Expression.Index(base, offset, tpe, _) =>
+        val jvmTpe = getJvmType(tpe)
+        jvmTpe match{
+          case PrimBool =>  compileIndexPrim[S, MBool](base, offset, map, lenv0, entryPoint)
+          case PrimChar => compileIndexPrim[S, MChar](base, offset, map, lenv0, entryPoint)
+          case PrimByte => compileIndexPrim[S, MByte](base, offset, map, lenv0, entryPoint)
+          case PrimShort => compileIndexPrim[S, MShort](base, offset, map, lenv0, entryPoint)
+          case PrimInt => compileIndexPrim[S, MInt](base, offset, map, lenv0, entryPoint)
+          case PrimLong => compileIndexPrim[S, MLong](base, offset, map, lenv0, entryPoint)
+          case PrimFloat => compileIndexPrim[S, MFloat](base, offset, map, lenv0, entryPoint)
+          case PrimDouble => compileIndexPrim[S, MDouble](base, offset, map, lenv0, entryPoint)
+          case Reference(name) => compileIndexNonPrim[S](base, offset, Reference(name), map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
+        }
 
       case Expression.Tuple(elms, tpe, loc) =>
         compileTuple(elms, tpe, loc, map, lenv0, entryPoint)
@@ -176,9 +189,50 @@ object GenExpression {
       case Expression.ArrayLength(base, tpe, loc) => ???
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) => ???
 
-      case Expression.Ref(exp, tpe, loc) => ???
-      case Expression.Deref(exp, tpe, loc) => ???
-      case Expression.Assign(exp1, exp2, tpe, loc) => ???
+      case Expression.Ref(exp, tpe, loc) =>
+        val jvmTpe = getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
+        jvmTpe match {
+          case PrimBool => compileRef[S, MBool](exp, loc, map, lenv0, entryPoint)
+          case PrimChar => compileRef[S, MChar](exp, loc, map, lenv0, entryPoint)
+          case PrimByte => compileRef[S, MByte](exp, loc, map, lenv0, entryPoint)
+          case PrimShort => compileRef[S, MShort](exp, loc, map, lenv0, entryPoint)
+          case PrimInt => compileRef[S, MInt](exp, loc, map, lenv0, entryPoint)
+          case PrimLong => compileRef[S, MLong](exp, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileRef[S, MFloat](exp, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileRef[S, MDouble](exp, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileRef[S, Ref[MObject]](exp, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
+        }
+      case Expression.Deref(exp, tpe, loc) =>
+        val jvmTpe = getJvmType(tpe)
+        jvmTpe match{
+          case PrimBool =>  compileDerefPrim[S, MBool](exp, loc, map, lenv0, entryPoint)
+          case PrimChar => compileDerefPrim[S, MChar](exp, loc, map, lenv0, entryPoint)
+          case PrimByte => compileDerefPrim[S, MByte](exp, loc, map, lenv0, entryPoint)
+          case PrimShort => compileDerefPrim[S, MShort](exp, loc, map, lenv0, entryPoint)
+          case PrimInt => compileDerefPrim[S, MInt](exp, loc, map, lenv0, entryPoint)
+          case PrimLong => compileDerefPrim[S, MLong](exp, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileDerefPrim[S, MFloat](exp, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileDerefPrim[S, MDouble](exp, loc, map, lenv0, entryPoint)
+          case Reference(name) => compileDerefNonPrim[S](exp, Reference(name), loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
+        }
+
+
+      case Expression.Assign(exp1, exp2, _, loc) =>
+        val jvmTpe = getErasedJvmType(exp1.tpe.asInstanceOf[MonoType.Ref].tpe)
+        jvmTpe match {
+          case PrimBool => compileAssign[S, MBool](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimChar => compileAssign[S, MChar](exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimByte => compileAssign[S, MByte](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimShort => compileAssign[S, MShort](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimInt => compileAssign[S, MInt](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimLong => compileAssign[S, MLong](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimFloat => compileAssign[S, MFloat](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimDouble => compileAssign[S, MDouble](exp1, exp2,loc, map, lenv0, entryPoint)
+          case Reference(_) => compileAssign[S, Ref[MObject]](exp1, exp2,loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
+        }
 
       case Expression.HandleWith(exp, bindings, tpe, loc) => ???
       case Expression.Existential(_, _, loc) =>
@@ -387,6 +441,31 @@ object GenExpression {
       CHECK_CAST[S](tpe)
   }
 
+  def compileIndexPrim[S <: Stack, T1 <:MnemonicsTypes : TypeTag]
+  (base: Expression, offset: Int, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** T1] =
+  {
+    val MonoType.Tuple(elms) = base.tpe.asInstanceOf[MonoType.Tuple]
+    val classType = getTupleInterfaceType(elms.map(getErasedJvmType))
+    val tupleIFace = map(classType.name).asInstanceOf[TupleInterface]
+
+    compileExpression[S, Ref[TupleInterface]](base, map, lenv0, entryPoint) |>>
+      tupleIFace.getIndexMethod[T1](offset).INVOKE
+  }
+
+  def compileIndexNonPrim[S <: Stack]
+  (base: Expression, offset: Int, ct: Reference, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MObject]] =
+  {
+    val MonoType.Tuple(elms) = base.tpe.asInstanceOf[MonoType.Tuple]
+    val classType = getTupleInterfaceType(elms.map(getErasedJvmType))
+    val tupleIFace = map(classType.name).asInstanceOf[TupleInterface]
+
+    compileExpression[S, Ref[TupleInterface]](base, map, lenv0, entryPoint) |>>
+      tupleIFace.getIndexMethod[Ref[MObject]](offset).INVOKE |>>
+      CHECK_CAST(ct)
+  }
+
   def compileTuple[S <: Stack](elms: List[Expression], tpe: MonoType, loc: SourceLocation,
                                map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
                               (implicit root: Root, flix: Flix): F[S] => F[S ** Ref[TupleClass]] = {
@@ -472,6 +551,58 @@ object GenExpression {
       recordInterface.restrictFieldMethod.INVOKE
   }
 
+
+  def compileRef[S<: Stack, T <: MnemonicsTypes : TypeTag]
+  (exp: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  F[S] => F[S ** Ref[RefClass[T]]] = {
+    val classTpe = getRefClassType[T]
+    val refClass = map(classTpe.name).asInstanceOf[RefClass[T]]
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      NEW[S, Ref[RefClass[T]]](classTpe) |>>
+      DUP |>>
+      compileExpression[S**Ref[RefClass[T]] ** Ref[RefClass[T]], T](exp, map, lenv0, entryPoint) |>>
+      refClass.defaultConstructor.INVOKE
+  }
+
+  def compileDerefPrim[S <: Stack, T <:MnemonicsTypes : TypeTag]
+  (exp: Expression, loc : SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** T] =
+  {
+    val classTpe = getRefClassType[T]
+    val refClass = map(classTpe.name).asInstanceOf[RefClass[T]]
+
+    ADD_SOURCE_LINE[S](loc)
+    compileExpression[S, Ref[RefClass[T]]](exp, map, lenv0, entryPoint) |>>
+    refClass.getValueMethod.INVOKE
+  }
+
+  def compileDerefNonPrim[S <: Stack]
+  (exp: Expression, ct: Reference, loc : SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MObject]] =
+  {
+    val classTpe = getRefClassType[Ref[MObject]]
+    val refClass = map(classTpe.name).asInstanceOf[RefClass[Ref[MObject]]]
+
+    ADD_SOURCE_LINE[S](loc)
+    compileExpression[S, Ref[RefClass[Ref[MObject]]]](exp, map, lenv0, entryPoint) |>>
+    refClass.getValueMethod.INVOKE |>>
+    CHECK_CAST(ct)
+  }
+
+  def compileAssign[S <: Stack, T <: MnemonicsTypes : TypeTag]
+  (exp1: Expression, exp2: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  F[S] => F[S ** Ref[MUnit]] =
+  {
+    val classTpe = getRefClassType[T]
+    val refClass = map(classTpe.name).asInstanceOf[RefClass[T]]
+    ADD_SOURCE_LINE[S](loc) |>>
+    compileExpression[S, Ref[RefClass[T]]](exp1, map, lenv0, entryPoint) |>>
+    compileExpression[S ** Ref[RefClass[T]], T](exp2, map, lenv0, entryPoint) |>>
+    refClass.setValueMethod.INVOKE |>>
+    Api.Java.Runtime.Value.Unit.getInstance.INVOKE
+  }
+
   def compileNewChannel[S <: Stack]
   (exp: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
   (implicit root: Root, flix: Flix):
@@ -516,7 +647,6 @@ object GenExpression {
     compileExpression[S**Ref[MConstraintSystem], Ref[MConstraintSystem]](exp2, map, lenv0, entryPoint) |>>
     Api.Java.Runtime.FixPoint.Solver.entails.INVOKE
   }
-
 
   def compileExistential[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
     ADD_SOURCE_LINE[S](loc) |>>
