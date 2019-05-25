@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.njvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.AsmOps.compileReifiedSourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
@@ -82,10 +81,37 @@ object GenExpression {
 
       case Expression.RecordEmpty(_, loc) =>
         compileRecordEmpty(loc, map)
-      case Expression.RecordSelect(_, _, _, _) =>
-        ???
-      case Expression.RecordSelect(_, _, _, _) | Expression.RecordExtend(_, _, _, _, _) |
-           Expression.RecordRestrict(_, _, _, _) => compileRecordExpression(exp0, map, lenv0, entryPoint)
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val valueTpe = getErasedJvmType(tpe)
+        valueTpe match {
+          case PrimBool => compileRecordSelect[S, MBool](exp, label, loc, map, lenv0, entryPoint)
+          case PrimChar => compileRecordSelect[S, MChar](exp, label, loc, map, lenv0, entryPoint)
+          case PrimByte => compileRecordSelect[S, MByte](exp, label, loc, map, lenv0, entryPoint)
+          case PrimShort => compileRecordSelect[S, MShort](exp, label, loc, map, lenv0, entryPoint)
+          case PrimInt => compileRecordSelect[S, MInt](exp, label, loc, map, lenv0, entryPoint)
+          case PrimLong => compileRecordSelect[S, MLong](exp, label, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileRecordSelect[S, MFloat](exp, label, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileRecordSelect[S, MDouble](exp, label, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileRecordSelect[S, Ref[MObject]](exp, label, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + valueTpe)
+        }
+
+      case Expression.RecordExtend(label, value, rest, _, loc) =>
+        val valueTpe = getErasedJvmType(value.tpe)
+        valueTpe match {
+          case PrimBool => compileRecordExtend[S, MBool](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimChar => compileRecordExtend[S, MChar](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimByte => compileRecordExtend[S, MByte](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimShort => compileRecordExtend[S, MShort](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimInt => compileRecordExtend[S, MInt](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimLong => compileRecordExtend[S, MLong](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileRecordExtend[S, MFloat](label, value, rest, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileRecordExtend[S, MDouble](label, value, rest, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileRecordExtend[S, Ref[MObject]](label, value, rest, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + valueTpe)
+        }
+      case Expression.RecordRestrict(label, rest, _, loc) =>
+        compileRecordRestrict(label, rest, loc, map, lenv0, entryPoint)
 
       case Expression.ArrayLit(elms, tpe, loc) => ???
       case Expression.ArrayNew(elm, len, tpe, loc) => ???
@@ -214,7 +240,7 @@ object GenExpression {
     }
   }
 
-  def compileApplyEff[S <: Stack, T1 <: MnemonicsTypes : TypeTag](s: String): F[S] => F[S ** T1] =
+  def compileApplyEff[S <: Stack, T1 <: MnemonicsTypes : TypeTag]: F[S] => F[S ** T1] =
     throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
 
   def compileIfThenElse[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
@@ -297,30 +323,29 @@ object GenExpression {
   }
 
 
-  def compileRecordExpression[S <: Stack, T1 <: MnemonicsTypes]
-  (exp: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
-  F[S] => F[S ** T1] =
-    (exp match {
+  def compileRecordSelect[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
+  (exp: Expression, label: String, loc: SourceLocation, map: Map[JvmName, MnemonicsClass],
+   lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  F[S] => F[S ** T1] = {
 
-      case Expression.RecordSelect(exp, label, tpe, loc) => ???
+    // Get the correct record extend class, given the expression type 'tpe'
+    // We get the JvmType of the extended record class to call the proper getField
+    val classType = getRecordExtendClassType[T1]
 
-      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
-        val valueTpe = getErasedJvmType(value.tpe)
-        valueTpe match {
-          case PrimBool => compileRecordExtend[S, MBool](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimChar => compileRecordExtend[S, MChar](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimByte => compileRecordExtend[S, MByte](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimShort => compileRecordExtend[S, MShort](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimInt => compileRecordExtend[S, MInt](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimLong => compileRecordExtend[S, MLong](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimFloat => compileRecordExtend[S, MFloat](label, value, rest, loc, map, lenv0, entryPoint)
-          case PrimDouble => compileRecordExtend[S, MDouble](label, value, rest, loc, map, lenv0, entryPoint)
-          case Reference(_) => compileRecordExtend[S, Ref[MObject]](label, value, rest, loc, map, lenv0, entryPoint)
-          case _ => throw InternalCompilerException("Unexpected type " + valueTpe)
-        }
-      case Expression.RecordRestrict(label, rest, tpe, loc) => ???
-      case _ => throw InternalCompilerException(s"Unexpected expression " + exp)
-    }).asInstanceOf[F[S] => F[S ** T1]]
+    // We get the JvmType of the record interface
+    val interfaceType = getRecordInterfaceType
+
+    val recordExtend = map(classType.name).asInstanceOf[RecordExtend[T1]]
+    val recordInterface = map(interfaceType.name).asInstanceOf[RecordInterface]
+
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, Ref[RecordInterface]](exp, map, lenv0, entryPoint) |>>
+      LDC_STRING(label) |>>
+      recordInterface.lookupFieldMethod.INVOKE |>>
+      CHECK_CAST2[S, Ref[RecordInterface], Ref[RecordExtend[T1]]](classType) |>>
+      recordExtend.getFieldMethod.INVOKE
+  }
 
   def compileRecordExtend[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
   (label: String, value: Expression, rest: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
@@ -337,6 +362,19 @@ object GenExpression {
       compileExpression
         [S ** Ref[RecordExtend[T1]] ** Ref[RecordExtend[T1]] ** Ref[MString] ** T1, Ref[RecordInterface]](rest, map, lenv0, entryPoint) |>>
       recClass.defaultConstructor.INVOKE
+  }
+
+  def compileRecordRestrict[S <: Stack]
+  (label: String, rest: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** Ref[RecordInterface]] = {
+
+    val interfaceType = getRecordInterfaceType
+    val recordInterface = map(interfaceType.name).asInstanceOf[RecordInterface]
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, Ref[RecordInterface]](rest, map, lenv0, entryPoint) |>>
+      LDC_STRING(label) |>>
+      recordInterface.restrictFieldMethod.INVOKE
   }
 
 
