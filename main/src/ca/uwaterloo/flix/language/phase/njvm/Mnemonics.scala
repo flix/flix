@@ -381,6 +381,11 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+    def emitDup2[S]: F[S] = {
+      mv.visitInsn(DUP2)
+      this.asInstanceOf[F[S]]
+    }
+
     def emitInstanceOf[S](jt : Reference): F[S] = {
       mv.visitTypeInsn(INSTANCEOF, jt.name.toInternalName)
       this.asInstanceOf[F[S]]
@@ -654,6 +659,11 @@ object Mnemonics {
 
   trait MFunction extends MObject
 
+  trait MRefiedSource extends MObject
+
+  trait MHoleError extends MObject
+
+
   object MnemonicsTypes {
 
     case class MVoid() extends MnemonicsPrimTypes
@@ -692,7 +702,8 @@ object Mnemonics {
   private val tObject = typeOf[Ref[MObject]]
   private val tProxy = typeOf[Ref[MProxyObject]]
   private val tFunction = typeOf[Ref[MFunction]]
-
+  private val tRefiedSource = typeOf[Ref[MRefiedSource]]
+  private val tHoleError = typeOf[Ref[MHoleError]]
 
   private val tUnit = typeOf[Ref[MUnit]]
   private val tBoolean = typeOf[Ref[MBool]]
@@ -765,6 +776,8 @@ object Mnemonics {
       case t if t =:= tUnit => NJvmType.Unit
       case t if t =:= tProxy => Reference(JvmName.ProxyObject)
       case t if t =:= tFunction => Reference(JvmName.Function)
+      case t if t =:= tRefiedSource => Reference(JvmName.Runtime.ReifiedSourceLocation)
+      case t if t =:= tHoleError => Reference(JvmName.Runtime.HoleError)
 
       case t if t =:= tBoolean => Reference(JvmName.Boolean)
       case t if t =:= tCharacter => Reference(JvmName.Character)
@@ -989,6 +1002,9 @@ object Mnemonics {
     def DUP[S <: Stack, T <: MnemonicsTypes : TypeTag]: F[S ** T] => F[S ** T ** T] =
       t => t.emitDup
 
+    def DUP2[S <: Stack, T1 <: MnemonicsTypes : TypeTag, T2 <: MnemonicsTypes : TypeTag]: F[S ** T1 ** T2] => F[S ** T1 ** T2 ** T1 ** T2] =
+      t => t.emitDup2
+
     def INSTANCE_OF[S <: Stack, T <: MnemonicsTypes : TypeTag](jt : Reference): F[S ** T] => F[S ** MBool] =
       t => t.emitInstanceOf(jt)
 
@@ -1048,6 +1064,8 @@ object Mnemonics {
     def THROW: F[StackNil ** Ref[MObject]] => F[StackNil] =
       t => t.emitThrow()
 
+    def THROW2[S <: Stack]: F[S ** Ref[MObject]] => F[S] =
+      t => t.emitThrow()
     /**
       * Instruction which allows us to do if statements
       * In this case if the bool on top is true then we do the series of instructions provided in f
@@ -1517,6 +1535,19 @@ object Mnemonics {
       val argsList = invokeCode match {
         case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3], getJvmType[T4])
         case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3], getJvmType[T4])
+        case _ => throw InternalCompilerException("Unexpected instruction")
+      }
+      t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)
+    }
+  }
+
+
+  class VoidMethod6[T1 <: MnemonicsTypes : TypeTag, T2 <: MnemonicsTypes : TypeTag, T3 <: MnemonicsTypes : TypeTag,
+                  T4 <: MnemonicsTypes : TypeTag,  T5 <: MnemonicsTypes : TypeTag,  T6 <: MnemonicsTypes : TypeTag](invokeCode: JvmModifier, ct: Reference, methodName: String) {
+    def INVOKE[S <: Stack](implicit root: Root, flix: Flix): F[S ** T1 ** T2 ** T3 ** T4 ** T5 ** T6] => F[S] = {
+      val argsList = invokeCode match {
+        case JvmModifier.InvokeStatic => List(getJvmType[T1], getJvmType[T2], getJvmType[T3], getJvmType[T4], getJvmType[T5], getJvmType[T6])
+        case JvmModifier.InvokeInterface | JvmModifier.InvokeSpecial | JvmModifier.InvokeVirtual => List(getJvmType[T2], getJvmType[T3], getJvmType[T4], getJvmType[T5], getJvmType[T6])
         case _ => throw InternalCompilerException("Unexpected instruction")
       }
       t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, argsList, Void)

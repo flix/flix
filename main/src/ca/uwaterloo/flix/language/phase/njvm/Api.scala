@@ -34,6 +34,16 @@ object Api {
       }
     }
     object Runtime {
+      object HoleError{
+        val constructor1: VoidMethod3[Ref[MHoleError], Ref[MString], Ref[MRefiedSource]] =
+          new VoidMethod3(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.HoleError) , "<init>")
+        val constructor2: VoidMethod3[Ref[MObject], Ref[MString], Ref[MRefiedSource]] =
+          new VoidMethod3(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.HoleError) , "<init>")
+      }
+      object RefiedSourceLocation{
+        val constructor: VoidMethod6[Ref[MRefiedSource], Ref[MString], MInt, MInt, MInt, MInt] =
+          new VoidMethod6(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.ReifiedSourceLocation) , "<init>")
+      }
       object ProxyObject {
         val of : Method4[Ref[MObject], Ref[MFunction], Ref[MFunction], Ref[MFunction] , Ref[MProxyObject]] = new Method4(JvmModifier.InvokeStatic, Reference(JvmName.ProxyObject), "of")
       }

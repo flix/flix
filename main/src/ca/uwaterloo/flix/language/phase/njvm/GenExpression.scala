@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Expression, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.FinalAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.AsmOps.compileReifiedSourceLocation
 import ca.uwaterloo.flix.language.phase.jvm.JvmName
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
@@ -34,7 +35,7 @@ import scala.reflect.runtime.universe._
 object GenExpression {
 
   def compileExpression[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
-  (exp0: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label) (implicit root: Root, flix: Flix):
+  (exp0: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
   F[S] => F[S ** T1] =
     (exp0 match {
       case Expression.Unit => compileUnit
@@ -53,8 +54,8 @@ object GenExpression {
       case Expression.Closure(sym, freeVars, fnType, tpe, loc) => ???
       case Expression.ApplyClo(exp, args, tpe, loc) => ???
       case Expression.ApplyDef(name, args, tpe, loc) => ???
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
+      case Expression.ApplyEff(_, _, _, _) =>
+        compileApplyEff[S, T1]
       case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
       case Expression.ApplyDefTail(name, args, tpe, loc) => ???
       case Expression.ApplyEffTail(sym, args, tpe, loc) => ???
@@ -63,43 +64,27 @@ object GenExpression {
       case Expression.Unary(sop, op, exp, _, _) => ???
       case Expression.Binary(sop, op, exp1, exp2, _, _) => ???
       case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
-        ADD_SOURCE_LINE[S](loc) |>>
-          compileExpression[S, MBool](exp1, map, lenv0, entryPoint) |>>
-          IFEQ_ELSE(
-            compileExpression(exp2, map, lenv0, entryPoint),
-            compileExpression(exp3, map, lenv0, entryPoint)
-          )
+        compileIfThenElse(exp1, exp2, exp3, loc, map, lenv0, entryPoint)
       case Expression.Branch(exp, branches, tpe, loc) => ???
-      case Expression.JumpTo(sym, tpe, loc) =>
-        ADD_SOURCE_LINE[S](loc) |>>
-          new MLabel(lenv0(sym)).GOTO
+      case Expression.JumpTo(sym, _, loc) =>
+        compileJumpTo(lenv0(sym), loc)
 
       case Expression.Let(sym, exp1, exp2, _, loc) => ???
       case Expression.LetRec(sym, exp1, exp2, _, _) => ???
 
       case Expression.Is(_, _, _, _) | Expression.Tag(_, _, _, _, _) |
-           Expression.Untag(_, _, _, _, _)=> compileTagExpression(exp0, map, lenv0, entryPoint)
+           Expression.Untag(_, _, _, _, _) => compileTagExpression(exp0, map, lenv0, entryPoint)
 
       case Expression.Index(base, offset, tpe, _) => ???
 
       case Expression.Tuple(elms, tpe, loc) =>
-        val MonoType.Tuple(erasedElms) = tpe
-        val tupleClassType = getTupleClassType(erasedElms.map(getErasedJvmType))
+        compileTuple(elms, tpe, loc, map, lenv0, entryPoint)
 
-        val tupleClass = map(tupleClassType.name).asInstanceOf[TupleClass]
-
-        ADD_SOURCE_LINE[S](loc) |>>
-          NEW[S, Ref[TupleClass]](tupleClassType) |>>
-          DUP |>>
-          elms.foldLeft(NO_OP[S ** Ref[TupleClass] ** Ref[TupleClass]]) {
-            case (ins, exp) =>
-              ins |>>
-                compileExpression(exp, map, lenv0, entryPoint).asInstanceOf
-          } |>>
-          tupleClass.defaultConstructor.INVOKE
-
-      case Expression.RecordEmpty(_, _) | Expression.RecordSelect(_, _, _, _) |
-           Expression.RecordSelect(_, _, _, _) | Expression.RecordExtend(_, _, _, _, _) |
+      case Expression.RecordEmpty(_, loc) =>
+        compileRecordEmpty(loc, map)
+      case Expression.RecordSelect(_, _, _, _) =>
+        ???
+      case Expression.RecordSelect(_, _, _, _) | Expression.RecordExtend(_, _, _, _, _) |
            Expression.RecordRestrict(_, _, _, _) => compileRecordExpression(exp0, map, lenv0, entryPoint)
 
       case Expression.ArrayLit(elms, tpe, loc) => ???
@@ -114,8 +99,10 @@ object GenExpression {
       case Expression.Assign(exp1, exp2, tpe, loc) => ???
 
       case Expression.HandleWith(exp, bindings, tpe, loc) => ???
-      case Expression.Existential(params, exp, loc) => ???
-      case Expression.Universal(params, exp, loc) => ???
+      case Expression.Existential(_, _, loc) =>
+        compileExistential(loc)
+      case Expression.Universal(_, _, loc) =>
+        compileUniversal(loc)
       case Expression.TryCatch(exp, rules, tpe, loc) => ???
       case Expression.NativeConstructor(constructor, args, tpe, loc) => ???
       case Expression.NativeField(field, tpe, loc) => ???
@@ -135,10 +122,14 @@ object GenExpression {
       case Expression.FixpointProject(pred, exp, tpe, loc) => ???
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => ???
 
-      case Expression.UserError(_, loc) => ???
-      case Expression.HoleError(sym, _, loc) => ???
-      case Expression.MatchError(_, loc) => ???
-      case Expression.SwitchError(_, loc) => ???
+      case Expression.UserError(_, loc) =>
+        compileUserError(loc)
+      case Expression.HoleError(sym, _, loc) =>
+        compileHoleError(sym.toString, loc)
+      case Expression.MatchError(_, loc) =>
+        compileMatchError(loc)
+      case Expression.SwitchError(_, loc) =>
+        compileSwitchError(loc)
 
     }).asInstanceOf[F[S] => F[S ** T1]]
 
@@ -223,16 +214,35 @@ object GenExpression {
     }
   }
 
-  def compileTagExpression[S <: Stack, T1<:MnemonicsTypes]
+  def compileApplyEff[S <: Stack, T1 <: MnemonicsTypes : TypeTag](s: String): F[S] => F[S ** T1] =
+    throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
+
+  def compileIfThenElse[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
+  (exp1: FinalAst.Expression, exp2: FinalAst.Expression, exp3: FinalAst.Expression, loc: SourceLocation,
+   map: Map[JvmName, Mnemonics.MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** T1] =
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, MBool](exp1, map, lenv0, entryPoint) |>>
+      IFEQ_ELSE(
+        compileExpression(exp2, map, lenv0, entryPoint),
+        compileExpression(exp3, map, lenv0, entryPoint)
+      )
+
+  def compileJumpTo[S <: Stack](label: Label, loc: SourceLocation): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      new MLabel(label).GOTO
+
+  def compileTagExpression[S <: Stack, T1 <: MnemonicsTypes]
   (exp: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
   F[S] => F[S ** T1] =
-   (exp match {
+    (exp match {
       case Expression.Is(enum, tag, exp1, loc) =>
         val tagInfo = getTagInfo(exp.tpe, tag)
         val tagTpe = getTagClassType(tagInfo)
         ADD_SOURCE_LINE[S](loc) |>>
-        compileExpression(exp1, map, lenv0, entryPoint) |>>
-        INSTANCE_OF(tagTpe)
+          compileExpression(exp1, map, lenv0, entryPoint) |>>
+          INSTANCE_OF(tagTpe)
 
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
 
@@ -240,15 +250,15 @@ object GenExpression {
         val classType = getTagClassType(tagInfo)
         val tagClass = map(classType.name).asInstanceOf[TagClass[_]]
 
-//        ADD_SOURCE_LINE(loc) |>>
-//          (tagClass.instance match {
-//          case Some(field) => field.GET_STATIC
-//          case None =>
-//              NEW[S, Ref[TupleClass[_]]](classType) |>>
-//              DUP |>>
-//              compileExpression(exp, map, lenv0, entryPoint)|>>
-//              tagClass.defaultConstructor.INVOKE
-//          })
+      //        ADD_SOURCE_LINE(loc) |>>
+      //          (tagClass.instance match {
+      //          case Some(field) => field.GET_STATIC
+      //          case None =>
+      //              NEW[S, Ref[TupleClass[_]]](classType) |>>
+      //              DUP |>>
+      //              compileExpression(exp, map, lenv0, entryPoint)|>>
+      //              tagClass.defaultConstructor.INVOKE
+      //          })
 
       case Expression.Untag(enum, tag, exp, tpe, loc) => ???
       case _ => throw InternalCompilerException(s"Unexpected expression " + exp)
@@ -256,18 +266,41 @@ object GenExpression {
     }).asInstanceOf[F[S] => F[S ** T1]]
 
 
-  def compileRecordExpression[S <: Stack, T1<:MnemonicsTypes]
-  (exp : Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  def compileTuple[S <: Stack](elms: List[Expression], tpe: MonoType, loc: SourceLocation,
+                               map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+                              (implicit root: Root, flix: Flix): F[S] => F[S ** Ref[TupleClass]] = {
+    val MonoType.Tuple(erasedElms) = tpe
+    val tupleClassType = getTupleClassType(erasedElms.map(getErasedJvmType))
+
+    val tupleClass = map(tupleClassType.name).asInstanceOf[TupleClass]
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      NEW[S, Ref[TupleClass]](tupleClassType) |>>
+      DUP |>>
+      elms.foldLeft(NO_OP[S ** Ref[TupleClass] ** Ref[TupleClass]]) {
+        case (ins, exp) =>
+          ins |>>
+            compileExpression(exp, map, lenv0, entryPoint).asInstanceOf
+      } |>>
+      tupleClass.defaultConstructor.INVOKE
+  }
+
+  def compileRecordEmpty[S <: Stack](loc: SourceLocation, map: Map[JvmName, MnemonicsClass])(implicit root: Root, flix: Flix):
+  F[S] => F[S ** Ref[RecordEmpty]] = {
+    val recEmptClassTpe = getRecordEmptyClassType
+    val recEmptClass = map(recEmptClassTpe.name).asInstanceOf[RecordEmpty]
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      NEW[S, Ref[RecordEmpty]](recEmptClassTpe) |>>
+      DUP |>>
+      recEmptClass.defaultConstructor.INVOKE
+  }
+
+
+  def compileRecordExpression[S <: Stack, T1 <: MnemonicsTypes]
+  (exp: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
   F[S] => F[S ** T1] =
     (exp match {
-      case Expression.RecordEmpty(_, loc) =>
-        val recEmptClassTpe = getRecordEmptyClassType
-        val recEmptClass = map(recEmptClassTpe.name).asInstanceOf[RecordEmpty]
-
-        ADD_SOURCE_LINE[S](loc) |>>
-          NEW[S, Ref[RecordEmpty]](recEmptClassTpe) |>>
-          DUP |>>
-          recEmptClass.defaultConstructor.INVOKE
 
       case Expression.RecordSelect(exp, label, tpe, loc) => ???
 
@@ -307,4 +340,63 @@ object GenExpression {
   }
 
 
+  def compileExistential[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileThrowFlixError(Reference(JvmName.Runtime.NotImplementedError), loc)
+
+  def compileUniversal[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileThrowFlixError(Reference(JvmName.Runtime.NotImplementedError), loc)
+
+  def compileUserError[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileThrowFlixError(Reference(JvmName.Runtime.NotImplementedError), loc)
+
+  def compileHoleError[S <: Stack](hole: String, loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileHoleError(hole, loc)
+
+  def compileMatchError[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileThrowFlixError(Reference(JvmName.Runtime.MatchError), loc)
+
+  def compileSwitchError[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] =
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileThrowFlixError(Reference(JvmName.Runtime.SwitchError), loc)
+
+
+  private def compileReifiedSourceLocation[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MRefiedSource]] = {
+
+    NEW[S, Ref[MRefiedSource]](Reference(JvmName.Runtime.ReifiedSourceLocation)) |>>
+      DUP |>>
+      LDC_STRING(loc.source.format) |>>
+      LDC_INT(loc.beginLine) |>>
+      LDC_INT(loc.beginCol) |>>
+      LDC_INT(loc.endLine) |>>
+      LDC_INT(loc.endCol) |>>
+      Api.Java.Runtime.RefiedSourceLocation.constructor.INVOKE
+  }
+
+
+  def compileThrowFlixError[S <: Stack](ct: Reference, loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] = {
+
+
+    val constructor = new VoidMethod2[Ref[MObject], Ref[MRefiedSource]](JvmModifier.InvokeSpecial, ct, "<init>")
+    NEW[S, Ref[MObject]](ct) |>>
+      DUP |>>
+      compileReifiedSourceLocation[S ** Ref[MObject] ** Ref[MObject]](loc) |>>
+      constructor.INVOKE |>>
+      THROW2
+  }
+
+
+  def compileThrowHoleError[S <: Stack](hole: String, loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S] = {
+
+    NEW[S, Ref[MObject]](Reference(JvmName.Runtime.HoleError)) |>>
+      DUP |>>
+      LDC_STRING(hole) |>>
+      compileReifiedSourceLocation(loc) |>>
+      Api.Java.Runtime.HoleError.constructor2.INVOKE |>>
+      THROW2
+  }
 }
