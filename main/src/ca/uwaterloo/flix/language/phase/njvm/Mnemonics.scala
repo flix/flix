@@ -663,6 +663,12 @@ object Mnemonics {
 
   trait MHoleError extends MObject
 
+  trait MConstraintSystem extends MObject
+
+  trait MSpawn extends MObject
+
+  trait MChannel extends MObject
+
 
   object MnemonicsTypes {
 
@@ -704,6 +710,10 @@ object Mnemonics {
   private val tFunction = typeOf[Ref[MFunction]]
   private val tRefiedSource = typeOf[Ref[MRefiedSource]]
   private val tHoleError = typeOf[Ref[MHoleError]]
+  private val tConstraintSystem = typeOf[Ref[MConstraintSystem]]
+  private val tSpawn = typeOf[Ref[MSpawn]]
+  private val tChannel = typeOf[Ref[MChannel]]
+
 
   private val tUnit = typeOf[Ref[MUnit]]
   private val tBoolean = typeOf[Ref[MBool]]
@@ -778,6 +788,9 @@ object Mnemonics {
       case t if t =:= tFunction => Reference(JvmName.Function)
       case t if t =:= tRefiedSource => Reference(JvmName.Runtime.ReifiedSourceLocation)
       case t if t =:= tHoleError => Reference(JvmName.Runtime.HoleError)
+      case t if t =:= tConstraintSystem => Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+      case t if t =:= tSpawn => NJvmType.Spawnable
+      case t if t =:= tChannel => Reference(JvmName.Channel)
 
       case t if t =:= tBoolean => Reference(JvmName.Boolean)
       case t if t =:= tCharacter => Reference(JvmName.Character)

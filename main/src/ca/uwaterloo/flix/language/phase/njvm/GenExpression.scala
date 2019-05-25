@@ -68,7 +68,20 @@ object GenExpression {
       case Expression.JumpTo(sym, _, loc) =>
         compileJumpTo(lenv0(sym), loc)
 
-      case Expression.Let(sym, exp1, exp2, _, loc) => ???
+      case Expression.Let(sym, exp1, exp2, _, loc) =>
+        val jvmType = getErasedJvmType(exp1.tpe)
+        jvmType match{
+          case PrimBool =>  compileLet[S, MBool, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimChar => compileLet[S, MChar, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimByte => compileLet[S, MByte, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimShort => compileLet[S, MShort, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimInt => compileLet[S, MInt, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimLong => compileLet[S, MLong, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileLet[S, MFloat, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileLet[S, MDouble, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileLet[S, Ref[MObject], T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type " + jvmType)
+        }
       case Expression.LetRec(sym, exp1, exp2, _, _) => ???
 
       case Expression.Is(_, tag, exp1, loc) =>
@@ -117,7 +130,7 @@ object GenExpression {
           case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
         }
 
-      case Expression.Index(base, offset, tpe, _) => ???
+      case Expression.Index(base, offset, tpe, loc) => ???
 
       case Expression.Tuple(elms, tpe, loc) =>
         compileTuple(elms, tpe, loc, map, lenv0, entryPoint)
@@ -177,20 +190,23 @@ object GenExpression {
       case Expression.NativeField(field, tpe, loc) => ???
       case Expression.NativeMethod(method, args, tpe, loc) => ???
 
-      case Expression.NewChannel(exp, tpe, loc) => ???
+      case Expression.NewChannel(exp, tpe, loc) =>
+        compileNewChannel(exp, loc, map, lenv0, entryPoint)
       case Expression.GetChannel(exp, tpe, loc) => ???
       case Expression.PutChannel(exp1, exp2, tpe, loc) => ???
       case Expression.SelectChannel(rules, default, tpe, loc) => ???
 
-      case Expression.Spawn(exp, tpe, loc) => ???
+      case Expression.Spawn(exp, _, loc) =>
+        compileSpawn(exp, loc, map, lenv0, entryPoint)
       case Expression.Sleep(exp, tpe, loc) => ???
 
       case Expression.FixpointConstraint(con, tpe, loc) => ???
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => ???
+      case Expression.FixpointCompose(exp1, exp2, _, loc) =>
+        compileFixpointCompose(exp1, exp2, loc, map, lenv0, entryPoint)
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => ???
       case Expression.FixpointProject(pred, exp, tpe, loc) => ???
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => ???
-
+      case Expression.FixpointEntails(exp1, exp2, _, loc) =>
+        compileFixpointEntails(exp1, exp2, loc, map, lenv0, entryPoint)
       case Expression.UserError(_, loc) =>
         compileUserError(loc)
       case Expression.HoleError(sym, _, loc) =>
@@ -302,6 +318,18 @@ object GenExpression {
     ADD_SOURCE_LINE[S](loc) |>>
       new MLabel(label).GOTO
 
+
+  def compileLet[S <: Stack, T1<: MnemonicsTypes : TypeTag, T2<: MnemonicsTypes : TypeTag]
+  (sym: Symbol.VarSym, exp1: Expression, exp2: Expression, loc: SourceLocation,
+   map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  F[S] => F[S**T2]= {
+    val letVar = new Local[T1](sym.getStackOffset + 3)
+
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, T1](exp1, map, lenv0, entryPoint) |>>
+      letVar.STORE |>>
+      compileExpression[S,T2](exp2, map, lenv0, entryPoint)
+  }
 
   def compileIs[S <: Stack, T <: MnemonicsTypes : TypeTag]
   (tagInfo: TagInfo, exp: FinalAst.Expression, loc: SourceLocation, map: Map[JvmName, Mnemonics.MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
@@ -442,6 +470,51 @@ object GenExpression {
       compileExpression[S, Ref[RecordInterface]](rest, map, lenv0, entryPoint) |>>
       LDC_STRING(label) |>>
       recordInterface.restrictFieldMethod.INVOKE
+  }
+
+  def compileNewChannel[S <: Stack]
+  (exp: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):
+  F[S] => F[S** Ref[MChannel]]={
+    ADD_SOURCE_LINE[S](loc) |>>
+    NEW[S, Ref[MChannel]](Reference(JvmName.Channel)) |>>
+    DUP |>>
+    compileExpression[S** Ref[MChannel] ** Ref[MChannel], MInt](exp, map, lenv0, entryPoint) |>>
+    Api.Java.Runtime.Channel.constructor.INVOKE
+  }
+
+
+
+
+  def compileSpawn[S <: Stack]
+  (exp: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):
+  F[S] => F[S** Ref[MUnit]]={
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, Ref[MSpawn]](exp, map, lenv0, entryPoint) |>>
+      Api.Java.Runtime.Channel.spawn.INVOKE |>>
+      Api.Java.Runtime.Value.Unit.getInstance.INVOKE
+  }
+
+
+  def compileFixpointCompose[S <: Stack]
+  (exp1: Expression, exp2: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):
+  F[S] => F[S** Ref[MConstraintSystem]]={
+    ADD_SOURCE_LINE[S](loc) |>>
+      compileExpression[S, Ref[MConstraintSystem]](exp1, map, lenv0, entryPoint) |>>
+      compileExpression[S**Ref[MConstraintSystem], Ref[MConstraintSystem]](exp2, map, lenv0, entryPoint) |>>
+      Api.Java.Runtime.FixPoint.Solver.compose.INVOKE
+  }
+
+  def compileFixpointEntails[S <: Stack]
+  (exp1: Expression, exp2: Expression, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):
+  F[S] => F[S** MBool]={
+    ADD_SOURCE_LINE[S](loc) |>>
+    compileExpression[S, Ref[MConstraintSystem]](exp1, map, lenv0, entryPoint) |>>
+    compileExpression[S**Ref[MConstraintSystem], Ref[MConstraintSystem]](exp2, map, lenv0, entryPoint) |>>
+    Api.Java.Runtime.FixPoint.Solver.entails.INVOKE
   }
 
 

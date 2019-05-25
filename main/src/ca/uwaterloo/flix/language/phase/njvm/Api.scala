@@ -34,6 +34,20 @@ object Api {
       }
     }
     object Runtime {
+      object Channel {
+        val spawn : VoidMethod1[Ref[MSpawn]] = new VoidMethod1(JvmModifier.InvokeStatic, Reference(JvmName.Channel), "spawn")
+        val constructor : VoidMethod2[Ref[MChannel], MInt] = new VoidMethod2(JvmModifier.InvokeSpecial, Reference(JvmName.Channel), "<init>")
+      }
+
+      object FixPoint{
+        object Solver{
+          val entails : Method2[Ref[MConstraintSystem], Ref[MConstraintSystem], MBool] =
+            new Method2(JvmModifier.InvokeStatic, Reference(JvmName.Runtime.Fixpoint.Solver), "entails")
+
+          val compose : Method2[Ref[MConstraintSystem], Ref[MConstraintSystem], Ref[MConstraintSystem]] =
+            new Method2(JvmModifier.InvokeStatic, Reference(JvmName.Runtime.Fixpoint.Solver), "compose")
+        }
+      }
       object HoleError{
         val constructor1: VoidMethod3[Ref[MHoleError], Ref[MString], Ref[MRefiedSource]] =
           new VoidMethod3(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.HoleError) , "<init>")
