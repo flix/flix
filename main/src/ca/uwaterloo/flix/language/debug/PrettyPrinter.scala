@@ -900,7 +900,48 @@ object PrettyPrinter {
           if (moreTypes) vt <<"[" << tpe.show << "]"
         case TypedAst.Expression.Cast(exp, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.Hole(sym, tpe, eff, loc) => vt << "?"
-        case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) =>
+          def fmtPat(pat: TypedAst.Pattern): Unit = pat match {
+            case TypedAst.Pattern.Wild(ptpe, ploc) => vt << "_"
+            case TypedAst.Pattern.Var(psym, ptpe, ploc) => fmtSym(psym, vt)
+            case TypedAst.Pattern.Unit(ploc) => vt << "()"
+            case TypedAst.Pattern.True(ploc) => vt << "true"
+            case TypedAst.Pattern.False(ploc)=> vt << "false"
+            case TypedAst.Pattern.Char(lit, loc) => vt << lit
+            case TypedAst.Pattern.Float32(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Float64(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Int8(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Int16(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Int32(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Int64(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.BigInt(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Str(lit, loc) => vt.text(lit.toString)
+            case TypedAst.Pattern.Tag(sym, tag, ppat, ptpe, loc) =>
+              vt << tag << "("
+              fmtPat(ppat)
+              vt << ")"
+            case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
+              vt << "("
+              for (elm <- elms) {
+                fmtPat(elm)
+                if (elm != elms.last) vt << ", "
+              }
+              vt << ")"
+          }
+          vt << "match "
+          visitExp(exp)
+          vt << " with {" << Indent << NewLine
+          for (rule <- rules) {
+            vt << "case "
+            fmtPat(rule.pat)
+            vt << " "
+            visitExp(rule.guard)
+            vt << " => "
+            visitExp(rule.exp)
+            if (rule != rules.last) vt << NewLine
+          }
+          vt << Dedent << NewLine
+          vt << "}"
         case TypedAst.Expression.Switch(rules, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.VectorLength(base, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => vt << "?"

@@ -18,7 +18,6 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
     * The transformation is currently very naive and could be optimized to yield better performance.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
-
     if (flix.options.debug) {
       println("PRE CONTINUATIONS -------------------------------")
       println()
@@ -155,7 +154,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
       case Expression.Unary(op, exp, tpe, eff, loc) => {
-        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Unary(op, l.head, tpe, eff, loc), eff, loc), defSymMap)
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Unary(op, l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
       }
 
       case Expression.Binary(op, exp1, exp2, tpe, _, loc) => {
@@ -194,8 +193,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         // We wrongly assume that there is not shift/reset in the guard
+        // todo sjj fix guard pat type
         val newRules = rules.map(r => MatchRule(r.pat, r.guard, visitExp(r.exp, kont0, kont0ReturnType, defSymMap)))
-        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Match(l.head, newRules, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
+        visitExps(List(exp), kont0ReturnType, l => Expression.Match(l.head, newRules, kont0ReturnType, eff, loc), defSymMap)
 
       case Expression.Switch(rules, tpe, eff, loc) =>
         //todo sjj: is this stupid to do before simplifier?
@@ -325,7 +325,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.UserError(tpe, eff, loc) => mkApplyCont(kont0, Expression.UserError(fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc)
+      case Expression.UserError(tpe, eff, loc) =>
+        mkApplyCont(kont0, Expression.UserError(fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc)
 
       case Expression.CPSShift(exp, tpe, eff, loc) =>
         exp match {
@@ -342,7 +343,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.CPSReset(exp, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.SwitchError(tpe, eff, loc) => mkApplyCont(kont0, exp0, eff, loc)
+      case Expression.SwitchError(tpe, eff, loc) =>
+        mkApplyCont(kont0, Expression.SwitchError(fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc)
     }
 
   /**
