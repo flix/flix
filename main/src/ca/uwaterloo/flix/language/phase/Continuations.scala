@@ -104,7 +104,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   // todo sjj rename cps transform, only add to one visitDefn
   def visitExp(exp0: Expression, kont0: Expression, kont0ReturnType: Type, defSymMap: Map[Symbol.DefnSym, Symbol.DefnSym])(implicit genSym: GenSym): Expression = exp0 match {
 
-      case Expression.Wild(tpe, eff, loc) => ??? //todo sjj
+      case Expression.Wild(tpe, eff, loc) => mkApplyCont(kont0, Expression.Wild(fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc)
       case Expression.Var(sym, tpe, eff, loc) => mkApplyCont(kont0, Expression.Var(sym, fixArrowType(tpe, kont0ReturnType), eff, loc), empEff(), loc)
 
       case Expression.Def(sym, tpe, eff, loc) => {
@@ -208,8 +208,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         }, kont0, kont0ReturnType, defSymMap)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-        println(exp0)
-        ???
+        visitExps(List(exp), kont0ReturnType, l =>Expression.Tag(sym, tag, l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), defSymMap)
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
         visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
@@ -223,7 +222,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? //todo sjj
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayLit(l, tpe, eff, loc), eff, loc), defSymMap)
+        visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayLit(l, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
         visitExps(List(elm, len), kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayNew(l.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
@@ -240,17 +239,23 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
         visitExps(List(base, startIndex, endIndex), kont0ReturnType, l => mkApplyCont(kont0, Expression.ArraySlice(l.head, l.tail.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.VectorLit(elms, tpe, eff, loc) => ??? //todo sjj
+      case Expression.VectorLit(elms, tpe, eff, loc) =>
+        visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.VectorLit(l, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.VectorNew(elm, len, tpe, eff, loc) => ??? //todo sjj
+      case Expression.VectorNew(elm, len, tpe, eff, loc) =>
+        visitExps(List(elm), kont0ReturnType, l => mkApplyCont(kont0, Expression.VectorNew(l.head, len, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.VectorLoad(base, index, tpe, eff, loc) => ??? //todo sjj
+      case Expression.VectorLoad(base, index, tpe, eff, loc) =>
+        visitExps(List(base), kont0ReturnType, l => mkApplyCont(kont0, Expression.VectorLoad(l.head, index, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ??? //todo sjj
+      case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+        visitExps(List(base, elm), kont0ReturnType, l => Expression.VectorStore(l.head, index, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), defSymMap)
 
-      case Expression.VectorLength(base, tpe, eff, loc) => ??? //todo sjj
+      case Expression.VectorLength(base, tpe, eff, loc) =>
+        visitExps(List(base), kont0ReturnType, l => mkApplyCont(kont0, Expression.VectorLength(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ??? //todo sjj
+      case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+        visitExps(List(base, endIndex), kont0ReturnType, l => mkApplyCont(kont0, Expression.VectorSlice(l.head, startIndex, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.Ref(exp, tpe, eff, loc) => ??? //todo sjj
 
@@ -262,11 +267,15 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Existential(fparam, exp, eff, loc) => ??? //todo sjj
 
-      case Expression.Universal(fparam, exp, eff, loc) => ??? //todo sjj
+      case Expression.Universal(fparam, exp, eff, loc) =>
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Universal(fparam, l.head, eff, loc), eff, loc), defSymMap)
 
-      case Expression.Ascribe(exp, tpe, eff, loc) => ??? //todo sjj
+      case Expression.Ascribe(exp, tpe, eff, loc) =>
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Ascribe(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.Cast(exp, tpe, eff, loc) => ??? //todo sjj
+
+      case Expression.Cast(exp, tpe, eff, loc) =>
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Cast(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? //todo sjj
 
@@ -274,17 +283,34 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.NativeField(field, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.NativeMethod(method, args, tpe, eff, loc) => ??? //todo sjj
+      case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+        // we assume that this type is not an arrowtype
+        assert(!tpe.isArrow)
+        visitExps(args, kont0ReturnType, l => mkApplyCont(kont0, Expression.NativeMethod(method, l, tpe, eff, loc), eff, loc), defSymMap)
 
-      case Expression.NewChannel(exp, tpe, eff, loc) => ??? //todo sjj
+      case Expression.NewChannel(exp, tpe, eff, loc) =>
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.NewChannel(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.GetChannel(exp, tpe, eff, loc) => ??? //todo sjj
+      case Expression.GetChannel(exp, tpe, eff, loc) =>
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.GetChannel(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? //todo sjj
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        visitExps(List(exp1, exp2), kont0ReturnType, l => mkApplyCont(kont0, Expression.PutChannel(l.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.Spawn(exp, tpe, eff, loc) => ??? //todo sjj
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        visitExps(rules.map(_.chan), kont0ReturnType, l => {
+          val newRules = rules.zip(l) map {
+            case (SelectChannelRule(sym, chan, exp), newChan) => SelectChannelRule(sym, newChan, visitExp(exp, kont0, kont0ReturnType, defSymMap))
+          }
+          Expression.SelectChannel(newRules, default, kont0ReturnType, eff, loc)
+        }, defSymMap)
+
+      case Expression.Spawn(exp, tpe, eff, loc) =>
+        val freshSym = Symbol.freshVarSym()
+        val freshSymVar = Expression.Var(freshSym, exp.tpe, eff, loc)
+        val id = mkLambda(freshSym, exp.tpe, freshSymVar)
+        mkApplyCont(kont0, Expression.Spawn(visitExp(exp, id, kont0ReturnType, defSymMap), fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc)
 
       case Expression.Sleep(exp, tpe, eff, loc) =>
         visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Sleep(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
@@ -299,7 +325,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.UserError(tpe, eff, loc) => ??? //todo sjj
+      case Expression.UserError(tpe, eff, loc) => mkApplyCont(kont0, Expression.UserError(fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc)
 
       case Expression.CPSShift(exp, tpe, eff, loc) =>
         exp match {
@@ -310,6 +336,8 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
             val newLambda = Expression.Lambda(lfparam, visitExp(lexp, id, kont0ReturnType, defSymMap),ltpe, leff, lloc)
 
             Expression.Apply(newLambda, kont0, kont0ReturnType, eff, loc)
+
+          case _ => throw InternalCompilerException("cps shift should contain lambda")
         }
 
       case Expression.CPSReset(exp, tpe, eff, loc) => ??? //todo sjj

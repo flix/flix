@@ -40,8 +40,7 @@
 //    if (a==0) a
 //    else f(a-1)
 
-def main(): Int = switch {
-case true => 3}
+def main(): List[Int] = List.range(1,5)
 
 
 //def main(): Int32 =
