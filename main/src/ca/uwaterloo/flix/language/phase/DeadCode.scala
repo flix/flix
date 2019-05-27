@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
@@ -78,7 +79,7 @@ object DeadCode extends Phase[Root, Root] {
         val expU = visitExp(exp2)
         val letP = isPure(exp1)
         if(sym.text == "_temp") { // TODO: Improve code
-          if(!letP) {
+          if(!letP.pure) {
             letU + expU
           } else {
             letU + expU + DeadCodeError(exp1.loc, "Expression is pure, i.e. it has no side effects, and its result is never used.").toFailure
@@ -222,83 +223,98 @@ object DeadCode extends Phase[Root, Root] {
     }
 
   // TODO: Confirm which expressions have side effects
-  private def isPure(e: TypedAst.Expression): Boolean =
+  private def isPure(e: TypedAst.Expression): TypEff =
     e match {
-      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+        val TypEff(t, p) = isPure(exp)
+        TypEff(Typ.Function(getArg(fparam.tpe), p, t), true)
+      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
       case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
-      case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
-      case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
-      case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isPure(exp1) && isPure(exp2) && isPure(exp3)
+      case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
+      case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
+      case TypedAst.Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
+      case TypedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => isPure(exp1) + isPure(exp2) + isPure(exp3)
       case TypedAst.Expression.Match(exp, rules, tpe, eff, loc) =>
-        isPure(exp) && rules.foldLeft(true) ((p, r) => p && isPure(r.guard) && isPure(r.exp))
+        isPure(exp) + rules.foldLeft(TypEff()) ((p, r) => isPure(r.guard) + isPure(r.exp) + p)
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
-        rules.foldLeft(true) ((p, r) => p && isPure(r._1) && isPure(r._2))
+        rules.foldLeft(TypEff()) ((p, r) => p + isPure(r._1) + isPure(r._2))
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
+      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms.foldLeft(TypEff()) ((p, e) => p + isPure(e))
       case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) => isPure(value) && isPure(rest)
+      case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) => isPure(value) + isPure(rest)
       case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) => isPure(rest)
-      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
-      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => isPure(elm) && isPure(len)
-      case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => isPure(base) && isPure(index)
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => elms.foldLeft(TypEff()) ((p, e) => p + isPure(e))
+      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => isPure(elm) + isPure(len) + false // TODO: Does this make sense?
+      case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => isPure(base) + isPure(index)
       case TypedAst.Expression.ArrayLength(base, tpe, eff, loc) => isPure(base)
-      case TypedAst.Expression.ArrayStore(base, index, elm, tpe, eff, loc) => false
-      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => isPure(base) && isPure(beginIndex) && isPure(endIndex)
-      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => elms.foldLeft(true) ((p, e) => p && isPure(e))
-      case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => isPure(elm)
+      case TypedAst.Expression.ArrayStore(base, index, elm, tpe, eff, loc) => TypEff(Typ.Primitive(), false)
+      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => isPure(base) + isPure(beginIndex) + isPure(endIndex)
+      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => elms.foldLeft(TypEff()) ((p, e) => p + isPure(e))
+      case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => isPure(elm) // TODO: Is VectorNew impure?
       case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => isPure(base)
-      case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) => isPure(base) && isPure(elm) // TODO: Is VectorStore impure?
-      case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => isPure(base) && isPure(endIndex)
+      case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) => isPure(base) + isPure(elm) // TODO: Is VectorStore impure?
+      case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => isPure(base) + isPure(endIndex)
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) => isPure(exp)
       case TypedAst.Expression.Deref(exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
-      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) => isPure(exp) && bindings.foldLeft(true) ((p, b) => p && isPure(b.exp))
+      case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
+      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) => isPure(exp) + bindings.foldLeft(TypEff()) ((p, b) => p + isPure(b.exp))
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) => isPure(exp)
       case TypedAst.Expression.Universal(fparam, exp, eff, loc) => isPure(exp)
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => isPure(exp)
       case TypedAst.Expression.Cast(exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) => args.foldLeft(true) ((p, e) => p && isPure(e))
-      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => isPure(exp) && rules.foldLeft(true) ((p, r) => p && isPure(r.exp))
-      case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) => args.foldLeft(true) ((p, e) => p && isPure(e))
-      case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => isPure(exp)
+      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) => args.foldLeft(TypEff()) ((p, e) => p + isPure(e))
+      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => isPure(exp) + rules.foldLeft(TypEff()) ((p, r) => p + isPure(r.exp))
+      case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) => args.foldLeft(TypEff()) ((p, e) => p + isPure(e))
+      case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => isPure(exp) + false
       case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) => false
+      case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2) + false
       case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
-        val rulesP = rules.foldLeft(true) ((p, r) => p && isPure(r.chan) && isPure(r.exp))
+        val rulesP = rules.foldLeft(TypEff()) ((p, r) => p + isPure(r.chan) + isPure(r.exp))
         val defaultP = default match {
           case Some(ex) => isPure(ex)
-          case None => true
+          case None => TypEff(Typ.Primitive(), true)
         }
-        rulesP && defaultP
-      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) => false
+        rulesP + defaultP
+      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) => TypEff(Typ.Primitive(), false)
       case TypedAst.Expression.Sleep(exp, tpe, eff, loc) => isPure(exp)
       case TypedAst.Expression.FixpointConstraint(c, tpe, eff, loc) =>
         val headP = c.head match {
           case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
-            isPure(pred.exp) && terms.foldLeft(true) ((p, e) => p && isPure(e))
+            isPure(pred.exp) + terms.foldLeft(TypEff(Typ.Primitive(), true)) ((p, e) => p + isPure(e))
         }
         val bodyP = for (b <- c.body) yield {
           b match {
             case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => isPure(pred.exp)
             case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
-              terms.foldLeft(true) ((p, e) => p && isPure(e))
+              terms.foldLeft(TypEff(Typ.Primitive(), true)) ((p, e) => p + isPure(e))
             case TypedAst.Predicate.Body.Functional(sym, term, loc) => isPure(term)
           }
         }
-        headP && bodyP.foldLeft(true) (_ && _)
-      case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
+        headP + bodyP.foldLeft(TypEff(Typ.Primitive(), true)) (_ + _)
+      case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
       case TypedAst.Expression.FixpointSolve(exp, tpe, eff, loc) => isPure(exp)
-      case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => isPure(pred.exp) && isPure(exp)
-      case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => isPure(exp1) && isPure(exp2)
-      case _ => true
+      case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => isPure(pred.exp) + isPure(exp)
+      case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => isPure(exp1) + isPure(exp2)
+      case _ => TypEff(Typ.Primitive(), true)
     }
 
     private def isPure(d: TypedAst.Def): Boolean = {
       val expP = isPure(d.exp)
-      expP
+      expP.pure
     }
+
+  // Am quite unsure about this
+  private def getArg(tpe: Type): Typ = {
+    tpe match {
+      case Type.Arrow(l) =>
+        val args = tpe.typeArguments.init
+        val argTyp = if(args.length == 1) getArg(args.head) else Typ.Tuple(args.map(getArg(_)))
+        val retTyp = getArg(tpe.typeArguments.last)
+        Typ.Function(argTyp, true, retTyp)
+      case Type.Tuple(l) => Typ.Tuple(tpe.typeArguments.map(getArg(_)))
+      case _ => Typ.Primitive()
+    }
+  }
 }
 
 case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym, String)] = Set.empty, defs: Set[Symbol.DefnSym] = Set.empty, vals: List[Validation[TypedAst.Expression, RedundancyError]] = List.empty) {
@@ -317,3 +333,24 @@ case class Used(vars: Set[Symbol.VarSym] = Set.empty, tags: Set[(Symbol.EnumSym,
   }
 }
 
+sealed trait Typ {
+  def join(that: Typ): Typ = (this, that) match {
+    case (Typ.Primitive(), Typ.Primitive()) => Typ.Primitive()
+    case (Typ.Tuple(xs), Typ.Tuple(ys)) => Typ.Tuple(xs.zip(ys).map(x => x._1 join x._2))
+    case (Typ.Function(t11, p1, t12), Typ.Function(t21, p2, t22)) => Typ.Function(t11 join t21, p1 && p2, t12 join t22)
+    case (_, _) => Typ.Tuple(List(this, that)) // TODO: Correct?
+  }
+}
+
+object Typ {
+  case class Primitive() extends Typ
+
+  case class Tuple(typs: List[Typ]) extends Typ
+
+  case class Function(t1: Typ, pure: Boolean, t2: Typ) extends Typ
+}
+
+case class TypEff(tpe: Typ = Typ.Primitive(), pure: Boolean = true) {
+  def +(that: TypEff): TypEff = TypEff(tpe join that.tpe, pure && that.pure)
+  def +(that: Boolean): TypEff = TypEff(tpe, pure && that)
+}
