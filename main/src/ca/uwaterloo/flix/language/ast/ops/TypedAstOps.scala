@@ -228,6 +228,20 @@ object TypedAstOps {
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.UserError(tpe, eff, loc) => Map.empty
+
+      case Expression.ApplyWithKont(exp1, exp2, exp3, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
+
+      case Expression.CPSShift(exp, tpe, eff, loc) => visitExp(exp, env0)
+
+      case Expression.CPSReset(exp, tpe, eff, loc) =>visitExp(exp, env0)
+
+      case Expression.LambdaWithKont(fparam1, fparam2, exp, tpe, eff, loc) =>
+        val env1 = Map(fparam1.sym -> fparam1.tpe)
+        val env2 = Map(fparam2.sym -> fparam2.tpe)
+        visitExp(exp, env0 ++ env1 ++ env2)
+
+      case Expression.SwitchError(tpe, eff, loc) => Map.empty
     }
 
     /**

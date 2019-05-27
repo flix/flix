@@ -116,9 +116,9 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         ??? //exp0
       }
 
-      case Expression.Eff(sym, tpe, eff, loc) => ??? //todo sjj
+      case Expression.Eff(sym, tpe, eff, loc) => exp0
 
-      case Expression.Hole(sym, tpe, eff, loc) => ??? //todo sjj
+      case Expression.Hole(sym, tpe, eff, loc) => exp0
 
       case Expression.Unit(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
       case Expression.True(loc) => mkApplyCont(kont0, exp0, empEff(), loc)
@@ -169,7 +169,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) => {
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => {
         //
         // Evaluate the conditional expression `exp1` passing a lambda that
         // selects the appropriate branch where to continue execution.
@@ -177,7 +177,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
         // Introduce a fresh variable symbol for the lambda.
         val freshCondSym = Symbol.freshVarSym()
-        val freshCondVar = if (!isCPure(exp1)) Expression.Var(freshCondSym, Type.Bool, empEff(), loc) else exp1
+        val freshCondVar = Expression.Var(freshCondSym, Type.Bool, empEff(), loc)
 
         // Construct an expression that branches on the variable symbol and
         // continues execution in the CPS converted version of one of the two branches.
@@ -189,14 +189,27 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         val lambda = mkLambda(freshCondSym, Type.Bool, e)
 
         // Recurse on the conditional.
-        visitExp(exp1, if (!isCPure(exp1)) lambda else e, kont0ReturnType, defSymMap)
+        visitExp(exp1, lambda, kont0ReturnType, defSymMap)
       }
 
-      case Expression.Match(exp, rules, tpe, eff, loc) => ??? //todo sjj
+      case Expression.Match(exp, rules, tpe, eff, loc) =>
+        // We wrongly assume that there is not shift/reset in the guard
+        val newRules = rules.map(r => MatchRule(r.pat, r.guard, visitExp(r.exp, kont0, kont0ReturnType, defSymMap)))
+        visitExps(List(exp), kont0ReturnType, l => mkApplyCont(kont0, Expression.Match(l.head, newRules, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.Switch(rules, tpe, eff, loc) => ??? //todo sjj
+      case Expression.Switch(rules, tpe, eff, loc) =>
+        //todo sjj: is this stupid to do before simplifier?
+        val zero = Expression.SwitchError(tpe, eff, loc)
+        visitExp(rules.foldRight(zero: Expression) {
+          case ((e1, e2), acc) =>
+            val cond = e1
+            val body = e2
+            Expression.IfThenElse(cond, body, acc, tpe, eff, loc)
+        }, kont0, kont0ReturnType, defSymMap)
 
-      case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ??? //todo sjj
+      case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+        println(exp0)
+        ???
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
         visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
@@ -209,17 +222,23 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.RecordRestrict(label, rest, tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.ArrayLit(elms, tpe, eff, loc) => ??? //todo sjj
+      case Expression.ArrayLit(elms, tpe, eff, loc) =>
+        visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayLit(l, tpe, eff, loc), eff, loc), defSymMap)
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? //todo sjj
+      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+        visitExps(List(elm, len), kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayNew(l.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? //todo sjj
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+        visitExps(List(base, index), kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayLoad(l.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ??? //todo sjj
+      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+        visitExps(List(base, index, elm), kont0ReturnType, l => Expression.ArrayStore(l.head, l.tail.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), defSymMap)
 
-      case Expression.ArrayLength(base, tpe, eff, loc) => ??? //todo sjj
+      case Expression.ArrayLength(base, tpe, eff, loc) =>
+        visitExps(List(base), kont0ReturnType, l => mkApplyCont(kont0, Expression.ArrayLength(l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
-      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) => ??? //todo sjj
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
+        visitExps(List(base, startIndex, endIndex), kont0ReturnType, l => mkApplyCont(kont0, Expression.ArraySlice(l.head, l.tail.head, l.last, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.VectorLit(elms, tpe, eff, loc) => ??? //todo sjj
 
@@ -282,9 +301,20 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.UserError(tpe, eff, loc) => ??? //todo sjj
 
-      case Expression.CPSShift(exp, tpe, eff, loc) => ??? //todo sjj
+      case Expression.CPSShift(exp, tpe, eff, loc) =>
+        exp match {
+          case Expression.Lambda(lfparam, lexp, ltpe, leff, lloc) =>
+            val freshSym = Symbol.freshVarSym()
+            val freshSymVar = Expression.Var(freshSym, kont0ReturnType, eff, loc)
+            val id = mkLambda(freshSym, kont0ReturnType, freshSymVar)
+            val newLambda = Expression.Lambda(lfparam, visitExp(lexp, id, kont0ReturnType, defSymMap),ltpe, leff, lloc)
+
+            Expression.Apply(newLambda, kont0, kont0ReturnType, eff, loc)
+        }
 
       case Expression.CPSReset(exp, tpe, eff, loc) => ??? //todo sjj
+
+      case Expression.SwitchError(tpe, eff, loc) => mkApplyCont(kont0, exp0, eff, loc)
     }
 
   /**

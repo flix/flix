@@ -254,6 +254,8 @@ object TypedAst {
     case class CPSReset(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class CPSShift(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class SwitchError(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
   }
 
   sealed trait Pattern {

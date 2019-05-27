@@ -13,19 +13,19 @@
 //    else applyN(f, f(x), n-1)
 
 /// Returns the sum of x and y.
-def add(x: Int, y: Int): Int = x + y
-
-/// Returns x plus one.
-def inc(x: Int): Int = add(x, 1)
-
-/// Returns a function that applies f twice.
-def twice(f: Int -> Int): Int -> Int = x -> f(f(x))
-
-/// Returns x plus two.
-def two(x: Int): Int = twice(inc)(x)
-
-/// Returns 123 plus 4 = 127.
-def main(): Int = twice(two)(123)
+//def add(x: Int, y: Int): Int = x + y
+//
+///// Returns x plus one.
+//def inc(x: Int): Int = add(x, 1)
+//
+///// Returns a function that applies f twice.
+//def twice(f: Int -> Int): Int -> Int = x -> f(f(x))
+//
+///// Returns x plus two.
+//def two(x: Int): Int = twice(inc)(x)
+//
+///// Returns 123 plus 4 = 127.
+//def main(): Int = twice(two)(123)
 
 
 //def main(): Int = f(1)
@@ -39,6 +39,10 @@ def main(): Int = twice(two)(123)
 //def f(a: Int): Int =
 //    if (a==0) a
 //    else f(a-1)
+
+def main(): Int = switch {
+case true => 3}
+
 
 //def main(): Int32 =
 //  mainP(x -> x)

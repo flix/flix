@@ -534,7 +534,7 @@ object PrettyPrinter {
   }
 
   object Typed {
-    val moreTypes = false
+    val moreTypes = true
 
     def fmtRoot(root: TypedAst.Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -909,6 +909,7 @@ object PrettyPrinter {
         case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) => vt << "?"
         case TypedAst.Expression.Wild(tpe, eff, loc) => vt << "?"
+        case TypedAst.Expression.SwitchError(tpe, eff, loc) => vt << Red("switch error") << ": [" << tpe.show << "]"
       }
 
       visitExp(exp0)

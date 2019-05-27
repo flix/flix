@@ -352,6 +352,15 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.UserError(tpe, eff, loc) =>
         Expression.UserError(tpe, eff, loc)
 
+      case Expression.CPSReset(exp, tpe, eff, loc) =>
+        Expression.CPSReset(visitExp(exp), tpe, eff, loc)
+
+      case Expression.CPSShift(exp, tpe, eff, loc) =>
+        Expression.CPSShift(visitExp(exp), tpe, eff, loc)
+
+      case Expression.SwitchError(tpe, eff, loc) =>
+        Expression.SwitchError(tpe, eff, loc)
+
     }
 
     /**

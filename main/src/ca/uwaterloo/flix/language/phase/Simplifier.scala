@@ -590,6 +590,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
+      case TypedAst.Expression.SwitchError(tpe, eff, loc) =>
+        SimplifiedAst.Expression.SwitchError(tpe, loc)
+
     }
 
     /**

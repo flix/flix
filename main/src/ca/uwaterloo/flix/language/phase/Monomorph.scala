@@ -513,6 +513,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
         case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
+
+        case Expression.SwitchError(tpe, eff, loc) => Expression.SwitchError(subst0(tpe), eff, loc)
       }
 
       /**
