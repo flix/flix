@@ -324,7 +324,7 @@ object Interpreter {
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       Solver.compose(v1, v2)
 
-    case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = newStratification(stf)(root, flix)
       val o = newOptions()

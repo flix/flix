@@ -365,11 +365,11 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.FixpointCompose(e1, e2, tpe, loc)
       }
 
-    case Expression.FixpointSolve(uid, exp, _, tpe, loc) =>
+    case Expression.FixpointSolve(exp, _, tpe, loc) =>
       // TODO: Specialize according to the type.
       val stf = stratify(dg, loc)
       mapN(visitExp(exp), stf) {
-        case (e, s) => Expression.FixpointSolve(uid, e, s, tpe, loc)
+        case (e, s) => Expression.FixpointSolve(e, s, tpe, loc)
       }
 
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
@@ -608,7 +608,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.FixpointCompose(exp1, exp2, _, _) =>
       constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
 
-    case Expression.FixpointSolve(_, exp, _, _, _) =>
+    case Expression.FixpointSolve(exp, _, _, _) =>
       constraintsOfExp(exp)
 
     case Expression.FixpointProject(pred, exp, tpe, loc) =>

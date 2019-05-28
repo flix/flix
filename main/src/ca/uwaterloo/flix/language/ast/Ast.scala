@@ -309,32 +309,4 @@ object Ast {
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
-
-  /**
-    * Returns a fresh unique identifier.
-    */
-  def freshUId()(implicit flix: Flix): UId = {
-    new UId(flix.genSym.freshId())
-  }
-
-  /**
-    * A unique reference to an expression.
-    *
-    * @param id the globally unique name of the symbol.
-    */
-  final class UId(val id: Int) {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: UId => this.id == that.id
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = id
-  }
-
 }
