@@ -224,6 +224,7 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
+        Stratifier |>
         PatternExhaustiveness |>
         Redundancy |>
         Trivial |>
@@ -251,7 +252,6 @@ class Flix {
       TreeShaker |>
       VarNumbering |>
       Finalize |>
-      Stratifier |>
       QuickChecker |>
       Verifier |>
       JvmBackend |>
