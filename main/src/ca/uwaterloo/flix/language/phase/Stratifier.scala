@@ -111,19 +111,25 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => exp0.toSuccess
 
-    case Expression.Wild(tpe, eff, loc) => ???
+    case Expression.Wild(_, _, _) => exp0.toSuccess
 
-    case Expression.Var(sym, tpe, eff, loc) => ???
+    case Expression.Var(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Def(sym, tpe, eff, loc) => ???
+    case Expression.Def(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Eff(sym, tpe, eff, loc) => ???
+    case Expression.Eff(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Hole(sym, tpe, eff, loc) => ???
+    case Expression.Hole(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => ???
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Lambda(fparam, e, tpe, eff, loc)
+      }
 
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.Apply(e1, e2, tpe, eff, loc)
+      }
 
     case Expression.Unary(op, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -150,7 +156,10 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 
-    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.Stm(e1, e2, tpe, eff, loc)
+      }
 
     case Expression.Match(exp, rules, tpe, eff, loc) => ???
 
@@ -393,7 +402,21 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => DependencyGraph.Empty
 
+    case Expression.Wild(_, _, _) => DependencyGraph.Empty
+
     case Expression.Var(_, _, _, _) => DependencyGraph.Empty
+
+    case Expression.Def(_, _, _, _) => DependencyGraph.Empty
+
+    case Expression.Eff(_, _, _, _) => DependencyGraph.Empty
+
+    case Expression.Hole(_, _, _, _) => DependencyGraph.Empty
+
+    case Expression.Lambda(_, exp, _, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Apply(exp1, exp2, _, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
 
     case Expression.Unary(_, exp, _, _, _) =>
       constraintsOfExp(exp)
@@ -409,6 +432,23 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       constraintsOfExp(exp1) ++ constraintsOfExp(exp2) ++ constraintsOfExp(exp3)
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.Match(exp, rules, _, _, _) =>
+      val dg = constraintsOfExp(exp)
+      rules.foldLeft(dg) {
+        case (acc, MatchRule(_, g, b)) => acc ++ constraintsOfExp(g) ++ constraintsOfExp(b)
+      }
+
+    case Expression.Switch(rules, _, _, _) =>
+      rules.foldLeft(DependencyGraph.Empty) {
+        case (acc, (e1, e2)) => acc ++ constraintsOfExp(e1) ++ constraintsOfExp(e2)
+      }
+
+    case Expression.Tag(_, _, exp, _, _, _) =>
+      constraintsOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _) =>
       elms.foldLeft(DependencyGraph.Empty) {
@@ -447,6 +487,26 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) =>
       constraintsOfExp(base) ++ constraintsOfExp(beginIndex) ++ constraintsOfExp(endIndex)
 
+    case Expression.VectorLit(elms, _, _, _) =>
+      elms.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.VectorNew(elm, _, _, _, _) =>
+      constraintsOfExp(elm)
+
+    case Expression.VectorLoad(base, _, _, _, _) =>
+      constraintsOfExp(base)
+
+    case Expression.VectorLength(base, _, _, _) =>
+      constraintsOfExp(base)
+
+    case Expression.VectorStore(base, _, elm, _, _, _) =>
+      constraintsOfExp(base) ++ constraintsOfExp(elm)
+
+    case Expression.VectorSlice(base, _, _, _, _, _) =>
+      constraintsOfExp(base)
+
     case Expression.Ref(exp, _, _, _) =>
       constraintsOfExp(exp)
 
@@ -465,6 +525,12 @@ object Stratifier extends Phase[Root, Root] {
       constraintsOfExp(exp)
 
     case Expression.Universal(_, exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Cast(exp, _, _, _) =>
       constraintsOfExp(exp)
 
     case Expression.NativeConstructor(_, args, _, _, _) =>
@@ -530,6 +596,8 @@ object Stratifier extends Phase[Root, Root] {
 
   }
 
+
+  // TODO: DOC
   private def constraintsOfPredicateWithParam(p0: PredicateWithParam): DependencyGraph = p0 match {
     case PredicateWithParam(_, exp) => constraintsOfExp(exp)
   }
