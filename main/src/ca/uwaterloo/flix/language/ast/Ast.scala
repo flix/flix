@@ -274,7 +274,12 @@ object Ast {
   /**
     * Represents a dependency graph; a set of dependency edges.
     */
-  case class DependencyGraph(xs: Set[DependencyEdge])
+  case class DependencyGraph(xs: Set[DependencyEdge]) {
+    /**
+      * Returns a dependency graph with all dependency edges in `this` and `that` dependency graph.
+      */
+    def ++(that: DependencyGraph): DependencyGraph = DependencyGraph(this.xs ++ that.xs)
+  }
 
 
   object Stratification {

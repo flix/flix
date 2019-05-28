@@ -56,6 +56,11 @@ object Stratifier extends Phase[Root, Root] {
     // Run the control-flow analysis.
     implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.runAnalysis(root)
 
+    // Compute an over-approximation of the dependency graph for all constraints in the program.
+    val dg = root.defs.par.aggregate(DependencyGraph.Empty)({
+      case (acc, (sym, decl)) => acc ++ constraintsOfDef(decl)
+    }, _ ++ _)
+
     // Stratify every definition.
     val defsVal = traverse(root.defs) {
       case (sym, defn) => visitDef(defn).map(d => sym -> d)
@@ -387,6 +392,268 @@ object Stratifier extends Phase[Root, Root] {
       case e => PredicateWithParam(sym, e)
     }
   }
+
+  // TODO: Move this to work on typedast?
+
+  // TODO: DOC
+  private def constraintsOfDef(def0: Def): DependencyGraph = constraintsOfExp(def0.exp)
+
+  // TODO: DOC
+  private def constraintsOfExp(exp0: Expression): DependencyGraph = exp0 match {
+    case Expression.Unit => DependencyGraph.Empty
+    case Expression.True => DependencyGraph.Empty
+    case Expression.False => DependencyGraph.Empty
+    case Expression.Char(_) => DependencyGraph.Empty
+    case Expression.Float32(_) => DependencyGraph.Empty
+    case Expression.Float64(_) => DependencyGraph.Empty
+    case Expression.Int8(_) => DependencyGraph.Empty
+    case Expression.Int16(_) => DependencyGraph.Empty
+    case Expression.Int32(_) => DependencyGraph.Empty
+    case Expression.Int64(_) => DependencyGraph.Empty
+    case Expression.BigInt(_) => DependencyGraph.Empty
+    case Expression.Str(_) => DependencyGraph.Empty
+
+    case Expression.Var(_, _, _) => DependencyGraph.Empty
+
+    case Expression.Closure(_, _, _, _, _) =>
+      DependencyGraph.Empty
+
+    case Expression.ApplyClo(exp, args, tpe, loc) =>
+      val dg = constraintsOfExp(exp)
+      args.foldLeft(dg) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ApplyDef(_, args, _, _) =>
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ApplyEff(_, args, _, _) =>
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ApplyCloTail(exp, args, _, _) =>
+      val dg = constraintsOfExp(exp)
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ApplyDefTail(_, args, _, _) =>
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ApplyEffTail(_, args, _, _) =>
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ApplySelfTail(_, _, actuals, _, _) =>
+      actuals.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.Unary(_, _, exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Binary(_, _, exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.Let(_, exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.LetRec(_, exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2) ++ constraintsOfExp(exp3)
+
+    case Expression.Branch(exp, branches, _, _) =>
+      branches.foldLeft(constraintsOfExp(exp)) {
+        case (acc, (_, e)) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.JumpTo(_, _, _) =>
+      DependencyGraph.Empty
+
+    case Expression.Is(_, _, exp, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Tag(_, _, exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Untag(_, _, exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Index(base, _, _, _) =>
+      constraintsOfExp(base)
+
+    case Expression.Tuple(elms, _, _) =>
+      elms.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.RecordEmpty(_, _) =>
+      DependencyGraph.Empty
+
+    case Expression.RecordSelect(base, _, _, _) =>
+      constraintsOfExp(base)
+
+    case Expression.RecordExtend(_, value, rest, _, _) =>
+      constraintsOfExp(value) ++ constraintsOfExp(rest)
+
+    case Expression.RecordRestrict(_, rest, _, _) =>
+      constraintsOfExp(rest)
+
+    case Expression.ArrayLit(elms, _, _) =>
+      elms.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.ArrayNew(elm, len, _, _) =>
+      constraintsOfExp(elm) ++ constraintsOfExp(len)
+
+    case Expression.ArrayLoad(base, index, _, _) =>
+      constraintsOfExp(base) ++ constraintsOfExp(index)
+
+    case Expression.ArrayLength(base, _, _) =>
+      constraintsOfExp(base)
+
+    case Expression.ArrayStore(base, index, elm, _, _) =>
+      constraintsOfExp(base) ++ constraintsOfExp(index) ++ constraintsOfExp(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, _, _) =>
+      constraintsOfExp(base) ++ constraintsOfExp(beginIndex) ++ constraintsOfExp(endIndex)
+
+    case Expression.Ref(exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Deref(exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Assign(exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.HandleWith(exp, bindings, _, loc) =>
+      bindings.foldLeft(constraintsOfExp(exp)) {
+        case (acc, HandlerBinding(_, e)) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.Existential(_, exp, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.Universal(_, exp, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.NativeConstructor(_, args, _, _) =>
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.TryCatch(exp, rules, _, _) =>
+      rules.foldLeft(constraintsOfExp(exp)) {
+        case (acc, CatchRule(_, _, e)) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.NativeField(field, tpe, loc) =>
+      DependencyGraph.Empty
+
+    case Expression.NativeMethod(_, args, _, _) =>
+      args.foldLeft(DependencyGraph.Empty) {
+        case (acc, e) => acc ++ constraintsOfExp(e)
+      }
+
+    case Expression.NewChannel(exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.GetChannel(exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.PutChannel(exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.SelectChannel(rules, default, _, _) =>
+      val dg = default match {
+        case None => DependencyGraph.Empty
+        case Some(d) => constraintsOfExp(d)
+      }
+
+      rules.foldLeft(dg) {
+        case (acc, SelectChannelRule(_, exp1, exp2)) => acc ++ constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+      }
+
+    case Expression.ProcessSpawn(exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.ProcessSleep(exp, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      DependencyGraph.Empty
+
+    case Expression.FixpointConstraint(con, _, _) =>
+      visitConstraint(con)
+
+    case Expression.FixpointCompose(exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.FixpointSolve(_, exp, _, _, _) =>
+      constraintsOfExp(exp)
+
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+      constraintsOfPredicateWithParam(pred) ++ constraintsOfExp(exp)
+
+    case Expression.FixpointEntails(exp1, exp2, _, _) =>
+      constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
+
+    case Expression.HoleError(_, _, _) =>
+      DependencyGraph.Empty
+
+    case Expression.MatchError(_, _) =>
+      DependencyGraph.Empty
+
+    case Expression.SwitchError(_, _) =>
+      DependencyGraph.Empty
+
+  }
+
+  // TODO: Remove uids from asts.
+
+  private def constraintsOfPredicateWithParam(p0: PredicateWithParam): DependencyGraph = p0 match {
+    case PredicateWithParam(_, exp) => constraintsOfExp(exp)
+  }
+
+  // TODO: DOC
+  private def visitConstraint(c: Constraint): DependencyGraph = c match {
+    case Constraint(cparams, head, body) =>
+      // Determine if the head predicate has a symbol.
+      visitHeadPredicateSymbol(head) match {
+        case None => DependencyGraph.Empty
+        case Some(headSym) =>
+          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
+          DependencyGraph(dependencies.toSet)
+      }
+  }
+
+  // TODO: DOC
+  private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
+    case Predicate.Head.Atom(pred, terms, tpe, loc) => Some(pred.sym)
+  }
+
+  // TODO: DOC
+  private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred.sym))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred.sym))
+    }
+
+    case Predicate.Body.Filter(sym, terms, loc) => None
+
+    case Predicate.Body.Functional(varSym, defSym, term, loc) => None
+  }
+
 
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
