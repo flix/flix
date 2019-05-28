@@ -432,7 +432,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointSolve(exp, _, _, _) =>
+      case Expression.FixpointSolve(exp, _, _, _, _) =>
         visitExp(exp)
 
       case Expression.FixpointProject(pred, exp, _, _, _) =>
@@ -897,7 +897,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
 
-        case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
 
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
 

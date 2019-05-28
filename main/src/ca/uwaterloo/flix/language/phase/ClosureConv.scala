@@ -335,9 +335,9 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.FixpointCompose(e1, e2, tpe, loc)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.FixpointSolve(e, tpe, loc)
+      Expression.FixpointSolve(e, stf, tpe, loc)
 
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val p = visitPredicateWithParam(pred)
@@ -522,7 +522,7 @@ object ClosureConv extends Phase[Root, Root] {
       freeVars(head) ++ body.flatMap(freeVars)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
+    case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
     case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(pred.exp) ++ freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
@@ -856,9 +856,9 @@ object ClosureConv extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)

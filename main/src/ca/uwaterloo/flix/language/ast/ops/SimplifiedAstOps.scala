@@ -493,7 +493,7 @@ object SimplifiedAstOps {
       //
       // Fixpoint Solve.
       //
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 

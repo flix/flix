@@ -248,7 +248,7 @@ object SimplifiedAst {
 
     case class FixpointCompose(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointSolve(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointSolve(exp: SimplifiedAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointProject(pred: SimplifiedAst.PredicateWithParam, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

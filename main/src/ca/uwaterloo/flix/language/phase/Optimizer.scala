@@ -475,9 +475,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Fixpoint Solve.
       //
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
       //
       // Fixpoint Project.

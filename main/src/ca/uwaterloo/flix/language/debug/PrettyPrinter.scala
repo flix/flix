@@ -452,7 +452,7 @@ object PrettyPrinter {
           vt.text("<+>")
           visitExp(exp2)
 
-        case Expression.FixpointSolve(exp, tpe, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, loc) =>
           vt.text("solve ")
           visitExp(exp)
 

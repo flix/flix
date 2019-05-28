@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Stratification
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -1775,7 +1776,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        */
       case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Empty, loc)
+        TypedAst.Expression.FixpointSolve(e, Stratification.Empty, subst0(tvar), Eff.Empty, loc)
 
       /*
        * FixpointProject expression.

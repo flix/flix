@@ -452,10 +452,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointCompose(e1, e2, t, loc)
 
-      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointSolve(e, Ast.Stratification.Empty, t, loc)
+        FinalAst.Expression.FixpointSolve(e, stf, t, loc)
 
       case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred, m)

@@ -333,9 +333,9 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, eff, loc)
+        Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
