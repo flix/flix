@@ -161,11 +161,31 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Stm(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Match(exp, rules, tpe, eff, loc) => ???
+    case Expression.Match(exp, rules, tpe, eff, loc) =>
+      val matchVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case MatchRule(pat, guard, body) => mapN(visitExp(guard), visitExp(body)) {
+          case (g, b) => MatchRule(pat, g, b)
+        }
+      }
+      mapN(matchVal, rulesVal) {
+        case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
+      }
 
-    case Expression.Switch(rules, tpe, eff, loc) => ???
+    case Expression.Switch(rules, tpe, eff, loc) =>
+      val rulesVal = traverse(rules) {
+        case (e1, e2) => mapN(visitExp(e1), visitExp(e2)) {
+          case (x, y) => (x, y)
+        }
+      }
+      mapN(rulesVal) {
+        case rs => Expression.Switch(rs, tpe, eff, loc)
+      }
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
+      }
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
@@ -220,17 +240,35 @@ object Stratifier extends Phase[Root, Root] {
         case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
       }
 
-    case Expression.VectorLit(elms, tpe, eff, loc) => ???
+    case Expression.VectorLit(elms, tpe, eff, loc) =>
+      mapN(traverse(elms)(visitExp)) {
+        case es => Expression.VectorLit(es, tpe, eff, loc)
+      }
 
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+    case Expression.VectorNew(elm, len, tpe, eff, loc) =>
+      mapN(visitExp(elm)) {
+        case e => Expression.VectorNew(e, len, tpe, eff, loc)
+      }
 
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+    case Expression.VectorLoad(base, index, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case e => Expression.VectorLoad(e, index, tpe, eff, loc)
+      }
 
-    case Expression.VectorLength(base, tpe, eff, loc) => ???
+    case Expression.VectorLength(base, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case e => Expression.VectorLength(e, tpe, eff, loc)
+      }
 
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+      mapN(visitExp(base), visitExp(elm)) {
+        case (b, e) => Expression.VectorStore(b, index, e, tpe, eff, loc)
+      }
 
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case b => Expression.VectorSlice(b, startIndex, endIndex, tpe, eff, loc)
+      }
 
     case Expression.Ref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -265,9 +303,15 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Universal(fparam, e, eff, loc)
       }
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => ???
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Ascribe(e, tpe, eff, loc)
+      }
 
-    case Expression.Cast(exp, tpe, eff, loc) => ???
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Cast(e, tpe, eff, loc)
+      }
 
     case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
@@ -370,8 +414,6 @@ object Stratifier extends Phase[Root, Root] {
       case e => PredicateWithParam(sym, e)
     }
   }
-
-  // TODO: Move this to work on typedast?
 
   // TODO: DOC
   private def constraintsOfDef(def0: Def): DependencyGraph = constraintsOfExp(def0.exp)
