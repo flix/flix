@@ -53,9 +53,6 @@ object Stratifier extends Phase[Root, Root] {
     if (flix.options.xnostratifier)
       return root.toSuccess
 
-    // Run the control-flow analysis.
-    implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.runAnalysis(root)
-
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val dg = root.defs.par.aggregate(DependencyGraph.Empty)({
       case (acc, (sym, decl)) => acc ++ constraintsOfDef(decl)
@@ -63,7 +60,7 @@ object Stratifier extends Phase[Root, Root] {
 
     // Stratify every definition.
     val defsVal = traverse(root.defs) {
-      case (sym, defn) => visitDef(defn).map(d => sym -> d)
+      case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
     }
 
     mapN(defsVal) {
@@ -75,7 +72,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit dg: DependencyGraph): Validation[Def, CompilationError] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
@@ -85,19 +82,30 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[Expression, StratificationError] = exp0 match {
-    case Expression.Unit => Expression.Unit.toSuccess
-    case Expression.True => Expression.True.toSuccess
-    case Expression.False => Expression.False.toSuccess
-    case Expression.Char(lit) => Expression.Char(lit).toSuccess
-    case Expression.Float32(lit) => Expression.Float32(lit).toSuccess
-    case Expression.Float64(lit) => Expression.Float64(lit).toSuccess
-    case Expression.Int8(lit) => Expression.Int8(lit).toSuccess
-    case Expression.Int16(lit) => Expression.Int16(lit).toSuccess
-    case Expression.Int32(lit) => Expression.Int32(lit).toSuccess
-    case Expression.Int64(lit) => Expression.Int64(lit).toSuccess
-    case Expression.BigInt(lit) => Expression.BigInt(lit).toSuccess
-    case Expression.Str(lit) => Expression.Str(lit).toSuccess
+  private def visitExp(exp0: Expression)(implicit dg: DependencyGraph): Validation[Expression, StratificationError] = exp0 match {
+    case Expression.Unit => exp0.toSuccess
+
+    case Expression.True => exp0.toSuccess
+
+    case Expression.False => exp0.toSuccess
+
+    case Expression.Char(_) => exp0.toSuccess
+
+    case Expression.Float32(_) => exp0.toSuccess
+
+    case Expression.Float64(_) => exp0.toSuccess
+
+    case Expression.Int8(_) => exp0.toSuccess
+
+    case Expression.Int16(_) => exp0.toSuccess
+
+    case Expression.Int32(_) => exp0.toSuccess
+
+    case Expression.Int64(_) => exp0.toSuccess
+
+    case Expression.BigInt(_) => exp0.toSuccess
+
+    case Expression.Str(_) => exp0.toSuccess
 
     case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc).toSuccess
 
@@ -358,8 +366,9 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(uid, exp, _, tpe, loc) =>
-      val g = analysis.getDependencyGraph(uid)
-      mapN(visitExp(exp), stratify(g, loc)) {
+      // TODO: Specialize according to the type.
+      val stf = stratify(dg, loc)
+      mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(uid, e, s, tpe, loc)
       }
 
@@ -387,7 +396,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given predicate with parameter `p0`.
     */
-  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[PredicateWithParam, StratificationError] = p0 match {
+  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit dg: DependencyGraph): Validation[PredicateWithParam, StratificationError] = p0 match {
     case PredicateWithParam(sym, exp) => mapN(visitExp(exp)) {
       case e => PredicateWithParam(sym, e)
     }
@@ -536,7 +545,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _) =>
       constraintsOfExp(exp1) ++ constraintsOfExp(exp2)
 
-    case Expression.HandleWith(exp, bindings, _, loc) =>
+    case Expression.HandleWith(exp, bindings, _, _) =>
       bindings.foldLeft(constraintsOfExp(exp)) {
         case (acc, HandlerBinding(_, e)) => acc ++ constraintsOfExp(e)
       }
@@ -557,7 +566,7 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, CatchRule(_, _, e)) => acc ++ constraintsOfExp(e)
       }
 
-    case Expression.NativeField(field, tpe, loc) =>
+    case Expression.NativeField(_, _, _) =>
       DependencyGraph.Empty
 
     case Expression.NativeMethod(_, args, _, _) =>
