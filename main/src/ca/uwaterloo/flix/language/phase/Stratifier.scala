@@ -115,6 +115,16 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Var(sym, tpe, eff, loc) => ???
 
+    case Expression.Def(sym, tpe, eff, loc) => ???
+
+    case Expression.Eff(sym, tpe, eff, loc) => ???
+
+    case Expression.Hole(sym, tpe, eff, loc) => ???
+
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) => ???
+
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) => ???
+
     case Expression.Unary(op, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Unary(op, exp, tpe, eff, loc)
@@ -139,6 +149,14 @@ object Stratifier extends Phase[Root, Root] {
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
+
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.Match(exp, rules, tpe, eff, loc) => ???
+
+    case Expression.Switch(rules, tpe, eff, loc) => ???
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => ???
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
       mapN(traverse(elms)(visitExp)) {
@@ -193,6 +211,18 @@ object Stratifier extends Phase[Root, Root] {
         case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
       }
 
+    case Expression.VectorLit(elms, tpe, eff, loc) => ???
+
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+
+    case Expression.VectorLength(base, tpe, eff, loc) => ???
+
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+
     case Expression.Ref(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Ref(e, tpe, eff, loc)
@@ -225,6 +255,10 @@ object Stratifier extends Phase[Root, Root] {
       mapN(visitExp(exp)) {
         case e => Expression.Universal(fparam, e, eff, loc)
       }
+
+    case Expression.Ascribe(exp, tpe, eff, loc) => ???
+
+    case Expression.Cast(exp, tpe, eff, loc) => ???
 
     case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
