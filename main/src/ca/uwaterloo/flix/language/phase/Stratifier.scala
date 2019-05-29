@@ -411,17 +411,17 @@ object Stratifier extends Phase[Root, Root] {
     * Restricts the given dependency graph `dg` to the predicate symbols that occur in the given type `tpe`.
     */
   private def restrict(dg: DependencyGraph, tpe: Type): DependencyGraph = {
-    val predSyms = predicateSymbolsOf(tpe)
+    val predSyms = predicateSymsOf(tpe)
     dg.restrict(predSyms.toSet)
   }
 
   /**
     * Returns all predicate symbols that appears in the given schema type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): List[Symbol.PredSym] = tpe match {
+  private def predicateSymsOf(tpe: Type): List[Symbol.PredSym] = tpe match {
     case Type.Var(_, _) => Nil
     case Type.SchemaEmpty => Nil
-    case Type.SchemaExtend(sym, _, rest) => sym :: predicateSymbolsOf(rest)
+    case Type.SchemaExtend(sym, _, rest) => sym :: predicateSymsOf(rest)
     case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
   }
 

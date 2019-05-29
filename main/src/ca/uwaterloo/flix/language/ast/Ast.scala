@@ -286,7 +286,7 @@ object Ast {
     }
 
     /**
-      * Returns `this` dependency graph including only the edges where both the source and destination is in `syms`.
+      * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
       */
     def restrict(syms: Set[Symbol.PredSym]): DependencyGraph =
       DependencyGraph(xs.filter {
