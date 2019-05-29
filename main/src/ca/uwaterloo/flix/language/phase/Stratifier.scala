@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -42,23 +42,21 @@ object Stratifier extends Phase[Root, Root] {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
-
     // Check if computation of stratification is disabled.
     if (flix.options.xnostratifier)
       return root.toSuccess
 
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val dg = root.defs.par.aggregate(DependencyGraph.Empty)({
+    val dg = root.defs.par.aggregate(DependencyGraph.empty)({
       case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
     }, _ + _)
 
-    // Stratify every definition.
+    // Compute the stratification at every solve expression in the ast.`
     val defsVal = traverse(root.defs) {
       case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
     }
 
     mapN(defsVal) {
-      // Reassemble the AST.
       case ds => root.copy(defs = ds.toMap)
     }
   }
@@ -123,7 +121,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Unary(op, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Unary(op, exp, tpe, eff, loc)
+        case e => Expression.Unary(op, e, tpe, eff, loc)
       }
 
     case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
@@ -347,10 +345,10 @@ object Stratifier extends Phase[Root, Root] {
       }
 
       val defaultVal = default match {
+        case None => None.toSuccess
         case Some(exp) => visitExp(exp) map {
           case e => Some(e)
         }
-        case None => None.toSuccess
       }
 
       mapN(rulesVal, defaultVal) {
@@ -379,11 +377,11 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      // Compute restricted dependency graph.
-      val g = restrict(dg, tpe)
+      // Compute the restricted dependency graph.
+      val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(g, loc)
+      val stf = stratify(rg, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -436,39 +434,39 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the dependency graph of the given expression `exp0`.
     */
   private def dependencyGraphOfExp(exp0: Expression): DependencyGraph = exp0 match {
-    case Expression.Unit(_) => DependencyGraph.Empty
+    case Expression.Unit(_) => DependencyGraph.empty
 
-    case Expression.True(_) => DependencyGraph.Empty
+    case Expression.True(_) => DependencyGraph.empty
 
-    case Expression.False(_) => DependencyGraph.Empty
+    case Expression.False(_) => DependencyGraph.empty
 
-    case Expression.Char(_, _) => DependencyGraph.Empty
+    case Expression.Char(_, _) => DependencyGraph.empty
 
-    case Expression.Float32(_, _) => DependencyGraph.Empty
+    case Expression.Float32(_, _) => DependencyGraph.empty
 
-    case Expression.Float64(_, _) => DependencyGraph.Empty
+    case Expression.Float64(_, _) => DependencyGraph.empty
 
-    case Expression.Int8(_, _) => DependencyGraph.Empty
+    case Expression.Int8(_, _) => DependencyGraph.empty
 
-    case Expression.Int16(_, _) => DependencyGraph.Empty
+    case Expression.Int16(_, _) => DependencyGraph.empty
 
-    case Expression.Int32(_, _) => DependencyGraph.Empty
+    case Expression.Int32(_, _) => DependencyGraph.empty
 
-    case Expression.Int64(_, _) => DependencyGraph.Empty
+    case Expression.Int64(_, _) => DependencyGraph.empty
 
-    case Expression.BigInt(_, _) => DependencyGraph.Empty
+    case Expression.BigInt(_, _) => DependencyGraph.empty
 
-    case Expression.Str(_, _) => DependencyGraph.Empty
+    case Expression.Str(_, _) => DependencyGraph.empty
 
-    case Expression.Wild(_, _, _) => DependencyGraph.Empty
+    case Expression.Wild(_, _, _) => DependencyGraph.empty
 
-    case Expression.Var(_, _, _, _) => DependencyGraph.Empty
+    case Expression.Var(_, _, _, _) => DependencyGraph.empty
 
-    case Expression.Def(_, _, _, _) => DependencyGraph.Empty
+    case Expression.Def(_, _, _, _) => DependencyGraph.empty
 
-    case Expression.Eff(_, _, _, _) => DependencyGraph.Empty
+    case Expression.Eff(_, _, _, _) => DependencyGraph.empty
 
-    case Expression.Hole(_, _, _, _) => DependencyGraph.Empty
+    case Expression.Hole(_, _, _, _) => DependencyGraph.empty
 
     case Expression.Lambda(_, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
@@ -501,7 +499,7 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.Switch(rules, _, _, _) =>
-      rules.foldLeft(DependencyGraph.Empty) {
+      rules.foldLeft(DependencyGraph.empty) {
         case (acc, (e1, e2)) => acc + dependencyGraphOfExp(e1) + dependencyGraphOfExp(e2)
       }
 
@@ -509,12 +507,12 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.Tuple(elms, _, _, _) =>
-      elms.foldLeft(DependencyGraph.Empty) {
+      elms.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
     case Expression.RecordEmpty(_, _, _) =>
-      DependencyGraph.Empty
+      DependencyGraph.empty
 
     case Expression.RecordSelect(base, _, _, _, _) =>
       dependencyGraphOfExp(base)
@@ -526,7 +524,7 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(rest)
 
     case Expression.ArrayLit(elms, _, _, _) =>
-      elms.foldLeft(DependencyGraph.Empty) {
+      elms.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
@@ -546,7 +544,7 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(base) + dependencyGraphOfExp(beginIndex) + dependencyGraphOfExp(endIndex)
 
     case Expression.VectorLit(elms, _, _, _) =>
-      elms.foldLeft(DependencyGraph.Empty) {
+      elms.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
@@ -592,7 +590,7 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.NativeConstructor(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.Empty) {
+      args.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
@@ -602,10 +600,10 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.NativeField(_, _, _, _) =>
-      DependencyGraph.Empty
+      DependencyGraph.empty
 
     case Expression.NativeMethod(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.Empty) {
+      args.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
@@ -620,7 +618,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.SelectChannel(rules, default, _, _, _) =>
       val dg = default match {
-        case None => DependencyGraph.Empty
+        case None => DependencyGraph.empty
         case Some(d) => dependencyGraphOfExp(d)
       }
 
@@ -635,10 +633,10 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.ProcessPanic(_, _, _, _) =>
-      DependencyGraph.Empty
+      DependencyGraph.empty
 
     case Expression.FixpointConstraint(con, _, _, _) =>
-      visitConstraint(con)
+      dependencyGraphOfConstraint(con)
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
@@ -647,36 +645,40 @@ object Stratifier extends Phase[Root, Root] {
       dependencyGraphOfExp(exp)
 
     case Expression.FixpointProject(pred, exp, _, _, _) =>
-      constraintsOfPredicateWithParam(pred) + dependencyGraphOfExp(exp)
+      dependencyGraphOfPredicateWithParam(pred) + dependencyGraphOfExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
   }
 
-  // TODO: DOC
-  private def constraintsOfPredicateWithParam(p0: PredicateWithParam): DependencyGraph = p0 match {
+  /**
+    * Returns the dependency graph of the given predicate with param `p0`.
+    */
+  private def dependencyGraphOfPredicateWithParam(p0: PredicateWithParam): DependencyGraph = p0 match {
     case PredicateWithParam(_, exp) => dependencyGraphOfExp(exp)
   }
 
-  // TODO: DOC
-  private def visitConstraint(c: Constraint): DependencyGraph = c match {
+  /**
+    * Returns the dependency graph of the given constraint `c0`.
+    */
+  private def dependencyGraphOfConstraint(c0: Constraint): DependencyGraph = c0 match {
     case Constraint(cparams, head, body, _) =>
-      // Determine if the head predicate has a symbol.
-      visitHeadPredicateSymbol(head) match {
-        case None => DependencyGraph.Empty
-        case Some(headSym) =>
-          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
-          DependencyGraph(dependencies.toSet)
-      }
+      val headSym = getPredicateSym(head)
+      val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
+      DependencyGraph(dependencies.toSet)
   }
 
-  // TODO: DOC
-  private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.Atom(pred, terms, tpe, loc) => Some(pred.sym)
+  /**
+    * Returns the predicate symbol of the given head atom `head0`.
+    */
+  private def getPredicateSym(head0: Predicate.Head): Symbol.PredSym = head0 match {
+    case Predicate.Head.Atom(pred, terms, tpe, loc) => pred.sym
   }
 
-  // TODO: DOC
+  /**
+    * Optionally returns a dependency edge of the right type for the given head symbol `head` and body predicate `body0`.
+    */
   private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, pred.sym))
@@ -687,7 +689,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Predicate.Body.Functional(sym, term, loc) => None
   }
-
 
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.

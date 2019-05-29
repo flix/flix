@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
 
-import ca.uwaterloo.flix.api.Flix
-
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
@@ -267,7 +265,7 @@ object Ast {
     /**
       * The empty dependency graph.
       */
-    val Empty: DependencyGraph = DependencyGraph(Set.empty)
+    val empty: DependencyGraph = DependencyGraph(Set.empty)
 
   }
 
@@ -278,7 +276,14 @@ object Ast {
     /**
       * Returns a dependency graph with all dependency edges in `this` and `that` dependency graph.
       */
-    def +(that: DependencyGraph): DependencyGraph = DependencyGraph(this.xs ++ that.xs)
+    def +(that: DependencyGraph): DependencyGraph = {
+      if (this eq DependencyGraph.empty)
+        that
+      else if (that eq DependencyGraph.empty)
+        this
+      else
+        DependencyGraph(this.xs ++ that.xs)
+    }
 
     /**
       * Returns `this` dependency graph including only the edges where both the source and destination is in `syms`.
