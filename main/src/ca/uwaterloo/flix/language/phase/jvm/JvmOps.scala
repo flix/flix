@@ -660,7 +660,7 @@ object JvmOps {
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp)
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
 
@@ -946,7 +946,7 @@ object JvmOps {
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp) + tpe
 

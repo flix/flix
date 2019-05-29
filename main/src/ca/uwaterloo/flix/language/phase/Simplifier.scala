@@ -565,9 +565,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointSolve(e, stf, tpe, loc)
 
       case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
@@ -1259,9 +1259,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointSolve(e, stf, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)

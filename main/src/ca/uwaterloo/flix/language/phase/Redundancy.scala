@@ -573,7 +573,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(exp2, env0)
       us1 ++ us2
 
-    case Expression.FixpointSolve(exp, _, _, _) =>
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0)
 
     case Expression.FixpointProject(pred, exp, _, _, _) =>

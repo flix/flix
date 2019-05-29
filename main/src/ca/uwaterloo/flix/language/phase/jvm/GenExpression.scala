@@ -1096,7 +1096,7 @@ object GenExpression {
       // Emit code for the invocation of compose.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "compose", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false);
 
-    case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
