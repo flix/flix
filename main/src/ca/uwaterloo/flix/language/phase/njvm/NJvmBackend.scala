@@ -17,12 +17,13 @@ package ca.uwaterloo.flix.language.phase.njvm
 
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.{Path, Paths}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SpecialOperator, Symbol}
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.language.phase.jvm.{Bootstrap, GenFunctionClasses, JvmName, JvmOps}
+import ca.uwaterloo.flix.language.phase.jvm.{Bootstrap, JvmName, JvmOps}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
@@ -80,12 +81,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     val types = JvmOps.typesOf(root)
 
-    //
-    // Generate function classes for each function in the program.
-    //
-    val functionClasses = GenFunctionClasses.gen(root.defs)
-
-
     /** Generated classes using NJVM */
     val map: Map[JvmName, MnemonicsClass] = Map()
     val classes: List[MnemonicsGenerator] =
@@ -104,7 +99,8 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
         GenContextClass,
         GenNamespacesClasses,
         GenMainClass,
-        GenClosuresClasses
+        GenFunctionClasses,
+          GenClosuresClasses
       )
 
 
@@ -115,7 +111,6 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
-      functionClasses,
       njvmClasses
     ).reduce(_ ++ _)
 

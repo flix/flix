@@ -309,7 +309,6 @@ class Closure(map: Map[JvmName, MnemonicsClass], closure: ClosureInfo)(implicit 
 
     // Function parameters
     val params = defn.formals.takeRight(defn.formals.length - closure.freeVars.length)
-
     cg.mkVoidMethod2("invoke",
       sig =>
         sig.getArg1.LOAD[StackNil] |>>

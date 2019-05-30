@@ -332,6 +332,15 @@ object Mnemonics {
       this.asInstanceOf[F[S]]
     }
 
+
+    def emitInvoke2[S](invokeCode: JvmModifier, className: String, methodName: String,
+                       descriptor: String): F[S] = {
+
+      //Last argument is true if invoking interface
+      val flag = if (invokeCode == JvmModifier.InvokeInterface) true else false
+      mv.visitMethodInsn(invokeCode.toInternal, className, methodName,descriptor, flag)
+      this.asInstanceOf[F[S]]
+    }
     /**
       * Emits a return instruction given the fieldType
       *
@@ -430,6 +439,11 @@ object Mnemonics {
 
     def emitIfACmpEq[S](label: Label): F[S] = {
       mv.visitJumpInsn(IF_ACMPEQ, label)
+      this.asInstanceOf[F[S]]
+    }
+
+    def emitIfICmpLt[S](label: Label): F[S] = {
+      mv.visitJumpInsn(IF_ICMPLT, label)
       this.asInstanceOf[F[S]]
     }
 
@@ -1199,6 +1213,19 @@ object Mnemonics {
 
     def BIPUSH[S <: Stack](b : Byte) : F[S] => F[S ** MByte] = t => t.emitBIPUSH(b)
     def SIPUSH[S <: Stack](s : Short) : F[S] => F[S ** MShort] = t => t.emitSIPUSH(s)
+
+    def IGE[S <: Stack] : F[S ** MInt ** MInt] => F[S** MBool] = {
+
+
+      val condElse = new Label()
+      val condEnd = new Label()
+      ((t :  F[S ** MInt ** MInt]) => t.emitIfICmpLt[S](condElse)) |>>
+      (t => t.emitICONST[S](1)) |>>
+      (t => t.emitGoto[S](condEnd)) |>>
+      (t => t.emitLabel[S](condElse)) |>>
+      (t => t.emitICONST[S](0)) |>>
+      (t => t.emitLabel[S ** MBool](condEnd))
+    }
   }
 
   /**
@@ -1586,6 +1613,14 @@ object Mnemonics {
     def INVOKE[S1 <: Stack, S2 <: Stack](implicit root: Root, flix: Flix): F[S1] => F[S2] = {
 
       t => t.emitInvoke(invokeCode, ct.name.toInternalName, methodName, args, Void)
+    }
+  }
+
+  class UncheckedVoidMethod2(invokeCode: JvmModifier, declatration: String, name: String, descriptor: String) {
+
+    def INVOKE[S1 <: Stack, S2 <: Stack](implicit root: Root, flix: Flix): F[S1] => F[S2] = {
+
+      t => t.emitInvoke2(invokeCode, declatration, name, descriptor)
     }
   }
 

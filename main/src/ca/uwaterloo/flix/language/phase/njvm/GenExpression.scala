@@ -16,62 +16,106 @@
 package ca.uwaterloo.flix.language.phase.njvm
 
 
+import java.lang.reflect.Modifier
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.{Expression, Root}
-import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.{JvmName, TagInfo}
+import ca.uwaterloo.flix.language.ast.SemanticOperator.{Int32Op, StringOp}
+import ca.uwaterloo.flix.language.ast.{FinalAst, MonoType, SemanticOperator, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.{ClosureInfo, JvmName, TagInfo}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
-import ca.uwaterloo.flix.language.phase.njvm.classes.{RecordEmpty, RecordExtend, RefClass, TagClass, TupleClass}
-import ca.uwaterloo.flix.language.phase.njvm.interfaces.{RecordInterface, TupleInterface}
+import ca.uwaterloo.flix.language.phase.njvm.classes.{Closure, Context, RecordEmpty, RecordExtend, RefClass, TagClass, TupleClass}
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.{ContinuationInterface, FunctionInterface, RecordInterface, TupleInterface}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Label
+import org.objectweb.asm
 
 import scala.reflect.runtime.universe._
 
 object GenExpression {
-
   def compileExpression[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
   (exp0: Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
-  F[S] => F[S ** T1] =
+  F[S] => F[S ** T1] = {
     (exp0 match {
-      case Expression.Unit => compileUnit
-      case Expression.True | Expression.False => compileBoolean(exp0)
-      case Expression.Char(c) => compileChar(c)
-      case Expression.Float32(f) => compileFloat(f)
-      case Expression.Float64(d) => compileDouble(d)
-      case Expression.Int8(b) => compileInt(b)
-      case Expression.Int16(s) => compileInt(s)
-      case Expression.Int32(i) => compileInt(i)
-      case Expression.Int64(l) => compileLong(l)
-      case Expression.BigInt(ii) => compileBigInt(ii)
-      case Expression.Str(s) => compileString(s)
-      case Expression.Var(sym, tpe, _) => compileVar(sym, tpe)
+      case Expression.Unit => compileUnit[S]
+      case Expression.True | Expression.False => compileBoolean[S](exp0)
+      case Expression.Char(c) => compileChar[S](c)
+      case Expression.Float32(f) => compileFloat[S](f)
+      case Expression.Float64(d) => compileDouble[S](d)
+      case Expression.Int8(b) => compileInt[S](b)
+      case Expression.Int16(s) => compileInt[S](s)
+      case Expression.Int32(i) => compileInt[S](i)
+      case Expression.Int64(l) => compileLong[S](l)
+      case Expression.BigInt(ii) => compileBigInt[S](ii)
+      case Expression.Str(s) => compileString[S](s)
+      case Expression.Var(sym, tpe, _) => compileVar[S, T1](sym, tpe)
 
-      case Expression.Closure(sym, freeVars, fnType, tpe, loc) => ???
-      case Expression.ApplyClo(exp, args, tpe, loc) => ???
-      case Expression.ApplyDef(name, args, tpe, loc) => ???
+      case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
+        // ClosureInfo
+        val closure = ClosureInfo(sym, freeVars, fnType)
+
+        compileClosure[S](closure, freeVars, loc, map, lenv0, entryPoint)
+      case Expression.ApplyClo(exp, args, tpe, loc) =>
+        compileApplyClo[S, T1](exp, args, tpe, map, lenv0, entryPoint)
+      case Expression.ApplyDef(name, args, tpe, loc) =>
+        compileApplyDef[S, T1](name, args, tpe, map, lenv0, entryPoint)
       case Expression.ApplyEff(_, _, _, _) =>
         compileApplyEff[S, T1]
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
+      case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+        compileApplyCloTail[S, T1](exp, args, tpe, loc, map, lenv0, entryPoint)
       case Expression.ApplyDefTail(name, args, tpe, loc) => ???
       case Expression.ApplyEffTail(sym, args, tpe, loc) => ???
       case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => ???
 
       case Expression.Unary(sop, op, exp, _, _) => ???
-      case Expression.Binary(sop, op, exp1, exp2, _, _) => ???
+      case Expression.Binary(sop, op, exp1, exp2, _, _) =>
+        sop match {
+          case op: SemanticOperator.BoolOp => ???
+          case op: SemanticOperator.CharOp => ???
+          case op: SemanticOperator.Float32Op => ???
+          case op: SemanticOperator.Float64Op => ???
+          case op: SemanticOperator.Int8Op => ???
+          case op: SemanticOperator.Int16Op => ???
+          case op: SemanticOperator.Int32Op =>
+            compileInt32Op[S, T1](op, exp1, exp2, map, lenv0, entryPoint)
+          case op: SemanticOperator.Int64Op => ???
+          case op: SemanticOperator.BigIntOp => ???
+          case op: SemanticOperator.StringOp =>
+            op match {
+              case StringOp.Concat =>
+                compileExpression[S ,Ref[MString]](exp1,map, lenv0, entryPoint) |>>
+                compileExpression[S ** Ref[MString], Ref[MString]](exp2,map, lenv0, entryPoint)
+                Api.Java.Lang.String.concat.INVOKE
+              case StringOp.Eq => ???
+              case StringOp.Neq => ???
+            }
+        }
       case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
         compileIfThenElse(exp1, exp2, exp3, loc, map, lenv0, entryPoint)
-      case Expression.Branch(exp, branches, tpe, loc) => ???
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        getJvmType(exp.tpe) match {
+          case PrimBool => compileBranch[S, MBool](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimChar => compileBranch[S, MChar](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimByte => compileBranch[S, MByte](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimShort => compileBranch[S, MShort](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimInt => compileBranch[S, MInt](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimLong => compileBranch[S, MLong](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileBranch[S, MFloat](exp, branches, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileBranch[S, MDouble](exp, branches, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileBranch[S, Ref[MObject]](exp, branches, loc, map, lenv0, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type" + getJvmType(exp.tpe))
+        }
+
       case Expression.JumpTo(sym, _, loc) =>
-        compileJumpTo(lenv0(sym), loc)
+        compileJumpTo[S](lenv0(sym), loc)
 
       case Expression.Let(sym, exp1, exp2, _, loc) =>
         val jvmType = getErasedJvmType(exp1.tpe)
-        jvmType match{
-          case PrimBool =>  compileLet[S, MBool, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
+        jvmType match {
+          case PrimBool => compileLet[S, MBool, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
           case PrimChar => compileLet[S, MChar, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
           case PrimByte => compileLet[S, MByte, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
           case PrimShort => compileLet[S, MShort, T1](sym, exp1, exp2, loc, map, lenv0, entryPoint)
@@ -87,8 +131,8 @@ object GenExpression {
       case Expression.Is(_, tag, exp1, loc) =>
         val tagInfo = getTagInfo(exp1.tpe, tag)
         val tagTpe = getErasedJvmType(tagInfo.tagType)
-        tagTpe match{
-          case PrimBool =>  compileIs[S, MBool](tagInfo, exp1, loc, map, lenv0, entryPoint)
+        tagTpe match {
+          case PrimBool => compileIs[S, MBool](tagInfo, exp1, loc, map, lenv0, entryPoint)
           case PrimChar => compileIs[S, MChar](tagInfo, exp1, loc, map, lenv0, entryPoint)
           case PrimByte => compileIs[S, MByte](tagInfo, exp1, loc, map, lenv0, entryPoint)
           case PrimShort => compileIs[S, MShort](tagInfo, exp1, loc, map, lenv0, entryPoint)
@@ -102,8 +146,8 @@ object GenExpression {
       case Expression.Tag(_, tag, exp, tpe, loc) =>
         val tagInfo = getTagInfo(tpe, tag)
         val tagTpe = getErasedJvmType(tagInfo.tagType)
-        tagTpe match{
-          case PrimBool =>  compileTag[S, MBool](tagInfo, exp, loc, map, lenv0, entryPoint)
+        tagTpe match {
+          case PrimBool => compileTag[S, MBool](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimChar => compileTag[S, MChar](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimByte => compileTag[S, MByte](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimShort => compileTag[S, MShort](tagInfo, exp, loc, map, lenv0, entryPoint)
@@ -117,8 +161,8 @@ object GenExpression {
       case Expression.Untag(_, tag, exp, tpe, loc) =>
         val tagInfo = getTagInfo(exp.tpe, tag)
         val jvmTpe = getJvmType(tpe)
-        jvmTpe match{
-          case PrimBool =>  compileUntagPrim[S, MBool](tagInfo, exp, loc, map, lenv0, entryPoint)
+        jvmTpe match {
+          case PrimBool => compileUntagPrim[S, MBool](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimChar => compileUntagPrim[S, MChar](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimByte => compileUntagPrim[S, MByte](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimShort => compileUntagPrim[S, MShort](tagInfo, exp, loc, map, lenv0, entryPoint)
@@ -126,14 +170,14 @@ object GenExpression {
           case PrimLong => compileUntagPrim[S, MLong](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimFloat => compileUntagPrim[S, MFloat](tagInfo, exp, loc, map, lenv0, entryPoint)
           case PrimDouble => compileUntagPrim[S, MDouble](tagInfo, exp, loc, map, lenv0, entryPoint)
-          case Reference(name) => compileUntagNonPrim[S](tagInfo, exp, Reference(name),loc, map, lenv0, entryPoint)
+          case Reference(name) => compileUntagNonPrim[S](tagInfo, exp, Reference(name), loc, map, lenv0, entryPoint)
           case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
         }
 
       case Expression.Index(base, offset, tpe, _) =>
         val jvmTpe = getJvmType(tpe)
-        jvmTpe match{
-          case PrimBool =>  compileIndexPrim[S, MBool](base, offset, map, lenv0, entryPoint)
+        jvmTpe match {
+          case PrimBool => compileIndexPrim[S, MBool](base, offset, map, lenv0, entryPoint)
           case PrimChar => compileIndexPrim[S, MChar](base, offset, map, lenv0, entryPoint)
           case PrimByte => compileIndexPrim[S, MByte](base, offset, map, lenv0, entryPoint)
           case PrimShort => compileIndexPrim[S, MShort](base, offset, map, lenv0, entryPoint)
@@ -146,10 +190,10 @@ object GenExpression {
         }
 
       case Expression.Tuple(elms, tpe, loc) =>
-        compileTuple(elms, tpe, loc, map, lenv0, entryPoint)
+        compileTuple[S](elms, tpe, loc, map, lenv0, entryPoint)
 
       case Expression.RecordEmpty(_, loc) =>
-        compileRecordEmpty(loc, map)
+        compileRecordEmpty[S](loc, map)
       case Expression.RecordSelect(exp, label, tpe, loc) =>
         val valueTpe = getErasedJvmType(tpe)
         valueTpe match {
@@ -180,7 +224,7 @@ object GenExpression {
           case _ => throw InternalCompilerException("Unexpected type " + valueTpe)
         }
       case Expression.RecordRestrict(label, rest, _, loc) =>
-        compileRecordRestrict(label, rest, loc, map, lenv0, entryPoint)
+        compileRecordRestrict[S](label, rest, loc, map, lenv0, entryPoint)
 
       case Expression.ArrayLit(elms, tpe, loc) => ???
       case Expression.ArrayNew(elm, len, tpe, loc) => ???
@@ -205,8 +249,8 @@ object GenExpression {
         }
       case Expression.Deref(exp, tpe, loc) =>
         val jvmTpe = getJvmType(tpe)
-        jvmTpe match{
-          case PrimBool =>  compileDerefPrim[S, MBool](exp, loc, map, lenv0, entryPoint)
+        jvmTpe match {
+          case PrimBool => compileDerefPrim[S, MBool](exp, loc, map, lenv0, entryPoint)
           case PrimChar => compileDerefPrim[S, MChar](exp, loc, map, lenv0, entryPoint)
           case PrimByte => compileDerefPrim[S, MByte](exp, loc, map, lenv0, entryPoint)
           case PrimShort => compileDerefPrim[S, MShort](exp, loc, map, lenv0, entryPoint)
@@ -222,15 +266,15 @@ object GenExpression {
       case Expression.Assign(exp1, exp2, _, loc) =>
         val jvmTpe = getErasedJvmType(exp1.tpe.asInstanceOf[MonoType.Ref].tpe)
         jvmTpe match {
-          case PrimBool => compileAssign[S, MBool](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimBool => compileAssign[S, MBool](exp1, exp2, loc, map, lenv0, entryPoint)
           case PrimChar => compileAssign[S, MChar](exp1, exp2, loc, map, lenv0, entryPoint)
-          case PrimByte => compileAssign[S, MByte](exp1, exp2,loc, map, lenv0, entryPoint)
-          case PrimShort => compileAssign[S, MShort](exp1, exp2,loc, map, lenv0, entryPoint)
-          case PrimInt => compileAssign[S, MInt](exp1, exp2,loc, map, lenv0, entryPoint)
-          case PrimLong => compileAssign[S, MLong](exp1, exp2,loc, map, lenv0, entryPoint)
-          case PrimFloat => compileAssign[S, MFloat](exp1, exp2,loc, map, lenv0, entryPoint)
-          case PrimDouble => compileAssign[S, MDouble](exp1, exp2,loc, map, lenv0, entryPoint)
-          case Reference(_) => compileAssign[S, Ref[MObject]](exp1, exp2,loc, map, lenv0, entryPoint)
+          case PrimByte => compileAssign[S, MByte](exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimShort => compileAssign[S, MShort](exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimInt => compileAssign[S, MInt](exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimLong => compileAssign[S, MLong](exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimFloat => compileAssign[S, MFloat](exp1, exp2, loc, map, lenv0, entryPoint)
+          case PrimDouble => compileAssign[S, MDouble](exp1, exp2, loc, map, lenv0, entryPoint)
+          case Reference(_) => compileAssign[S, Ref[MObject]](exp1, exp2, loc, map, lenv0, entryPoint)
           case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
         }
 
@@ -242,8 +286,39 @@ object GenExpression {
       case Expression.TryCatch(exp, rules, tpe, loc) => ???
       case Expression.NativeConstructor(constructor, args, tpe, loc) => ???
       case Expression.NativeField(field, tpe, loc) => ???
-      case Expression.NativeMethod(method, args, tpe, loc) => ???
+      case Expression.NativeMethod(method, args, tpe, loc) =>
 
+        val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+        val name = method.getName
+        val descriptor = asm.Type.getMethodDescriptor(method)
+        val invokeInsn = if (Modifier.isStatic(method.getModifiers)) JvmModifier.InvokeStatic else JvmModifier.InvokeVirtual
+
+
+          // Adding source line number for debugging
+          ADD_SOURCE_LINE[S](loc) |>>
+            // Evaluate arguments left-to-right and push them onto the stack.
+            args.foldLeft(NO_OP[S]) {
+              case (ins, arg) =>
+                val jvmTpe = getErasedJvmType(arg.tpe)
+                ins |>> (jvmTpe match {
+                  case PrimBool => compileExpression[S, MBool](arg, map, lenv0, entryPoint)
+                  case PrimChar => compileExpression[S, MChar](arg, map, lenv0, entryPoint)
+                  case PrimByte => compileExpression[S, MByte](arg, map, lenv0, entryPoint)
+                  case PrimShort => compileExpression[S, MShort](arg, map, lenv0, entryPoint)
+                  case PrimInt => compileExpression[S, MInt](arg, map, lenv0, entryPoint)
+                  case PrimLong => compileExpression[S, MLong](arg, map, lenv0, entryPoint)
+                  case PrimFloat => compileExpression[S, MFloat](arg, map, lenv0, entryPoint)
+                  case PrimDouble => compileExpression[S, MDouble](arg, map, lenv0, entryPoint)
+                  case Reference(_) => compileExpression[S, Ref[MObject]](arg, map, lenv0, entryPoint)
+                  case _ => throw InternalCompilerException("Unexpected type " + jvmTpe)
+                }).asInstanceOf[F[S] => F[S]]
+            } |>>
+            new UncheckedVoidMethod2(invokeInsn, declaration, name, descriptor).INVOKE |>>
+            (if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+              Api.Java.Runtime.Value.Unit.getInstance.INVOKE
+            } else {
+              NO_OP
+            }).asInstanceOf[F[S] => F[S ** T1]]
       case Expression.NewChannel(exp, tpe, loc) =>
         compileNewChannel(exp, loc, map, lenv0, entryPoint)
       case Expression.GetChannel(exp, tpe, loc) => ???
@@ -271,6 +346,7 @@ object GenExpression {
         compileSwitchError(loc)
 
     }).asInstanceOf[F[S] => F[S ** T1]]
+  }
 
   def compileUnit[S <: Stack](implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MUnit]] = Api.Java.Runtime.Value.Unit.getInstance.INVOKE
 
@@ -353,8 +429,580 @@ object GenExpression {
     }
   }
 
+  def compileClosure[S <: Stack]
+  (closure: ClosureInfo, freeVars: List[FinalAst.FreeVar], loc : SourceLocation,map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix):
+  F[S] => F[S ** Ref[Closure]]=
+  {
+    val jvmType = getClosureClassType(closure)
+    val varTypes = freeVars.map(_.tpe).map(getErasedJvmType)
+    val closureConstructor = new UncheckedVoidMethod(JvmModifier.InvokeSpecial, jvmType, "<init>", NJvmType.Object +: varTypes)
+    val contextLocal = new Local[Ref[Context]](1)
+    NEW[S, Ref[Closure]](jvmType) |>>
+      DUP |>>
+      contextLocal.LOAD |>>
+      freeVars.foldLeft(NO_OP[S ** Ref[Closure] **Ref[Closure] ** Ref[Context] ]){
+        case (ins, f) =>
+          val v = Expression.Var(f.sym, f.tpe, loc)
+         ins|>> (getJvmType(f.tpe) match {
+            case PrimBool => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MBool](v, map, lenv0, entryPoint)
+            case PrimChar => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MChar](v, map, lenv0, entryPoint)
+            case PrimByte => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MByte](v, map, lenv0, entryPoint)
+            case PrimShort => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MShort](v, map, lenv0, entryPoint)
+            case PrimInt => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MInt](v, map, lenv0, entryPoint)
+            case PrimLong => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MLong](v, map, lenv0, entryPoint)
+            case PrimFloat => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MFloat](v, map, lenv0, entryPoint)
+            case PrimDouble => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], MDouble](v, map, lenv0, entryPoint)
+            case Reference(_) => ins |>> compileExpression[S ** Ref[Closure] **Ref[Closure] ** Ref[Context], Ref[MObject]](v, map, lenv0, entryPoint)
+            case _ => throw InternalCompilerException("Unexpected type" + getJvmType(f.tpe))
+          }).asInstanceOf[F[S ** Ref[Closure] **Ref[Closure] ** Ref[Context]] => F[S ** Ref[Closure] **Ref[Closure] ** Ref[Context]]]
+      }|>> closureConstructor.INVOKE
+
+  }
+
+  def compileApplyClo[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
+  (exp: Expression, args: List[Expression], tpe: MonoType, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):   F[S] => F[S ** T1] = {
+
+    val retTpe = getJvmType(tpe)
+
+    val cont =
+      retTpe match {
+        case PrimBool =>
+          getContinuationInterfaceType[MBool]
+        case PrimChar =>
+          getContinuationInterfaceType[MChar]
+        case PrimByte =>
+          getContinuationInterfaceType[MByte]
+        case PrimShort =>
+          getContinuationInterfaceType[MShort]
+        case PrimInt =>
+          getContinuationInterfaceType[MInt]
+        case PrimLong =>
+          getContinuationInterfaceType[MLong]
+        case PrimFloat =>
+          getContinuationInterfaceType[MFloat]
+        case PrimDouble =>
+          getContinuationInterfaceType[MDouble]
+        case Reference(_) =>
+          getContinuationInterfaceType[Ref[MObject]]
+        case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+      }
+
+
+    // Type of the function
+    val MonoType.Arrow(targs, tresult) = exp.tpe.asInstanceOf[MonoType.Arrow]
+    // Type of the function interface
+    val functionInterface = getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+
+    val functionInterfaceClass = map(functionInterface.name).asInstanceOf[FunctionInterface]
+
+    val contextLocal = new Local[Ref[Context]](1)
+
+    //generate the capability to acess the continuation field in the context class
+    val continuationField = new ClassField[Ref[FunctionInterface]]("continuation", NJvmType.Context)
+    val continuationField2 = new UncheckedClassField("continuation", getContextClassType, NJvmType.Object)
+
+
+    contextLocal.LOAD[S] |>>
+    compileExpression[S ** Ref[Context], Ref[MObject]](exp, map, lenv0, entryPoint) |>>
+    CHECK_CAST2[S ** Ref[Context], Ref[MObject], Ref[FunctionInterface]](functionInterface) |>>
+      args.zipWithIndex.foldLeft(NO_OP[S ** Ref[Context] ** Ref[FunctionInterface]]) {
+        case (ins, (arg, ind)) =>
+          val argErasedType = getErasedJvmType(arg.tpe)
+          ins |>>
+            DUP |>>
+            (argErasedType match {
+              case PrimBool =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MBool](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MBool](ind).INVOKE
+              case PrimChar =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MChar](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MChar](ind).INVOKE
+              case PrimByte =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MByte](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MByte](ind).INVOKE
+              case PrimShort =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MShort](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MShort](ind).INVOKE
+              case PrimInt =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MInt](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MInt](ind).INVOKE
+              case PrimLong =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MLong](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MLong](ind).INVOKE
+              case PrimFloat =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MFloat](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MFloat](ind).INVOKE
+              case PrimDouble =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MDouble](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MDouble](ind).INVOKE
+              case Reference(_) =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], Ref[MObject]](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[Ref[MObject]](ind).INVOKE
+              case _ => throw InternalCompilerException("Unexpected type" + argErasedType)
+            })
+      }|>>
+      continuationField.PUT_FIELD[S, Ref[Context]] |>>
+      IFNONNULL(
+        contextLocal.LOAD[S] |>>
+          continuationField2.GET_FIELD[S,Ref[Context], Ref[MObject]] |>>
+
+          contextLocal.LOAD[S ** Ref[MObject]] |>>
+          CONST_NULL[S ** Ref[MObject] ** Ref[Context], Ref[MObject]] |>>
+          continuationField2.PUT_FIELD[S ** Ref[MObject], Ref[Context], Ref[MObject]] |>>
+          (retTpe match {
+            case PrimBool =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MBool]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimChar =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MChar]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimByte =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].invokeMethod
+              CHECK_CAST2[S, Ref[MObject], Ref[ContinuationInterface[MByte]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimShort =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MShort]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimInt =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MInt]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimLong =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MLong]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimFloat =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MFloat]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimDouble =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MDouble]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case Reference(_) =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[Ref[MObject]]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+          }) |>>
+
+          contextLocal.LOAD |>>
+          continuationField2.GET_FIELD
+      ) |>>
+      (retTpe match {
+        case PrimBool =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimChar =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimByte =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimShort =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimInt =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimLong =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimFloat =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimDouble =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case Reference(name) =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE |>>
+            CHECK_CAST(Reference(name))
+        case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+      }).asInstanceOf[F[S] => F[S ** T1]]
+  }
+
+
+  def compileApplyDef[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
+  (name: Symbol.DefnSym, args: List[Expression], tpe: MonoType, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):   F[S] => F[S ** T1] = {
+    // Namespace of the Def
+    val ns = getNamespace(name)
+    // JvmType of `ns`
+    val nsJvmType = getNamespaceClassType(ns)
+    // Name of the field for `ns` on `Context`
+    val nsFieldName = getNamespaceFieldNameInContextClass(ns)
+    // Field for Def on `ns`
+    val defFiledName = getDefFieldNameInNamespaceClass(name)
+    // JvmType of Def
+    val defJvmType = getFunctionDefinitionClassType(name)
+
+    // Type of the function
+    val MonoType.Arrow(targs, tresult) = root.defs(name).tpe.asInstanceOf[MonoType.Arrow]
+    // Type of the continuation interface
+    val retTpe = getJvmType(tpe)
+
+    val cont =
+      retTpe match {
+        case PrimBool =>
+          getContinuationInterfaceType[MBool]
+        case PrimChar =>
+          getContinuationInterfaceType[MChar]
+        case PrimByte =>
+          getContinuationInterfaceType[MByte]
+        case PrimShort =>
+          getContinuationInterfaceType[MShort]
+        case PrimInt =>
+          getContinuationInterfaceType[MInt]
+        case PrimLong =>
+          getContinuationInterfaceType[MLong]
+        case PrimFloat =>
+          getContinuationInterfaceType[MFloat]
+        case PrimDouble =>
+          getContinuationInterfaceType[MDouble]
+        case Reference(_) =>
+          getContinuationInterfaceType[Ref[MObject]]
+        case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+      }
+    // Type of the function interface
+    val functionInterface = getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+
+    val functionInterfaceClass = map(functionInterface.name).asInstanceOf[FunctionInterface]
+
+    val contextLocal = new Local[Ref[Context]](1)
+    //generate the capability to acess the namespace field in the context class
+    val nsField = new UncheckedClassField(nsFieldName, NJvmType.Context, nsJvmType)
+    //generate the capability to acess the definition field in the namespace class
+    val defField = new UncheckedClassField(defFiledName, nsJvmType, defJvmType)
+
+    //generate the capability to acess the continuation field in the context class
+    val continuationField = new ClassField[Ref[FunctionInterface]]("continuation", NJvmType.Context)
+    val continuationField2 = new UncheckedClassField("continuation", getContextClassType, NJvmType.Object)
+
+
+    contextLocal.LOAD[S] |>>
+      contextLocal.LOAD[S ** Ref[Context]] |>>
+      nsField.GET_FIELD[S ** Ref[Context], Ref[Context], Ref[MObject]] |>>
+      defField.GET_FIELD[S ** Ref[Context], Ref[MObject], Ref[MObject]] |>>
+      CHECK_CAST2[S ** Ref[Context], Ref[MObject], Ref[FunctionInterface]](functionInterface) |>>
+      args.zipWithIndex.foldLeft(NO_OP[S ** Ref[Context] ** Ref[FunctionInterface]]) {
+        case (ins, (arg, ind)) =>
+          val argErasedType = getErasedJvmType(arg.tpe)
+          ins |>>
+            DUP |>>
+            (argErasedType match {
+              case PrimBool =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MBool](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MBool](ind).INVOKE
+              case PrimChar =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MChar](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MChar](ind).INVOKE
+              case PrimByte =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MByte](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MByte](ind).INVOKE
+              case PrimShort =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MShort](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MShort](ind).INVOKE
+              case PrimInt =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MInt](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MInt](ind).INVOKE
+              case PrimLong =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MLong](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MLong](ind).INVOKE
+              case PrimFloat =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MFloat](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MFloat](ind).INVOKE
+              case PrimDouble =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MDouble](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MDouble](ind).INVOKE
+              case Reference(_) =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], Ref[MObject]](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[Ref[MObject]](ind).INVOKE
+              case _ => throw InternalCompilerException("Unexpected type" + argErasedType)
+            })
+      }|>>
+      continuationField.PUT_FIELD[S, Ref[Context]] |>>
+      IFNONNULL(
+        contextLocal.LOAD[S] |>>
+          continuationField2.GET_FIELD[S,Ref[Context], Ref[MObject]] |>>
+
+          contextLocal.LOAD[S ** Ref[MObject]] |>>
+          CONST_NULL[S ** Ref[MObject] ** Ref[Context], Ref[MObject]] |>>
+          continuationField2.PUT_FIELD[S ** Ref[MObject], Ref[Context], Ref[MObject]] |>>
+          (retTpe match {
+            case PrimBool =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MBool]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimChar =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MChar]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimByte =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].invokeMethod
+              CHECK_CAST2[S, Ref[MObject], Ref[ContinuationInterface[MByte]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimShort =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MShort]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimInt =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MInt]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimLong =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MLong]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimFloat =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MFloat]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case PrimDouble =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[MDouble]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case Reference(_) =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+              val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].invokeMethod
+              CHECK_CAST2[S , Ref[MObject], Ref[ContinuationInterface[Ref[MObject]]]](cont) |>>
+                DUP |>>
+                ifoLocal.STORE |>>
+                contextLocal.LOAD |>>
+                invokeMethod.INVOKE
+            case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+          }) |>>
+
+          contextLocal.LOAD |>>
+          continuationField2.GET_FIELD
+      ) |>>
+      (retTpe match {
+        case PrimBool =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimChar =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimByte =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimShort =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimInt =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimLong =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimFloat =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case PrimDouble =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE
+        case Reference(name) =>
+          val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+          val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].getResultMethod
+          ifoLocal.LOAD[S] |>>
+            getResultMethod.INVOKE |>>
+            CHECK_CAST(Reference(name))
+        case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+      }).asInstanceOf[F[S] => F[S ** T1]]
+  }
+
   def compileApplyEff[S <: Stack, T1 <: MnemonicsTypes : TypeTag]: F[S] => F[S ** T1] =
     throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
+
+  def compileApplyCloTail[S <: Stack, T <: MnemonicsTypes : TypeTag]
+  (exp: Expression, args: List[Expression], tpe: MonoType, loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix) : F[S] => F[S ** T]= {
+    // Type of the function interface
+    val MonoType.Arrow(targs, tresult) = exp.tpe.asInstanceOf[MonoType.Arrow]
+    val functionInterface = getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+    // Result type
+    val continuationField = new ClassField[Ref[FunctionInterface]]("continuation", NJvmType.Context)
+
+    val contextLocal = new Local[Ref[Context]](1)
+    val functionInterfaceClass = map(functionInterface.name).asInstanceOf[FunctionInterface]
+
+    contextLocal.LOAD[S] |>>
+      compileExpression[S ** Ref[Context], Ref[MObject]](exp, map,lenv0, entryPoint) |>>
+      CHECK_CAST2[S ** Ref[Context], Ref[MObject], Ref[FunctionInterface]](functionInterface) |>>
+      args.zipWithIndex.foldLeft(NO_OP[S ** Ref[Context] ** Ref[FunctionInterface]]) {
+        case (ins, (arg, ind)) =>
+          val argErasedType = getErasedJvmType(arg.tpe)
+          ins |>>
+            DUP |>>
+            (argErasedType match {
+              case PrimBool =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MBool](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MBool](ind).INVOKE
+              case PrimChar =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MChar](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MChar](ind).INVOKE
+              case PrimByte =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MByte](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MByte](ind).INVOKE
+              case PrimShort =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MShort](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MShort](ind).INVOKE
+              case PrimInt =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MInt](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MInt](ind).INVOKE
+              case PrimLong =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MLong](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MLong](ind).INVOKE
+              case PrimFloat =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MFloat](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MFloat](ind).INVOKE
+              case PrimDouble =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], MDouble](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[MDouble](ind).INVOKE
+              case Reference(_) =>
+                compileExpression[S ** Ref[Context] ** Ref[FunctionInterface] ** Ref[FunctionInterface], Ref[MObject]](arg, map, lenv0, entryPoint) |>>
+                  functionInterfaceClass.setArgMethod[Ref[MObject]](ind).INVOKE
+              case _ => throw InternalCompilerException("Unexpected type" + argErasedType)
+            })
+      }|>>
+      continuationField.PUT_FIELD |>>
+      pushDummyValue[S, T]
+  }
+
+  def compileInt32Op[S <: Stack, T <: MnemonicsTypes]
+  (op: SemanticOperator.Int32Op, exp1 : Expression, exp2 : Expression, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix): F[S] => F[S ** T] = {
+
+    compileExpression[S, MInt](exp1, map, lenv0, entryPoint) |>>
+    compileExpression[S ** MInt, MInt](exp1, map, lenv0, entryPoint) |>>
+    (op match {
+      case Int32Op.Neg => ???
+      case Int32Op.Not => ???
+      case Int32Op.Add => IADD
+      case Int32Op.Sub => ???
+      case Int32Op.Mul => ???
+      case Int32Op.Div => ???
+      case Int32Op.Rem => ???
+      case Int32Op.Exp => ???
+      case Int32Op.And => ???
+      case Int32Op.Or => ???
+      case Int32Op.Xor => ???
+      case Int32Op.Shl => ???
+      case Int32Op.Shr => ???
+      case Int32Op.Eq => ???
+      case Int32Op.Neq => ???
+      case Int32Op.Lt => ???
+      case Int32Op.Le => ???
+      case Int32Op.Gt => ???
+      case Int32Op.Ge => IGE
+    }).asInstanceOf[F[S ** MInt ** MInt] => F[S ** T]]
+  }
 
   def compileIfThenElse[S <: Stack, T1 <: MnemonicsTypes : TypeTag]
   (exp1: FinalAst.Expression, exp2: FinalAst.Expression, exp3: FinalAst.Expression, loc: SourceLocation,
@@ -367,6 +1015,39 @@ object GenExpression {
         compileExpression(exp2, map, lenv0, entryPoint),
         compileExpression(exp3, map, lenv0, entryPoint)
       )
+
+  def compileBranch[S <: Stack, T <: MnemonicsTypes : TypeTag]
+  (exp: Expression, branches: Map[Symbol.LabelSym, Expression], loc: SourceLocation, map: Map[JvmName, MnemonicsClass], lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)
+  (implicit root: Root, flix: Flix):
+  F[S] => F[S] = {
+    val updatedJumpLabels = branches.foldLeft(lenv0)((map, branch) => map + (branch._1 -> new Label()))
+    val endLabel = new Label()
+    val mEndLabel = new MLabel(endLabel)
+
+    ADD_SOURCE_LINE[S](loc) |>>
+    compileExpression[S, T](exp, map, updatedJumpLabels, entryPoint) |>>
+    mEndLabel.GOTO[S ** T] |>>
+      branches.foldLeft(NO_OP[S ** T]) { case (ins, (sym, branchExp)) =>
+        val mUpdatedLabel = new MLabel(updatedJumpLabels(sym))
+        ins |>>
+          mUpdatedLabel.EMIT_LABEL[S ** T] |>>
+          (getJvmType(branchExp.tpe) match {
+          case PrimBool => compileExpression[S ** T, MBool](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimChar => compileExpression[S ** T, MChar](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimByte => compileExpression[S ** T, MByte](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimShort => compileExpression[S ** T, MShort](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimInt =>  compileExpression[S ** T, MInt](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimLong => compileExpression[S ** T, MLong](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimFloat => compileExpression[S ** T, MFloat](branchExp, map, updatedJumpLabels, entryPoint)
+          case PrimDouble => compileExpression[S ** T, MDouble](branchExp, map, updatedJumpLabels, entryPoint)
+          case Reference(_) => compileExpression[S ** T, Ref[MObject]](branchExp, map, updatedJumpLabels, entryPoint)
+          case _ => throw InternalCompilerException("Unexpected type" + getJvmType(branchExp.tpe))
+          }).asInstanceOf[F[S ** T] => F[S ** T]] |>>
+          mEndLabel.GOTO
+      } |>>
+      mEndLabel.GOTO[S ** T] |>>
+      mEndLabel.EMIT_LABEL[S**T].asInstanceOf[F[S**T] => F[S]]
+  }
 
   def compileJumpTo[S <: Stack](label: Label, loc: SourceLocation): F[S] => F[S] =
     ADD_SOURCE_LINE[S](loc) |>>
@@ -480,7 +1161,19 @@ object GenExpression {
       elms.foldLeft(NO_OP[S ** Ref[TupleClass] ** Ref[TupleClass]]) {
         case (ins, exp) =>
           ins |>>
-            compileExpression(exp, map, lenv0, entryPoint).asInstanceOf
+            (getErasedJvmType(exp.tpe) match {
+              case PrimBool => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MBool](exp, map, lenv0, entryPoint)
+              case PrimChar => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MChar](exp, map, lenv0, entryPoint)
+              case PrimByte => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MByte](exp, map, lenv0, entryPoint)
+              case PrimShort => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MShort](exp, map, lenv0, entryPoint)
+              case PrimInt => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MInt](exp, map, lenv0, entryPoint)
+              case PrimLong => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MLong](exp, map, lenv0, entryPoint)
+              case PrimFloat => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MFloat](exp, map, lenv0, entryPoint)
+              case PrimDouble => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass], MDouble](exp, map, lenv0, entryPoint)
+              case Reference(_) => compileExpression[S ** Ref[TupleClass] ** Ref[TupleClass] , Ref[MObject]](exp, map, lenv0, entryPoint)
+              case _ => throw InternalCompilerException("Unexpected type" + getJvmType(exp.tpe))
+            }).asInstanceOf[F[S ** Ref[TupleClass] ** Ref[TupleClass]] => F[S ** Ref[TupleClass] ** Ref[TupleClass]]]
+
       } |>>
       tupleClass.defaultConstructor.INVOKE
   }
@@ -672,6 +1365,24 @@ object GenExpression {
     ADD_SOURCE_LINE[S](loc) |>>
       compileThrowFlixError(Reference(JvmName.Runtime.SwitchError), loc)
 
+
+  def pushDummyValue[S <: Stack, T <: MnemonicsTypes : TypeTag ] (implicit root: Root, flix: Flix): F[S] => F[S ** T] ={
+    val erasedType = getJvmType[T]
+    (erasedType match {
+      case PrimBool => ICONST(1)
+      case PrimChar => ICONST(-1)
+      case PrimByte => ICONST(-1)
+      case PrimShort => ICONST(-1)
+      case PrimInt => ICONST(-1)
+      case PrimLong =>
+        ICONST[S](-1) |>>
+          I2L
+      case PrimFloat => FCONST(1)
+      case PrimDouble => DCONST(1)
+      case Reference(_) => CONST_NULL
+      case _ => throw InternalCompilerException(s"Unexpected type: $erasedType")
+    }).asInstanceOf[F[S]  => F[S ** T]]
+  }
 
   private def compileReifiedSourceLocation[S <: Stack](loc: SourceLocation)(implicit root: Root, flix: Flix): F[S] => F[S ** Ref[MRefiedSource]] = {
 

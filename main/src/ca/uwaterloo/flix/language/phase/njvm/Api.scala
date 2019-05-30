@@ -116,6 +116,11 @@ object Api {
           def INVOKE[S <: Stack]: F[S ** Ref[MString] ** Ref[MString]] => F[S ** MBool] =
             t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool)
         }
+
+        object concat {
+          def INVOKE[S <: Stack]: F[S ** Ref[MString] ** Ref[MString]] => F[S ** Ref[MString]] =
+            t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "concat", List(NJvmType.String), NJvmType.String)
+        }
       }
       object Exception {
         val constructor: VoidMethod2[Ref[MObject], Ref[MString]] =

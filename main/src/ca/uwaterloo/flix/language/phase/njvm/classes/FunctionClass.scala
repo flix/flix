@@ -413,7 +413,7 @@ class FunctionClass(map: Map[JvmName, MnemonicsClass], sym: Symbol.DefnSym, defn
           getContinuationInterfaceType[MDouble]
         case Reference(_) =>
           getContinuationInterfaceType[Ref[MObject]]
-        case _ => throw InternalCompilerException(s"Unexpected type $fnType")
+        case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
       }
 
     cg.mkMethod2("eval",
