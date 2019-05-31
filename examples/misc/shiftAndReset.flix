@@ -40,7 +40,7 @@
 //    if (a==0) a
 //    else f(a-1)
 
-def main(): List[Int] = List.range(1,5)
+def main(): Int = List.range(1,5) |> List.length
 
 
 //def main(): Int32 =
@@ -54,3 +54,4 @@ def main(): List[Int] = List.range(1,5)
 //    if (c) k(x)
 //    else (g -> (m -> (n -> (xP -> (g(xP, k)))(m - n))(1))(x))(fP)
 //  ))(y == z))(0))(x)
+

@@ -208,7 +208,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
         }, kont0, kont0ReturnType, defSymMap)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-        visitExps(List(exp), kont0ReturnType, l =>Expression.Tag(sym, tag, l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), defSymMap)
+        visitExps(List(exp), kont0ReturnType, l =>mkApplyCont(kont0, Expression.Tag(sym, tag, l.head, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
 
       case Expression.Tuple(elms, tpe, eff, loc) =>
         visitExps(elms, kont0ReturnType, l => mkApplyCont(kont0, Expression.Tuple(l, fixArrowType(tpe, kont0ReturnType), eff, loc), eff, loc), defSymMap)
