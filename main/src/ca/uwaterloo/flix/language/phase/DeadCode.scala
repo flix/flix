@@ -71,7 +71,7 @@ object DeadCode extends Phase[Root, Root] {
         } else {
           Used() + DeadCodeError(fparam.sym.loc, "Lambda parameter never used.").toFailure
         }
-      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => visitExp(exp1) + visitExp(exp2)
+      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => print("am here!"); visitExp(exp1) + visitExp(exp2)
       case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) => visitExp(exp)
       case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => visitExp(exp1) + visitExp(exp2)
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
@@ -243,11 +243,11 @@ object DeadCode extends Phase[Root, Root] {
       case TypedAst.Expression.RecordSelect(exp, label, tpe, eff, loc) => isPure(exp)
       case TypedAst.Expression.RecordExtend(label, value, rest, tpe, eff, loc) => isPure(value) + isPure(rest)
       case TypedAst.Expression.RecordRestrict(label, rest, tpe, eff, loc) => isPure(rest)
-      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => elms.foldLeft(TypEff()) ((p, e) => p + isPure(e))
-      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => isPure(elm) + isPure(len) + false // TODO: Does this make sense?
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => elms.foldLeft(TypEff()) ((p, e) => p + isPure(e)) + false // TODO: Maybe just return TypEff(Typ.Primitive(), false) in all these cases?
+      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => isPure(elm) + isPure(len) + false
       case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => isPure(base) + isPure(index)
       case TypedAst.Expression.ArrayLength(base, tpe, eff, loc) => isPure(base)
-      case TypedAst.Expression.ArrayStore(base, index, elm, tpe, eff, loc) => TypEff(Typ.Primitive(), false)
+      case TypedAst.Expression.ArrayStore(base, index, elm, tpe, eff, loc) => TypEff(Typ.Primitive(), false) // TODO: Fix if answer to above question is "no"
       case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => isPure(base) + isPure(beginIndex) + isPure(endIndex)
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => elms.foldLeft(TypEff()) ((p, e) => p + isPure(e))
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => isPure(elm) // TODO: Is VectorNew impure?
@@ -344,9 +344,7 @@ sealed trait Typ {
 
 object Typ {
   case class Primitive() extends Typ
-
   case class Tuple(typs: List[Typ]) extends Typ
-
   case class Function(t1: Typ, pure: Boolean, t2: Typ) extends Typ
 }
 
