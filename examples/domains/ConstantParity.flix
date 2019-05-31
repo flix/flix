@@ -83,21 +83,21 @@ namespace Domain/ConstantParity {
         case Top    => 0ii
         case Odd    => 1ii
         case Even   => 1ii
-        case Cst(n) => 2ii
+        case Cst(_) => 2ii
         case Bot    => 3ii
     }
 
     ///
     /// Abstracts a concrete number into the constant parity domain.
     ///
-    def alpha(i: BigInt): ConstantParity = Cst(i)
+    pub def alpha(i: BigInt): ConstantParity = Cst(i)
 
     ///
     /// Over-approximates integer `increment`.
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: ConstantParity): ConstantParity = match e with {
+    pub def inc(e: ConstantParity): ConstantParity = match e with {
         case Bot    => Bot
         case Cst(n) => Cst(n + 1ii)
         case Even   => Odd
@@ -110,7 +110,7 @@ namespace Domain/ConstantParity {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: ConstantParity): ConstantParity = match e with {
+    pub def dec(e: ConstantParity): ConstantParity = match e with {
         case Bot    => Bot
         case Cst(n) => Cst(n - 1ii)
         case Even   => Odd
@@ -123,7 +123,7 @@ namespace Domain/ConstantParity {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative
-    def plus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
+    pub def plus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
@@ -143,7 +143,7 @@ namespace Domain/ConstantParity {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
+    pub def minus(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
@@ -163,7 +163,7 @@ namespace Domain/ConstantParity {
     ///
     #safe2((x, y) -> x * y)
     #strict2  // NB: @monotone annotation removed since Z3 reports unknown.
-    def times(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
+    pub def times(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
@@ -185,7 +185,7 @@ namespace Domain/ConstantParity {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
         case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
@@ -203,7 +203,7 @@ namespace Domain/ConstantParity {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
@@ -211,7 +211,7 @@ namespace Domain/ConstantParity {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def less(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
         case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
@@ -224,17 +224,17 @@ namespace Domain/ConstantParity {
     #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def lessEqual(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(e1: ConstantParity, e2: ConstantParity): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     ///
     /// Returns `true` iff the given number `n` is odd.
     ///
-    def isOdd(n: BigInt): Bool = (n % 2ii) != 0ii
+    pub def isOdd(n: BigInt): Bool = (n % 2ii) != 0ii
 
     ///
     /// Returns `true` iff the given number `n` is even.
     ///
-    def isEven(n: BigInt): Bool = !isOdd(n)
+    pub def isEven(n: BigInt): Bool = !isOdd(n)
 
     let ConstantParity<> = (Bot, Top, equ, leq, lub, glb)
 

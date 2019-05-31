@@ -60,10 +60,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
     val declarationsVal = traverse(root.decls)(visitDecl)
     val propertiesVal = visitAllProperties(root)
+    val loc = mkSL(root.sp1, root.sp2)
 
     mapN(declarationsVal, propertiesVal) {
       case (decls1, decls2) =>
-        WeededAst.Root(decls1.flatten ++ decls2)
+        WeededAst.Root(decls1.flatten ++ decls2, loc)
     }
   }
 
@@ -370,8 +371,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given expression.
     */
   private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
-    case ParsedAst.Expression.Wild(sp1, sp2) => IllegalWildcard(mkSL(sp1, sp2)).toFailure
-
     case ParsedAst.Expression.SName(sp1, ident, sp2) =>
       val qname = Name.mkQName(ident)
       WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
@@ -496,6 +495,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
         case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Statement(exp1, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.Stm(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
@@ -968,21 +973,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (rs, d) => WeededAst.Expression.SelectChannel(rs, d, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
+    case ParsedAst.Expression.ProcessSpawn(sp1, exp, sp2) =>
       visitExp(exp) map {
-        case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.ProcessSpawn(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Sleep(sp1, exp, sp2) =>
+    case ParsedAst.Expression.ProcessSleep(sp1, exp, sp2) =>
       visitExp(exp) map {
-        case e => WeededAst.Expression.Sleep(e, mkSL(sp1, sp2))
+        case e => WeededAst.Expression.ProcessSleep(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Statement(exp1, exp2, sp2) =>
-      val sp1 = leftMostSourcePosition(exp1)
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.Let(Name.Ident(sp1, "_temp", sp1), e1, e2, mkSL(sp1, sp2)) //TODO skal spX i LetRec være sp1?
-      }
+    case ParsedAst.Expression.ProcessPanic(sp1, msg, sp2) =>
+      WeededAst.Expression.ProcessPanic(msg.lit, mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs0, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1030,9 +1032,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val sp1 = leftMostSourcePosition(exp1)
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
-
-    case ParsedAst.Expression.UserError(sp1, sp2) =>
-      WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
   }
 
 
@@ -1158,15 +1157,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
      * Local visitor.
      */
     def visit(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = pattern match {
-      case ParsedAst.Pattern.Wild(sp1, sp2) => WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Pattern.Var(sp1, ident, sp2) => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> ident)
-          WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
-        case Some(otherIdent) =>
-          NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
-      }
+      case ParsedAst.Pattern.Var(sp1, ident, sp2) =>
+        // Check if the identifier is a wildcard.
+        if (ident.name == "_") {
+          WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
+        } else {
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
+            case Some(otherIdent) =>
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+          }
+        }
 
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) => visitLitPat(lit)
 
@@ -1525,7 +1528,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     traverse(fparams) {
       case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
         case None =>
-          seen += (ident.name -> param)
+          if (!ident.name.startsWith("_")) {
+            // Wildcards cannot be duplicate.
+            seen += (ident.name -> param)
+          }
+
           visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline)) flatMap {
             case mod =>
               if (typeRequired && typeOpt.isEmpty)
@@ -1763,7 +1770,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns the left most source position in the sub-tree of the expression `e`.
     */
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
-    case ParsedAst.Expression.Wild(sp1, _) => sp1
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
@@ -1776,6 +1782,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
@@ -1819,15 +1826,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
-    case ParsedAst.Expression.Sleep(sp1, _, _) => sp1
-    case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.ProcessSpawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.ProcessSleep(sp1, _, _) => sp1
+    case ParsedAst.Expression.ProcessPanic(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
-    case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 
   /**
@@ -1944,7 +1950,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
-    WeededAst.Root(List(decl))
+    WeededAst.Root(List(decl), SourceLocation.Unknown)
   }
 
 }

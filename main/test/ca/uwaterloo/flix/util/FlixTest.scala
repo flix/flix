@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
 
-class FlixTest(name: String, paths: String*)(implicit compiled: Boolean = true) extends FunSuite {
+class FlixTest(name: String, paths: String*)(implicit options: Options = Options.DefaultTest) extends FunSuite {
 
   /**
     * Returns the name of the test suite.
@@ -33,12 +33,8 @@ class FlixTest(name: String, paths: String*)(implicit compiled: Boolean = true) 
     * Attempts to initialize all the tests.
     */
   private def init(): Unit = {
-    // Use interpreter or compiler?
-    val evaluation = if (compiled) Evaluation.Compiled else Evaluation.Interpreted
-
     // Options and Flix object.
-    val opts = Options.DefaultTest.copy(core = false, evaluation = evaluation)
-    val flix = new Flix().setOptions(opts)
+    val flix = new Flix().setOptions(options)
 
     // Add the given path.
     for (path <- paths)

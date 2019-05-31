@@ -19,13 +19,24 @@ package ca.uwaterloo.flix.language.ast
 /**
   * Represents the computational effect of an expression.
   */
-sealed trait Eff
+sealed trait Eff {
+
+  def isPure: Boolean = this match {
+    case Eff.Pure => true
+    case Eff.Impure => false
+  }
+
+}
 
 object Eff {
 
   /**
     * Represents the empty effect.
     */
-  val Empty: Eff = null
+  val Empty: Eff = Impure
+
+  case object Pure extends Eff
+
+  case object Impure extends Eff
 
 }

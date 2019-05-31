@@ -1,6 +1,5 @@
 namespace Test/Predicate/Atom {
     rel A(x: Int, y: Int, z: Int)
-    rel B(x: Int, y: Int, z: Int)
 
     @test
     def testAtomWithParam01(): Bool =

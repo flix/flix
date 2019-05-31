@@ -322,17 +322,20 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Spawn(e, tpe, loc)
+        Expression.ProcessSpawn(e, tpe, loc)
 
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Sleep(e, tpe, loc)
+        Expression.ProcessSleep(e, tpe, loc)
+
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        Expression.ProcessPanic(msg, tpe, loc)
 
       case Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0)
@@ -343,9 +346,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
@@ -356,8 +359,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
-
-      case Expression.UserError(tpe, loc) => e
 
       case Expression.HoleError(sym, tpe, loc) => e
 

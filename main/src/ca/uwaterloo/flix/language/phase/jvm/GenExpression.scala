@@ -1031,7 +1031,7 @@ object GenExpression {
       // Jump here if the correct rule has been evaluated
       visitor.visitLabel(completedLabel)
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.ProcessSpawn(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       // Compile the expression, putting a function implementing the Spawnable interface on the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1042,7 +1042,7 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.Sleep(exp, tpe, loc) =>
+    case Expression.ProcessSleep(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       // Compile the expression, putting the time to sleep in ns (as a long) on top of the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1071,6 +1071,11 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      // TODO: Throw a more specific exception?
+      addSourceLine(visitor, loc)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
+
     case Expression.FixpointConstraint(con, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
@@ -1091,7 +1096,7 @@ object GenExpression {
       // Emit code for the invocation of compose.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "compose", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false);
 
-    case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1132,10 +1137,6 @@ object GenExpression {
 
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
-
-    case Expression.UserError(_, loc) =>
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)

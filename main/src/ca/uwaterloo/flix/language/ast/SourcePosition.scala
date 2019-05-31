@@ -17,4 +17,21 @@ object SourcePosition {
   * @param col   the column number.
   * @param input the parser input.
   */
-case class SourcePosition(source: Source, line: Int, col: Int, input: Option[ParserInput])
+case class SourcePosition(source: Source, line: Int, col: Int, input: Option[ParserInput]) {
+
+  /**
+    * Returns the hashCode of `this` source position.
+    */
+  override def hashCode(): Int = source.hashCode() + line + col
+
+  /**
+    * Returns `true` if `this` and `o` represent the same source position.
+    */
+  override def equals(o: Any): Boolean = o match {
+    case that: SourcePosition =>
+      this.source == that.source &&
+        this.line == that.line &&
+        this.col == that.col
+    case _ => false
+  }
+}

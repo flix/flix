@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
@@ -40,6 +41,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     implicit val _ = flix.genSym
 
+    // compute all the source locations
+    val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
+      case (macc, root) => macc + (root.loc.source -> root.loc)
+    }
+
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       defs = Map.empty,
@@ -53,7 +59,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       latticeComponents = Map.empty,
       named = Map.empty,
       properties = Map.empty,
-      reachable = program.reachable
+      reachable = program.reachable,
+      sources = locations
     )
 
     // collect all the declarations.
@@ -566,8 +573,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
       val fparam = visitFormalParam(fparam0, tenv0)
-      val env1 = Map(fparam.sym.text -> fparam.sym)
-      visitExp(exp, env0 ++ env1, tenv0) map {
+      val env1 = env0 + (fparam.sym.text -> fparam.sym)
+      visitExp(exp, env1, tenv0) map {
         case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
       }
 
@@ -586,6 +593,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val e3 = visitExp(exp3, env0, tenv0)
       mapN(e1, e2, e3) {
         NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.Stm(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1, env0, tenv0)
+      val e2 = visitExp(exp2, env0, tenv0)
+      mapN(e1, e2) {
+        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
@@ -850,15 +864,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.Spawn(exp, loc) =>
+    case WeededAst.Expression.ProcessSpawn(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.Sleep(exp, loc) =>
+    case WeededAst.Expression.ProcessSleep(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Sleep(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), loc)
       }
+
+    case WeededAst.Expression.ProcessPanic(msg, loc) =>
+      NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.FixpointConstraint(con, loc) =>
       visitConstraint(con, env0, tenv0) map {
@@ -884,8 +901,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), loc)
       }
-
-    case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
   }
 
   /**
@@ -1099,6 +1114,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case WeededAst.Expression.Stm(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) => freeVars(exp1) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) => filterBoundVars(freeVars(exp1), List(ident)) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
@@ -1149,15 +1165,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
-    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Sleep(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ProcessSpawn(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.UserError(loc) => Nil
   }
 
   /**
@@ -1243,7 +1259,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitFormalParam(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.FormalParam = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
-      val freshSym = Symbol.freshVarSym(ident)
+      val freshSym = if (ident.name == "_")
+        Symbol.freshVarSym("_")
+      else
+        Symbol.freshVarSym(ident)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
       val tpe = optType match {
@@ -1438,7 +1457,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns a variable environment constructed from the given formal parameters `fparams0`.
     */
   private def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
-    fparams0.map(p => p.sym.text -> p.sym).toMap
+    fparams0.foldLeft(Map.empty[String, Symbol.VarSym]) {
+      case (macc, NamedAst.FormalParam(sym, mod, tpe, loc)) =>
+        if (sym.isWild()) macc else macc + (sym.text -> sym)
+    }
   }
 
   /**

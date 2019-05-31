@@ -47,6 +47,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh hole symbol associated with the given source location `loc`.
+    */
+  def freshHoleSym(loc: SourceLocation)(implicit genSym: GenSym): HoleSym = {
+    val id = genSym.freshId()
+    new HoleSym(Nil, "h" + id, loc)
+  }
+
+  /**
     * Returns a fresh variable symbol with no additional information.
     */
   def freshVarSym()(implicit genSym: GenSym): VarSym = {
@@ -198,6 +206,11 @@ object Symbol {
       * The internal stack offset. Computed during variable numbering.
       */
     private var stackOffset: Option[Int] = None
+
+    /**
+      * Returns `true`if `this` symbol is a wildcard.
+      */
+    def isWild(): Boolean = text.startsWith("_")
 
     /**
       * Returns the stack offset of `this` variable symbol.

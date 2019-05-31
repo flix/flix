@@ -79,6 +79,9 @@ object TypedAstOps {
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
 
+      case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
       case Expression.Match(matchExp, rules, tpe, eff, loc) =>
         val m = visitExp(matchExp, env0)
         rules.foldLeft(m) {
@@ -208,16 +211,18 @@ object TypedAstOps {
 
         rs ++ d
 
-      case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
+      case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+      case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+
+      case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
       case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
@@ -226,8 +231,6 @@ object TypedAstOps {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.UserError(tpe, eff, loc) => Map.empty
     }
 
     /**

@@ -345,7 +345,6 @@ object JvmOps {
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
   }
 
 
@@ -651,21 +650,22 @@ object JvmOps {
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
-      case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
+      case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
+      case Expression.ProcessSleep(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.ProcessPanic(msg, tpe, loc) => Set.empty
 
       case Expression.FixpointConstraint(con, tpe, loc) => Set.empty
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp)
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
@@ -936,21 +936,22 @@ object JvmOps {
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
-      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.Sleep(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.ProcessSleep(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.ProcessPanic(msg, tpe, loc) => Set(tpe)
 
       case Expression.FixpointConstraint(c, tpe, loc) => visitConstraint(c) + tpe
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
       case Expression.MatchError(tpe, loc) => Set(tpe)
       case Expression.SwitchError(tpe, loc) => Set(tpe)

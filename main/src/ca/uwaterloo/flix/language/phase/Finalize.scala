@@ -70,7 +70,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable).toSuccess
+    FinalAst.Root(defs ++ m, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -427,15 +427,19 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.SelectChannel(rs, d, t, loc)
 
-      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Spawn(e, t, loc)
+        FinalAst.Expression.ProcessSpawn(e, t, loc)
 
-      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.Sleep(e, t, loc)
+        FinalAst.Expression.ProcessSleep(e, t, loc)
+
+      case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.ProcessPanic(msg, t, loc)
 
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)
@@ -448,10 +452,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointCompose(e1, e2, t, loc)
 
-      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointSolve(Ast.freshUId(), e, Ast.Stratification.Empty, t, loc)
+        FinalAst.Expression.FixpointSolve(e, stf, t, loc)
 
       case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred, m)
@@ -464,10 +468,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e2 = visit(exp2)
         val t = visitType(tpe)
         FinalAst.Expression.FixpointEntails(e1, e2, t, loc)
-
-      case SimplifiedAst.Expression.UserError(tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expression.UserError(t, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)

@@ -28,7 +28,7 @@ object BytecodeLoader {
   /**
     * Loads the given JVM `classes` using a custom class loader.
     */
-  def loadAll(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Map[JvmName, Class[_]] = {
+  def loadAll(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Map[JvmName, Class[_]] = flix.subphase("LoadClasses") {
     //
     // Compute a map from binary names (strings) to JvmClasses.
     //

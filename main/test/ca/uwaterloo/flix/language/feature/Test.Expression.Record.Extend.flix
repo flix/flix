@@ -30,19 +30,19 @@ def testRecordExtend04(): { fstName: Str, lstName: Str, age: Int, cowboy: Bool }
 
 @test
 def testRecordForkExtend01(): Unit =
-    let r0 = { lstName = "Lannister" };
-    let r1 = { +fstName = "Tywin" | r0 };
-    let r2 = { +fstName = "Jaime" | r0 };
-    let r3 = { +lstName = "Cersei" | r0 };
-    let r4 = { +lstName = "Tyrion" | r0 };
+    let r = { lstName = "Lannister" };
+    let _ = { +fstName = "Tywin" | r };
+    let _ = { +fstName = "Jaime" | r };
+    let _ = { +lstName = "Cersei" | r };
+    let _ = { +lstName = "Tyrion" | r };
     ()
 
 @test
 def testRecordForkExtend02(): Unit =
     let r0 = { x = 0, y = 0 };
     let r1 = { +z = 0 | r0 };
-    let r2 = { +color = "red" | r1 };
-    let r4 = { +color = "blu" | r1 };
+    let _ = { +color = "red" | r1 };
+    let _ = { +color = "blu" | r1 };
     ()
 
 @test
@@ -76,8 +76,6 @@ def testRecordDuplicateExtend04(): Bool =
         r1.x != r2.x
 
 @test
-def testRecordDuplicateExtend05(): Unit =
+def testRecordDuplicateExtend05(): { x: List[Int], x: Int } =
     let r0 = { +x = 123 | {} };
-    let r1 = { +x = Some(12345) | r0 };
-    let r2 = { +x = 123 :: Nil  | r0 };
-        ()
+    { +x = 123 :: Nil  | r0 }

@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.FunSuite
 
 import scala.reflect.ClassTag
@@ -28,15 +29,21 @@ trait TestUtils {
   this: FunSuite =>
 
   /**
+    * Compiles the given input string `s` with the given compilation options `o`.
+    */
+  def compile(s: String, o: Options): Validation[CompilationResult, CompilationError] = new Flix().setOptions(o).addStr(s).compile()
+
+  /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
   def expectError[T](result: Validation[CompilationResult, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
-      val actual = errors.head.getClass
-      if (expected != actual)
-        fail(s"Expected an error of type ${expected.getSimpleName}, but got ${actual.getSimpleName}.")
+      val actuals = errors.map(_.getClass)
+
+      if (!actuals.contains(expected))
+        fail(s"Expected an error of type ${expected.getSimpleName}, but found ${actuals.mkString(", ")}.")
   }
 
 }

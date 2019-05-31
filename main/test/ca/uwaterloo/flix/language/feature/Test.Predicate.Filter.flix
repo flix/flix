@@ -85,12 +85,10 @@ def testFilter13(): Schema { R } = solve {
 //}
 
 rel A(x: Int)
-rel B(x: Int)
 rel R(x: Str)
 
 def success(): Bool = true
 def failure(): Bool = false
 def isZero(x: Int): Bool = x == 0
-def isSame(x: Int, y: Int): Bool = x == y
 def increment(x: Int): Int = x + 1
 def decrement(x: Int): Int = x - 1

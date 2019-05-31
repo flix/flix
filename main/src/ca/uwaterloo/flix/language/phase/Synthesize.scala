@@ -134,6 +134,11 @@ object Synthesize extends Phase[Root, Root] {
         val e3 = visitExp(exp3)
         Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
+      case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Stm(e1, e2, tpe, eff, loc)
+
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
@@ -304,17 +309,20 @@ object Synthesize extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 
-      case Expression.Spawn(exp, tpe, eff, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.Spawn(e, tpe, eff, loc)
+        Expression.ProcessSpawn(e, tpe, eff, loc)
 
-      case Expression.Sleep(exp, tpe, eff, loc) =>
+      case Expression.ProcessSleep(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.Sleep(e, tpe, eff, loc)
+        Expression.ProcessSleep(e, tpe, eff, loc)
+
+      case Expression.ProcessPanic(msg, tpe, eff, loc) =>
+        Expression.ProcessPanic(msg, tpe, eff, loc)
 
       case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
@@ -325,9 +333,9 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, eff, loc)
+        Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
@@ -338,9 +346,6 @@ object Synthesize extends Phase[Root, Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
-
-      case Expression.UserError(tpe, eff, loc) =>
-        Expression.UserError(tpe, eff, loc)
 
     }
 
@@ -464,7 +469,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -684,7 +689,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -913,7 +918,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -1230,7 +1235,7 @@ object Synthesize extends Phase[Root, Root] {
      * (a) Every type that appears as return type of some definition.
      */
     val typesInDefs: Set[Type] = root.defs.map {
-      case (_, Def(_, _, _, _, _, _, exp, _, _, _)) => exp.tpe
+      case (_, Def(_, _, _, _, _, _, exp, _, _, _, _)) => exp.tpe
     }.toSet
 
     /*
@@ -1238,12 +1243,12 @@ object Synthesize extends Phase[Root, Root] {
      */
     // TODO: Need to deal with polymorphic attributes.
     val typesInRels = root.relations.flatMap {
-      case (_, Relation(_, _, _, attributes, _)) => attributes.map {
+      case (_, Relation(_, _, _, _, attributes, _)) => attributes.map {
         case Attribute(_, tpe, _) => tpe
       }
     }
     val typesInLats = root.lattices.flatMap {
-      case (_, Lattice(_, _, _, attributes, _)) =>
+      case (_, Lattice(_, _, _, _, attributes, _)) =>
         attributes.map {
           case Attribute(_, tpe, _) => tpe
         }

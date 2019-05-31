@@ -224,8 +224,10 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
-        Effects |>
+        Stratifier |>
         PatternExhaustiveness |>
+        Redundancy |>
+        Trivial |>
         Safety
 
     // Apply the pipeline to the parsed AST.
@@ -250,11 +252,10 @@ class Flix {
       TreeShaker |>
       VarNumbering |>
       Finalize |>
-      Stratifier |>
       QuickChecker |>
       Verifier |>
-      NJvmBackend
-//      JvmBackend
+      JvmBackend |>
+      Finish
 
     // Apply the pipeline to the parsed AST.
     pipeline.run(typedAst)(this)
@@ -297,7 +298,7 @@ class Flix {
       Console.println(emojiPart + phasePart + timePart)
 
       // Print information about each subphase.
-      for ((subphase, e) <- currentPhase.subphases) {
+      for ((subphase, e) <- currentPhase.subphases.reverse) {
         val d = new Duration(e)
         val emojiPart = "    "
         val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")

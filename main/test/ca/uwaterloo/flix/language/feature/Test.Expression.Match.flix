@@ -37,7 +37,7 @@ def testMatchWildcard05(): Bool = assertEq!(f03(1), 11)
 def testMatchWildcard06(): Bool = assertEq!(f03(99999), 11)
 
 def f04(x: Int): Int = match x with {
-  case a => 1
+  case _ => 1
 }
 
 @test
@@ -402,7 +402,7 @@ enum Val25 { case Nip25, case Val25((Str, Int)) }
 def f25(x: Val25): Int = match x with {
   case Val25.Nip25 => 0
   case Val25.Val25(v) => match v with {
-    case ("x", y) => -1
+    case ("x", _) => -1
     case (_, y) => y
   }
 }
@@ -424,7 +424,7 @@ enum Val26 { case Nip26, case Val26((Str, Int)) }
 def f26(x: Val26): Int = match x with {
   case Val26.Nip26 => 0
   case Val26.Val26(v) => match v with {
-    case (x, y) => match x with {
+    case (w, y) => match w with {
       case "x" => -1
       case _ => match y with {
         case z => z
@@ -458,7 +458,7 @@ def f27(x: B27): Str = match x with {
     }
     case A27.AB27(b) => match b with {
       case 0 => "b0"
-      case z => "bbb"
+      case _ => "bbb"
     }
   }
   case B27.Bot27 => "bot"
@@ -682,10 +682,10 @@ def testMatchTuple25(): Bool = assertEq!(f45(3, NameAndAge45.T45("Anne", 18)), -
 def testMatchTuple26(): Bool = assertEq!(f45(4, NameAndAge45.T45("Charles", 64)), -1)
 
 def f46(x: Int, y: Int): Int = match (x, y) with {
-  case (x, y) => match x with {
-    case 0 => y
-    case _ => match y with {
-      case 0 => x
+  case (u, v) => match u with {
+    case 0 => v
+    case _ => match v with {
+      case 0 => u
       case _ => 0
     }
   }

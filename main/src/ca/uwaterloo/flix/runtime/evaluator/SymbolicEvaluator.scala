@@ -857,13 +857,13 @@ object SymbolicEvaluator {
         */
       case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      // TODO SJ:
       case Expression.NewChannel(tpe, exp, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.GetChannel(exp ,tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.GetChannel(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.PutChannel(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.SelectChannel(rules, default, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.Spawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.Sleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.ProcessSpawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.ProcessSleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.ProcessPanic(msg, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Constraint.
@@ -878,7 +878,7 @@ object SymbolicEvaluator {
       /**
         * Fixpoint Solve.
         */
-      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Project.
@@ -889,11 +889,6 @@ object SymbolicEvaluator {
         * Fixpoint Entails.
         */
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * User Error.
-        */
-      case Expression.UserError(tpe, loc) => throw new NotImplementedError(loc.reified)
 
       /**
         * Hole Error.

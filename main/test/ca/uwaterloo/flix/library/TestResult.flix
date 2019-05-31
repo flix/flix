@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace TestResult {
+
 /////////////////////////////////////////////////////////////////////////////
 // isOk                                                                    //
 /////////////////////////////////////////////////////////////////////////////
@@ -214,3 +216,5 @@ def toOption01(): Bool = Result.toOption(Err(-1ii)) `assertEq!` None
 
 @test
 def toOption02(): Bool = Result.toOption(Ok(1)) `assertEq!` Some(1)
+
+}

@@ -155,7 +155,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     */
   private def mkFlix(input: String)(implicit ws: WebSocket): Flix = {
     val flix = new Flix()
-    val opts = Options.Default.copy(writeClassFiles = false)
+    val opts = Options.Default.copy(writeClassFiles = false, xallowredundancies = true)
     flix.setOptions(opts)
     flix.addStr(input)
   }

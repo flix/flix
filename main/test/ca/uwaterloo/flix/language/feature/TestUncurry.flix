@@ -106,7 +106,7 @@ def testZeroArgs01(): Bool = {
 @test
 def nestedDef01(): Bool = {
   let id: Int32 -> Int32 = i -> {
-    let nested = y -> x -> i;
+    let nested = _ -> _ -> i;
     nested(3)(3)
   };
 

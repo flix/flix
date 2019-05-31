@@ -312,13 +312,16 @@ object ClosureConv extends Phase[Root, Root] {
 
       Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.ProcessSpawn(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
+      Expression.ProcessSpawn(e, tpe, loc)
 
-    case Expression.Sleep(exp, tpe, loc) =>
+    case Expression.ProcessSleep(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.Sleep(e, tpe, loc)
+      Expression.ProcessSleep(e, tpe, loc)
+
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      Expression.ProcessPanic(msg, tpe, loc)
 
     case Expression.FixpointConstraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
@@ -332,9 +335,9 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.FixpointCompose(e1, e2, tpe, loc)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.FixpointSolve(e, tpe, loc)
+      Expression.FixpointSolve(e, stf, tpe, loc)
 
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val p = visitPredicateWithParam(pred)
@@ -346,7 +349,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.FixpointEntails(e1, e2, tpe, loc)
 
-    case Expression.UserError(tpe, loc) => exp0
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
     case Expression.SwitchError(tpe, loc) => exp0
@@ -508,19 +510,22 @@ object ClosureConv extends Phase[Root, Root] {
       val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
 
       rs ++ d
-    case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
-    case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessSpawn(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessSleep(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
       freeVars(head) ++ body.flatMap(freeVars)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
+    case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
     case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(pred.exp) ++ freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -820,17 +825,20 @@ object ClosureConv extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Spawn(e, tpe, loc)
+        Expression.ProcessSpawn(e, tpe, loc)
 
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Sleep(e, tpe, loc)
+        Expression.ProcessSleep(e, tpe, loc)
+
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        Expression.ProcessPanic(msg, tpe, loc)
 
       case Expression.FixpointConstraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con
@@ -848,9 +856,9 @@ object ClosureConv extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
@@ -862,7 +870,6 @@ object ClosureConv extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.UserError(tpe, loc) => e
       case Expression.HoleError(sym, tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e

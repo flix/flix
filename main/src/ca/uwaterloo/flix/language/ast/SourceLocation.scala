@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.debug.FormatSourceLocation
 import flix.runtime.ReifiedSourceLocation
 
 
@@ -58,5 +59,28 @@ case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine
     * Returns a reified source location.
     */
   def reified: ReifiedSourceLocation = new ReifiedSourceLocation(source.format, beginLine, beginCol, endLine, endCol)
+
+  /**
+    * Returns the hashCode of `this` source location.
+    */
+  override def hashCode(): Int = source.hashCode() + beginLine + beginCol + endLine + endCol
+
+  /**
+    * Returns `true` if `this` and `o` represent the same source location.
+    */
+  override def equals(o: Any): Boolean = o match {
+    case that: SourceLocation =>
+      this.source == that.source &&
+        this.beginLine == that.beginLine &&
+        this.beginCol == that.beginCol &&
+        this.endLine == that.endLine &&
+        this.endCol == that.endCol
+    case _ => false
+  }
+
+  /**
+    * Returns a human-readable string representation for debugging.
+    */
+  override def toString: String = FormatSourceLocation.format(this)
 
 }

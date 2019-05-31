@@ -164,7 +164,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeEffSym(sym, subst0(tpe))
           Expression.Eff(newSym, subst0(tpe), eff, loc)
 
-        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc)
+        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
         case Expression.True(loc) => Expression.True(loc)
@@ -259,6 +259,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           val e3 = visitExp(exp3, env0)
           Expression.IfThenElse(e1, e2, e3, subst0(tpe), eff, loc)
+
+        case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.Stm(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.Match(exp, rules, tpe, eff, loc) =>
           val rs = rules map {
@@ -446,13 +451,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
 
-        case Expression.Spawn(exp, tpe, eff, loc) =>
+        case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Spawn(e, subst0(tpe), eff, loc)
+          Expression.ProcessSpawn(e, subst0(tpe), eff, loc)
 
-        case Expression.Sleep(exp, tpe, eff, loc) =>
+        case Expression.ProcessSleep(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Sleep(e, subst0(tpe), eff, loc)
+          Expression.ProcessSleep(e, subst0(tpe), eff, loc)
+
+        case Expression.ProcessPanic(msg, tpe, eff, loc) =>
+          Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
           val Constraint(cparams0, head0, body0, loc) = c0
@@ -467,9 +475,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
-        case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointSolve(e, tpe, eff, loc)
+          Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
           val p = visitPredicateWithParam(pred, env0)
@@ -480,8 +488,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.FixpointEntails(e1, e2, tpe, eff, loc)
-
-        case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }
 
       /**

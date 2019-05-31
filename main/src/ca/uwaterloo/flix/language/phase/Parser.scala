@@ -111,7 +111,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     rule {
-      Imports ~ Decls ~ optWS ~ EOI ~> ParsedAst.Root
+      SP ~ Imports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
     }
   }
 
@@ -583,10 +583,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
+        GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve |
         FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
-        UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        UnaryLambda | QName | Tag | SName | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -684,12 +684,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    def ProcessSpawn: Rule1[ParsedAst.Expression.ProcessSpawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ProcessSpawn
     }
 
-    def Sleep: Rule1[ParsedAst.Expression.Sleep] = rule {
-      SP ~ atomic("sleep") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Sleep
+    def ProcessSleep: Rule1[ParsedAst.Expression.ProcessSleep] = rule {
+      SP ~ atomic("sleep") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.ProcessSleep
+    }
+
+    def ProcessPanic: Rule1[ParsedAst.Expression.ProcessPanic] = rule {
+      SP ~ atomic("panic") ~ WS ~ Literals.Str ~ SP ~> ParsedAst.Expression.ProcessPanic
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
@@ -822,10 +826,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Wild: Rule1[ParsedAst.Expression.Wild] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Expression.Wild
-    }
-
     def SName: Rule1[ParsedAst.Expression.SName] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Expression.SName
     }
@@ -834,8 +834,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
     }
 
-    def Hole: Rule1[ParsedAst.Expression.Hole] = rule {
-      SP ~ atomic("?") ~ Names.Hole ~ SP ~> ParsedAst.Expression.Hole
+    def Hole: Rule1[ParsedAst.Expression.Hole] = {
+      def AnonymousHole: Rule1[ParsedAst.Expression.Hole] = rule {
+        SP ~ atomic("???") ~ SP ~> ((sp1: SourcePosition, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, None, sp2))
+      }
+
+      def NamedHole: Rule1[ParsedAst.Expression.Hole] = rule {
+        SP ~ atomic("?") ~ Names.Hole ~ SP ~> ((sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) => ParsedAst.Expression.Hole(sp1, Some(name), sp2))
+      }
+
+      rule {
+        AnonymousHole | NamedHole
+      }
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -861,10 +871,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
-    }
-
-    def UserError: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
     }
 
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
@@ -906,18 +912,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Literal | Tuple | Wildcard | Variable
+      FNil | Tag | Lit | Tuple | Var
     }
 
-    def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
-      SP ~ atomic("_") ~ SP ~> ParsedAst.Pattern.Wild
-    }
-
-    def Variable: Rule1[ParsedAst.Pattern.Var] = rule {
+    def Var: Rule1[ParsedAst.Pattern.Var] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Pattern.Var
     }
 
-    def Literal: Rule1[ParsedAst.Pattern.Lit] = rule {
+    def Lit: Rule1[ParsedAst.Pattern.Lit] = rule {
       SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Pattern.Lit
     }
 
@@ -1059,7 +1061,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Schema: Rule1[ParsedAst.Type] =rule {
+    def Schema: Rule1[ParsedAst.Type] = rule {
       SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
     }
 
@@ -1161,7 +1163,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * A lowercase letter.
       */
-    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha
+    val LowerLetter: CharPredicate = CharPredicate.LowerAlpha ++ "_"
 
     /**
       * An uppercase letter.
@@ -1188,7 +1190,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * a (upper/lower case) letter, numeral, greek letter, or other legal character.
       */
-    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "'" ++ "!"
+    val LegalLetter: CharPredicate = CharPredicate.AlphaNum ++ "_" ++ "!"
 
     /**
       * A lowercase identifier is a lowercase letter optionally followed by any letter, underscore, or prime.

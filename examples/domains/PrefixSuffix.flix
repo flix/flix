@@ -83,9 +83,9 @@ namespace Domain/PrefixSuffix {
     #nonNegative #decreasing(equ, leq)
     pub def height(e: PrefixSuffix): BigInt = match e with {
         case Top            => 0ii
-        case Pre(p)         => 1ii
-        case Suf(s)         => 1ii
-        case PreSuf(p, s)   => 2ii
+        case Pre(_)         => 1ii
+        case Suf(_)         => 1ii
+        case PreSuf(_, _)   => 2ii
         case Bot            => 3ii
     }
 
@@ -93,7 +93,7 @@ namespace Domain/PrefixSuffix {
     /// Over-approximates `concatenate`.
     ///
     #strict2 #monotone2 #associative
-    def concatenate(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
+    pub def concatenate(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot
         case (PreSuf(p1, _), PreSuf(_, s2)) => PreSuf(p1, s2)
@@ -118,7 +118,7 @@ namespace Domain/PrefixSuffix {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)            => Belnap/Belnap.Bot
         case (_, Bot)            => Belnap/Belnap.Bot
         case (PreSuf(p1, s1), PreSuf(p2, s2)) => switch {
@@ -141,7 +141,7 @@ namespace Domain/PrefixSuffix {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     let PrefixSuffix<> = (Bot, Top, equ, leq, lub, glb)
 
