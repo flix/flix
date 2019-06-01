@@ -383,6 +383,7 @@ object Continuations extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   private def fixArrowType(tpe: Type, kont0ReturnType: Type): Type = {
+    // TODO SJJ: This is wrong when you have arrow types inside other composite types. ie array of lambdas
     if (tpe.isArrow) {
       val kType = Type.mkArrow(fixArrowType(getReturnType(tpe), kont0ReturnType), kont0ReturnType)
       val lst: List[Type] = tpe.typeArguments.init :+ kType
