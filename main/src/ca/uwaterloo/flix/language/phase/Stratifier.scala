@@ -369,9 +369,15 @@ object Stratifier extends Phase[Root, Root] {
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
     case Expression.FixpointConstraint(con, tpe, eff, loc) =>
+      // TODO: The constraint itself might not be stratified.
       Expression.FixpointConstraint(con, tpe, eff, loc).toSuccess
 
+    case Expression.FixpointConstraintSet(cs, tpe, eff, loc) =>
+      // TODO: The constraint itself might not be stratified.
+      Expression.FixpointConstraintSet(cs, tpe, eff, loc).toSuccess
+
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
+      // TODO: Check if the composition is stratified.
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
       }
@@ -637,6 +643,11 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.FixpointConstraint(con, _, _, _) =>
       dependencyGraphOfConstraint(con)
+
+    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+      cs.foldLeft(DependencyGraph.empty) {
+        case (dg, c) => dg + dependencyGraphOfConstraint(c)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)

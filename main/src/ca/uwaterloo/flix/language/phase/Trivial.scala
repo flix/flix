@@ -429,6 +429,9 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointConstraint(c, _, _, _) =>
         visitConstraint(c)
 
+      case Expression.FixpointConstraintSet(cs, _, _, _) =>
+        cs.flatMap(visitConstraint)
+
       case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 

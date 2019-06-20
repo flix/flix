@@ -756,6 +756,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             case c => ResolvedAst.Expression.FixpointConstraint(c, tvar, loc)
           }
 
+        case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
+          for {
+            cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, prog0))
+          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
+
         case NamedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
