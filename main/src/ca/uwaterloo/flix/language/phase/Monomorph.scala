@@ -463,11 +463,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-          val c = visitConstraint(c0)
+          val c = visitConstraint(c0, env0)
           Expression.FixpointConstraint(c, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
-          val cs = cs0.map(visitConstraint)
+          val cs = cs0.map(visitConstraint(_, env0))
           Expression.FixpointConstraintSet(cs, subst0(tpe), eff, loc)
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
@@ -522,9 +522,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       /**
-        * Specializes the given constraint `c0`.
+        * Specializes the given constraint `c0` w.r.t. the given environment and current substitution.
         */
-      def visitConstraint(c0: Constraint): Constraint = {
+      def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): Constraint = {
         val Constraint(cparams0, head0, body0, loc) = c0
         val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
         val head = visitHeadPredicate(head0, env0 ++ env1)
