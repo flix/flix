@@ -139,8 +139,8 @@ namespace Result {
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
     pub def toSet[t, e](r: Result[t, e]): Set[t] = match r with {
-        case Ok(v) => Set#{v}
-        case Err(_) => Set#{}
+        case Ok(v)  => Set.singleton(v)
+        case Err(_) => Set.empty()
     }
 
     ///
@@ -148,7 +148,7 @@ namespace Result {
     ///
     pub def toMap[k, v, e](r: Result[(k, v), e]): Map[k, v] = match r with {
         case Ok((k, v)) => Map.singleton(k, v)
-        case Err(_) => @{}
+        case Err(_)     => Map.empty()
     }
 
     ///

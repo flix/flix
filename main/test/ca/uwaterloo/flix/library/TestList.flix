@@ -1700,15 +1700,15 @@ def toSet08(): Bool = assert!(Set.eq(List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = assert!(Map.eq(List.toMap(Nil), @{}))
+def toMap01(): Bool = assert!(Map.eq(List.toMap(Nil), Map#{}))
 
 @test
-def toMap02(): Bool = assert!(Map.eq(List.toMap((1, true) :: Nil), @{1 -> true}))
+def toMap02(): Bool = assert!(Map.eq(List.toMap((1, true) :: Nil), Map#{1 -> true}))
 
 @test
-def toMap03(): Bool = assert!(Map.eq(List.toMap((1, true) :: (2, false) :: Nil), @{1 -> true, 2 -> false}))
+def toMap03(): Bool = assert!(Map.eq(List.toMap((1, true) :: (2, false) :: Nil), Map#{1 -> true, 2 -> false}))
 
 @test
-def toMap04(): Bool = assert!(Map.eq(List.toMap((1, true) :: (1, false) :: Nil), @{1 -> true}))
+def toMap04(): Bool = assert!(Map.eq(List.toMap((1, true) :: (1, false) :: Nil), Map#{1 -> true}))
 
 }

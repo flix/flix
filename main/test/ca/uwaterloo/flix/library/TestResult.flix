@@ -203,10 +203,10 @@ def toSet02(): Bool = Result.toSet(Ok(1)) `assertEq!` Set#{1}
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = Result.toMap(Err(-1ii)) `assertEq!` @{}
+def toMap01(): Bool = Result.toMap(Err(-1ii)) `assertEq!` Map#{}
 
 @test
-def toMap02(): Bool = Result.toMap(Ok((1, true))) `assertEq!` @{1 -> true}
+def toMap02(): Bool = Result.toMap(Ok((1, true))) `assertEq!` Map#{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
 // toOption                                                                //

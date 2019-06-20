@@ -161,10 +161,10 @@ def toSet02(): Bool = Option.toSet(Some(1)) `assertEq!` Set#{1}
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = Option.toMap(None) `assertEq!` @{}
+def toMap01(): Bool = Option.toMap(None) `assertEq!` Map#{}
 
 @test
-def toMap02(): Bool = Option.toMap(Some((1, true))) `assertEq!` @{1 -> true}
+def toMap02(): Bool = Option.toMap(Some((1, true))) `assertEq!` Map#{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //
