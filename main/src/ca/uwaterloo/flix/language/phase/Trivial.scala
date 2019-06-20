@@ -898,6 +898,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.FixpointConstraint(c, tpe, eff, loc) => ???
 
+        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => ???
+
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???

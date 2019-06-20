@@ -476,38 +476,26 @@ object SimplifiedAstOps {
       case Expression.ProcessPanic(msg, tpe, loc) =>
         checkType(tpe)
 
-      //
-      // Constraint.
-      //
-      case Expression.FixpointConstraint(c, tpe, loc) =>
+      case Expression.FixpointConstraint(_, tpe, _) =>
         checkType(tpe)
 
-      //
-      // ConstraintUnion.
-      //
+      case Expression.FixpointConstraintSet(_, tpe, _) =>
+        checkType(tpe)
+
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Fixpoint Solve.
-      //
       case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Fixpoint Project.
-      //
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         checkPredicateWithParam(pred, env0, ienv0)
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Fixpoint Project.
-      //
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)

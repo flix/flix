@@ -31,6 +31,7 @@ public final class ConstraintSystem {
     /**
      * Constructs a new constraint system of the given constraint `c`.
      */
+    // TODO: Deprecated
     public static ConstraintSystem of(Constraint c) {
         if (c == null)
             throw new IllegalArgumentException("'c' must be non-null.");

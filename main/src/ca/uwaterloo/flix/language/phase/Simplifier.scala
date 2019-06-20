@@ -1258,6 +1258,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val c = visitConstraint(c0)
         SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
 
+      case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint)
+        SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
+
       case SimplifiedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -529,8 +529,12 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
-      val Constraint(cparams, head, body) = con
-      freeVars(head) ++ body.flatMap(freeVars)
+      freeVars(con)
+
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+      cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
+        case (m, c) => m ++ freeVars(c)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
     case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
@@ -550,6 +554,14 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+  }
+
+  /**
+    * Returns the free variables in the given constraint `c0`.
+    */
+  private def freeVars(c0: Constraint): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = {
+    val Constraint(cparams, head, body) = c0
+    freeVars(head) ++ body.flatMap(freeVars)
   }
 
   /**
@@ -851,16 +863,13 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
 
-      case Expression.FixpointConstraint(con, tpe, loc) =>
-        val Constraint(cparams0, head0, body0) = con
-        val cs = cparams0 map {
-          case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
-          case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
-        }
-        val head = visitHeadPredicate(head0)
-        val body = body0 map visitBodyPredicate
-        val c = Constraint(cs, head, body)
+      case Expression.FixpointConstraint(c0, tpe, loc) =>
+        val c = visitConstraint(c0)
         Expression.FixpointConstraint(c, tpe, loc)
+
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint)
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -889,6 +898,17 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
       case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+    }
+
+    def visitConstraint(c0: Constraint): Constraint = {
+      val Constraint(cparams0, head0, body0) = c0
+      val cs = cparams0 map {
+        case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
+        case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
+      }
+      val head = visitHeadPredicate(head0)
+      val body = body0 map visitBodyPredicate
+      Constraint(cs, head, body)
     }
 
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {

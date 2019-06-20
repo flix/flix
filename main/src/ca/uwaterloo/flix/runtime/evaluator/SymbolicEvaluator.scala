@@ -865,29 +865,11 @@ object SymbolicEvaluator {
       case Expression.ProcessSleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.ProcessPanic(msg, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Constraint.
-        */
       case Expression.FixpointConstraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * ConstraintUnion.
-        */
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * Fixpoint Solve.
-        */
       case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * Fixpoint Project.
-        */
       case Expression.FixpointProject(pred, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * Fixpoint Entails.
-        */
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**

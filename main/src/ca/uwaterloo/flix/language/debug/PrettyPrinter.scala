@@ -447,6 +447,9 @@ object PrettyPrinter {
         case Expression.FixpointConstraint(c, tpe, loc) =>
           vt.text("<constraint>")
 
+        case Expression.FixpointConstraintSet(c, tpe, loc) =>
+          vt.text("<constraintset>")
+
         case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text("<+>")
