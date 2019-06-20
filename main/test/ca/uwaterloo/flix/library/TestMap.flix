@@ -176,22 +176,22 @@ def memberOf10(): Bool = assert!(Map.memberOf(-2, @{2 -> 1, 3 -> 17, -2 -> -2}))
 // keysOf                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def keysOf01(): Bool = assert!(Set.eq(Map.keysOf(@{}), #{}))
+def keysOf01(): Bool = assert!(Set.eq(Map.keysOf(@{}), Set#{}))
 
 @test
-def keysOf02(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2}), #{1}))
+def keysOf02(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2}), Set#{1}))
 
 @test
-def keysOf03(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4}), #{1, 2}))
+def keysOf03(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4}), Set#{1, 2}))
 
 @test
-def keysOf04(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6}), #{1, 2, 3}))
+def keysOf04(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6}), Set#{1, 2, 3}))
 
 @test
-def keysOf05(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}), #{1, 2, 3, 4}))
+def keysOf05(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}), Set#{1, 2, 3, 4}))
 
 @test
-def keysOf06(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}), #{1, 2, 3, 4, 5}))
+def keysOf06(): Bool = assert!(Set.eq(Map.keysOf(@{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}), Set#{1, 2, 3, 4, 5}))
 
 /////////////////////////////////////////////////////////////////////////////
 // valuesOf                                                                //
@@ -1467,16 +1467,16 @@ def differenceWithKey21(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = assert!(Set.eq(Map.toSet(@{}), #{}))
+def toSet01(): Bool = assert!(Set.eq(Map.toSet(@{}), Set#{}))
 
 @test
-def toSet02(): Bool = assert!(Set.eq(Map.toSet(@{1 -> 2}), #{(1, 2)}))
+def toSet02(): Bool = assert!(Set.eq(Map.toSet(@{1 -> 2}), Set#{(1, 2)}))
 
 @test
-def toSet03(): Bool = assert!(Set.eq(Map.toSet(@{1 -> 2, 3 -> 4}), #{(1, 2), (3, 4)}))
+def toSet03(): Bool = assert!(Set.eq(Map.toSet(@{1 -> 2, 3 -> 4}), Set#{(1, 2), (3, 4)}))
 
 @test
-def toSet04(): Bool = assert!(Set.eq(Map.toSet(@{1 -> 2, 2 -> 2, 3 -> 4}), #{(1, 2), (2, 2), (3, 4)}))
+def toSet04(): Bool = assert!(Set.eq(Map.toSet(@{1 -> 2, 2 -> 2, 3 -> 4}), Set#{(1, 2), (2, 2), (3, 4)}))
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //

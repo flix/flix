@@ -1673,28 +1673,28 @@ def findMap08(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 0
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = assert!(Set.eq(List.toSet(Nil), #{}))
+def toSet01(): Bool = assert!(Set.eq(List.toSet(Nil), Set#{}))
 
 @test
-def toSet02(): Bool = assert!(Set.eq(List.toSet(1 :: Nil), #{1}))
+def toSet02(): Bool = assert!(Set.eq(List.toSet(1 :: Nil), Set#{1}))
 
 @test
-def toSet03(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: Nil), #{1, 2}))
+def toSet03(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: Nil), Set#{1, 2}))
 
 @test
-def toSet04(): Bool = assert!(Set.eq(List.toSet(1 :: 1 :: Nil), #{1}))
+def toSet04(): Bool = assert!(Set.eq(List.toSet(1 :: 1 :: Nil), Set#{1}))
 
 @test
-def toSet05(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: 3 :: Nil), #{1, 2, 3}))
+def toSet05(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: 3 :: Nil), Set#{1, 2, 3}))
 
 @test
-def toSet06(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: 1 :: Nil), #{1, 2}))
+def toSet06(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: 1 :: Nil), Set#{1, 2}))
 
 @test
-def toSet07(): Bool = assert!(Set.eq(List.toSet(1 :: 1 :: 2 :: Nil), #{1, 2}))
+def toSet07(): Bool = assert!(Set.eq(List.toSet(1 :: 1 :: 2 :: Nil), Set#{1, 2}))
 
 @test
-def toSet08(): Bool = assert!(Set.eq(List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Nil), #{1, 2, 3, 4, 5, 6}))
+def toSet08(): Bool = assert!(Set.eq(List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Nil), Set#{1, 2, 3, 4, 5, 6}))
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //

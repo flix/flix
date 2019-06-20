@@ -194,10 +194,10 @@ def toList02(): Bool = Result.toList(Ok(1)) `assertEq!` 1 :: Nil
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = Result.toSet(Err(-1ii)) `assertEq!` #{}
+def toSet01(): Bool = Result.toSet(Err(-1ii)) `assertEq!` Set#{}
 
 @test
-def toSet02(): Bool = Result.toSet(Ok(1)) `assertEq!` #{1}
+def toSet02(): Bool = Result.toSet(Ok(1)) `assertEq!` Set#{1}
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //

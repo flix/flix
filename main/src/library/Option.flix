@@ -181,8 +181,8 @@ namespace Option {
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
     pub def toSet[a](o: Option[a]): Set[a] = match o with {
-        case None => #{}
-        case Some(v) => #{v}
+        case None => Set#{}
+        case Some(v) => Set#{v}
     }
 
     ///

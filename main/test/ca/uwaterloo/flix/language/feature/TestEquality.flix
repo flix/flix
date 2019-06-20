@@ -286,166 +286,166 @@ def neqTuple13(): Bool = assert!(((1, 2), (3, (4, 5))) != ((1, 2), (3, (42, 5)))
 //
 
 @test
-def eqSet01(): Bool = assert!(#{} == #{})
+def eqSet01(): Bool = assert!(Set#{} == Set#{})
 
 @test
-def eqSet02(): Bool = assert!(#{1} == #{1})
+def eqSet02(): Bool = assert!(Set#{1} == Set#{1})
 
 @test
-def eqSet03(): Bool = assert!(#{#{3}} == #{#{3}})
+def eqSet03(): Bool = assert!(Set#{Set#{3}} == Set#{Set#{3}})
 
 @test
-def eqSet04(): Bool = assert!(#{#{3, 2}} == #{#{2, 3}})
+def eqSet04(): Bool = assert!(Set#{Set#{3, 2}} == Set#{Set#{2, 3}})
 
 @test
-def eqSet05(): Bool = assert!(#{#{#{}}} == #{#{#{}}})
+def eqSet05(): Bool = assert!(Set#{Set#{Set#{}}} == Set#{Set#{Set#{}}})
 
 @test
-def eqSet06(): Bool = assert!(#{#{#{4}}} == #{#{#{4}}})
+def eqSet06(): Bool = assert!(Set#{Set#{Set#{4}}} == Set#{Set#{Set#{4}}})
 
 @test
-def eqSet07(): Bool = assert!(#{#{#{4, 11}}} == #{#{#{11, 4}}})
+def eqSet07(): Bool = assert!(Set#{Set#{Set#{4, 11}}} == Set#{Set#{Set#{11, 4}}})
 
 @test
-def eqSet08(): Bool = assert!(#{#{#{4, 12, 1}, #{16, 24, 1}}} == #{#{#{4, 1, 12}, #{24, 16, 1}}})
+def eqSet08(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{16, 24, 1}}} == Set#{Set#{Set#{4, 1, 12}, Set#{24, 16, 1}}})
 
 @test
-def eqSet09(): Bool = assert!(#{#{#{4, 12, 1}, #{22, 3, 33}, #{16, 24, 1}}} ==
-                            #{#{#{22, 3, 33}, #{4, 1, 12}, #{24, 16, 1}}})
+def eqSet09(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{22, 3, 33}, Set#{16, 24, 1}}} ==
+                            Set#{Set#{Set#{22, 3, 33}, Set#{4, 1, 12}, Set#{24, 16, 1}}})
 
 @test
-def eqSet10(): Bool = assert!(#{#{#{4, 12, 1}, #{22, 3, 33}, #{16, 24, 1}, #{}}} ==
-                            #{#{#{22, 3, 33}, #{}, #{4, 1, 12}, #{24, 16, 1}}})
+def eqSet10(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{22, 3, 33}, Set#{16, 24, 1}, Set#{}}} ==
+                            Set#{Set#{Set#{22, 3, 33}, Set#{}, Set#{4, 1, 12}, Set#{24, 16, 1}}})
 
 @test
-def eqSet11(): Bool = assert!(#{1, 2} == #{2, 1})
+def eqSet11(): Bool = assert!(Set#{1, 2} == Set#{2, 1})
 
 @test
-def eqSet12(): Bool = assert!(#{1, 2} == #{1, 2})
+def eqSet12(): Bool = assert!(Set#{1, 2} == Set#{1, 2})
 
 @test
-def eqSet13(): Bool = assert!(#{#{}, #{1, 2}} == #{#{1, 2}, #{}})
+def eqSet13(): Bool = assert!(Set#{Set#{}, Set#{1, 2}} == Set#{Set#{1, 2}, Set#{}})
 
 @test
-def eqSet14(): Bool = assert!(#{#{44}, #{1, 2}} == #{#{1, 2}, #{44}})
+def eqSet14(): Bool = assert!(Set#{Set#{44}, Set#{1, 2}} == Set#{Set#{1, 2}, Set#{44}})
 
 @test
-def eqSet15(): Bool = assert!(#{#{#{}}, #{#{}, #{2}}} == #{#{#{2}, #{}}, #{#{}}})
+def eqSet15(): Bool = assert!(Set#{Set#{Set#{}}, Set#{Set#{}, Set#{2}}} == Set#{Set#{Set#{2}, Set#{}}, Set#{Set#{}}})
 
 @test
-def eqSet16(): Bool = assert!(#{#{#{}, #{4, 5}}, #{#{1}, #{6, 7, 9}}} == #{#{#{1}, #{7, 9, 6}}, #{#{}, #{4, 5}}})
+def eqSet16(): Bool = assert!(Set#{Set#{Set#{}, Set#{4, 5}}, Set#{Set#{1}, Set#{6, 7, 9}}} == Set#{Set#{Set#{1}, Set#{7, 9, 6}}, Set#{Set#{}, Set#{4, 5}}})
 
 @test
-def eqSet17(): Bool = assert!(#{#{#{}, #{4, 5}, #{2, 3, 4}}, #{#{1}, #{6, 7, 9}}} ==
-                            #{#{#{1}, #{7, 9, 6}}, #{#{2, 3, 4}, #{}, #{4, 5}}})
+def eqSet17(): Bool = assert!(Set#{Set#{Set#{}, Set#{4, 5}, Set#{2, 3, 4}}, Set#{Set#{1}, Set#{6, 7, 9}}} ==
+                            Set#{Set#{Set#{1}, Set#{7, 9, 6}}, Set#{Set#{2, 3, 4}, Set#{}, Set#{4, 5}}})
 
 @test
-def eqSet18(): Bool = assert!(#{#{#{#{4}}, #{#{4, 5}, #{2, 1}}}, #{#{#{1}}, #{#{6, 7, 9}, #{2, 3}}}} ==
-                            #{#{#{#{1, 2}, #{5, 4}}, #{#{4}}}, #{#{#{1}}, #{#{2, 3}, #{9, 6, 7}}}})
+def eqSet18(): Bool = assert!(Set#{Set#{Set#{Set#{4}}, Set#{Set#{4, 5}, Set#{2, 1}}}, Set#{Set#{Set#{1}}, Set#{Set#{6, 7, 9}, Set#{2, 3}}}} ==
+                            Set#{Set#{Set#{Set#{1, 2}, Set#{5, 4}}, Set#{Set#{4}}}, Set#{Set#{Set#{1}}, Set#{Set#{2, 3}, Set#{9, 6, 7}}}})
 
 @test
-def eqSet19(): Bool = assert!(#{1, 2, 3} == #{2, 3, 1})
+def eqSet19(): Bool = assert!(Set#{1, 2, 3} == Set#{2, 3, 1})
 
 @test
-def eqSet20(): Bool = assert!(#{#{}, #{1, 2, 3}, #{2, 3, 4}} == #{#{4, 2, 3}, #{3, 1, 2}, #{}})
+def eqSet20(): Bool = assert!(Set#{Set#{}, Set#{1, 2, 3}, Set#{2, 3, 4}} == Set#{Set#{4, 2, 3}, Set#{3, 1, 2}, Set#{}})
 
 @test
-def eqSet21(): Bool = assert!(#{#{}, #{#{1, 3}, #{4}}, #{#{2, 3}, #{4}}} == #{#{#{4}, #{2, 3}}, #{#{3, 1}, #{4}}, #{}})
+def eqSet21(): Bool = assert!(Set#{Set#{}, Set#{Set#{1, 3}, Set#{4}}, Set#{Set#{2, 3}, Set#{4}}} == Set#{Set#{Set#{4}, Set#{2, 3}}, Set#{Set#{3, 1}, Set#{4}}, Set#{}})
 
 @test
-def eqSet22(): Bool = assert!(#{#{}, #{#{#{1, 3}}, #{#{4}}}, #{#{#{2}, #{3}}, #{#{4}}}} ==
-                            #{#{#{#{4}}, #{#{2}, #{3}}}, #{#{#{3, 1}}, #{#{4}}}, #{}})
+def eqSet22(): Bool = assert!(Set#{Set#{}, Set#{Set#{Set#{1, 3}}, Set#{Set#{4}}}, Set#{Set#{Set#{2}, Set#{3}}, Set#{Set#{4}}}} ==
+                            Set#{Set#{Set#{Set#{4}}, Set#{Set#{2}, Set#{3}}}, Set#{Set#{Set#{3, 1}}, Set#{Set#{4}}}, Set#{}})
 
 @test
-def neqSet01(): Bool = assert!(#{1} != #{})
+def neqSet01(): Bool = assert!(Set#{1} != Set#{})
 
 @test
-def neqSet02(): Bool = assert!(#{1} != #{2})
+def neqSet02(): Bool = assert!(Set#{1} != Set#{2})
 
 @test
-def neqSet03(): Bool = assert!(#{#{3}} != #{#{4}})
+def neqSet03(): Bool = assert!(Set#{Set#{3}} != Set#{Set#{4}})
 
 @test
-def neqSet04(): Bool = assert!(#{#{3, 2}} != #{#{2, 4}})
+def neqSet04(): Bool = assert!(Set#{Set#{3, 2}} != Set#{Set#{2, 4}})
 
 @test
-def neqSet05(): Bool = assert!(#{#{3, 2}} != #{#{2, 3}, #{}})
+def neqSet05(): Bool = assert!(Set#{Set#{3, 2}} != Set#{Set#{2, 3}, Set#{}})
 
 @test
-def neqSet06(): Bool = assert!(#{#{#{}}} != #{#{#{11}}})
+def neqSet06(): Bool = assert!(Set#{Set#{Set#{}}} != Set#{Set#{Set#{11}}})
 
 @test
-def neqSet07(): Bool = assert!(#{#{}} != #{#{#{}}})
+def neqSet07(): Bool = assert!(Set#{Set#{}} != Set#{Set#{Set#{}}})
 
 @test
-def neqSet08(): Bool = assert!(#{#{#{4}}} != #{#{#{5}}})
+def neqSet08(): Bool = assert!(Set#{Set#{Set#{4}}} != Set#{Set#{Set#{5}}})
 
 @test
-def neqSet09(): Bool = assert!(#{#{#{4}}} != #{#{#{4}, #{4, 1}}})
+def neqSet09(): Bool = assert!(Set#{Set#{Set#{4}}} != Set#{Set#{Set#{4}, Set#{4, 1}}})
 
 @test
-def neqSet10(): Bool = assert!(#{#{#{4, 11}}} != #{#{#{11, 5}}})
+def neqSet10(): Bool = assert!(Set#{Set#{Set#{4, 11}}} != Set#{Set#{Set#{11, 5}}})
 
 @test
-def neqSet11(): Bool = assert!(#{#{#{4, 12, 1}, #{16, 24, 1}}} != #{#{#{4, 12}, #{24, 16, 1}}})
+def neqSet11(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{16, 24, 1}}} != Set#{Set#{Set#{4, 12}, Set#{24, 16, 1}}})
 
 @test
-def neqSet12(): Bool = assert!(#{#{#{4, 12, 1}, #{22, 3, 33}, #{16, 24, 1}}} !=
-                            #{#{#{22, 3, 33}, #{4, 1, 12}, #{24, 16, 11}}})
+def neqSet12(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{22, 3, 33}, Set#{16, 24, 1}}} !=
+                            Set#{Set#{Set#{22, 3, 33}, Set#{4, 1, 12}, Set#{24, 16, 11}}})
 
 @test
-def neqSet13(): Bool = assert!(#{#{#{4, 12, 1}, #{22, 3, 33}, #{16, 24, 1}}} !=
-                            #{#{#{22, 3, 33}, #{4, 1, 12}, #{9}, #{24, 16, 1}}})
+def neqSet13(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{22, 3, 33}, Set#{16, 24, 1}}} !=
+                            Set#{Set#{Set#{22, 3, 33}, Set#{4, 1, 12}, Set#{9}, Set#{24, 16, 1}}})
 
 @test
-def neqSet14(): Bool = assert!(#{#{#{4, 12, 1}, #{22, 3, 33}, #{16, 24, 1}, #{}}} !=
-                            #{#{#{2, 3, 33}, #{}, #{4, 1, 12}, #{24, 16, 11}}})
+def neqSet14(): Bool = assert!(Set#{Set#{Set#{4, 12, 1}, Set#{22, 3, 33}, Set#{16, 24, 1}, Set#{}}} !=
+                            Set#{Set#{Set#{2, 3, 33}, Set#{}, Set#{4, 1, 12}, Set#{24, 16, 11}}})
 
 @test
-def neqSet15(): Bool = assert!(#{1, 2} != #{2, 3})
+def neqSet15(): Bool = assert!(Set#{1, 2} != Set#{2, 3})
 
 @test
-def neqSet16(): Bool = assert!(#{1, 2} != #{8})
+def neqSet16(): Bool = assert!(Set#{1, 2} != Set#{8})
 
 @test
-def neqSet17(): Bool = assert!(#{#{}, #{1, 2}} != #{#{1}, #{2}})
+def neqSet17(): Bool = assert!(Set#{Set#{}, Set#{1, 2}} != Set#{Set#{1}, Set#{2}})
 
 @test
-def neqSet18(): Bool = assert!(#{#{44}, #{1, 2}} != #{#{1, 3}, #{44}})
+def neqSet18(): Bool = assert!(Set#{Set#{44}, Set#{1, 2}} != Set#{Set#{1, 3}, Set#{44}})
 
 @test
-def neqSet19(): Bool = assert!(#{#{44}, #{1, 2}} != #{#{1, 2}, #{2, 3}, #{44}})
+def neqSet19(): Bool = assert!(Set#{Set#{44}, Set#{1, 2}} != Set#{Set#{1, 2}, Set#{2, 3}, Set#{44}})
 
 @test
-def neqSet20(): Bool = assert!(#{#{#{8}}, #{#{}, #{2}}} != #{#{#{2}, #{}}, #{#{}}})
+def neqSet20(): Bool = assert!(Set#{Set#{Set#{8}}, Set#{Set#{}, Set#{2}}} != Set#{Set#{Set#{2}, Set#{}}, Set#{Set#{}}})
 
 @test
-def neqSet21(): Bool = assert!(#{#{#{}, #{4, 5}}, #{#{1}, #{6, 8, 9}}} != #{#{#{1}, #{7, 9, 6}}, #{#{}, #{4, 5}}})
+def neqSet21(): Bool = assert!(Set#{Set#{Set#{}, Set#{4, 5}}, Set#{Set#{1}, Set#{6, 8, 9}}} != Set#{Set#{Set#{1}, Set#{7, 9, 6}}, Set#{Set#{}, Set#{4, 5}}})
 
 @test
-def neqSet22(): Bool = assert!(#{#{#{}, #{4, 5}, #{2, 3, 4}}, #{#{1}, #{6, 7, 9}}} !=
-                            #{#{#{1}, #{7, 9, 6}}, #{#{2, 7, 4}, #{1}, #{4, 5}}})
+def neqSet22(): Bool = assert!(Set#{Set#{Set#{}, Set#{4, 5}, Set#{2, 3, 4}}, Set#{Set#{1}, Set#{6, 7, 9}}} !=
+                            Set#{Set#{Set#{1}, Set#{7, 9, 6}}, Set#{Set#{2, 7, 4}, Set#{1}, Set#{4, 5}}})
 
 @test
-def neqSet23(): Bool = assert!(#{#{#{#{4}}, #{#{4, 5}, #{2, 1}}}, #{#{#{1}}, #{#{6, 7, 9}, #{2, 3}}}} !=
-                            #{#{#{#{1, 2, 3}, #{5, 4}}, #{#{4}}}, #{#{#{1}}, #{#{2, 3}, #{9, 6, 7}}}})
+def neqSet23(): Bool = assert!(Set#{Set#{Set#{Set#{4}}, Set#{Set#{4, 5}, Set#{2, 1}}}, Set#{Set#{Set#{1}}, Set#{Set#{6, 7, 9}, Set#{2, 3}}}} !=
+                            Set#{Set#{Set#{Set#{1, 2, 3}, Set#{5, 4}}, Set#{Set#{4}}}, Set#{Set#{Set#{1}}, Set#{Set#{2, 3}, Set#{9, 6, 7}}}})
 
 @test
-def neqSet24(): Bool = assert!(#{1, 2, 3} != #{2, 3, 4})
+def neqSet24(): Bool = assert!(Set#{1, 2, 3} != Set#{2, 3, 4})
 
 @test
-def neqSet25(): Bool = assert!(#{1, 2, 3} != #{2, 3, 1, 0})
+def neqSet25(): Bool = assert!(Set#{1, 2, 3} != Set#{2, 3, 1, 0})
 
 @test
-def neqSet26(): Bool = assert!(#{#{}, #{1, 2, 3}, #{2, 3}} != #{#{4, 2, 3}, #{3, 1, 2}, #{}})
+def neqSet26(): Bool = assert!(Set#{Set#{}, Set#{1, 2, 3}, Set#{2, 3}} != Set#{Set#{4, 2, 3}, Set#{3, 1, 2}, Set#{}})
 
 @test
-def neqSet27(): Bool = assert!(#{#{}, #{#{1, 3}, #{4, 5}}, #{#{2, 3}, #{4}}} !=
-                             #{#{#{4}, #{2, 3, 4}}, #{#{3, 1}, #{4, 5}}, #{}})
+def neqSet27(): Bool = assert!(Set#{Set#{}, Set#{Set#{1, 3}, Set#{4, 5}}, Set#{Set#{2, 3}, Set#{4}}} !=
+                             Set#{Set#{Set#{4}, Set#{2, 3, 4}}, Set#{Set#{3, 1}, Set#{4, 5}}, Set#{}})
 
 @test
-def neqSet28(): Bool = assert!(#{#{}, #{#{#{1, 3}}, #{#{4}}}, #{#{#{2}, #{3}}, #{#{4}}}} !=
-                            #{#{#{#{4}}, #{#{2}, #{3}}}, #{#{#{3, 1, 17}}, #{#{4}}}, #{}})
+def neqSet28(): Bool = assert!(Set#{Set#{}, Set#{Set#{Set#{1, 3}}, Set#{Set#{4}}}, Set#{Set#{Set#{2}, Set#{3}}, Set#{Set#{4}}}} !=
+                            Set#{Set#{Set#{Set#{4}}, Set#{Set#{2}, Set#{3}}}, Set#{Set#{Set#{3, 1, 17}}, Set#{Set#{4}}}, Set#{}})
 
 //
 // # Map
@@ -643,17 +643,17 @@ def eqCompose02(): Bool = assert!(Some(@{1 -> (1 :: 2 :: Nil), 3 -> (3 :: 4 :: N
                                 Some(@{3 -> (3 :: 4 :: Nil), 1 -> (1 :: 2 :: Nil)}))
 
 @test
-def eqCompose03(): Bool = assert!(Some(@{1 -> (#{1, 2, 3, 4, 5} :: #{2, 1} :: Nil), 3 -> (#{3} :: #{4, 2} :: Nil)}) ==
-                                Some(@{3 -> (#{3} :: #{4, 2} :: Nil), 1 -> (#{1, 5, 4, 2, 3} :: #{1, 2} :: Nil)}))
+def eqCompose03(): Bool = assert!(Some(@{1 -> (Set#{1, 2, 3, 4, 5} :: Set#{2, 1} :: Nil), 3 -> (Set#{3} :: Set#{4, 2} :: Nil)}) ==
+                                Some(@{3 -> (Set#{3} :: Set#{4, 2} :: Nil), 1 -> (Set#{1, 5, 4, 2, 3} :: Set#{1, 2} :: Nil)}))
 
 @test
-def eqCompose04(): Bool = assert!(Some(@{1 -> (#{1, 2, 3, 4, 5} :: #{2, 1} :: Nil, Ok(2)), 3 -> (#{3} :: #{4, 2} :: Nil, Ok(1))}) ==
-                                Some(@{3 -> (#{3} :: #{4, 2} :: Nil, Ok(1)), 1 -> (#{1, 5, 4, 2, 3} :: #{1, 2} :: Nil, Ok(2))}))
+def eqCompose04(): Bool = assert!(Some(@{1 -> (Set#{1, 2, 3, 4, 5} :: Set#{2, 1} :: Nil, Ok(2)), 3 -> (Set#{3} :: Set#{4, 2} :: Nil, Ok(1))}) ==
+                                Some(@{3 -> (Set#{3} :: Set#{4, 2} :: Nil, Ok(1)), 1 -> (Set#{1, 5, 4, 2, 3} :: Set#{1, 2} :: Nil, Ok(2))}))
 
 @test
-def eqCompose05(): Bool = assert!(Some(@{1 -> (#{1, 2, 3, 4, 5} :: #{2, 1} :: Nil, Ok(#{2, 3, 8})), 3 -> (#{3} :: #{4, 2} :: Nil, Ok(#{99, 4}))}) ==
-                                Some(@{3 -> (#{3} :: #{4, 2} :: Nil, Ok(#{4, 99})), 1 -> (#{1, 5, 4, 2, 3} :: #{1, 2} :: Nil, Ok(#{8, 2, 3}))}))
+def eqCompose05(): Bool = assert!(Some(@{1 -> (Set#{1, 2, 3, 4, 5} :: Set#{2, 1} :: Nil, Ok(Set#{2, 3, 8})), 3 -> (Set#{3} :: Set#{4, 2} :: Nil, Ok(Set#{99, 4}))}) ==
+                                Some(@{3 -> (Set#{3} :: Set#{4, 2} :: Nil, Ok(Set#{4, 99})), 1 -> (Set#{1, 5, 4, 2, 3} :: Set#{1, 2} :: Nil, Ok(Set#{8, 2, 3}))}))
 
 @test
-def eqCompose06(): Bool = assert!((@{1 -> 4, 5 -> 6}, #{1, 2, 3, 4}, Err(#{9, 18})) ==
-                                (@{5 -> 6, 1 -> 4}, #{4, 2, 3, 1}, Err(#{18, 9})))
+def eqCompose06(): Bool = assert!((@{1 -> 4, 5 -> 6}, Set#{1, 2, 3, 4}, Err(Set#{9, 18})) ==
+                                (@{5 -> 6, 1 -> 4}, Set#{4, 2, 3, 1}, Err(Set#{18, 9})))

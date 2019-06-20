@@ -485,15 +485,15 @@ def testMatchTag30(): Bool = assertEq!(f27(B27.BB27(A27.AB27(-1))), "bbb")
 enum Val28 { case Nip28, case Val28(Set[Int]) }
 
 def f28(x: Val28): Set[Int] = match x with {
-  case Val28.Nip28 => #{0}
+  case Val28.Nip28 => Set#{0}
   case Val28.Val28(s) => s
 }
 
 @test
-def testMatchTag31(): Bool = assertEq!(f28(Val28.Nip28), #{0})
+def testMatchTag31(): Bool = assertEq!(f28(Val28.Nip28), Set#{0})
 
 @test
-def testMatchTag32(): Bool = assertEq!(f28(Val28.Val28(#{1, 2, 3})), #{1, 2, 3})
+def testMatchTag32(): Bool = assertEq!(f28(Val28.Val28(Set#{1, 2, 3})), Set#{1, 2, 3})
 
 enum Val29 { case Val29(Int8) }
 

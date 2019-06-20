@@ -152,10 +152,10 @@ def toList02(): Bool = Option.toList(Some(1)) `assertEq!` 1 :: Nil
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = Option.toSet(None) `assertEq!` #{}
+def toSet01(): Bool = Option.toSet(None) `assertEq!` Set#{}
 
 @test
-def toSet02(): Bool = Option.toSet(Some(1)) `assertEq!` #{1}
+def toSet02(): Bool = Option.toSet(Some(1)) `assertEq!` Set#{1}
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //

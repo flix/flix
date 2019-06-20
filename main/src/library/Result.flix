@@ -139,8 +139,8 @@ namespace Result {
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
     pub def toSet[t, e](r: Result[t, e]): Set[t] = match r with {
-        case Ok(v) => #{v}
-        case Err(_) => #{}
+        case Ok(v) => Set#{v}
+        case Err(_) => Set#{}
     }
 
     ///
