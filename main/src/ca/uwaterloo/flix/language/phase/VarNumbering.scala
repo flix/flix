@@ -231,13 +231,12 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         i0
 
       case Expression.FixpointConstraint(c, tpe, loc) =>
-        // Assign a number to each constraint parameters.
-        // These are unrelated to the true stack offsets.
-        for ((cparam, index) <- c.cparams.zipWithIndex) {
-          cparam match {
-            case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
-            case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
-          }
+        visitConstraint(c)
+        i0
+
+      case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+        for (c <- cs) {
+          visitConstraint(c)
         }
         i0
 
@@ -272,6 +271,20 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case x :: xs =>
         val i2 = visitExp(x, i)
         visitExps(xs, i2)
+    }
+
+    /**
+      * Returns the next available stack offset.
+      */
+    def visitConstraint(c: Constraint): Unit = {
+      // Assign a number to each constraint parameters.
+      // These are unrelated to the true stack offsets.
+      for ((cparam, index) <- c.cparams.zipWithIndex) {
+        cparam match {
+          case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
+          case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
+        }
+      }
     }
 
     // Compute the stack offset for each formal parameter.

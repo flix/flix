@@ -324,11 +324,12 @@ object ClosureConv extends Phase[Root, Root] {
       Expression.ProcessPanic(msg, tpe, loc)
 
     case Expression.FixpointConstraint(c0, tpe, loc) =>
-      val Constraint(cparams0, head0, body0) = c0
-      val head = visitHeadPredicate(head0)
-      val body = body0 map visitBodyPredicate
-      val c = Constraint(cparams0, head, body)
+      val c = visitConstraint(c0)
       Expression.FixpointConstraint(c, tpe, loc)
+
+    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+      val cs = cs0.map(visitConstraint)
+      Expression.FixpointConstraintSet(cs, tpe, loc)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
@@ -362,6 +363,16 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyEffTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+  }
+
+  /**
+    * Performs closure conversion on the given constraint `c0`.
+    */
+  private def visitConstraint(c0: Constraint)(implicit flix: Flix): Constraint = {
+    val Constraint(cparams0, head0, body0) = c0
+    val head = visitHeadPredicate(head0)
+    val body = body0 map visitBodyPredicate
+    Constraint(cparams0, head, body)
   }
 
   /**

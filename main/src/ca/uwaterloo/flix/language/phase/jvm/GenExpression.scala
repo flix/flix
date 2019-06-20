@@ -1083,6 +1083,13 @@ object GenExpression {
       // Emit code for the constraint.
       newConstraintSystem(con, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint.
+      newConstraintSystem(cs, visitor)(root, flix, currentClass, lenv0, entryPoint)
+
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
@@ -1601,6 +1608,29 @@ object GenExpression {
 
       // Instantiate the constraint system object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "(Lflix/runtime/fixpoint/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+  }
+
+  /**
+    * Emits code to instantiate a new constraint system for the given constraints `cs`.
+    */
+  private def newConstraintSystem(cs: List[Constraint], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // Instantiate a new array of appropriate length.
+    compileInt(mv, cs.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Constraint.toInternalName)
+    for ((constraint, index) <- cs.zipWithIndex) {
+      // Compile each attribute and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+
+      // Instantiate the attribute.
+      newConstraint(constraint, mv)
+
+      // Store the attribute in the array.
+      mv.visitInsn(AASTORE)
+    }
+
+    // Instantiate the constraint system object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "([Lflix/runtime/fixpoint/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
   }
 
   /**

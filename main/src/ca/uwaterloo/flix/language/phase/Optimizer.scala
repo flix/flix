@@ -465,6 +465,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.FixpointConstraint(c, tpe, loc)
 
       //
+      // ConstraintSet.
+      //
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint(_, env0))
+        Expression.FixpointConstraintSet(cs, tpe, loc)
+
+      //
       // Constraint Union.
       //
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>

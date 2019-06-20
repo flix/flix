@@ -328,6 +328,10 @@ object Synthesize extends Phase[Root, Root] {
         val c = visitConstraint(c0)
         Expression.FixpointConstraint(c, tpe, eff, loc)
 
+      case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+        val cs = cs0.map(visitConstraint)
+        Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)

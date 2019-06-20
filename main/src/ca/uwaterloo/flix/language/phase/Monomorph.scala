@@ -463,12 +463,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-          val Constraint(cparams0, head0, body0, loc) = c0
-          val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
-          val head = visitHeadPredicate(head0, env0 ++ env1)
-          val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
-          val c = Constraint(cparams, head, body, loc)
+          val c = visitConstraint(c0)
           Expression.FixpointConstraint(c, subst0(tpe), eff, loc)
+
+        case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+          val cs = cs0.map(visitConstraint)
+          Expression.FixpointConstraintSet(cs, subst0(tpe), eff, loc)
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -519,6 +519,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Tuple(elms, tpe, loc) =>
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
+      }
+
+      /**
+        * Specializes the given constraint `c0`.
+        */
+      def visitConstraint(c0: Constraint): Constraint = {
+        val Constraint(cparams0, head0, body0, loc) = c0
+        val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
+        val head = visitHeadPredicate(head0, env0 ++ env1)
+        val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
+        Constraint(cparams, head, body, loc)
       }
 
       /**
