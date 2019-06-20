@@ -280,13 +280,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given constraint `c0`.
     */
-  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Constraint], WeederError] = c0 match {
+  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[WeededAst.Constraint, WeederError] = c0 match {
     case ParsedAst.Declaration.Constraint(sp1, head0, body0, sp2) =>
       val headVal = visitHeadPredicate(head0)
       val bodyVal = traverse(body0)(visitPredicateBody)
 
       mapN(headVal, bodyVal) {
-        case (h, bs) => List(WeededAst.Constraint(h, bs, mkSL(sp1, sp2)))
+        case (h, bs) => WeededAst.Constraint(h, bs, mkSL(sp1, sp2))
       }
   }
 
@@ -992,12 +992,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       traverse(cs0)(visitConstraint) map {
         case cs =>
           // Map each constraint into a constraint expression.
-          val constraintExps = cs.flatten.map(WeededAst.Expression.FixpointConstraint(_, loc))
+          val constraintExps = cs.map(WeededAst.Expression.FixpointConstraint(_, loc))
 
           // Combine all constraint expressions using compose.
           constraintExps.reduceLeft[WeededAst.Expression] {
             case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
           }
+      }
+
+    case ParsedAst.Expression.FixpointConstraintSet(sp1, cs0, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      traverse(cs0)(visitConstraint) map {
+        case cs => WeededAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
@@ -1391,7 +1398,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       */
     def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Constraint], WeederError] = d0 match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
-      case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
+      case d: ParsedAst.Declaration.Constraint => visitConstraint(d).map(x => x :: Nil)
       case _ => Nil.toSuccess
     }
 
@@ -1830,6 +1837,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ProcessSleep(sp1, _, _) => sp1
     case ParsedAst.Expression.ProcessPanic(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1

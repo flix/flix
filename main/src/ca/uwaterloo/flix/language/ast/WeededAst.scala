@@ -192,6 +192,8 @@ object WeededAst {
 
     case class FixpointConstraint(c: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
+    case class FixpointConstraintSet(cs: List[WeededAst.Constraint], loc: SourceLocation) extends WeededAst.Expression
+
     case class FixpointCompose(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
