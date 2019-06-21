@@ -2126,11 +2126,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaType()(implicit genSym: GenSym): Type = {
-    val sym = Symbol.mkRelSym("True")
-    val tpe = Type.Relation(sym, Nil, Kind.Star)
-    Type.SchemaExtend(sym, tpe, Type.freshTypeVar())
-  }
+  private def mkAnySchemaType()(implicit genSym: GenSym): Type = Type.freshTypeVar()
 
   /**
     * Returns the Flix Type of a Java Type

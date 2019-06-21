@@ -1360,7 +1360,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       val init = lookupType(rest, ns0, root)
 
       // Fold over the predicate types and check that they are relations or lattices.
-      val result = Validation.foldRight(ts)(init) {
+      Validation.foldRight(ts)(init) {
         case (predType, acc) =>
           // Lookup the type and check that is either a relation or lattice type.
           flatMapN(lookupType(predType, ns0, root)) {
@@ -1389,14 +1389,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                 ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
             }
           }
-      }
-
-      // Ensure that the result type has the True predicate.
-      mapN(result) {
-        case schema =>
-          val sym = Symbol.mkRelSym("True")
-          val tpe = Type.Relation(sym, Nil, Kind.Star)
-          Type.SchemaExtend(sym, tpe, schema)
       }
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess

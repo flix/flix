@@ -4,16 +4,6 @@
 pub enum Void { }
 
 ///
-/// The True predicate.
-///
-pub rel True()
-
-///
-/// The False predicate.
-///
-pub rel False()
-
-///
 /// The identity function.
 ///
 pub def identity[a](x: a): a = x
