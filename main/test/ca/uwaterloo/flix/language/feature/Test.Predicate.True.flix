@@ -1,3 +1,5 @@
+rel True()
+
 @test
 def testTruePredicate01(): Schema { True } =
     solve True().

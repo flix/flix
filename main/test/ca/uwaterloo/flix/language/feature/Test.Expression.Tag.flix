@@ -104,7 +104,7 @@ def testTag19(): B13 = B13.BB13(A13.AA13(42))
 enum Val14 { case Val14(Set[Int]) }
 
 @test
-def testTag20(): Val14 = Val14.Val14(#{1, 2, 3})
+def testTag20(): Val14 = Val14.Val14(Set#{1, 2, 3})
 
 enum Val15 { case Val15(BigInt) }
 

@@ -426,8 +426,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ProcessPanic(_, _, _, _) => Nil
 
-      case Expression.FixpointConstraint(c, _, _, _) =>
-        visitConstraint(c)
+      case Expression.FixpointConstraintSet(cs, _, _, _) =>
+        cs.flatMap(visitConstraint)
 
       case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
@@ -893,7 +893,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.ProcessPanic(msg, tpe, eff, loc) => e0
 
-        case Expression.FixpointConstraint(c, tpe, eff, loc) => ???
+        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => ???
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
 

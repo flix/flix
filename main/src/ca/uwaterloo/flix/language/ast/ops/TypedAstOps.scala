@@ -217,7 +217,9 @@ object TypedAstOps {
 
       case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
-      case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
+      case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+        case (macc, c) => macc ++ visitConstraint(c, env0)
+      }
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)

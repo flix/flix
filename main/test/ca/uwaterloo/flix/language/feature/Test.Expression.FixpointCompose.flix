@@ -2,18 +2,18 @@ rel A(x: Int, y: Int, z: Int)
 rel P[a](x: Int, y: a, z: Int)
 
 @test
-def testFixpointCompose01(): Schema {  } =
-    let c1 = True().;
+def testFixpointCompose01(): Schema { A } =
+    let c1 = A(1, 1, 1).;
     solve c1 <+> c1
 
 @test
-def testFixpointCompose02(): Schema { } =
-    let c1 = True().;
+def testFixpointCompose02(): Schema { A } =
+    let c1 = A(1, 1, 1).;
     solve c1 <+> c1 <+> c1
 
 @test
-def testFixpointCompose03(): Schema { } =
-    let c1 = True().;
+def testFixpointCompose03(): Schema { A } =
+    let c1 = A(1, 1, 1).;
     solve (solve c1 <+> c1) <+> (solve c1 <+> c1)
 
 @test

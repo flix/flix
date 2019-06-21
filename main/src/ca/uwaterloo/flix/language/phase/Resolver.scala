@@ -751,10 +751,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.ProcessPanic(msg, tvar, loc) =>
           ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
 
-        case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
-          Constraints.resolve(cons, tenv0, ns0, prog0) map {
-            case c => ResolvedAst.Expression.FixpointConstraint(c, tvar, loc)
-          }
+        case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
+          for {
+            cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, prog0))
+          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
 
         case NamedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           for {
@@ -1355,7 +1355,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       val init = lookupType(rest, ns0, root)
 
       // Fold over the predicate types and check that they are relations or lattices.
-      val result = Validation.foldRight(ts)(init) {
+      Validation.foldRight(ts)(init) {
         case (predType, acc) =>
           // Lookup the type and check that is either a relation or lattice type.
           flatMapN(lookupType(predType, ns0, root)) {
@@ -1384,14 +1384,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                 ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
             }
           }
-      }
-
-      // Ensure that the result type has the True predicate.
-      mapN(result) {
-        case schema =>
-          val sym = Symbol.mkRelSym("True")
-          val tpe = Type.Relation(sym, Nil, Kind.Star)
-          Type.SchemaExtend(sym, tpe, schema)
       }
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess

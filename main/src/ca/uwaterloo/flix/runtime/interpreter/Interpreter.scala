@@ -316,8 +316,13 @@ object Interpreter {
     case Expression.ProcessPanic(msg, tpe, loc) =>
       throw new RuntimeException(msg)
 
-    case Expression.FixpointConstraint(c, tpe, loc) =>
-      evalConstraint(c, env0, henv0, lenv0)(flix, root)
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+      val empty = fixpoint.ConstraintSystem.of(Array.empty[fixpoint.Constraint])
+      cs.foldLeft(empty) {
+        case (v1, c) =>
+          val v2 = cast2constraintset(evalConstraint(c, env0, henv0, lenv0)(flix, root))
+          Solver.compose(v1, v2)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))

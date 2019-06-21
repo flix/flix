@@ -181,16 +181,16 @@ namespace Option {
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
     pub def toSet[a](o: Option[a]): Set[a] = match o with {
-        case None => #{}
-        case Some(v) => #{v}
+        case None       => Set.empty()
+        case Some(v)    => Set.singleton(v)
     }
 
     ///
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
     pub def toMap[k,v](o: Option[(k, v)]): Map[k, v] = match o with {
-        case None => @{}
-        case Some((k, v)) => Map.singleton(k, v)
+        case None           => Map.empty()
+        case Some((k, v))   => Map.singleton(k, v)
     }
 
     ///

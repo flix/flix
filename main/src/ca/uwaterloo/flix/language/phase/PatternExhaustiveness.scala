@@ -344,9 +344,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ProcessPanic(_, _, _, _) =>
           tast.toSuccess
 
-        case Expression.FixpointConstraint(c, tpe, eff, loc) =>
+        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) =>
           for {
-            _ <- visitConstraint(c, root)
+            _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>

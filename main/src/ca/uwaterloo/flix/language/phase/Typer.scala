@@ -1226,21 +1226,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
         liftM(tvar)
 
-      /*
-       * Constraint expression.
-       */
-      case ResolvedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
-        val ResolvedAst.Constraint(cparams, head0, body0, loc) = cons
-        //
-        //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
-        //  -----------------------------------
-        //  A_0 :- A_1, ..., A_n : tpe
-        //
+      case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
-          headPredicateType <- inferHeadPredicate(head0, program)
-          bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, program)))
-          unifiedBodyPredicateType <- unifyAllowEmptyM(bodyPredicateTypes, loc)
-          resultType <- unifyM(tvar, headPredicateType, unifiedBodyPredicateType, loc)
+          constraintTypes <- seqM(cs.map(visitConstraint))
+          resultType <- unifyAllowEmptyM(constraintTypes, loc)
         } yield resultType
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
@@ -1296,6 +1285,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
         } yield resultType
 
+    }
+
+    /**
+      * Infers the type of the given constraint `con0` inside the inference monad.
+      */
+    def visitConstraint(con0: ResolvedAst.Constraint): InferMonad[Type] = {
+      val ResolvedAst.Constraint(cparams, head0, body0, loc) = con0
+      //
+      //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
+      //  -----------------------------------
+      //  A_0 :- A_1, ..., A_n : tpe
+      //
+      for {
+        headPredicateType <- inferHeadPredicate(head0, program)
+        bodyPredicateTypes <- seqM(body0.map(b => inferBodyPredicate(b, program)))
+        unifiedBodyPredicateType <- unifyAllowEmptyM(bodyPredicateTypes, loc)
+        resultType <- unifyM(headPredicateType, unifiedBodyPredicateType, loc)
+      } yield resultType
     }
 
     visitExp(exp0)
@@ -1741,27 +1748,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         TypedAst.Expression.ProcessPanic(msg, subst0(tvar), Eff.Empty, loc)
 
       /*
-       * Constraint expression.
+       * ConstraintSet expression.
        */
-      case ResolvedAst.Expression.FixpointConstraint(c0, tvar, loc) =>
-        // Pattern match on the constraint.
-        val ResolvedAst.Constraint(cparams0, head0, body0, loc) = c0
-
-        // Unification was successful. Reassemble the head and body predicates.
-        val head = reassembleHeadPredicate(head0, program, subst0)
-        val body = body0.map(b => reassembleBodyPredicate(b, program, subst0))
-
-        // Reassemble the constraint parameters.
-        val cparams = cparams0.map {
-          case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, l) =>
-            TypedAst.ConstraintParam.HeadParam(sym, subst0(tpe), l)
-          case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, l) =>
-            TypedAst.ConstraintParam.RuleParam(sym, subst0(tpe), l)
-        }
-
-        // Reassemble the constraint.
-        val c = TypedAst.Constraint(cparams, head, body, loc)
-        TypedAst.Expression.FixpointConstraint(c, subst0(tvar), Eff.Empty, loc)
+      case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
+        val cs = cs0.map(visitConstraint)
+        TypedAst.Expression.FixpointConstraintSet(cs, subst0(tvar), Eff.Empty, loc)
 
       /*
        * ConstraintUnion expression.
@@ -1793,6 +1784,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), Eff.Empty, loc)
+    }
+
+    /**
+      * Applies the substitution to the given constraint.
+      */
+    def visitConstraint(c0: ResolvedAst.Constraint): TypedAst.Constraint = {
+      // Pattern match on the constraint.
+      val ResolvedAst.Constraint(cparams0, head0, body0, loc) = c0
+
+      // Unification was successful. Reassemble the head and body predicates.
+      val head = reassembleHeadPredicate(head0, program, subst0)
+      val body = body0.map(b => reassembleBodyPredicate(b, program, subst0))
+
+      // Reassemble the constraint parameters.
+      val cparams = cparams0.map {
+        case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, l) =>
+          TypedAst.ConstraintParam.HeadParam(sym, subst0(tpe), l)
+        case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, l) =>
+          TypedAst.ConstraintParam.RuleParam(sym, subst0(tpe), l)
+      }
+
+      // Reassemble the constraint.
+      TypedAst.Constraint(cparams, head, body, loc)
     }
 
     /**
@@ -2100,11 +2114,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaType()(implicit genSym: GenSym): Type = {
-    val sym = Symbol.mkRelSym("True")
-    val tpe = Type.Relation(sym, Nil, Kind.Star)
-    Type.SchemaExtend(sym, tpe, Type.freshTypeVar())
-  }
+  private def mkAnySchemaType()(implicit genSym: GenSym): Type = Type.freshTypeVar()
 
   /**
     * Returns the Flix Type of a Java Type

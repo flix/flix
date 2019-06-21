@@ -324,9 +324,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.ProcessPanic(msg, tpe, eff, loc) =>
         Expression.ProcessPanic(msg, tpe, eff, loc)
 
-      case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-        val c = visitConstraint(c0)
-        Expression.FixpointConstraint(c, tpe, eff, loc)
+      case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+        val cs = cs0.map(visitConstraint)
+        Expression.FixpointConstraintSet(cs, tpe, eff, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)

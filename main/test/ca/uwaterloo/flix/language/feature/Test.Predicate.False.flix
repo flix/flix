@@ -1,3 +1,5 @@
+rel False()
+
 @test
 def testFalsePredicate01(): Schema { False } =
     let x = False().;
