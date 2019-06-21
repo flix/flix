@@ -556,10 +556,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
-      case TypedAst.Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-        val c = visitConstraint(c0)
-        SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
-
       case TypedAst.Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
         val cs = cs0.map(visitConstraint)
         SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
@@ -1253,10 +1249,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
-
-      case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0)
-        SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)

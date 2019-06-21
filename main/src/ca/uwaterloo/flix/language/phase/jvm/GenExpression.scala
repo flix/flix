@@ -1076,13 +1076,6 @@ object GenExpression {
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
-    case Expression.FixpointConstraint(con, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(visitor, loc)
-
-      // Emit code for the constraint.
-      newConstraintSystem(con, visitor)(root, flix, currentClass, lenv0, entryPoint)
-
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)

@@ -245,8 +245,6 @@ object TypedAst {
 
     case class ProcessPanic(msg: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointConstraint(c: TypedAst.Constraint, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-
     case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression

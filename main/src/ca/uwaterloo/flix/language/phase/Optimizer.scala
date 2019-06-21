@@ -458,13 +458,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ProcessPanic(msg, tpe, loc)
 
       //
-      // Constraint.
-      //
-      case Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0, env0)
-        Expression.FixpointConstraint(c, tpe, loc)
-
-      //
       // ConstraintSet.
       //
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>

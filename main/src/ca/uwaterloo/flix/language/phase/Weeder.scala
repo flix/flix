@@ -990,14 +990,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
 
       traverse(cs0)(visitConstraint) map {
-        case cs =>
-          // Map each constraint into a constraint expression.
-          val constraintExps = cs.map(WeededAst.Expression.FixpointConstraint(_, loc))
-
-          // Combine all constraint expressions using compose.
-          constraintExps.reduceLeft[WeededAst.Expression] {
-            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
-          }
+        case cs => WeededAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
     case ParsedAst.Expression.FixpointConstraintSet(sp1, cs0, sp2) =>
@@ -1936,13 +1929,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val tparams = Nil
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
-    // Map each constraint into a constraint expression.
-    val constraintExps = cs.map(WeededAst.Expression.FixpointConstraint(_, loc))
-
-    // Combine all constraint expressions using compose.
-    val innerExp = constraintExps.reduceLeft[WeededAst.Expression] {
-      case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
-    }
+    // Collect all the constraints into a single constraint set.
+    val innerExp = WeededAst.Expression.FixpointConstraintSet(cs, loc)
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)

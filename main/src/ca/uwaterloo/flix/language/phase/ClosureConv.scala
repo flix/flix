@@ -323,10 +323,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.ProcessPanic(msg, tpe, loc) =>
       Expression.ProcessPanic(msg, tpe, loc)
 
-    case Expression.FixpointConstraint(c0, tpe, loc) =>
-      val c = visitConstraint(c0)
-      Expression.FixpointConstraint(c, tpe, loc)
-
     case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       val cs = cs0.map(visitConstraint)
       Expression.FixpointConstraintSet(cs, tpe, loc)
@@ -527,9 +523,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.ProcessSleep(exp, tpe, loc) => freeVars(exp)
 
     case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
-
-    case Expression.FixpointConstraint(con, tpe, loc) =>
-      freeVars(con)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
@@ -862,10 +855,6 @@ object ClosureConv extends Phase[Root, Root] {
 
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
-
-      case Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0)
-        Expression.FixpointConstraint(c, tpe, loc)
 
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)

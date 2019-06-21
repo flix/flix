@@ -441,11 +441,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.ProcessPanic(msg, t, loc)
 
-      case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0, m)
-        val t = visitType(tpe)
-        FinalAst.Expression.FixpointConstraint(c, t, loc)
-
       case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, m))
         val t = visitType(tpe)

@@ -444,9 +444,6 @@ object PrettyPrinter {
         case Expression.ProcessPanic(msg, tpe, loc) =>
           vt.text("!!! " + msg)
 
-        case Expression.FixpointConstraint(c, tpe, loc) =>
-          vt.text("<constraint>")
-
         case Expression.FixpointConstraintSet(c, tpe, loc) =>
           vt.text("<constraintset>")
 

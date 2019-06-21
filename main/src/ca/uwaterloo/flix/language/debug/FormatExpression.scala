@@ -75,7 +75,6 @@ object FormatExpression {
     case TypedAst.Expression.ProcessSpawn(exp, tpe, eff, loc) => s"ProcessSpawn($exp)"
     case TypedAst.Expression.ProcessSleep(exp, tpe, eff, loc) => s"ProcessSleep($exp)"
     case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) => s"ProcessPanic($msg)"
-    case TypedAst.Expression.FixpointConstraint(c, tpe, eff, loc) => s"FixpointConstraint($c)"
     case TypedAst.Expression.FixpointConstraintSet(cs, tpe, eff, loc) => s"FixpointConstraintSet($cs})"
     case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => s"FixpointCompose($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"

@@ -316,9 +316,6 @@ object Interpreter {
     case Expression.ProcessPanic(msg, tpe, loc) =>
       throw new RuntimeException(msg)
 
-    case Expression.FixpointConstraint(c, tpe, loc) =>
-      evalConstraint(c, env0, henv0, lenv0)(flix, root)
-
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       val empty = fixpoint.ConstraintSystem.of(Array.empty[fixpoint.Constraint])
       cs.foldLeft(empty) {

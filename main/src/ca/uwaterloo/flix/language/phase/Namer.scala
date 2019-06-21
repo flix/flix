@@ -877,11 +877,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ProcessPanic(msg, loc) =>
       NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), loc).toSuccess
 
-    case WeededAst.Expression.FixpointConstraint(con, loc) =>
-      visitConstraint(con, env0, tenv0) map {
-        case c => NamedAst.Expression.FixpointConstraint(c, Type.freshTypeVar(), loc)
-      }
-
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, tenv0))) {
         case cs =>
@@ -1175,7 +1170,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)

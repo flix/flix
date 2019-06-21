@@ -751,11 +751,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.ProcessPanic(msg, tvar, loc) =>
           ResolvedAst.Expression.ProcessPanic(msg, tvar, loc).toSuccess
 
-        case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
-          Constraints.resolve(cons, tenv0, ns0, prog0) map {
-            case c => ResolvedAst.Expression.FixpointConstraint(c, tvar, loc)
-          }
-
         case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, prog0))

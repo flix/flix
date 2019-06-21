@@ -1226,11 +1226,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
         liftM(tvar)
 
-      case ResolvedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
-        for {
-          resultType <- visitConstraint(cons)
-        } yield resultType
-
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
           constraintTypes <- seqM(cs.map(visitConstraint))
@@ -1751,13 +1746,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        */
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, loc) =>
         TypedAst.Expression.ProcessPanic(msg, subst0(tvar), Eff.Empty, loc)
-
-      /*
-       * Constraint expression.
-       */
-      case ResolvedAst.Expression.FixpointConstraint(c0, tvar, loc) =>
-        val c = visitConstraint(c0)
-        TypedAst.Expression.FixpointConstraint(c, subst0(tvar), Eff.Empty, loc)
 
       /*
        * ConstraintSet expression.

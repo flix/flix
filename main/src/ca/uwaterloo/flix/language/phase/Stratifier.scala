@@ -368,11 +368,6 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ProcessPanic(msg, tpe, eff, loc) =>
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
-    case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-      // TODO: The constraint itself might not be stratified.
-      val c = reorder(c0)
-      Expression.FixpointConstraint(c, tpe, eff, loc).toSuccess
-
     case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
       // TODO: The constraint itself might not be stratified.
       val cs = cs0.map(reorder)
@@ -642,9 +637,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.ProcessPanic(_, _, _, _) =>
       DependencyGraph.empty
-
-    case Expression.FixpointConstraint(con, _, _, _) =>
-      dependencyGraphOfConstraint(con)
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {

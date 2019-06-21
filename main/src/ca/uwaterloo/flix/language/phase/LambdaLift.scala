@@ -337,10 +337,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
 
-      case Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0)
-        Expression.FixpointConstraint(c, tpe, loc)
-
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
         Expression.FixpointConstraintSet(cs, tpe, loc)

@@ -476,9 +476,6 @@ object SimplifiedAstOps {
       case Expression.ProcessPanic(msg, tpe, loc) =>
         checkType(tpe)
 
-      case Expression.FixpointConstraint(_, tpe, _) =>
-        checkType(tpe)
-
       case Expression.FixpointConstraintSet(_, tpe, _) =>
         checkType(tpe)
 
