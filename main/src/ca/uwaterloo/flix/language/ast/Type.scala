@@ -102,7 +102,6 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is an enum type.
     */
-  @deprecated("removed", "0.5")
   def isEnum: Boolean = typeConstructor match {
     case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
     case _ => false
@@ -127,7 +126,6 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is a tuple type.
     */
-  @deprecated("removed", "0.5")
   def isTuple: Boolean = typeConstructor match {
     case Type.Cst(TypeConstructor.Tuple(l)) => true
     case _ => false

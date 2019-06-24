@@ -848,7 +848,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an environment with the given variable symbols `varSyms` in it.
       */
-    def of(varSyms: Traversable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
+    def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
       case (acc, sym) => acc + sym
     }
   }

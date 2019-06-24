@@ -724,7 +724,7 @@ object JvmOps {
     case _ => Set.empty
   }
 
-  @deprecated("will be removed", "0.5")
+  // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
     case MonoType.Var(id) => Type.Var(id, Kind.Star)
     case MonoType.Unit => Type.Cst(TypeConstructor.Unit)
