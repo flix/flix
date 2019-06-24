@@ -19,7 +19,7 @@ before_install:
   - wget http://downloads.typesafe.com/scala/2.13.0/scala-2.13.0.tgz
   - tar xzf scala-2.13.0.tgz
   - cd
-  - export SCALA_HOME=`pwd`/scala-2.12.3
+  - export SCALA_HOME=`pwd`/scala-2.13.0
   - export PATH=$SCALA_HOME/bin:$PATH
   - popd
   - wget -P "$TRAVIS_BUILD_DIR/lib" http://central.maven.org/maven2/org/scala-lang/scala-reflect/2.13.0/scala-reflect-2.13.0.jar
