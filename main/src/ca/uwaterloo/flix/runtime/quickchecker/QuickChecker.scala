@@ -207,7 +207,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
       val errors = results.collect {
         case PropertyResult.Failure(_, _, _, _, error) => error
       }
-      Validation.Failure(errors.toStream)
+      Validation.Failure(errors.to(LazyList))
     }
   }
 

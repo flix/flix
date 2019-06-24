@@ -172,7 +172,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
       val unknowns = results.collect {
         case PropertyResult.Unknown(_, _, _, _, error) => error
       }
-      Validation.Failure((errors ++ unknowns).toStream)
+      Validation.Failure((errors ++ unknowns).to(LazyList))
     }
   }
 

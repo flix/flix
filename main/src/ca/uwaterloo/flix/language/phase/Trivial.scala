@@ -45,7 +45,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     if (trivial.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(trivial.toStream)
+      Validation.Failure(trivial.to(LazyList))
   }
 
   private object Catalog {
