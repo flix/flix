@@ -165,7 +165,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
     * Attempts to quick check all properties in the given AST.
     */
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, PropertyError] = {
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     /*
      * Number of times to instantiate a quantified variable.

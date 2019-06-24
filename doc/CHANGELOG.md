@@ -1,6 +1,7 @@
 # Changelog
 
 HEAD:
+- Upgrade to Scala 2.13
 
 Version 0.6:
 - Added preliminary support for a simple build system.

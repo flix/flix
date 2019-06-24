@@ -46,7 +46,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     //
     // Put the AST root into implicit scope.
     //
-    implicit val _ = root
+    implicit val r: Root = root
 
     // Generate all classes.
     val allClasses = flix.subphase("CodeGen") {

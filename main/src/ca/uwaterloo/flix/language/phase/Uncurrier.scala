@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.Ast.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
@@ -147,7 +147,7 @@ object Uncurrier extends Phase[Root, Root] {
     */
   def mkUncurried2(sym: Symbol.DefnSym, newDefs: TopLevel, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
     // Put gensym into implicit scope.
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     // Lookup the original definition.
     val defn = root.defs(sym)

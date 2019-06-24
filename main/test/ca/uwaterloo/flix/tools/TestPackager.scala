@@ -8,7 +8,7 @@ import org.scalatest.FunSuite
 
 class TestPackager extends FunSuite {
 
-  private implicit val _ = TerminalContext.NoTerminal
+  private implicit val terminalContext: TerminalContext = TerminalContext.NoTerminal
 
   private val ProjectPrefix: String = "flix-project-"
 

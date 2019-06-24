@@ -36,7 +36,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def run(prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = flix.phase("Resolver") {
 
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {

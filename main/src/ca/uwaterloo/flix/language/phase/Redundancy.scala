@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Result, Validation}
 
+import scala.collection.parallel.CollectionConverters._
+
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
   *

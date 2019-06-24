@@ -292,7 +292,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     // Compute the live defs.
-    val liveDefs = root.defs.filterKeys(reachableFunctions.contains)
+    val liveDefs = root.defs.filter {
+      case (sym, _) => reachableFunctions.contains(sym)
+    }
 
     // All reachable function should be live.
     // assert(reachableFunctions.size == liveDefs.size)

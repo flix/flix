@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.collection.parallel.CollectionConverters._
+
 // TODO: Come up with better name.
 object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 

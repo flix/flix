@@ -105,7 +105,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     for {
       _ <- sequence(root.defs.map { case (_, v) => checkPats(v, root) })

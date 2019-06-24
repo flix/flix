@@ -32,7 +32,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Type checks the given program.
     */
   def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     val result = for {
       defs <- typeDefs(program)

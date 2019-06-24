@@ -109,7 +109,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     * Attempts to verify all properties in the given AST.
     */
   def runAndPrint(root: FinalAst.Root, writer: PrintWriter)(implicit flix: Flix): Unit = {
-    implicit val _ = flix.genSym
+    implicit val genSynm: GenSym = flix.genSym
 
     /*
      * Verify each property.
@@ -139,7 +139,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     * Attempts to verify all properties in the given AST.
     */
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, PropertyError] = {
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     /*
      * Check if verification is enabled. Otherwise return success immediately.
@@ -513,7 +513,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     * Enumerates all possible symbolic values of the given type.
     */
   private def enumerate(root: Root, genSym: GenSym)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
-    implicit val _ = genSym
+    implicit val gen: GenSym = genSym
 
     /*
      * Local visitor. Enumerates the symbolic values of a type.

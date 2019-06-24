@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -647,7 +647,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   // TODO: Deprecated
   // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
   private def lit2symTemporaryToBeRemoved(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
     // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
     val lit = visitExp(exp0, m)

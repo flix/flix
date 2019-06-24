@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.{CompilationError, ast}
+import ca.uwaterloo.flix.language.{CompilationError, GenSym, ast}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -35,7 +35,7 @@ object Synthesize extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Synthesize") {
     // Put the GenSym object into implicit scope.
-    implicit val _ = flix.genSym
+    implicit val genSym: GenSym = flix.genSym
 
     // A mutable map from symbols to definitions. Populated during traversal.
     val newDefs = mutable.Map.empty[Symbol.DefnSym, Def]

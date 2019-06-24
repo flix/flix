@@ -1016,7 +1016,7 @@ object Interpreter {
   /**
     * Returns the given array `result` with all its values wrapped in proxy object.
     */
-  private def getWrappedArray(result: AnyRef, tpe: MonoType, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
+  private def getWrappedArray(result: Any, tpe: MonoType, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
     // Wrap the array values in proxy objects.
     result match {
       case a: Array[Char] => a map (v => ProxyObject.of(Char.box(v), null, null, null))
@@ -1234,8 +1234,8 @@ object Interpreter {
   /**
     * Returns the given reference `ref` as a Java object.
     */
-  def toJava(ref: AnyRef): AnyRef = ref match {
-    case Value.Unit => scala.Unit
+  def toJava(ref: AnyRef): Any = ref match {
+    case Value.Unit => ()
     case Value.True => java.lang.Boolean.TRUE
     case Value.False => java.lang.Boolean.FALSE
     case Value.Char(lit) => new java.lang.Character(lit)
@@ -1273,7 +1273,6 @@ object Interpreter {
     * Returns the given reference `ref` as a Value object.
     */
   def fromJava(ref: AnyRef): AnyRef = ref match {
-    case scala.Unit => Value.Unit
     case o: java.lang.Boolean => if (o.booleanValue()) Value.True else Value.False
     case o: java.lang.Character => Value.Char(o.charValue())
     case o: java.lang.Byte => Value.Int8(o.byteValue())
