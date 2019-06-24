@@ -1063,7 +1063,7 @@ object SymbolicEvaluator {
       *
       * Evaluates from left to right.
       */
-    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = {
+    def evaln(pc0: PathConstraint, xs: Iterable[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = {
       /*
        * Local visitor.
        */

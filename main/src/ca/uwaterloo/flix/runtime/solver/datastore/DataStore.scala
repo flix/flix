@@ -48,11 +48,11 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
     lattices += (latSym -> initLattice(latSym))
   }
 
-  def getRelations(): Traversable[IndexedRelation] = relations.values
+  def getRelations(): Iterable[IndexedRelation] = relations.values
 
   def getRelation(r: PredSym): IndexedRelation = relations(r)
 
-  def getLattices(): Traversable[IndexedLattice] = lattices.values
+  def getLattices(): Iterable[IndexedLattice] = lattices.values
 
   def getLattice(l: PredSym): IndexedLattice = lattices(l)
 

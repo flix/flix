@@ -1238,11 +1238,11 @@ object Interpreter {
     case Value.Unit => ()
     case Value.True => java.lang.Boolean.TRUE
     case Value.False => java.lang.Boolean.FALSE
-    case Value.Char(lit) => new java.lang.Character(lit)
-    case Value.Int8(lit) => new java.lang.Byte(lit)
-    case Value.Int16(lit) => new java.lang.Short(lit)
-    case Value.Int32(lit) => new java.lang.Integer(lit)
-    case Value.Int64(lit) => new java.lang.Long(lit)
+    case Value.Char(lit) => java.lang.Character.valueOf(lit)
+    case Value.Int8(lit) => java.lang.Byte.valueOf(lit)
+    case Value.Int16(lit) => java.lang.Short.valueOf(lit)
+    case Value.Int32(lit) => java.lang.Integer.valueOf(lit)
+    case Value.Int64(lit) => java.lang.Long.valueOf(lit)
     case Value.BigInt(lit) => lit
     case Value.Str(lit) => lit
     case Value.Arr(elms, tpe) =>

@@ -322,7 +322,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
                 def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerMonoType, root).gen.mk(r))
               }
           }
-          oneOf(elms.toArray: _*)
+          oneOf(elms.toIndexedSeq: _*)
 
         case MonoType.Tuple(elms) => (r: Random) => {
           val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))

@@ -438,7 +438,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   /**
     * Returns a sequence of rows matched by the given atom `p`.
     */
-  private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
+  private def evalAtom(p: AtomPredicate, env: Env): Iterable[Env] = {
     // retrieve the terms.
     val terms = p.getTerms
 
@@ -724,7 +724,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         result(index) = interp
         index = index + 1
       }
-      result.toIterator
+      result.iterator
     }
   }
 

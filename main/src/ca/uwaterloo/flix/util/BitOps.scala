@@ -39,7 +39,7 @@ object BitOps {
   /**
    * Returns the given bit vector `vec` with the `bits` set.
    */
-  def setBits(vec: Int, bits: Traversable[Int]): Int = {
+  def setBits(vec: Int, bits: Iterable[Int]): Int = {
     var result = vec
     for (bit <- bits) {
       result = setBit(result, bit)
