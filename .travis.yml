@@ -17,7 +17,7 @@ before_install:
   - pushd .
   - cd
   - wget http://downloads.typesafe.com/scala/2.13.0/scala-2.13.0.tgz
-  - tar xzf scala-2.12.3.tgz
+  - tar xzf scala-2.13.0.tgz
   - cd
   - export SCALA_HOME=`pwd`/scala-2.12.3
   - export PATH=$SCALA_HOME/bin:$PATH
