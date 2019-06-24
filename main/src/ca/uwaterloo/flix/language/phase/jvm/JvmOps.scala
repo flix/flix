@@ -753,7 +753,7 @@ object JvmOps {
     case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
-  @deprecated("will be removed", "0.5")
+  // TODO: Remove
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   /**

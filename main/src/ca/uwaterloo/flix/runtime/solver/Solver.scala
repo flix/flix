@@ -69,7 +69,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * A (possibly local) work list is a collection of (rule, env) pairs
     * specifying that the rule must be re-evaluated under the associated environment.
     */
-  type WorkList = mutable.ArrayStack[(Constraint, Env)]
+  type WorkList = mutable.Stack[(Constraint, Env)]
 
   /**
     * The type of a (partial) interpretation.
