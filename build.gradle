@@ -1,7 +1,6 @@
 plugins {
     id 'application'
     id 'scala'
-    id "com.github.maiflai.scalatest" version "0.25"
 }
 
 application {
@@ -13,7 +12,6 @@ repositories {
 }
 
 dependencies {
-
     implementation 'org.scala-lang:scala-library:2.13.0'
     implementation 'org.scala-lang:scala-reflect:2.13.0'
 
@@ -32,8 +30,6 @@ dependencies {
     compile files('lib/scala.collection.parallel-0.2.0.jar')
     compile files('lib/scala.xml-1.2.0.jar')
     compile files('lib/shapeless-2.3.3.jar')
-
-    testRuntime 'org.pegdown:pegdown:1.4.2'
 }
 
 tasks.withType(ScalaCompile) {
@@ -53,4 +49,10 @@ sourceSets {
             srcDirs = ['main/test']
         }
     }
+}
+
+task spec(dependsOn: ['testClasses'], type: JavaExec) {
+    main = 'org.scalatest.tools.Runner'
+    args = ['-R', 'build/classes/test', '-o']
+    classpath = sourceSets.test.runtimeClasspath
 }
