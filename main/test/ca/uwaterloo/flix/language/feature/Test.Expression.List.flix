@@ -2,7 +2,7 @@
 def testList01(): List[Int] = Nil
 
 @test
-def testList02(): List[Bool] = 1 :: Nil
+def testList02(): List[Int] = 1 :: Nil
 
 @test
 def testList03(): List[Int] = 1 :: 2 :: Nil
