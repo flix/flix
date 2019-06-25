@@ -6,7 +6,5 @@ jdk:
 os:
   - linux
 
-install: gradle wrapper --gradle-version 5.4.1
-
 notifications:
   email: false
