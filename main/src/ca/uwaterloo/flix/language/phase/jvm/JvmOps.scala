@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
@@ -707,8 +706,6 @@ object JvmOps {
     */
   def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
     case enumType@MonoType.Enum(sym, args) =>
-      implicit val genSym: GenSym = flix.genSym
-
       // Retrieve the enum.
       val enum = root.enums(enumType.sym)
 
@@ -724,7 +721,7 @@ object JvmOps {
     case _ => Set.empty
   }
 
-  @deprecated("will be removed", "0.5")
+  // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
     case MonoType.Var(id) => Type.Var(id, Kind.Star)
     case MonoType.Unit => Type.Cst(TypeConstructor.Unit)
@@ -753,7 +750,7 @@ object JvmOps {
     case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
-  @deprecated("will be removed", "0.5")
+  // TODO: Remove
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   /**

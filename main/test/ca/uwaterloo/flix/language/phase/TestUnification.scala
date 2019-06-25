@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result
@@ -26,7 +26,7 @@ class TestUnification extends FunSuite {
 
   val SL: SourceLocation = SourceLocation.Unknown
 
-  implicit val genSym: GenSym = new GenSym()
+  implicit val flix: Flix = new Flix()
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //

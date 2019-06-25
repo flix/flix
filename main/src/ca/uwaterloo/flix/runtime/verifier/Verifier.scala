@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.runtime.verifier
 import java.io.PrintWriter
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.PropertyError
@@ -109,8 +108,6 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     * Attempts to verify all properties in the given AST.
     */
   def runAndPrint(root: FinalAst.Root, writer: PrintWriter)(implicit flix: Flix): Unit = {
-    implicit val _ = flix.genSym
-
     /*
      * Verify each property.
      */
@@ -139,8 +136,6 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     * Attempts to verify all properties in the given AST.
     */
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, PropertyError] = {
-    implicit val _ = flix.genSym
-
     /*
      * Check if verification is enabled. Otherwise return success immediately.
      */
@@ -172,14 +167,14 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
       val unknowns = results.collect {
         case PropertyResult.Unknown(_, _, _, _, error) => error
       }
-      Validation.Failure((errors ++ unknowns).toStream)
+      Validation.Failure((errors ++ unknowns).to(LazyList))
     }
   }
 
   /**
     * Attempts the verify that the given property `p` is valid.
     */
-  def verifyProperty(p: Property, root: FinalAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(p: Property, root: FinalAst.Root)(implicit flix: Flix): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
 
@@ -190,7 +185,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
     val env0 = Map.empty: SymbolicEvaluator.Environment
 
     // perform symbolic execution to obtain all possible paths.
-    val contexts = SymbolicEvaluator.eval(p.exp, env0, Map.empty, enumerate(root, genSym), root)
+    val contexts = SymbolicEvaluator.eval(p.exp, env0, Map.empty, enumerate(root, flix), root)
 
     // a boolean to indicate whether to continue checking path satisfiability.
     var continue: Boolean = true
@@ -512,9 +507,7 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
     * Enumerates all possible symbolic values of the given type.
     */
-  private def enumerate(root: Root, genSym: GenSym)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
-    implicit val _ = genSym
-
+  private def enumerate(root: Root, flix: Flix)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
@@ -522,15 +515,15 @@ object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
       tpe match {
         case MonoType.Unit => List(SymVal.Unit)
         case MonoType.Bool => List(SymVal.True, SymVal.False)
-        case MonoType.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Char))
-        case MonoType.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Float32))
-        case MonoType.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Float64))
-        case MonoType.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int8))
-        case MonoType.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int16))
-        case MonoType.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int32))
-        case MonoType.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Int64))
-        case MonoType.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.BigInt))
-        case MonoType.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), MonoType.Str))
+        case MonoType.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Char))
+        case MonoType.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Float32))
+        case MonoType.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Float64))
+        case MonoType.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Int8))
+        case MonoType.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Int16))
+        case MonoType.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Int32))
+        case MonoType.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Int64))
+        case MonoType.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.BigInt))
+        case MonoType.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym)(flix), MonoType.Str))
 
         case MonoType.Enum(enumSym, _) =>
           val decl = root.enums(enumSym)

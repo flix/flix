@@ -34,9 +34,6 @@ object Synthesize extends Phase[Root, Root] {
     * Performs synthesis on the given ast `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Synthesize") {
-    // Put the GenSym object into implicit scope.
-    implicit val _ = flix.genSym
-
     // A mutable map from symbols to definitions. Populated during traversal.
     val newDefs = mutable.Map.empty[Symbol.DefnSym, Def]
 

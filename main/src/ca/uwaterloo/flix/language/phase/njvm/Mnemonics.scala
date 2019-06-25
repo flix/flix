@@ -191,7 +191,7 @@ object Mnemonics {
       * Emits a getField instruction given the fieldName, it's type and the class reference which contains the field
       *
       * @param fieldName the of the field
-      * @param ct reference of the class which contains the fields
+      * @param ct        reference of the class which contains the fields
       * @param fieldType the jvmType of the field we want to get
       * @pre This method should only be called if field with the specified fieldName matches the jvmType,
       *      to avoid verifier errors
@@ -230,8 +230,8 @@ object Mnemonics {
 
     /**
       * Emits a series of instructions that get a field and boxes it
-      * @pre the field should be of a primitive type i.e to allow boxing
       *
+      * @pre the field should be of a primitive type i.e to allow boxing
       * @param fieldName the of the field
       * @param fieldType the jvmType of the field we want to get
       */
@@ -281,7 +281,7 @@ object Mnemonics {
       * Emits a putField instruction given the fieldName, it's type and the class where the field is
       *
       * @param fieldName the of the field
-      * @param ct the reference of the class which contains the field we want to get
+      * @param ct        the reference of the class which contains the field we want to get
       * @param fieldType the jvmType of the field we want to get
       * @pre This method should only be called if field with the specified fieldName matches the jvmType,
       *      to avoid verifier errors
@@ -2464,16 +2464,16 @@ object Mnemonics {
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
             ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
-      map + (
-        new ContinuationInterface[MBool].getClassMapping,
-        new ContinuationInterface[MChar].getClassMapping,
-        new ContinuationInterface[MFloat].getClassMapping,
-        new ContinuationInterface[MDouble].getClassMapping,
-        new ContinuationInterface[MByte].getClassMapping,
-        new ContinuationInterface[MShort].getClassMapping,
-        new ContinuationInterface[MInt].getClassMapping,
-        new ContinuationInterface[MLong].getClassMapping,
-        new ContinuationInterface[Ref[MObject]].getClassMapping)
+      map ++
+        Map(new ContinuationInterface[MBool].getClassMapping) ++
+        Map(new ContinuationInterface[MChar].getClassMapping) ++
+        Map(new ContinuationInterface[MFloat].getClassMapping) ++
+        Map(new ContinuationInterface[MDouble].getClassMapping) ++
+        Map(new ContinuationInterface[MByte].getClassMapping) ++
+        Map(new ContinuationInterface[MShort].getClassMapping) ++
+        Map(new ContinuationInterface[MInt].getClassMapping) ++
+        Map(new ContinuationInterface[MLong].getClassMapping) ++
+        Map(new ContinuationInterface[Ref[MObject]].getClassMapping)
     }
   }
 
@@ -2628,16 +2628,16 @@ object Mnemonics {
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
             ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
-      map + (
-        new RecordExtend[MBool](map).getClassMapping,
-        new RecordExtend[MChar](map).getClassMapping,
-        new RecordExtend[MFloat](map).getClassMapping,
-        new RecordExtend[MDouble](map).getClassMapping,
-        new RecordExtend[MByte](map).getClassMapping,
-        new RecordExtend[MShort](map).getClassMapping,
-        new RecordExtend[MInt](map).getClassMapping,
-        new RecordExtend[MLong](map).getClassMapping,
-        new RecordExtend[Ref[MObject]](map).getClassMapping)
+      map ++
+        Map(new RecordExtend[MBool](map).getClassMapping) ++
+        Map(new RecordExtend[MChar](map).getClassMapping) ++
+        Map(new RecordExtend[MFloat](map).getClassMapping) ++
+        Map(new RecordExtend[MDouble](map).getClassMapping) ++
+        Map(new RecordExtend[MByte](map).getClassMapping) ++
+        Map(new RecordExtend[MShort](map).getClassMapping) ++
+        Map(new RecordExtend[MInt](map).getClassMapping) ++
+        Map(new RecordExtend[MLong](map).getClassMapping) ++
+        Map(new RecordExtend[Ref[MObject]](map).getClassMapping)
     }
   }
 
@@ -2671,16 +2671,16 @@ object Mnemonics {
     def gen(map: Map[JvmName, MnemonicsClass], types: Set[MonoType], tags: Set[TagInfo],
             ns: Set[NamespaceInfo], closures: Set[ClosureInfo])
            (implicit root: Root, flix: Flix): Map[JvmName, MnemonicsClass] = {
-      map + (
-        new RefClass[MBool].getClassMapping,
-        new RefClass[MChar].getClassMapping,
-        new RefClass[MFloat].getClassMapping,
-        new RefClass[MDouble].getClassMapping,
-        new RefClass[MByte].getClassMapping,
-        new RefClass[MShort].getClassMapping,
-        new RefClass[MInt].getClassMapping,
-        new RefClass[MLong].getClassMapping,
-        new RefClass[Ref[MObject]].getClassMapping)
+      map ++
+        Map(new RefClass[MBool].getClassMapping) ++
+        Map(new RefClass[MChar].getClassMapping) ++
+        Map(new RefClass[MFloat].getClassMapping) ++
+        Map(new RefClass[MDouble].getClassMapping) ++
+        Map(new RefClass[MByte].getClassMapping) ++
+        Map(new RefClass[MShort].getClassMapping) ++
+        Map(new RefClass[MInt].getClassMapping) ++
+        Map(new RefClass[MLong].getClassMapping) ++
+        Map(new RefClass[Ref[MObject]].getClassMapping)
     }
 
   }

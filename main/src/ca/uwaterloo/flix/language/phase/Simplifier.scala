@@ -33,11 +33,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Simplifier") {
     //
-    // Put GenSym into the implicit scope.
-    //
-    implicit val _ = flix.genSym
-
-    //
     // A mutable map to contain fresh top-level definitions.
     //
     val toplevel: TopLevel = mutable.Map.empty

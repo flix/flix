@@ -58,7 +58,7 @@ object NJvmBackend extends Phase[Root, CompilationResult] {
     //
     // Put the AST root into implicit scope.
     //
-    implicit val _ = root
+    implicit val r: Root = root
 
     //
     // Compute the set of closures in the program.

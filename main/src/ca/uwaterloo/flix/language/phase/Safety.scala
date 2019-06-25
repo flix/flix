@@ -32,7 +32,7 @@ object Safety extends Phase[Root, Root] {
     if (errors.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(errors.toStream)
+      Validation.Failure(errors.to(LazyList))
   }
 
   /**

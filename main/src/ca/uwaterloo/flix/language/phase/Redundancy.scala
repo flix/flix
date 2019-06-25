@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Result, Validation}
 
+import scala.collection.parallel.CollectionConverters._
+
 /**
   * The Redundancy phase checks that declarations and expressions within the AST are used in a meaningful way.
   *
@@ -846,7 +848,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Returns an environment with the given variable symbols `varSyms` in it.
       */
-    def of(varSyms: Traversable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
+    def of(varSyms: Iterable[Symbol.VarSym]): Env = varSyms.foldLeft(Env.empty) {
       case (acc, sym) => acc + sym
     }
   }
@@ -873,7 +875,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Updates `this` environment with a set of new variable symbols `varSyms`.
       */
-    def ++(vs: Traversable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
+    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
       case (acc, sym) => acc + sym
     }
   }
@@ -975,7 +977,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Adds the given traversable of redundancy errors `es` to `this` object.
       */
-    def ++(es: Traversable[RedundancyError]): Used =
+    def ++(es: Iterable[RedundancyError]): Used =
       if (es.isEmpty) this else copy(errors = errors ++ es)
 
     /**
@@ -986,13 +988,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Marks all the given variable symbols `syms` as used.
       */
-    def --(syms: Traversable[Symbol.VarSym]): Used =
+    def --(syms: Iterable[Symbol.VarSym]): Used =
       if (syms.isEmpty) this else copy(varSyms = varSyms -- syms)
 
     /**
       * Returns Successful(a) unless `this` contains errors.
       */
-    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.toStream)
+    def toValidation[A](a: A): Validation[A, RedundancyError] = if (errors.isEmpty) Success(a) else Failure(errors.to(LazyList))
   }
 
   /**

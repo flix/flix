@@ -51,7 +51,7 @@ object Main {
     }
 
     // the default color context.
-    implicit val _ = TerminalContext.AnsiTerminal
+    implicit val terminal = TerminalContext.AnsiTerminal
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {

@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
+import scala.collection.parallel.CollectionConverters._
 
 /**
   * The stratification phase breaks constraints into strata.

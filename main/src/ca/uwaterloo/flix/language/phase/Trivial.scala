@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.collection.parallel.CollectionConverters._
+
 // TODO: Come up with better name.
 object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -43,7 +45,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     if (trivial.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(trivial.toStream)
+      Validation.Failure(trivial.to(LazyList))
   }
 
   private object Catalog {
@@ -61,7 +63,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     val EmptyString: Expression = Expression.Str("", SL)
     val ListNil: Expression = Expression.Tag(Symbol.mkEnumSym("List"), "Nil", Unit, TInt32, Pure, SL)
 
-    def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym()(flix.genSym), TInt32, Pure, SL)
+    def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym(), TInt32, Pure, SL)
 
     def add(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Plus, e1, e2, TInt32, Pure, SL)
@@ -88,7 +90,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def identity()(implicit flix: Flix): Expression = {
-      val sym = Symbol.freshVarSym()(flix.genSym)
+      val sym = Symbol.freshVarSym()(flix)
       val fparam = FormalParam(sym, Ast.Modifiers.Empty, TInt32, SL)
       val body = Var(sym, TInt32, Pure, SL)
       Lambda(fparam, body, TInt32, Pure, SL)

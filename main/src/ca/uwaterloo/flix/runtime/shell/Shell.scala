@@ -36,7 +36,7 @@ import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 
 class Shell(initialPaths: List[Path], options: Options) {
@@ -49,7 +49,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * The default color context.
     */
-  private implicit val _ = TerminalContext.AnsiTerminal
+  private implicit val terminalContext: TerminalContext = TerminalContext.AnsiTerminal
 
   /**
     * The executor service.

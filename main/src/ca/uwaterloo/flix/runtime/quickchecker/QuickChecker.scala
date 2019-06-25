@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.runtime.quickchecker
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{FinalAst, Symbol, MonoType}
 import ca.uwaterloo.flix.language.errors.PropertyError
@@ -165,8 +164,6 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
     * Attempts to quick check all properties in the given AST.
     */
   def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, PropertyError] = {
-    implicit val _ = flix.genSym
-
     /*
      * Number of times to instantiate a quantified variable.
      */
@@ -207,14 +204,14 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
       val errors = results.collect {
         case PropertyResult.Failure(_, _, _, _, error) => error
       }
-      Validation.Failure(errors.toStream)
+      Validation.Failure(errors.to(LazyList))
     }
   }
 
   /**
     * Attempts to quick check the given `property`.
     */
-  private def quickCheckProperty(p: Property, limit: Int, root: Root)(implicit genSym: GenSym, random: Random): PropertyResult = {
+  private def quickCheckProperty(p: Property, limit: Int, root: Root)(implicit flix: Flix, random: Random): PropertyResult = {
     /*
      * Start the clock.
      */
@@ -235,7 +232,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
      * Run the symbolic evaluator on the generated environment.
      */
     val results = try {
-      SymbolicEvaluator.eval(p.exp, env0, Map.empty, enumerate(limit, root, genSym, random), root) map {
+      SymbolicEvaluator.eval(p.exp, env0, Map.empty, enumerate(limit, root, flix, random), root) map {
         case (Nil, qua, SymVal.True) =>
           success += PathResult.Success
         case (Nil, qua, SymVal.False) =>
@@ -264,7 +261,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
   /**
     * Randomly generates a list of symbolic values for the given type.
     */
-  private def enumerate(limit: Int, root: Root, genSym: GenSym, random: Random)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
+  private def enumerate(limit: Int, root: Root, flix: Flix, random: Random)(sym: Symbol.VarSym, tpe: MonoType): List[SymVal] = {
     val arb = new ArbSymVal(tpe, root).gen
     (1 to limit).toList.map(_ => arb.mk(random))
   }
@@ -322,7 +319,7 @@ object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
                 def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerMonoType, root).gen.mk(r))
               }
           }
-          oneOf(elms.toArray: _*)
+          oneOf(elms.toIndexedSeq: _*)
 
         case MonoType.Tuple(elms) => (r: Random) => {
           val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))

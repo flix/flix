@@ -56,7 +56,7 @@ sealed trait Validation[+T, +E] {
   /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
-  protected def errors: Stream[E]
+  protected def errors: LazyList[E]
 
 }
 
@@ -71,18 +71,18 @@ object Validation {
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
-    def errors: Stream[E] = Stream.empty
+    def errors: LazyList[E] = LazyList.empty
   }
 
   /**
     * Represents a failure with no value and `errors`.
     */
-  case class Failure[T, E](errors: Stream[E]) extends Validation[T, E]
+  case class Failure[T, E](errors: LazyList[E]) extends Validation[T, E]
 
   /**
     * Sequences the given list of validations `xs`.
     */
-  def sequence[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
+  def sequence[T, E](xs: Iterable[Validation[T, E]]): Validation[List[T], E] = {
     val zero = Success(List.empty[T]): Validation[List[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
@@ -99,19 +99,19 @@ object Validation {
   /**
     * Traverses `xs` while applying the function `f`.
     */
-  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
+  def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
 
   /**
     * A fast implementation of traverse.
     */
-  private def fastTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
+  private def fastTraverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
     // Check if the sequence is empty.
     if (xs.isEmpty)
       return Validation.SuccessNil
 
     // Two mutable arrays to hold the intermediate results.
     val successValues = mutable.ArrayBuffer.empty[S]
-    val failureStream = mutable.ArrayBuffer.empty[Stream[E]]
+    val failureStream = mutable.ArrayBuffer.empty[LazyList[E]]
 
     // Apply f to each element and collect the results.
     for (x <- xs) {
@@ -125,7 +125,7 @@ object Validation {
     if (failureStream.isEmpty) {
       Success(successValues.toList)
     } else {
-      Failure(failureStream.foldLeft(Stream.empty[E])(_ #::: _))
+      Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
     }
 
   }
@@ -245,7 +245,7 @@ object Validation {
     * Adds an implicit `toFailure` method.
     */
   implicit class ToFailure[+E](val e: E) {
-    def toFailure[V, F >: E]: Validation[V, F] = Failure(e #:: Stream.empty)
+    def toFailure[V, F >: E]: Validation[V, F] = Failure(e #:: LazyList.empty)
   }
 
   // TODO: Everything below this line is deprecated.

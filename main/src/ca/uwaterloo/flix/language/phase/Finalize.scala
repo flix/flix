@@ -647,7 +647,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   // TODO: Deprecated
   // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
   private def lit2symTemporaryToBeRemoved(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
-    implicit val _ = flix.genSym
     // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
     val lit = visitExp(exp0, m)
