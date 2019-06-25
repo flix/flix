@@ -2,6 +2,7 @@
 
 HEAD:
 - Upgrade to Scala 2.13
+- Added support for Gradle builds.
 
 Version 0.6:
 - Added preliminary support for a simple build system.
