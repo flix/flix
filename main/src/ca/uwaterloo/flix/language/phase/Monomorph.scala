@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -103,8 +103,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
-    implicit val genSyn: GenSym = flix.genSym
-
     /**
       * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
       *

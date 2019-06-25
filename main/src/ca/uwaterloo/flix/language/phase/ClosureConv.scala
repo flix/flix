@@ -121,7 +121,7 @@ object ClosureConv extends Phase[Root, Root] {
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
       val newArgs = fvs.map {
         case (oldSym, ptype) =>
-          val newSym = Symbol.freshVarSym(oldSym)(flix.genSym)
+          val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
           FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
       } ++ args

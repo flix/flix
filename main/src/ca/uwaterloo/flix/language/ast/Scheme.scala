@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
@@ -24,7 +24,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme)(implicit genSym: GenSym): Type = Type.refreshTypeVars(sc.quantifiers, sc.base)
+  def instantiate(sc: Scheme)(implicit flix: Flix): Type = Type.refreshTypeVars(sc.quantifiers, sc.base)
 
 }
 

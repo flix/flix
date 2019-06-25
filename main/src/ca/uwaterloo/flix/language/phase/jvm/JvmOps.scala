@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
@@ -707,8 +706,6 @@ object JvmOps {
     */
   def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
     case enumType@MonoType.Enum(sym, args) =>
-      implicit val genSym: GenSym = flix.genSym
-
       // Retrieve the enum.
       val enum = root.enums(enumType.sym)
 

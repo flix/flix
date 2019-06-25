@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show
 
@@ -316,7 +316,7 @@ object Type {
   /**
     * Returns a fresh type variable.
     */
-  def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
+  def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
 
   /**
     * Constructs the arrow type A -> B.
@@ -395,7 +395,7 @@ object Type {
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
-  def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit genSym: GenSym): Type = {
+  def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
     val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) => macc + (tvar.id -> freshTypeVar(tvar.kind))
     }

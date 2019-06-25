@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Stratification
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
@@ -32,8 +32,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Type checks the given program.
     */
   def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
-    implicit val genSym: GenSym = flix.genSym
-
     val result = for {
       defs <- typeDefs(program)
       effs <- typeEffs(program)
@@ -60,9 +58,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a definition fails to type check.
     */
   private def typeDefs(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
-    // Put genSym into implicit scope.
-    implicit val genSym = flix.genSym
-
     /**
       * Performs type inference and reassembly on the given definition `defn`.
       */
@@ -112,7 +107,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Performs type inference and reassembly on all enums in the given program.
     */
-  private def typeEnums(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
+  private def typeEnums(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
     /**
       * Performs type resolution on the given enum and its cases.
       */
@@ -171,7 +166,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     *
     * Returns [[Err]] if a type error occurs.
     */
-  private def typeLatticeComponents(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.LatticeComponents], TypeError] = {
+  private def typeLatticeComponents(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Type, TypedAst.LatticeComponents], TypeError] = {
 
     /**
       * Performs type inference and reassembly on the given `lattice`.
@@ -226,7 +221,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the types of all the properties in the given program `prog0`.
     */
-  private def typeProperties(prog0: ResolvedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Property], TypeError] = {
+  private def typeProperties(prog0: ResolvedAst.Program)(implicit flix: Flix): Result[List[TypedAst.Property], TypeError] = {
 
     /**
       * Infers the type of the given property `p0`.
@@ -253,7 +248,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, program: ResolvedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Def, TypeError] = {
+  private def typeCheckDef(defn0: ResolvedAst.Def, program: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Def, TypeError] = {
     // Resolve the declared scheme.
     val declaredScheme = defn0.sc
 
@@ -287,20 +282,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def typeCheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
     case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff0, loc) =>
-      implicit val genSym: GenSym = flix.genSym
-
       val eff = program0.effs(sym)
-      val effectType = Scheme.instantiate(eff.sc)(flix.genSym)
+      val effectType = Scheme.instantiate(eff.sc)
 
-      val declaredType = Scheme.instantiate(sc)(flix.genSym)
-
+      val declaredType = Scheme.instantiate(sc)
       val subst0 = getSubstFromParams(fparams0)
       val tparams = getTypeParams(tparams0)
       val fparams = getFormalParams(fparams0, subst0)
       val argumentTypes = fparams.map(_.tpe)
 
       val result = for {
-        actualType <- inferExp(exp0, program0)(flix.genSym)
+        actualType <- inferExp(exp0, program0)
         unifiedType <- unifyM(declaredType, effectType, Type.mkArrow(argumentTypes, actualType), loc)
       } yield unifiedType
 
@@ -317,7 +309,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   private def typeCheckEff(eff0: ResolvedAst.Eff)(implicit flix: Flix): Result[TypedAst.Eff, TypeError] = eff0 match {
     case ResolvedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc, eff, loc) =>
       val argumentTypes = fparams0.map(_.tpe)
-      val tpe = Scheme.instantiate(sc)(flix.genSym)
+      val tpe = Scheme.instantiate(sc)
 
       val subst = getSubstFromParams(fparams0)
       val tparams = getTypeParams(tparams0)
@@ -355,7 +347,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
+  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
@@ -1830,7 +1822,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given pattern `pat0`.
     */
-  private def inferPattern(pat0: ResolvedAst.Pattern, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = {
+  private def inferPattern(pat0: ResolvedAst.Pattern, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = {
     /**
       * Local pattern visitor.
       */
@@ -1888,7 +1880,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferPatterns(pats0: List[ResolvedAst.Pattern], program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
+  private def inferPatterns(pats0: List[ResolvedAst.Pattern], program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[List[Type]] = {
     seqM(pats0.map(p => inferPattern(p, program)))
   }
 
@@ -1924,7 +1916,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given head predicate.
     */
-  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = head match {
+  private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = head match {
     case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
@@ -1963,7 +1955,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given body predicate.
     */
-  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
+  private def inferBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = body0 match {
     //
     //  t_1 : tpe_1, ..., t_n: tpe_n
     //  ------------------------------------------------------------
@@ -2044,7 +2036,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     *
     * where a is a fresh type variable.
     */
-  private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+  private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = {
     val quantifiers = sym match {
       case x: Symbol.RelSym => program.relations(x).sc.quantifiers
       case x: Symbol.LatSym => program.lattices(x).sc.quantifiers
@@ -2114,12 +2106,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaType()(implicit genSym: GenSym): Type = Type.freshTypeVar()
+  private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshTypeVar()
 
   /**
     * Returns the Flix Type of a Java Type
     */
-  private def getGenericFlixType(t: java.lang.reflect.Type)(implicit genSym: GenSym): Type = {
+  private def getGenericFlixType(t: java.lang.reflect.Type)(implicit flix: Flix): Type = {
     t match {
       case arrayType: java.lang.reflect.GenericArrayType =>
         val comp = arrayType.getGenericComponentType

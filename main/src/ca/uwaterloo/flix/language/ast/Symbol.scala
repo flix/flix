@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Name.{Ident, NName}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -25,75 +25,75 @@ object Symbol {
   /**
     * Returns a fresh def symbol with the given text.
     */
-  def freshDefnSym(text: String)(implicit genSym: GenSym): DefnSym = {
-    val id = Some(genSym.freshId())
+  def freshDefnSym(text: String)(implicit flix: Flix): DefnSym = {
+    val id = Some(flix.genSym.freshId())
     new DefnSym(id, Nil, text, SourceLocation.Unknown)
   }
 
   /**
     * Returns a fresh def symbol based on the given symbol.
     */
-  def freshDefnSym(sym: DefnSym)(implicit genSym: GenSym): DefnSym = {
-    val id = Some(genSym.freshId())
+  def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {
+    val id = Some(flix.genSym.freshId())
     new DefnSym(id, sym.namespace, sym.text, sym.loc)
   }
 
   /**
     * Returns a fresh eff symbol based on the given symbol.
     */
-  def freshEffSym(sym: EffSym)(implicit genSym: GenSym): EffSym = {
-    val id = Some(genSym.freshId())
+  def freshEffSym(sym: EffSym)(implicit flix: Flix): EffSym = {
+    val id = Some(flix.genSym.freshId())
     new EffSym(id, sym.namespace, sym.text, sym.loc)
   }
 
   /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
-  def freshHoleSym(loc: SourceLocation)(implicit genSym: GenSym): HoleSym = {
-    val id = genSym.freshId()
+  def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
+    val id = flix.genSym.freshId()
     new HoleSym(Nil, "h" + id, loc)
   }
 
   /**
     * Returns a fresh variable symbol with no additional information.
     */
-  def freshVarSym()(implicit genSym: GenSym): VarSym = {
-    new VarSym(genSym.freshId(), "tmp", Type.freshTypeVar(), SourceLocation.Unknown)
+  def freshVarSym()(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), "tmp", Type.freshTypeVar(), SourceLocation.Unknown)
   }
 
   /**
     * Returns a fresh variable symbol based on the given symbol.
     */
-  def freshVarSym(sym: VarSym)(implicit genSym: GenSym): VarSym = {
-    new VarSym(genSym.freshId(), sym.text, sym.tvar, sym.loc)
+  def freshVarSym(sym: VarSym)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), sym.text, sym.tvar, sym.loc)
   }
 
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident)(implicit genSym: GenSym): VarSym = {
-    new VarSym(genSym.freshId(), ident.name, Type.freshTypeVar(), ident.loc)
+  def freshVarSym(ident: Name.Ident)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), ident.name, Type.freshTypeVar(), ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String)(implicit genSym: GenSym): VarSym = {
-    new VarSym(genSym.freshId(), text, Type.freshTypeVar(), SourceLocation.Unknown)
+  def freshVarSym(text: String)(implicit flix: Flix): VarSym = {
+    new VarSym(flix.genSym.freshId(), text, Type.freshTypeVar(), SourceLocation.Unknown)
   }
 
   /**
     * Returns a label symbol with the given text.
     */
-  def freshLabel(text: String)(implicit genSym: GenSym): LabelSym = {
-    new LabelSym(genSym.freshId(), text)
+  def freshLabel(text: String)(implicit flix: Flix): LabelSym = {
+    new LabelSym(flix.genSym.freshId(), text)
   }
 
   /**
     * Returns a fresh label symbol with the same text as the given label.
     */
-  def freshLabel(sym: LabelSym)(implicit genSym: GenSym): LabelSym = {
-    new LabelSym(genSym.freshId(), sym.text)
+  def freshLabel(sym: LabelSym)(implicit flix: Flix): LabelSym = {
+    new LabelSym(flix.genSym.freshId(), sym.text)
   }
 
   /**
