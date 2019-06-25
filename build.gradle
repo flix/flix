@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'scala'
+    id "com.github.maiflai.scalatest" version "0.25"
 }
 
 application {
@@ -32,14 +33,12 @@ dependencies {
     compile files('lib/scala.xml-1.2.0.jar')
     compile files('lib/shapeless-2.3.3.jar')
 
+    testRuntime 'org.pegdown:pegdown:1.4.2'
 }
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = [
-           // "-deprecation",
-      //      "-unchecked",
             "-language:postfixOps"
-        //    "-Xfatal-warnings"
     ]
 }
 
