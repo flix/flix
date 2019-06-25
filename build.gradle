@@ -51,10 +51,11 @@ sourceSets {
     }
 }
 
-task spec(dependsOn: ['testClasses'], type: JavaExec) {
+task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     main = 'org.scalatest.tools.Runner'
-    args = ['-R', 'build/classes/scala/test', '-o']
+    // args = ['-R', 'build/classes/scala/test', '-o']
+    args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
     classpath = sourceSets.test.runtimeClasspath
 }
 
-test.dependsOn spec
+test.dependsOn testAll
