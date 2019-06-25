@@ -1,5 +1,5 @@
 @test
-def testList01(): List[Int] = Nil
+def testList01(): List[Bool] = Nil
 
 @test
 def testList02(): List[Int] = 1 :: Nil
