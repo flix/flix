@@ -63,7 +63,7 @@ enum ColorNoSep {
 }
 
 @test
-def testEnum01(): ColorNoSep = Red
+def testEnum014(): ColorNoSep = Red
 
 @test
-def testEnum02(): ColorNoSep = Blu
+def testEnum015(): ColorNoSep = Blu

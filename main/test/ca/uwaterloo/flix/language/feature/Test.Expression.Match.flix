@@ -702,3 +702,16 @@ def testMatchTuple29(): Bool = assertEq!(f46(0, 2), 2)
 
 @test
 def testMatchTuple30(): Bool = assertEq!(f46(3, 4), 0)
+
+@test
+def testMatchTupleWithSep01(): Bool = match 0 with {
+    case 0 => true,
+    case 1 => true,
+    case 2 => true,
+    case _ => true
+}
+
+@test
+def testMatchTupleWithSep02(): Bool = match 0 with {
+    case 0 => true, case 1 => true, case 2 => true, case _ => true
+}
