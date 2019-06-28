@@ -68,6 +68,12 @@ def testEnum014(): ColorNoSep = Red
 @test
 def testEnum015(): ColorNoSep = Blu
 
-enum ColorShort {
-    case Red, Blu
+enum AnimalShort {
+    case Cat, Dog
 }
+
+@test
+def testEnum015(): AnimalShort = Cat
+
+@test
+def testEnum016(): AnimalShort = Dog
