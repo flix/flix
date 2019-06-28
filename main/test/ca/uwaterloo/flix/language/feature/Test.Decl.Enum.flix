@@ -73,7 +73,7 @@ enum AnimalShort {
 }
 
 @test
-def testEnum015(): AnimalShort = Cat
+def testEnum016(): AnimalShort = Cat
 
 @test
-def testEnum016(): AnimalShort = Dog
+def testEnum017(): AnimalShort = Dog
