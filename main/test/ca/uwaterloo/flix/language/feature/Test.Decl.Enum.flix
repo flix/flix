@@ -67,3 +67,7 @@ def testEnum014(): ColorNoSep = Red
 
 @test
 def testEnum015(): ColorNoSep = Blu
+
+enum ColorShort {
+    case Red, Blu
+}
