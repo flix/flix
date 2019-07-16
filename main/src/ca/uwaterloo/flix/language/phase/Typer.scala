@@ -653,10 +653,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Tuple(elms, tvar, evar, loc) =>
-        for (
-          elementTypes <- seqM(elms.map(visitExp));
+        for {
+          (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
           resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
-        ) yield resultType
+          resultEff <- unifyEffM(evar :: elementEffects, loc)
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.RecordEmpty(tvar, evar, loc) =>
         //
@@ -769,43 +770,40 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultType, resultEff)
 
-      /*
-       * ArrayStore expression.
-       */
-      case ResolvedAst.Expression.ArrayStore(base, index, elm, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, evar, loc) =>
         //
-        //  base : Array[t]   index : Int   elm : t
+        //  exp1 : Array[t]    exp2 : Int    exp3 : t
         //  -----------------------------------------
-        //  base[index] = elm : Unit
+        //  exp1[exp2] = exp3 : Unit
         //
         val elementType = Type.freshTypeVar()
-        for (
-          actualBaseType <- visitExp(base);
-          actualIndexType <- visitExp(index);
-          actualElementType <- visitExp(elm);
-          arrayType <- unifyM(actualBaseType, Type.mkArray(elementType), loc);
-          indexType <- unifyM(actualIndexType, Type.Cst(TypeConstructor.Int32), loc);
-          elementType <- unifyM(actualElementType, elementType, loc);
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          (tpe3, eff3) <- visitExp(exp3)
+          arrayType <- unifyM(tpe1, Type.mkArray(elementType), loc)
+          indexType <- unifyM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
+          elementType <- unifyM(tpe3, elementType, loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
-        ) yield resultType
+          resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * ArraySlice expression.
-       */
-      case ResolvedAst.Expression.ArraySlice(base, startIndex, endIndex, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, evar, loc) =>
         //
-        //  base : Array[t]   startIndex : Int   endIndex : Int
-        //  -----------------------------------------
-        //  base[startIndex..EndIndex] : Array[t]
+        //  exp1 : Array[t]    exp2 : Int    exp3 : Int
+        //  -------------------------------------------
+        //  exp1[exp2..exp3] : Array[t]
         //
-        for (
-          actualBaseType <- visitExp(base);
-          actualStartIndexType <- visitExp(startIndex);
-          actualEndIndexType <- visitExp(endIndex);
-          startIndexType <- unifyM(actualStartIndexType, Type.Cst(TypeConstructor.Int32), loc);
-          endIndexType <- unifyM(actualEndIndexType, Type.Cst(TypeConstructor.Int32), loc);
-          resultType <- unifyM(tvar, actualBaseType, loc)
-        ) yield resultType
+        val elementType = Type.freshTypeVar()
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          (tpe3, eff3) <- visitExp(exp3)
+          resultType <- unifyM(tvar, tpe1, Type.mkArray(elementType), loc)
+          fstIndexType <- unifyM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
+          lstIndexType <- unifyM(tpe3, Type.Cst(TypeConstructor.Int32), loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
+        } yield resultType
 
       case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) =>
         //

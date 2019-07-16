@@ -376,6 +376,8 @@ object Type {
     }
   }
 
+  // TODO: Move these helpers into the Typer.
+
   /**
     * Constructs the array type [elmType] where 'elmType' is the given type.
     */
