@@ -604,26 +604,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val bodies = rules.map(_.exp)
 
         for {
-          matchType <- visitExp(exp1)
+          (tpe, eff) <- visitExp(exp1)
           patternTypes <- inferPatterns(patterns, program)
-          patternType <- unifyM(patternTypes, loc)
-          ___________ <- unifyM(matchType, patternType, loc)
-          guardTypes <- seqM(guards map visitExp)
+          patternType <- unifyM(tpe :: patternTypes, loc)
+          (guardTypes, guardEffects) <- seqM(guards map visitExp).map(_.unzip)
           guardType <- unifyM(Type.Cst(TypeConstructor.Bool) :: guardTypes, loc)
-          actualBodyTypes <- seqM(bodies map visitExp)
-          resultType <- unifyM(tvar :: actualBodyTypes, loc)
-        } yield resultType
+          (bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip)
+          resultType <- unifyM(tvar :: bodyTypes, loc)
+          resultEff <- unifyEffM(evar :: guardEffects ::: bodyEffects, loc)
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Switch(rules, tvar, evar, loc) =>
         val condExps = rules.map(_._1)
         val bodyExps = rules.map(_._2)
-        for (
-          actualCondTypes <- seqM(condExps map visitExp);
-          actualBodyTypes <- seqM(bodyExps map visitExp);
-          unifiedCondTypes <- unifyM(Type.Cst(TypeConstructor.Bool) :: actualCondTypes, loc);
-          unifiedBodyType <- unifyM(actualBodyTypes, loc);
-          resultType <- unifyM(tvar, unifiedBodyType, loc)
-        ) yield resultType
+        for {
+          (condTypes, condEffects) <- seqM(condExps map visitExp).map(_.unzip)
+          (bodyTypes, bodyEffects) <- seqM(bodyExps map visitExp).map(_.unzip)
+          condType <- unifyM(Type.Cst(TypeConstructor.Bool) :: condTypes, loc)
+          resultType <- unifyM(tvar :: bodyTypes, loc)
+          resultEff <- unifyEffM(evar :: condEffects ::: bodyEffects, loc)
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, evar, loc) =>
         // TODO: Use a type scheme?
