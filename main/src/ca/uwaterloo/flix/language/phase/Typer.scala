@@ -1151,41 +1151,33 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, actualResultType, loc)
         } yield resultType
 
-      /*
-       * ProcessSpawn Expression.
-       */
       case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
         //
         //  exp: t
-        //  ------------------
+        //  ----------------
         //  spawn exp : Unit
         //
         for {
-          e <- visitExp(exp)
-          _ <- unifyM(e, Type.freshTypeVar(), loc)
+          (tpe, eff) <- visitExp(exp)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
-        } yield resultType
+          resultEff <- unifyEffM(evar, Eff.Pure, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * ProcessSleep expression.
-       */
       case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) =>
         //
         // exp: Int
-        // ------------------
+        // ----------------
         // sleep exp : Unit
         //
         for {
-          e <- visitExp(exp)
-          _ <- unifyM(e, Type.Cst(TypeConstructor.Int64), loc)
+          (tpe, eff) <- visitExp(exp)
+          durationType <- unifyM(tpe, Type.Cst(TypeConstructor.Int64), loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
+          resultEff <- unifyEffM(evar, eff, loc)
         } yield resultType
 
-      /*
-       * ProcessPanic expression.
-       */
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
-        liftM(tvar)
+        liftM((tvar, evar))
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, evar, loc) =>
         for {
