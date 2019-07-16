@@ -738,7 +738,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Arrow(_, l), _) => Expression.Int32(123, sl)
 
         case _ =>
           //
@@ -1004,7 +1004,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 
-        case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
+        case Type.Apply(Type.Arrow(_, l), _) => Expression.Str("<<clo>>", sl)
 
         case _ =>
           //

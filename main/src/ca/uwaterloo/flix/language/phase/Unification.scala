@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -60,7 +60,7 @@ object Unification {
           case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(l) => Type.Arrow(l)
+      case Type.Arrow(f, l) => Type.Arrow(f, l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
@@ -208,7 +208,8 @@ object Unification {
         else
           Result.Err(UnificationError.Mismatch(tpe1, tpe2))
 
-      case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+      case (Type.Arrow(f1, l1), Type.Arrow(f2, l2)) if l1 == l2 =>
+        unifyEffects(f1, f2)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
@@ -254,6 +255,11 @@ object Unification {
           case Result.Err(e) => Result.Err(e)
         }
       case _ => Result.Err(UnificationError.Mismatch(tpe1, tpe2))
+    }
+
+    // TODO: DOC and IMPL
+    def unifyEffects(eff1: Eff, eff2: Eff): Result[Substitution, UnificationError] = {
+      Result.Ok(Substitution.empty)
     }
 
     /**

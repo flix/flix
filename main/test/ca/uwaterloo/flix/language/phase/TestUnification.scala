@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Eff, Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
@@ -215,7 +215,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Arrow") {
-    val result = Unification.unify(Type.Arrow(3), Type.Arrow(3))
+    val result = Unification.unify(Type.Arrow(Eff.Pure, 3), Type.Arrow(Eff.Pure, 3))
     assert(isOk(result))
   }
 

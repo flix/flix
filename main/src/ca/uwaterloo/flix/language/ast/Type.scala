@@ -37,7 +37,7 @@ sealed trait Type {
     case Type.Cst(tc) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
-    case Type.Arrow(l) => Set.empty
+    case Type.Arrow(_, _) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
@@ -95,7 +95,7 @@ sealed trait Type {
     * Returns `true` if `this` type is an arrow type.
     */
   def isArrow: Boolean = typeConstructor match {
-    case Type.Arrow(l) => true
+    case Type.Arrow(_, _) => true
     case _ => false
   }
 
@@ -166,7 +166,7 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Arrow(l) => s"Arrow($l)"
+    case Type.Arrow(eff, l) => s"Arrow($eff, $l)"
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.RecordEmpty => "{ }"
@@ -230,7 +230,7 @@ object Type {
   /**
     * A type expression that represents functions.
     */
-  case class Arrow(length: Int) extends Type {
+  case class Arrow(eff: Eff, length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
@@ -321,12 +321,12 @@ object Type {
   /**
     * Constructs the arrow type A -> B.
     */
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b)
+  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(Eff.Pure, 2), a), b) // TODO: Pure?
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
-  def mkArrow(as: List[Type], b: Type): Type = {
+  def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
     as.foldRight(b)(mkArrow)
   }
 
@@ -334,7 +334,7 @@ object Type {
     * Constructs the arrow type [A] -> B.
     */
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    val arrow = Arrow(as.length + 1)
+    val arrow = Arrow(Eff.Pure, as.length + 1) // TODO: Pure?
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -406,7 +406,7 @@ object Type {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(l) => Type.Arrow(l)
+      case Type.Arrow(f, l) => Type.Arrow(f, l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
@@ -470,7 +470,7 @@ object Type {
           //
           // Arrow.
           //
-          case Type.Arrow(l) =>
+          case Type.Arrow(_, l) =>
             val argumentTypes = args.init
             val resultType = args.last
             if (argumentTypes.length == 1) {

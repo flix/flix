@@ -19,14 +19,7 @@ package ca.uwaterloo.flix.language.ast
 /**
   * Represents the computational effect of an expression.
   */
-sealed trait Eff {
-
-  def isPure: Boolean = this match {
-    case Eff.Pure => true
-    case Eff.Impure => false
-  }
-
-}
+sealed trait Eff
 
 object Eff {
 
@@ -35,8 +28,19 @@ object Eff {
     */
   val Empty: Eff = Impure
 
+  /**
+    * Represents an effect variable.
+    */
+  case class Var(id: Int) extends Eff
+
+  /**
+    * Represents a pure effect.
+    */
   case object Pure extends Eff
 
+  /**
+    * Represents an impure effect.
+    */
   case object Impure extends Eff
 
 }
