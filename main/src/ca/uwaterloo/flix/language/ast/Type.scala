@@ -324,6 +324,11 @@ object Type {
   def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(Eff.Pure, 2), a), b) // TODO: Pure?
 
   /**
+    * Constructs the arrow type A -> B.
+    */
+  def mkArrow(a: Type, eff: Eff, b: Type): Type = Apply(Apply(Arrow(eff, 2), a), b)
+
+  /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
   def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?

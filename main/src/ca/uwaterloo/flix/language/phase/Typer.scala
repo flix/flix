@@ -178,12 +178,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         // Perform type inference on each of the lattice components.
         val m = for {
-          botType <- inferExp(e1, program)
-          topType <- inferExp(e2, program)
-          equType <- inferExp(e3, program)
-          leqType <- inferExp(e4, program)
-          lubType <- inferExp(e5, program)
-          glbType <- inferExp(e6, program)
+          (botType, botEff) <- inferExp(e1, program)
+          (topType, topEff) <- inferExp(e2, program)
+          (equType, equEff) <- inferExp(e3, program)
+          (leqType, leqEff) <- inferExp(e4, program)
+          (lubType, lubEff) <- inferExp(e5, program)
+          (glbType, glbEff) <- inferExp(e6, program)
           _______ <- unifyM(botType, declaredType, loc)
           _______ <- unifyM(topType, declaredType, loc)
           _______ <- unifyM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Bool)), loc)
@@ -255,8 +255,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // TODO: Some duplication
     val argumentTypes = defn0.fparams.map(_.tpe)
 
+    // TODO: Use resultEff
     val result = for (
-      resultType <- inferExp(defn0.exp, program);
+      (resultType, resultEff) <- inferExp(defn0.exp, program);
       unifiedType <- unifyM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, resultType), defn0.loc)
     ) yield unifiedType
 
@@ -292,8 +293,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val argumentTypes = fparams.map(_.tpe)
 
       val result = for {
-        actualType <- inferExp(exp0, program0)
-        unifiedType <- unifyM(declaredType, effectType, Type.mkArrow(argumentTypes, actualType), loc)
+        (resultType, resultEff) <- inferExp(exp0, program0)
+        unifiedType <- unifyM(declaredType, effectType, Type.mkArrow(argumentTypes, resultType), loc)
       } yield unifiedType
 
       result.run(Substitution.empty) map {
@@ -347,253 +348,255 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = {
+  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[(Type, Eff)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: ResolvedAst.Expression): InferMonad[Type] = e0 match {
+    def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Eff)] = e0 match {
 
-      /*
-       * Wildcard expression.
-       */
-      case ResolvedAst.Expression.Wild(tpe, loc) => liftM(tpe)
+      case ResolvedAst.Expression.Wild(tpe, loc) => liftM((tpe, Eff.Pure))
 
-      /*
-       * Variable expression.
-       */
-      case ResolvedAst.Expression.Var(sym, tpe, loc) => unifyM(sym.tvar, tpe, loc)
+      case ResolvedAst.Expression.Var(sym, tpe, loc) =>
+        for {
+          resultType <- unifyM(sym.tvar, tpe, loc)
+        } yield (resultType, Eff.Pure)
 
-      /*
-       * Def expression.
-       */
       case ResolvedAst.Expression.Def(sym, tvar, evar, loc) =>
         val defn = program.defs(sym)
-        unifyM(tvar, Scheme.instantiate(defn.sc), loc)
+        for {
+          resultType <- unifyM(tvar, Scheme.instantiate(defn.sc), loc)
+        } yield (resultType, Eff.Pure) // TODO: Eff
 
-      /*
-       * Eff expression.
-       */
       case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
         val eff = program.effs(sym)
-        unifyM(tvar, Scheme.instantiate(eff.sc), loc)
+        for {
+          resultType <- unifyM(tvar, Scheme.instantiate(eff.sc), loc)
+        } yield (resultType, Eff.Pure) // TODO: Eff
 
-      /*
-       * Sig expression.
-       */
       case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
         val sig = program.classes(sym.clazz)
-        ??? // TODO
+        ??? // TODO: Sig
 
-      /*
-       * Hole expression.
-       */
-      case ResolvedAst.Expression.Hole(sym, tpe, evar, loc) =>
-        liftM(tpe)
+      case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
+        liftM((tvar, evar))
 
-      /*
-       * Literal expression.
-       */
-      case ResolvedAst.Expression.Unit(loc) => liftM(Type.Cst(TypeConstructor.Unit))
-      case ResolvedAst.Expression.True(loc) => liftM(Type.Cst(TypeConstructor.Bool))
-      case ResolvedAst.Expression.False(loc) => liftM(Type.Cst(TypeConstructor.Bool))
-      case ResolvedAst.Expression.Char(lit, loc) => liftM(Type.Cst(TypeConstructor.Char))
-      case ResolvedAst.Expression.Float32(lit, loc) => liftM(Type.Cst(TypeConstructor.Float32))
-      case ResolvedAst.Expression.Float64(lit, loc) => liftM(Type.Cst(TypeConstructor.Float64))
-      case ResolvedAst.Expression.Int8(lit, loc) => liftM(Type.Cst(TypeConstructor.Int8))
-      case ResolvedAst.Expression.Int16(lit, loc) => liftM(Type.Cst(TypeConstructor.Int16))
-      case ResolvedAst.Expression.Int32(lit, loc) => liftM(Type.Cst(TypeConstructor.Int32))
-      case ResolvedAst.Expression.Int64(lit, loc) => liftM(Type.Cst(TypeConstructor.Int64))
-      case ResolvedAst.Expression.BigInt(lit, loc) => liftM(Type.Cst(TypeConstructor.BigInt))
-      case ResolvedAst.Expression.Str(lit, loc) => liftM(Type.Cst(TypeConstructor.Str))
+      case ResolvedAst.Expression.Unit(loc) =>
+        liftM((Type.Cst(TypeConstructor.Unit), Eff.Pure))
 
-      /*
-       * Lambda expression.
-       */
+      case ResolvedAst.Expression.True(loc) =>
+        liftM((Type.Cst(TypeConstructor.Bool), Eff.Pure))
+
+      case ResolvedAst.Expression.False(loc) =>
+        liftM((Type.Cst(TypeConstructor.Bool), Eff.Pure))
+
+      case ResolvedAst.Expression.Char(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Char), Eff.Pure))
+
+      case ResolvedAst.Expression.Float32(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Float32), Eff.Pure))
+
+      case ResolvedAst.Expression.Float64(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Float64), Eff.Pure))
+
+      case ResolvedAst.Expression.Int8(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Int8), Eff.Pure))
+
+      case ResolvedAst.Expression.Int16(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Int16), Eff.Pure))
+
+      case ResolvedAst.Expression.Int32(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Int32), Eff.Pure))
+
+      case ResolvedAst.Expression.Int64(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Int64), Eff.Pure))
+
+      case ResolvedAst.Expression.BigInt(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.BigInt), Eff.Pure))
+
+      case ResolvedAst.Expression.Str(lit, loc) =>
+        liftM((Type.Cst(TypeConstructor.Str), Eff.Pure))
+
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
-        val argumentType = fparam.tpe
-        for (
-          inferredExpType <- visitExp(exp);
-          resultType <- unifyM(tvar, Type.mkArrow(argumentType, inferredExpType), loc)
-        ) yield resultType
+        val argType = fparam.tpe
+        for {
+          (bodyType, bodyEff) <- visitExp(exp)
+          resultType <- unifyM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
+          resultEff <- unifyEffM(evar, Eff.Pure, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Apply expression.
-       */
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
-        val freshResultType = Type.freshTypeVar()
-        for (
-          inferredLambdaType <- visitExp(exp1);
-          inferredArgumentType <- visitExp(exp2);
-          expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentType, freshResultType), loc);
-          resultType <- unifyM(freshResultType, tvar, loc)
-        ) yield resultType
+        val lambdaBodyType = Type.freshTypeVar()
+        val lambdaBodyEff = Eff.freshEffVar()
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          lambdaType <- unifyM(tpe1, Type.mkArrow(tpe2, lambdaBodyEff, lambdaBodyType), loc)
+          resultType <- unifyM(tvar, lambdaBodyType, loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, lambdaBodyEff, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Unary expression.
-       */
-      case ResolvedAst.Expression.Unary(op, exp1, tvar, evar, loc) => op match {
+      case ResolvedAst.Expression.Unary(op, exp, tvar, evar, loc) => op match {
         case UnaryOperator.LogicalNot =>
-          for (
-            tpe <- visitExp(exp1);
-            res <- unifyM(tvar, tpe, Type.Cst(TypeConstructor.Bool), loc)
-          ) yield res
+          for {
+            (tpe, eff) <- visitExp(exp)
+            resultType <- unifyM(tvar, tpe, Type.Cst(TypeConstructor.Bool), loc)
+            resultEff <- unifyEffM(evar, eff, loc)
+          } yield (resultType, resultEff)
 
         case UnaryOperator.Plus =>
-          for (
-            tpe <- visitExp(exp1);
-            res <- unifyM(tvar, tpe, loc)
-          ) yield res
+          for {
+            (tpe, eff) <- visitExp(exp)
+            resultType <- unifyM(tvar, tpe, loc)
+            resultEff <- unifyEffM(evar, eff, loc)
+          } yield (resultType, resultEff)
 
         case UnaryOperator.Minus =>
-          for (
-            tpe <- visitExp(exp1);
-            res <- unifyM(tvar, tpe, loc)
-          ) yield res
+          for {
+            (tpe, eff) <- visitExp(exp)
+            resultType <- unifyM(tvar, tpe, loc)
+            resultEff <- unifyEffM(evar, eff, loc)
+          } yield (resultType, resultEff)
 
         case UnaryOperator.BitwiseNegate =>
-          for (
-            tpe <- visitExp(exp1);
-            res <- unifyM(tvar, tpe, loc)
-          ) yield res
+          for {
+            (tpe, eff) <- visitExp(exp)
+            resultType <- unifyM(tvar, tpe, loc)
+            resultEff <- unifyEffM(evar, eff, loc)
+          } yield (resultType, resultEff)
       }
 
-      /*
-       * Binary expression.
-       */
       case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, evar, loc) => op match {
         case BinaryOperator.Plus =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Minus =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Times =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Divide =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Modulo =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Exponentiate =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Equal | BinaryOperator.NotEqual =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
-            ____ <- unifyM(tpe1, tpe2, loc);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
+            valueType <- unifyM(tpe1, tpe2, loc)
             resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
-            ____ <- unifyM(tpe1, tpe2, loc);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
+            valueType <- unifyM(tpe1, tpe2, loc)
             resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Bool), loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, Type.Cst(TypeConstructor.Bool), loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyM(tvar, tpe1, tpe2, loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (resultType, resultEff)
 
         case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
-          for (
-            tpe1 <- visitExp(exp1);
-            tpe2 <- visitExp(exp2);
-            lhsType <- unifyM(tvar, tpe1, loc);
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
+            lhsType <- unifyM(tvar, tpe1, loc)
             rhsType <- unifyM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
-          ) yield lhsType
+            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          } yield (lhsType, resultEff)
       }
 
-      /*
-       * If-then-else expression.
-       */
       case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, evar, loc) =>
-        for (
-          tpe1 <- visitExp(exp1);
-          tpe2 <- visitExp(exp2);
-          tpe3 <- visitExp(exp3);
-          ____ <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc);
-          rtpe <- unifyM(tvar, tpe2, tpe3, loc)
-        ) yield rtpe
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          (tpe3, eff3) <- visitExp(exp3)
+          condType <- unifyM(Type.Cst(TypeConstructor.Bool), tpe1, loc)
+          resultType <- unifyM(tvar, tpe2, tpe3, loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Stm expression.
-       */
       case ResolvedAst.Expression.Stm(exp1, exp2, tvar, evar, loc) =>
         for {
-          tpe1 <- visitExp(exp1)
-          tpe2 <- visitExp(exp2)
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
           resultType <- unifyM(tvar, tpe2, loc)
-        } yield resultType
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Let expression.
-       */
       case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, evar, loc) =>
-        for (
-          tpe1 <- visitExp(exp1);
-          tpe2 <- visitExp(exp2);
-          boundVar <- unifyM(sym.tvar, tpe1, loc);
-          resultVar <- unifyM(tvar, tpe2, loc)
-        ) yield resultVar
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          boundVar <- unifyM(sym.tvar, tpe1, loc)
+          resultType <- unifyM(tvar, tpe2, loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * LetRec expression.
-       */
       case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, evar, loc) =>
         // TODO: Require boundVar to be a function?
-        for (
-          tpe1 <- visitExp(exp1);
-          tpe2 <- visitExp(exp2);
-          boundVar <- unifyM(sym.tvar, tpe1, loc);
-          resultVar <- unifyM(tvar, tpe2, loc)
-        ) yield resultVar
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          boundVar <- unifyM(sym.tvar, tpe1, loc)
+          resultType <- unifyM(tvar, tpe2, loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Match expression.
-       */
       case ResolvedAst.Expression.Match(exp1, rules, tvar, evar, loc) =>
-        assert(rules.nonEmpty)
-        // Extract the patterns, guards, and body expressions of each rule.
         val patterns = rules.map(_.pat)
         val guards = rules.map(_.guard)
         val bodies = rules.map(_.exp)
@@ -609,11 +612,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar :: actualBodyTypes, loc)
         } yield resultType
 
-      /*
-         * Switch expression.
-         */
       case ResolvedAst.Expression.Switch(rules, tvar, evar, loc) =>
-        assert(rules.nonEmpty)
         val condExps = rules.map(_._1)
         val bodyExps = rules.map(_._2)
         for (
@@ -624,10 +623,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, unifiedBodyType, loc)
         ) yield resultType
 
-      /*
-       * Tag expression.
-       */
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, evar, loc) =>
+        // TODO: Use a type scheme?
+
         // Lookup the enum declaration.
         val decl = program.enums(sym)
 
@@ -647,34 +645,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         // Substitute the fresh type variables into the case type.
         val freshCaseType = subst(caseType)
-        for (
-          innerType <- visitExp(exp);
-          _________ <- unifyM(innerType, freshCaseType, loc);
+        for {
+          (tpe, eff) <- visitExp(exp)
+          _________ <- unifyM(tpe, freshCaseType, loc)
           resultType <- unifyM(tvar, freshEnumType, loc)
-        ) yield resultType
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Tuple expression.
-       */
       case ResolvedAst.Expression.Tuple(elms, tvar, evar, loc) =>
         for (
           elementTypes <- seqM(elms.map(visitExp));
           resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
         ) yield resultType
 
-      /*
-       * RecordEmpty expression.
-       */
       case ResolvedAst.Expression.RecordEmpty(tvar, evar, loc) =>
         //
-        //  ------------
-        //  %{ } : % { }
+        //  ---------
+        //  { } : { }
         //
-        unifyM(tvar, Type.RecordEmpty, loc)
+        for {
+          resultType <- unifyM(tvar, Type.RecordEmpty, loc)
+          resultEff <- unifyEffM(evar, Eff.Pure, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * RecordSelect expression.
-       */
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
         //
         // r : { label = tpe | row }
@@ -684,13 +677,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val freshRowVar = Type.freshTypeVar()
         val expectedType = Type.RecordExtend(label, tvar, freshRowVar)
         for {
-          actualType <- visitExp(exp)
-          recordType <- unifyM(actualType, expectedType, loc)
-        } yield tvar
+          (tpe, eff) <- visitExp(exp)
+          recordType <- unifyM(tpe, expectedType, loc)
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (tvar, resultEff)
 
-      /*
-       * RecordExtend expression.
-       */
       case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, evar, loc) =>
         //
         // value : tpe
@@ -703,9 +694,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, Type.RecordExtend(label, valueType, restType), loc)
         } yield resultType
 
-      /*
-       * RecordRestrict expression.
-       */
       case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, evar, loc) =>
         //
         // ----------------------
@@ -719,74 +707,67 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, freshRowVar, loc)
         } yield resultType
 
-      /*
-       * ArrayLit expression.
-       */
       case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
         //
         //  e1 : t ... en: t
-        //  ------------------------
+        //  ----------------------
         //  [e1,...,en] : Array[t]
         //
         if (elms.isEmpty) {
-          for (
+          for {
             resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
-          ) yield resultType
-        }
-        else {
-          for (
-            elementsTypes <- seqM(elms.map(visitExp));
-            elementType <- unifyM(elementsTypes, loc);
+            resultEff <- unifyEffM(evar, Eff.Pure, loc)
+          } yield (resultType, resultEff)
+        } else {
+          for {
+            (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
+            elementType <- unifyM(elementTypes, loc)
             resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar :: elementEffects, loc)
+          } yield (resultType, resultEff)
         }
 
-      /*
-       * ArrayNew expression.
-       */
-      case ResolvedAst.Expression.ArrayNew(elm, len, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayNew(exp1, exp2, tvar, evar, loc) =>
         //
-        //  elm : t      len: Int
+        //  exp1 : t    exp2: Int
         //  ------------------------
-        //  [elm ; len] : Array[t]
+        //  [exp1 ; exp2] : Array[t]
         //
-        for (
-          actualElementType <- visitExp(elm);
-          actualLengthType <- visitExp(len);
-          lengthType <- unifyM(actualLengthType, Type.Cst(TypeConstructor.Int32), loc);
-          resultType <- unifyM(tvar, Type.mkArray(actualElementType), loc)
-        ) yield resultType
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          resultType <- unifyM(tvar, Type.mkArray(tpe1), loc)
+          lengthType <- unifyM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * ArrayLoad expression.
-       */
-      case ResolvedAst.Expression.ArrayLoad(base, index, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
         //
-        //  base : Array[t]   index: Int
-        //  ------------------------
-        //  base[index] : t
+        //  exp1 : Array[t]    exp2: Int
+        //  ----------------------------
+        //  exp1[exp2] : t
         //
-        for (
-          actualBaseType <- visitExp(base);
-          actualIndexType <- visitExp(index);
-          arrayType <- unifyM(actualBaseType, Type.mkArray(tvar), loc);
-          indexType <- unifyM(actualIndexType, Type.Cst(TypeConstructor.Int32), loc)
-        ) yield tvar
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          arrayType <- unifyM(tpe1, Type.mkArray(tvar), loc)
+          indexType <- unifyM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (tvar, resultEff)
 
-      /*
-       * ArrayLength expression.
-       */
-      case ResolvedAst.Expression.ArrayLength(base, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) =>
         //
-        //  base : Array[t]
-        //  ------------------------
-        //  length[base] : Int
+        //  exp : Array[t]
+        //  ----------------
+        //  exp.length : Int
         //
-        for (
-          baseType <- visitExp(base);
-          arrayType <- unifyM(baseType, Type.mkArray(tvar), loc);
-          resultType <- unifyM(Type.freshTypeVar(), Type.Cst(TypeConstructor.Int32), loc)
-        ) yield resultType
+        val elementType = Type.freshTypeVar()
+        for {
+          (tpe, eff) <- visitExp(exp)
+          arrayType <- unifyM(tpe, Type.mkArray(elementType), loc)
+          resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Int32), loc)
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (resultType, resultEff)
 
       /*
        * ArrayStore expression.

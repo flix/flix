@@ -401,6 +401,14 @@ object Unification {
 
       InferMonad(runNext)
     }
+
+    // TODO: Necessary for pattern matching?
+    // TODO: What should this return?
+    def withFilter(f: A => Boolean): InferMonad[A] = InferMonad(x => run(x) match {
+      case Ok((subst, t)) => if (f(t)) Ok((subst, t)) else Ok((subst, t))
+      case Err(e) => Err(e)
+    })
+
   }
 
   /**
@@ -495,6 +503,28 @@ object Unification {
   def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[List[Type]] = seqM((xs zip ys).map {
     case (x, y) => unifyM(x, y, loc)
   })
+
+  /**
+    * Unifies the two given effects `eff1` and `eff2`.
+    */
+  def unifyEffM(eff1: Eff, eff2: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = {
+    ??? // TODO
+  }
+
+  /**
+    * Unifies the three given effects `eff1`, `eff2`, and `eff3`.
+    */
+  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = ???
+
+  /**
+    * Unifies the four given effects `eff1`, `eff2`, `eff3`, and `eff4`.
+    */
+  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, eff4: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = ???
+
+  /**
+    * Unifies all the effects in the given non-empty list `fs`.
+    */
+  def unifyEffM(fs: List[Eff], loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = ???
 
   /**
     * Collects the result of each type inference monad in `ts` going left to right.
