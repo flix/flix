@@ -887,17 +887,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultType, resultEff)
 
-      case ResolvedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorSlice(exp, startIndex, optEndIndex, tvar, evar, loc) =>
         //
         //  Case None =
-        //  base : Vector[t, len2]   startIndex : len3
+        //  exp : Vector[t, len2]   startIndex : len3
         //  len1 : Succ(n1, Zero) len2 : Succ(n2, Zero) len3 : Succ(n3, Var)
         //  --------------------------------------------------------------------------------------
-        //  base[|startIndex.. |] : Vector[t, len1]
+        //  exp[|startIndex.. |] : Vector[t, len1]
         //
         //
         //  Case Some =
-        //  base : Vector[t, len2]   startIndex : len3   endIndexOpt : len4
+        //  exp : Vector[t, len2]   startIndex : len3   endIndexOpt : len4
         //  len1 : Succ(n1, Zero) len2 : Succ(n2, Zero) len3 : Succ(n3, Var) len 4 : Succ(n4, Var)
         //  --------------------------------------------------------------------------------------
         //  base[startIndex..endIndexOpt] : Vector[t, len1]
@@ -907,18 +907,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val freshElmType = Type.freshTypeVar()
         optEndIndex match {
           case None =>
-            for (
-              baseType <- visitExp(base);
-              firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshEndIndex)), loc);
+            for {
+              (tpe, eff) <- visitExp(exp)
+              firstIndex <- unifyM(tpe, Type.mkVector(freshElmType, Type.Succ(startIndex, freshEndIndex)), loc)
               resultType <- unifyM(tvar, Type.mkVector(freshElmType, freshEndIndex), loc)
-            ) yield resultType
+              resultEff <- unifyEffM(evar, eff, loc)
+            } yield (resultType, resultEff)
+
           case Some(endIndex) =>
-            for (
-              baseType <- visitExp(base);
-              firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc);
-              secondIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc);
+            for {
+              (tpe, eff) <- visitExp(exp)
+              firstIndex <- unifyM(tpe, Type.mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc)
+              secondIndex <- unifyM(tpe, Type.mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc)
               resultType <- unifyM(tvar, Type.mkVector(freshElmType, Type.Succ(endIndex - startIndex, Type.Zero)), loc)
-            ) yield resultType
+              resultEff <- unifyEffM(evar, eff, loc)
+            } yield (resultType, resultEff)
         }
 
       case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) =>
