@@ -422,6 +422,11 @@ object Unification {
   def liftM[A](a: A, s: Substitution): InferMonad[A] = InferMonad(_ => Ok(s, a))
 
   /**
+    * Asserts that the given type variable `tvar` has the type `tpe`.
+    */
+  def liftM(tvar: Type.Var, tpe: Type): InferMonad[Type] = liftM(tpe, Substitution(Map(tvar -> tpe), Map.empty))
+
+  /**
     * Lifts the given error `e` into the type inference monad.
     */
   def failM[A](e: TypeError): InferMonad[A] = InferMonad(_ => Err(e))
@@ -475,7 +480,7 @@ object Unification {
     * Unifies all the types in the given non-empty list `ts`.
     */
   def unifyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    assert(ts.nonEmpty)
+    liftM(ts.nonEmpty)
 
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0

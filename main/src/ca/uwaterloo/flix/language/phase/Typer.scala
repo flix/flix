@@ -979,26 +979,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, tpe, loc)
         } yield resultType
 
-      /*
-       * Existential expression.
-       */
       case ResolvedAst.Expression.Existential(fparam, exp, evar, loc) =>
-        // NB: An existential behaves very much like a lambda.
-        // TODO: Must check the type of the param.
         for {
-          bodyType <- visitExp(exp)
+          argumentType <- liftM(fparam.sym.tvar, fparam.tpe)
+          (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
+          resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
         } yield resultType
 
       /*
        * Universal expression.
        */
       case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
-        // NB: An existential behaves very much like a lambda.
-        // TODO: Must check the type of the param.
         for {
-          bodyType <- visitExp(exp)
+          argumentType <- liftM(fparam.sym.tvar, fparam.tpe)
+          (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
+          resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
         } yield resultType
 
       /*
@@ -1128,7 +1125,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ------------------------------------------------
         //  select { rule_i; (default) } : t
         //
-        assert(rules.nonEmpty)
+        liftM(rules.nonEmpty)
         val bodies = rules.map(_.exp)
 
         // check that each rules channel expression is a channel
