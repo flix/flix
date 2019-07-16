@@ -16,12 +16,19 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
+
 /**
   * Represents the computational effect of an expression.
   */
 sealed trait Eff
 
 object Eff {
+
+  /**
+    * Returns a fresh effect variable.
+    */
+  def freshEffVar()(implicit flix: Flix): Eff.Var = Eff.Var(flix.genSym.freshId())
 
   /**
     * Represents the empty effect.
