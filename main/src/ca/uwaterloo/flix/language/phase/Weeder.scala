@@ -1501,8 +1501,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitEff(effOpt: Option[ParsedAst.Effect])(implicit flix: Flix): Validation[Eff, WeederError] = effOpt match {
     case None => Eff.freshEffVar().toSuccess
     case Some(ParsedAst.Effect(xs)) =>
-      // TODO: Add support for effects.
-      Eff.freshEffVar().toSuccess
+      // TODO: Parse the effect name.
+      Eff.Impure.toSuccess
   }
 
   /**
