@@ -986,16 +986,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Existential(fparam, exp, evar, loc) =>
+        // TODO: Check formal parameter type.
         for {
-          argumentType <- liftM(fparam.sym.tvar, fparam.tpe)
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
           resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
         } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
+        // TODO: Check formal parameter type.
         for {
-          argumentType <- liftM(fparam.sym.tvar, fparam.tpe)
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
           resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
