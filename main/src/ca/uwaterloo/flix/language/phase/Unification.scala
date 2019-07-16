@@ -34,9 +34,14 @@ object Unification {
     val empty: Substitution = Substitution(Map.empty, Map.empty)
 
     /**
-      * Returns the singleton substitution mapping `x` to `tpe`.
+      * Returns the singleton substitution mapping the type variable `x` to `tpe`.
       */
     def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe), Map.empty)
+
+    /**
+      * Returns the singleton substitution mapping the effect variable `x` to `eff`.
+      */
+    def singleton(x: Eff.Var, eff: Eff): Substitution = Substitution(Map.empty, Map(x -> eff))
   }
 
   /**
@@ -169,6 +174,9 @@ object Unification {
       */
     case class NonSchemaType(nonSchemaType: Type) extends UnificationError
 
+    // TODO: DOC
+    case class MismatchedEffects(eff1: Eff, eff2: Eff) extends UnificationError
+
   }
 
   /**
@@ -275,11 +283,6 @@ object Unification {
       case _ => Result.Err(UnificationError.Mismatch(tpe1, tpe2))
     }
 
-    // TODO: DOC and IMPL
-    def unifyEffects(eff1: Eff, eff2: Eff): Result[Substitution, UnificationError] = {
-      Result.Ok(Substitution.empty)
-    }
-
     /**
       * Unifies the two given lists of types `ts1` and `ts2`.
       */
@@ -365,6 +368,17 @@ object Unification {
     }
 
     unifyTypes(tpe1, tpe2)
+  }
+
+  /**
+    * Returns the most general unifier of the two given effects `eff1` and `eff2`.
+    */
+  def unifyEffects(eff1: Eff, eff2: Eff): Result[Substitution, UnificationError] = (eff1, eff2) match {
+    case (x: Eff.Var, _) => Ok(Substitution.singleton(x, eff2))
+    case (_, y: Eff.Var) => Ok(Substitution.singleton(y, eff1))
+    case (Eff.Pure, Eff.Pure) => Ok(Substitution.empty)
+    case (Eff.Impure, Eff.Impure) => Ok(Substitution.empty)
+    case _ => Err(UnificationError.MismatchedEffects(eff1, eff2)) // TODO
   }
 
   /**
@@ -461,6 +475,11 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, loc))
+
+          // TODO: Where in the order
+        case Result.Err(UnificationError.MismatchedEffects(eff1, eff2)) =>
+          Err(TypeError.MismatchedEffects(eff1, eff2, loc))
+
       }
     }
     )
@@ -480,8 +499,6 @@ object Unification {
     * Unifies all the types in the given non-empty list `ts`.
     */
   def unifyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
-    liftM(ts.nonEmpty)
-
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
@@ -513,23 +530,44 @@ object Unification {
     * Unifies the two given effects `eff1` and `eff2`.
     */
   def unifyEffM(eff1: Eff, eff2: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = {
-    ??? // TODO
+    InferMonad((s: Substitution) => {
+      val effect1 = s(eff1)
+      val effect2 = s(eff2)
+      unifyEffects(effect1, effect2) match {
+        case Result.Ok(s1) =>
+          val subst = s1 @@ s
+          Ok(subst, subst(eff1))
+
+        case Result.Err(UnificationError.MismatchedEffects(e1, e2)) =>
+          Err(TypeError.MismatchedEffects(e1, e2, loc)) // TODO
+      }
+    }
+    )
   }
 
   /**
     * Unifies the three given effects `eff1`, `eff2`, and `eff3`.
     */
-  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = ???
+  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = unifyEffM(List(eff1, eff2, eff3), loc)
 
   /**
     * Unifies the four given effects `eff1`, `eff2`, `eff3`, and `eff4`.
     */
-  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, eff4: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = ???
+  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, eff4: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = unifyEffM(List(eff1, eff2, eff3, eff4), loc)
 
   /**
     * Unifies all the effects in the given non-empty list `fs`.
     */
-  def unifyEffM(fs: List[Eff], loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = ???
+  def unifyEffM(fs: List[Eff], loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = {
+    def visit(x0: InferMonad[Eff], xs: List[Eff]): InferMonad[Eff] = xs match {
+      case Nil => x0
+      case y :: ys => x0 flatMap {
+        case tpe => visit(unifyEffM(tpe, y, loc), ys)
+      }
+    }
+
+    visit(liftM(fs.head), fs.tail)
+  }
 
   /**
     * Collects the result of each type inference monad in `ts` going left to right.

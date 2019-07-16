@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt._
@@ -74,6 +73,18 @@ object TypeError {
       vt << NewLine
       vt << "Type One: " << pretty(diff(fullType1, fullType2), Cyan) << NewLine
       vt << "Type Two: " << pretty(diff(fullType2, fullType1), Magenta) << NewLine
+    }
+  }
+
+  // TODO: DOC
+  case class MismatchedEffects(eff1: Eff, eff2: Eff, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify '" << Red(eff1.toString) << "' and '" << Red(eff2.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched types.") << NewLine
     }
   }
 

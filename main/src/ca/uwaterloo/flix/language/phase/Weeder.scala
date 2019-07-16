@@ -188,7 +188,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val t = mkArrowType(fs, visitType(tpe), loc)
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.Empty, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.freshEffVar(), loc))
       }
   }
 
@@ -305,7 +305,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given class `d0`.
     */
-  private def visitClass(d0: ParsedAst.Declaration.Class): Validation[List[WeededAst.Declaration.Class], WeederError] = d0 match {
+  private def visitClass(d0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = d0 match {
     case ParsedAst.Declaration.Class(doc0, sp1, mod0, cc, decls, sp2) =>
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val ccVal = visitClassConstraint(cc)
@@ -514,7 +514,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           tpe match {
             case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
             case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Empty, value.loc)
+              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.freshEffVar(), value.loc)
               WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
           }
         case (pattern, value, body) =>
@@ -524,7 +524,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           tpe match {
             case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
             case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Empty, value.loc)
+              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.freshEffVar(), value.loc)
               WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
           }
       }
@@ -1498,11 +1498,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
-    case None => Eff.Empty.toSuccess
+  private def visitEff(effOpt: Option[ParsedAst.Effect])(implicit flix: Flix): Validation[Eff, WeederError] = effOpt match {
+    case None => Eff.freshEffVar().toSuccess
     case Some(ParsedAst.Effect(xs)) =>
       // TODO: Add support for effects.
-      Eff.Empty.toSuccess
+      Eff.freshEffVar().toSuccess
   }
 
   /**
@@ -1607,7 +1607,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given signature `sig`.
     */
-  private def visitSig(sig: ParsedAst.Declaration.Sig): Validation[WeededAst.Declaration.Sig, WeederError] = sig match {
+  private def visitSig(sig: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[WeededAst.Declaration.Sig, WeederError] = sig match {
     case ParsedAst.Declaration.Sig(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
@@ -1913,7 +1913,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Introduces a main declaration that wraps the given constraints in a solve expression.
     */
-  private def mkMain(cs: List[WeededAst.Constraint]): WeededAst.Root = {
+  private def mkMain(cs: List[WeededAst.Constraint])(implicit flix: Flix): WeededAst.Root = {
     // Source positions and source locations for the generated main.
     val sp1 = SourcePosition.Unknown
     val sp2 = SourcePosition.Unknown
@@ -1940,7 +1940,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
     val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
     val tpe = WeededAst.Type.Arrow(argumentType :: Nil, resultType, loc)
-    val eff = Eff.Empty
+    val eff = Eff.freshEffVar()
 
     // Construct the declaration.
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)

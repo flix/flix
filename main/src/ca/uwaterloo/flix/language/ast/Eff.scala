@@ -33,6 +33,7 @@ object Eff {
   /**
     * Represents the empty effect.
     */
+    // TODO: Remove
   val Empty: Eff = Impure
 
   /**
