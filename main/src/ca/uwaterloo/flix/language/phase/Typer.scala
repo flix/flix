@@ -1054,7 +1054,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, returnType, loc)
         } yield (resultType, evar)
 
-      case ResolvedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
+      case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
         //  exp: Int
         //  ------------------------
@@ -1063,7 +1063,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           lengthType <- unifyM(tpe, Type.Cst(TypeConstructor.Int32), loc)
-          resultType <- liftM(Type.mkChannel(tpe))
+          resultType <- liftM(Type.mkChannel(declaredType))
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultType, resultEff)
 
