@@ -378,53 +378,51 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val sig = program.classes(sym.clazz)
         ??? // TODO: Sig
 
-      // TODO: Effect should be variable, not pure.
-
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
         liftM((tvar, evar))
 
       case ResolvedAst.Expression.Unit(loc) =>
-        liftM((Type.Cst(TypeConstructor.Unit), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Unit), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.True(loc) =>
-        liftM((Type.Cst(TypeConstructor.Bool), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Bool), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.False(loc) =>
-        liftM((Type.Cst(TypeConstructor.Bool), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Bool), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Char(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Char), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Char), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Float32(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Float32), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Float32), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Float64(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Float64), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Float64), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Int8(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int8), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Int8), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Int16(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int16), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Int16), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Int32(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int32), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Int32), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Int64(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int64), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Int64), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.BigInt(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.BigInt), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.BigInt), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Str(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Str), Eff.Pure))
+        liftM((Type.Cst(TypeConstructor.Str), Eff.freshEffVar()))
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
         val argType = fparam.tpe
         for {
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
-          resultEff <- unifyEffM(evar, Eff.Pure, loc)
+          resultEff <- unifyEffM(evar, Eff.freshEffVar(), loc)
         } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>

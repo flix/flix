@@ -1499,10 +1499,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given parsed optional effect `effOpt`.
     */
   private def visitEff(effOpt: Option[ParsedAst.Effect])(implicit flix: Flix): Validation[Eff, WeederError] = effOpt match {
-    case None => Eff.freshEffVar().toSuccess
+    case None => Eff.Pure.toSuccess
     case Some(ParsedAst.Effect(xs)) =>
-      // TODO: Parse the effect name.
-      Eff.Impure.toSuccess
+      if (xs.exists(_.name == "Pure"))
+        Eff.Impure.toSuccess
+      else if (xs.exists(_.name == "Impure"))
+        Eff.Impure.toSuccess
+      else if (xs.exists(_.name == "IO"))
+        Eff.Impure.toSuccess
+      else
+        throw InternalCompilerException(s"Unexpected effects: ${xs.mkString(" ,")}") // TODO: What effects to recognize?
   }
 
   /**
