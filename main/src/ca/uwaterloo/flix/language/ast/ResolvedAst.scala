@@ -81,15 +81,15 @@ object ResolvedAst {
 
   object Expression {
 
-    case class Wild(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Wild(tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Var(sym: Symbol.VarSym, tvar: Type, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Eff(sym: Symbol.EffSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Eff(sym: Symbol.EffSym, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Sig(sym: Symbol.SigSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Sig(sym: Symbol.SigSym, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

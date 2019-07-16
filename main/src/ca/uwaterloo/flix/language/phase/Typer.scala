@@ -355,26 +355,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Eff)] = e0 match {
 
-      case ResolvedAst.Expression.Wild(tpe, loc) => liftM((tpe, Eff.Pure))
+      case ResolvedAst.Expression.Wild(tvar, evar, loc) => liftM((tvar, evar))
 
-      case ResolvedAst.Expression.Var(sym, tpe, loc) =>
+      case ResolvedAst.Expression.Var(sym, tvar, evar, loc) =>
         for {
-          resultType <- unifyM(sym.tvar, tpe, loc)
-        } yield (resultType, Eff.Pure)
+          resultType <- unifyM(sym.tvar, tvar, loc)
+        } yield (resultType, evar)
 
       case ResolvedAst.Expression.Def(sym, tvar, evar, loc) =>
         val defn = program.defs(sym)
         for {
           resultType <- unifyM(tvar, Scheme.instantiate(defn.sc), loc)
-        } yield (resultType, Eff.Pure) // TODO: Eff
+        } yield (resultType, evar)
 
-      case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
+      case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
         val eff = program.effs(sym)
         for {
           resultType <- unifyM(tvar, Scheme.instantiate(eff.sc), loc)
-        } yield (resultType, Eff.Pure) // TODO: Eff
+        } yield (resultType, evar)
 
-      case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
+      case ResolvedAst.Expression.Sig(sym, tvar, evar, loc) =>
         val sig = program.classes(sym.clazz)
         ??? // TODO: Sig
 
@@ -1267,54 +1267,47 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Applies the given substitution `subst0` to the given expression `exp0`.
       */
     def visitExp(exp0: ResolvedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
-      /*
-       * Wildcard expression.
-       */
-      case ResolvedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), Eff.Empty, loc)
 
-      /*
-       * Variable expression.
-       */
-      case ResolvedAst.Expression.Var(sym, _, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Empty, loc)
+      case ResolvedAst.Expression.Wild(tvar, evar, loc) =>
+        TypedAst.Expression.Wild(subst0(tvar), subst0(evar), loc)
 
-      /*
-       * Def expression.
-       */
+      case ResolvedAst.Expression.Var(sym, tvar, evar, loc) =>
+        TypedAst.Expression.Var(sym, subst0(sym.tvar), subst0(evar), loc)
+
       case ResolvedAst.Expression.Def(sym, tvar, evar, loc) =>
         TypedAst.Expression.Def(sym, subst0(tvar), subst0(evar), loc)
 
-      /*
-       * Eff expression.
-       */
-      case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
-        TypedAst.Expression.Eff(sym, subst0(tvar), Eff.Empty, loc)
+      case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
+        TypedAst.Expression.Eff(sym, subst0(tvar), subst0(evar), loc)
 
-      /*
-       * Eff expression.
-       */
-      case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
+      case ResolvedAst.Expression.Sig(sym, tvar, evar, loc) =>
         ??? // TODO
 
-      /*
-       * Hole expression.
-       */
       case ResolvedAst.Expression.Hole(sym, tpe, evar, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)
 
-      /*
-       * Literal expression.
-       */
       case ResolvedAst.Expression.Unit(loc) => TypedAst.Expression.Unit(loc)
+
       case ResolvedAst.Expression.True(loc) => TypedAst.Expression.True(loc)
+
       case ResolvedAst.Expression.False(loc) => TypedAst.Expression.False(loc)
+
       case ResolvedAst.Expression.Char(lit, loc) => TypedAst.Expression.Char(lit, loc)
+
       case ResolvedAst.Expression.Float32(lit, loc) => TypedAst.Expression.Float32(lit, loc)
+
       case ResolvedAst.Expression.Float64(lit, loc) => TypedAst.Expression.Float64(lit, loc)
+
       case ResolvedAst.Expression.Int8(lit, loc) => TypedAst.Expression.Int8(lit, loc)
+
       case ResolvedAst.Expression.Int16(lit, loc) => TypedAst.Expression.Int16(lit, loc)
+
       case ResolvedAst.Expression.Int32(lit, loc) => TypedAst.Expression.Int32(lit, loc)
+
       case ResolvedAst.Expression.Int64(lit, loc) => TypedAst.Expression.Int64(lit, loc)
+
       case ResolvedAst.Expression.BigInt(lit, loc) => TypedAst.Expression.BigInt(lit, loc)
+
       case ResolvedAst.Expression.Str(lit, loc) => TypedAst.Expression.Str(lit, loc)
 
       /*

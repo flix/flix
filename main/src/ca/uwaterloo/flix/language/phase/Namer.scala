@@ -530,7 +530,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Performs naming on the given expression `exp0` under the given environment `env0`.
     */
   private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
-    case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
+
+    case WeededAst.Expression.Wild(loc) =>
+      NamedAst.Expression.Wild(Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
 
     case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
       // lookup the variable name in the environment.
@@ -540,7 +542,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Expression.Def(name, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
         case Some(sym) =>
           // Case 2: variable.
-          NamedAst.Expression.Var(sym, loc).toSuccess
+          NamedAst.Expression.Var(sym, Eff.freshEffVar(), loc).toSuccess
       }
 
     case WeededAst.Expression.VarOrDef(name, loc) =>

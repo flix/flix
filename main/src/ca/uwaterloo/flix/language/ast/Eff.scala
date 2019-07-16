@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Magnus Madsen
+ * Copyright 2019 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
@@ -29,12 +28,6 @@ object Eff {
     * Returns a fresh effect variable.
     */
   def freshEffVar()(implicit flix: Flix): Eff.Var = Eff.Var(flix.genSym.freshId())
-
-  /**
-    * Represents the empty effect.
-    */
-    // TODO: Remove
-  val Empty: Eff = Impure
 
   /**
     * Represents an effect variable.

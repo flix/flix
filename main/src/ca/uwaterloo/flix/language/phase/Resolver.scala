@@ -370,18 +370,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Local visitor.
         */
       def visit(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
-        case NamedAst.Expression.Wild(tpe, loc) => ResolvedAst.Expression.Wild(tpe, loc).toSuccess
 
-        case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
-          case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
-          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
+        case NamedAst.Expression.Wild(tvar, evar, loc) =>
+          ResolvedAst.Expression.Wild(tvar, evar, loc).toSuccess
+
+        case NamedAst.Expression.Var(sym, evar, loc) => tenv0.get(sym) match {
+          case None => ResolvedAst.Expression.Var(sym, sym.tvar, evar, loc).toSuccess
+          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, evar, loc).toSuccess
         }
 
         case NamedAst.Expression.Def(qname, tvar, evar, loc) =>
           lookupQName(qname, ns0, prog0) map {
             case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, evar, loc)
-            case LookupResult.Eff(sym) => ResolvedAst.Expression.Eff(sym, tvar, loc)
-            case LookupResult.Sig(sym) => ResolvedAst.Expression.Sig(sym, tvar, loc)
+            case LookupResult.Eff(sym) => ResolvedAst.Expression.Eff(sym, tvar, evar, loc)
+            case LookupResult.Sig(sym) => ResolvedAst.Expression.Sig(sym, tvar, evar, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -516,7 +518,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, Eff.freshEffVar(), loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), evar, loc)
