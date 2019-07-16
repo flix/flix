@@ -810,61 +810,65 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) =>
         //
         // elm1: t ...  elm_len: t  len: Succ(n, Zero)
-        // ---------------------------
+        // -------------------------------------------
         // [|elm1,...,elm_len|] : Vector[t, len]
         //
         if (elms.isEmpty) {
-          for (
+          for {
             resultType <- unifyM(tvar, Type.mkVector(Type.freshTypeVar(), Type.Succ(0, Type.Zero)), loc)
-          ) yield resultType
-        }
-        else {
-          for (
-            elementTypes <- seqM(elms.map(visitExp));
-            elementType <- unifyM(elementTypes, loc);
+            resultEff <- unifyEffM(evar, Eff.Pure, loc)
+          } yield (resultType, resultEff)
+        } else {
+          for {
+            (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
+            elementType <- unifyM(elementTypes, loc)
             resultType <- unifyM(tvar, Type.mkVector(elementType, Type.Succ(elms.length, Type.Zero)), loc)
-          ) yield resultType
+            resultEff <- unifyEffM(evar :: elementEffects, loc)
+          } yield (resultType, resultEff)
         }
 
-      case ResolvedAst.Expression.VectorNew(elm, len, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorNew(exp, len, tvar, evar, loc) =>
         //
-        // elm: t    len: Succ(n, Zero)
-        // --------------------------
-        // [|elm ; len |] : Vector[t, len]
+        // exp: t    len: Succ(n, Zero)
+        // --------------------------------
+        // [|exp1 ; len |] : Vector[t, len]
         //
-
-        for (
-          tpe <- visitExp(elm);
+        for {
+          (tpe, eff) <- visitExp(exp)
           resultType <- unifyM(tvar, Type.mkVector(tpe, Type.Succ(len, Type.Zero)), loc)
-        ) yield resultType
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (resultType, resultEff)
 
-      case ResolvedAst.Expression.VectorLoad(base, index, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorLoad(exp, index, tvar, evar, loc) =>
         //
-        //  base : Vector[t, len1]   index: len2   len1: Succ(n1, Zero) len2: Succ(n2, Var)
-        //  -------------------------------------------------------------------------------
-        //  base[|index|] : t
+        //  exp : Vector[t, len1]   index: len2   len1: Succ(n1, Zero) len2: Succ(n2, Var)
+        //  ------------------------------------------------------------------------------
+        //  exp[|index|] : t
         //
-        val freshElementVar = Type.freshTypeVar()
-        for (
-          baseType <- visitExp(base);
-          resultType <- unifyM(baseType, Type.mkVector(tvar, Type.Succ(index, freshElementVar)), loc)
-        ) yield tvar
+        val elementType = Type.freshTypeVar()
+        for {
+          (tpe, eff) <- visitExp(exp)
+          vectorType <- unifyM(tpe, Type.mkVector(tvar, Type.Succ(index, elementType)), loc)
+          resultType <- unifyM(tvar, elementType, loc)
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (resultType, resultEff)
 
-      case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorStore(exp1, index, exp2, tvar, evar, loc) =>
         //
-        //  base : Vector[t, len1]   index: len2   elm: t    len1: Succ(n1, Zero)  len2: Succ(n2, Var)
-        //  ------------------------------------------------------------------------------------------
-        //  base[|index|] = elm : Unit
+        //  exp1 : Vector[t, len1]   index: len2   exp2: t    len1: Succ(n1, Zero)  len2: Succ(n2, Var)
+        //  -------------------------------------------------------------------------------------------
+        //  exp1[|index|] = exp2 : Unit
         //
-        val freshElementVar = Type.freshTypeVar()
-        val elmVar = Type.freshTypeVar()
-        for (
-          baseType <- visitExp(base);
-          recievedObjectType <- visitExp(elm);
-          vectorType <- unifyM(baseType, Type.mkVector(elmVar, Type.Succ(index, freshElementVar)), loc);
-          objectType <- unifyM(recievedObjectType, elmVar, loc);
+        val elementType = Type.freshTypeVar()
+        val indexType = Type.freshTypeVar()
+        for {
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          vectorType <- unifyM(tpe1, Type.mkVector(elementType, Type.Succ(index, indexType)), loc)
+          elementType <- unifyM(tpe2, elementType, loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
-        ) yield resultType
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.VectorLength(base, tvar, evar, loc) =>
         //
@@ -924,7 +928,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (tpe, eff) <- visitExp(exp)
           resultType <- unifyM(tvar, Type.Apply(Type.Cst(TypeConstructor.Ref), tpe), loc)
           resultEff <- unifyEffM(evar, eff, Eff.Impure, loc)
-        } yield resultType
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
         //
@@ -938,7 +942,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           refType <- unifyM(tpe, Type.Apply(Type.Cst(TypeConstructor.Ref), elementType), loc)
           resultType <- unifyM(tvar, elementType, loc)
           resultEff <- unifyEffM(evar, Eff.Impure, loc)
-        } yield resultType
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
         //
@@ -980,18 +984,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
           resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
-        } yield resultType
+        } yield (resultType, resultEff)
 
-      /*
-       * Universal expression.
-       */
       case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
         for {
           argumentType <- liftM(fparam.sym.tvar, fparam.tpe)
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
           resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
-        } yield resultType
+        } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
