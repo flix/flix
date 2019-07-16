@@ -848,9 +848,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  exp[|index|] : t
         //
         val elementType = Type.freshTypeVar()
+        val indexOffsetType = Type.freshTypeVar()
         for {
           (tpe, eff) <- visitExp(exp)
-          vectorType <- unifyM(tpe, Type.mkVector(tvar, Type.Succ(index, elementType)), loc)
+          vectorType <- unifyM(tpe, Type.mkVector(elementType, Type.Succ(index, indexOffsetType)), loc)
           resultType <- unifyM(tvar, elementType, loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultType, resultEff)
@@ -933,7 +934,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           resultType <- unifyM(tvar, Type.Apply(Type.Cst(TypeConstructor.Ref), tpe), loc)
-          resultEff <- unifyEffM(evar, eff, Eff.Impure, loc)
+          resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
@@ -947,8 +948,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (tpe, eff) <- visitExp(exp)
           refType <- unifyM(tpe, Type.Apply(Type.Cst(TypeConstructor.Ref), elementType), loc)
           resultType <- unifyM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, Eff.Impure, loc)
-        } yield (resultType, resultEff)
+        } yield (resultType, evar)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
         //
@@ -961,7 +961,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (tpe2, eff2) <- visitExp(exp2)
           refType <- unifyM(tpe1, Type.Apply(Type.Cst(TypeConstructor.Ref), tpe2), loc)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
-          resultEff <- unifyEffM(evar, Eff.Impure, eff1, eff2, loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultType, resultEff)
 
       case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) =>
