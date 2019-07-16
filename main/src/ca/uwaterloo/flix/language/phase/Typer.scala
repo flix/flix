@@ -634,7 +634,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        }.toMap, Map.empty)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
@@ -1591,7 +1591,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
        */
       case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
         // TODO: Check if tvar is unbound.
-        if (!(subst0.m contains tvar))
+        if (!(subst0.typeMap contains tvar))
           throw InternalCompilerException("Unbound tvar in ref.")
 
         val e = visitExp(exp, subst0)
@@ -1848,7 +1848,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap)
+        }.toMap, Map.empty)
 
         // Retrieve the enum type.
         val enumType = decl.tpe

@@ -388,7 +388,7 @@ class TestUnification extends FunSuite {
     val subst0 = Substitution.singleton(tpe1, tpe2)
     val result = Unification.liftM(tpe1, subst0).run(subst0)
     val (subst, _) = result.get
-    assertResult(Type.Cst(TypeConstructor.Bool))(subst.m(tpe1))
+    assertResult(Type.Cst(TypeConstructor.Bool))(subst.typeMap(tpe1))
   }
 
   test("unifyM.01") {
@@ -437,9 +437,9 @@ class TestUnification extends FunSuite {
     val res3 = Unification.unifyM(Type.Var(3, Kind.Star), Type.mkTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), SL)
     val result = seqM(List(res1, res2, res3)).run(subst0)
     val (subst, tpe) = result.get
-    assertResult(Type.Cst(TypeConstructor.Bool))(subst.m(Type.Var(1, Kind.Star)))
-    assertResult(Type.Cst(TypeConstructor.Char))(subst.m(Type.Var(2, Kind.Star)))
-    assertResult(Type.mkTuple(List(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))))(subst.m(Type.Var(3, Kind.Star)))
+    assertResult(Type.Cst(TypeConstructor.Bool))(subst.typeMap(Type.Var(1, Kind.Star)))
+    assertResult(Type.Cst(TypeConstructor.Char))(subst.typeMap(Type.Var(2, Kind.Star)))
+    assertResult(Type.mkTuple(List(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))))(subst.typeMap(Type.Var(3, Kind.Star)))
   }
 
   private def isOk[T, E](r: Result[T, E]) = r match {

@@ -1364,7 +1364,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                 val targs = t.typeArguments
                 val subst = Substitution((tvars zip targs).foldLeft(Map.empty[Type.Var, Type]) {
                   case (macc, (tvar, targ)) => macc + (tvar -> targ)
-                })
+                }, Map.empty)
                 Type.SchemaExtend(sym, subst(t), acc).toSuccess
 
               case Type.Lattice(sym, _, _) =>
@@ -1374,7 +1374,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                 val targs = t.typeArguments
                 val subst = Substitution((tvars zip targs).foldLeft(Map.empty[Type.Var, Type]) {
                   case (macc, (tvar, targ)) => macc + (tvar -> targ)
-                })
+                }, Map.empty)
                 Type.SchemaExtend(sym, subst(t), acc).toSuccess
 
               case nonRelationOrLatticeType =>

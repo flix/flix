@@ -31,33 +31,33 @@ object Unification {
     /**
       * Returns the empty substitution.
       */
-    val empty: Substitution = Substitution(Map.empty)
+    val empty: Substitution = Substitution(Map.empty, Map.empty)
 
     /**
       * Returns the singleton substitution mapping `x` to `tpe`.
       */
-    def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe))
+    def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe), Map.empty)
   }
 
   /**
     * A substitution is a map from type variables to types.
     */
-  case class Substitution(m: Map[Type.Var, Type]) {
+  case class Substitution(typeMap: Map[Type.Var, Type], effectMap: Map[Eff.Var, Eff]) {
 
     /**
       * Returns `true` if `this` is the empty substitution.
       */
-    def isEmpty: Boolean = m.isEmpty
+    def isEmpty: Boolean = typeMap.isEmpty && effectMap.isEmpty
 
     /**
-      * Applies `this` substitution to the given type `tpe`.
+      * Applies `this` substitution to the given type `tpe0`.
       */
-    def apply(tpe: Type): Type = tpe match {
+    def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
-        m.get(x) match {
+        typeMap.get(x) match {
           case None => x
-          case Some(y) if x.kind == tpe.kind => y
-          case Some(y) if x.kind != tpe.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe.kind}'.")
+          case Some(y) if x.kind == tpe0.kind => y
+          case Some(y) if x.kind != tpe0.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe0.kind}'.")
         }
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(f, l) => Type.Arrow(f, l)
@@ -78,20 +78,38 @@ object Unification {
     def apply(ts: List[Type]): List[Type] = ts map apply
 
     /**
+      * Applies `this` substitution to the given effect `eff`.
+      */
+    def apply(eff: Eff): Eff = eff match {
+      case x: Eff.Var => effectMap.get(x) match {
+        case None => x
+        case Some(y) => y
+      }
+      case Eff.Pure => Eff.Pure
+      case Eff.Impure => Eff.Impure
+    }
+
+    /**
       * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
     def ++(that: Substitution): Substitution = {
-      Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
+      Substitution(
+        this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
+        this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
+      )
     }
 
     /**
       * Returns the composition of `this` substitution with `that` substitution.
       */
     def @@(that: Substitution): Substitution = {
-      val m = that.m.foldLeft(Map.empty[Type.Var, Type]) {
+      val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
         case (macc, (x, t)) => macc.updated(x, this.apply(t))
       }
-      Substitution(m) ++ this
+      val newEffectMap = that.effectMap.foldLeft(Map.empty[Eff.Var, Eff]) {
+        case (macc, (x, t)) => macc.updated(x, this.apply(t))
+      }
+      Substitution(newTypeMap, newEffectMap) ++ this
     }
 
   }
@@ -299,7 +317,7 @@ object Unification {
         // Introduce a fresh type variable to represent one more level of the row.
         val restRow2 = Type.freshTypeVar()
         val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
-        val subst = Unification.Substitution(Map(tvar -> type2))
+        val subst = Unification.Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
 
       case Type.RecordEmpty =>
@@ -334,7 +352,7 @@ object Unification {
         // Introduce a fresh type variable to represent one more level of the row.
         val restRow2 = Type.freshTypeVar()
         val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
-        val subst = Unification.Substitution(Map(tvar -> type2))
+        val subst = Unification.Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
 
       case Type.SchemaEmpty =>
