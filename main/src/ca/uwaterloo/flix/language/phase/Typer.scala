@@ -1062,52 +1062,45 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyM(tvar, returnType, loc)
         } yield resultType
 
-      /*
-     * New Channel expression.
-     */
       case ResolvedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
         //
         //  exp: Int
-        //  --------------------
-        //  newch t exp : Channel[t]
+        //  ------------------------
+        //  channel exp : Channel[t]
         //
         for {
-          actualLengthType <- visitExp(exp)
-          lengthType <- unifyM(actualLengthType, Type.Cst(TypeConstructor.Int32), loc)
+          (tpe, eff) <- visitExp(exp)
+          lengthType <- unifyM(tpe, Type.Cst(TypeConstructor.Int32), loc)
           resultType <- liftM(Type.mkChannel(tpe))
-        } yield resultType
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Get Channel expression.
-       */
       case ResolvedAst.Expression.GetChannel(exp, tvar, evar, loc) =>
         //
-        //  exp: Channel[tpe]
-        //  -----------------
-        //  <- exp : tpe
+        //  exp: Channel[t]
+        //  ---------------
+        //  <- exp : tvar
         //
+        val elementType = Type.freshTypeVar()
         for {
-          channelType <- visitExp(exp)
-          _ <- unifyM(channelType, Type.mkChannel(tvar), loc)
-        } yield tvar
+          (tpe, eff) <- visitExp(exp)
+          channelType <- unifyM(tpe, Type.mkChannel(elementType), loc)
+          resultType <- unifyM(tvar, elementType, loc)
+          resultEff <- unifyEffM(evar, eff, loc)
+        } yield (resultType, resultEff)
 
-      /*
-       * Put Channel expression.
-       */
       case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, evar, loc) =>
         //
-        //  exp1: Channel[t], exp2: t
-        //  -------------------------
+        //  exp1: Channel[t]    exp2: t
+        //  ---------------------------
         //  exp1 <- exp2 : Channel[t]
         //
-        val freshElementTypeVar = Type.freshTypeVar()
         for {
-          channelType <- visitExp(exp1)
-          elementType <- visitExp(exp2)
-          _ <- unifyM(channelType, Type.mkChannel(freshElementTypeVar), loc)
-          _ <- unifyM(elementType, freshElementTypeVar, loc)
-          resultType <- unifyM(tvar, Type.mkChannel(freshElementTypeVar), loc)
-        } yield resultType
+          (tpe1, eff1) <- visitExp(exp1)
+          (tpe2, eff2) <- visitExp(exp2)
+          resultType <- unifyM(tvar, tpe1, Type.mkChannel(tpe2), loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+        } yield (resultType, resultEff)
 
       /*
        * Select Channel Expression.
