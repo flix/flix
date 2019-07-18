@@ -666,8 +666,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         for {
           resultType <- unifyM(tvar, Type.RecordEmpty, loc)
-          resultEff <- unifyEffM(evar, Eff.Pure, loc)
-        } yield (resultType, resultEff)
+        } yield (resultType, evar)
 
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
         //
@@ -719,8 +718,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         if (elms.isEmpty) {
           for {
             resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
-            resultEff <- unifyEffM(evar, Eff.Pure, loc)
-          } yield (resultType, resultEff)
+          } yield (resultType, evar)
         } else {
           for {
             (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
@@ -816,8 +814,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         if (elms.isEmpty) {
           for {
             resultType <- unifyM(tvar, Type.mkVector(Type.freshTypeVar(), Type.Succ(0, Type.Zero)), loc)
-            resultEff <- unifyEffM(evar, Eff.Pure, loc)
-          } yield (resultType, resultEff)
+          } yield (resultType, evar)
         } else {
           for {
             (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
@@ -988,16 +985,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
-          resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
-        } yield (resultType, resultEff)
+        } yield (resultType, evar)
 
       case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
         // TODO: Check formal parameter type.
         for {
           (bodyType, bodyEff) <- visitExp(exp)
           resultType <- unifyM(bodyType, Type.Cst(TypeConstructor.Bool), loc)
-          resultEff <- unifyEffM(bodyEff, Eff.Pure, loc)
-        } yield (resultType, resultEff)
+        } yield (resultType, evar)
 
       case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
@@ -1151,8 +1146,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           (tpe, eff) <- visitExp(exp)
           resultType <- unifyM(tvar, Type.Cst(TypeConstructor.Unit), loc)
-          resultEff <- unifyEffM(evar, Eff.Pure, loc)
-        } yield (resultType, resultEff)
+        } yield (resultType, evar)
 
       case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) =>
         //
