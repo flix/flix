@@ -937,9 +937,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         for {
           (tpe, eff) <- visitExp(exp)
-          resultType <- unifyTypM(tvar, Type.Apply(Type.Cst(TypeConstructor.Ref), tpe), loc)
+          resultTyp <- unifyTypM(tvar, mkRefType(tpe), loc)
           resultEff <- unifyEffM(evar, eff, loc)
-        } yield (resultType, resultEff)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
         //
@@ -950,9 +950,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val elementType = Type.freshTypeVar()
         for {
           (tpe, eff) <- visitExp(exp)
-          refType <- unifyTypM(tpe, Type.Apply(Type.Cst(TypeConstructor.Ref), elementType), loc)
-          resultType <- unifyTypM(tvar, elementType, loc)
-        } yield (resultType, evar)
+          refType <- unifyTypM(tpe, mkRefType(elementType), loc)
+          resultTyp <- unifyTypM(tvar, elementType, loc)
+        } yield (resultTyp, evar)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
         //
@@ -963,10 +963,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
-          refType <- unifyTypM(tpe1, Type.Apply(Type.Cst(TypeConstructor.Ref), tpe2), loc)
-          resultType <- unifyTypM(tvar, Type.Cst(TypeConstructor.Unit), loc)
+          refType <- unifyTypM(tpe1, mkRefType(tpe2), loc)
+          resultTyp <- unifyTypM(tvar, mkUnitType(), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
-        } yield (resultType, resultEff)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) =>
         // TODO: Need to check that the return types are consistent.
@@ -1966,5 +1966,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       Type.Cst(TypeConstructor.Native(c))
     }
   }
+
+  /**
+    * Returns the type `Unit`.
+    */
+  private def mkUnitType(): Type = Type.Cst(TypeConstructor.Unit)
+
+  /**
+    * Returns the type `Ref[tpe]`.
+    */
+  private def mkRefType(tpe: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Ref), tpe)
 
 }
