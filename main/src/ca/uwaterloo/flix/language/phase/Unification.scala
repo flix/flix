@@ -120,6 +120,50 @@ object Unification {
   }
 
   /**
+    * A type inference state monad that maintains the current substitution.
+    */
+  case class InferMonad[A](run: Substitution => Result[(Substitution, A), TypeError]) {
+    /**
+      * Applies the given function `f` to the value in the monad.
+      */
+    def map[B](f: A => B): InferMonad[B] = {
+      def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
+        // Run the original function and map over its result (since it may have error'd).
+        run(s0) map {
+          case (s, a) => (s, f(a))
+        }
+      }
+
+      InferMonad(runNext)
+    }
+
+    /**
+      * Applies the given function `f` to the value in the monad.
+      */
+    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
+      def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
+        // Run the original function and flatMap over its result (since it may have error'd).
+        run(s0) flatMap {
+          case (s, a) => f(a) match {
+            // Unwrap the returned monad and apply the inner function g.
+            case InferMonad(g) => g(s)
+          }
+        }
+      }
+
+      InferMonad(runNext)
+    }
+
+    // TODO: Necessary for pattern matching?
+    // TODO: What should this return?
+    def withFilter(f: A => Boolean): InferMonad[A] = InferMonad(x => run(x) match {
+      case Ok((subst, t)) => if (f(t)) Ok((subst, t)) else Ok((subst, t))
+      case Err(e) => Err(e)
+    })
+
+  }
+
+  /**
     * A common super-type for unification errors.
     */
   sealed trait UnificationError
@@ -182,7 +226,7 @@ object Unification {
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -246,7 +290,7 @@ object Unification {
         rewriteRow(row2, label1, fieldType1, row2) flatMap {
           case (subst1, restRow2) =>
             // TODO: Missing the safety/occurs check.
-            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+            unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
               case subst2 => Result.Ok(subst2 @@ subst1)
             }
         }
@@ -256,7 +300,7 @@ object Unification {
         rewriteSchemaRow(row2, sym, tpe, row2) flatMap {
           case (subst1, restRow2) =>
             // TODO: Missing the safety/occurs check.
-            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+            unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
               case subst2 => Result.Ok(subst2 @@ subst1)
             }
         }
@@ -274,7 +318,7 @@ object Unification {
 
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
-          case Result.Ok(subst1) => unify(subst1(t12), subst1(t22)) match {
+          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
             case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
             case Result.Err(e) => Result.Err(e)
           }
@@ -307,7 +351,7 @@ object Unification {
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
           for {
-            subst <- unify(fieldType1, fieldType2)
+            subst <- unifyTypes(fieldType1, fieldType2)
           } yield (subst, restRow2)
         } else {
           // Case 1.2: The labels do not match, attempt to match with a label further down.
@@ -342,7 +386,7 @@ object Unification {
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
           for {
-            subst <- unify(fieldType1, fieldType2)
+            subst <- unifyTypes(fieldType1, fieldType2)
           } yield (subst, restRow2)
         } else {
           // Case 1.2: The labels do not match, attempt to match with a label further down.
@@ -382,50 +426,6 @@ object Unification {
   }
 
   /**
-    * A type inference state monad that maintains the current substitution.
-    */
-  case class InferMonad[A](run: Substitution => Result[(Substitution, A), TypeError]) {
-    /**
-      * Applies the given function `f` to the value in the monad.
-      */
-    def map[B](f: A => B): InferMonad[B] = {
-      def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
-        // Run the original function and map over its result (since it may have error'd).
-        run(s0) map {
-          case (s, a) => (s, f(a))
-        }
-      }
-
-      InferMonad(runNext)
-    }
-
-    /**
-      * Applies the given function `f` to the value in the monad.
-      */
-    def flatMap[B](f: A => InferMonad[B]): InferMonad[B] = {
-      def runNext(s0: Substitution): Result[(Substitution, B), TypeError] = {
-        // Run the original function and flatMap over its result (since it may have error'd).
-        run(s0) flatMap {
-          case (s, a) => f(a) match {
-            // Unwrap the returned monad and apply the inner function g.
-            case InferMonad(g) => g(s)
-          }
-        }
-      }
-
-      InferMonad(runNext)
-    }
-
-    // TODO: Necessary for pattern matching?
-    // TODO: What should this return?
-    def withFilter(f: A => Boolean): InferMonad[A] = InferMonad(x => run(x) match {
-      case Ok((subst, t)) => if (f(t)) Ok((subst, t)) else Ok((subst, t))
-      case Err(e) => Err(e)
-    })
-
-  }
-
-  /**
     * Lifts the given value `a` into the type inference monad
     */
   def liftM[A](a: A): InferMonad[A] = InferMonad(s => Ok((s, a)))
@@ -444,11 +444,11 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     InferMonad((s: Substitution) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
-      unify(type1, type2) match {
+      unifyTypes(type1, type2) match {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
@@ -483,21 +483,21 @@ object Unification {
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3), loc)
+  def unifyTypM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypM(List(tpe1, tpe2, tpe3), loc)
 
   /**
     * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3, tpe4), loc)
+  def unifyTypM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyTypM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
   /**
     * Unifies all the types in the given non-empty list `ts`.
     */
-  def unifyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
-        case tpe => visit(unifyM(tpe, y, loc), ys)
+        case tpe => visit(unifyTypM(tpe, y, loc), ys)
       }
     }
 
@@ -507,18 +507,18 @@ object Unification {
   /**
     * Unifies all the types in the given (possibly empty) list `ts`.
     */
-  def unifyAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+  def unifyTypAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
       liftM(Type.freshTypeVar())
     else
-      unifyM(ts, loc)
+      unifyTypM(ts, loc)
   }
 
   /**
     * Pairwise unifies the two given lists of types `xs` and `ys`.
     */
-  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[List[Type]] = seqM((xs zip ys).map {
-    case (x, y) => unifyM(x, y, loc)
+  def unifyTypM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[List[Type]] = seqM((xs zip ys).map {
+    case (x, y) => unifyTypM(x, y, loc)
   })
 
   /**

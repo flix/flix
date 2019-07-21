@@ -602,7 +602,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Unify the declared and actual type to obtain the substitution map.
       val declaredType = defn.tpe
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
@@ -635,7 +635,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val declaredType = eff.tpe
 
       // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
 
       // Check if the substitution is empty, if so there is no need for specialization.
       if (subst.isEmpty) {
@@ -733,7 +733,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Check the function name.
         if (name == sym.name) {
           // Check whether the type unifies.
-          if (Unification.unify(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
+          if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
             // Match found!
             matches += sym
           }

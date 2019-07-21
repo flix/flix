@@ -1195,7 +1195,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def casesOf(enum: Enum, tpe: Type): List[(String, Type)] = {
       // Compute a substitution for the parametric enum specialized to the specific type.
-      val subst = Unification.unify(enum.tpe, tpe).get
+      val subst = Unification.unifyTypes(enum.tpe, tpe).get
 
       // Apply the substitution to each case.
       enum.cases.map {
