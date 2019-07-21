@@ -266,9 +266,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     // TODO: Use resultEff
     val result = for (
-      (resultType, resultEff) <- inferExp(defn0.exp, program);
-      unifiedType <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, resultType), defn0.loc)
-    ) yield unifiedType
+      (inferredTyp, inferredEff) <- inferExp(defn0.exp, program);
+      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, inferredTyp), defn0.loc);
+     // unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc) // TODO
+    ) yield unifiedTyp
 
     // TODO: See if this can be rewritten nicer
     result match {
@@ -1038,16 +1039,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultType <- unifyTypM(tvar, Type.Cst(TypeConstructor.Native(clazz)), loc)
         } yield (resultType, evar)
 
-      /*
-       * Native Field expression.
-       */
       case ResolvedAst.Expression.NativeField(field, tvar, evar, loc) =>
         // TODO: Check types.
         liftM((tvar, evar))
 
-      /*
-       * Native Method expression.
-       */
       case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, evar, loc) =>
         // TODO: Check argument types.
         val returnType = getGenericFlixType(method.getGenericReturnType)
@@ -1712,7 +1707,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
       //  ------------------------------------------------------------
-      //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
+      //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
 
       // Lookup the type scheme.
