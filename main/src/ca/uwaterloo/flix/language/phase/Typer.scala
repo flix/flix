@@ -267,7 +267,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // TODO: Use resultEff
     val result = for (
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, program);
-      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, inferredTyp), defn0.loc);
+      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, inferredTyp), defn0.loc)
      // unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc) // TODO
     ) yield unifiedTyp
 
