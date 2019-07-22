@@ -321,18 +321,27 @@ object Type {
   /**
     * Constructs the arrow type A -> B.
     */
+  @deprecated("Use the effectful version of mkArrow", "0.6.0")
   def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(Eff.Pure, 2), a), b) // TODO: Pure?
 
   /**
-    * Constructs the arrow type A -> B.
+    * Constructs the arrow type A -> B with the effect `eff`.
     */
   def mkArrow(a: Type, eff: Eff, b: Type): Type = Apply(Apply(Arrow(eff, 2), a), b)
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
+  @deprecated("Use the effectful version of mkArrow", "0.6.0")
   def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
     as.foldRight(b)(mkArrow)
+  }
+
+  /**
+    * Constructs the arrow type A_1 -> .. -> A_n -> B with the effect `eff` on each arrow.
+    */
+  def mkArrow(as: List[Type], eff: Eff, b: Type): Type = {
+    as.foldRight(b)(mkArrow(_, eff, _))
   }
 
   /**
