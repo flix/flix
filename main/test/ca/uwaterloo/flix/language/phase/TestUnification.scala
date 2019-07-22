@@ -261,8 +261,8 @@ class TestUnification extends FunSuite {
 
   test("Unify.Succ.05") {
     val freshVar = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkVector(Type.Cst(TypeConstructor.Bool), Type.Succ(7, Type.Zero))
-    val tpe2 = Type.mkVector(Type.Cst(TypeConstructor.Bool), Type.Succ(5, freshVar))
+    val tpe1 = Type.mkApply(Type.Cst(TypeConstructor.Vector), Type.Cst(TypeConstructor.Bool) :: Type.Succ(7, Type.Zero) :: Nil)
+    val tpe2 = Type.mkApply(Type.Cst(TypeConstructor.Vector), Type.Cst(TypeConstructor.Bool) :: Type.Succ(5, freshVar) :: Nil)
     val result = Unification.unifyTypes(tpe1, tpe2)
     assert(isOk(result))
   }

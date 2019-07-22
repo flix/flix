@@ -362,6 +362,8 @@ object Type {
     case (acc, t) => Apply(acc, t)
   }
 
+  // TODO: Move these helpers into the Typer.
+
   /**
     * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
     */
@@ -373,39 +375,12 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: Type*): Type = mkTuple(ts.toList)
-
-  /**
-    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
-    */
   def mkTuple(ts: List[Type]): Type = {
     val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
     ts.foldLeft(tuple: Type) {
       case (acc, x) => Apply(acc, x)
     }
   }
-
-  // TODO: Move these helpers into the Typer.
-
-  /**
-    * Constructs the array type [elmType] where 'elmType' is the given type.
-    */
-  def mkArray(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Array), elmType)
-
-  /**
-    * Constructs the channel type [elmType] where 'elmType' is the given type.
-    */
-  def mkChannel(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Channel), elmType)
-
-  /**
-    * Constructs the vector type [|elmType, Len|] where
-    *
-    * @param elmType is the given element type
-    * @param len     is the given length of the vector.
-    *
-    *                len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
-    */
-  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Cst(TypeConstructor.Vector), elmType), len)
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`

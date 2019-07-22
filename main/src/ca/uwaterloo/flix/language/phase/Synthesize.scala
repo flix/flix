@@ -531,7 +531,7 @@ object Synthesize extends Phase[Root, Root] {
             val enumDecl = root.enums(enumSym)
 
             // Construct the pair (e1, e2) to match against.
-            val matchValue = Expression.Tuple(List(exp1, exp2), Type.mkTuple(tpe, tpe), ast.Eff.Pure, sl)
+            val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), ast.Eff.Pure, sl)
 
             // Compute the cases specialized to the current type.
             val cases = casesOf(enumDecl, tpe)
@@ -551,7 +551,7 @@ object Synthesize extends Phase[Root, Root] {
                 val patY = Pattern.Tag(enumSym, tag, Pattern.Var(freshY, caseType, sl), tpe, sl)
 
                 // Generate the pattern: (Tag(freshX) and Tag(freshY)).
-                val p = Pattern.Tuple(List(patX, patY), Type.mkTuple(tpe, tpe), sl)
+                val p = Pattern.Tuple(List(patX, patY), mkTupleType(tpe, tpe), sl)
 
                 // Generate the guard (simply true).
                 val g = Expression.True(sl)
@@ -595,7 +595,7 @@ object Synthesize extends Phase[Root, Root] {
             val elementTypes = getElementTypes(tpe)
 
             // Construct the pair (e1, e2) to match against.
-            val matchValue = Expression.Tuple(List(exp1, exp2), Type.mkTuple(tpe, tpe), ast.Eff.Pure, sl)
+            val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), ast.Eff.Pure, sl)
 
             // Introduce fresh variables for each component of the first tuple.
             val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
@@ -610,7 +610,7 @@ object Synthesize extends Phase[Root, Root] {
             val ys = Pattern.Tuple((freshVarsY zip elementTypes).map {
               case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
             }, tpe, sl)
-            val p = Pattern.Tuple(List(xs, ys), Type.mkTuple(tpe, tpe), sl)
+            val p = Pattern.Tuple(List(xs, ys), mkTupleType(tpe, tpe), sl)
 
             // The guard of the rule (simply true).
             val g = Expression.True(sl)
@@ -1189,6 +1189,11 @@ object Synthesize extends Phase[Root, Root] {
       case Type.Cst(TypeConstructor.Int64) => true
       case _ => false
     }
+
+    /**
+      * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+      */
+    def mkTupleType(ts: Type*): Type = Type.mkTuple(ts.toList)
 
     /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.

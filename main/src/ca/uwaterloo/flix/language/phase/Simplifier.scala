@@ -427,12 +427,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
-        val t = Type.mkArray(tpe.typeArguments.head)
+        val t = Type.mkApply(Type.Cst(TypeConstructor.Array), tpe.typeArguments.head :: Nil)
         SimplifiedAst.Expression.ArrayLit(es, t, loc)
 
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
         val e = visitExp(elm)
-        val t = Type.mkArray(elm.tpe)
+        val t = Type.mkApply(Type.Cst(TypeConstructor.Array), elm.tpe :: Nil)
         val i = SimplifiedAst.Expression.Int32(len)
         SimplifiedAst.Expression.ArrayNew(e, i, t, loc)
 
