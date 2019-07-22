@@ -321,7 +321,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val zero = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
+        val zero = mkRelationOrLattice(sym, attributes.map(_.tpe))
         val tpe = quantifiers.foldLeft(zero) {
           case (tacc, tvar) => Type.Apply(tacc, tvar)
         }
@@ -341,7 +341,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val zero = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
+        val zero = mkRelationOrLattice(sym, attributes.map(_.tpe))
         val tpe = quantifiers.foldLeft(zero) {
           case (tacc, tvar) => Type.Apply(tacc, tvar)
         }
@@ -1655,7 +1655,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(rel0.sym.namespace)
     getRelationIfAccessible(rel0, ns0, loc) flatMap {
       case sym => traverse(rel0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => Type.mkRelationOrLattice(sym, attr)
+        case attr => mkRelationOrLattice(sym, attr)
       }
     }
   }
@@ -1670,15 +1670,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(lat0.sym.namespace)
     getLatticeIfAccessible(lat0, ns0, loc) flatMap {
       case sym => traverse(lat0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => Type.mkRelationOrLattice(sym, attr)
+        case attr => mkRelationOrLattice(sym, attr)
       }
     }
   }
 
   /**
+    * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
+    */
+  private def mkRelationOrLattice(predSym: Symbol.PredSym, ts: List[Type]): Type = predSym match {
+    case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
+    case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+  }
+
+  /**
     * Returns the class reflection object for the given `className`.
     */
-  def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
+  private def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
     Class.forName(className).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure

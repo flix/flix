@@ -363,15 +363,6 @@ object Type {
   }
 
   // TODO: Move these helpers into the Typer.
-
-  /**
-    * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
-    */
-  def mkRelationOrLattice(predSym: Symbol.PredSym, ts: List[Type]): Type = predSym match {
-    case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
-    case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
-  }
-
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */

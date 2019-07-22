@@ -1832,7 +1832,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case x: Symbol.LatSym => program.lattices(x).sc.quantifiers
     }
 
-    val zero = Type.mkRelationOrLattice(sym, ts)
+    val zero = sym match {
+      case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
+      case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+    }
+
     val result = quantifiers.foldLeft(zero) {
       case (tacc, _) => Type.Apply(tacc, Type.freshTypeVar())
     }
