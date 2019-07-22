@@ -164,7 +164,7 @@ object Main {
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
           println()
-          println(s"Compilation failed with ${errors.length} errors.")
+          println(s"Compilation failed with ${errors.length} error(s).")
           System.exit(1)
       }
     } catch {

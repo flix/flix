@@ -171,12 +171,20 @@ object Unification {
   object UnificationError {
 
     /**
-      * An unification error due to a mismatch between `tpe1` and `tpe2`.
+      * An unification error due to a mismatch between the types `tpe1` and `tpe2`.
       *
       * @param tpe1 the first type.
       * @param tpe2 the second type.
       */
-    case class Mismatch(tpe1: Type, tpe2: Type) extends UnificationError
+    case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
+
+    /**
+      * An unification error due to a mismatch between the effects `eff1` and `eff2`.
+      *
+      * @param eff1 the first effect.
+      * @param eff2 the second effect.
+      */
+    case class MismatchedEffects(eff1: Eff, eff2: Eff) extends UnificationError
 
     /**
       * An unification error due to an occurrence of `tvar` in `tpe`.
@@ -217,9 +225,6 @@ object Unification {
       * @param nonSchemaType the unexpected non-schema type.
       */
     case class NonSchemaType(nonSchemaType: Type) extends UnificationError
-
-    // TODO: DOC
-    case class MismatchedEffects(eff1: Eff, eff2: Eff) extends UnificationError
 
   }
 
@@ -270,13 +275,13 @@ object Unification {
         if (clazz1 == clazz2)
           Result.Ok(Substitution.empty)
         else
-          Result.Err(UnificationError.Mismatch(tpe1, tpe2))
+          Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
       case (Type.Cst(c1), Type.Cst(c2)) =>
         if (c1 == c2)
           Result.Ok(Substitution.empty)
         else
-          Result.Err(UnificationError.Mismatch(tpe1, tpe2))
+          Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
       case (Type.Arrow(f1, l1), Type.Arrow(f2, l2)) if l1 == l2 =>
         unifyEffects(f1, f2)
@@ -324,7 +329,7 @@ object Unification {
           }
           case Result.Err(e) => Result.Err(e)
         }
-      case _ => Result.Err(UnificationError.Mismatch(tpe1, tpe2))
+      case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
     }
 
     /**
@@ -422,7 +427,7 @@ object Unification {
     case (_, y: Eff.Var) => Ok(Substitution.singleton(y, eff1))
     case (Eff.Pure, Eff.Pure) => Ok(Substitution.empty)
     case (Eff.Impure, Eff.Impure) => Ok(Substitution.empty)
-    case _ => Err(UnificationError.MismatchedEffects(eff1, eff2)) // TODO
+    case _ => Err(UnificationError.MismatchedEffects(eff1, eff2))
   }
 
   /**
@@ -453,8 +458,11 @@ object Unification {
           val subst = s1 @@ s
           Ok(subst, subst(tpe1))
 
-        case Result.Err(UnificationError.Mismatch(baseType1, baseType2)) =>
+        case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
+
+        case Result.Err(UnificationError.MismatchedEffects(eff1, eff2)) =>
+          Err(TypeError.MismatchedEffects(eff1, eff2, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
@@ -470,11 +478,6 @@ object Unification {
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, loc))
-
-          // TODO: Where in the order
-        case Result.Err(UnificationError.MismatchedEffects(eff1, eff2)) =>
-          Err(TypeError.MismatchedEffects(eff1, eff2, loc))
-
       }
     }
     )
@@ -532,9 +535,8 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))
-
-        case Result.Err(UnificationError.MismatchedEffects(e1, e2)) =>
-          Err(TypeError.MismatchedEffects(e1, e2, loc)) // TODO
+        case Result.Err(UnificationError.MismatchedEffects(e1, e2)) => Err(TypeError.MismatchedEffects(e1, e2, loc))
+        case Result.Err(e) => throw InternalCompilerException(s"Unexpected error: '$e'.")
       }
     }
     )

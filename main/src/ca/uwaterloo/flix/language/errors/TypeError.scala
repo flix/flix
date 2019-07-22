@@ -34,26 +34,6 @@ sealed trait TypeError extends CompilationError {
 object TypeError {
 
   /**
-    * Undefined Attribute Error.
-    *
-    * @param attribute the attribute name.
-    * @param loc       the location where the error occurred.
-    */
-  // TODO: Move?
-  case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined attribute '" << Red(attribute) << "' in table '" << Cyan(table) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "attribute not found.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent attribute?" << NewLine
-    }
-  }
-
-  /**
     * Unification Error.
     *
     * @param baseType1 the first base type.
@@ -67,7 +47,7 @@ object TypeError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
@@ -82,14 +62,14 @@ object TypeError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify '" << Red(eff1.toString) << "' and '" << Red(eff2.toString) << "'." << NewLine
+      vt << ">> Unable to unify the effects: '" << Red(eff1.toString) << "' and '" << Red(eff2.toString) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched types.") << NewLine
+      vt << Code(loc, "mismatched effects.") << NewLine
     }
   }
 
   /**
-    * OccursCheck Error.
+    * Occurs Check.
     *
     * @param baseVar   the base type variable.
     * @param baseType  the base type.
