@@ -34,7 +34,7 @@ sealed trait TypeError extends CompilationError {
 object TypeError {
 
   /**
-    * Unification Error.
+    * Mismatches Types.
     *
     * @param baseType1 the first base type.
     * @param baseType2 the second base type.
@@ -42,7 +42,7 @@ object TypeError {
     * @param fullType2 the second full type.
     * @param loc       the location where the error occurred.
     */
-  case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
@@ -56,7 +56,13 @@ object TypeError {
     }
   }
 
-  // TODO: DOC
+  /**
+    * Mismatches Effects.
+    *
+    * @param eff1 the first effect.
+    * @param eff2 the second effect.
+    * @param loc  the location where the error occurred.
+    */
   case class MismatchedEffects(eff1: Eff, eff2: Eff, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {

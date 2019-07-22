@@ -459,7 +459,7 @@ object Unification {
           Ok(subst, subst(tpe1))
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
-          Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
+          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
 
         case Result.Err(UnificationError.MismatchedEffects(eff1, eff2)) =>
           Err(TypeError.MismatchedEffects(eff1, eff2, loc))
