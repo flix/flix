@@ -32,7 +32,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, TrivialError] = flix.phase("Trivial") {
 
-    // TODO: Introduce flag to disable
+    return root.toSuccess
 
     // Find the patterns
     val pats = Catalog.allPatterns(root, flix)

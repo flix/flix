@@ -24,7 +24,37 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme)(implicit flix: Flix): Type = Type.refreshTypeVars(sc.quantifiers, sc.base)
+  def instantiate(sc: Scheme)(implicit flix: Flix): Type = refreshTypeVars(sc.quantifiers, sc.base)
+
+  /**
+    * Replaces every free occurrence of a type variable in `typeVars`
+    * with a fresh type variable in the given type `tpe`.
+    */
+  private def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
+    val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
+      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
+    }
+
+    /**
+      * Replaces every variable occurrence in the given type using the map `freeVars`.
+      */
+    def visit(t0: Type): Type = t0 match {
+      case Type.Var(x, k) => freshVars.getOrElse(x, t0)
+      case Type.Cst(tc) => Type.Cst(tc)
+      case Type.Arrow(f, l) => Type.Arrow(f, l)
+      case Type.RecordEmpty => Type.RecordEmpty
+      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
+      case Type.SchemaEmpty => Type.SchemaEmpty
+      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
+      case Type.Zero => Type.Zero
+      case Type.Succ(n, t) => Type.Succ(n, t)
+      case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
+      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
+      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
+    }
+
+    visit(tpe)
+  }
 
 }
 

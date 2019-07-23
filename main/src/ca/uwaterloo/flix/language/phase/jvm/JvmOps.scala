@@ -713,7 +713,7 @@ object JvmOps {
       enum.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unify(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
@@ -735,8 +735,8 @@ object JvmOps {
     case MonoType.Int64 => Type.Cst(TypeConstructor.Int64)
     case MonoType.BigInt => Type.Cst(TypeConstructor.BigInt)
     case MonoType.Str => Type.Cst(TypeConstructor.Str)
-    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
-    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
+    case MonoType.Array(elm) => Type.mkApply(Type.Cst(TypeConstructor.Array), hackMonoType2Type(elm) :: Nil)
+    case MonoType.Channel(elm) => Type.mkApply(Type.Cst(TypeConstructor.Channel), hackMonoType2Type(elm) :: Nil)
     case MonoType.Native(clazz) => Type.Cst(TypeConstructor.Native(clazz))
     case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))

@@ -808,7 +808,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     compile(input, DefaultOptions).get
   }
 
-  test("UselessExpression.Literal.01") {
+  ignore("UselessExpression.Literal.01") {
     val input =
       s"""
          |def main(): Int = (); 123
@@ -818,7 +818,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.Literal.02") {
+  ignore("UselessExpression.Literal.02") {
     val input =
       s"""
          |def main(): Int = 123; 123
@@ -828,7 +828,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.ArrayLit.01") {
+  ignore("UselessExpression.ArrayLit.01") {
     val input =
       s"""
          |def main(): Int =
@@ -840,7 +840,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.ArrayNew.01") {
+  ignore("UselessExpression.ArrayNew.01") {
     val input =
       s"""
          |def main(): Int =
@@ -852,7 +852,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.ArraySlice.01") {
+  ignore("UselessExpression.ArraySlice.01") {
     val input =
       s"""
          |def main(): Int =
@@ -865,7 +865,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.VectorLit.01") {
+  ignore("UselessExpression.VectorLit.01") {
     val input =
       s"""
          |def main(): Int =
@@ -877,7 +877,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.VectorNew.01") {
+  ignore("UselessExpression.VectorNew.01") {
     val input =
       s"""
          |def main(): Int =
@@ -889,7 +889,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.VectorSlice.01") {
+  ignore("UselessExpression.VectorSlice.01") {
     val input =
       s"""
          |def main(): Int =
@@ -902,7 +902,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.Ref.01") {
+  ignore("UselessExpression.Ref.01") {
     val input =
       s"""
          |def main(): Int =
@@ -914,7 +914,7 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UselessExpression.NewChannel.01") {
+  ignore("UselessExpression.NewChannel.01") {
     val input =
       s"""
          |def main(): Int =

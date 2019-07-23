@@ -37,7 +37,7 @@ sealed trait Type {
     case Type.Cst(tc) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
-    case Type.Arrow(l) => Set.empty
+    case Type.Arrow(_, _) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
@@ -84,81 +84,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a type variable.
-    */
-  def isVar: Boolean = typeConstructor match {
-    case Type.Var(_, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is an arrow type.
-    */
-  def isArrow: Boolean = typeConstructor match {
-    case Type.Arrow(l) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is an enum type.
-    */
-  def isEnum: Boolean = typeConstructor match {
-    case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a relation type.
-    */
-  def isRelation: Boolean = typeConstructor match {
-    case Type.Relation(sym, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a lattice type.
-    */
-  def isLattice: Boolean = typeConstructor match {
-    case Type.Lattice(sym, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a tuple type.
-    */
-  def isTuple: Boolean = typeConstructor match {
-    case Type.Cst(TypeConstructor.Tuple(l)) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a record type.
-    */
-  def isRecord: Boolean = typeConstructor match {
-    case Type.RecordEmpty => true
-    case Type.RecordExtend(base, label, value) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a schema type.
-    */
-  def isSchema: Boolean = typeConstructor match {
-    case Type.SchemaEmpty => true
-    case Type.SchemaExtend(_, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type does not contain type variables.
-    */
-  def isDeterminate: Boolean = this match {
-    case Type.Var(id, kind) => false
-    case Type.Apply(tpe1, tpe2) => tpe1.isDeterminate && tpe2.isDeterminate
-    case _ => true
-  }
-
-  /**
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {
@@ -166,7 +91,7 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Arrow(l) => s"Arrow($l)"
+    case Type.Arrow(eff, l) => s"Arrow($eff, $l)"
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.RecordEmpty => "{ }"
@@ -230,7 +155,7 @@ object Type {
   /**
     * A type expression that represents functions.
     */
-  case class Arrow(length: Int) extends Type {
+  case class Arrow(eff: Eff, length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
@@ -321,20 +246,34 @@ object Type {
   /**
     * Constructs the arrow type A -> B.
     */
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b)
+  @deprecated("Use the effectful version of mkArrow", "0.6.0")
+  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(Eff.Pure, 2), a), b) // TODO: Pure?
+
+  /**
+    * Constructs the arrow type A -> B with the effect `eff`.
+    */
+  def mkArrow(a: Type, eff: Eff, b: Type): Type = Apply(Apply(Arrow(eff, 2), a), b)
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
-  def mkArrow(as: List[Type], b: Type): Type = {
+  @deprecated("Use the effectful version of mkArrow", "0.6.0")
+  def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
     as.foldRight(b)(mkArrow)
+  }
+
+  /**
+    * Constructs the arrow type A_1 -> .. -> A_n -> B with the effect `eff` on each arrow.
+    */
+  def mkArrow(as: List[Type], eff: Eff, b: Type): Type = {
+    as.foldRight(b)(mkArrow(_, eff, _))
   }
 
   /**
     * Constructs the arrow type [A] -> B.
     */
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    val arrow = Arrow(as.length + 1)
+    val arrow = Arrow(Eff.Pure, as.length + 1) // TODO: Pure?
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -348,19 +287,7 @@ object Type {
     case (acc, t) => Apply(acc, t)
   }
 
-  /**
-    * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
-    */
-  def mkRelationOrLattice(predSym: Symbol.PredSym, ts: List[Type]): Type = predSym match {
-    case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
-    case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
-  }
-
-  /**
-    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
-    */
-  def mkTuple(ts: Type*): Type = mkTuple(ts.toList)
-
+  // TODO: Move these helpers into the Typer.
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
@@ -371,55 +298,6 @@ object Type {
     }
   }
 
-  /**
-    * Constructs the array type [elmType] where 'elmType' is the given type.
-    */
-  def mkArray(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Array), elmType)
-
-  /**
-    * Constructs the channel type [elmType] where 'elmType' is the given type.
-    */
-  def mkChannel(elmType: Type): Type = Apply(Type.Cst(TypeConstructor.Channel), elmType)
-
-  /**
-    * Constructs the vector type [|elmType, Len|] where
-    *
-    * @param elmType is the given element type
-    * @param len     is the given length of the vector.
-    *
-    *                len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
-    */
-  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Cst(TypeConstructor.Vector), elmType), len)
-
-  /**
-    * Replaces every free occurrence of a type variable in `typeVars`
-    * with a fresh type variable in the given type `tpe`.
-    */
-  def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
-    val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.id -> freshTypeVar(tvar.kind))
-    }
-
-    /**
-      * Replaces every variable occurrence in the given type using the map `freeVars`.
-      */
-    def visit(t0: Type): Type = t0 match {
-      case Type.Var(x, k) => freshVars.getOrElse(x, t0)
-      case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(l) => Type.Arrow(l)
-      case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
-      case Type.SchemaEmpty => Type.SchemaEmpty
-      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
-      case Type.Zero => Type.Zero
-      case Type.Succ(n, t) => Type.Succ(n, t)
-      case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
-      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
-      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
-    }
-
-    visit(tpe)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Type Class Instances                                                    //
@@ -470,7 +348,7 @@ object Type {
           //
           // Arrow.
           //
-          case Type.Arrow(l) =>
+          case Type.Arrow(_, l) =>
             val argumentTypes = args.init
             val resultType = args.last
             if (argumentTypes.length == 1) {

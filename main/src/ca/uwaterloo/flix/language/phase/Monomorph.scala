@@ -77,7 +77,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visit(t: Type): Type = t match {
         case Type.Cst(tc) => Type.Cst(tc)
         case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
-        case Type.Arrow(l) => Type.Arrow(l)
+        case Type.Arrow(f, l) => Type.Arrow(f, l)
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
@@ -602,7 +602,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Unify the declared and actual type to obtain the substitution map.
       val declaredType = defn.tpe
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
@@ -635,7 +635,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val declaredType = eff.tpe
 
       // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
 
       // Check if the substitution is empty, if so there is no need for specialization.
       if (subst.isEmpty) {
@@ -733,7 +733,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Check the function name.
         if (name == sym.name) {
           // Check whether the type unifies.
-          if (Unification.unify(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
+          if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
             // Match found!
             matches += sym
           }
