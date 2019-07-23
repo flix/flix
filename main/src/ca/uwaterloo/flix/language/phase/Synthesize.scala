@@ -506,7 +506,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Enum Case.
           //
-          if (tpe.isEnum) {
+          if (isEnum(tpe)) {
             //
             // Assume we have an enum:
             //
@@ -744,7 +744,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Enum case.
           //
-          if (tpe.isEnum) {
+          if (isEnum(tpe)) {
             //
             // Assume we have an enum:
             //
@@ -1010,7 +1010,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Enum case.
           //
-          if (tpe.isEnum) {
+          if (isEnum(tpe)) {
             //
             // Assume we have an enum:
             //
@@ -1191,6 +1191,30 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /**
+      * Returns `true` if `tpe` is a type variable.
+      */
+    def isVar(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Var(_, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is an arrow type.
+      */
+    def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Arrow(_, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is an enum type.
+      */
+    def isEnum(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
+      case _ => false
+    }
+
+    /**
       * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
       */
     def mkTupleType(ts: Type*): Type = Type.mkTuple(ts.toList)
@@ -1266,7 +1290,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce Equality special operators.
      */
     val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkEq(tpe))
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkEq(tpe))
       case (macc, tpe) => macc
     }
 
@@ -1274,7 +1298,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce Hash special operators.
      */
     val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkHash(tpe))
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkHash(tpe))
       case (macc, tpe) => macc
     }
 
@@ -1282,7 +1306,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce ToString special operators.
      */
     val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkToString(tpe))
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }
 

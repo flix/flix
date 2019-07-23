@@ -84,30 +84,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a type variable.
-    */
-  def isVar: Boolean = typeConstructor match {
-    case Type.Var(_, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is an arrow type.
-    */
-  def isArrow: Boolean = typeConstructor match {
-    case Type.Arrow(_, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is an enum type.
-    */
-  def isEnum: Boolean = typeConstructor match {
-    case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
-    case _ => false
-  }
-
-  /**
     * Returns `true` if `this` type is a relation type.
     */
   def isRelation: Boolean = typeConstructor match {
