@@ -578,7 +578,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Tuple Case.
           //
-          if (tpe.isTuple) {
+          if (isTuple(tpe)) {
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -808,7 +808,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Tuple case.
           //
-          if (tpe.isTuple) {
+          if (isTuple(tpe)) {
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -1072,7 +1072,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Relation case.
           //
-          if (tpe.isRelation) {
+          if (isRelation(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
             return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
@@ -1080,7 +1080,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Lattice case.
           //
-          if (tpe.isLattice) {
+          if (isLattice(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
             return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
@@ -1088,7 +1088,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Tuple case.
           //
-          if (tpe.isTuple) {
+          if (isTuple(tpe)) {
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -1140,7 +1140,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Records
           //
-          if (tpe.isRecord) {
+          if (isRecord(tpe)) {
             // TODO: Implement toString for records.
             return Expression.Str("<<record>>", sl)
           }
@@ -1148,7 +1148,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Schema
           //
-          if (tpe.isSchema) {
+          if (isSchema(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
             return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
@@ -1211,6 +1211,48 @@ object Synthesize extends Phase[Root, Root] {
       */
     def isEnum(tpe: Type): Boolean = tpe.typeConstructor match {
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a tuple type.
+      */
+    def isTuple(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Cst(TypeConstructor.Tuple(l)) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a relation type.
+      */
+    def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Relation(sym, _, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a lattice type.
+      */
+    def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Lattice(sym, _, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a record type.
+      */
+    def isRecord(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.RecordEmpty => true
+      case Type.RecordExtend(base, label, value) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a schema type.
+      */
+    def isSchema(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.SchemaEmpty => true
+      case Type.SchemaExtend(_, _, _) => true
       case _ => false
     }
 

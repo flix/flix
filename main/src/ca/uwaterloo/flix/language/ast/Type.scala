@@ -84,57 +84,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a relation type.
-    */
-  def isRelation: Boolean = typeConstructor match {
-    case Type.Relation(sym, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a lattice type.
-    */
-  def isLattice: Boolean = typeConstructor match {
-    case Type.Lattice(sym, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a tuple type.
-    */
-  def isTuple: Boolean = typeConstructor match {
-    case Type.Cst(TypeConstructor.Tuple(l)) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a record type.
-    */
-  def isRecord: Boolean = typeConstructor match {
-    case Type.RecordEmpty => true
-    case Type.RecordExtend(base, label, value) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a schema type.
-    */
-  def isSchema: Boolean = typeConstructor match {
-    case Type.SchemaEmpty => true
-    case Type.SchemaExtend(_, _, _) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type does not contain type variables.
-    */
-  def isDeterminate: Boolean = this match {
-    case Type.Var(id, kind) => false
-    case Type.Apply(tpe1, tpe2) => tpe1.isDeterminate && tpe2.isDeterminate
-    case _ => true
-  }
-
-  /**
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {
@@ -349,35 +298,6 @@ object Type {
     }
   }
 
-  /**
-    * Replaces every free occurrence of a type variable in `typeVars`
-    * with a fresh type variable in the given type `tpe`.
-    */
-  def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
-    val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.id -> freshTypeVar(tvar.kind))
-    }
-
-    /**
-      * Replaces every variable occurrence in the given type using the map `freeVars`.
-      */
-    def visit(t0: Type): Type = t0 match {
-      case Type.Var(x, k) => freshVars.getOrElse(x, t0)
-      case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(f, l) => Type.Arrow(f, l)
-      case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
-      case Type.SchemaEmpty => Type.SchemaEmpty
-      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
-      case Type.Zero => Type.Zero
-      case Type.Succ(n, t) => Type.Succ(n, t)
-      case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
-      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
-      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
-    }
-
-    visit(tpe)
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Type Class Instances                                                    //
