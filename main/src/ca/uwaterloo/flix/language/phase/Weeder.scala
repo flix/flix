@@ -1288,12 +1288,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       visitExp(term) map {
         case t => WeededAst.Predicate.Body.Functional(ident, t, mkSL(sp1, sp2))
       }
-
-    case ParsedAst.Predicate.Body.NotEqual(sp1, ident1, ident2, sp2) =>
-      val qname = Name.mkQName("neq", sp1, sp2)
-      val t1 = WeededAst.Expression.VarOrDef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
-      val t2 = WeededAst.Expression.VarOrDef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
-      WeededAst.Predicate.Body.Filter(qname, List(t1, t2), mkSL(sp1, sp2)).toSuccess
   }
 
   /**
