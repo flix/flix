@@ -644,64 +644,69 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         } else {
           // The expression is not a literal.
           // Must create a new top-level definition for the expression.
-
-          // Generate a fresh symbol for the new definition.
-          val freshSym = Symbol.freshDefnSym("head")
-
-          //
-          // Special Case: No constraint parameters.
-          //
-          if (cparams.isEmpty) {
-            // Construct the definition type.
-            val arrowType = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e0.tpe)
-
-            // Assemble the fresh definition.
-            val ann = Ast.Annotations.Empty
-            val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-
-            val varX = Symbol.freshVarSym("_unit")
-            val param = SimplifiedAst.FormalParam(varX, mod, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
-
-            val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(e0), arrowType, e0.loc)
-
-            // Add the fresh definition to the top-level.
-            toplevel += freshSym -> defn
-
-            // Return a head term that calls the freshly generated top-level definition.
-            return SimplifiedAst.Term.Head.App(freshSym, Nil, e0.tpe, e0.loc)
-          }
-
-          // Generate fresh symbols for the formal parameters of the definition.
-          val freshSymbols = cparams.map {
-            case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
-            case TypedAst.ConstraintParam.RuleParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
-          }
-
-          // Generate fresh formal parameters for the definition.
-          val formals = freshSymbols.map {
-            case (oldSym, (newSym, tpe)) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
-          }
-
-          // The expression of the fresh definition is simply `e0` with fresh local variables.
-          val exp = copyExp(visitExp(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
-
-          // Construct the definition type.
-          val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), e0.tpe)
-
-          // Assemble the fresh definition.
-          val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-          val defn = SimplifiedAst.Def(ann, mod, freshSym, formals, exp, arrowType, e0.loc)
-
-          // Add the fresh definition to the top-level.
-          toplevel += freshSym -> defn
-
-          // Compute the argument symbols, i.e. the symbols of the rule.
-          val argSymbols = freshSymbols.map(_._1)
-
-          // Return a head term that calls the freshly generated top-level definition.
+          val (freshSym, argSymbols) = liftExp(e0, cparams)
           SimplifiedAst.Term.Head.App(freshSym, argSymbols, e0.tpe, e0.loc)
         }
+    }
+
+    // TODO: DOC
+    def liftExp(e0: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): (Symbol.DefnSym, List[Symbol.VarSym]) = {
+      // Generate a fresh symbol for the new definition.
+      val freshSym = Symbol.freshDefnSym("lifted")
+
+      //
+      // Special Case: No constraint parameters.
+      //
+      if (cparams.isEmpty) {
+        // Construct the definition type.
+        val arrowType = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e0.tpe)
+
+        // Assemble the fresh definition.
+        val ann = Ast.Annotations.Empty
+        val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+
+        val varX = Symbol.freshVarSym("_unit")
+        val param = SimplifiedAst.FormalParam(varX, mod, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+
+        val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(e0), arrowType, e0.loc)
+
+        // Add the fresh definition to the top-level.
+        toplevel += freshSym -> defn
+
+        // Return a head term that calls the freshly generated top-level definition.
+        return (freshSym, Nil)
+      }
+
+      // Generate fresh symbols for the formal parameters of the definition.
+      val freshSymbols = cparams.map {
+        case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
+        case TypedAst.ConstraintParam.RuleParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
+      }
+
+      // Generate fresh formal parameters for the definition.
+      val formals = freshSymbols.map {
+        case (oldSym, (newSym, tpe)) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
+      }
+
+      // The expression of the fresh definition is simply `e0` with fresh local variables.
+      val exp = copyExp(visitExp(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
+
+      // Construct the definition type.
+      val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), e0.tpe)
+
+      // Assemble the fresh definition.
+      val ann = Ast.Annotations.Empty
+      val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+      val defn = SimplifiedAst.Def(ann, mod, freshSym, formals, exp, arrowType, e0.loc)
+
+      // Add the fresh definition to the top-level.
+      toplevel += freshSym -> defn
+
+      // Compute the argument symbols, i.e. the symbols of the rule.
+      val argSymbols = freshSymbols.map(_._1)
+
+      // Return the def symbol and argument symbols.
+      (freshSym, argSymbols)
     }
 
     /**
