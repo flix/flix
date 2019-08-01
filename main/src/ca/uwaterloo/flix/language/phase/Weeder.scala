@@ -1270,9 +1270,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Predicate.Body.Atom(qname, e, Polarity.Negative, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Filter(sp1, exp, sp2) =>
-      // TODO: Allow arbitrary expressions as filters.
-      ???
+    case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Body.Guard(e, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Predicate.Body.ApplyFilter(sp1, qname, terms, sp2) =>
       traverse(terms)(visitExp) map {

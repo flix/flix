@@ -993,8 +993,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
-      def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ atomic("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Filter
+      def Filter: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
+        SP ~ atomic("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
       }
 
       def ApplyFilter: Rule1[ParsedAst.Predicate.Body.ApplyFilter] = rule {

@@ -1170,7 +1170,7 @@ object ParsedAst {
         * @param exp the filter expression.
         * @param sp2 the position of the last character in the predicate.
         */
-      case class Filter(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Filter Apply Predicate.

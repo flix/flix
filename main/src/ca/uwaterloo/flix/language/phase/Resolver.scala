@@ -876,6 +876,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
 
+        case NamedAst.Predicate.Body.Guard(exp, loc) =>
+          for {
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
+          } yield ResolvedAst.Predicate.Body.Guard(e, loc)
+
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
           for {
             lookupResult <- lookupQName(qname, ns0, prog0)
