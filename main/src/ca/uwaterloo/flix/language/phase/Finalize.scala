@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -506,6 +506,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       val t = visitType(tpe)
       FinalAst.Predicate.Body.Atom(p, polarity, ts, t, loc)
 
+    case SimplifiedAst.Predicate.Body.Guard(exp, loc) => exp match {
+      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
+
+        ???
+
+      case _ => throw InternalCompilerException(s"Unexpected expression: '$exp'.")
+    }
+
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       FinalAst.Predicate.Body.Filter(sym, ts, loc)
@@ -514,7 +522,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case SimplifiedAst.Term.Head.App(defSym, args, tpe, _) =>
         FinalAst.Predicate.Body.Functional(varSym, defSym, args, loc)
 
-      case _ => throw InternalCompilerException(s"Unexpected term: $term.")
+      case _ => throw InternalCompilerException(s"Unexpected term: '$term'.")
     }
   }
 
