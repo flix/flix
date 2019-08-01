@@ -1771,6 +1771,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  ----------
     //  if exp : a
     //
+    case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
+      // Infer the types of the terms.
+      for {
+        (tpe, eff) <- inferExp(exp, program)
+        expEff <- unifyEffM(Eff.Pure, eff, loc)
+        expTyp <- unifyTypM(mkBoolType(), tpe, loc)
+      } yield mkAnySchemaType()
+
+    //
+    //  exp : Bool
+    //  ----------
+    //  if exp : a
+    //
     case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val defn = program.defs(sym)
       val declaredType = Scheme.instantiate(defn.sc)
@@ -1802,6 +1815,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
       val pred = TypedAst.PredicateWithParam(sym, e)
       TypedAst.Predicate.Body.Atom(pred, polarity, ts, subst0(tvar), loc)
+
+    case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
+      val e = reassembleExp(exp, program, subst0)
+      TypedAst.Predicate.Body.Guard(e, loc)
 
     case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val defn = program.defs(sym)

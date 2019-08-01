@@ -345,6 +345,8 @@ object TypedAst {
 
       case class Atom(pred: TypedAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
+      case class Guard(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
+
       case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Functional(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
