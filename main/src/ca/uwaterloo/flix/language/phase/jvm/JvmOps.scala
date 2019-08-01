@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
 
@@ -655,7 +656,9 @@ object JvmOps {
 
       case Expression.ProcessPanic(msg, tpe, loc) => Set.empty
 
-      case Expression.FixpointConstraintSet(cs, tpe, loc) => Set.empty
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, constraint) => sacc ++ visitConstraint(constraint)
+      }
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
@@ -670,8 +673,29 @@ object JvmOps {
       case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
+    /**
+      * Returns the set of closures in the given constraint `c0`.
+      */
+    def visitConstraint(c0: Constraint): Set[ClosureInfo] = {
+      c0.body.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, b) => sacc ++ visitBodyAtom(b)
+      }
+    }
 
-    // TODO: Magnus: Look for closures in other places.
+    /**
+      * Returns the set of closures in the given body atom `b0`.
+      */
+    def visitBodyAtom(b0: Predicate.Body): Set[ClosureInfo] = b0 match {
+      case Body.Atom(_, _, _, _, _) => Set.empty
+
+      case Body.Guard(exp, _, _) => visitExp(exp)
+
+      case Body.Filter(_, _, _) => Set.empty
+
+      case Body.Functional(_, _, _, _) => Set.empty
+    }
+
+    // TODO: Look for closures in other places.
 
     // Visit every definition.
     root.defs.foldLeft(Set.empty[ClosureInfo]) {
@@ -967,6 +991,9 @@ object JvmOps {
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
       case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitBodyTerm)
+
+      case Predicate.Body.Guard(exp, terms, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         terms.flatMap(visitBodyTerm).toSet

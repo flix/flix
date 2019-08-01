@@ -1702,6 +1702,23 @@ object GenExpression {
       // Instantiate a new atom predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
 
+    case Predicate.Body.Guard(exp, terms, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the closure.
+      compileExpression(exp, mv, clazz, lenv0, entryPoint)
+
+      // TODO: XXX: POP the closure, push null
+      mv.visitInsn(POP)
+      mv.visitInsn(ACONST_NULL)
+
+      // Emit code for the terms.
+      newBodyTerms(terms, mv)
+
+      // Instantiate a new filter predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false)
+
     case Predicate.Body.Filter(sym, terms, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)

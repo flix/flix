@@ -116,7 +116,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
   private def visitConstraint(constraint0: SimplifiedAst.Constraint, m: TopLevel)(implicit flix: Flix): FinalAst.Constraint = {
     val head = visitHeadPredicate(constraint0.head, m)
-    val body = constraint0.body.map(b => visitBodyPredicate(b, m))
+    val body = constraint0.body.map(b => visitBodyPredicate(b, constraint0.cparams, m))
     val cparams = constraint0.cparams.map {
       case SimplifiedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
         val tpe = visitType(tpe0)
@@ -499,20 +499,17 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       FinalAst.Predicate.Head.Atom(p, ts, t, loc)
   }
 
-  private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
+  private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, cparams0: List[SimplifiedAst.ConstraintParam], m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
     case SimplifiedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       val p = visitPredicateWithParam(pred, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
       val t = visitType(tpe)
       FinalAst.Predicate.Body.Atom(p, polarity, ts, t, loc)
 
-    case SimplifiedAst.Predicate.Body.Guard(exp, loc) => exp match {
-      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-
-        ???
-
-      case _ => throw InternalCompilerException(s"Unexpected expression: '$exp'.")
-    }
+    case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
+      val e = visitExp(exp, m)
+      val ts = cparams0.map(cparam => FinalAst.Term.Body.QuantVar(cparam.sym, visitType(cparam.tpe), cparam.loc))
+      FinalAst.Predicate.Body.Guard(e, ts, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
