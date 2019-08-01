@@ -1709,10 +1709,6 @@ object GenExpression {
       // Emit code for the closure.
       compileExpression(exp, mv, clazz, lenv0, entryPoint)
 
-      // TODO: XXX: POP the closure, push null
-      mv.visitInsn(POP)
-      mv.visitInsn(ACONST_NULL)
-
       // Emit code for the terms.
       newBodyTerms(terms, mv)
 
