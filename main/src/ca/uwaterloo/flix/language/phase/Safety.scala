@@ -246,7 +246,11 @@ object Safety extends Phase[Root, Root] {
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       visitPredicateWithParam(pred) ::: checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
+
+    case Predicate.Body.Guard(exp, loc) => visitExp(exp)
+
     case Predicate.Body.Filter(sym, terms, loc) => Nil
+
     case Predicate.Body.Functional(sym, term, loc) => Nil
   }
 
@@ -284,7 +288,11 @@ object Safety extends Phase[Root, Root] {
         // Case 2: A negative atom does not positively define any variables.
         Set.empty
     }
+
+    case Predicate.Body.Guard(exp, loc) => Set.empty
+
     case Predicate.Body.Filter(sym, terms, loc) => Set.empty
+
     case Predicate.Body.Functional(sym, term, loc) => Set.empty
   }
 

@@ -374,6 +374,10 @@ object Synthesize extends Phase[Root, Root] {
         val p = visitPredicateWithParam(pred)
         Predicate.Body.Atom(p, polarity, pats, tpe, loc)
 
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Guard(e, loc)
+
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms.map(visitExp)
         Predicate.Body.Filter(sym, ts, loc)

@@ -624,6 +624,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Body.Atom(pred, _, terms, _, _) =>
       Used.of(pred.sym) ++ visitExp(pred.exp, env0)
 
+    case Body.Guard(exp, _) =>
+      visitExp(exp, env0)
+
     case Body.Filter(sym, terms, _) =>
       Used.of(sym) ++ visitExps(terms, env0)
 

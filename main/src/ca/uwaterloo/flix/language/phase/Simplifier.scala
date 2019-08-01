@@ -597,6 +597,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
         SimplifiedAst.Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
+      case TypedAst.Predicate.Body.Guard(exp, loc) =>
+        ??? // TODO
+
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
 
