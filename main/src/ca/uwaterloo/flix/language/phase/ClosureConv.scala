@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -389,6 +389,10 @@ object ClosureConv extends Phase[Root, Root] {
       val p = visitPredicateWithParam(pred)
       val ts = terms map visitBodyTerm
       Predicate.Body.Atom(p, polarity, ts, tpe, loc)
+
+    case Predicate.Body.Guard(exp0, loc) =>
+      val e = visitExp(exp0)
+      Predicate.Body.Guard(e, loc)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms map visitBodyTerm

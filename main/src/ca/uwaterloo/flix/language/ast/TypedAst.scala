@@ -363,6 +363,8 @@ object TypedAst {
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym
+    def tpe: Type
+    def loc: SourceLocation
   }
 
   object ConstraintParam {
