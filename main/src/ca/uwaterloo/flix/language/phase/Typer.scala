@@ -1780,20 +1780,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       } yield mkAnySchemaType()
 
     //
-    //  exp : Bool
-    //  ----------
-    //  if exp : a
-    //
-    case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-      val defn = program.defs(sym)
-      val declaredType = Scheme.instantiate(defn.sc)
-      for {
-        (argTypes, argEffects) <- seqM(terms.map(t => inferExp(t, program))).map(_.unzip)
-        lambdaType <- Unification.unifyTypM(declaredType, Type.mkArrow(argTypes, Eff.Pure, mkBoolType()), loc)
-        pureArgEffects <- unifyEffM(Eff.Pure :: argEffects, loc)
-      } yield mkAnySchemaType()
-
-    //
     //  x: t    exp: Array[t]
     //  ---------------------
     //  x <- exp : a
@@ -1819,11 +1805,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
-
-    case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-      val defn = program.defs(sym)
-      val ts = terms.map(t => reassembleExp(t, program, subst0))
-      TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
 
     case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
       val t = reassembleExp(term, program, subst0)

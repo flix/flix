@@ -601,9 +601,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = newLambdaWrapper(cparams, exp, loc)
         SimplifiedAst.Predicate.Body.Guard(e, loc)
 
-      case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
-
       case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
         val cps = cparams.filter {
           case TypedAst.ConstraintParam.HeadParam(sym2, _, _) => sym != sym2
@@ -1341,10 +1338,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Predicate.Body.Guard(e, loc)
-
-      case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitBodyTerm)
-        SimplifiedAst.Predicate.Body.Filter(sym, ts, loc)
 
       case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) =>
         val t = visitHeadTerm(term)

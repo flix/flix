@@ -693,8 +693,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Predicate.Body.Guard(exp, loc) => None
 
-    case Predicate.Body.Filter(sym, terms, loc) => None
-
     case Predicate.Body.Functional(sym, term, loc) => None
   }
 

@@ -991,11 +991,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
       } yield NamedAst.Predicate.Body.Guard(e, loc)
 
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
-      for {
-        ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Body.Filter(qname, ts, loc)
-
     case WeededAst.Predicate.Body.Functional(ident, term, loc) =>
       visitExp(term, outerEnv ++ ruleEnv0, tenv0) map {
         case t =>
@@ -1010,7 +1005,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => ident :: Nil
   }
 
@@ -1020,7 +1014,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => Nil
   }
 
@@ -1250,7 +1243,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
     case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => freeVars(term)
   }
 

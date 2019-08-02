@@ -268,8 +268,6 @@ object FinalAst {
 
       case class Guard(exp: FinalAst.Expression, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 
-      case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
-
       case class Functional(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, terms: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
 
     }

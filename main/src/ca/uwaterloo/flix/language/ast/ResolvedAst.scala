@@ -283,8 +283,6 @@ object ResolvedAst {
 
       case class Guard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class Filter(sym: Symbol.DefnSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
-
       case class Functional(sym: Symbol.VarSym, term: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
     }

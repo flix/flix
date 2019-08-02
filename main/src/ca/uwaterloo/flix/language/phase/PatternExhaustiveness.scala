@@ -403,11 +403,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- checkPats(exp, root)
         } yield b0
 
-      case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        for {
-          ts <- traverse(terms)(checkPats(_, root))
-        } yield b0
-
       case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
         for {
           t <- checkPats(term, root)

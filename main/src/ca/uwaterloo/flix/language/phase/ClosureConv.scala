@@ -394,10 +394,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp0)
       Predicate.Body.Guard(e, loc)
 
-    case Predicate.Body.Filter(sym, terms, loc) =>
-      val ts = terms map visitBodyTerm
-      Predicate.Body.Filter(sym, ts, loc)
-
     case Predicate.Body.Functional(sym, term, loc) =>
       val t = visitHeadTerm(term)
       Predicate.Body.Functional(sym, t, loc)
@@ -578,9 +574,6 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Predicate.Body.Guard(exp, loc) =>
       freeVars(exp)
-
-    case Predicate.Body.Filter(sym, terms, loc) =>
-      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
 
     case Predicate.Body.Functional(sym, term, loc) =>
       freeVars(term)
@@ -923,10 +916,6 @@ object ClosureConv extends Phase[Root, Root] {
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         Predicate.Body.Guard(e, loc)
-
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms map visitBodyTerm
-        Predicate.Body.Filter(sym, ts, loc)
 
       case Predicate.Body.Functional(sym, term, loc) =>
         val s = subst.getOrElse(sym, sym)

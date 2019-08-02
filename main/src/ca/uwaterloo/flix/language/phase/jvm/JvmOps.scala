@@ -690,8 +690,6 @@ object JvmOps {
 
       case Body.Guard(exp, _, _) => visitExp(exp)
 
-      case Body.Filter(_, _, _) => Set.empty
-
       case Body.Functional(_, _, _, _) => Set.empty
     }
 
@@ -994,9 +992,6 @@ object JvmOps {
 
       case Predicate.Body.Guard(exp, terms, loc) =>
         visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet
-
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Functional(varSym, defSym, terms, loc) => Set.empty
     }

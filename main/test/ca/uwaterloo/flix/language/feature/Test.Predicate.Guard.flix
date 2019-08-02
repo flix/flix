@@ -1,7 +1,3 @@
-pub rel A(x: Int)
-pub rel B(x: Int)
-pub rel R(x: Int, y: Int)
-
 @test
 def testGuardConst01(): Bool =
     let c = R(1, 1) :- if true.;
@@ -168,3 +164,6 @@ def testGuardQuantAndCapturedVar03(): Bool =
     let r = solve f <+> c;
     (r |= R(1, 1).) && (r |= R(1, 2).)
 
+pub rel A(x: Int)
+pub rel B(x: Int)
+pub rel R(x: Int, y: Int)

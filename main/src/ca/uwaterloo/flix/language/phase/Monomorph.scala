@@ -569,10 +569,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             val e = visitExp(exp, env0)
             Predicate.Body.Guard(e, loc)
 
-          case Predicate.Body.Filter(sym, terms, loc) =>
-            val ts = terms.map(t => visitExp(t, env0))
-            Predicate.Body.Filter(sym, ts, loc)
-
           case Predicate.Body.Functional(sym, term, loc) =>
             val s = env0(sym)
             val t = visitExp(term, env0)

@@ -262,8 +262,6 @@ object WeededAst {
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
-
       case class Functional(ident: Name.Ident, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }

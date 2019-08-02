@@ -249,8 +249,6 @@ object Safety extends Phase[Root, Root] {
 
     case Predicate.Body.Guard(exp, loc) => visitExp(exp)
 
-    case Predicate.Body.Filter(sym, terms, loc) => Nil
-
     case Predicate.Body.Functional(sym, term, loc) => Nil
   }
 
@@ -290,8 +288,6 @@ object Safety extends Phase[Root, Root] {
     }
 
     case Predicate.Body.Guard(exp, loc) => Set.empty
-
-    case Predicate.Body.Filter(sym, terms, loc) => Set.empty
 
     case Predicate.Body.Functional(sym, term, loc) => Set.empty
   }

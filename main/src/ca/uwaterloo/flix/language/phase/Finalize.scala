@@ -511,10 +511,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       val ts = cparams0.map(cparam => FinalAst.Term.Body.QuantVar(cparam.sym, visitType(cparam.tpe), cparam.loc))
       FinalAst.Predicate.Body.Guard(e, ts, loc)
 
-    case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
-      val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.Filter(sym, ts, loc)
-
     case SimplifiedAst.Predicate.Body.Functional(varSym, term, loc) => term match {
       case SimplifiedAst.Term.Head.App(defSym, args, tpe, _) =>
         FinalAst.Predicate.Body.Functional(varSym, defSym, args, loc)

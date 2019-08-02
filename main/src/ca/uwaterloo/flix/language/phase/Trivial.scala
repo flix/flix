@@ -471,11 +471,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Body.Guard(exp, _) => visitExp(exp)
 
-      case Body.Filter(_, terms, _) =>
-        terms.foldLeft(Nil: List[TrivialError]) {
-          case (acc, term) => acc ++ visitExp(term)
-        }
-
       case Body.Functional(_, term, _) => visitExp(term)
     }
 
