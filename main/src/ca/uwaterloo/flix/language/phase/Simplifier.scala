@@ -606,7 +606,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Wraps the given expression `exp` with the given constraint parameters `cparams` in a lambda expression.
       */
     def newLambdaWrapper(cparams: List[TypedAst.ConstraintParam], exp: TypedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
-      // Compute a substitute from the constraint parameters to fresh variable symbols.
+      // Compute a mapping from the constraint parameters to fresh variable symbols.
       val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
 
       // Compute the formal parameters of the lambda.
@@ -1206,9 +1206,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
       case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = substitute(exp, m)
+        val e = visitExp(exp)
         val bs = bindings map {
-          case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, substitute(handler, m))
+          case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
         }
         SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>

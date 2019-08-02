@@ -115,8 +115,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   private def visitConstraint(constraint0: SimplifiedAst.Constraint, m: TopLevel)(implicit flix: Flix): FinalAst.Constraint = {
-    val head = visitHeadPredicate(constraint0.head, m)
-    val body = constraint0.body.map(b => visitBodyPredicate(b, constraint0.cparams, m))
+    val head = visitHeadPredicate(constraint0.cparams, constraint0.head, m)
+    val body = constraint0.body.map(b => visitBodyPredicate(constraint0.cparams, b, m))
     val cparams = constraint0.cparams.map {
       case SimplifiedAst.ConstraintParam.HeadParam(sym, tpe0, loc) =>
         val tpe = visitType(tpe0)
@@ -491,7 +491,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     visit(exp0)
   }
 
-  private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
+  private def visitHeadPredicate(cparams0: List[SimplifiedAst.ConstraintParam], head0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = head0 match {
     case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
       val p = visitPredicateWithParam(pred, m)
       val ts = terms.map(t => visitHeadTerm(t, m))
@@ -499,7 +499,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       FinalAst.Predicate.Head.Atom(p, ts, t, loc)
   }
 
-  private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, cparams0: List[SimplifiedAst.ConstraintParam], m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
+  private def visitBodyPredicate(cparams0: List[SimplifiedAst.ConstraintParam], body0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = body0 match {
     case SimplifiedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       val p = visitPredicateWithParam(pred, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
