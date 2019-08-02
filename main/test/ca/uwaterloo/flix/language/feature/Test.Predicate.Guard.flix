@@ -143,3 +143,28 @@ def testGuardCapturedVar06(): Bool =
     let r = solve c;
     r |= R(1, 1).
 
+@test
+def testGuardQuantAndCapturedVar01(): Bool =
+    let k = 1;
+    let f = #{ A(1). A(2). B(1). B(2). };
+    let c = R(x, y) :- if x == k, A(x), B(y).;
+    let r = solve f <+> c;
+    (r |= R(1, 1).) && (r |= R(1, 2).)
+
+@test
+def testGuardQuantAndCapturedVar02(): Bool =
+    let k = 1;
+    let g = (x: Int, y: Int) -> x == y;
+    let f = #{ A(1). A(2). B(1). B(2). };
+    let c = R(x, y) :- if g(k, x), A(x), B(y).;
+    let r = solve f <+> c;
+    (r |= R(1, 1).) && (r |= R(1, 2).)
+
+@test
+def testGuardQuantAndCapturedVar03(): Bool =
+    let k = 1;
+    let f = #{ A(1). A(2). B(1). B(2). };
+    let c = R(x, y) :- if List.exists(z -> z == k, x :: k :: y :: Nil), A(x), B(y).;
+    let r = solve f <+> c;
+    (r |= R(1, 1).) && (r |= R(1, 2).)
+
