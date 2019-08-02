@@ -469,12 +469,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
       case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
 
-      case Body.Filter(_, terms, _) =>
-        terms.foldLeft(Nil: List[TrivialError]) {
-          case (acc, term) => acc ++ visitExp(term)
-        }
-
-      case Body.Functional(_, term, _) => visitExp(term)
+      case Body.Guard(exp, _) => visitExp(exp)
     }
 
     visitExp(exp0)

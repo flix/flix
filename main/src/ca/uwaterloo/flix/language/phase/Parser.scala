@@ -965,7 +965,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.ApplyFilter | Predicates.Body.NotEqual | Predicates.Body.Loop
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Filter
   }
 
   object Predicates {
@@ -993,20 +993,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
+      def Guard: Rule1[ParsedAst.Predicate.Body.Guard] = rule {
+        SP ~ atomic("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Guard
+      }
+
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ atomic("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Filter
-      }
-
-      def ApplyFilter: Rule1[ParsedAst.Predicate.Body.ApplyFilter] = rule {
-        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.ApplyFilter
-      }
-
-      def NotEqual: Rule1[ParsedAst.Predicate.Body.NotEqual] = rule {
-        SP ~ Names.Variable ~ optWS ~ atomic("!=") ~ optWS ~ Names.Variable ~ SP ~> ParsedAst.Predicate.Body.NotEqual
-      }
-
-      def Loop: Rule1[ParsedAst.Predicate.Body.Functional] = rule {
-        SP ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Functional
+        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
       }
     }
 

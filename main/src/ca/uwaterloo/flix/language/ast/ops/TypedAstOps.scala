@@ -254,8 +254,7 @@ object TypedAstOps {
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
       case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => visitPredicateWithParam(pred, env0)
-      case Predicate.Body.Filter(sym, terms, loc) => Map.empty[Symbol.HoleSym, HoleContext] ++ terms.flatMap(visitExp(_, env0))
-      case Predicate.Body.Functional(sym, term, loc) => visitExp(term, env0)
+      case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
     }
 
     /**

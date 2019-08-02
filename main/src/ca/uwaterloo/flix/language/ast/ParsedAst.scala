@@ -1164,43 +1164,23 @@ object ParsedAst {
       case class Negative(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
-        * Filter Predicate.
+        * Guard Predicate.
         *
         * @param sp1 the position of the first character in the predicate.
         * @param exp the filter expression.
         * @param sp2 the position of the last character in the predicate.
         */
-      case class Filter(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
-        * Filter Apply Predicate.
+        * Filter Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the filter function.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class ApplyFilter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
-        * Functional Predicate.
-        *
-        * @param sp1   the position of the first character in the predicate.
-        * @param ident the name of the variable.
-        * @param term  the term of the predicate.
-        * @param sp2   the position of the last character in the predicate.
-        */
-      case class Functional(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
-        * NotEqual Predicate.
-        *
-        * @param sp1    the position of the first character in the predicate.
-        * @param ident1 the name of the first variable.
-        * @param ident2 the name of the second variable.
-        * @param sp2    the position of the last character in the predicate.
-        */
-      case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
     }
 

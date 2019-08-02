@@ -539,13 +539,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(visitBodyTerm(_, env0))
         Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitBodyTerm(_, env0))
-        Predicate.Body.Filter(sym, ts, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term, env0)
-        Predicate.Body.Functional(sym, t, loc)
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp, env0)
+        Predicate.Body.Guard(e, loc)
     }
 
     /**

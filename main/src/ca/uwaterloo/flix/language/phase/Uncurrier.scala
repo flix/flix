@@ -109,18 +109,8 @@ object Uncurrier extends Phase[Root, Root] {
     */
   def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => b
-    case Predicate.Body.Functional(sym, term, loc) =>
-      val t = visitHeadTerm(term, newDefs, root)
-      Predicate.Body.Functional(sym, t, loc)
-    case Predicate.Body.Filter(sym, terms, loc) => terms match {
-      case Nil => b
-      case x :: Nil => b
-      case x :: y :: Nil =>
-        val freshSym = mkUncurried2(sym, newDefs, root)
-        Predicate.Body.Filter(freshSym, x :: y :: Nil, loc)
-      case _ =>
-        throw InternalCompilerException(s"Unable to uncurry definition of arity n > 2.")
-    }
+
+    case Predicate.Body.Guard(exp, loc) => b
   }
 
   /**

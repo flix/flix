@@ -559,13 +559,8 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        for (term <- terms) {
-          checkBodyTerm(term, env0)
-        }
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        checkHeadTerm(term, env0)
+      case Predicate.Body.Guard(exp, loc) =>
+        checkExp(exp, env0, ienv0)
     }
 
     /**

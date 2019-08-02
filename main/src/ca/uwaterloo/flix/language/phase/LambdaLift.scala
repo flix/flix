@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -402,13 +402,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(visitBodyTerm)
         Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitBodyTerm)
-        Predicate.Body.Filter(sym, ts, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term)
-        Predicate.Body.Functional(sym, t, loc)
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Guard(e, loc)
     }
 
     /**

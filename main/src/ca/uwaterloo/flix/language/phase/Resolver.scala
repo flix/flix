@@ -876,22 +876,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
 
-        case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
+        case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
-            lookupResult <- lookupQName(qname, ns0, prog0)
-            ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
-          } yield {
-            lookupResult match {
-              case LookupResult.Def(sym) => ResolvedAst.Predicate.Body.Filter(sym, ts, loc)
-              case LookupResult.Eff(sym) => throw InternalCompilerException(s"Unexpected effect here: ${sym.toString}")
-              case LookupResult.Sig(sym) => throw InternalCompilerException(s"Unexpected signature here: ${sym.toString}")
-            }
-          }
-
-        case NamedAst.Predicate.Body.Functional(sym, term, loc) =>
-          for {
-            t <- Expressions.resolve(term, Map.empty, ns0, prog0)
-          } yield ResolvedAst.Predicate.Body.Functional(sym, t, loc)
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
+          } yield ResolvedAst.Predicate.Body.Guard(e, loc)
       }
     }
 

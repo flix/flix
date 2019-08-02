@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -398,14 +398,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           e <- checkPats(pred.exp, root)
         } yield b0
 
-      case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
+      case TypedAst.Predicate.Body.Guard(exp, loc) =>
         for {
-          ts <- traverse(terms)(checkPats(_, root))
-        } yield b0
-
-      case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
-        for {
-          t <- checkPats(term, root)
+          e <- checkPats(exp, root)
         } yield b0
     }
 
@@ -656,7 +651,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         // other enums
         case TyCon.Enum(_, sym, _, _) => {
           root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
-        }.toList ::: xs
+          }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
          * Int = ...| -1 | 0 | 1 | 2 | 3 | ...

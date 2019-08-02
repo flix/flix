@@ -691,9 +691,7 @@ object Stratifier extends Phase[Root, Root] {
       case Polarity.Negative => Some(DependencyEdge.Negative(head, pred.sym))
     }
 
-    case Predicate.Body.Filter(sym, terms, loc) => None
-
-    case Predicate.Body.Functional(sym, term, loc) => None
+    case Predicate.Body.Guard(exp, loc) => None
   }
 
   /**

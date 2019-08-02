@@ -565,14 +565,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             val ts = terms map visitPatTemporaryToBeRemoved
             Predicate.Body.Atom(pred, polarity, ts, tpe, loc)
 
-          case Predicate.Body.Filter(sym, terms, loc) =>
-            val ts = terms.map(t => visitExp(t, env0))
-            Predicate.Body.Filter(sym, ts, loc)
-
-          case Predicate.Body.Functional(sym, term, loc) =>
-            val s = env0(sym)
-            val t = visitExp(term, env0)
-            Predicate.Body.Functional(s, t, loc)
+          case Predicate.Body.Guard(exp, loc) =>
+            val e = visitExp(exp, env0)
+            Predicate.Body.Guard(e, loc)
         }
       }
 

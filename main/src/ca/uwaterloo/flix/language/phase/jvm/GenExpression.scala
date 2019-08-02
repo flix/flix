@@ -1702,35 +1702,18 @@ object GenExpression {
       // Instantiate a new atom predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
 
-    case Predicate.Body.Filter(sym, terms, loc) =>
+    case Predicate.Body.Guard(exp, terms, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Emit code for the function symbol.
-      AsmOps.compileDefSymbol(sym, mv)
+      // Emit code for the closure.
+      compileExpression(exp, mv, clazz, lenv0, entryPoint)
 
       // Emit code for the terms.
       newBodyTerms(terms, mv)
 
       // Instantiate a new filter predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false)
-
-    case Predicate.Body.Functional(varSym, defSym, args, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
-
-      // The variable symbol.
-      newVarSym(varSym, mv)
-
-      // The function object.
-      AsmOps.compileDefSymbol(defSym, mv)
-
-      // The function argument variables.
-      newVarSyms(args, mv)
-
-      // Instantiate a new functional predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false)
-
   }
 
   /**
