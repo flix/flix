@@ -38,3 +38,9 @@ def testGuardConst06(): Bool =
     let r = solve c;
     !(r |= R(1, 1).)
 
+@test
+def testGuardConst07(): Bool =
+    let c = R(1, 1) :- if true, if true && true, if 1 == 1.;
+    let r = solve c;
+    r |= R(1, 1).
+
