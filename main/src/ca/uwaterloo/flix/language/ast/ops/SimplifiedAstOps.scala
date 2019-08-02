@@ -561,9 +561,6 @@ object SimplifiedAstOps {
 
       case Predicate.Body.Guard(exp, loc) =>
         checkExp(exp, env0, ienv0)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        checkHeadTerm(term, env0)
     }
 
     /**

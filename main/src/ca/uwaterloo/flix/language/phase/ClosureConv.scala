@@ -393,10 +393,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Predicate.Body.Guard(exp0, loc) =>
       val e = visitExp(exp0)
       Predicate.Body.Guard(e, loc)
-
-    case Predicate.Body.Functional(sym, term, loc) =>
-      val t = visitHeadTerm(term)
-      Predicate.Body.Functional(sym, t, loc)
   }
 
   /**
@@ -574,9 +570,6 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Predicate.Body.Guard(exp, loc) =>
       freeVars(exp)
-
-    case Predicate.Body.Functional(sym, term, loc) =>
-      freeVars(term)
   }
 
   /**
@@ -916,11 +909,6 @@ object ClosureConv extends Phase[Root, Root] {
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         Predicate.Body.Guard(e, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val s = subst.getOrElse(sym, sym)
-        val t = visitHeadTerm(term)
-        Predicate.Body.Functional(s, t, loc)
     }
 
     def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {

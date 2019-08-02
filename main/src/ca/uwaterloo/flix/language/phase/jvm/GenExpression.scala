@@ -1714,23 +1714,6 @@ object GenExpression {
 
       // Instantiate a new filter predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false)
-
-    case Predicate.Body.Functional(varSym, defSym, args, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
-
-      // The variable symbol.
-      newVarSym(varSym, mv)
-
-      // The function object.
-      AsmOps.compileDefSymbol(defSym, mv)
-
-      // The function argument variables.
-      newVarSyms(args, mv)
-
-      // Instantiate a new functional predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false)
-
   }
 
   /**

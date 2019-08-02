@@ -880,11 +880,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
           } yield ResolvedAst.Predicate.Body.Guard(e, loc)
-
-        case NamedAst.Predicate.Body.Functional(sym, term, loc) =>
-          for {
-            t <- Expressions.resolve(term, Map.empty, ns0, prog0)
-          } yield ResolvedAst.Predicate.Body.Functional(sym, t, loc)
       }
     }
 

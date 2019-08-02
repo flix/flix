@@ -181,9 +181,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
         case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
           visitExp(exp)
-
-        case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) =>
-          visitHeadTerm(term)
       }.fold(Set())(_ ++ _)
 
       headSymbols ++ bodySymbols

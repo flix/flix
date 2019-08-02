@@ -600,16 +600,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
         SimplifiedAst.Predicate.Body.Guard(e, loc)
-
-      case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
-        val cps = cparams.filter {
-          case TypedAst.ConstraintParam.HeadParam(sym2, _, _) => sym != sym2
-          case TypedAst.ConstraintParam.RuleParam(sym2, _, _) => sym != sym2
-        }
-        SimplifiedAst.Predicate.Body.Functional(sym, exp2HeadTerm(term, cps), loc)
     }
 
-    // TODO: DOC
+    /**
+      * Wraps the given expression `exp` with the given constraint parameters `cparams` in a lambda expression.
+      */
     def newLambdaWrapper(cparams: List[TypedAst.ConstraintParam], exp: TypedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       // Compute a substitute from the constraint parameters to fresh variable symbols.
       val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
@@ -1338,10 +1333,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Predicate.Body.Guard(e, loc)
-
-      case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term)
-        SimplifiedAst.Predicate.Body.Functional(sym, t, loc)
     }
 
     def visitHeadTerm(t0: SimplifiedAst.Term.Head): SimplifiedAst.Term.Head = t0 match {

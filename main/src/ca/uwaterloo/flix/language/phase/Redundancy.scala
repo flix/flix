@@ -626,9 +626,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
-
-    case Body.Functional(sym, term, _) =>
-      Used.of(sym) ++ visitExp(term, env0)
   }
 
   /**

@@ -1285,11 +1285,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val e = mkApplyCurried(b, as, loc)
           WeededAst.Predicate.Body.Guard(e, loc)
       }
-
-    case ParsedAst.Predicate.Body.Functional(sp1, ident, term, sp2) =>
-      visitExp(term) map {
-        case t => WeededAst.Predicate.Body.Functional(ident, t, mkSL(sp1, sp2))
-      }
   }
 
   /**

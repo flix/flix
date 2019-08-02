@@ -1778,18 +1778,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         expEff <- unifyEffM(Eff.Pure, eff, loc)
         expTyp <- unifyTypM(mkBoolType(), tpe, loc)
       } yield mkAnySchemaType()
-
-    //
-    //  x: t    exp: Array[t]
-    //  ---------------------
-    //  x <- exp : a
-    //
-    case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
-      for {
-        (termType, termEff) <- inferExp(term, program)
-        pureTermEff <- unifyEffM(Eff.Pure, termEff, loc)
-        arrayType <- unifyTypM(mkArray(sym.tvar), termType, loc)
-      } yield mkAnySchemaType()
   }
 
   /**
@@ -1805,10 +1793,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
       TypedAst.Predicate.Body.Guard(e, loc)
-
-    case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
-      val t = reassembleExp(term, program, subst0)
-      TypedAst.Predicate.Body.Functional(sym, t, loc)
   }
 
   /**

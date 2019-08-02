@@ -248,8 +248,6 @@ object Safety extends Phase[Root, Root] {
       visitPredicateWithParam(pred) ::: checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
     case Predicate.Body.Guard(exp, loc) => visitExp(exp)
-
-    case Predicate.Body.Functional(sym, term, loc) => Nil
   }
 
   /**
@@ -288,8 +286,6 @@ object Safety extends Phase[Root, Root] {
     }
 
     case Predicate.Body.Guard(exp, loc) => Set.empty
-
-    case Predicate.Body.Functional(sym, term, loc) => Set.empty
   }
 
 }

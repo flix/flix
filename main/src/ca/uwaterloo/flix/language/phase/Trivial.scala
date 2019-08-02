@@ -470,8 +470,6 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
 
       case Body.Guard(exp, _) => visitExp(exp)
-
-      case Body.Functional(_, term, _) => visitExp(term)
     }
 
     visitExp(exp0)

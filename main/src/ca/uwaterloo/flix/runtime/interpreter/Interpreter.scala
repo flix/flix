@@ -780,14 +780,6 @@ object Interpreter {
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
       FilterPredicate.of(f, ts.toArray)
-
-    case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
-      val s = VarSym.of(varSym.text, varSym.getStackOffset)
-      val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
-        override def apply(as: Array[AnyRef]): Array[ProxyObject] = link(defSym, root).apply(as).getValue.asInstanceOf[Array[ProxyObject]]
-      }
-      val ts = terms.map(s => VarSym.of(s.text, s.getStackOffset))
-      FunctionalPredicate.of(s, f, ts.toArray)
   }
 
   /**

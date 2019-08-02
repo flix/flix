@@ -965,7 +965,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Filter | Predicates.Body.Loop
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Guard | Predicates.Body.Filter
   }
 
   object Predicates {
@@ -999,10 +999,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
         SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
-      }
-
-      def Loop: Rule1[ParsedAst.Predicate.Body.Functional] = rule {
-        SP ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Functional
       }
     }
 

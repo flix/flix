@@ -377,10 +377,6 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         Predicate.Body.Guard(e, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitExp(term)
-        Predicate.Body.Functional(sym, t, loc)
     }
 
     /**

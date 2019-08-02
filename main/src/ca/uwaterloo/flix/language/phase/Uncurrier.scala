@@ -111,10 +111,6 @@ object Uncurrier extends Phase[Root, Root] {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => b
 
     case Predicate.Body.Guard(exp, loc) => b
-
-    case Predicate.Body.Functional(sym, term, loc) =>
-      val t = visitHeadTerm(term, newDefs, root)
-      Predicate.Body.Functional(sym, t, loc)
   }
 
   /**

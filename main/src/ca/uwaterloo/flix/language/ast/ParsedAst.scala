@@ -1182,16 +1182,6 @@ object ParsedAst {
         */
       case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
-      /**
-        * Functional Predicate.
-        *
-        * @param sp1   the position of the first character in the predicate.
-        * @param ident the name of the variable.
-        * @param term  the term of the predicate.
-        * @param sp2   the position of the last character in the predicate.
-        */
-      case class Functional(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
     }
 
   }

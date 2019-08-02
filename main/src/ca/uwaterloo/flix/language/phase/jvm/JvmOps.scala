@@ -689,8 +689,6 @@ object JvmOps {
       case Body.Atom(_, _, _, _, _) => Set.empty
 
       case Body.Guard(exp, _, _) => visitExp(exp)
-
-      case Body.Functional(_, _, _, _) => Set.empty
     }
 
     // TODO: Look for closures in other places.
@@ -992,8 +990,6 @@ object JvmOps {
 
       case Predicate.Body.Guard(exp, terms, loc) =>
         visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet
-
-      case Predicate.Body.Functional(varSym, defSym, terms, loc) => Set.empty
     }
 
     def visitHeadTerm(t0: Term.Head): Set[MonoType] = t0 match {

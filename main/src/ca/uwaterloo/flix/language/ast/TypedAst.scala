@@ -347,8 +347,6 @@ object TypedAst {
 
       case class Guard(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class Functional(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
-
     }
 
   }

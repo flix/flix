@@ -405,10 +405,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         Predicate.Body.Guard(e, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term)
-        Predicate.Body.Functional(sym, t, loc)
     }
 
     /**

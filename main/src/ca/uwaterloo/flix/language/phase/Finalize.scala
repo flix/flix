@@ -510,13 +510,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       val e = visitExp(exp, m)
       val ts = cparams0.map(cparam => FinalAst.Term.Body.QuantVar(cparam.sym, visitType(cparam.tpe), cparam.loc))
       FinalAst.Predicate.Body.Guard(e, ts, loc)
-
-    case SimplifiedAst.Predicate.Body.Functional(varSym, term, loc) => term match {
-      case SimplifiedAst.Term.Head.App(defSym, args, tpe, _) =>
-        FinalAst.Predicate.Body.Functional(varSym, defSym, args, loc)
-
-      case _ => throw InternalCompilerException(s"Unexpected term: '$term'.")
-    }
   }
 
   private def visitPredicateWithParam(p0: SimplifiedAst.PredicateWithParam, m: TopLevel)(implicit flix: Flix): FinalAst.PredicateWithParam = p0 match {
