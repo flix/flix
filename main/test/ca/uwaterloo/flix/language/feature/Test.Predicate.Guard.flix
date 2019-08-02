@@ -99,3 +99,47 @@ def testGuardQuantVar07(): Bool =
     let r = solve f <+> c;
     r |= R(1, 2).
 
+@test
+def testGuardCapturedVar01(): Bool =
+    let k = true;
+    let c = R(1, 1) :- if k.;
+    let r = solve c;
+    r |= R(1, 1).
+
+@test
+def testGuardCapturedVar02(): Bool =
+    let k = true;
+    let c = R(1, 1) :- if k && true.;
+    let r = solve c;
+    r |= R(1, 1).
+
+@test
+def testGuardCapturedVar03(): Bool =
+    let k = true;
+    let l = true;
+    let c = R(1, 1) :- if k && l.;
+    let r = solve c;
+    r |= R(1, 1).
+
+@test
+def testGuardCapturedVar04(): Bool =
+    let f = (x: Bool) -> !x;
+    let c = R(1, 1) :- if f(false).;
+    let r = solve c;
+    r |= R(1, 1).
+
+@test
+def testGuardCapturedVar05(): Bool =
+    let f = (x: Bool, y: Bool) -> x && y;
+    let c = R(1, 1) :- if f(true, true).;
+    let r = solve c;
+    r |= R(1, 1).
+
+@test
+def testGuardCapturedVar06(): Bool =
+    let k = true;
+    let f = (x: Bool, y: Bool) -> x && y;
+    let c = R(1, 1) :- if f(k, k).;
+    let r = solve c;
+    r |= R(1, 1).
+
