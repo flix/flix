@@ -1275,14 +1275,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Predicate.Body.Guard(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Predicate.Body.ApplyFilter(sp1, qname, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
+      val loc = mkSL(sp1, sp2)
       traverse(terms)(visitExp) map {
         case ts =>
-          // Check if the term list is empty. If so, invoke the function with the unit value.
-          if (ts.isEmpty)
-            WeededAst.Predicate.Body.Filter(qname, List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), mkSL(sp1, sp2))
-          else
-            WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
+          // Check if the argument list is empty. If so, invoke the function with the Unit value.
+          val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
+          val b = WeededAst.Expression.VarOrDef(qname, loc)
+          val e = mkApplyCurried(b, as, loc)
+          WeededAst.Predicate.Body.Guard(e, loc)
       }
 
     case ParsedAst.Predicate.Body.Functional(sp1, ident, term, sp2) =>

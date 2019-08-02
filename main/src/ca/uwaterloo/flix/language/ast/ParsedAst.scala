@@ -1164,7 +1164,7 @@ object ParsedAst {
       case class Negative(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
-        * Filter Predicate.
+        * Guard Predicate.
         *
         * @param sp1 the position of the first character in the predicate.
         * @param exp the filter expression.
@@ -1173,14 +1173,14 @@ object ParsedAst {
       case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
-        * Filter Apply Predicate.
+        * Filter Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the filter function.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class ApplyFilter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Functional Predicate.
