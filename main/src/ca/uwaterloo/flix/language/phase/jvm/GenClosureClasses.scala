@@ -115,7 +115,7 @@ object GenClosureClasses {
     compileSpawnMethod(visitor, classType, root.defs(closure.sym), resultType)
 
     // Execute method of the class.
-    compileApplyMethod(visitor, classType, root.defs(closure.sym), tresult)
+    compileApplyMethod(visitor, classType, root.defs(closure.sym), targs, tresult)
 
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
@@ -340,7 +340,7 @@ object GenClosureClasses {
     */
   private def compileApplyMethod(visitor: ClassWriter,
                                  classType: JvmType.Reference,
-                                 defn: Def, resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+                                 defn: Def, targs: List[MonoType], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
     // The JVM result type
     val jvmResultType = JvmOps.getErasedJvmType(resultType)
 
@@ -349,7 +349,7 @@ object GenClosureClasses {
       AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
 
     // Iterate through each formal argument and invoke `setArg`.
-    for ((FormalParam(sym, tpe), index) <- defn.formals.zipWithIndex) {
+    for ((tpe, index) <- targs.zipWithIndex) {
       // Load the `this` value (to be used for the call below).
       mv.visitVarInsn(ALOAD, 0)
 
