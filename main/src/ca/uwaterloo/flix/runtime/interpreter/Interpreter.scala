@@ -770,6 +770,17 @@ object Interpreter {
       val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
       AtomPredicate.of(predSym, polarity, terms)
 
+    case FinalAst.Predicate.Body.Guard(exp, terms, loc) =>
+      val f = new function.Function[Array[Object], ProxyObject] {
+        override def apply(as: Array[Object]): ProxyObject = {
+          val clo = cast2closure(eval(exp, env0, henv0, lenv0, root))
+          // TODO: Not yet implemented.
+          throw InternalRuntimeException(s"Not yet supported.")
+        }
+      }
+      val ts = terms.map(t => evalBodyTerm(t, env0))
+      FilterPredicate.of(f, ts.toArray)
+
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {
         override def apply(as: Array[Object]): ProxyObject = {

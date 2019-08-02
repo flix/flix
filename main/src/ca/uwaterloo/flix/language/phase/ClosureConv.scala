@@ -576,6 +576,9 @@ object ClosureConv extends Phase[Root, Root] {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       freeVars(pred.exp) ++ terms.flatMap(freeVars)
 
+    case Predicate.Body.Guard(exp, loc) =>
+      freeVars(exp)
+
     case Predicate.Body.Filter(sym, terms, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
 
@@ -916,6 +919,10 @@ object ClosureConv extends Phase[Root, Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitBodyTerm
         Predicate.Body.Atom(p, polarity, ts, tpe, loc)
+
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Guard(e, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms map visitBodyTerm
