@@ -1298,8 +1298,8 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * (a) Every type that appears as return type of some definition.
      */
-    val typesInDefs: Set[Type] = root.defs.map {
-      case (_, Def(_, _, _, _, _, _, exp, _, _, _, _)) => exp.tpe
+    val typesInDefs: Set[Type] = root.defs.collect {
+      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (ann.isBenchmark || ann.isTest || sym.name == "main") => exp.tpe
     }.toSet
 
     /*

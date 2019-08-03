@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -30,14 +30,14 @@ import scala.collection.mutable
   *
   * A function is considered reachable if it:
   *
-  * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
-  * (b) Appears in the global handlers.
-  * (c) Appears in a lattice declaration.
-  * (d) Appears in a property declaration.
-  * (e) Appears as a special op.
-  * (f) Appears in a function which itself is reachable.
+  * (a) The main function is always reachable.
+  * (b) A function marked with @benchmark or @test is reachable.
+  * (c) A function that appears in a lattice component.
+  * (d) A function that appears in a property.
+  * (e) A function that appears as a special operator.
+  * (f) Appear in a function which itself is reachable.
+  *
   */
-
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Performs tree shaking on the given AST `root`.
@@ -60,106 +60,230 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val queue: mutable.Queue[SimplifiedAst.Def] = mutable.Queue.empty
 
     /**
-      * Returns true iff the function definition `defn` is initially reachable by (a).
-      *
-      * That is, returns true iff `defn` satisfies:
-      *
-      * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
-      */
-    def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
-      val isRootNs = defn.sym.namespace.isEmpty
-      val isSingleUnitArg = defn.fparams.nonEmpty && defn.fparams.head.tpe == Type.Cst(TypeConstructor.Unit)
-      val isNonSynthetic = !defn.mod.isSynthetic
-      val isBenchmark = defn.ann.isBenchmark
-      val isTest = defn.ann.isTest
-
-      (isRootNs && isSingleUnitArg && isNonSynthetic) || isBenchmark || isTest
-    }
-
-    /**
       * Returns the function symbols reachable from the given Expression `e0`.
       */
     def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
-      case Expression.Unit => Set.empty
-      case Expression.True => Set.empty
-      case Expression.False => Set.empty
-      case Expression.Char(lit) => Set.empty
-      case Expression.Float32(lit) => Set.empty
-      case Expression.Float64(lit) => Set.empty
-      case Expression.Int8(lit) => Set.empty
-      case Expression.Int16(lit) => Set.empty
-      case Expression.Int32(lit) => Set.empty
-      case Expression.Int64(lit) => Set.empty
-      case Expression.BigInt(lit) => Set.empty
-      case Expression.Str(lit) => Set.empty
-      case Expression.Var(sym, tpe, loc) => Set.empty
-      case Expression.Def(sym, tpe, loc) => Set(sym)
-      case Expression.Eff(sym, tpe, loc) => Set.empty
-      case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
-      case Expression.Closure(sym, freeVars, tpe, loc) => Set(sym)
-      case Expression.ApplyClo(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
-      case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args) + sym
-      case Expression.ApplyEff(sym, args, tpe, loc) => visitExps(args)
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
-      case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args) + sym
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => visitExps(args)
-      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
-      case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp)
-      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-      case Expression.Branch(exp, branches, tpe, loc) => visitExp(exp) ++ visitExps(branches.values.toList)
-      case Expression.JumpTo(sym, tpe, loc) => Set.empty
-      case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
-      case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
-      case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)
-      case Expression.Index(base, offset, tpe, loc) => visitExp(base)
-      case Expression.Tuple(elms, tpe, loc) => visitExps(elms)
-      case Expression.RecordEmpty(tpe, loc) => Set.empty
-      case Expression.RecordSelect(exp, label, tpe, loc) => visitExp(exp)
-      case Expression.RecordExtend(label, value, rest, tpe, loc) => visitExp(value) ++ visitExp(rest)
-      case Expression.RecordRestrict(label, rest, tpe, loc) => visitExp(rest)
-      case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms)
-      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len)
-      case Expression.ArrayLoad(base, index, tpe, lco) => visitExp(base) ++ visitExp(index)
-      case Expression.ArrayStore(base, index, elm, tpe, loc) => visitExp(base) ++ visitExp(index) ++ visitExp(elm)
-      case Expression.ArrayLength(base, tpe, loc) => visitExp(base)
-      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) => visitExp(base) ++ visitExp(startIndex) ++ visitExp(endIndex)
-      case Expression.Ref(exp, tpe, loc) => visitExp(exp)
-      case Expression.Deref(exp, tpe, loc) => visitExp(exp)
-      case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.HandleWith(exp, bindings, tpe, loc) => visitExp(exp) ++ visitExps(bindings.map(_.exp))
-      case Expression.Existential(fparam, exp, loc) => visitExp(exp)
-      case Expression.Universal(fparam, exp, loc) => visitExp(exp)
-      case Expression.TryCatch(exp, rules, tpe, loc) =>
+      case Expression.Unit =>
+        Set.empty
+
+      case Expression.True =>
+        Set.empty
+
+      case Expression.False =>
+        Set.empty
+
+      case Expression.Char(_) =>
+        Set.empty
+
+      case Expression.Float32(_) =>
+        Set.empty
+
+      case Expression.Float64(_) =>
+        Set.empty
+
+      case Expression.Int8(_) =>
+        Set.empty
+
+      case Expression.Int16(_) =>
+        Set.empty
+
+      case Expression.Int32(_) =>
+        Set.empty
+
+      case Expression.Int64(_) =>
+        Set.empty
+
+      case Expression.BigInt(_) =>
+        Set.empty
+
+      case Expression.Str(_) =>
+        Set.empty
+
+      case Expression.Var(_, _, _) =>
+        Set.empty
+
+      case Expression.Def(sym, _, _) =>
+        Set(sym)
+
+      case Expression.Eff(_, _, _) =>
+        Set.empty
+
+      case Expression.Lambda(_, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Closure(sym, _, _, _) =>
+        Set(sym)
+
+      case Expression.ApplyClo(exp, args, _, _) =>
+        visitExp(exp) ++ visitExps(args)
+
+      case Expression.ApplyDef(sym, args, _, _) =>
+        Set(sym) ++ visitExps(args)
+
+      case Expression.ApplyEff(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.ApplyCloTail(exp, args, _, _) =>
+        visitExp(exp) ++ visitExps(args)
+
+      case Expression.ApplyDefTail(sym, args, _, _) =>
+        Set(sym) ++ visitExps(args)
+
+      case Expression.ApplyEffTail(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.ApplySelfTail(sym, _, args, _, _) =>
+        Set(sym) ++ visitExps(args)
+
+      case Expression.Unary(_, _, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Binary(_, _, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Branch(exp, branches, _, _) =>
+        visitExp(exp) ++ visitExps(branches.values.toList)
+
+      case Expression.JumpTo(_, _, _) =>
+        Set.empty
+
+      case Expression.Let(_, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.LetRec(_, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Is(_, _, exp, _) =>
+        visitExp(exp)
+
+      case Expression.Tag(_, _, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Untag(_, _, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Index(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.Tuple(elms, _, _) =>
+        visitExps(elms)
+
+      case Expression.RecordEmpty(_, _) =>
+        Set.empty
+
+      case Expression.RecordSelect(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.RecordExtend(_, value, rest, _, _) =>
+        visitExp(value) ++ visitExp(rest)
+
+      case Expression.RecordRestrict(_, rest, _, _) =>
+        visitExp(rest)
+
+      case Expression.ArrayLit(elms, _, _) =>
+        visitExps(elms)
+
+      case Expression.ArrayNew(elm, len, _, _) =>
+        visitExp(elm) ++ visitExp(len)
+
+      case Expression.ArrayLoad(base, index, _, _) =>
+        visitExp(base) ++ visitExp(index)
+
+      case Expression.ArrayStore(base, index, elm, _, _) =>
+        visitExp(base) ++ visitExp(index) ++ visitExp(elm)
+
+      case Expression.ArrayLength(base, _, _) =>
+        visitExp(base)
+
+      case Expression.ArraySlice(base, startIndex, endIndex, _, _) =>
+        visitExp(base) ++ visitExp(startIndex) ++ visitExp(endIndex)
+
+      case Expression.Ref(exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Deref(exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.Assign(exp1, exp2, tpe, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.HandleWith(exp, bindings, _, _) =>
+        visitExp(exp) ++ visitExps(bindings.map(_.exp))
+
+      case Expression.Existential(_, exp, _) =>
+        visitExp(exp)
+
+      case Expression.Universal(_, exp, _) =>
+        visitExp(exp)
+
+      case Expression.TryCatch(exp, rules, _, _) =>
         visitExp(exp) ++ visitExps(rules.map(_.exp))
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
-      case Expression.NativeField(field, tpe, loc) => Set.empty
-      case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
-      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp)
-      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
-      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.SelectChannel(rules, default, tpe, loc) =>
+
+      case Expression.NativeConstructor(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.NativeField(_, _, _) =>
+        Set.empty
+
+      case Expression.NativeMethod(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.NewChannel(exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.GetChannel(exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.SelectChannel(rules, default, _, _) =>
         val rs = visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
         val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
-      case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp)
-      case Expression.ProcessSleep(exp, tpe, loc) => visitExp(exp)
-      case Expression.ProcessPanic(msg, tpe, loc) => Set.empty
-      case Expression.FixpointConstraintSet(cs0, tpe, loc) => cs0.foldLeft(Set.empty[Symbol.DefnSym]) {
-        case (fvs, c) => fvs ++ visitConstraint(c)
-      }
-      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
-      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.HoleError(sym, tpe, loc) => Set.empty
-      case Expression.MatchError(tpe, loc) => Set.empty
-      case Expression.SwitchError(tpe, loc) => Set.empty
 
-      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+      case Expression.ProcessSpawn(exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.ProcessSleep(exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.ProcessPanic(_, _, _) =>
+        Set.empty
+
+      case Expression.FixpointConstraintSet(cs0, _, _) =>
+        cs0.foldLeft(Set.empty[Symbol.DefnSym]) {
+          case (fvs, c) => fvs ++ visitConstraint(c)
+        }
+      case Expression.FixpointCompose(exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.FixpointSolve(exp, _, _, _) =>
+        visitExp(exp)
+
+      case Expression.FixpointProject(pred, exp, _, _) =>
+        visitExp(pred.exp) ++ visitExp(exp)
+
+      case Expression.FixpointEntails(exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.HoleError(_, _, _) =>
+        Set.empty
+
+      case Expression.MatchError(_, _) =>
+        Set.empty
+
+      case Expression.SwitchError(_, _) =>
+        Set.empty
+
+      case Expression.LambdaClosure(_, _, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+
+      case Expression.Apply(_, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**
@@ -227,33 +351,23 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /*
-     * We can now use these helper functions to perform tree shaking.
+     * (a) The main function is always reachable.
      */
+    reachableFunctions.add(Symbol.mkDefnSym("main"))
 
     /*
-     * Find reachable functions that:
-     *
-     * (a) Appear in the global namespaces, take zero arguments, and are not marked as synthetic.
+     * (b) A function marked with @benchmark or @test is reachable.
      */
     for ((sym, defn) <- root.defs) {
-      if (isReachableRoot(defn)) {
+      val isBenchmark = defn.ann.isBenchmark
+      val isTest = defn.ann.isTest
+      if (isBenchmark || isTest) {
         reachableFunctions.add(sym)
       }
     }
 
     /*
-     * Find reachable functions that:
-     *
-     * (b) Appear in global handlers.
-     */
-    for ((sym, handler) <- root.handlers) {
-      reachableFunctions ++= visitExp(handler.exp)
-    }
-
-    /*
-     * Find reachable functions that:
-     *
-     * (c) Appear in a lattice declaration.
+     * (c) A function that appears in a lattice component.
      */
     reachableFunctions ++= root.latticeComponents.values.map {
       case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
@@ -261,45 +375,39 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }.fold(Set())(_ ++ _)
 
     /*
-     * Find reachable functions that:
-     *
-     * (d) Appear in a property declaration.
+     * (d) A function that appears in a property.
      */
     reachableFunctions ++= root.properties.map {
       case SimplifiedAst.Property(law, defn, exp) => visitExp(exp) + law + defn
     }.fold(Set())(_ ++ _)
 
     /*
-     * Find reachable functions that:
-     *
-     * (e) Appear as a special op.
+     * (e) A function that appears as a special operator.
      */
     reachableFunctions ++= root.specialOps.values.flatMap(_.values)
 
     /*
-     * Find reachable functions that:
-     *
      * (f) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
       root.defs.get(_) match {
+        case None => // nop
         case Some(defn) => queue.enqueue(defn)
-        case None =>
       }
     }
 
+    // Compute transitively reachable function.
     while (queue.nonEmpty) {
       // Extract a function body from the queue and search for other reachable functions.
-      visitExp(queue.dequeue().exp).foreach(newReachableDefinitionSymbol)
+      for (sym <- visitExp(queue.dequeue().exp)) {
+        newReachableDefinitionSymbol(sym)
+      }
     }
 
     // Compute the live defs.
     val liveDefs = root.defs.filter {
       case (sym, _) => reachableFunctions.contains(sym)
     }
-
-    // All reachable function should be live.
-    // assert(reachableFunctions.size == liveDefs.size)
 
     // Reassemble the AST.
     root.copy(defs = liveDefs).toSuccess
