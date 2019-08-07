@@ -242,32 +242,3 @@ def testStrLit02(): #{ StrRel } =
 def testStrLit03(): #{ StrRel } =
     let x = StrRel("hello world!").;
     solve x
-
-
-///////////////////////////////////////////////////////////////////////////////
-/// Option                                                                  ///
-///////////////////////////////////////////////////////////////////////////////
-rel OptionRel(x: Option[Int])
-
-@test
-def testOptionLit01(): #{ OptionRel } =
-    let x = OptionRel(None).;
-    solve x
-
-@test
-def testOptionLit02(): #{ OptionRel } =
-    let x = OptionRel(Some(123)).;
-    solve x
-
-@test
-def testOptionLit03(): #{ OptionRel } =
-    let x = OptionRel(None).;
-    let y = OptionRel(Some(123)).;
-    solve x <+> y
-
-@test
-def testOptionLit04(): #{ OptionRel } =
-    let x = OptionRel(None).;
-    let y = OptionRel(Some(123)).;
-    let z = OptionRel(Some(456)).;
-    solve x <+> y <+> z
