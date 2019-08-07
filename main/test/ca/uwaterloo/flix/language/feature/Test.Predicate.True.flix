@@ -1,37 +1,37 @@
 rel True()
 
 @test
-def testTruePredicate01(): Schema { True } =
+def testTruePredicate01(): #{ True } =
     solve True().
 
 @test
-def testTruePredicate02(): Schema { True } =
+def testTruePredicate02(): #{ True } =
     let x = True().;
     let u = x <+> x;
     solve u
 
 @test
-def testTruePredicate03(): Schema { True } =
+def testTruePredicate03(): #{ True } =
     let x = True().;
     let u = x <+> x <+> x;
     solve u
 
 @test
-def testTruePredicate04(): Schema { True } =
+def testTruePredicate04(): #{ True } =
     let x = True().;
     let y = True().;
     let u = x <+> y;
     solve u
 
 @test
-def testTruePredicate05(): Schema { True } =
+def testTruePredicate05(): #{ True } =
     let x = True().;
     let y = True().;
     let u = (x <+> y) <+> (y <+> x);
     solve u
 
 @test
-def testTruePredicate06(): Schema { True } =
+def testTruePredicate06(): #{ True } =
     let x = True().;
     let y = True().;
     let u = solve x;
@@ -39,7 +39,7 @@ def testTruePredicate06(): Schema { True } =
     (solve u) <+> (solve v)
 
 @test
-def testTruePredicate07(): Schema { True } =
+def testTruePredicate07(): #{ True } =
     let x = True().;
     let y = True().;
     let u = solve x <+> y;
@@ -47,7 +47,7 @@ def testTruePredicate07(): Schema { True } =
     (solve u) <+> (solve v)
 
 @test
-def testTruePredicate08(): Schema { True } =
+def testTruePredicate08(): #{ True } =
     let x = True().;
     let y = True().;
     let u = solve (solve x <+> y);
@@ -55,7 +55,7 @@ def testTruePredicate08(): Schema { True } =
     (solve u) <+> (solve v)
 
 @test
-def testTruePredicate09(): Schema { True } =
+def testTruePredicate09(): #{ True } =
     let x = True().;
     let y = True().;
     let u = solve (solve x <+> y);

@@ -23,7 +23,7 @@ namespace IFDS {
 
     // Rules
     @test
-    def test(): Schema { EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, PathEdge, SummaryEdge, Results, Facts, Identity } = solve {
+    def test(): #{ EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, PathEdge, SummaryEdge, Results, Facts, Identity } = solve {
         // intraproc
         PathEdge(d1,m,d3) :-
             PathEdge(d1,n,d2),

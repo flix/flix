@@ -3,7 +3,7 @@ rel ParentOf(x: Str, y: Str)
 rel AncestorOf(x: Str, y: Str)
 
 /// Returns a collection of facts.
-def getFacts(): Schema { ParentOf, AncestorOf } = {
+def getFacts(): #{ ParentOf, AncestorOf } = {
     ParentOf("Pompey", "Strabo").
     ParentOf("Gnaeus", "Pompey").
     ParentOf("Pompeia", "Pompey").
@@ -11,11 +11,11 @@ def getFacts(): Schema { ParentOf, AncestorOf } = {
 }
 
 /// Returns a collection of rules to compute ancestors.
-def getRules(): Schema { ParentOf, AncestorOf } = {
+def getRules(): #{ ParentOf, AncestorOf } = {
     AncestorOf(x, y) :- ParentOf(x, y).
     AncestorOf(x, z) :- AncestorOf(x, y), AncestorOf(y, z).
 }
 
 /// Composes the facts and rules, and computes the lfp.
-def main(): Schema { ParentOf, AncestorOf } =
+def main(): #{ ParentOf, AncestorOf } =
     solve getFacts() <+> getRules()
