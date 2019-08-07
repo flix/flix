@@ -3,7 +3,7 @@ rel ParentOf(x: Str, y: Str)
 rel AncestorOf(x: Str, y: Str)
 
 /// Returns a collection of facts.
-def getFacts(): #{ ParentOf, AncestorOf } = {
+def getFacts(): #{ ParentOf, AncestorOf } = #{
     ParentOf("Pompey", "Strabo").
     ParentOf("Gnaeus", "Pompey").
     ParentOf("Pompeia", "Pompey").
@@ -11,7 +11,7 @@ def getFacts(): #{ ParentOf, AncestorOf } = {
 }
 
 /// Returns a collection of rules to compute ancestors.
-def getRules(): #{ ParentOf, AncestorOf } = {
+def getRules(): #{ ParentOf, AncestorOf } = #{
     AncestorOf(x, y) :- ParentOf(x, y).
     AncestorOf(x, z) :- AncestorOf(x, y), AncestorOf(y, z).
 }

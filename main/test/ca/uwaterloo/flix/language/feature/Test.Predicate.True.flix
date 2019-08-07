@@ -68,19 +68,19 @@ def testTruePredicate10(): Bool =
 
 @test
 def testTruePredicate11(): Bool =
-    (True().) |= (True(). True().)
+    (True().) |= #{ True(). True(). }
 
 @test
 def testTruePredicate12(): Bool =
-    (True().) |= (True(). True(). True().)
+    (True().) |= #{ True(). True(). True(). }
 
 @test
 def testTruePredicate13(): Bool =
-    (True(). True(). ) |= (True().)
+    #{ True(). True(). } |= (True().)
 
 @test
 def testTruePredicate14(): Bool =
-    (True(). True(). True().) |= (True().)
+    #{ True(). True(). True(). } |= (True().)
 
 @test
 def testTruePredicate15(): Bool =

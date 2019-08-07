@@ -597,7 +597,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve |
-        FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
+        FixpointProject | Constraint | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
 
@@ -873,8 +873,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("match") ~ optWS ~ Pattern ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LambdaMatch
     }
 
-    def ConstraintSeq: Rule1[ParsedAst.Expression] = rule {
-      SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.FixpointConstraintSeq
+    def Constraint: Rule1[ParsedAst.Expression] = rule {
+      SP ~ Declarations.Constraint ~ SP ~> ParsedAst.Expression.FixpointConstraint
     }
 
     def ConstraintSet: Rule1[ParsedAst.Expression] = rule {

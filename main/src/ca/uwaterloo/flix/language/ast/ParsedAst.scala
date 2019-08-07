@@ -976,13 +976,13 @@ object ParsedAst {
     case class ProcessPanic(sp1: SourcePosition, msg: ParsedAst.Literal.Str, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Fixpoint Constraint Sequence expression.
+      * Fixpoint Constraint expression.
       *
       * @param sp1 the position of the first character in the expression.
-      * @param cs  the sequence of constraints.
+      * @param con the constraint.
       * @param sp2 the position of the last character in the expression.
       */
-    case class FixpointConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraint(sp1: SourcePosition, con: Declaration.Constraint, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Constraint Set expression.

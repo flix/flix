@@ -39,11 +39,11 @@ namespace Test/Predicate/Atom {
 
     @test
     def testAtomWithParam10(): Bool =
-        (A<0>(1, 2, 3). A<1>(1, 2, 3).) |= A<0>(1, 2, 3).
+        #{ A<0>(1, 2, 3). A<1>(1, 2, 3). } |= A<0>(1, 2, 3).
 
     @test
     def testAtomWithParam11(): Bool =
-        (A<0>(1, 2, 3). A<1>(1, 2, 3).) |= A<1>(1, 2, 3).
+        #{ A<0>(1, 2, 3). A<1>(1, 2, 3). } |= A<1>(1, 2, 3).
 
     @test
     def testAtomWithParam12(): Bool =
@@ -55,6 +55,6 @@ namespace Test/Predicate/Atom {
     def testAtomWithParam13(): Bool =
         let x = 123;
         let y = 456;
-        (A<x>(1, 2, 3). A<y>(1, 2, 3).) |= (A<x>(1, 2, 3). A<y>(1, 2, 3).)
+        #{ A<x>(1, 2, 3). A<y>(1, 2, 3). } |= #{ A<x>(1, 2, 3). A<y>(1, 2, 3). }
 
 }
