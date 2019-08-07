@@ -653,7 +653,7 @@ object Synthesize extends Phase[Root, Root] {
       *
       * If no such definition exists, it is created.
       */
-    def getOrMkHash(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
+    def getOrMkHash(tpe: Type): Symbol.DefnSym = mutHashOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the hash operator.
       val sym = Symbol.freshDefnSym("hash")
 
