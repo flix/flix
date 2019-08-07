@@ -584,7 +584,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |rel R[a](x: Int)
          |
-         |def main(): Schema { R[Int] } = R(123).
+         |def main(): #{ R[Int] } = R(123).
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -596,7 +596,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |rel R[a, b](x: a)
          |
-         |def main(): Schema { R[Int, Int] } = R(123).
+         |def main(): #{ R[Int, Int] } = R(123).
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -608,7 +608,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |rel R[a, b](x: b)
          |
-         |def main(): Schema { R[Int, Int] } = R(123).
+         |def main(): #{ R[Int, Int] } = R(123).
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -620,7 +620,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       s"""
          |rel R[a, b, c](x: a, y: c)
          |
-         |def main(): Schema { R[Int, Int, Int] } = R(123, 456).
+         |def main(): #{ R[Int, Int, Int] } = R(123, 456).
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)

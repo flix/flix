@@ -5,17 +5,17 @@ rel ColorlessPath(x: Int, y: Int)
 
 def main(): Bool =
     // Introduce some facts for colored paths.
-    let f1 = {
+    let f1 = #{
         ColorEdge(1, "blue", 2).
         ColorEdge(2, "blue", 3).
     };
     // Introduce some rules for computing paths.
-    let r1 = {
+    let r1 = #{
         ColorPath(x, c, y) :- ColorEdge(x, c, y).
         ColorPath(x, c, z) :- ColorPath(x, c, y), ColorEdge(y, c, z).
     };
     // Introduce some rules for computing colorless paths.
-    let r2 = {
+    let r2 = #{
         ColorlessPath(x, y) :- ColorPath(x, _, y).
     };
     // Compute all the color paths.

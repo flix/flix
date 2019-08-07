@@ -7,7 +7,7 @@ rel R(x: Int)
 rel N()
 
 @test
-def testStratification01(): Schema { A, B, R } = solve {
+def testStratification01(): #{ A, B, R } = solve #{
     A(1). A(2). A(3).
 
     B(3).
@@ -16,7 +16,7 @@ def testStratification01(): Schema { A, B, R } = solve {
 }
 
 @test
-def testStratification02(): Schema { A, B, R } = solve {
+def testStratification02(): #{ A, B, R } = solve #{
     A(1). A(2). A(3).
 
     B(3).
@@ -25,7 +25,7 @@ def testStratification02(): Schema { A, B, R } = solve {
 }
 
 @test
-def testStratification03(): Schema { A, B, C, R } = solve {
+def testStratification03(): #{ A, B, C, R } = solve #{
     A(1). A(2). A(3).
 
     B(3).
@@ -36,7 +36,7 @@ def testStratification03(): Schema { A, B, C, R } = solve {
 }
 
 @test
-def testStratification04(): Schema { A, B, C, R } = solve {
+def testStratification04(): #{ A, B, C, R } = solve #{
     A(1). A(2). A(3).
 
     B(3).
@@ -47,7 +47,7 @@ def testStratification04(): Schema { A, B, C, R } = solve {
 }
 
 @test
-def testStratification05(): Schema { A, B, C, R } = solve {
+def testStratification05(): #{ A, B, C, R } = solve #{
     A(1). A(2).
     B(3).
 
@@ -57,7 +57,7 @@ def testStratification05(): Schema { A, B, C, R } = solve {
 }
 
 @test
-def testStratification06(): Schema { A, B, C, D, R } = solve {
+def testStratification06(): #{ A, B, C, D, R } = solve #{
     A(1). A(2).
     B(3).
 
@@ -68,7 +68,7 @@ def testStratification06(): Schema { A, B, C, D, R } = solve {
 }
 
 @test
-def testStratification07(): Schema { A, B, C, D, E, R } = solve {
+def testStratification07(): #{ A, B, C, D, E, R } = solve #{
     A(1). A(2).
     B(3).
 
@@ -80,7 +80,7 @@ def testStratification07(): Schema { A, B, C, D, E, R } = solve {
 }
 
 @test
-def testStratification08(): Schema { A, N } = solve {
+def testStratification08(): #{ A, N } = solve #{
     A(1).
     A(2).
     A(3).
@@ -91,7 +91,7 @@ def testStratification08(): Schema { A, N } = solve {
 }
 
 @test
-def testStratification09(): Schema { A, B, N } = solve {
+def testStratification09(): #{ A, B, N } = solve #{
     A(1). A(2).
     B(1).  B(2).
 
