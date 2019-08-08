@@ -1,6 +1,15 @@
 # Changelog
 
 HEAD:
+
+Version 0.7:
+
+- Changed the syntax of constraint sets.
+- Changed syntax for sets and maps.
+- Improvements to tree shaking.
+- Check for dead and unreachable code.
+- Improved stratification of first-class constraints based on types.
+- Multiple bug fixes.
 - Upgrade to Scala 2.13
 - Added support for Gradle builds.
 
