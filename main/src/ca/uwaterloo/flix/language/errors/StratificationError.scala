@@ -33,7 +33,7 @@ case class StratificationError(cycle: List[(Symbol.PredSym, SourceLocation)], lo
     vt << Line(kind, source.format) << NewLine
     vt << ">> Stratification Error." << NewLine
     vt << NewLine
-    vt << Code(loc, "the predicate is part of a negative cycle.")
+    vt << Code(loc, "the constraint set is not stratified.")
     vt << NewLine
     vt << "The following predicate symbols form a negative cycle:" << NewLine
     vt << Indent << NewLine

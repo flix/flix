@@ -39,6 +39,8 @@ import scala.collection.parallel.CollectionConverters._
   */
 object Stratifier extends Phase[Root, Root] {
 
+  // TODO: It might be useful to cache the results of stratification.
+
   /**
     * Returns a stratified version of the given AST `root`.
     */
@@ -370,14 +372,27 @@ object Stratifier extends Phase[Root, Root] {
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
     case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
-      // TODO: The constraint itself might not be stratified.
-      val cs = cs0.map(reorder)
-      Expression.FixpointConstraintSet(cs, tpe, eff, loc).toSuccess
+      // Compute the restricted dependency graph.
+      val rg = restrict(dg, tpe)
+
+      // Compute the stratification of the restricted dependency graph.
+      val stf = stratify(rg, loc)
+
+      mapN(stf) {
+        case _ =>
+          val cs = cs0.map(reorder)
+          Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
-      // TODO: Check if the composition is stratified.
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
+      // Compute the restricted dependency graph.
+      val rg = restrict(dg, tpe)
+
+      // Compute the stratification of the restricted dependency graph.
+      val stf = stratify(rg, loc)
+
+      mapN(visitExp(exp1), visitExp(exp2), stf) {
+        case (e1, e2, _) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
@@ -743,7 +758,7 @@ object Stratifier extends Phase[Root, Root] {
               changed = true
             }
 
-          case DependencyEdge.Negative(headSym, bodySym, loc) =>
+          case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -756,7 +771,7 @@ object Stratifier extends Phase[Root, Root] {
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g, loc), loc).toFailure
+                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), loc).toFailure
               }
             }
         }

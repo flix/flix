@@ -1170,7 +1170,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, evar, loc) =>
         for {
           constraintTypes <- seqM(cs.map(visitConstraint))
-          resultTyp <- unifyTypAllowEmptyM(constraintTypes, loc)
+          resultTyp <- unifyTypAllowEmptyM(tvar :: constraintTypes, loc)
           resultEff <- unifyEffM(Eff.freshEffVar(), evar, loc)
         } yield (resultTyp, resultEff)
 
