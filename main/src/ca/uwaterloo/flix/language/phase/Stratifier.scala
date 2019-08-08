@@ -39,6 +39,8 @@ import scala.collection.parallel.CollectionConverters._
   */
 object Stratifier extends Phase[Root, Root] {
 
+  // TODO: It might be useful to cache the results of stratification.
+
   /**
     * Returns a stratified version of the given AST `root`.
     */
@@ -370,14 +372,27 @@ object Stratifier extends Phase[Root, Root] {
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
     case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
-      // TODO: The constraint itself might not be stratified.
-      val cs = cs0.map(reorder)
-      Expression.FixpointConstraintSet(cs, tpe, eff, loc).toSuccess
+      // Compute the restricted dependency graph.
+      val rg = restrict(dg, tpe)
+
+      // Compute the stratification of the restricted dependency graph.
+      val stf = stratify(rg, loc)
+
+      mapN(stf) {
+        case _ =>
+          val cs = cs0.map(reorder)
+          Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
-      // TODO: Check if the composition is stratified.
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
+      // Compute the restricted dependency graph.
+      val rg = restrict(dg, tpe)
+
+      // Compute the stratification of the restricted dependency graph.
+      val stf = stratify(rg, loc)
+
+      mapN(visitExp(exp1), visitExp(exp2), stf) {
+        case (e1, e2, _) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
@@ -687,8 +702,8 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred.sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred.sym))
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred.sym, loc))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred.sym, loc))
     }
 
     case Predicate.Body.Guard(exp, loc) => None
@@ -732,7 +747,7 @@ object Stratifier extends Phase[Root, Root] {
       // Examine each dependency edge in turn.
       for (edge <- g.xs) {
         edge match {
-          case DependencyEdge.Positive(headSym, bodySym) =>
+          case DependencyEdge.Positive(headSym, bodySym, _) =>
             // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -743,7 +758,7 @@ object Stratifier extends Phase[Root, Root] {
               changed = true
             }
 
-          case DependencyEdge.Negative(headSym, bodySym) =>
+          case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
             val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
             val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
@@ -756,7 +771,7 @@ object Stratifier extends Phase[Root, Root] {
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g), loc).toFailure
+                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), loc).toFailure
               }
             }
         }
@@ -770,23 +785,53 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph): List[Symbol.PredSym] = {
+  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph, loc: SourceLocation): List[(Symbol.PredSym, SourceLocation)] = {
     // Computes a map from symbols to their successors.
-    val m = mutable.Map.empty[Symbol.PredSym, Set[Symbol.PredSym]]
+    val succ = mutable.Map.empty[Symbol.PredSym, Set[(Symbol.PredSym, SourceLocation)]]
     for (edge <- g.xs) {
       edge match {
-        case DependencyEdge.Positive(head, body) =>
-          val s = m.getOrElse(body, Set.empty)
-          m.put(body, s + head)
-        case DependencyEdge.Negative(head, body) =>
-          val s = m.getOrElse(body, Set.empty)
-          m.put(body, s + head)
+        case DependencyEdge.Positive(head, body, loc) =>
+          val s = succ.getOrElse(body, Set.empty)
+          succ.put(body, s + ((head, loc)))
+        case DependencyEdge.Negative(head, body, loc) =>
+          val s = succ.getOrElse(body, Set.empty)
+          succ.put(body, s + ((head, loc)))
       }
     }
 
-    // TODO: Need some cycle finding algorithm.
+    // We perform a DFS using recursion to find the cycle.
 
-    src :: dst :: Nil
+    // A map from symbols to their immediate predecessor in the DFS.
+    val pred = mutable.Map.empty[Symbol.PredSym, (Symbol.PredSym, SourceLocation)]
+
+    // A set of previously seen symbols.
+    val seen = mutable.Set.empty[Symbol.PredSym]
+
+    // Recursively visit the given symbol.
+    def visit(curr: Symbol.PredSym): Unit = {
+      // Update the set of previously seen nodes.
+      seen.add(curr)
+
+      // Recursively visit each unseen child.
+      for ((succ, loc) <- succ.getOrElse(curr, Set.empty)) {
+        if (!seen.contains(succ)) {
+          pred.update(succ, (curr, loc))
+          visit(succ)
+        }
+      }
+    }
+
+    // Compute the predecessor map.
+    visit(dst)
+
+    // Recursively constructs a path from `src` and backwards through the graph.
+    def unroll(curr: Symbol.PredSym): List[(Symbol.PredSym, SourceLocation)] = pred.get(curr) match {
+      case None => Nil
+      case Some((prev, loc)) => (prev, loc) :: unroll(prev)
+    }
+
+    // Assemble the full path.
+    (src, loc) :: unroll(src) ::: (src, loc) :: Nil
   }
 
   /**
