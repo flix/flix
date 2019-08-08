@@ -784,9 +784,35 @@ object Stratifier extends Phase[Root, Root] {
       }
     }
 
-    // TODO: Need some cycle finding algorithm.
+    // A map of predecessors and a set of previous seen nodes.
+    val pred = mutable.Map.empty[Symbol.PredSym, Symbol.PredSym]
+    val seen = mutable.Set.empty[Symbol.PredSym]
 
-    src :: dst :: Nil
+    // Recursively the map of predecessors.
+    def visit(curr: Symbol.PredSym): Unit = {
+      // Update the set of previously seen nodes.
+      seen.add(curr)
+
+      // Recursively visit each unseen child.
+      for (succ <- m.getOrElse(curr, Set.empty)) {
+        if (!seen.contains(succ)) {
+          pred.update(succ, curr)
+          visit(succ)
+        }
+      }
+    }
+
+    // Compute the predecessors.
+    visit(dst)
+
+    // Recursively constructs a path from `src` and backwards through the graph.
+    def unroll(curr: Symbol.PredSym): List[Symbol.PredSym] = pred.get(curr) match {
+      case None => Nil
+      case Some(prev) => prev :: unroll(prev)
+    }
+
+    // Assemble the full path.
+    src :: unroll(src)
   }
 
   /**
