@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2019 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.tc.Show._
-import ca.uwaterloo.flix.util.{LocalResource, StreamOps, Validation}
+import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
@@ -113,25 +113,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     root.toSuccess
-  }
-
-  /**
-    * Returns a JSON object of the available namespaces for the menu.
-    */
-  private def mkMenu(xs: Set[List[String]]): List[JObject] = {
-    val prelude = JObject(List(
-      JField("name", JString("Prelude")),
-      JField("link", JString("index.html"))
-    ))
-
-    val namespaces = xs map {
-      case ns => JObject(List(
-        JField("name", JString(ns.mkString("."))),
-        JField("link", JString(ns.mkString(".") + ".html"))
-      ))
-    }
-
-    prelude :: namespaces.toList
   }
 
   /**
@@ -245,16 +226,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Returns the path where the HTML file, for the given namespace, should be stored.
-    */
-  private def getHtmlPath(ns: List[String]): Path = {
-    if (ns.isEmpty)
-      OutputDirectory.resolve("index.html")
-    else
-      OutputDirectory.resolve(ns.mkString(".") + ".html")
-  }
-
-  /**
     * Writes the given string `s` to the given path `p`.
     */
   private def writeString(s: String, p: Path): Unit = try {
@@ -269,65 +240,5 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Converts the given type into a pretty string.
     */
   private def prettify(t: Type): String = t.show
-
-  /**
-    * Returns the HTML fragment to use for the given namespace `ns`.
-    */
-  private def mkHtmlPage(ns: List[String], menu: JValue, page: JValue): String = {
-    // Compute the page title (if any).
-    val title = if (ns.isEmpty)
-      "Flix Standard Library"
-    else
-      "Flix Standard Library: " + ns.mkString(".")
-
-    // Render the menu JSON data into a string.
-    val menuStr = JsonMethods.pretty(JsonMethods.render(menu))
-
-    // Render the page JSON data into a string.
-    val pageStr = JsonMethods.pretty(JsonMethods.render(page))
-
-    // Compute the relative path path to the JSON file.
-    val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
-    s"""<!DOCTYPE html>
-       |<html lang="en">
-       |<head>
-       |    <meta charset="UTF-8">
-       |    <title>$title</title>
-       |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
-       |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-       |</head>
-       |<body>
-       |
-       |<!-- Application Element -->
-       |<div id="app">
-       |  <div id="navbar"></div>
-       |</div>
-       |
-       |<!-- Menu Data -->
-       |<script type="application/ecmascript">
-       |window.menu = $menuStr;
-       |</script>
-       |
-       |<!-- Page Data -->
-       |<script type="application/ecmascript">
-       |window.page = $pageStr;
-       |</script>
-       |
-       |<!-- JavaScript Resource -->
-       |<script src="__app__.js" type="application/ecmascript">
-       |</script>
-       |
-       |<!-- Trigger Boot -->
-       |<script type="application/ecmascript">
-       |    bootstrap("$path");
-       |</script>
-       |
-       |</body>
-       |</html>
-   """.stripMargin
-  }
 
 }
