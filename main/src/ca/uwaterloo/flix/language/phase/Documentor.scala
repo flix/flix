@@ -138,6 +138,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val returnType = prettify(getReturnType(d.tpe))
 
     // TODO: Trim comments and parse comments better?
+    // TODO: Remvoe unit parameters
 
     JObject(List(
       JField("name", JString(d.sym.name)),
