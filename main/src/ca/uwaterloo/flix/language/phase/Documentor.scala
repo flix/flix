@@ -135,7 +135,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type.
-    val returnType = prettify(d.tpe.typeArguments.last)
+    val returnType = prettify(getReturnType(d.tpe))
 
     JObject(List(
       JField("name", JString(d.sym.name)),
@@ -145,6 +145,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("comment", JString(d.doc.text))
     ))
 
+  }
+
+  // TODO: DOC
+  private def getReturnType(tpe0: Type): Type = tpe0 match {
+    case Type.Apply(Type.Arrow(_, _), tpe) => tpe
+    case Type.Apply(tpe1, tpe2) => getReturnType(tpe2)
+    case _ => tpe0
   }
 
   // TODO: DOC
