@@ -22,12 +22,14 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.tc.Show._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
+
+import scala.annotation.tailrec
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -47,198 +49,93 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || !defn.mod.isPublic
       }.groupBy(_._1.namespace)
 
-      // Collect the effects.
-      val effsByNS = root.effs.filterNot {
-        case (sym, defn) => !defn.mod.isPublic
-      }.groupBy(_._1.namespace)
-
-      // Collect the laws.
-      val lawsByNS = root.defs.filter {
-        case (sym, defn) => defn.ann.isLaw
-      }.groupBy(_._1.namespace)
-
-      // Collect the tests.
-      val testsByNS = root.defs.filter {
-        case (sym, defn) => defn.ann.isTest
-      }.groupBy(_._1.namespace)
-
-      // Collect the enums.
-      val enumsByNS = root.enums.groupBy(_._1.namespace)
-
-      // Collect the tables.
-      val tablesByNS = root.relations.groupBy(_._1.namespace) ++ root.lattices.groupBy(_._1.namespace)
-
-      // Collect the relations.
-      val relationsByNS = root.relations.values.groupBy(_.sym.namespace)
-
-      // Collect the lattices.
-      val latticesByNS = root.lattices.values.groupBy(_.sym.namespace)
-
       // Compute the set of all available namespaces.
-      val namespaces = (defsByNS.keySet ++ effsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet).toList
+      val namespaces = defsByNS.keySet.toList
 
       // Process each namespace.
       val data = namespaces map {
         case ns =>
           val defs = defsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          val laws = lawsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          val effs = effsByNS.getOrElse(ns, Nil).toList.map(kv => mkEff(kv._2))
-          val tests = testsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
-          val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
-          val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
-
           ns.mkString(".") -> JObject(
             JField("namespace", JString(ns.mkString("."))),
-            JField("types", JArray(enums)),
-            JField("defs", JArray(defs)),
-            JField("effs", JArray(effs)),
-            JField("laws", JArray(laws)),
-            JField("tests", JArray(tests)),
-            JField("relations", JArray(relations.toList)),
-            JField("lattices", JArray(lattices.toList))
+            JField("defs", JArray(defs))
           )
       }
 
       // Create the output directory (and its parent directories).
       Files.createDirectories(OutputDirectory)
 
-      val json = JObject(("title", JString("Flix Lib")) :: ("namespaces", JObject(data)) :: Nil)
+      // Construct the JSON object.
+      val json = JObject(("title", JString("Flix Standard Library")) :: ("namespaces", JObject(data)) :: Nil)
+
+      // Serialize the JSON object to a string.
       val s = JsonMethods.pretty(JsonMethods.render(json))
 
-      // Copy the JavaScript resource.
-      val javaScriptPath = OutputDirectory.resolve("api.js")
+      // The path to the file to write.
+      val p = OutputDirectory.resolve("api.js")
 
-      writeString(s, javaScriptPath)
+      // Write the string to the path.
+      writeString(s, p)
     }
 
     root.toSuccess
   }
 
   /**
-    * Returns the given definition `d` as a JSON object.
+    * Returns the given definition `defn0` as a JSON object.
     */
-  private def mkDefn(d: Def): JObject = {
-    // Process type parameters.
-    val tparams = d.tparams.map {
+  private def mkDefn(defn0: Def): JObject = {
+    // Compute the type parameters.
+    val tparams = defn0.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
         JField("name", JString(ident.name))
       ))
     }
 
-    // Process formal parameters.
-    val fparams = (d.fparams ::: visitInner(d.exp)).map {
-      case FormalParam(psym, mod, tpe, loc) => JObject(
+    // Compute the formal parameters.
+    val fparams = getFormalParams(defn0).collect {
+      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
-        JField("type", JString(prettify(tpe)))
+        JField("type", JString(tpe.show))
       )
     }
 
     // Compute return type.
-    val returnType = prettify(getReturnType(d.tpe))
+    val returnType = getReturnType(defn0.tpe).show
 
-    // TODO: Trim comments and parse comments better?
-    // TODO: Remvoe unit parameters
-
+    // Construct the JSON object.
     JObject(List(
-      JField("name", JString(d.sym.name)),
+      JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
       JField("result", JString(returnType)),
-      JField("comment", JString(d.doc.text))
+      JField("comment", JString(defn0.doc.text.trim))
     ))
-
   }
 
-  // TODO: DOC
+  /**
+    * Returns the (uncurried) formal parameters of the given definition `defn0`.
+    */
+  private def getFormalParams(defn0: Def): List[FormalParam] = {
+    /**
+      * Returns the formal parameters of the lambda expressions in the given expression `exp0`.
+      */
+    def uncurry(exp0: Expression): List[FormalParam] = exp0 match {
+      case Expression.Lambda(fparam, exp, _, _, _) => fparam :: uncurry(exp)
+      case _ => Nil
+    }
+
+    defn0.fparams ::: uncurry(defn0.exp)
+  }
+
+  /**
+    * Returns the return type of the given function type `tpe0`.
+    */
+  @tailrec
   private def getReturnType(tpe0: Type): Type = tpe0 match {
     case Type.Apply(Type.Arrow(_, _), tpe) => tpe
     case Type.Apply(tpe1, tpe2) => getReturnType(tpe2)
     case _ => tpe0
-  }
-
-  // TODO: DOC
-  private def visitInner(exp0: Expression): List[FormalParam] = exp0 match {
-    case Expression.Lambda(fparam, exp, _, _, _) => fparam :: visitInner(exp)
-    case _ => Nil
-  }
-
-  /**
-    * Returns the given effect `d` as a JSON object.
-    */
-  private def mkEff(eff: TypedAst.Eff): JObject = {
-    // Process type parameters.
-    val tparams = eff.tparams.map {
-      case TypeParam(ident, tpe, loc) => JObject(List(
-        JField("name", JString(ident.name))
-      ))
-    }
-
-    // Process formal parameters.
-    val fparams = eff.fparams.map {
-      case FormalParam(psym, mod, tpe, loc) => JObject(
-        JField("name", JString(psym.text)),
-        JField("type", JString(prettify(tpe)))
-      )
-    }
-
-    // Compute return type.
-    val returnType = prettify(eff.tpe.typeArguments.last)
-
-    JObject(List(
-      JField("name", JString(eff.sym.name)),
-      JField("tparams", JArray(tparams)),
-      JField("fparams", JArray(fparams)),
-      JField("result", JString(returnType)),
-      JField("comment", JString(eff.doc.text))
-    ))
-
-  }
-
-  /**
-    * Returns the given enum `e` as a JSON object.
-    */
-  private def mkEnum(e: TypedAst.Enum): JObject = {
-    JObject(List(
-      JField("name", JString(e.sym.name)),
-      JField("comment", JString(e.doc.text))
-    ))
-  }
-
-  /**
-    * Returns the given relation `r` as a JSON object.
-    */
-  private def mkRelation(r: Relation): JObject = {
-    val attributes = r.attr.map {
-      case Attribute(name, tpe, loc) => JObject(List(
-        JField("name", JString(name)),
-        JField("tpe", JString(prettify(tpe)))
-      ))
-    }
-
-    JObject(List(
-      JField("name", JString(r.sym.name)),
-      JField("attributes", JArray(attributes)),
-      JField("comment", JString(r.doc.text))
-    ))
-  }
-
-  /**
-    * Returns the given lattice `l` as a JSON object.
-    */
-  private def mkLattice(l: Lattice): JObject = {
-    val attributes = l.attr.map {
-      case Attribute(name, tpe, loc) => JObject(List(
-        JField("name", JString(name)),
-        JField("tpe", JString(prettify(tpe)))
-      ))
-    }
-
-    JObject(List(
-      JField("name", JString(l.sym.name)),
-      JField("attributes", JArray(attributes)),
-      JField("comment", JString(l.doc.text))
-    ))
   }
 
   /**
@@ -251,10 +148,5 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   } catch {
     case ex: IOException => throw new RuntimeException(s"Unable to write to path '$p'.", ex)
   }
-
-  /**
-    * Converts the given type into a pretty string.
-    */
-  private def prettify(t: Type): String = t.show
 
 }
