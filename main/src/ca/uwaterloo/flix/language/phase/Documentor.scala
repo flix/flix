@@ -118,7 +118,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given definition `d` as a JSON object.
     */
-  private def mkDefn(d: TypedAst.Def): JObject = {
+  private def mkDefn(d: Def): JObject = {
     // Process type parameters.
     val tparams = d.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
@@ -127,7 +127,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Process formal parameters.
-    val fparams = d.fparams.map {
+    val fparams = (d.fparams ::: visitInner(d.exp)).map {
       case FormalParam(psym, mod, tpe, loc) => JObject(
         JField("name", JString(psym.text)),
         JField("tpe", JString(prettify(tpe)))
@@ -145,6 +145,12 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("comment", JString(d.doc.text))
     ))
 
+  }
+
+  // TODO: DOC
+  private def visitInner(exp0: Expression): List[FormalParam] = exp0 match {
+    case Expression.Lambda(fparam, exp, _, _, _) => fparam :: visitInner(exp)
+    case _ => Nil
   }
 
   /**
