@@ -75,7 +75,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       val latticesByNS = root.lattices.values.groupBy(_.sym.namespace)
 
       // Compute the set of all available namespaces.
-      val namespaces = defsByNS.keySet ++ effsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
+      val namespaces = (defsByNS.keySet ++ effsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet).toList
 
       // Process each namespace.
       val data = namespaces map {
@@ -88,10 +88,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
           val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
 
-          ns -> JObject(
+          ns.mkString(".") -> JObject(
             JField("namespace", JString(ns.mkString("."))),
             JField("types", JArray(enums)),
-            JField("definitions", JArray(defs)),
+            JField("defs", JArray(defs)),
             JField("effs", JArray(effs)),
             JField("laws", JArray(laws)),
             JField("tests", JArray(tests)),
@@ -103,21 +103,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // Create the output directory (and its parent directories).
       Files.createDirectories(OutputDirectory)
 
+      val json = JObject(("title", JString("Flix Lib")) :: ("namespaces", JObject(data)) :: Nil)
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+
       // Copy the JavaScript resource.
-      val javaScriptPath = OutputDirectory.resolve("__app__.js")
-      StreamOps.writeAll(LocalResource.Documentation.JavaScript, javaScriptPath)
+      val javaScriptPath = OutputDirectory.resolve("api.js")
 
-      // Copy the StyleSheet resource.
-      val styleSheetPath = OutputDirectory.resolve("__app__.css")
-      StreamOps.writeAll(LocalResource.Documentation.StyleSheet, styleSheetPath)
-
-      // Generate JSON for the menu.
-      val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
-
-      // Generate HTML files for each namespace.
-      for ((ns, page) <- data) {
-        writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
-      }
+      writeString(s, javaScriptPath)
     }
 
     root.toSuccess
@@ -309,31 +301,31 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
        |</head>
        |<body>
        |
-        |<!-- Application Element -->
+       |<!-- Application Element -->
        |<div id="app">
        |  <div id="navbar"></div>
        |</div>
        |
-        |<!-- Menu Data -->
+       |<!-- Menu Data -->
        |<script type="application/ecmascript">
        |window.menu = $menuStr;
        |</script>
        |
-        |<!-- Page Data -->
+       |<!-- Page Data -->
        |<script type="application/ecmascript">
        |window.page = $pageStr;
        |</script>
        |
-        |<!-- JavaScript Resource -->
+       |<!-- JavaScript Resource -->
        |<script src="__app__.js" type="application/ecmascript">
        |</script>
        |
-        |<!-- Trigger Boot -->
+       |<!-- Trigger Boot -->
        |<script type="application/ecmascript">
        |    bootstrap("$path");
        |</script>
        |
-        |</body>
+       |</body>
        |</html>
    """.stripMargin
   }
