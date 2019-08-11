@@ -130,7 +130,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val fparams = (d.fparams ::: visitInner(d.exp)).map {
       case FormalParam(psym, mod, tpe, loc) => JObject(
         JField("name", JString(psym.text)),
-        JField("tpe", JString(prettify(tpe)))
+        JField("type", JString(prettify(tpe)))
       )
     }
 
@@ -168,7 +168,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val fparams = eff.fparams.map {
       case FormalParam(psym, mod, tpe, loc) => JObject(
         JField("name", JString(psym.text)),
-        JField("tpe", JString(prettify(tpe)))
+        JField("type", JString(prettify(tpe)))
       )
     }
 
