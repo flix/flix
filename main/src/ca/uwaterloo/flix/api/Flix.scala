@@ -81,6 +81,7 @@ class Flix {
     "Option.flix" -> LocalResource.get("/library/Option.flix"),
     "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
+    "Random.flix" -> LocalResource.get("/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
     "String.flix" -> LocalResource.get("/library/String.flix"),
