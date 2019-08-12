@@ -13,10 +13,16 @@ namespace Random {
     ///
     /// Returns a pseudorandom element from the given array `a` using the random number generator `r`.
     ///
-    pub def choose[a](r: Random, a: Array[a]): a =
-        let m = length[a];
-        let i = nextNatWithMax(r, m);
-        a[i]
+    /// Returns `None` if the given array `a` is empty.
+    ///
+    pub def choose[a](r: Random, a: Array[a]): Option[a] =
+        if (length[a] == 0) {
+            None
+        } else {
+            let m = length[a];
+            let i = nextNatWithMax(r, m);
+            Some(a[i])
+        }
 
     ///
     /// Returns the next pseudorandom boolean from the given random number generator `r`.

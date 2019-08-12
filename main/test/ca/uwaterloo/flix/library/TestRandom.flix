@@ -1,19 +1,19 @@
 @test
-def testChoose01(): Int32 =
-    let r = Random.newWithSeed(0i64);
+def testChoose01(): Option[Int32] =
+    let r = Random.new();
     let a = [42i32; 10];
     Random.choose(r, a)
 
 @test
-def testChoose02(): Str =
-    let r = Random.newWithSeed(0i64);
+def testChoose02(): Option[Str] =
+    let r = Random.new();
     let a = ["Hello World"; 10];
     Random.choose(r, a)
 
 @test
-def testChoose03(): Option[Int] =
-    let r = Random.newWithSeed(0i64);
-    let a = [Some(42); 10];
+def testChoose03(): Option[Result[Int, Int]] =
+    let r = Random.new();
+    let a = [Ok(123), Ok(456), Err(789)];
     Random.choose(r, a)
 
 @test
