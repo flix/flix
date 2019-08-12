@@ -11,6 +11,14 @@ namespace Random {
     pub def newWithSeed(seed: Int64): Random = Random(native new java.util.Random(seed))
 
     ///
+    /// Returns a random element from the given array `a` using the given random number generator `r`.
+    ///
+    pub def choose[a](r: Random, a: Array[a]): a =
+        let m = length[a];
+        let i = nextInt32WithMax(r, m);
+        a[i]
+
+    ///
     /// Returns the next pseudorandom boolean from the given random number generator `r`.
     ///
     pub def nextBool(r: Random): Bool =
@@ -37,6 +45,13 @@ namespace Random {
     pub def nextInt32(r: Random): Int32 =
         let Random(o) = r;
         native method java.util.Random.nextInt(o) as Int32
+
+    ///
+    /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
+    ///
+    pub def nextInt32WithMax(r: Random, m: Int32): Int32 =
+        let Random(o) = r;
+        native method java.util.Random.nextInt(o, m) as Int32
 
     ///
     /// Returns the next pseudorandom 64-bit integer value from the given random number generator `r`.
