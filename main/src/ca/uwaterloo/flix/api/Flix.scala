@@ -65,7 +65,6 @@ class Flix {
     */
   private val library = List(
     "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
-    "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
     "Char.flix" -> LocalResource.get("/library/Char.flix"),
     "Console.flix" -> LocalResource.get("/library/Console.flix"),
     "Float32.flix" -> LocalResource.get("/library/Float32.flix"),
@@ -74,40 +73,40 @@ class Flix {
     "Int16.flix" -> LocalResource.get("/library/Int16.flix"),
     "Int32.flix" -> LocalResource.get("/library/Int32.flix"),
     "Int64.flix" -> LocalResource.get("/library/Int64.flix"),
-    "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
     "List.flix" -> LocalResource.get("/library/List.flix"),
     "Map.flix" -> LocalResource.get("/library/Map.flix"),
-    "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
     "Option.flix" -> LocalResource.get("/library/Option.flix"),
-    "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
     "Random.flix" -> LocalResource.get("/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
     "String.flix" -> LocalResource.get("/library/String.flix"),
-    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
+
+    "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
+    "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
+    "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
+    "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
-
-    "flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
-
-    "flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
-    "flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
-    "flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
-    "flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
-    "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
-    "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
-
-    "flix/io/BufferedReader.flix" -> LocalResource.get("/library/flix/io/BufferedReader.flix"),
-    "flix/io/BufferedWriter.flix" -> LocalResource.get("/library/flix/io/BufferedWriter.flix"),
-    "flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
-    "flix/io/OpenOption.flix" -> LocalResource.get("/library/flix/io/OpenOption.flix"),
-    "flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
-    "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
+    "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
 
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
-
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
+
+    //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
+    //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
+    //"flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
+    //"flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
+    //"flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
+    //"flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
+    //"flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
+    //"flix/io/BufferedReader.flix" -> LocalResource.get("/library/flix/io/BufferedReader.flix"),
+    //"flix/io/BufferedWriter.flix" -> LocalResource.get("/library/flix/io/BufferedWriter.flix"),
+    //"flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
+    //"flix/io/OpenOption.flix" -> LocalResource.get("/library/flix/io/OpenOption.flix"),
+    //"flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
+    //"flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
+
   )
 
   /**

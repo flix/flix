@@ -51,7 +51,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     if (flix.options.documentor) {
       // Collect all public definitions and group them by namespace.
       val defsByNS = root.defs.filter {
-        case (sym, defn) => defn.mod.isPublic
+        case (sym, defn) => defn.mod.isPublic && !defn.ann.isBenchmark && !defn.ann.isLaw && !defn.ann.isTest
       }.groupBy(_._1.namespace)
 
       // Convert all definitions to JSON objects.
