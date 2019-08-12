@@ -311,18 +311,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
           val e = visitExp(elm, env0)
           val ln = visitExp(len, env0)
-          Expression.ArrayNew(e, ln, tpe, eff, loc)
+          Expression.ArrayNew(e, ln, subst0(tpe), eff, loc)
 
         case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i = visitExp(index, env0)
-          Expression.ArrayLoad(b, i, tpe, eff, loc)
+          Expression.ArrayLoad(b, i, subst0(tpe), eff, loc)
 
         case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i = visitExp(index, env0)
           val e = visitExp(elm, env0)
-          Expression.ArrayStore(b, i, e, tpe, eff, loc)
+          Expression.ArrayStore(b, i, e, subst0(tpe), eff, loc)
 
         case Expression.ArrayLength(base, tpe, eff, loc) =>
           val b = visitExp(base, env0)
@@ -332,7 +332,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val b = visitExp(base, env0)
           val i1 = visitExp(startIndex, env0)
           val i2 = visitExp(endIndex, env0)
-          Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+          Expression.ArraySlice(b, i1, i2, subst0(tpe), eff, loc)
 
         case Expression.VectorLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
@@ -340,38 +340,38 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.VectorNew(elm, len, tpe, eff, loc) =>
           val e = visitExp(elm, env0)
-          Expression.VectorNew(e, len, tpe, eff, loc)
+          Expression.VectorNew(e, len, subst0(tpe), eff, loc)
 
         case Expression.VectorLoad(base, index, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.VectorLoad(b, index, tpe, eff, loc)
+          Expression.VectorLoad(b, index, subst0(tpe), eff, loc)
 
         case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val e = visitExp(elm, env0)
-          Expression.VectorStore(b, index, e, tpe, eff, loc)
+          Expression.VectorStore(b, index, e, subst0(tpe), eff, loc)
 
         case Expression.VectorLength(base, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.VectorLength(b, tpe, eff, loc)
+          Expression.VectorLength(b, subst0(tpe), eff, loc)
 
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i2 = visitExp(endIndex, env0)
-          Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
+          Expression.VectorSlice(b, startIndex, i2, subst0(tpe), eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Ref(e, tpe, eff, loc)
+          Expression.Ref(e, subst0(tpe), eff, loc)
 
         case Expression.Deref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Deref(e, tpe, eff, loc)
+          Expression.Deref(e, subst0(tpe), eff, loc)
 
         case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.Assign(e1, e2, tpe, eff, loc)
+          Expression.Assign(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -381,7 +381,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val e = visitExp(handler, env0)
               HandlerBinding(specializedSym, e)
           }
-          Expression.HandleWith(e, bs, tpe, eff, loc)
+          Expression.HandleWith(e, bs, subst0(tpe), eff, loc)
 
         case Expression.Existential(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)

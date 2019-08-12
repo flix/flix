@@ -890,7 +890,15 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
+      for ((arg, index) <- args.zipWithIndex) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+
+        // Cast the this parameter.
+        if (index == 0 && !Modifier.isStatic(method.getModifiers)) {
+          val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+          visitor.visitTypeInsn(CHECKCAST, thisType)
+        }
+      }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
