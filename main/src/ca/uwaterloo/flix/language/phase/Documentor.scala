@@ -43,6 +43,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   val OutputDirectory: Path = Paths.get("./target/api")
 
+  /**
+    * Emits a JSON file with information about the definitions of the program.
+    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
@@ -54,7 +57,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // Convert all definitions to JSON objects.
       val jsonDefsByNs = defsByNS.foldRight(List.empty[(String, JObject)]) {
         case ((ns, defs), acc) =>
-          val ds = defs.toList.map(kv => mkDefn(kv._2))
+          val ds = defs.toList.map(kv => visitDef(kv._2))
           (ns.mkString(".") -> JObject(JField("defs", JArray(ds)))) :: acc
       }
 
@@ -83,7 +86,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given definition `defn0` as a JSON object.
     */
-  private def mkDefn(defn0: Def): JObject = {
+  private def visitDef(defn0: Def): JObject = {
     // Compute the type parameters.
     val tparams = defn0.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
@@ -100,14 +103,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type.
-    val returnType = getReturnType(defn0.tpe).show
+    val returnType = getReturnType(defn0.tpe)
 
     // Construct the JSON object.
     JObject(List(
       JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(returnType)),
+      JField("result", JString(returnType.show)),
       JField("comment", JString(defn0.doc.text.trim))
     ))
   }
