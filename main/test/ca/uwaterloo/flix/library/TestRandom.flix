@@ -45,3 +45,8 @@ def testNextInt32(): Int32 =
 def testNextInt64(): Int64 =
     let r = Random.new();
     Random.nextInt64(r)
+
+@test
+def testNextNatWithMax(): Int32 =
+    let r = Random.new();
+    Random.nextNatWithMax(r, 100)
