@@ -23,9 +23,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.util.tc.Show._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.tc.Show._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
@@ -34,19 +34,21 @@ import scala.annotation.tailrec
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
-    * The directory where to write the generated HTML documentation (and its resources).
+    * The title of the generated API.
+    */
+  val ApiTitle = "Flix Standard Library"
+
+  /**
+    * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./target/api")
 
-  /**
-    * Generates documentation for the given program `p`.
-    */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
-      // Collect the definitions.
-      val defsByNS = root.defs.filterNot {
-        case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || !defn.mod.isPublic
+      // Collect all public definitions and group them by namespace.
+      val defsByNS = root.defs.filter {
+        case (sym, defn) => defn.mod.isPublic
       }.groupBy(_._1.namespace)
 
       // Compute the set of all available namespaces.
@@ -57,7 +59,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case ns =>
           val defs = defsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
           ns.mkString(".") -> JObject(
-            JField("namespace", JString(ns.mkString("."))),
             JField("defs", JArray(defs))
           )
       }
@@ -66,7 +67,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       Files.createDirectories(OutputDirectory)
 
       // Construct the JSON object.
-      val json = JObject(("title", JString("Flix Standard Library")) :: ("namespaces", JObject(data)) :: Nil)
+      val json = JObject(
+        ("title", JString(ApiTitle)),
+        ("namespaces", JObject(data))
+      )
 
       // Serialize the JSON object to a string.
       val s = JsonMethods.pretty(JsonMethods.render(json))
@@ -133,8 +137,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   @tailrec
   private def getReturnType(tpe0: Type): Type = tpe0 match {
-    case Type.Apply(Type.Arrow(_, _), tpe) => tpe
-    case Type.Apply(tpe1, tpe2) => getReturnType(tpe2)
+    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
     case _ => tpe0
   }
 
