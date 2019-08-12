@@ -11,7 +11,7 @@ namespace Random {
     pub def newWithSeed(seed: Int64): Random = Random(native new java.util.Random(seed))
 
     ///
-    /// Returns a random element from the given array `a` using the random number generator `r`.
+    /// Returns a pseudorandom element from the given array `a` using the random number generator `r`.
     ///
     pub def choose[a](r: Random, a: Array[a]): a =
         let m = length[a];
