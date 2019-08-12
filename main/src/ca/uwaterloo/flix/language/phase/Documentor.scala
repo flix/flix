@@ -51,16 +51,11 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case (sym, defn) => defn.mod.isPublic
       }.groupBy(_._1.namespace)
 
-      // Compute the set of all available namespaces.
-      val namespaces = defsByNS.keySet.toList
-
-      // Process each namespace.
-      val data = namespaces map {
-        case ns =>
-          val defs = defsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          ns.mkString(".") -> JObject(
-            JField("defs", JArray(defs))
-          )
+      // Convert all definitions to JSON objects.
+      val jsonDefsByNs = defsByNS.foldRight(List.empty[(String, JObject)]) {
+        case ((ns, defs), acc) =>
+          val ds = defs.toList.map(kv => mkDefn(kv._2))
+          (ns.mkString(".") -> JObject(JField("defs", JArray(ds)))) :: acc
       }
 
       // Create the output directory (and its parent directories).
@@ -69,7 +64,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       // Construct the JSON object.
       val json = JObject(
         ("title", JString(ApiTitle)),
-        ("namespaces", JObject(data))
+        ("namespaces", JObject(jsonDefsByNs))
       )
 
       // Serialize the JSON object to a string.
