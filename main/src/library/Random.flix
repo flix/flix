@@ -20,14 +20,19 @@ namespace Random {
     ///
     /// TODO
     ///
+    pub def nextFloat32(r: Random): Float32 =
+        let Random(o) = r;
+        native method java.util.Random.nextFloat(o) as Float32
+
+    ///
+    /// TODO
+    ///
     pub def nextFloat64(r: Random): Float64 =
         let Random(o) = r;
         native method java.util.Random.nextDouble(o) as Float64
 
 }
 
-//Returns the next pseudorandom, uniformly distributed double value between 0.0 and 1.0 from this random number generator's sequence.
-//float	nextFloat()
 
 //Returns the next pseudorandom, uniformly distributed float value between 0.0 and 1.0 from this random number generator's sequence.
 //double	nextGaussian()
