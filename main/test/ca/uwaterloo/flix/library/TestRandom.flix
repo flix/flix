@@ -1,4 +1,22 @@
 @test
+def testChoose01(): Int32 =
+    let r = Random.newWithSeed(0i64);
+    let a = [42i32; 10];
+    Random.choose(r, a)
+
+@test
+def testChoose02(): Str =
+    let r = Random.newWithSeed(0i64);
+    let a = ["Hello World"; 10];
+    Random.choose(r, a)
+
+@test
+def testChoose03(): Option[Int] =
+    let r = Random.newWithSeed(0i64);
+    let a = [Some(42); 10];
+    Random.choose(r, a)
+
+@test
 def testNextBool(): Bool =
     let r = Random.newWithSeed(0i64);
     Random.nextBool(r)

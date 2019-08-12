@@ -11,11 +11,11 @@ namespace Random {
     pub def newWithSeed(seed: Int64): Random = Random(native new java.util.Random(seed))
 
     ///
-    /// Returns a random element from the given array `a` using the given random number generator `r`.
+    /// Returns a random element from the given array `a` using the random number generator `r`.
     ///
     pub def choose[a](r: Random, a: Array[a]): a =
         let m = length[a];
-        let i = nextInt32WithMax(r, m);
+        let i = nextNatWithMax(r, m);
         a[i]
 
     ///
@@ -47,13 +47,6 @@ namespace Random {
         native method java.util.Random.nextInt(o) as Int32
 
     ///
-    /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
-    ///
-    pub def nextInt32WithMax(r: Random, m: Int32): Int32 =
-        let Random(o) = r;
-        native method java.util.Random.nextInt(o, m) as Int32
-
-    ///
     /// Returns the next pseudorandom 64-bit integer value from the given random number generator `r`.
     ///
     pub def nextInt64(r: Random): Int64 =
@@ -66,6 +59,13 @@ namespace Random {
     pub def nextGaussian(r: Random): Float64 =
         let Random(o) = r;
         native method java.util.Random.nextGaussian(o) as Float64
+
+    ///
+    /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
+    ///
+    pub def nextNatWithMax(r: Random, m: Int32): Int32 =
+        let Random(o) = r;
+        native method java.util.Random.nextInt(o, m) as Int32
 
     ///
     /// Represents a random number generator.
