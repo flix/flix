@@ -6,9 +6,9 @@ namespace Random {
     pub def new(): Random = Random(native new java.util.Random())
 
     ///
-    /// Returns a fresh random number generator initialized with the given `seed`.
+    /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
-    pub def newWithSeed(seed: Int64): Random = Random(native new java.util.Random(seed))
+    pub def newWithSeed(s: Int64): Random = Random(native new java.util.Random(s))
 
     ///
     /// Returns a pseudorandom element from the given array `a` using the random number generator `r`.
