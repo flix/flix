@@ -323,6 +323,18 @@ object Type {
           case Type.Var(id, kind) => m(id)
 
           //
+          // Array
+          //
+          case Type.Cst(TypeConstructor.Array) =>
+            "Array" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+
+          //
+          // Channel
+          //
+          case Type.Cst(TypeConstructor.Channel) =>
+            "Channel" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+
+          //
           // Enum.
           //
           case Type.Cst(TypeConstructor.Enum(sym, _)) =>
@@ -337,7 +349,7 @@ object Type {
           //
           // Type Constructors.
           //
-          case Type.Cst(tc) => tc.toString
+          case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
 
           //
           // Primitive Types.
