@@ -39,13 +39,15 @@ namespace Map {
 
     ///
     /// Returns the empty map.
-    /// `@{}` is syntactic sugar for `empty` (`@{} = empty()`).
+    ///
+    /// `Map#{}` is syntactic sugar for `empty` (`Map#{} = empty()`).
     ///
     pub def empty[k, v](): Map[k, v] = Map(Nil)
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
-    /// `@{k -> v}` is syntactic sugar for `singleton` (`@{k -> v} = singleton(k, v)`).
+    ///
+    /// `Map#{k -> v}` is syntactic sugar for `singleton` (`Map#{k -> v} = singleton(k, v)`).
     ///
     pub def singleton[k, v](k: k, v: v): Map[k, v] = Map((k, v) :: Nil)
 
@@ -63,6 +65,7 @@ namespace Map {
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
+    ///
     /// Otherwise returns `None`.
     ///
     pub def get[k, v](k: k, m: Map[k, v]): Option[v] =
@@ -71,6 +74,7 @@ namespace Map {
 
     ///
     /// Returns `v` if `k -> v` is in `m`.
+    ///
     /// Otherwise, returns `d`.
     ///
     pub def getWithDefault[k, v](k: k, d: v, m: Map[k, v]): v = Option.getWithDefault(get(k, m), d)
@@ -110,6 +114,7 @@ namespace Map {
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
+    ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
     pub def insertWith[k, v](f: (v, v) -> v, k: k, v: v, m: Map[k, v]): Map[k, v] =
@@ -117,6 +122,7 @@ namespace Map {
 
     ///
     /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
+    ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
     pub def insertWithKey[k, v](f: (k, v, v) -> v, k: k, v: v, m: Map[k, v]): Map[k, v] =
@@ -132,35 +138,33 @@ namespace Map {
 
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
+    ///
     /// Otherwise, returns `m`.
     ///
     pub def adjust[k, v](f: v -> v, k: k, m: Map[k, v]): Map[k, v] = adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`.
-    /// Otherwise, returns `m`.
+    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
     ///
     pub def adjustWithKey[k, v](f: (k, v) -> v, k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, f(k, v)) else (key, v), xs))
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1).
-    /// Otherwise, returns `m`.
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1). Otherwise, returns `m`.
     ///
     pub def update[k, v](f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] = updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1).
-    /// Otherwise, returns `m`.
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1). Otherwise, returns `m`.
     ///
     pub def updateWithKey[k, v](f: (k, v) -> Option[v], k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
 
     ///
-    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`.
-    /// Otherwise, returns `m`.
+    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`. Otherwise, returns `m`.
+    ///
     /// Note: The returned map may be smaller than `m`.
     ///
     pub def replace[k, v](x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
@@ -176,7 +180,7 @@ namespace Map {
 
 
     ///
-    ///
+    /// Removes the mapping `k` from the map `m`.
     ///
     pub def delete[k, v](k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
@@ -265,12 +269,14 @@ namespace Map {
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
+    ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
     pub def foldLeft[k, v, b](f: (b, v) -> b, s: b, m: Map[k, v]): b = foldLeftWithKey((_, b, v) -> f(b, v), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
+    ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
     ///
     pub def foldLeftWithKey[k, v, b](f: (k, b, v) -> b, s: b, m: Map[k, v]): b =
@@ -279,6 +285,7 @@ namespace Map {
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     pub def foldRight[k, v, b](f: (v, b) -> b, s: b, m: Map[k, v]): b =
@@ -286,6 +293,7 @@ namespace Map {
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     pub def foldRightWithKey[k, v, b](f: (k, v, b) -> b, s: b, m: Map[k, v]): b =
@@ -304,14 +312,18 @@ namespace Map {
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
+    ///
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeft[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] = List.reduceLeft(f, m.valuesOf())
 
     ///
     /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
+    ///
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeftWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
@@ -320,7 +332,9 @@ namespace Map {
 
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
+    ///
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRight[k, v](f: (v, v) -> v, m: Map[k, v]): Option[v] =
@@ -329,7 +343,9 @@ namespace Map {
 
     ///
     /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
+    ///
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRightWithKey[k, v](f: (k, v, k, v) -> (k, v), m: Map[k, v]): Option[(k, v)] =
@@ -350,6 +366,7 @@ namespace Map {
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
+    ///
     /// Returns `false` if `m` is the empty map.
     ///
     pub def exists[k, v](f: (k, v) -> Bool, m: Map[k, v]): Bool =
@@ -358,6 +375,7 @@ namespace Map {
 
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
+    ///
     /// Returns `true` if `m` is the empty map.
     ///
     pub def forall[k, v](f: (k, v) -> Bool, m: Map[k, v]): Bool =
@@ -371,6 +389,7 @@ namespace Map {
 
     ///
     /// Returns the left-biased union of `m1` and `m2`.
+    ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
     pub def union[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
@@ -388,6 +407,7 @@ namespace Map {
 
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
+    ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
     pub def intersection[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, _) -> v1, m1, m2)
@@ -406,12 +426,14 @@ namespace Map {
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    ///
     /// That is, returns the map `m1` with the keys removed that are in `m2`.
     ///
     pub def difference[k, v](m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    ///
     /// When a key `k` is in both `m1` and `m2`, the associated values are passed to the merge function `f`.
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
@@ -420,6 +442,7 @@ namespace Map {
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    ///
     /// When a key `k` is in both `m1` and `m2`, `k` and the associated values are passed to the merge function `f`.
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.

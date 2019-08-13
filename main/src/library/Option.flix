@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Liam Palmer
+ * Copyright 2019 Liam Palmer, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,7 @@ namespace Option {
 
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true` or if `o` is `None`.
+    ///
     /// Otherwise returns `false`.
     ///
     pub def forall[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), true)

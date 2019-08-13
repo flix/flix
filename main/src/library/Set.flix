@@ -39,13 +39,15 @@ namespace Set {
 
     ///
     /// Returns the empty set.
-    /// `#{}` is syntactic sugar for `empty` (`#{} = empty()`).
+    ///
+    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
     ///
     pub def empty[a](): Set[a] = Set(Nil)
 
     ///
     /// Returns the singleton set containing `x`.
-    /// `#{x}` is syntactic sugar for `singleton` (`#{x} = singleton(x)`).
+    ///
+    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
     ///
     pub def singleton[a](x: a): Set[a] = Set(x :: Nil)
 
@@ -127,6 +129,7 @@ namespace Set {
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft[a,b](f: (b, a) -> b, s: b, xs: Set[a]): b =
@@ -135,6 +138,7 @@ namespace Set {
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight[a,b](f: (a, b) -> b, s: b, xs: Set[a]): b =
@@ -188,6 +192,7 @@ namespace Set {
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    ///
     /// Returns `false` if `xs` is the empty set.
     ///
     pub def exists[a](f: a -> Bool, xs: Set[a]): Bool =
@@ -196,6 +201,7 @@ namespace Set {
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    ///
     /// Returns `true` if `xs` is the empty set.
     ///
     pub def forall[a](f: a -> Bool, xs: Set[a]): Bool =
@@ -249,6 +255,7 @@ namespace Set {
 
     ///
     /// Returns the result of applying `f` to every element in `xs`.
+    ///
     /// Note: The returned set may be smaller than `xs`.
     ///
     pub def map[a, b](f: a -> b, xs: Set[a]): Set[b] = match xs with {
@@ -265,14 +272,15 @@ namespace Set {
     }
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `xs`.
-    /// Otherwise, returns `xs`.
+    /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
+    ///
     /// Note: The returned set may be smaller than `xs`.
     ///
     pub def replace[a](x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
+    //
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
     ///
@@ -295,6 +303,7 @@ namespace Set {
 
     ///
     /// Returns the association set `xs` as a map.
+    ///
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
