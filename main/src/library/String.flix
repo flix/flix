@@ -45,6 +45,11 @@ namespace String {
     ///
     pub def startsWith(s1: Str, s2: Str): Bool = native method java.lang.String.startsWith(s1, s2) as Bool
 
+    ///
+    /// Splits the string `s` around matches of the regular expression `r`.
+    ///
+    pub def split(s: Str, r: Str): Array[Str] = native method java.lang.String.split(s, r) as Array[Str]
+
     //
     // Returns the lower case version of the string `s`.
     //

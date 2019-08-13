@@ -33,7 +33,7 @@ namespace Path {
     ///
     /// Returns a list of all the lines in the given path `p`.
     ///
-    pub def readLines(p: Path): Str =
+    pub def readLines(p: Path): List[Str] =
         let Path(javaFile) = p;
         let javaPath = native method java.io.File.toPath(javaFile);
         let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
