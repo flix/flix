@@ -14,3 +14,12 @@
  * limitations under the License.
  */
 
+@test
+def testNew01(): Path = Path.new("hello.txt")
+
+@test
+def testNew02(): Path = Path.new("hello/world.txt")
+
+@test
+def testNew03(): Path = Path.new("/tmp/hello.txt")
+

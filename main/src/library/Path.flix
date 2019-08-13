@@ -19,9 +19,9 @@ namespace Path {
     /// Returns a path from the given string `s`.
     ///
     pub def new(s: Str): Path =
-        let p = native method java.nio.file.Paths.get(s, [ ] : Array[Str]);
+        let f = native new java.io.File(s : Str);
+        let p = native method java.io.File.toPath(f);
         Path(p)
-
 
 //
 //    ///
@@ -93,9 +93,9 @@ namespace Path {
 //    ///
 //    handler readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a = ???
 
-    ///
-    /// Represents a path.
-    ///
-    type Path = Path(##java.nio.file.Path)
-
 }
+
+///
+/// Represents a path.
+///
+type Path = Path(##java.nio.file.Path)
