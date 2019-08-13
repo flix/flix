@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Liam Palmer
+ * Copyright 2019 Liam Palmer, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,7 @@ namespace BigInt {
     pub def dist(x: BigInt, y: BigInt): BigInt = abs(x - y)
 
     ///
-    /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
-    /// The sign of x - y.
+    /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
     pub def compare(x: BigInt, y: BigInt): Int32 = switch {
         case x == y  => 0
@@ -47,13 +46,13 @@ namespace BigInt {
     }
 
     ///
-    /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
-    /// The sign of x.
+    /// Returns `1` if `x > 0`, `-1` if `x < 0`, and `0` if `x = 0`.
     ///
     pub def signum(x: BigInt): Int32 = compare(x, 0ii)
 
     ///
     /// Returns the bit of `x` at `position` (either 0 or 1).
+    ///
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     pub def getBit(x: BigInt, position: Int32): Int32 =
@@ -78,4 +77,5 @@ namespace BigInt {
     /// Returns `x` with the bit at position `position` flipped.
     ///
     pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ (1ii <<< position)
+
 }

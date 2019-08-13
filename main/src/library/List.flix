@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Liam Palmer
+ * Copyright 2019 Liam Palmer, Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ namespace List {
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `xs`.
+    ///
     /// Returns `None` if `xs` is empty.
     ///
     pub def head[a](xs: List[a]): Option[a] = match xs with {
@@ -46,6 +47,7 @@ namespace List {
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `xs`.
+    ///
     /// Returns `None` if `xs` is empty.
     ///
     pub def last[a](xs: List[a]): Option[a] = match xs with {
@@ -64,6 +66,7 @@ namespace List {
 
     ///
     /// Returns `ys` appended to `xs`.
+    ///
     /// The infix operator `:::` is an alias for `append` (`xs ::: ys = append(xs, ys)`).
     ///
     pub def append[a](xs: List[a], ys: List[a]): List[a] = match xs with {
@@ -72,7 +75,7 @@ namespace List {
     }
 
     ///
-    /// Returns true if and only if `xs` contains the element `a`.
+    /// Returns `true` if and only if `xs` contains the element `a`.
     ///
     pub def memberOf[a](a: a, xs: List[a]): Bool = match xs with {
         case Nil => false
@@ -81,7 +84,8 @@ namespace List {
 
     ///
     /// Returns the position of `a` in `xs`.
-    /// Returns -1 if `a` does not exist in `xs`.
+    ///
+    /// Returns `-1` if `a` does not exist in `xs`.
     ///
     pub def indexOf[a](a: a, xs: List[a]): Int32 = indexOfHelper(a, xs, 0)
 
@@ -121,12 +125,14 @@ namespace List {
 
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
     /// Returns `Nil` if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): List[Int32] = if (b >= e) Nil else b :: range(b + 1, e)
 
     ///
     /// Returns a list with the element `a` repeated `n` times.
+    ///
     /// Returns `Nil` if `n < 0`.
     ///
     pub def repeat[a](a: a, n: Int32): List[a] = if (n <= 0) Nil else a :: repeat(a, n - 1)
@@ -138,6 +144,7 @@ namespace List {
 
     ///
     /// Accumulates the result of applying `f` to `xs` going left to right.
+    ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
     pub def scanLeft[a,b](f: (b, a) -> b, s: b, xs: List[a]): List[b] = s :: scanLeftHelper(f, s, xs)
@@ -152,6 +159,7 @@ namespace List {
 
     ///
     /// Accumulates the result of applying `f` to `xs` going right to left.
+    ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
     pub def scanRight[a,b](f: (a, b) -> b, s: b, xs: List[a]): List[b] = match xs with {
@@ -169,6 +177,7 @@ namespace List {
 
     ///
     /// Returns the result of applying `f` to every element in `xs`.
+    ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
     pub def map[a,b](f: a -> b, xs: List[a]): List[b] = match xs with {
@@ -178,6 +187,7 @@ namespace List {
 
     ///
     /// Returns the result of applying `f` to every element in `xs` along with that element's index.
+    ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     pub def mapWithIndex[a,b](f: (a, Int32) -> b, xs: List[a]): List[b] = mapWithIndexHelper(f, xs, 0)
@@ -213,6 +223,7 @@ namespace List {
 
     ///
     /// Returns `xs` with its elements rotated `n` positions to the left.
+    ///
     /// That is, returns a new list where the first `n mod length(xs)` elements in `xs`
     /// are the last `n mod length(xs)` elements of the new list.
     ///
@@ -225,6 +236,7 @@ namespace List {
 
     ///
     /// Returns `xs` with its elements rotated `n` positions to the right.
+    ///
     /// That is, returns a new list where the last `n mod length(xs)` elements in `xs`
     /// are the first `n mod length(xs)` elements of the new list.
     ///
@@ -232,6 +244,7 @@ namespace List {
 
     ///
     /// Returns `xs` with the element at index `i` replaced by `a`.
+    ///
     /// Returns `xs` if `i < 0` or `i > length(xs)-1`.
     ///
     pub def update[a](i: Int32, a: a, xs: List[a]): List[a] = match (i, xs) with {
@@ -247,6 +260,7 @@ namespace List {
 
     ///
     /// Returns `ys` with the `n` elements starting at index `i` replaced with the elements of `xs`.
+    ///
     /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `ys` then no patching is done at these indices.
     /// If `xs` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `ys`, then the element at index `j` in `xs` is used.
@@ -263,6 +277,7 @@ namespace List {
 
     ///
     /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
+    ///
     /// That is, `xs` is the first permutation and `reverse(xs)` is the last permutation.
     ///
     pub def permutations[a](xs: List[a]): List[List[a]] = match xs with {
@@ -298,6 +313,7 @@ namespace List {
 
     ///
     /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
+    ///
     /// That is, `xs` is the first subsequence and `Nil` is the last subsequence.
     ///
     pub def subsequences[a](xs: List[a]): List[List[a]] = match xs with {
@@ -326,7 +342,8 @@ namespace List {
 
     ///
     /// Returns the concatenation of the elements in `ys` with the elements of `xs` inserted between every two adjacent elements.
-    /// That is, returns y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil.
+    ///
+    /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
     pub def intercalate[a](xs: List[a], ys: List[List[a]]): List[a] = match ys with {
         case Nil => Nil
@@ -336,6 +353,7 @@ namespace List {
 
     ///
     /// Returns the transpose of `xs`.
+    ///
     /// Returns `xs` if the dimensions of the elements of `xs` are mismatched.
     ///
     pub def transpose[a](xs: List[List[a]]): List[List[a]] = match xs with {
@@ -409,6 +427,7 @@ namespace List {
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft[a,b](f: (b, a) -> b, s: b, xs: List[a]): b = match xs with {
@@ -418,6 +437,7 @@ namespace List {
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight[a,b](f: (a, b) -> b, s: b, xs: List[a]): b = match xs with {
@@ -432,7 +452,9 @@ namespace List {
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+    ///
     /// Returns `None` if `xs` is empty.
     ///
     pub def reduceLeft[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
@@ -442,7 +464,9 @@ namespace List {
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    ///
     /// Returns `None` if `xs` is empty.
     ///
     pub def reduceRight[a](f: (a, a) -> a, xs: List[a]): Option[a] = match xs with {
@@ -478,6 +502,7 @@ namespace List {
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    ///
     /// Returns `false` if `xs` is empty.
     ///
     pub def exists[a](f: a -> Bool, xs: List[a]): Bool = match xs with {
@@ -487,6 +512,7 @@ namespace List {
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    ///
     /// Returns `true` if `xs` is empty.
     ///
     pub def forall[a](f: a -> Bool, xs: List[a]): Bool = match xs with {
@@ -511,6 +537,7 @@ namespace List {
 
     ///
     /// Returns the sublist of `xs` from index `b` (inclusive) to index `e` (exclusive).
+    ///
     /// That is, an element at index `i` in `xs` is part of the returned sublist if and only if `i >= b` and `i < e`.
     /// Note: Indices that are out of bounds in `xs` are not considered (i.e. slice(b, e, xs) = slice(max(0,b), min(length(xs),e), xs)).
     ///
@@ -528,6 +555,7 @@ namespace List {
 
     ///
     /// Returns a pair of lists `(ys, zs)`.
+    ///
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
     ///
@@ -540,6 +568,7 @@ namespace List {
 
     ///
     /// Returns a pair of lists `(ys, zs)`.
+    ///
     /// `ys` is the longest prefix of `xs` that satisfies the predicate `f`.
     /// `zs` is the remainder of `xs`.
     ///
@@ -554,6 +583,7 @@ namespace List {
 
     ///
     /// Returns `xs` without the first `n` elements.
+    ///
     /// Returns `Nil` if `n > length(xs)`.
     /// Returns `xs` if `n < 0`.
     ///
@@ -573,6 +603,7 @@ namespace List {
 
     ///
     /// Returns the first `n` elements of `xs`.
+    ///
     /// Returns `xs` if `n > length(xs)`.
     /// Returns `Nil` if `n < 0`.
     ///
@@ -597,6 +628,7 @@ namespace List {
 
     ///
     /// Partitions `xs` into sublists such that for any two elements `x` and `y` in a sublist, `f(x, y)` is true.
+    ///
     /// A sublist is created by iterating through the remaining elements of `xs` from left to right and adding an
     /// element to the sublist if and only if doing so creates no conflicts with the elements already in the sublist.
     ///
@@ -631,6 +663,7 @@ namespace List {
     ///
     /// Returns a list where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zip[a,b](xs: List[a], ys: List[b]): List[(a,b)] = match (xs, ys) with {
@@ -641,6 +674,7 @@ namespace List {
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zipWith[a,b,c](f: (a, b) -> c, xs: List[a], ys: List[b]): List[c] = match (xs, ys) with {
@@ -667,6 +701,7 @@ namespace List {
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
     /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     /// Functionally equivalent to zipWith.
     ///
@@ -729,6 +764,7 @@ namespace List {
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `xs`.
+    ///
     /// Returns `None` if every element of `xs` is `None`.
     ///
     pub def findMap[a,b](f: a -> Option[b], xs: List[a]): Option[b] = match xs with {
@@ -755,6 +791,7 @@ namespace List {
 
     ///
     /// Returns the association list `xs` as a map.
+    ///
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///

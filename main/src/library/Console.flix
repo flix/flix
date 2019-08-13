@@ -18,7 +18,7 @@ namespace Console {
     ///
     /// Alias for `Console.StdIn.readLine`.
     ///
-    pub def readLine(): Str @ IO = Console/StdIn.readLine(())
+    pub def readLine(): Option[Str] @ IO = Console/StdIn.readLine(())
 
     ///
     /// Alias for `Console.StdOut.print`.
@@ -38,7 +38,9 @@ namespace Console {
         ///
         /// Returns the next line read from the standard input stream.
         ///
-        pub def readLine(): Str @ IO = native method flix.runtime.library.Console.readLine() as Str @ IO
+        pub def readLine(): Option[Str] @ IO =
+            let s = native method flix.runtime.library.Console.readLine() as Str @ IO;
+            (if (isNull(s)) None else Some(s)) as Option[Str] @ IO
 
     }
 

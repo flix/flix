@@ -127,7 +127,16 @@ pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ !(x ∧ y)
 pub def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 
 ///
+/// Returns `true` if the given value `x` is `null`.
+///
+/// NB: For internal use only.
+///
+pub def isNull[a](x: a): Bool = native method java.util.Objects.isNull(x)
+
+///
 /// Asserts that the given boolean `b` is `true`.
+///
+/// NB: For internal use only.
 ///
 pub def assert!(b: Bool): Bool =
     if (b) true else panic "assertion failed"
@@ -135,11 +144,15 @@ pub def assert!(b: Bool): Bool =
 ///
 /// Asserts that the given boolean `b` is `false`.
 ///
+/// NB: For internal use only.
+///
 pub def assertNot!(b: Bool): Bool =
     if (!b) true else panic "assertion failed"
 
 ///
 /// Asserts that the given values `x` and `y` are equal.
+///
+/// NB: For internal use only.
 ///
 pub def assertEq![a](x: a, y: a): Bool = if (x == y) true else panic "assertion failed"
 
