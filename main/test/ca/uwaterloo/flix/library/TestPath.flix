@@ -23,3 +23,12 @@ def testNew02(): Path = Path.new("hello/world.txt")
 @test
 def testNew03(): Path = Path.new("/tmp/hello.txt")
 
+@test
+def testExists01(): Bool = !Path.exists(Path.new("hello.txt"))
+
+@test
+def testExists02(): Bool = !Path.exists(Path.new("hello/world.txt"))
+
+@test
+def testExists03(): Bool = !Path.exists(Path.new("/tmp/hello.txt"))
+

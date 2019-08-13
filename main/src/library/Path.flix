@@ -20,32 +20,15 @@ namespace Path {
     ///
     pub def new(s: Str): Path =
         let f = native new java.io.File(s : Str);
-        let p = native method java.io.File.toPath(f);
-        Path(p)
+        Path(f)
 
-//
-//    ///
-//    /// Returns the extension of the given path `p`.
-//    ///
-//    pub def extension(p: Path): Option[Str] = {
-//        let Path(javaPath) = p;
-//        let shortPath = native method java.nio.file.Path.getFileName(javaPath);
-//        let myString = native method java.nio.file.Path.toString(shortPath);
-//        let dotIndex = native method java.lang.String.lastIndexOf(myString, "." : Str);
-//        match dotIndex with {
-//            case -1 => None
-//            case _ => let actualIndex = dotIndex + 1;
-//                      Some(native method java.lang.String.substring(myString, actualIndex) as Str)
-//        }
-//    }
-//
-//    ///
-//    /// Checks whether the given path `p` exists
-//    ///
-//    pub def exists(p: Path): Bool = {
-//        let Path(javaPath) = p;
-//        native method java.nio.file.Files.exists(javaPath, [ ] : Array[##java.nio.file.LinkOption]) as Bool
-//    }
+    ///
+    /// Returns `true` if the given path `p` exists.
+    ///
+    pub def exists(p: Path): Bool = {
+        let Path(javaFile) = p;
+        native method java.io.File.exists(javaFile) as Bool
+    }
 //
 //    ///
 //    /// Effectfully returns `true` if the given path `parent` is the direct parent of the path `child`.
@@ -98,4 +81,4 @@ namespace Path {
 ///
 /// Represents a path.
 ///
-type Path = Path(##java.nio.file.Path)
+type Path = Path(##java.io.File)
