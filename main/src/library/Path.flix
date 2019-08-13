@@ -31,17 +31,23 @@ namespace Path {
     })
 
     ///
-    /// Returns `true` if the given path `p` exists and is a directory.
+    /// Returns `true` if the given path `p` is a directory.
     ///
     pub def isDirectory(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
         let Path(javaFile) = p;
         native method java.io.File.isDirectory(javaFile) as Bool
     })
 
-//    static boolean 	isExecutable​(Path path)
-//    Tests whether a file is executable.
-//    static boolean 	isHidden​(Path path)
-//    Tells whether or not a file is considered hidden.
+    ///
+    /// Returns `true` if the given path `p` is executable.
+    ///
+    pub def isExecutable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        native method java.io.File.canExecute(javaFile) as Bool
+    })
+
+
+
 //    static boolean 	isReadable​(Path path)
 //    Tests whether a file is readable.
 //    static boolean 	isRegularFile​(Path path, LinkOption... options)
