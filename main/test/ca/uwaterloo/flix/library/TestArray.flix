@@ -57,3 +57,12 @@ def testSlice02(): Bool = Array.slice([1, 2, 3], 1, 2)[0] == 2
 
 @test
 def testSlice03(): Bool = Array.slice([1, 2, 3], 2, 3)[0] == 3
+
+@test
+def testToList01(): Bool = Array.toList([]) == Nil
+
+@test
+def testToList02(): Bool = Array.toList([1]) == 1 :: Nil
+
+@test
+def testToList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil

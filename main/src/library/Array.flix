@@ -49,11 +49,18 @@ namespace Array {
     ///
     pub def slice[a](a: Array[a], b: Int, e: Int): Array[a] = a[b..e]
 
-//
-//
-//    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-//
-//    case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-//
-}
+    ///
+    /// Returns the array `a` as a list.
+    ///
+    pub def toList[a](a: Array[a]): List[a] = toListHelper(a, 0)
 
+    ///
+    /// Helper for toList.
+    ///
+    def toListHelper[a](a: Array[a], i: Int): List[a] =
+        if (i == length(a))
+            Nil
+        else
+            a[i] :: toListHelper(a, i + 1)
+
+}
