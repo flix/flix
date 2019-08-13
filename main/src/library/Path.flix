@@ -46,32 +46,38 @@ namespace Path {
         native method java.io.File.canExecute(javaFile) as Bool
     })
 
+    ///
+    /// Returns `true` if the given path `p` is readable.
+    ///
+    pub def isReadable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        native method java.io.File.canRead(javaFile) as Bool
+    })
 
+    ///
+    /// Returns `true` if the given path `p` is a file.
+    ///
+    pub def isFile(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        native method java.io.File.isFile(javaFile) as Bool
+    })
 
-//    static boolean 	isReadable​(Path path)
-//    Tests whether a file is readable.
-//    static boolean 	isRegularFile​(Path path, LinkOption... options)
-//    Tests whether a file is a regular file with opaque content.
-//    static boolean 	isSameFile​(Path path, Path path2)
-//    Tests if two paths locate the same file.
-//    static boolean 	isSymbolicLink​(Path path)
-//    Tests whether a file is a symbolic link.
-//    static boolean 	isWritable​(Path path)
-//
-//static BufferedReader 	newBufferedReader​(Path path, Charset cs)
-//Opens a file for reading, returning a BufferedReader that may be used to read text from the file in an efficient manner.
-//static BufferedWriter 	newBufferedWriter​(Path path, Charset cs, OpenOption... options)
-//Opens or creates a file for writing, returning a BufferedWriter that may be used to write text to the file in an efficient manner.
-//static BufferedWriter 	newBufferedWriter​(Path path, OpenOption... options)
+    ///
+    /// Returns `true` if the given path `p` is a symbolic link.
+    ///
+    pub def isSymbolicLink(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        let javaPath = native method java.io.File.toPath(javaFile);
+        native method java.nio.file.Files.isSymbolicLink(javaPath) as Bool
+    })
 
-// static String 	readString​(Path path)
-   // Reads all content from a file into a string, decoding from bytes to characters using the UTF-8 charset.
-
-   //static String 	readString​(Path path, Charset cs)
-   //Reads all characters from a file into a string, decoding from bytes to characters using the specified charset.
-
-
-
+    ///
+    /// Returns `true` if the given path `p` is writable.
+    ///
+    pub def isWritable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        native method java.io.File.canWrite(javaFile) as Bool
+    })
 
     ///
     /// Returns a list of all the lines in the given path `p`.
