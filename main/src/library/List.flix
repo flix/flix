@@ -768,9 +768,9 @@ namespace List {
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal.
     ///
-    pub def eq[a](xs: List[a], ys: List[a]): Bool = match (xs, ys) with {
+    pub def __eq[a](xs: List[a], ys: List[a]): Bool = match (xs, ys) with {
         case (Nil, Nil) => true
-        case (x :: rs, y :: qs) => x == y && eq(rs, qs)
+        case (x :: rs, y :: qs) => x == y && __eq(rs, qs)
         case _ => false
     }
 }

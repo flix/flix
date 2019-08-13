@@ -310,5 +310,5 @@ namespace Set {
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
     ///
-    pub def eq[a](xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
+    pub def __eq[a](xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
 }
