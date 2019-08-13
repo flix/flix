@@ -24,32 +24,23 @@ def testNew02(): Channel[Int] = Channel.new()
 def testNew03(): Channel[Str] = Channel.new()
 
 @test
-def testUnbuffered01(): Channel[Bool] = Channel.unbuffered()
+def testNewWithCapacity01(): Channel[Bool] = Channel.newWithCapacity(123)
 
 @test
-def testUnbuffered02(): Channel[Int] = Channel.unbuffered()
+def testNewWithCapacity02(): Channel[Int] = Channel.newWithCapacity(123)
 
 @test
-def testUnbuffered03(): Channel[Str] = Channel.unbuffered()
-
-@test
-def testBuffered01(): Channel[Bool] = Channel.buffered(123)
-
-@test
-def testBuffered02(): Channel[Int] = Channel.buffered(123)
-
-@test
-def testBuffered03(): Channel[Str] = Channel.buffered(123)
+def testNewWithCapacity03(): Channel[Str] = Channel.newWithCapacity(123)
 
 @test
 def testGetPut01(): Bool =
-    let c = Channel.buffered(1);
+    let c = Channel.newWithCapacity(1);
     Channel.put(c, true);
     Channel.get(c)
 
 @test
 def testGetPut02(): Int =
-    let c = Channel.buffered(1);
+    let c = Channel.newWithCapacity(1);
     Channel.put(c, 123);
     Channel.get(c)
 

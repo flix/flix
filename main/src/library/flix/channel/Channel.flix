@@ -19,17 +19,14 @@ namespace Channel {
     ///
     /// Returns a fresh unbuffered channel.
     ///
+    /// An unbuffered channel has an internal capacity of `0`.
+    ///
     pub def new[a](): Channel[a] = chan a 0
 
     ///
-    /// Returns a fresh unbuffered channel.
+    /// Returns a fresh buffered channel with internal capacity `c`.
     ///
-    pub def unbuffered[a](): Channel[a] = chan a 0
-
-    ///
-    /// Returns a fresh buffered channel with the given `capacity`.
-    ///
-    pub def buffered[a](capacity: Int): Channel[a] = chan a capacity
+    pub def newWithCapacity[a](c: Int): Channel[a] = chan a c
 
     ///
     /// Receives an element from the channel `c`.
