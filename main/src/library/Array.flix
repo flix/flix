@@ -35,6 +35,12 @@ namespace Array {
     ///
     pub def length[a](a: Array[a]): Int = length[a]
 
+    ///
+    /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
+    ///
+    /// Equivalent to the expression `a[b..e]`.
+    ///
+    pub def slice[a](a: Array[a], b: Int, e: Int): Array[a] = a[b..e]
 
 //
 //
@@ -42,13 +48,5 @@ namespace Array {
 //
 //    case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 //
-//    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-//
-//    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-//
-//    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-
-
-
 }
 

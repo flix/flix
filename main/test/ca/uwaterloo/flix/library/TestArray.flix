@@ -23,7 +23,6 @@ def testPut02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
 @test
 def testPut03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
 
-
 @test
 def testLength01(): Bool = Array.length([]) == 0
 
@@ -32,3 +31,12 @@ def testLength02(): Bool = Array.length([1]) == 1
 
 @test
 def testLength03(): Bool = Array.length([1, 2, 3]) == 3
+
+@test
+def testSlice01(): Bool = Array.slice([1, 2, 3], 0, 1)[0] == 1
+
+@test
+def testSlice02(): Bool = Array.slice([1, 2, 3], 1, 2)[0] == 2
+
+@test
+def testSlice03(): Bool = Array.slice([1, 2, 3], 2, 3)[0] == 3

@@ -46,6 +46,6 @@ def testGetPut02(): Int =
 
 @test
 def testGetPut03(): Str =
-    let c = Channel.buffered(1);
+    let c = Channel.newWithCapacity(1);
     Channel.put(c, "Hello World!");
     Channel.get(c)
