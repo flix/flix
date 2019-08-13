@@ -64,6 +64,7 @@ class Flix {
     * A sequence of internal inputs to be parsed into Flix ASTs.
     */
   private val library = List(
+    "Array.flix" -> LocalResource.get("/library/Array.flix"),
     "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
     "Char.flix" -> LocalResource.get("/library/Char.flix"),
     "Console.flix" -> LocalResource.get("/library/Console.flix"),
