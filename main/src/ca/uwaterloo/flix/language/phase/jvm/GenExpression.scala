@@ -872,7 +872,16 @@ object GenExpression {
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
+      for (arg <- args) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        // Cast the argument to the right type.
+        arg.tpe match {
+          case MonoType.Native(clazz) =>
+            val argType = asm.Type.getInternalName(clazz)
+            visitor.visitTypeInsn(CHECKCAST, argType)
+          case _ => // nop
+        }
+      }
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 

@@ -82,11 +82,12 @@ namespace Path {
     ///
     /// Returns a list of all the lines in the given path `p`.
     ///
-    pub def readLines(p: Path): List[Str] =
+    pub def readLines(p: Path): Result[List[Str], IOError] = tryWithCatch(_ -> {
         let Path(javaFile) = p;
         let javaPath = native method java.io.File.toPath(javaFile);
         let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
         readAll(reader)
+    })
 
     ///
     /// Reads all lines from the given buffered reader `r` until it is empty.
@@ -99,10 +100,33 @@ namespace Path {
             line :: readAll(r)
 
     ///
+    /// Writes all lines in the list `l` to the path `p`.
+    ///
+    pub def writeLines(p: Path, l: List[Str]): Result[(), IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        let w = native new java.io.PrintWriter(javaFile : ##java.io.File);
+        writeAll(l, w);
+        native method java.io.PrintWriter.close(w);
+        ()
+    })
+
+    ///
+    /// Writes all lines in `l` to the writer `w`.
+    ///
+    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Result[(), IOError] = match l with {
+        case Nil => Ok(())
+        case x :: xs =>
+            Console.printLine(x);
+            native method java.io.PrintWriter.println(w, x : Str);
+            writeAll(xs, w)
+    }
+
+    ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.
     ///
     def tryWithCatch[a](f: Unit -> a): Result[a, IOError] = try {
-        Ok(f())
+        let res = f();
+        Ok(res)
     } catch {
         case _: ##java.io.IOException => Err(Generic("I/O Error"))
     }
