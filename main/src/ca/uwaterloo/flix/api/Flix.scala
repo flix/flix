@@ -89,6 +89,7 @@ class Flix {
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
 
+    "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
