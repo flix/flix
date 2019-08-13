@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.tc.Show._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
@@ -98,7 +97,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     val fparams = getFormalParams(defn0).collect {
       case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
-        JField("type", JString(tpe.show))
+        JField("type", JString(format(tpe)))
       )
     }
 
@@ -110,7 +109,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(returnType.show)),
+      JField("result", JString(format(returnType))),
       JField("comment", JString(defn0.doc.text.trim))
     ))
   }
@@ -137,6 +136,81 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def getReturnType(tpe0: Type): Type = tpe0 match {
     case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
     case _ => tpe0
+  }
+
+  /**
+    * Returns a string representation of the given type `tpe0`.
+    */
+  private def format(tpe0: Type): String = {
+    val base = tpe0.typeConstructor
+    val args = tpe0.typeArguments
+
+    base match {
+      case tvar: Type.Var => tvar.getText.getOrElse(tvar.id.toString)
+
+      case Type.Cst(tc) => tc match {
+        case TypeConstructor.Unit => "Unit"
+        case TypeConstructor.Bool => "Bool"
+        case TypeConstructor.Char => "Char"
+        case TypeConstructor.Float32 => "Float32"
+        case TypeConstructor.Float64 => "Float64"
+        case TypeConstructor.Int8 => "Int8"
+        case TypeConstructor.Int16 => "Int16"
+        case TypeConstructor.Int32 => "Int32"
+        case TypeConstructor.Int64 => "Int64"
+        case TypeConstructor.BigInt => "BigInt"
+        case TypeConstructor.Str => "Str"
+
+        case TypeConstructor.Array => "Array" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Channel => "Channel" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Enum(sym, kind) =>
+          if (args.isEmpty)
+            sym.toString
+          else
+            sym.toString + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Native(clazz) => clazz.getName + (if (args.isEmpty) "" else "[" + args.map(format).mkString(", ") + "]")
+
+        case TypeConstructor.Ref => "Ref" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Tuple(l) => "(" + args.map(format).mkString(", ") + ")"
+
+        case TypeConstructor.Vector => "Vector" + "[" + args.map(format).mkString(", ") + "]"
+      }
+
+      case Type.Zero => "Zero"
+
+      case Type.Succ(n, t) => n.toString + " " + t.toString
+
+      case Type.Arrow(_, l) =>
+        val argumentTypes = args.init
+        val resultType = args.last
+        if (argumentTypes.length == 1) {
+          format(argumentTypes.head) + " -> " + format(resultType)
+        } else {
+          "(" + argumentTypes.map(format).mkString(", ") + ") -> " + format(resultType)
+        }
+
+      case Type.RecordEmpty => "{ }"
+
+      case Type.RecordExtend(label, value, rest) =>
+        "{" + label + " = " + format(value) + " | " + format(rest) + "}"
+
+      case Type.SchemaEmpty => "Schema { }"
+
+      case Type.SchemaExtend(sym, t, rest) =>
+        "{" + sym + " = " + format(t) + " | " + format(rest) + "}"
+
+      case Type.Relation(sym, attr, _) =>
+        sym.toString + "(" + attr.map(format).mkString(", ") + ")"
+
+      case Type.Lattice(sym, attr, _) =>
+        sym.toString + "(" + attr.map(format).mkString(", ") + ")"
+
+      case Type.Apply(tpe1, tpe2) => format(tpe1) + "[" + format(tpe2) + "]"
+    }
   }
 
   /**
