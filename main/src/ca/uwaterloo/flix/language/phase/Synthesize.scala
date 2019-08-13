@@ -430,7 +430,7 @@ object Synthesize extends Phase[Root, Root] {
       // TODO: [Equality]: We need to lookup the existence of any eq operator here. This may require monomorphization.
 
       // Introduce a fresh symbol for the equality operator.
-      val sym = Symbol.freshDefnSym("eq")
+      val sym = Symbol.freshDefnSym("__eq")
 
       // Immediately add the symbol to the equality map.
       // This is necessary to support recursive data types.

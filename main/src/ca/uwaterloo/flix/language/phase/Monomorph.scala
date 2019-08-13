@@ -207,7 +207,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
-          lookup("eq", eqType) match {
+          lookup("__eq", eqType) match {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {

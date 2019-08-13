@@ -41,19 +41,19 @@ def size06(): Bool = Map.size(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `as
 // empty                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def empty01(): Bool = assert!(Map.eq(Map.empty(), Map#{}))
+def empty01(): Bool = assert!(Map.__eq(Map.empty(), Map#{}))
 
 /////////////////////////////////////////////////////////////////////////////
 // singleton                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def singleton01(): Bool = assert!(Map.eq(Map.singleton(1, 2), Map#{1 -> 2}))
+def singleton01(): Bool = assert!(Map.__eq(Map.singleton(1, 2), Map#{1 -> 2}))
 
 @test
-def singleton02(): Bool = assert!(Map.eq(Map.singleton(3, -1), Map#{3 -> -1}))
+def singleton02(): Bool = assert!(Map.__eq(Map.singleton(3, -1), Map#{3 -> -1}))
 
 @test
-def singleton03(): Bool = assert!(Map.eq(Map.singleton(-99, -11), Map#{-99 -> -11}))
+def singleton03(): Bool = assert!(Map.__eq(Map.singleton(-99, -11), Map#{-99 -> -11}))
 
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
@@ -176,22 +176,22 @@ def memberOf10(): Bool = assert!(Map.memberOf(-2, Map#{2 -> 1, 3 -> 17, -2 -> -2
 // keysOf                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def keysOf01(): Bool = assert!(Set.eq(Map.keysOf(Map#{}), Set#{}))
+def keysOf01(): Bool = assert!(Set.__eq(Map.keysOf(Map#{}), Set#{}))
 
 @test
-def keysOf02(): Bool = assert!(Set.eq(Map.keysOf(Map#{1 -> 2}), Set#{1}))
+def keysOf02(): Bool = assert!(Set.__eq(Map.keysOf(Map#{1 -> 2}), Set#{1}))
 
 @test
-def keysOf03(): Bool = assert!(Set.eq(Map.keysOf(Map#{1 -> 2, 2 -> 4}), Set#{1, 2}))
+def keysOf03(): Bool = assert!(Set.__eq(Map.keysOf(Map#{1 -> 2, 2 -> 4}), Set#{1, 2}))
 
 @test
-def keysOf04(): Bool = assert!(Set.eq(Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6}), Set#{1, 2, 3}))
+def keysOf04(): Bool = assert!(Set.__eq(Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6}), Set#{1, 2, 3}))
 
 @test
-def keysOf05(): Bool = assert!(Set.eq(Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}), Set#{1, 2, 3, 4}))
+def keysOf05(): Bool = assert!(Set.__eq(Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}), Set#{1, 2, 3, 4}))
 
 @test
-def keysOf06(): Bool = assert!(Set.eq(Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}), Set#{1, 2, 3, 4, 5}))
+def keysOf06(): Bool = assert!(Set.__eq(Map.keysOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}), Set#{1, 2, 3, 4, 5}))
 
 /////////////////////////////////////////////////////////////////////////////
 // valuesOf                                                                //
@@ -221,226 +221,226 @@ def valuesOf07(): Bool = Map.valuesOf(Map#{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 
 // insert                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def insert01(): Bool = assert!(Map.eq(Map.insert(1, 3, Map#{}), Map#{1 -> 3}))
+def insert01(): Bool = assert!(Map.__eq(Map.insert(1, 3, Map#{}), Map#{1 -> 3}))
 
 @test
-def insert02(): Bool = assert!(Map.eq(Map.insert(1, 3, Map#{1 -> 4}), Map#{1 -> 3}))
+def insert02(): Bool = assert!(Map.__eq(Map.insert(1, 3, Map#{1 -> 4}), Map#{1 -> 3}))
 
 @test
-def insert03(): Bool = assert!(Map.eq(Map.insert(2, 3, Map#{1 -> 4}), Map#{1 -> 4, 2 -> 3}))
+def insert03(): Bool = assert!(Map.__eq(Map.insert(2, 3, Map#{1 -> 4}), Map#{1 -> 4, 2 -> 3}))
 
 @test
-def insert04(): Bool = assert!(Map.eq(Map.insert(1, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 1, 5 -> -2}))
+def insert04(): Bool = assert!(Map.__eq(Map.insert(1, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 1, 5 -> -2}))
 
 @test
-def insert05(): Bool = assert!(Map.eq(Map.insert(5, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> 1}))
+def insert05(): Bool = assert!(Map.__eq(Map.insert(5, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> 1}))
 
 @test
-def insert06(): Bool = assert!(Map.eq(Map.insert(4, -2, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2, 4 -> -2}))
+def insert06(): Bool = assert!(Map.__eq(Map.insert(4, -2, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2, 4 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // insertWith                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def insertWith01(): Bool = assert!(Map.eq(Map.insertWith((v1, v2) -> v1 + v2, 1, 3, Map#{}), Map#{1 -> 3}))
+def insertWith01(): Bool = assert!(Map.__eq(Map.insertWith((v1, v2) -> v1 + v2, 1, 3, Map#{}), Map#{1 -> 3}))
 
 @test
-def insertWith02(): Bool = assert!(Map.eq(Map.insertWith((v1, v2) -> v1 + v2, 1, 3, Map#{1 -> 4}), Map#{1 -> 7}))
+def insertWith02(): Bool = assert!(Map.__eq(Map.insertWith((v1, v2) -> v1 + v2, 1, 3, Map#{1 -> 4}), Map#{1 -> 7}))
 
 @test
-def insertWith03(): Bool = assert!(Map.eq(Map.insertWith((v1, v2) -> v1 + v2, 2, 3, Map#{1 -> 4}), Map#{1 -> 4, 2 -> 3}))
+def insertWith03(): Bool = assert!(Map.__eq(Map.insertWith((v1, v2) -> v1 + v2, 2, 3, Map#{1 -> 4}), Map#{1 -> 4, 2 -> 3}))
 
 @test
-def insertWith04(): Bool = assert!(Map.eq(Map.insertWith((v1, v2) -> v1 + v2, 1, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 5, 5 -> -2}))
+def insertWith04(): Bool = assert!(Map.__eq(Map.insertWith((v1, v2) -> v1 + v2, 1, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 5, 5 -> -2}))
 
 @test
-def insertWith05(): Bool = assert!(Map.eq(Map.insertWith((v1, v2) -> v1 + v2, 5, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -1}))
+def insertWith05(): Bool = assert!(Map.__eq(Map.insertWith((v1, v2) -> v1 + v2, 5, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -1}))
 
 @test
-def insertWith06(): Bool = assert!(Map.eq(Map.insertWith((v1, v2) -> v1 + v2, 4, -2, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2, 4 -> -2}))
+def insertWith06(): Bool = assert!(Map.__eq(Map.insertWith((v1, v2) -> v1 + v2, 4, -2, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2, 4 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // insertWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def insertWithKey01(): Bool = assert!(Map.eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 3, Map#{}), Map#{1 -> 3}))
+def insertWithKey01(): Bool = assert!(Map.__eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 3, Map#{}), Map#{1 -> 3}))
 
 @test
-def insertWithKey02(): Bool = assert!(Map.eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 3, Map#{1 -> 4}), Map#{1 -> 8}))
+def insertWithKey02(): Bool = assert!(Map.__eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 3, Map#{1 -> 4}), Map#{1 -> 8}))
 
 @test
-def insertWithKey03(): Bool = assert!(Map.eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 2, 3, Map#{1 -> 4}), Map#{1 -> 4, 2 -> 3}))
+def insertWithKey03(): Bool = assert!(Map.__eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 2, 3, Map#{1 -> 4}), Map#{1 -> 4, 2 -> 3}))
 
 @test
-def insertWithKey04(): Bool = assert!(Map.eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 6, 5 -> -2}))
+def insertWithKey04(): Bool = assert!(Map.__eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 1, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 6, 5 -> -2}))
 
 @test
-def insertWithKey05(): Bool = assert!(Map.eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 5, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> 4}))
+def insertWithKey05(): Bool = assert!(Map.__eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 5, 1, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> 4}))
 
 @test
-def insertWithKey06(): Bool = assert!(Map.eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 4, -2, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2, 4 -> -2}))
+def insertWithKey06(): Bool = assert!(Map.__eq(Map.insertWithKey((k, v1, v2) -> k + v1 + v2, 4, -2, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2, 4 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // adjust                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def adjust01(): Bool = assert!(Map.eq(Map.adjust(v -> 2*v, 1, Map#{}), Map#{}))
+def adjust01(): Bool = assert!(Map.__eq(Map.adjust(v -> 2*v, 1, Map#{}), Map#{}))
 
 @test
-def adjust02(): Bool = assert!(Map.eq(Map.adjust(v -> 2*v, 1, Map#{1 -> 4}), Map#{1 -> 8}))
+def adjust02(): Bool = assert!(Map.__eq(Map.adjust(v -> 2*v, 1, Map#{1 -> 4}), Map#{1 -> 8}))
 
 @test
-def adjust03(): Bool = assert!(Map.eq(Map.adjust(v -> 2*v, 2, Map#{1 -> 4}), Map#{1 -> 4}))
+def adjust03(): Bool = assert!(Map.__eq(Map.adjust(v -> 2*v, 2, Map#{1 -> 4}), Map#{1 -> 4}))
 
 @test
-def adjust04(): Bool = assert!(Map.eq(Map.adjust(v -> 2*v, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -28, 5 -> -2}))
+def adjust04(): Bool = assert!(Map.__eq(Map.adjust(v -> 2*v, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -28, 5 -> -2}))
 
 @test
-def adjust05(): Bool = assert!(Map.eq(Map.adjust(v -> 2*v, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -4}))
+def adjust05(): Bool = assert!(Map.__eq(Map.adjust(v -> 2*v, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -4}))
 
 @test
-def adjust06(): Bool = assert!(Map.eq(Map.adjust(v -> 2*v, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
+def adjust06(): Bool = assert!(Map.__eq(Map.adjust(v -> 2*v, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // adjustWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def adjustWithKey01(): Bool = assert!(Map.eq(Map.adjustWithKey((k, v) -> k+v, 1, Map#{}), Map#{}))
+def adjustWithKey01(): Bool = assert!(Map.__eq(Map.adjustWithKey((k, v) -> k+v, 1, Map#{}), Map#{}))
 
 @test
-def adjustWithKey02(): Bool = assert!(Map.eq(Map.adjustWithKey((k, v) -> k+v, 1, Map#{1 -> 4}), Map#{1 -> 5}))
+def adjustWithKey02(): Bool = assert!(Map.__eq(Map.adjustWithKey((k, v) -> k+v, 1, Map#{1 -> 4}), Map#{1 -> 5}))
 
 @test
-def adjustWithKey03(): Bool = assert!(Map.eq(Map.adjustWithKey((k, v) -> k+v, 2, Map#{1 -> 4}), Map#{1 -> 4}))
+def adjustWithKey03(): Bool = assert!(Map.__eq(Map.adjustWithKey((k, v) -> k+v, 2, Map#{1 -> 4}), Map#{1 -> 4}))
 
 @test
-def adjustWithKey04(): Bool = assert!(Map.eq(Map.adjustWithKey((k, v) -> k+v, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -13, 5 -> -2}))
+def adjustWithKey04(): Bool = assert!(Map.__eq(Map.adjustWithKey((k, v) -> k+v, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -13, 5 -> -2}))
 
 @test
-def adjustWithKey05(): Bool = assert!(Map.eq(Map.adjustWithKey((k, v) -> k+v, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> 3}))
+def adjustWithKey05(): Bool = assert!(Map.__eq(Map.adjustWithKey((k, v) -> k+v, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> 3}))
 
 @test
-def adjustWithKey06(): Bool = assert!(Map.eq(Map.adjustWithKey((k, v) -> k+v, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
+def adjustWithKey06(): Bool = assert!(Map.__eq(Map.adjustWithKey((k, v) -> k+v, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // update                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def update01(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{}), Map#{}))
+def update01(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{}), Map#{}))
 
 @test
-def update02(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> 3}), Map#{1 -> 6}))
+def update02(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> 3}), Map#{1 -> 6}))
 
 @test
-def update03(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> 4}), Map#{1 -> 4}))
+def update03(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> 4}), Map#{1 -> 4}))
 
 @test
-def update04(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 2, Map#{1 -> 4}), Map#{1 -> 4}))
+def update04(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 2, Map#{1 -> 4}), Map#{1 -> 4}))
 
 @test
-def update05(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -14, 5 -> -2}))
+def update05(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -14, 5 -> -2}))
 
 @test
-def update06(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> -13, 5 -> -2}), Map#{1 -> -26, 5 -> -2}))
+def update06(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 1, Map#{1 -> -13, 5 -> -2}), Map#{1 -> -26, 5 -> -2}))
 
 @test
-def update07(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
+def update07(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
 
 @test
-def update08(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -1}), Map#{1 -> 4, 5 -> -2}))
+def update08(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 5, Map#{1 -> 4, 5 -> -1}), Map#{1 -> 4, 5 -> -2}))
 
 @test
-def update09(): Bool = assert!(Map.eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
+def update09(): Bool = assert!(Map.__eq(Map.update(v -> if (v % 2 != 0) Some(2*v) else None, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // updateWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def updateWithKey01(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{}), Map#{}))
+def updateWithKey01(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{}), Map#{}))
 
 @test
-def updateWithKey02(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 3}), Map#{1 -> 7}))
+def updateWithKey02(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 3}), Map#{1 -> 7}))
 
 @test
-def updateWithKey03(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 4}), Map#{1 -> 4}))
+def updateWithKey03(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> 4}), Map#{1 -> 4}))
 
 @test
-def updateWithKey04(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 2, Map#{1 -> 4}), Map#{1 -> 4}))
+def updateWithKey04(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 2, Map#{1 -> 4}), Map#{1 -> 4}))
 
 @test
-def updateWithKey05(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -14, 5 -> -2}))
+def updateWithKey05(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -14, 5 -> -2}), Map#{1 -> -14, 5 -> -2}))
 
 @test
-def updateWithKey06(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -13, 5 -> -2}), Map#{1 -> -25, 5 -> -2}))
+def updateWithKey06(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 1, Map#{1 -> -13, 5 -> -2}), Map#{1 -> -25, 5 -> -2}))
 
 @test
-def updateWithKey07(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
+def updateWithKey07(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
 
 @test
-def updateWithKey08(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -1}), Map#{1 -> 4, 5 -> 3}))
+def updateWithKey08(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 5, Map#{1 -> 4, 5 -> -1}), Map#{1 -> 4, 5 -> 3}))
 
 @test
-def updateWithKey09(): Bool = assert!(Map.eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
+def updateWithKey09(): Bool = assert!(Map.__eq(Map.updateWithKey((k, v) -> if (v % 2 != 0) Some(k+2*v) else None, 4, Map#{1 -> 4, 5 -> -2}), Map#{1 -> 4, 5 -> -2}))
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{}), Map#{}))
+def replace01(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{}), Map#{}))
 
 @test
-def replace02(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{1 -> false}), Map#{1 -> false}))
+def replace02(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{1 -> false}), Map#{1 -> false}))
 
 @test
-def replace03(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{1 -> true}), Map#{2 -> false}))
+def replace03(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{1 -> true}), Map#{2 -> false}))
 
 @test
-def replace04(): Bool = assert!(Map.eq(Map.replace((1, true), (1, false), Map#{1 -> true}), Map#{1 -> false}))
+def replace04(): Bool = assert!(Map.__eq(Map.replace((1, true), (1, false), Map#{1 -> true}), Map#{1 -> false}))
 
 @test
-def replace05(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{1 -> false, 3 -> true}), Map#{1 -> false, 3 -> true}))
+def replace05(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{1 -> false, 3 -> true}), Map#{1 -> false, 3 -> true}))
 
 @test
-def replace06(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{1 -> true, 3 -> true}), Map#{2 -> false, 3 -> true}))
+def replace06(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{1 -> true, 3 -> true}), Map#{2 -> false, 3 -> true}))
 
 @test
-def replace07(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{3 -> false, 1 -> true}), Map#{3 -> false, 2 -> false}))
+def replace07(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{3 -> false, 1 -> true}), Map#{3 -> false, 2 -> false}))
 
 @test
-def replace08(): Bool = assert!(Map.eq(Map.replace((1, true), (2, false), Map#{1 -> true, 2 -> true}), Map#{2 -> false}))
+def replace08(): Bool = assert!(Map.__eq(Map.replace((1, true), (2, false), Map#{1 -> true, 2 -> true}), Map#{2 -> false}))
 
 /////////////////////////////////////////////////////////////////////////////
 // delete                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def delete01(): Bool = assert!(Map.eq(Map.delete(1, Map#{}), Map#{}))
+def delete01(): Bool = assert!(Map.__eq(Map.delete(1, Map#{}), Map#{}))
 
 @test
-def delete02(): Bool = assert!(Map.eq(Map.delete(1, Map#{2 -> 4}), Map#{2 -> 4}))
+def delete02(): Bool = assert!(Map.__eq(Map.delete(1, Map#{2 -> 4}), Map#{2 -> 4}))
 
 @test
-def delete03(): Bool = assert!(Map.eq(Map.delete(1, Map#{1 -> 4}), Map#{}))
+def delete03(): Bool = assert!(Map.__eq(Map.delete(1, Map#{1 -> 4}), Map#{}))
 
 @test
-def delete04(): Bool = assert!(Map.eq(Map.delete(1, Map#{6 -> 1, 2 -> 4}), Map#{6 -> 1, 2 -> 4}))
+def delete04(): Bool = assert!(Map.__eq(Map.delete(1, Map#{6 -> 1, 2 -> 4}), Map#{6 -> 1, 2 -> 4}))
 
 @test
-def delete05(): Bool = assert!(Map.eq(Map.delete(6, Map#{6 -> 1, 2 -> 4}), Map#{2 -> 4}))
+def delete05(): Bool = assert!(Map.__eq(Map.delete(6, Map#{6 -> 1, 2 -> 4}), Map#{2 -> 4}))
 
 @test
-def delete06(): Bool = assert!(Map.eq(Map.delete(2, Map#{6 -> 1, 2 -> 4}), Map#{6 -> 1}))
+def delete06(): Bool = assert!(Map.__eq(Map.delete(2, Map#{6 -> 1, 2 -> 4}), Map#{6 -> 1}))
 
 @test
-def delete07(): Bool = assert!(Map.eq(Map.delete(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{6 -> 1, 2 -> 4, 8 -> 89}))
+def delete07(): Bool = assert!(Map.__eq(Map.delete(1, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{6 -> 1, 2 -> 4, 8 -> 89}))
 
 @test
-def delete08(): Bool = assert!(Map.eq(Map.delete(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{2 -> 4, 8 -> 89}))
+def delete08(): Bool = assert!(Map.__eq(Map.delete(6, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{2 -> 4, 8 -> 89}))
 
 @test
-def delete09(): Bool = assert!(Map.eq(Map.delete(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{6 -> 1, 8 -> 89}))
+def delete09(): Bool = assert!(Map.__eq(Map.delete(2, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{6 -> 1, 8 -> 89}))
 
 @test
-def delete10(): Bool = assert!(Map.eq(Map.delete(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{6 -> 1, 2 -> 4}))
+def delete10(): Bool = assert!(Map.__eq(Map.delete(8, Map#{6 -> 1, 2 -> 4, 8 -> 89}), Map#{6 -> 1, 2 -> 4}))
 
 /////////////////////////////////////////////////////////////////////////////
 // isSubmapOf                                                              //
@@ -632,85 +632,85 @@ def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) 
 // filter                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filter01(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{}), Map#{}))
+def filter01(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{}), Map#{}))
 
 @test
-def filter02(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 2}), Map#{1 -> 2}))
+def filter02(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 2}), Map#{1 -> 2}))
 
 @test
-def filter03(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 3}), Map#{}))
+def filter03(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 3}), Map#{}))
 
 @test
-def filter04(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 8, 2 -> 4}), Map#{1 -> 8, 2 -> 4}))
+def filter04(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 8, 2 -> 4}), Map#{1 -> 8, 2 -> 4}))
 
 @test
-def filter05(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 7, 2 -> 4}), Map#{2 -> 4}))
+def filter05(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 7, 2 -> 4}), Map#{2 -> 4}))
 
 @test
-def filter06(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 8, 2 -> 3}), Map#{1 -> 8}))
+def filter06(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{1 -> 8, 2 -> 3}), Map#{1 -> 8}))
 
 @test
-def filter07(): Bool = assert!(Map.eq(Map.filter(v -> v % 2 == 0, Map#{1 -> -1, 2 -> -3}), Map#{}))
+def filter07(): Bool = assert!(Map.__eq(Map.filter(v -> v % 2 == 0, Map#{1 -> -1, 2 -> -3}), Map#{}))
 
 /////////////////////////////////////////////////////////////////////////////
 // filterWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filterWithKey01(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{}), Map#{}))
+def filterWithKey01(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{}), Map#{}))
 
 @test
-def filterWithKey02(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1}), Map#{1 -> 1}))
+def filterWithKey02(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1}), Map#{1 -> 1}))
 
 @test
-def filterWithKey03(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 3}), Map#{}))
+def filterWithKey03(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 3}), Map#{}))
 
 @test
-def filterWithKey04(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}), Map#{1 -> 1, 2 -> 2}))
+def filterWithKey04(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}), Map#{1 -> 1, 2 -> 2}))
 
 @test
-def filterWithKey05(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 7, 2 -> 2}), Map#{2 -> 2}))
+def filterWithKey05(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 7, 2 -> 2}), Map#{2 -> 2}))
 
 @test
-def filterWithKey06(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1, 2 -> 3}), Map#{1 -> 1}))
+def filterWithKey06(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> 1, 2 -> 3}), Map#{1 -> 1}))
 
 @test
-def filterWithKey07(): Bool = assert!(Map.eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> -1, 2 -> -3}), Map#{}))
+def filterWithKey07(): Bool = assert!(Map.__eq(Map.filterWithKey((k, v) -> k == v, Map#{1 -> -1, 2 -> -3}), Map#{}))
 
 /////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def map01(): Bool = assert!(Map.eq(Map.map(v -> 3*v, Map#{}), Map#{}))
+def map01(): Bool = assert!(Map.__eq(Map.map(v -> 3*v, Map#{}), Map#{}))
 
 @test
-def map02(): Bool = assert!(Map.eq(Map.map(v -> 3*v, Map#{1 -> 4}), Map#{1 -> 12}))
+def map02(): Bool = assert!(Map.__eq(Map.map(v -> 3*v, Map#{1 -> 4}), Map#{1 -> 12}))
 
 @test
-def map03(): Bool = assert!(Map.eq(Map.map(v -> 3*v, Map#{2 -> -1, 0 -> 0}), Map#{2 -> -3, 0 -> 0}))
+def map03(): Bool = assert!(Map.__eq(Map.map(v -> 3*v, Map#{2 -> -1, 0 -> 0}), Map#{2 -> -3, 0 -> 0}))
 
 @test
-def map04(): Bool = assert!(Map.eq(Map.map(v -> 3*v, Map#{2 -> -1, 5 -> 15, 11 -> -9}), Map#{2 -> -3, 5 -> 45, 11 -> -27}))
+def map04(): Bool = assert!(Map.__eq(Map.map(v -> 3*v, Map#{2 -> -1, 5 -> 15, 11 -> -9}), Map#{2 -> -3, 5 -> 45, 11 -> -27}))
 
 @test
-def map05(): Bool = assert!(Map.eq(Map.map(v -> 3*v, Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8}), Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}))
+def map05(): Bool = assert!(Map.__eq(Map.map(v -> 3*v, Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8}), Map#{2 -> -3, 5 -> 45, 11 -> -27, 8 -> 24}))
 
 /////////////////////////////////////////////////////////////////////////////
 // mapWithKey                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def mapWithKey01(): Bool = assert!(Map.eq(Map.mapWithKey((_, v) -> v, Map#{}), Map#{}))
+def mapWithKey01(): Bool = assert!(Map.__eq(Map.mapWithKey((_, v) -> v, Map#{}), Map#{}))
 
 @test
-def mapWithKey02(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> k + v, Map#{1 -> 4}), Map#{1 -> 5}))
+def mapWithKey02(): Bool = assert!(Map.__eq(Map.mapWithKey((k, v) -> k + v, Map#{1 -> 4}), Map#{1 -> 5}))
 
 @test
-def mapWithKey03(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 0 -> 0}), Map#{2 -> 1, 0 -> 0}))
+def mapWithKey03(): Bool = assert!(Map.__eq(Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 0 -> 0}), Map#{2 -> 1, 0 -> 0}))
 
 @test
-def mapWithKey04(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15, 11 -> -9}), Map#{2 -> 1, 5 -> 20, 11 -> 2}))
+def mapWithKey04(): Bool = assert!(Map.__eq(Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15, 11 -> -9}), Map#{2 -> 1, 5 -> 20, 11 -> 2}))
 
 @test
-def mapWithKey05(): Bool = assert!(Map.eq(Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8}),
+def mapWithKey05(): Bool = assert!(Map.__eq(Map.mapWithKey((k, v) -> k + v, Map#{2 -> -1, 5 -> 15, 11 -> -9, 8 -> 8}),
                                         Map#{2 -> 1, 5 -> 20, 11 -> 2, 8 -> 16}))
 
 /////////////////////////////////////////////////////////////////////////////
@@ -969,514 +969,514 @@ def forall07(): Bool = assert!(Map.forall((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}
 // union                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def union01(): Bool = assert!(Map.eq(Map.union(Map#{}, Map#{}), Map#{}))
+def union01(): Bool = assert!(Map.__eq(Map.union(Map#{}, Map#{}), Map#{}))
 
 @test
-def union02(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
+def union02(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
 
 @test
-def union03(): Bool = assert!(Map.eq(Map.union(Map#{}, Map#{1 -> 2}), Map#{1 -> 2}))
+def union03(): Bool = assert!(Map.__eq(Map.union(Map#{}, Map#{1 -> 2}), Map#{1 -> 2}))
 
 @test
-def union04(): Bool = assert!(Map.eq(Map.union(Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{1 -> 2, 3 -> 4}))
+def union04(): Bool = assert!(Map.__eq(Map.union(Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def union05(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
+def union05(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def union06(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2, 3 -> 4}))
+def union06(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def union07(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> 2}))
+def union07(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> 2}))
 
 @test
-def union08(): Bool = assert!(Map.eq(Map.union(Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def union08(): Bool = assert!(Map.__eq(Map.union(Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def union09(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def union09(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def union10(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def union10(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def union11(): Bool = assert!(Map.eq(Map.union(Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def union11(): Bool = assert!(Map.__eq(Map.union(Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def union12(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> 3}))
+def union12(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> 3}))
 
 @test
-def union13(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 2, 2 -> 3}))
+def union13(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 2, 2 -> 3}))
 
 @test
-def union14(): Bool = assert!(Map.eq(Map.union(Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 4, 2 -> 3}))
+def union14(): Bool = assert!(Map.__eq(Map.union(Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 4, 2 -> 3}))
 
 @test
-def union15(): Bool = assert!(Map.eq(Map.union(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 7}))
+def union15(): Bool = assert!(Map.__eq(Map.union(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 7}))
 
 @test
-def union16(): Bool = assert!(Map.eq(Map.union(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
+def union16(): Bool = assert!(Map.__eq(Map.union(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
                                    Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22, 1 -> 2, 44 -> 33}))
 
 /////////////////////////////////////////////////////////////////////////////
 // unionWith                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWith01(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
+def unionWith01(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
 
 @test
-def unionWith02(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
+def unionWith02(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
 
 @test
-def unionWith03(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2}), Map#{1 -> 2}))
+def unionWith03(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2}), Map#{1 -> 2}))
 
 @test
-def unionWith04(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{1 -> 2, 3 -> 4}))
+def unionWith04(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def unionWith05(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
+def unionWith05(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def unionWith06(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2, 3 -> 4}))
+def unionWith06(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def unionWith07(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -3}))
+def unionWith07(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -3}))
 
 @test
-def unionWith08(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWith08(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWith09(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWith09(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWith10(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWith10(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWith11(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWith11(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWith12(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> -5}))
+def unionWith12(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> -5}))
 
 @test
-def unionWith13(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -6, 2 -> 3}))
+def unionWith13(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -6, 2 -> 3}))
 
 @test
-def unionWith14(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3}))
+def unionWith14(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3}))
 
 @test
-def unionWith15(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 4}))
+def unionWith15(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 4}))
 
 @test
-def unionWith16(): Bool = assert!(Map.eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
+def unionWith16(): Bool = assert!(Map.__eq(Map.unionWith((v1, v2) -> v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
                                    Map#{2 -> -1, 11 -> 14, 9 -> 8, 15 -> 1, 1 -> 2, 44 -> 33}))
 
 /////////////////////////////////////////////////////////////////////////////
 // unionWithKey                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def unionWithKey01(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
+def unionWithKey01(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
 
 @test
-def unionWithKey02(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
+def unionWithKey02(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
 
 @test
-def unionWithKey03(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2}), Map#{1 -> 2}))
+def unionWithKey03(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2}), Map#{1 -> 2}))
 
 @test
-def unionWithKey04(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{1 -> 2, 3 -> 4}))
+def unionWithKey04(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def unionWithKey05(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
+def unionWithKey05(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def unionWithKey06(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2, 3 -> 4}))
+def unionWithKey06(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def unionWithKey07(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -2}))
+def unionWithKey07(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -2}))
 
 @test
-def unionWithKey08(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWithKey08(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWithKey09(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWithKey09(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWithKey10(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWithKey10(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWithKey11(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def unionWithKey11(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def unionWithKey12(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> -3}))
+def unionWithKey12(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> -3}))
 
 @test
-def unionWithKey13(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -5, 2 -> 3}))
+def unionWithKey13(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -5, 2 -> 3}))
 
 @test
-def unionWithKey14(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 3, 2 -> 3}))
+def unionWithKey14(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 3, 2 -> 3}))
 
 @test
-def unionWithKey15(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 6}))
+def unionWithKey15(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2, 2 -> 6}))
 
 @test
-def unionWithKey16(): Bool = assert!(Map.eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
+def unionWithKey16(): Bool = assert!(Map.__eq(Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
                                    Map#{2 -> 1, 11 -> 14, 9 -> 8, 15 -> 16, 1 -> 2, 44 -> 33}))
 
 /////////////////////////////////////////////////////////////////////////////
 // intersection                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersection01(): Bool = assert!(Map.eq(Map.intersection(Map#{}, Map#{}), Map#{}))
+def intersection01(): Bool = assert!(Map.__eq(Map.intersection(Map#{}, Map#{}), Map#{}))
 
 @test
-def intersection02(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2}, Map#{}), Map#{}))
+def intersection02(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2}, Map#{}), Map#{}))
 
 @test
-def intersection03(): Bool = assert!(Map.eq(Map.intersection(Map#{}, Map#{1 -> 2}), Map#{}))
+def intersection03(): Bool = assert!(Map.__eq(Map.intersection(Map#{}, Map#{1 -> 2}), Map#{}))
 
 @test
-def intersection04(): Bool = assert!(Map.eq(Map.intersection(Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
+def intersection04(): Bool = assert!(Map.__eq(Map.intersection(Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
 
 @test
-def intersection05(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{}))
+def intersection05(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{}))
 
 @test
-def intersection06(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2}, Map#{3 -> 4}), Map#{}))
+def intersection06(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2}, Map#{3 -> 4}), Map#{}))
 
 @test
-def intersection07(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> 2}))
+def intersection07(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> 2}))
 
 @test
-def intersection08(): Bool = assert!(Map.eq(Map.intersection(Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
+def intersection08(): Bool = assert!(Map.__eq(Map.intersection(Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
 
 @test
-def intersection09(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{}))
+def intersection09(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{}))
 
 @test
-def intersection10(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{}))
+def intersection10(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{}))
 
 @test
-def intersection11(): Bool = assert!(Map.eq(Map.intersection(Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def intersection11(): Bool = assert!(Map.__eq(Map.intersection(Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def intersection12(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{2 -> 3}))
+def intersection12(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{2 -> 3}))
 
 @test
-def intersection13(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 2}))
+def intersection13(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 2}))
 
 @test
-def intersection14(): Bool = assert!(Map.eq(Map.intersection(Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 4}))
+def intersection14(): Bool = assert!(Map.__eq(Map.intersection(Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 4}))
 
 @test
-def intersection15(): Bool = assert!(Map.eq(Map.intersection(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 7}))
+def intersection15(): Bool = assert!(Map.__eq(Map.intersection(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 7}))
 
 @test
-def intersection16(): Bool = assert!(Map.eq(Map.intersection(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 1}),
+def intersection16(): Bool = assert!(Map.__eq(Map.intersection(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 1}),
                                    Map#{2 -> 7, 15 -> 22, 11 -> 14}))
 
 /////////////////////////////////////////////////////////////////////////////
 // intersectionWith                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWith01(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
+def intersectionWith01(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
 
 @test
-def intersectionWith02(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{}), Map#{}))
+def intersectionWith02(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{}), Map#{}))
 
 @test
-def intersectionWith03(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2}), Map#{}))
+def intersectionWith03(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2}), Map#{}))
 
 @test
-def intersectionWith04(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
+def intersectionWith04(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
 
 @test
-def intersectionWith05(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{}))
+def intersectionWith05(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{}))
 
 @test
-def intersectionWith06(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{}))
+def intersectionWith06(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{}))
 
 @test
-def intersectionWith07(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -3}))
+def intersectionWith07(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -3}))
 
 @test
-def intersectionWith08(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
+def intersectionWith08(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
 
 @test
-def intersectionWith09(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{}))
+def intersectionWith09(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{}))
 
 @test
-def intersectionWith10(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{}))
+def intersectionWith10(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{}))
 
 @test
-def intersectionWith11(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def intersectionWith11(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def intersectionWith12(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{2 -> -5}))
+def intersectionWith12(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{2 -> -5}))
 
 @test
-def intersectionWith13(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -6}))
+def intersectionWith13(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -6}))
 
 @test
-def intersectionWith14(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2}))
+def intersectionWith14(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 2}))
 
 @test
-def intersectionWith15(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 4}))
+def intersectionWith15(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 4}))
 
 @test
-def intersectionWith16(): Bool = assert!(Map.eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 11}),
+def intersectionWith16(): Bool = assert!(Map.__eq(Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 11}),
                                    Map#{2 -> -1, 15 -> 1, 11 -> 3}))
 
 /////////////////////////////////////////////////////////////////////////////
 // intersectionWithKey                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersectionWithKey01(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
+def intersectionWithKey01(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
 
 @test
-def intersectionWithKey02(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{}), Map#{}))
+def intersectionWithKey02(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{}), Map#{}))
 
 @test
-def intersectionWithKey03(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2}), Map#{}))
+def intersectionWithKey03(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2}), Map#{}))
 
 @test
-def intersectionWithKey04(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
+def intersectionWithKey04(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
 
 @test
-def intersectionWithKey05(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{}))
+def intersectionWithKey05(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{}))
 
 @test
-def intersectionWithKey06(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{}))
+def intersectionWithKey06(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{3 -> 4}), Map#{}))
 
 @test
-def intersectionWithKey07(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -2}))
+def intersectionWithKey07(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2}, Map#{1 -> 5}), Map#{1 -> -2}))
 
 @test
-def intersectionWithKey08(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
+def intersectionWithKey08(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
 
 @test
-def intersectionWithKey09(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{}))
+def intersectionWithKey09(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{}))
 
 @test
-def intersectionWithKey10(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{}))
+def intersectionWithKey10(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{}))
 
 @test
-def intersectionWithKey11(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def intersectionWithKey11(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def intersectionWithKey12(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{2 -> -3}))
+def intersectionWithKey12(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{2 -> -3}))
 
 @test
-def intersectionWithKey13(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -5}))
+def intersectionWithKey13(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> -5}))
 
 @test
-def intersectionWithKey14(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 3}))
+def intersectionWithKey14(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 3}))
 
 @test
-def intersectionWithKey15(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 6}))
+def intersectionWithKey15(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 6}))
 
 @test
-def intersectionWithKey16(): Bool = assert!(Map.eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 17}),
+def intersectionWithKey16(): Bool = assert!(Map.__eq(Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33, 11 -> 17}),
                                    Map#{2 -> 1, 15 -> 16, 11 -> 8}))
 
 /////////////////////////////////////////////////////////////////////////////
 // difference                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def difference01(): Bool = assert!(Map.eq(Map.difference(Map#{}, Map#{}), Map#{}))
+def difference01(): Bool = assert!(Map.__eq(Map.difference(Map#{}, Map#{}), Map#{}))
 
 @test
-def difference02(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
+def difference02(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
 
 @test
-def difference03(): Bool = assert!(Map.eq(Map.difference(Map#{}, Map#{1 -> 2}), Map#{}))
+def difference03(): Bool = assert!(Map.__eq(Map.difference(Map#{}, Map#{1 -> 2}), Map#{}))
 
 @test
-def difference04(): Bool = assert!(Map.eq(Map.difference(Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
+def difference04(): Bool = assert!(Map.__eq(Map.difference(Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
 
 @test
-def difference05(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
+def difference05(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def difference06(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2}))
+def difference06(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2}))
 
 @test
-def difference07(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2}, Map#{1 -> 5}), Map#{}))
+def difference07(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2}, Map#{1 -> 5}), Map#{}))
 
 @test
-def difference08(): Bool = assert!(Map.eq(Map.difference(Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
+def difference08(): Bool = assert!(Map.__eq(Map.difference(Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
 
 @test
-def difference09(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def difference09(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def difference10(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3}))
+def difference10(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3}))
 
 @test
-def difference11(): Bool = assert!(Map.eq(Map.difference(Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{3 -> 4}))
+def difference11(): Bool = assert!(Map.__eq(Map.difference(Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{3 -> 4}))
 
 @test
-def difference12(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2}))
+def difference12(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2}))
 
 @test
-def difference13(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{2 -> 3}))
+def difference13(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{2 -> 3}))
 
 @test
-def difference14(): Bool = assert!(Map.eq(Map.difference(Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def difference14(): Bool = assert!(Map.__eq(Map.difference(Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def difference15(): Bool = assert!(Map.eq(Map.difference(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def difference15(): Bool = assert!(Map.__eq(Map.difference(Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def difference16(): Bool = assert!(Map.eq(Map.difference(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
+def difference16(): Bool = assert!(Map.__eq(Map.difference(Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
                                    Map#{11 -> 14, 9 -> 8}))
 
 /////////////////////////////////////////////////////////////////////////////
 // differenceWith                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWith01(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
+def differenceWith01(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
 
 @test
-def differenceWith02(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
+def differenceWith02(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
 
 @test
-def differenceWith03(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 -> 2}), Map#{}))
+def differenceWith03(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 -> 2}), Map#{}))
 
 @test
-def differenceWith04(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
+def differenceWith04(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
 
 @test
-def differenceWith05(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
+def differenceWith05(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def differenceWith06(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2}))
+def differenceWith06(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2}))
 
 @test
-def differenceWith07(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2}, Map#{1 -> 5}), Map#{}))
+def differenceWith07(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2}, Map#{1 -> 5}), Map#{}))
 
 @test
-def differenceWith08(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 5}, Map#{1 -> 4}), Map#{1 -> 5}))
+def differenceWith08(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 5}, Map#{1 -> 4}), Map#{1 -> 5}))
 
 @test
-def differenceWith09(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
+def differenceWith09(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
 
 @test
-def differenceWith10(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def differenceWith10(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def differenceWith11(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3}))
+def differenceWith11(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3}))
 
 @test
-def differenceWith12(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{3 -> 4}))
+def differenceWith12(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{3 -> 4}))
 
 @test
-def differenceWith13(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2}))
+def differenceWith13(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2}))
 
 @test
-def differenceWith14(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 9}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> 9}))
+def differenceWith14(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 9}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> 9}))
 
 @test
-def differenceWith15(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{2 -> 3}))
+def differenceWith15(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{2 -> 3}))
 
 @test
-def differenceWith16(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 9, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 9, 2 -> 3}))
+def differenceWith16(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 9, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 9, 2 -> 3}))
 
 @test
-def differenceWith17(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 1}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def differenceWith17(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 1}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def differenceWith18(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 4}))
+def differenceWith18(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 4}))
 
 @test
-def differenceWith19(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> -4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def differenceWith19(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> -4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def differenceWith20(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 7}))
+def differenceWith20(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 7}))
 
 @test
-def differenceWith21(): Bool = assert!(Map.eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
+def differenceWith21(): Bool = assert!(Map.__eq(Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
                                    Map#{11 -> 14, 9 -> 8, 15 -> 22}))
 
 /////////////////////////////////////////////////////////////////////////////
 // differenceWithKey                                                       //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def differenceWithKey01(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
+def differenceWithKey01(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}), Map#{}: Map[Int, Int]))
 
 @test
-def differenceWithKey02(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
+def differenceWithKey02(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2}, Map#{}), Map#{1 -> 2}))
 
 @test
-def differenceWithKey03(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 -> 2}), Map#{}))
+def differenceWithKey03(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 -> 2}), Map#{}))
 
 @test
-def differenceWithKey04(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
+def differenceWithKey04(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 -> 2, 3 -> 4}), Map#{}))
 
 @test
-def differenceWithKey05(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
+def differenceWithKey05(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 3 -> 4}, Map#{}), Map#{1 -> 2, 3 -> 4}))
 
 @test
-def differenceWithKey06(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2}))
+def differenceWithKey06(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2}, Map#{3 -> 4}), Map#{1 -> 2}))
 
 @test
-def differenceWithKey07(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2}, Map#{1 -> 5}), Map#{}))
+def differenceWithKey07(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2}, Map#{1 -> 5}), Map#{}))
 
 @test
-def differenceWithKey08(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 5}, Map#{1 -> 4}), Map#{1 -> 6}))
+def differenceWithKey08(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 5}, Map#{1 -> 4}), Map#{1 -> 6}))
 
 @test
-def differenceWithKey09(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
+def differenceWithKey09(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 -> 2, 2 -> 3, 3 -> 4}), Map#{}))
 
 @test
-def differenceWithKey10(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
+def differenceWithKey10(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3, 3 -> 4}, Map#{}), Map#{1 -> 2, 2 -> 3, 3 -> 4}))
 
 @test
-def differenceWithKey11(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3}))
+def differenceWithKey11(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3}, Map#{3 -> 4}), Map#{1 -> 2, 2 -> 3}))
 
 @test
-def differenceWithKey12(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{3 -> 4}))
+def differenceWithKey12(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{3 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{3 -> 4}))
 
 @test
-def differenceWithKey13(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2}))
+def differenceWithKey13(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3}, Map#{2 -> 8}), Map#{1 -> 2}))
 
 @test
-def differenceWithKey14(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 9}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> 11}))
+def differenceWithKey14(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 9}, Map#{2 -> 8}), Map#{1 -> 2, 2 -> 11}))
 
 @test
-def differenceWithKey15(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{2 -> 3}))
+def differenceWithKey15(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 2, 2 -> 3}, Map#{1 -> 8}), Map#{2 -> 3}))
 
 @test
-def differenceWithKey16(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 9, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 10, 2 -> 3}))
+def differenceWithKey16(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 9, 2 -> 3}, Map#{1 -> 8}), Map#{1 -> 10, 2 -> 3}))
 
 @test
-def differenceWithKey17(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 1}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def differenceWithKey17(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 1}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def differenceWithKey18(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 5}))
+def differenceWithKey18(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 -> 4}, Map#{1 -> 2, 2 -> 3}), Map#{1 -> 5}))
 
 @test
-def differenceWithKey19(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> -4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
+def differenceWithKey19(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> -4}, Map#{1 -> 2, 2 -> 3}), Map#{}))
 
 @test
-def differenceWithKey20(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 9}))
+def differenceWithKey20(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> 7}, Map#{1 -> 2, 2 -> 3}), Map#{2 -> 9}))
 
 @test
-def differenceWithKey21(): Bool = assert!(Map.eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
+def differenceWithKey21(): Bool = assert!(Map.__eq(Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 -> 7, 11 -> 14, 9 -> 8, 15 -> 22}, Map#{15 -> 21, 1 -> 2, 2 -> 8, 44 -> 33}),
                                    Map#{11 -> 14, 9 -> 8, 15 -> 37}))
 
 /////////////////////////////////////////////////////////////////////////////
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = assert!(Set.eq(Map.toSet(Map#{}), Set#{}))
+def toSet01(): Bool = assert!(Set.__eq(Map.toSet(Map#{}), Set#{}))
 
 @test
-def toSet02(): Bool = assert!(Set.eq(Map.toSet(Map#{1 -> 2}), Set#{(1, 2)}))
+def toSet02(): Bool = assert!(Set.__eq(Map.toSet(Map#{1 -> 2}), Set#{(1, 2)}))
 
 @test
-def toSet03(): Bool = assert!(Set.eq(Map.toSet(Map#{1 -> 2, 3 -> 4}), Set#{(1, 2), (3, 4)}))
+def toSet03(): Bool = assert!(Set.__eq(Map.toSet(Map#{1 -> 2, 3 -> 4}), Set#{(1, 2), (3, 4)}))
 
 @test
-def toSet04(): Bool = assert!(Set.eq(Map.toSet(Map#{1 -> 2, 2 -> 2, 3 -> 4}), Set#{(1, 2), (2, 2), (3, 4)}))
+def toSet04(): Bool = assert!(Set.__eq(Map.toSet(Map#{1 -> 2, 2 -> 2, 3 -> 4}), Set#{(1, 2), (2, 2), (3, 4)}))
 
 /////////////////////////////////////////////////////////////////////////////
 // toList                                                                  //
@@ -1497,78 +1497,78 @@ def toList04(): Bool = Map.toList(Map#{1 -> 2, 2 -> 2, 3 -> 4}) `assertEq!` (3, 
 // eq                                                                      //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def eq01(): Bool = assert!(Map.eq(Map#{}, Map#{}))
+def eq01(): Bool = assert!(Map.__eq(Map#{}, Map#{}))
 
 @test
-def eq02(): Bool = assertNot!(Map.eq(Map#{1 -> 2}, Map#{}))
+def eq02(): Bool = assertNot!(Map.__eq(Map#{1 -> 2}, Map#{}))
 
 @test
-def eq03(): Bool = assertNot!(Map.eq(Map#{}, Map#{1 -> 2}))
+def eq03(): Bool = assertNot!(Map.__eq(Map#{}, Map#{1 -> 2}))
 
 @test
-def eq04(): Bool = assertNot!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{}))
+def eq04(): Bool = assertNot!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{}))
 
 @test
-def eq05(): Bool = assertNot!(Map.eq(Map#{}, Map#{1 -> 2, 3 -> 4}))
+def eq05(): Bool = assertNot!(Map.__eq(Map#{}, Map#{1 -> 2, 3 -> 4}))
 
 @test
-def eq06(): Bool = assert!(Map.eq(Map#{1 -> 2}, Map#{1 -> 2}))
+def eq06(): Bool = assert!(Map.__eq(Map#{1 -> 2}, Map#{1 -> 2}))
 
 @test
-def eq07(): Bool = assertNot!(Map.eq(Map#{1 -> 3}, Map#{1 -> 2}))
+def eq07(): Bool = assertNot!(Map.__eq(Map#{1 -> 3}, Map#{1 -> 2}))
 
 @test
-def eq08(): Bool = assertNot!(Map.eq(Map#{1 -> 2}, Map#{1 -> 3}))
+def eq08(): Bool = assertNot!(Map.__eq(Map#{1 -> 2}, Map#{1 -> 3}))
 
 @test
-def eq09(): Bool = assertNot!(Map.eq(Map#{2 -> 2}, Map#{1 -> 2}))
+def eq09(): Bool = assertNot!(Map.__eq(Map#{2 -> 2}, Map#{1 -> 2}))
 
 @test
-def eq10(): Bool = assertNot!(Map.eq(Map#{1 -> 2}, Map#{4 -> 2}))
+def eq10(): Bool = assertNot!(Map.__eq(Map#{1 -> 2}, Map#{4 -> 2}))
 
 @test
-def eq11(): Bool = assertNot!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2}))
+def eq11(): Bool = assertNot!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2}))
 
 @test
-def eq12(): Bool = assertNot!(Map.eq(Map#{1 -> 2}, Map#{1 -> 2, 3 -> 4}))
+def eq12(): Bool = assertNot!(Map.__eq(Map#{1 -> 2}, Map#{1 -> 2, 3 -> 4}))
 
 @test
-def eq13(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 4}))
+def eq13(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 4}))
 
 @test
-def eq14(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{3 -> 4, 1 -> 2}))
+def eq14(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{3 -> 4, 1 -> 2}))
 
 @test
-def eq15(): Bool = assertNot!(Map.eq(Map#{1 -> 1, 3 -> 4}, Map#{1 -> 2, 3 -> 4}))
+def eq15(): Bool = assertNot!(Map.__eq(Map#{1 -> 1, 3 -> 4}, Map#{1 -> 2, 3 -> 4}))
 
 @test
-def eq16(): Bool = assertNot!(Map.eq(Map#{4 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 4}))
+def eq16(): Bool = assertNot!(Map.__eq(Map#{4 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 4}))
 
 @test
-def eq17(): Bool = assertNot!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 2 -> 4}))
+def eq17(): Bool = assertNot!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 2 -> 4}))
 
 @test
-def eq18(): Bool = assertNot!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 8}))
+def eq18(): Bool = assertNot!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 8}))
 
 @test
-def eq19(): Bool = assertNot!(Map.eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{1 -> 2, 3 -> 4}))
+def eq19(): Bool = assertNot!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{1 -> 2, 3 -> 4}))
 
 @test
-def eq20(): Bool = assertNot!(Map.eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 4, 5 -> 6}))
+def eq20(): Bool = assertNot!(Map.__eq(Map#{1 -> 2, 3 -> 4}, Map#{1 -> 2, 3 -> 4, 5 -> 6}))
 
 @test
-def eq21(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{1 -> 2, 3 -> 4, 5 -> 6}))
+def eq21(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{1 -> 2, 3 -> 4, 5 -> 6}))
 
 @test
-def eq22(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{1 -> 2, 5 -> 6, 3 -> 4}))
+def eq22(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{1 -> 2, 5 -> 6, 3 -> 4}))
 
 @test
-def eq23(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{3 -> 4, 5 -> 6, 1 -> 2}))
+def eq23(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{3 -> 4, 5 -> 6, 1 -> 2}))
 
 @test
-def eq24(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{5 -> 6, 3 -> 4, 1 -> 2}))
+def eq24(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6}, Map#{5 -> 6, 3 -> 4, 1 -> 2}))
 
 @test
-def eq25(): Bool = assert!(Map.eq(Map#{1 -> 2, 3 -> 4, 5 -> 6, 7 -> 8, 9 -> 10}, Map#{7 -> 8, 1 -> 2, 3 -> 4, 9 -> 10, 5 -> 6}))
+def eq25(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6, 7 -> 8, 9 -> 10}, Map#{7 -> 8, 1 -> 2, 3 -> 4, 9 -> 10, 5 -> 6}))
 
 }
