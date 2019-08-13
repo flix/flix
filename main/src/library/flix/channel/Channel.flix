@@ -40,6 +40,6 @@ namespace Channel {
     ///
     /// Equivalent to the expression `c <- x`.
     ///
-    pub def put[a](c: Channel[a], x: a): Unit = c <- x; ()
+    pub def put[a](c: Channel[a], x: a): Channel[a] = c <- x
 
 }

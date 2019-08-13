@@ -21,6 +21,8 @@ import org.scalatest.{ParallelTestExecution, Suites}
 
 class LibrarySuite extends Suites(
   new FlixTest("TestPrelude", "main/test/ca/uwaterloo/flix/library/TestPrelude.flix"),
+  new FlixTest("TestArray", "main/test/ca/uwaterloo/flix/library/TestArray.flix"),
+  new FlixTest("TestChannel", "main/test/ca/uwaterloo/flix/library/TestChannel.flix"),
   new FlixTest("TestInt8", "main/test/ca/uwaterloo/flix/library/TestInt8.flix"),
   new FlixTest("TestInt16", "main/test/ca/uwaterloo/flix/library/TestInt16.flix"),
   new FlixTest("TestInt32", "main/test/ca/uwaterloo/flix/library/TestInt32.flix"),
