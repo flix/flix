@@ -23,6 +23,12 @@ namespace Array {
     ///
     pub def get[a](a: Array[a], i: Int): a = a[i]
 
+    ///
+    /// Stores the value `x` at position `i` in the array `a`.
+    ///
+    /// Equivalent to the expression `a[i] = x`.
+    ///
+    pub def put[a](a: Array[a], i: Int, x: a): Array[a] = a[i] = x; a
 
     ///
     /// Returns the length of the array `a`.
@@ -35,8 +41,6 @@ namespace Array {
 //    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 //
 //    case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-//
-//    case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 //
 //    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 //

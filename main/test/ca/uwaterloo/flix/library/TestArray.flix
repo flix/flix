@@ -15,5 +15,20 @@
  */
 
 @test
-def min01(): Bool = BigInt.min(1234ii, 12123123123124151532146469083259682341ii) `assertEq!` 1234ii
+def testPut01(): Bool = Array.put([1], 0, 42)[0] == 42
 
+@test
+def testPut02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
+
+@test
+def testPut03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
+
+
+@test
+def testLength01(): Bool = Array.length([]) == 0
+
+@test
+def testLength02(): Bool = Array.length([1]) == 1
+
+@test
+def testLength03(): Bool = Array.length([1, 2, 3]) == 3
