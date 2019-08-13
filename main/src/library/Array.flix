@@ -17,6 +17,13 @@
 namespace Array {
 
     ///
+    /// Returns a fresh array of length `l` filled with the element `x`.
+    ///
+    /// Equivalent to the expression `[x; l]`.
+    ///
+    pub def new[a](x: a, l: Int): Array[a] = [x; l]
+
+    ///
     /// Returns the element a position `i` in the array `a`.
     ///
     /// Equivalent to the expression `a[i]`.

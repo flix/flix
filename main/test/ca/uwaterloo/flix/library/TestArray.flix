@@ -13,6 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@test
+def testNew01(): Bool = Array.new(42, 10)[0] == 42
+
+@test
+def testNew02(): Bool = Array.new(42, 10)[5] == 42
+
+@test
+def testNew03(): Bool = Array.new(42, 10)[9] == 42
+
+@test
+def testGet01(): Bool = Array.get([1, 2, 3], 0) == 1
+
+@test
+def testGet02(): Bool = Array.get([1, 2, 3], 1) == 2
+
+@test
+def testGet03(): Bool = Array.get([1, 2, 3], 2) == 3
 
 @test
 def testPut01(): Bool = Array.put([1], 0, 42)[0] == 42
