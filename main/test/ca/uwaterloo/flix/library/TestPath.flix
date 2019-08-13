@@ -32,3 +32,5 @@ def testExists02(): Bool = !Path.exists(Path.new("hello/world.txt"))
 @test
 def testExists03(): Bool = !Path.exists(Path.new("/tmp/hello.txt"))
 
+@test
+def testReadLines01(): List[Str] = Path.readLines(Path.new("README.md"))

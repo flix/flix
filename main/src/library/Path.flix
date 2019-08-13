@@ -29,53 +29,25 @@ namespace Path {
         let Path(javaFile) = p;
         native method java.io.File.exists(javaFile) as Bool
     }
-//
-//    ///
-//    /// Effectfully returns `true` if the given path `parent` is the direct parent of the path `child`.
-//    ///
-//    pub eff isParentOf[a](parent: Path, child: Path, k: Result[Bool, IOError] -> a): a
-
-//     pub eff isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
-    /// Effectfully returns a list of all lines in the given text file denoted by path `p`.
+    /// Returns a list of all the lines in the given path `p`.
     ///
-//    pub eff readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a
-//
-//    ///
-//    /// Default handler for `readLines`.
-//    ///
-//    handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = {
-//        let isRegularFileResponse = isRegularFile(p, result -> result);
-//        match isRegularFileResponse with {
-//            case Ok(true)  => let Path(javaPath) = p;
-//                              let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
-//                              let flixList = readLinesHelper(Nil, reader);
-//                              let _ = native method java.io.BufferedReader.close(reader);
-//                              k(Ok(flixList))
-//            case Ok(false) => k(Err(IOError("Argument 'p' is not a regular file")))
-//            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
-//        }
-//    }
-//
-//    def readLinesHelper(fList: List[Str], reader : ##java.io.BufferedReader) : List[Str] = {
-//        let readLine = native method java.io.BufferedReader.readLine(reader);
-//        if (native method java.util.Objects.isNull(readLine))
-//            List.reverse(fList)
-//        else
-//            readLinesHelper(readLine :: fList, reader)
-//    }
-//
-//    ///
-//    /// Effectfully returns a list of all lines in the given text file denoted by path `p` parsed with the given charset `cs`.
-//    ///
-//    pub eff readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a
-//
-//    ///
-//    /// Default handler for `readLinesWithCharset`.
-//    ///
-//    handler readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a = ???
+    pub def readLines(p: Path): Str =
+        let Path(javaFile) = p;
+        let javaPath = native method java.io.File.toPath(javaFile);
+        let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
+        readAll(reader)
 
+    ///
+    /// Reads all lines from the given buffered reader `r` until it is empty.
+    ///
+    def readAll(r: ##java.io.BufferedReader): List[Str] =
+        let line = native method java.io.BufferedReader.readLine(r);
+        if (isNull(line))
+            Nil
+        else
+            line :: readAll(r)
 }
 
 ///
