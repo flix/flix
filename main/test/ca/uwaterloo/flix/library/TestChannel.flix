@@ -41,3 +41,20 @@ def testBuffered02(): Channel[Int] = Channel.buffered(123)
 @test
 def testBuffered03(): Channel[Str] = Channel.buffered(123)
 
+@test
+def testGetPut01(): Bool =
+    let c = Channel.buffered(1);
+    Channel.put(c, true);
+    Channel.get(c)
+
+@test
+def testGetPut02(): Int =
+    let c = Channel.buffered(1);
+    Channel.put(c, 123);
+    Channel.get(c)
+
+@test
+def testGetPut03(): Str =
+    let c = Channel.buffered(1);
+    Channel.put(c, "Hello World!");
+    Channel.get(c)

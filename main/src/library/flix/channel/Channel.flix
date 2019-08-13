@@ -31,4 +31,18 @@ namespace Channel {
     ///
     pub def buffered[a](capacity: Int): Channel[a] = chan a capacity
 
+    ///
+    /// Receives an element from the channel `c`.
+    ///
+    /// Equivalent to the expression `<- c`.
+    ///
+    pub def get[a](c: Channel[a]): a = <- c
+
+    ///
+    /// Sends the element `x` on the channel `c`.
+    ///
+    /// Equivalent to the expression `c <- x`.
+    ///
+    pub def put[a](c: Channel[a], x: a): Unit = c <- x; ()
+
 }
