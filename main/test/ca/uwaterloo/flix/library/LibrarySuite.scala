@@ -31,6 +31,7 @@ class LibrarySuite extends Suites(
   new FlixTest("TestFloat32", "main/test/ca/uwaterloo/flix/library/TestFloat32.flix"),
   new FlixTest("TestFloat64", "main/test/ca/uwaterloo/flix/library/TestFloat64.flix"),
   new FlixTest("TestOption", "main/test/ca/uwaterloo/flix/library/TestOption.flix"),
+  new FlixTest("TestPath", "main/test/ca/uwaterloo/flix/library/TestPath.flix"),
   new FlixTest("TestRandom", "main/test/ca/uwaterloo/flix/library/TestRandom.flix"),
   new FlixTest("TestResult", "main/test/ca/uwaterloo/flix/library/TestResult.flix"),
   new FlixTest("TestList", "main/test/ca/uwaterloo/flix/library/TestList.flix"),

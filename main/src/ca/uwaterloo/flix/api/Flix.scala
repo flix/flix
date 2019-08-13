@@ -77,6 +77,7 @@ class Flix {
     "List.flix" -> LocalResource.get("/library/List.flix"),
     "Map.flix" -> LocalResource.get("/library/Map.flix"),
     "Option.flix" -> LocalResource.get("/library/Option.flix"),
+    "Path.flix" -> LocalResource.get("/library/Path.flix"),
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
     "Random.flix" -> LocalResource.get("/library/Random.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
