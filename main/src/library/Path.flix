@@ -53,6 +53,20 @@ namespace Path {
       })
 
     ///
+    /// Returns a list of children for the given path `p`.
+    ///
+    /// Returns `None` if the path `p` does not denote a directory.
+    ///
+    pub def getChildren(p: Path): Result[Option[List[Path]], IOError] = tryWithCatch(_ -> {
+        let Path(javaFile) = p;
+        let children = native method java.io.File.listFiles(javaFile);
+        if (isNull(children))
+            None
+        else
+            Some(children |> Array.toList |> List.map(p -> Path(p)))
+    })
+
+    ///
     /// Returns `true` if the given path `p` is a directory.
     ///
     pub def isDirectory(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
