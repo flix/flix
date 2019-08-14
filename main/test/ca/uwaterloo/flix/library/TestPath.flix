@@ -15,22 +15,40 @@
  */
 
 @test
-def testNew01(): Path = Path.new("hello.txt")
+def new01(): Path = Path.new("hello.txt")
 
 @test
-def testNew02(): Path = Path.new("hello/world.txt")
+def new02(): Path = Path.new("hello/world.txt")
 
 @test
-def testNew03(): Path = Path.new("/tmp/hello.txt")
+def new03(): Path = Path.new("/tmp/hello.txt")
 
 @test
-def testExists01(): Bool = !Path.exists(Path.new("hello.txt"))
+def exists01(): Bool = Path.exists(Path.new("hello.txt")) |> Result.isOk
 
 @test
-def testExists02(): Bool = !Path.exists(Path.new("hello/world.txt"))
+def exists02(): Bool = Path.exists(Path.new("./doc/")) |> Result.isOk
 
 @test
-def testExists03(): Bool = !Path.exists(Path.new("/tmp/hello.txt"))
+def exists03(): Bool = Path.exists(Path.new("./doc/foo")) |> Result.isOk
 
 @test
-def testReadLines01(): List[Str] = Path.readLines(Path.new("README.md"))
+def isDirectory01(): Bool = Path.isDirectory(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def isDirectory02(): Bool = Path.isDirectory(Path.new("./doc/")) |> Result.isOk
+
+@test
+def isDirectory03(): Bool = Path.isDirectory(Path.new("./doc/foo")) |> Result.isOk
+
+@test
+def isExecutable01(): Bool = Path.isDirectory(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def isExecutable02(): Bool = Path.isDirectory(Path.new("./doc/")) |> Result.isOk
+
+@test
+def isExecutable03(): Bool = Path.isDirectory(Path.new("./doc/foo")) |> Result.isOk
+
+@test
+def testReadLines01(): Bool = Path.readLines(Path.new("README.md")) |> Result.isOk
