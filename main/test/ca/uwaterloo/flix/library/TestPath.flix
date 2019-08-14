@@ -51,4 +51,40 @@ def isExecutable02(): Bool = Path.isDirectory(Path.new("./doc/")) |> Result.isOk
 def isExecutable03(): Bool = Path.isDirectory(Path.new("./doc/foo")) |> Result.isOk
 
 @test
+def isReadable01(): Bool = Path.isReadable(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def isReadable02(): Bool = Path.isReadable(Path.new("./doc/")) |> Result.isOk
+
+@test
+def isReadable03(): Bool = Path.isReadable(Path.new("./doc/foo")) |> Result.isOk
+
+@test
+def isFile01(): Bool = Path.isFile(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def isFile02(): Bool = Path.isFile(Path.new("./doc/")) |> Result.isOk
+
+@test
+def isFile03(): Bool = Path.isFile(Path.new("./doc/foo")) |> Result.isOk
+
+@test
+def isSymbolicLink01(): Bool = Path.isSymbolicLink(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def isSymbolicLink02(): Bool = Path.isSymbolicLink(Path.new("./doc/")) |> Result.isOk
+
+@test
+def isSymbolicLink03(): Bool = Path.isSymbolicLink(Path.new("./doc/foo")) |> Result.isOk
+
+@test
+def isWritable01(): Bool = Path.isWritable(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def isWritable02(): Bool = Path.isWritable(Path.new("./doc/")) |> Result.isOk
+
+@test
+def isWritable03(): Bool = Path.isWritable(Path.new("./doc/foo")) |> Result.isOk
+
+@test
 def testReadLines01(): Bool = Path.readLines(Path.new("README.md")) |> Result.isOk
