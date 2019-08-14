@@ -33,6 +33,15 @@ def exists02(): Bool = Path.exists(Path.new("./doc/")) |> Result.isOk
 def exists03(): Bool = Path.exists(Path.new("./doc/foo")) |> Result.isOk
 
 @test
+def getName01(): Bool = Path.getName(Path.new("hello.txt")) == Ok("hello.txt")
+
+@test
+def getName02(): Bool = Path.getName(Path.new("./doc/")) == Ok("doc")
+
+@test
+def getName03(): Bool = Path.getName(Path.new("./doc/foo")) == Ok("foo")
+
+@test
 def isDirectory01(): Bool = Path.isDirectory(Path.new("hello.txt")) |> Result.isOk
 
 @test

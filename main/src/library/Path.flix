@@ -31,6 +31,28 @@ namespace Path {
     })
 
     ///
+    /// Returns the name of the directory or file denoted by the given path `p`.
+    ///
+    pub def getName(p: Path): Result[Str, IOError] = tryWithCatch(_ -> {
+         let Path(javaFile) = p;
+         native method java.io.File.getName(javaFile) as Str
+     })
+
+     ///
+     /// Optionally returns the path to the parent of the given path `p`.
+     ///
+     /// Returns `None` if `p` has no parent.
+     ///
+     pub def getParent(p: Path): Result[Option[Path], IOError] = tryWithCatch(_ -> {
+          let Path(javaFile) = p;
+          let parent = native method java.io.File.getParentFile(javaFile) as ##java.io.File;
+          if (isNull(parent))
+            None
+          else
+            Some(Path(parent))
+      })
+
+    ///
     /// Returns `true` if the given path `p` is a directory.
     ///
     pub def isDirectory(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
