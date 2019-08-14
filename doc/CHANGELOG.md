@@ -2,6 +2,12 @@
 
 HEAD:
 
+Version 0.8:
+
+- Added Array, Channel, Random, and Path to the standard library.
+- Rewrote --doc to output JSON.
+- Accurately report negative cycles in the presence of stratified negation.
+
 Version 0.7:
 
 - Changed the syntax of constraint sets.
