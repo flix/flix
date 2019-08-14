@@ -42,6 +42,15 @@ def getName02(): Bool = Path.getName(Path.new("./doc/")) == Ok("doc")
 def getName03(): Bool = Path.getName(Path.new("./doc/foo")) == Ok("foo")
 
 @test
+def getParent01(): Bool = Path.getParent(Path.new("hello.txt")) |> Result.isOk
+
+@test
+def getParent02(): Bool = Path.getParent(Path.new("./doc/")) |> Result.isOk
+
+@test
+def getParent03(): Bool = Path.getParent(Path.new("./doc/foo")) |> Result.isOk
+
+@test
 def isDirectory01(): Bool = Path.isDirectory(Path.new("hello.txt")) |> Result.isOk
 
 @test
