@@ -454,19 +454,20 @@ object GenExpression {
      there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
      a new one.
      */
+      // Creating a new instance of the class
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      visitor.visitInsn(DUP)
       if (JvmOps.isUnitTag(tagInfo)) {
-        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+          AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
       } else {
-        // Creating a new instance of the class
-        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-        visitor.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-        // Calling the constructor of the class
-        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
+      // Descriptor of the constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+      // Calling the constructor of the class
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
@@ -872,7 +873,16 @@ object GenExpression {
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
+      for (arg <- args) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        // Cast the argument to the right type.
+        arg.tpe match {
+          case MonoType.Native(clazz) =>
+            val argType = asm.Type.getInternalName(clazz)
+            visitor.visitTypeInsn(CHECKCAST, argType)
+          case _ => // nop
+        }
+      }
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
