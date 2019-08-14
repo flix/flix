@@ -138,22 +138,21 @@ namespace Path {
     ///
     /// Writes all lines in the list `l` to the path `p`.
     ///
-    pub def writeLines(p: Path, l: List[Str]): Result[(), IOError] = tryWithCatch(_ -> {
+    pub def writeLines(p: Path, l: List[Str]): Result[Unit, IOError] = tryWithCatch(_ -> {
         let Path(javaFile) = p;
         let w = native new java.io.PrintWriter(javaFile : ##java.io.File);
         writeAll(l, w);
-        native method java.io.PrintWriter.close(w);
+        native method java.io.PrintWriter.close(w) as Unit;
         ()
     })
 
     ///
     /// Writes all lines in `l` to the writer `w`.
     ///
-    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Result[(), IOError] = match l with {
-        case Nil => Ok(())
+    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit = match l with {
+        case Nil => ()
         case x :: xs =>
-            Console.printLine(x);
-            native method java.io.PrintWriter.println(w, x : Str);
+            native method java.io.PrintWriter.println(w, x : Str) as Unit;
             writeAll(xs, w)
     }
 

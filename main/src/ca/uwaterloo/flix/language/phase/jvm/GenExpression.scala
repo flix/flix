@@ -454,19 +454,20 @@ object GenExpression {
      there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
      a new one.
      */
+      // Creating a new instance of the class
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      visitor.visitInsn(DUP)
       if (JvmOps.isUnitTag(tagInfo)) {
-        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+          AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
       } else {
-        // Creating a new instance of the class
-        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-        visitor.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-        // Calling the constructor of the class
-        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
+      // Descriptor of the constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+      // Calling the constructor of the class
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
