@@ -785,24 +785,24 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph, loc: SourceLocation): List[(Symbol.PredSym, SourceLocation)] = {
+  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph, loc: SourceLocation): List[(Symbol.PredSym, Polarity, SourceLocation)] = {
     // Computes a map from symbols to their successors.
-    val succ = mutable.Map.empty[Symbol.PredSym, Set[(Symbol.PredSym, SourceLocation)]]
+    val succ = mutable.Map.empty[Symbol.PredSym, Set[(Symbol.PredSym, Polarity, SourceLocation)]]
     for (edge <- g.xs) {
       edge match {
         case DependencyEdge.Positive(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
-          succ.put(body, s + ((head, loc)))
+          succ.put(body, s + ((head, Polarity.Positive, loc)))
         case DependencyEdge.Negative(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
-          succ.put(body, s + ((head, loc)))
+          succ.put(body, s + ((head, Polarity.Negative, loc)))
       }
     }
 
     // We perform a DFS using recursion to find the cycle.
 
     // A map from symbols to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[Symbol.PredSym, (Symbol.PredSym, SourceLocation)]
+    val pred = mutable.Map.empty[Symbol.PredSym, (Symbol.PredSym, Polarity, SourceLocation)]
 
     // A set of previously seen symbols.
     val seen = mutable.Set.empty[Symbol.PredSym]
@@ -813,9 +813,9 @@ object Stratifier extends Phase[Root, Root] {
       seen.add(curr)
 
       // Recursively visit each unseen child.
-      for ((succ, loc) <- succ.getOrElse(curr, Set.empty)) {
+      for ((succ, polarity, loc) <- succ.getOrElse(curr, Set.empty)) {
         if (!seen.contains(succ)) {
-          pred.update(succ, (curr, loc))
+          pred.update(succ, (curr, polarity, loc))
           visit(succ)
         }
       }
@@ -825,13 +825,13 @@ object Stratifier extends Phase[Root, Root] {
     visit(dst)
 
     // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: Symbol.PredSym): List[(Symbol.PredSym, SourceLocation)] = pred.get(curr) match {
+    def unroll(curr: Symbol.PredSym): List[(Symbol.PredSym, Polarity, SourceLocation)] = pred.get(curr) match {
       case None => Nil
-      case Some((prev, loc)) => (prev, loc) :: unroll(prev)
+      case Some((prev, polarity, loc)) => (prev, polarity, loc) :: unroll(prev)
     }
 
     // Assemble the full path.
-    (src, loc) :: unroll(src) ::: (src, loc) :: Nil
+    (src, Polarity.Negative, loc) :: unroll(src) ::: (src, Polarity.Negative, loc) :: Nil
   }
 
   /**
