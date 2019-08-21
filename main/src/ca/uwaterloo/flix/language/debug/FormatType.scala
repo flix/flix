@@ -7,6 +7,9 @@ import ca.uwaterloo.flix.util.tc.Show._
 
 object FormatType {
 
+  /**
+    * Returns a human readable representation of the given type `tpe`.
+    */
   def format(tpe: Type): String = tpe match {
     case Type.SchemaEmpty => "#{}"
     case _: Type.SchemaExtend =>
@@ -17,7 +20,7 @@ object FormatType {
   }
 
   /**
-    * Returns the predicates and types that occur in a schema type.
+    * Returns the types of the predicate symbols in a schema type.
     */
   private def getSchemaTypes(tpe: Type): List[Type] = tpe match {
     case Type.Var(_, _) => Nil

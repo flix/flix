@@ -32,7 +32,7 @@ case class StratificationError(cycle: List[(Symbol.PredSym, SourceLocation)], tp
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
-    vt << ">> The expression is not stratified. A predicate depends on itself negatively." << NewLine
+    vt << ">> The expression is not stratified. A predicate depends negatively on itself." << NewLine
     vt << NewLine
     vt << Code(loc, "the expression is not stratified.")
     vt << NewLine
@@ -45,7 +45,7 @@ case class StratificationError(cycle: List[(Symbol.PredSym, SourceLocation)], tp
     vt << cycle.map(_._1).mkString(" <- ")
     vt << Dedent << NewLine
     vt << NewLine
-    vt << "The follow constraints are part of the negative cycle:" << NewLine
+    vt << "The following constraints are part of the negative cycle:" << NewLine
     vt << Indent
     for ((sym, loc) <- cycle) {
       vt << NewLine << Cyan(sym.toString) << " at " << loc.format << " (which depends on)"
