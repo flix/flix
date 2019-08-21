@@ -50,13 +50,17 @@ object Stratifier extends Phase[Root, Root] {
       return root.toSuccess
 
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val dg = root.defs.par.aggregate(DependencyGraph.empty)({
-      case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
-    }, _ + _)
+    val dg = flix.subphase("Compute Dependency Graph") {
+      root.defs.par.aggregate(DependencyGraph.empty)({
+        case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
+      }, _ + _)
+    }
 
     // Compute the stratification at every solve expression in the ast.`
-    val defsVal = traverse(root.defs) {
-      case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
+    val defsVal = flix.subphase("Compute Stratification") {
+      traverse(root.defs) {
+        case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
+      }
     }
 
     mapN(defsVal) {
