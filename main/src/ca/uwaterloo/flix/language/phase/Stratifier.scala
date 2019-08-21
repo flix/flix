@@ -50,13 +50,17 @@ object Stratifier extends Phase[Root, Root] {
       return root.toSuccess
 
     // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val dg = root.defs.par.aggregate(DependencyGraph.empty)({
-      case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
-    }, _ + _)
+    val dg = flix.subphase("Compute Dependency Graph") {
+      root.defs.par.aggregate(DependencyGraph.empty)({
+        case (acc, (sym, decl)) => acc + dependencyGraphOfDef(decl)
+      }, _ + _)
+    }
 
     // Compute the stratification at every solve expression in the ast.`
-    val defsVal = traverse(root.defs) {
-      case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
+    val defsVal = flix.subphase("Compute Stratification") {
+      traverse(root.defs) {
+        case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
+      }
     }
 
     mapN(defsVal) {
@@ -376,7 +380,7 @@ object Stratifier extends Phase[Root, Root] {
       val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(rg, loc)
+      val stf = stratify(rg, tpe, loc)
 
       mapN(stf) {
         case _ =>
@@ -389,7 +393,7 @@ object Stratifier extends Phase[Root, Root] {
       val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(rg, loc)
+      val stf = stratify(rg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
         case (e1, e2, _) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
@@ -400,7 +404,7 @@ object Stratifier extends Phase[Root, Root] {
       val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(rg, loc)
+      val stf = stratify(rg, tpe, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -714,7 +718,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(g: DependencyGraph, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
+  private def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicate symbols to their (maximum) stratum number.
     //
@@ -771,7 +775,7 @@ object Stratifier extends Phase[Root, Root] {
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), loc).toFailure
+                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
               }
             }
         }
