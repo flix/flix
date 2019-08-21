@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.FormatType
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Symbol.PredSym, Polarity, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
+case class StratificationError(cycle: List[(Symbol.PredSym, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = loc.source
   val message: VirtualTerminal = {
@@ -42,23 +42,15 @@ case class StratificationError(cycle: List[(Symbol.PredSym, Polarity, SourceLoca
     vt << Dedent << NewLine << NewLine
     vt << "The following predicate symbols are on the negative cycle:" << NewLine
     vt << Indent << NewLine
-    vt << cycle.map(format).mkString(", ")
+    vt << cycle.map(_._1).mkString(" <- ")
     vt << Dedent << NewLine
     vt << NewLine
     vt << "The follow constraints are part of the negative cycle:" << NewLine
     vt << Indent
-    for ((sym, _, loc) <- cycle) {
+    for ((sym, loc) <- cycle) {
       vt << NewLine << Cyan(sym.toString) << " at " << loc.format << " (which depends on)"
     }
     vt << Dedent << NewLine
-  }
-
-  /**
-    * Formats the given (symbol, polarity, location) triple.
-    */
-  private def format(t: (Symbol.PredSym, Polarity, SourceLocation)): String = t match {
-    case (sym, Polarity.Positive, _) => sym.toString
-    case (sym, Polarity.Negative, _) => "not " + sym.toString
   }
 
 }
