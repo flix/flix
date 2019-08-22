@@ -124,7 +124,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       effs.get(ident.name) match {
         case None =>
           // Case 1: The effect does not already exist. Update it.
-          val tparams = getTypeParams(tparams0)
+          val tparams = getExplicitTypeParams(tparams0)
           val tenv0 = getTypeEnv(tparams)
           val fparams = getFormalParams(fparams0, tenv0)
           val env0 = getVarEnv(fparams)
@@ -147,7 +147,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       handlers.get(ident.name) match {
         case None =>
           // Case 1: The handler does not already exist. Update it.
-          val tparams = getTypeParams(tparams0)
+          val tparams = getExplicitTypeParams(tparams0)
           val tenv0 = getTypeEnv(tparams)
           val fparams = getFormalParams(fparams0, tenv0)
           val env0 = getVarEnv(fparams)
@@ -329,7 +329,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkRelSym(ns0, ident)
-          val tparams = getTypeParams(tparams0)
+          val tparams = getExplicitTypeParams(tparams0)
           val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
           val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
           val relations = Map(ident.name -> relation)
@@ -340,7 +340,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkRelSym(ns0, ident)
-              val tparams = getTypeParams(tparams0)
+              val tparams = getExplicitTypeParams(tparams0)
               val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
               val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
               val relations = relations0 + (ident.name -> relation)
@@ -360,7 +360,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkLatSym(ns0, ident)
-          val tparams = getTypeParams(tparams0)
+          val tparams = getExplicitTypeParams(tparams0)
           val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
           val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
           val lattices = Map(ident.name -> lattice)
@@ -371,7 +371,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkLatSym(ns0, ident)
-              val tparams = getTypeParams(tparams0)
+              val tparams = getExplicitTypeParams(tparams0)
               val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
               val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
               val lattices = lattices0 + (ident.name -> lattice)
@@ -439,8 +439,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      val explicitTypeParams = getTypeParams(tparams0) // TODO: Rename and check usages.
-      val implicitTypeParams = getImplicitTypeParams(fparams0, explicitTypeParams) // TODO: and from return type...
+      val explicitTypeParams = getExplicitTypeParams(tparams0)
+      val implicitTypeParams = getImplicitTypeParams(fparams0, explicitTypeParams, Some(tpe))
+
       val tparams = explicitTypeParams ::: implicitTypeParams
       val tenv = tenv0 ++ getTypeEnv(tparams)
       val fparams = getFormalParams(fparams0, tenv)
@@ -492,7 +493,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): NamedAst.Sig = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
       val sym = Symbol.mkSigSym(classSym, ident)
-      val tparams = getTypeParams(tparams0)
+      val tparams = getExplicitTypeParams(tparams0)
       val tenv = tenv0 ++ getTypeEnv(tparams)
       val fparams = getFormalParams(fparams0, tenv)
       val sc = getScheme(tparams, tpe, tenv)
@@ -1436,7 +1437,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given type parameters `tparams0`.
     */
-  private def getTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
+  private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
       // Generate a fresh type variable for the type parameter.
       val tvar = Type.freshTypeVar()
@@ -1445,20 +1446,35 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.TypeParam(p, tvar, p.loc)
   }
 
-  // TODO: DOC
-  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], explicitTypeParams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
-    val bound = explicitTypeParams.map(_.name.name).toSet
+  // TODO: Where to support elision?
 
-    val freeTypeVars = fparams.foldRight(Set.empty[String]) {
-      case (WeededAst.FormalParam(_, _, None, _), xs) => xs
-      case (WeededAst.FormalParam(_, _, Some(tpe), _), xs) =>
-        val free = freeVars(tpe).map(_.name).toSet -- bound
-        xs ++ free
+  // TODO: DOC
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], explicitTypeParams: List[NamedAst.TypeParam], returnType: Option[WeededAst.Type])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    // Compute the set of identifiers explicitly bound by the formal type parameters.
+    val explicitlyBound = explicitTypeParams.foldLeft(Set.empty[String]) {
+      case (acc, NamedAst.TypeParam(ident, _, _)) => acc + ident.name
     }
 
-    // TODO: The names need to be a set and subtracted from the declared type variables.
+    // Compute the set of *all* identifiers, bound and unbound, in the formal parameters.
+    val identifiers = fparams.foldLeft(Set.empty[String]) {
+      case (acc, WeededAst.FormalParam(_, _, None, _)) => acc
+      case (acc, WeededAst.FormalParam(_, _, Some(tpe), _)) =>
+        freeVars(tpe).foldLeft(acc) {
+          case (innerAcc, ident) => innerAcc + ident.name
+        }
+    }
 
-    freeTypeVars.toList.map {
+    // Compute the set of *all* identifiers in the optional return type.
+    val extraIdentifiers = returnType match {
+      case None => Set.empty
+      case Some(tpe) => freeVars(tpe).map(_.name).toSet
+    }
+
+    // Compute the set of implicitly bound identifiers.
+    val implicitlyBound = identifiers ++ extraIdentifiers -- explicitlyBound
+
+    // Construct a (sorted) list of implicitly bound type parameters.
+    implicitlyBound.toList.sorted.map {
       case n =>
         val name = Name.Ident(SourcePosition.Unknown, n, SourcePosition.Unknown)
         val tpe = Type.freshTypeVar()
