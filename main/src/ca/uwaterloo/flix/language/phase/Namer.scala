@@ -439,7 +439,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      val tparams = getTypeParams(tparams0)
+      val explicitTypeParams = getTypeParams(tparams0) // TODO: Rename and check usages.
+      val implicitTypeParams = getImplicitTypeParams(fparams0, explicitTypeParams) // TODO: and from return type...
+      val tparams = explicitTypeParams ::: implicitTypeParams
       val tenv = tenv0 ++ getTypeEnv(tparams)
       val fparams = getFormalParams(fparams0, tenv)
       val env0 = getVarEnv(fparams)
@@ -1441,6 +1443,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       // Remember the original textual name.
       tvar.setText(p.name)
       NamedAst.TypeParam(p, tvar, p.loc)
+  }
+
+  // TODO: DOC
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], explicitTypeParams: List[NamedAst.TypeParam])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    val bound = explicitTypeParams.map(_.name.name).toSet
+
+    val freeTypeVars = fparams.foldRight(Set.empty[String]) {
+      case (WeededAst.FormalParam(_, _, None, _), xs) => xs
+      case (WeededAst.FormalParam(_, _, Some(tpe), _), xs) =>
+        val free = freeVars(tpe).map(_.name).toSet -- bound
+        xs ++ free
+    }
+
+    // TODO: The names need to be a set and subtracted from the declared type variables.
+
+    freeTypeVars.toList.map {
+      case n =>
+        val name = Name.Ident(SourcePosition.Unknown, n, SourcePosition.Unknown)
+        val tpe = Type.freshTypeVar()
+        val loc = SourceLocation.Generated
+        NamedAst.TypeParam(name, tpe, loc)
+    }
   }
 
   /**
