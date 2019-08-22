@@ -39,12 +39,23 @@ import scala.collection.parallel.CollectionConverters._
   */
 object Stratifier extends Phase[Root, Root] {
 
-  // TODO: It might be useful to cache the results of stratification.
+  /**
+    * Enable cache?
+    */
+  val EnableCache: Boolean = true
+
+  /**
+    * The type of the cache.
+    */
+  type Cache = mutable.Map[Set[Symbol.PredSym], Ast.Stratification]
 
   /**
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
+    // A cache of stratifications. Only caches successful stratifications.
+    val cache: Cache = mutable.Map.empty
+
     // Check if computation of stratification is disabled.
     if (flix.options.xnostratifier)
       return root.toSuccess
@@ -59,7 +70,7 @@ object Stratifier extends Phase[Root, Root] {
     // Compute the stratification at every solve expression in the ast.`
     val defsVal = flix.subphase("Compute Stratification") {
       traverse(root.defs) {
-        case (sym, defn) => visitDef(defn)(dg).map(d => sym -> d)
+        case (sym, defn) => visitDef(defn)(dg, cache).map(d => sym -> d)
       }
     }
 
@@ -71,7 +82,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit dg: DependencyGraph): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit dg: DependencyGraph, cache: Cache): Validation[Def, CompilationError] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
@@ -81,7 +92,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression)(implicit dg: DependencyGraph): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit dg: DependencyGraph, cache: Cache): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(_) => exp0.toSuccess
 
     case Expression.True(_) => exp0.toSuccess
@@ -380,7 +391,7 @@ object Stratifier extends Phase[Root, Root] {
       val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(rg, tpe, loc)
+      val stf = stratifyWithCache(rg, tpe, loc)
 
       mapN(stf) {
         case _ =>
@@ -393,7 +404,7 @@ object Stratifier extends Phase[Root, Root] {
       val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(rg, tpe, loc)
+      val stf = stratifyWithCache(rg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
         case (e1, e2, _) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
@@ -404,7 +415,7 @@ object Stratifier extends Phase[Root, Root] {
       val rg = restrict(dg, tpe)
 
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratify(rg, tpe, loc)
+      val stf = stratifyWithCache(rg, tpe, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -424,7 +435,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given predicate with parameter `p0`.
     */
-  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit dg: DependencyGraph): Validation[PredicateWithParam, StratificationError] = p0 match {
+  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit dg: DependencyGraph, cache: Cache): Validation[PredicateWithParam, StratificationError] = p0 match {
     case PredicateWithParam(sym, exp) => mapN(visitExp(exp)) {
       case e => PredicateWithParam(sym, e)
     }
@@ -715,6 +726,35 @@ object Stratifier extends Phase[Root, Root] {
 
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
+    */
+  private def stratifyWithCache(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
+    // Check if the cache is enabled.
+    if (!EnableCache) {
+      return stratify(g, tpe, loc)
+    }
+
+    // Construct the key from the type.
+    val key = getPredicateSymbols(tpe)
+
+    cache.get(key) match {
+      case None =>
+        // Case 1: The stratification was not in the cache. Compute it.
+        stratify(g, tpe, loc) match {
+          case Validation.Success(stf) =>
+            // Cache the stratification.
+            cache.put(key, stf)
+            // And return it.
+            stf.toSuccess
+          case Validation.Failure(errors) => Validation.Failure(errors)
+        }
+      case Some(stf) =>
+        // Case 2: The stratification was cached. Simply use it.
+        stf.toSuccess
+    }
+  }
+
+  /**
+    * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
@@ -841,7 +881,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Reorders a constraint such that its negated atoms occur last.
     */
-  def reorder(c0: Constraint): Constraint = {
+  private def reorder(c0: Constraint): Constraint = {
     /**
       * Returns `true` if the body predicate is negated.
       */
@@ -856,6 +896,16 @@ object Stratifier extends Phase[Root, Root] {
 
     // Reassemble the constraint.
     c0.copy(body = nonNegated ::: negated)
+  }
+
+  /**
+    * Returns the set of predicate symbols that appears in the given row type `tpe`.
+    */
+  private def getPredicateSymbols(tpe: Type): Set[Symbol.PredSym] = tpe match {
+    case Type.Var(_, _) => Set.empty
+    case Type.SchemaEmpty => Set.empty
+    case Type.SchemaExtend(sym, _, rest) => getPredicateSymbols(rest) + sym
+    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
 }
