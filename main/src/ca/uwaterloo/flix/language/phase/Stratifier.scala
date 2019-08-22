@@ -40,12 +40,7 @@ import scala.collection.parallel.CollectionConverters._
 object Stratifier extends Phase[Root, Root] {
 
   /**
-    * Enable cache?
-    */
-  val EnableCache: Boolean = true
-
-  /**
-    * The type of the cache.
+    * A type alias for the stratification cache.
     */
   type Cache = mutable.Map[Set[Symbol.PredSym], Ast.Stratification]
 
@@ -728,27 +723,26 @@ object Stratifier extends Phase[Root, Root] {
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
     */
   private def stratifyWithCache(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
-    // Check if the cache is enabled.
-    if (!EnableCache) {
-      return stratify(g, tpe, loc)
-    }
-
-    // Construct the key from the type.
+    // The key is the set of predicate symbols that occur in the row type.
     val key = getPredicateSymbols(tpe)
 
+    // Lookup the key in the stratification cache.
     cache.get(key) match {
       case None =>
-        // Case 1: The stratification was not in the cache. Compute it.
+        // Case 1: Cache miss: Compute the stratification and possibly cache it.
         stratify(g, tpe, loc) match {
           case Validation.Success(stf) =>
             // Cache the stratification.
             cache.put(key, stf)
+
             // And return it.
             stf.toSuccess
-          case Validation.Failure(errors) => Validation.Failure(errors)
+          case Validation.Failure(errors) =>
+            // Unable to stratify. Do not cache the result.
+            Validation.Failure(errors)
         }
       case Some(stf) =>
-        // Case 2: The stratification was cached. Simply use it.
+        // Case 2: Cache hit: Return the stratification.
         stf.toSuccess
     }
   }
