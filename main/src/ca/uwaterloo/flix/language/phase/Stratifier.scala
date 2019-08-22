@@ -382,7 +382,7 @@ object Stratifier extends Phase[Root, Root] {
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
     case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
-      // Compute the stratification of the restricted dependency graph.
+      // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
@@ -392,7 +392,7 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
-      // Compute the stratification of the restricted dependency graph.
+      // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
@@ -400,7 +400,7 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      // Compute the stratification of the restricted dependency graph.
+      // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp), stf) {
@@ -693,7 +693,9 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
+    * Computes the stratification of the given dependency graph `dg` for the given row type `tpe` at the given source location `loc`.
+    *
+    * Uses the given cache and updates it if required.
     */
   private def stratifyWithCache(dg: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicate symbols that occur in the row type.
@@ -707,6 +709,7 @@ object Stratifier extends Phase[Root, Root] {
         // Compute the restricted dependency graph.
         val rg = restrict(dg, tpe)
 
+        // Compute the stratification.
         stratify(rg, tpe, loc) match {
           case Validation.Success(stf) =>
             // Cache the stratification.
