@@ -440,7 +440,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
       val explicitTypeParams = getExplicitTypeParams(tparams0)
-      val implicitTypeParams = getImplicitTypeParams(fparams0, explicitTypeParams, Some(tpe))
+      val implicitTypeParams = getImplicitTypeParams(fparams0, explicitTypeParams, Some(tpe), loc)
 
       val tparams = explicitTypeParams ::: implicitTypeParams
       val tenv = tenv0 ++ getTypeEnv(tparams)
@@ -1449,7 +1449,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   // TODO: Where to support elision?
 
   // TODO: DOC
-  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], explicitTypeParams: List[NamedAst.TypeParam], returnType: Option[WeededAst.Type])(implicit flix: Flix): List[NamedAst.TypeParam] = {
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], explicitTypeParams: List[NamedAst.TypeParam], returnType: Option[WeededAst.Type], loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the set of identifiers explicitly bound by the formal type parameters.
     val explicitlyBound = explicitTypeParams.foldLeft(Set.empty[String]) {
       case (acc, NamedAst.TypeParam(ident, _, _)) => acc + ident.name
@@ -1475,11 +1475,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // Construct a (sorted) list of implicitly bound type parameters.
     implicitlyBound.toList.sorted.map {
-      case n =>
-        val name = Name.Ident(SourcePosition.Unknown, n, SourcePosition.Unknown)
-        val tpe = Type.freshTypeVar()
-        val loc = SourceLocation.Generated
-        NamedAst.TypeParam(name, tpe, loc)
+      case name =>
+        val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+        val tvar = Type.freshTypeVar()
+        tvar.setText(name)
+        NamedAst.TypeParam(ident, tvar, loc)
     }
   }
 
