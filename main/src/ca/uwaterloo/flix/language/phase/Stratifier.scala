@@ -382,11 +382,8 @@ object Stratifier extends Phase[Root, Root] {
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
     case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
-      // Compute the restricted dependency graph.
-      val rg = restrict(dg, tpe)
-
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratifyWithCache(rg, tpe, loc)
+      val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
         case _ =>
@@ -395,22 +392,16 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
-      // Compute the restricted dependency graph.
-      val rg = restrict(dg, tpe)
-
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratifyWithCache(rg, tpe, loc)
+      val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
         case (e1, e2, _) => Expression.FixpointCompose(e1, e2, tpe, eff, loc)
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      // Compute the restricted dependency graph.
-      val rg = restrict(dg, tpe)
-
       // Compute the stratification of the restricted dependency graph.
-      val stf = stratifyWithCache(rg, tpe, loc)
+      val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(visitExp(exp), stf) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
@@ -434,24 +425,6 @@ object Stratifier extends Phase[Root, Root] {
     case PredicateWithParam(sym, exp) => mapN(visitExp(exp)) {
       case e => PredicateWithParam(sym, e)
     }
-  }
-
-  /**
-    * Restricts the given dependency graph `dg` to the predicate symbols that occur in the given type `tpe`.
-    */
-  private def restrict(dg: DependencyGraph, tpe: Type): DependencyGraph = {
-    val predSyms = predicateSymsOf(tpe)
-    dg.restrict(predSyms.toSet)
-  }
-
-  /**
-    * Returns all predicate symbols that appears in the given schema type `tpe`.
-    */
-  private def predicateSymsOf(tpe: Type): List[Symbol.PredSym] = tpe match {
-    case Type.Var(_, _) => Nil
-    case Type.SchemaEmpty => Nil
-    case Type.SchemaExtend(sym, _, rest) => sym :: predicateSymsOf(rest)
-    case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
   }
 
   /**
@@ -722,15 +695,19 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
     */
-  private def stratifyWithCache(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
+  private def stratifyWithCache(dg: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit cache: Cache): Validation[Ast.Stratification, StratificationError] = {
     // The key is the set of predicate symbols that occur in the row type.
-    val key = getPredicateSymbols(tpe)
+    val key = predicateSymbolsOf(tpe)
 
     // Lookup the key in the stratification cache.
     cache.get(key) match {
       case None =>
         // Case 1: Cache miss: Compute the stratification and possibly cache it.
-        stratify(g, tpe, loc) match {
+
+        // Compute the restricted dependency graph.
+        val rg = restrict(dg, tpe)
+
+        stratify(rg, tpe, loc) match {
           case Validation.Success(stf) =>
             // Cache the stratification.
             cache.put(key, stf)
@@ -893,13 +870,21 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
+    * Restricts the given dependency graph `dg` to the predicate symbols that occur in the given type `tpe`.
+    */
+  private def restrict(dg: DependencyGraph, tpe: Type): DependencyGraph = {
+    val predSyms = predicateSymbolsOf(tpe)
+    dg.restrict(predSyms)
+  }
+
+  /**
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
-  private def getPredicateSymbols(tpe: Type): Set[Symbol.PredSym] = tpe match {
+  private def predicateSymbolsOf(tpe: Type): Set[Symbol.PredSym] = tpe match {
     case Type.Var(_, _) => Set.empty
     case Type.SchemaEmpty => Set.empty
-    case Type.SchemaExtend(sym, _, rest) => getPredicateSymbols(rest) + sym
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym
+    case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
   }
 
 }
