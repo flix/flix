@@ -117,7 +117,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
       val expVal = visitExp(exp0)
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = WeededAst.TypeParams.Explicit(tparams0.toList.map(_.ident))
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt)
 
@@ -179,7 +179,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val expVal = visitExp(exp0)
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = WeededAst.TypeParams.Explicit(tparams0.toList.map(_.ident))
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
 
       mapN(formalsVal, expVal) {
@@ -1923,7 +1923,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val ident = Name.Ident(sp1, "main", sp2)
 
     // Type and formal parameters for the generated main.
-    val tparams = Nil
+    val tparams = WeededAst.TypeParams.Explicit(Nil)
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
     // Collect all the constraints into a single constraint set.

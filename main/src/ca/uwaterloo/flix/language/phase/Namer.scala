@@ -439,10 +439,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      val explicitTypeParams = getExplicitTypeParams(tparams0)
-      val implicitTypeParams = getImplicitTypeParams(fparams0, explicitTypeParams, Some(tpe), loc)
+      val tparams = tparams0 match {
+        case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+        case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
+      }
 
-      val tparams = explicitTypeParams ::: implicitTypeParams
       val tenv = tenv0 ++ getTypeEnv(tparams)
       val fparams = getFormalParams(fparams0, tenv)
       val env0 = getVarEnv(fparams)
@@ -1435,7 +1436,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Performs naming on the given type parameters `tparams0`.
+    * Returns the explicit type parameters from the given type parameters.
     */
   private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
@@ -1446,15 +1447,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.TypeParam(p, tvar, p.loc)
   }
 
-  // TODO: Where to support elision?
-
-  // TODO: DOC
-  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], explicitTypeParams: List[NamedAst.TypeParam], returnType: Option[WeededAst.Type], loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
-    // Compute the set of identifiers explicitly bound by the formal type parameters.
-    val explicitlyBound = explicitTypeParams.foldLeft(Set.empty[String]) {
-      case (acc, NamedAst.TypeParam(ident, _, _)) => acc + ident.name
-    }
-
+  /**
+    * Returns the implicit type parameters constructed from the given formal parameters and return type.
+    */
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the set of *all* identifiers, bound and unbound, in the formal parameters.
     val identifiers = fparams.foldLeft(Set.empty[String]) {
       case (acc, WeededAst.FormalParam(_, _, None, _)) => acc
@@ -1465,16 +1461,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     // Compute the set of *all* identifiers in the optional return type.
-    val extraIdentifiers = returnType match {
-      case None => Set.empty
-      case Some(tpe) => freeVars(tpe).map(_.name).toSet
-    }
+    val extraIdentifiers = freeVars(returnType).map(_.name)
 
     // Compute the set of implicitly bound identifiers.
-    val implicitlyBound = identifiers ++ extraIdentifiers -- explicitlyBound
+    val implicitlyBound = identifiers ++ extraIdentifiers
 
     // Construct a (sorted) list of implicitly bound type parameters.
-    implicitlyBound.toList.sorted.map {
+    implicitlyBound.toList.map {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
         val tvar = Type.freshTypeVar()
