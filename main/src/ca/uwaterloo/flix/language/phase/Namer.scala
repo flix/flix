@@ -20,7 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
+import ca.uwaterloo.flix.language.ast.WeededAst.{Declaration, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -124,7 +124,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       effs.get(ident.name) match {
         case None =>
           // Case 1: The effect does not already exist. Update it.
-          val tparams = getExplicitTypeParams(tparams0)
+          val tparams = tparams0 match {
+            case WeededAst.TypeParams.Elided => Nil // TODO: Support elision?
+            case WeededAst.TypeParams.Explicit(tparams) => getExplicitTypeParams(tparams)
+          }
           val tenv0 = getTypeEnv(tparams)
           val fparams = getFormalParams(fparams0, tenv0)
           val env0 = getVarEnv(fparams)
@@ -147,7 +150,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       handlers.get(ident.name) match {
         case None =>
           // Case 1: The handler does not already exist. Update it.
-          val tparams = getExplicitTypeParams(tparams0)
+          val tparams = tparams0 match {
+            case WeededAst.TypeParams.Elided => Nil // TODO: Support type elision?
+            case WeededAst.TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+          }
           val tenv0 = getTypeEnv(tparams)
           val fparams = getFormalParams(fparams0, tenv0)
           val env0 = getVarEnv(fparams)
@@ -178,8 +184,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 2.1: The enum does not exist in the namespace. Update it.
           val sym = Symbol.mkEnumSym(ns0, ident)
-          val tparams = tparams0 map {
-            case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+          val tparams = tparams0 match {
+            case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+            case TypeParams.Explicit(tps) => tps map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+            }
           }
           val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
           val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
@@ -324,12 +333,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Relation.
      */
     case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
+      val tparams = tparams0 match {
+        case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+      }
+
       // check if the table already exists.
       prog0.relations.get(ns0) match {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkRelSym(ns0, ident)
-          val tparams = getExplicitTypeParams(tparams0)
           val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
           val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
           val relations = Map(ident.name -> relation)
@@ -340,7 +353,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkRelSym(ns0, ident)
-              val tparams = getExplicitTypeParams(tparams0)
               val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
               val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
               val relations = relations0 + (ident.name -> relation)
@@ -355,12 +367,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Lattice.
      */
     case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
+      val tparams = tparams0 match {
+        case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+      }
+
       // check if the table already exists.
       prog0.lattices.get(ns0) match {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkLatSym(ns0, ident)
-          val tparams = getExplicitTypeParams(tparams0)
           val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
           val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
           val lattices = Map(ident.name -> lattice)
@@ -371,7 +387,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkLatSym(ns0, ident)
-              val tparams = getExplicitTypeParams(tparams0)
               val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
               val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
               val lattices = lattices0 + (ident.name -> lattice)
@@ -494,7 +509,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): NamedAst.Sig = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
       val sym = Symbol.mkSigSym(classSym, ident)
-      val tparams = getExplicitTypeParams(tparams0)
+      val tparams = tparams0 match {
+        case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+      }
       val tenv = tenv0 ++ getTypeEnv(tparams)
       val fparams = getFormalParams(fparams0, tenv)
       val sc = getScheme(tparams, tpe, tenv)

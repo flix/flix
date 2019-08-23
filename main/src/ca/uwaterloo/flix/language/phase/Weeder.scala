@@ -117,7 +117,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
       val expVal = visitExp(exp0)
-      val tparams = WeededAst.TypeParams.Explicit(tparams0.toList.map(_.ident))
+      val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt)
 
@@ -138,7 +138,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt)
 
@@ -158,7 +158,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val expVal = visitExp(exp0)
       val effVal = visitEff(effOpt)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
@@ -179,7 +179,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val expVal = visitExp(exp0)
-      val tparams = WeededAst.TypeParams.Explicit(tparams0.toList.map(_.ident))
+      val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
 
       mapN(formalsVal, expVal) {
@@ -199,7 +199,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, cases, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
 
       modVal flatMap {
         case mod =>
@@ -236,7 +236,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       modVal map {
         case mod =>
           val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, visitType(caze.tpe)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, Nil, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, WeededAst.TypeParams.Explicit(Nil), cases, mkSL(sp1, sp2)))
       }
   }
 
@@ -247,7 +247,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attrs, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
 
       /*
        * Check for `DuplicateAttribute`.
@@ -265,7 +265,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
 
       /*
        * Check for `DuplicateAttribute`.
@@ -1611,7 +1611,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val annVal = visitAnnotationOrProperty(ann0)
       // TODO: legalAnnotations
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val effVal = visitEff(effOpt)
 
       /*
@@ -1640,6 +1640,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         e <- visitExp(exp)
       } yield WeededAst.HandlerBinding(qname, e)
+  }
+
+  /**
+    * Weeds the given type parameters `tparams0`.
+    */
+  private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
+    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
+    case ParsedAst.TypeParams.Explicit(bounds) => WeededAst.TypeParams.Explicit(bounds.map(_.ident))
   }
 
   /**
