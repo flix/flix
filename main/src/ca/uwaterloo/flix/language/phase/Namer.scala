@@ -129,13 +129,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case WeededAst.TypeParams.Explicit(tparams) => getExplicitTypeParams(tparams)
           }
           val tenv0 = getTypeEnv(tparams)
-          val fparams = getFormalParams(fparams0, tenv0)
-          val env0 = getVarEnv(fparams)
-
-          val sym = Symbol.mkEffSym(ns0, ident)
-          val sc = getScheme(tparams, tpe, tenv0)
-          val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, eff0, loc)
-          prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff)))).toSuccess
+          flatMapN(getFormalParams(fparams0, tenv0)) {
+            case fparams =>
+              val env0 = getVarEnv(fparams)
+              val sym = Symbol.mkEffSym(ns0, ident)
+              mapN(getScheme(tparams, tpe, tenv0)) {
+                case sc =>
+                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, eff0, loc)
+                  prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff))))
+              }
+          }
         case Some(eff) =>
           // Case 2: Duplicate effect.
           NameError.DuplicateEff(ident.name, eff.loc, ident.loc).toFailure
@@ -154,16 +157,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
             case WeededAst.TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
           }
-          val tenv0 = getTypeEnv(tparams)
-          val fparams = getFormalParams(fparams0, tenv0)
-          val env0 = getVarEnv(fparams)
 
-          visitExp(exp, env0, tenv0) map {
-            case e =>
-              val sym = Symbol.mkEffSym(ns0, ident)
-              val sc = getScheme(tparams, tpe, tenv0)
-              val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, eff0, loc)
-              prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
+          val tenv0 = getTypeEnv(tparams)
+          flatMapN(getFormalParams(fparams0, tenv0)) {
+            case fparams =>
+              val env0 = getVarEnv(fparams)
+              mapN(visitExp(exp, env0, tenv0), getScheme(tparams, tpe, tenv0)) {
+                case (e, sc) =>
+                  val sym = Symbol.mkEffSym(ns0, ident)
+                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, eff0, loc)
+                  prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
+              }
           }
         case Some(handler) =>
           // Case 2: Duplicate handler.
@@ -200,9 +204,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
             }
           }
-          val enum = NamedAst.Enum(doc, mod, sym, tparams, casesOf(cases, tenv), enumType, loc)
-          val enums = enums0 + (ident.name -> enum)
-          prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
+
+          mapN(casesOf(cases, tenv)) {
+            case cases =>
+              val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, loc)
+              val enums = enums0 + (ident.name -> enum)
+              prog0.copy(enums = prog0.enums + (ns0 -> enums))
+          }
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
           NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
@@ -224,18 +232,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * BoundedLattice (deprecated).
      */
-    case WeededAst.Declaration.LatticeComponents(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+    case WeededAst.Declaration.LatticeComponents(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
       val botVal = visitExp(bot0, Map.empty, Map.empty)
       val topVal = visitExp(top0, Map.empty, Map.empty)
       val equVal = visitExp(equ0, Map.empty, Map.empty)
       val leqVal = visitExp(leq0, Map.empty, Map.empty)
       val lubVal = visitExp(lub0, Map.empty, Map.empty)
       val glbVal = visitExp(glb0, Map.empty, Map.empty)
+      val tpeVal = visitType(tpe0, Map.empty)
 
-      mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal) {
-        case (bot, top, equ, leq, lub, glb) =>
-          val lattice = NamedAst.LatticeComponents(visitType(tpe, Map.empty), bot, top, equ, leq, lub, glb, ns0, loc)
-          prog0.copy(latticeComponents = prog0.latticeComponents + (visitType(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
+      mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
+        case (bot, top, equ, leq, lub, glb, tpe) =>
+          val lattice = NamedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
+          prog0.copy(latticeComponents = prog0.latticeComponents + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
     //
@@ -288,8 +297,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tenv0 = typeEnvFromFreeVars(freeTypeVars)
 
       // Perform naming on the head and body class atoms.
-      val head = visitComplexClass(head0, ns0, tenv0)
-      val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
+      val headVal = visitComplexClass(head0, ns0, tenv0)
+      val bodyVal = traverse(body0)(visitComplexClass(_, ns0, tenv0))
 
       // Perform naming on the definitions in the implementation.
       val defsVal = Validation.fold(defs0, Map.empty[String, NamedAst.Def]) {
@@ -303,8 +312,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
-      defsVal map {
-        case defs =>
+      mapN(defsVal, headVal, bodyVal) {
+        case (defs, head, body) =>
           // Reassemble the implementation.
           val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
 
@@ -343,20 +352,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkRelSym(ns0, ident)
-          val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
-          val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
-          val relations = Map(ident.name -> relation)
-          prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
+          val tenv = getTypeEnv(tparams)
+          val attrVal = traverse(attr)(visitAttribute(_, tenv))
+          mapN(attrVal) {
+            case attr =>
+              val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
+              val relations = Map(ident.name -> relation)
+              prog0.copy(relations = prog0.relations + (ns0 -> relations))
+          }
         case Some(relations0) =>
           // Case 2: The namespace exists. Lookup the table.
           relations0.get(ident.name) match {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkRelSym(ns0, ident)
-              val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
-              val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
-              val relations = relations0 + (ident.name -> relation)
-              prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
+              val tenv = getTypeEnv(tparams)
+              val attrVal = traverse(attr)(visitAttribute(_, tenv))
+              mapN(attrVal) {
+                case attr =>
+                  val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
+                  val relations = relations0 + (ident.name -> relation)
+                  prog0.copy(relations = prog0.relations + (ns0 -> relations))
+              }
             case Some(table) =>
               // Case 2.2: Duplicate definition.
               NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -377,20 +394,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkLatSym(ns0, ident)
-          val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
-          val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
-          val lattices = Map(ident.name -> lattice)
-          prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
+          val tenv = getTypeEnv(tparams)
+          val attrVal = traverse(attr)(visitAttribute(_, tenv))
+          mapN(attrVal) {
+            case attr =>
+              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
+              val lattices = Map(ident.name -> lattice)
+              prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
+          }
         case Some(lattices0) =>
           // Case 2: The namespace exists. Lookup the table.
           lattices0.get(ident.name) match {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkLatSym(ns0, ident)
-              val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
-              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
-              val lattices = lattices0 + (ident.name -> lattice)
-              prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
+              val tenv = getTypeEnv(tparams)
+              val attrVal = traverse(attr)(visitAttribute(_, tenv))
+              mapN(attrVal) {
+                case attr =>
+                  val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
+                  val lattices = lattices0 + (ident.name -> lattice)
+                  prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
+              }
             case Some(table) =>
               // Case 2.2: Duplicate definition.
               NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -444,9 +469,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given `cases` map.
     */
-  private def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit flix: Flix): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-    case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
-      macc + (name -> NamedAst.Case(enum, tag, visitType(tpe, tenv0)))
+  private def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[String, NamedAst.Case], NameError] = {
+    val casesVal = cases map {
+      case (name, WeededAst.Case(enum, tag, tpe)) =>
+        mapN(visitType(tpe, tenv0)) {
+          case t => (name, NamedAst.Case(enum, tag, t))
+        }
+    }
+    mapN(sequence(casesVal))(_.toMap)
   }
 
   /**
@@ -460,14 +490,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       val tenv = tenv0 ++ getTypeEnv(tparams)
-      val fparams = getFormalParams(fparams0, tenv)
-      val env0 = getVarEnv(fparams)
+      flatMapN(getFormalParams(fparams0, tenv)) {
+        case fparams =>
+          val env0 = getVarEnv(fparams)
 
-      visitExp(exp, env0, tenv) map {
-        case e =>
-          val sym = Symbol.mkDefnSym(ns0, ident)
-          val sc = getScheme(tparams, tpe, tenv)
-          NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+          mapN(visitExp(exp, env0, tenv), getScheme(tparams, tpe, tenv)) {
+            case (e, sc) =>
+              val sym = Symbol.mkDefnSym(ns0, ident)
+              NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+          }
       }
   }
 
@@ -492,7 +523,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (macc, sig) =>
           val name = sig.ident.name
           macc.get(name) match {
-            case None => (macc + (sig.ident.name -> visitSig(sig, sym, tenv0, ns0))).toSuccess
+            case None =>
+              mapN(visitSig(sig, sym, tenv0, ns0)) {
+                case s => (macc + (sig.ident.name -> s))
+              }
             case Some(otherSig) => NameError.DuplicateSig(name, otherSig.sym.loc, sig.ident.loc).toFailure
           }
       }
@@ -506,7 +540,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given signature declaration `sig0` in the given namespace `ns0`.
     */
-  private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): NamedAst.Sig = sig0 match {
+  private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
       val sym = Symbol.mkSigSym(classSym, ident)
       val tparams = tparams0 match {
@@ -514,9 +548,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
       }
       val tenv = tenv0 ++ getTypeEnv(tparams)
-      val fparams = getFormalParams(fparams0, tenv)
-      val sc = getScheme(tparams, tpe, tenv)
-      NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+
+      mapN(getFormalParams(fparams0, tenv), getScheme(tparams, tpe, tenv)) {
+        case (fparams, sc) => NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+      }
   }
 
   /**
@@ -531,10 +566,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given complex class atom `a`.
     */
-  private def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit flix: Flix): NamedAst.ComplexClass = a match {
+  private def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.ComplexClass, NameError] = a match {
     case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
-      val targs = targs0.map(t => visitType(t, tenv0))
-      NamedAst.ComplexClass(qname, polarity, targs, loc)
+      mapN(traverse(targs0)(visitType(_, tenv0))) {
+        case targs => NamedAst.ComplexClass(qname, polarity, targs, loc)
+      }
   }
 
   /**
@@ -593,10 +629,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
-      val fparam = visitFormalParam(fparam0, tenv0)
-      val env1 = env0 + (fparam.sym.text -> fparam.sym)
-      visitExp(exp, env1, tenv0) map {
-        case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      flatMapN(visitFormalParam(fparam0, tenv0)) {
+        case p =>
+          val env1 = env0 + (p.sym.text -> p.sym)
+          mapN(visitExp(exp, env1, tenv0)) {
+            case e => NamedAst.Expression.Lambda(p, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+          }
       }
 
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, tenv0) map {
@@ -787,26 +825,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Existential(param, exp, loc) =>
-      val p = visitFormalParam(param, tenv0)
-      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-        case e =>
-          NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc)
+      flatMapN(visitFormalParam(param, tenv0)) {
+        case p =>
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0)) {
+            case e =>
+              NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc)
+          }
       }
 
     case WeededAst.Expression.Universal(param, exp, loc) =>
-      val p = visitFormalParam(param, tenv0)
-      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-        case e =>
-          NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc)
+      flatMapN(visitFormalParam(param, tenv0)) {
+        case p =>
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0)) {
+            case e =>
+              NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc)
+          }
       }
 
-    case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp, env0, tenv0) map {
-      case e => NamedAst.Expression.Ascribe(e, visitType(tpe, tenv0), eff, loc)
-    }
+    case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
+        case (e, t) => NamedAst.Expression.Ascribe(e, t, eff, loc)
+      }
 
-    case WeededAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp, env0, tenv0) map {
-      case e => NamedAst.Expression.Cast(e, visitType(tpe, tenv0), eff, loc)
-    }
+    case WeededAst.Expression.Cast(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
+        case (e, t) => NamedAst.Expression.Cast(e, t, eff, loc)
+      }
 
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, tenv0)
@@ -849,8 +893,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.NewChannel(e, visitType(tpe, tenv0), Eff.freshEffVar(), loc)
+      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
+        case (e, t) => NamedAst.Expression.NewChannel(e, t, Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
@@ -1033,51 +1077,63 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded type `tpe` into a named type under the given type environment `tenv0`.
     */
-  private def visitType(tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): NamedAst.Type = {
+  private def visitType(tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
     /**
       * Inner visitor.
       */
-    def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): NamedAst.Type = tpe0 match {
-      case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
+    def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): Validation[NamedAst.Type, NameError] = tpe0 match {
+      case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
       case WeededAst.Type.Var(ident, loc) => env0.get(ident.name) match {
-        case None =>
-          throw InternalCompilerException(s"Unknown type variable '${ident.name}' near: ${loc.format}")
-        case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+        case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
+        case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
       }
 
       case WeededAst.Type.Ambiguous(qname, loc) =>
         if (qname.isUnqualified)
           env0.get(qname.ident.name) match {
-            case None => NamedAst.Type.Ambiguous(qname, loc)
-            case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+            case None => NamedAst.Type.Ambiguous(qname, loc).toSuccess
+            case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
           }
         else
-          NamedAst.Type.Ambiguous(qname, loc)
+          NamedAst.Type.Ambiguous(qname, loc).toSuccess
 
-      case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
+      case WeededAst.Type.Tuple(elms, loc) =>
+        mapN(traverse(elms)(visitType(_, env0))) {
+          case ts => NamedAst.Type.Tuple(ts, loc)
+        }
 
-      case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
+      case WeededAst.Type.RecordEmpty(loc) =>
+        NamedAst.Type.RecordEmpty(loc).toSuccess
 
       case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
-        val t = visit(value, env0)
-        val r = visit(rest, env0)
-        NamedAst.Type.RecordExtend(label, t, r, loc)
+        mapN(visit(value, env0), visit(rest, env0)) {
+          case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
+        }
 
-      case WeededAst.Type.SchemaEmpty(loc) => NamedAst.Type.SchemaEmpty(loc)
+      case WeededAst.Type.SchemaEmpty(loc) =>
+        NamedAst.Type.SchemaEmpty(loc).toSuccess
 
       case WeededAst.Type.Schema(ps, rest, loc) =>
-        val ts = ps.map(visit(_, env0))
-        val r = visit(rest, env0)
-        NamedAst.Type.Schema(ts, r, loc)
+        mapN(traverse(ps)(visitType(_, env0)), visitType(rest, env0)) {
+          case (ts, t) => NamedAst.Type.Schema(ts, t, loc)
+        }
 
-      case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
+      case WeededAst.Type.Nat(len, loc) =>
+        NamedAst.Type.Nat(len, loc).toSuccess
 
-      case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
+      case WeededAst.Type.Native(fqn, loc) =>
+        NamedAst.Type.Native(fqn, loc).toSuccess
 
-      case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)
+      case WeededAst.Type.Arrow(tparams, tresult, loc) =>
+        mapN(traverse(tparams)(visitType(_, env0)), visitType(tresult, env0)) {
+          case (ts, t) => NamedAst.Type.Arrow(ts, t, loc)
+        }
 
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env0), visit(tpe2, env0), loc)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1, env0), visit(tpe2, env0)) {
+          case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
+        }
     }
 
     visit(tpe, tenv0)
@@ -1261,14 +1317,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded attribute to a named attribute.
     */
-  private def visitAttribute(attr: WeededAst.Attribute, tenv0: Map[String, Type.Var])(implicit flix: Flix): NamedAst.Attribute = attr match {
-    case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, visitType(tpe, tenv0), loc)
+  private def visitAttribute(attr: WeededAst.Attribute, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
+    case WeededAst.Attribute(ident, tpe0, loc) =>
+      mapN(visitType(tpe0, tenv0)) {
+        case tpe => NamedAst.Attribute(ident, tpe, loc)
+      }
   }
 
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit flix: Flix): NamedAst.FormalParam = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = if (ident.name == "_")
@@ -1277,13 +1336,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         Symbol.freshVarSym(ident)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
-      val tpe = optType match {
-        case None => NamedAst.Type.Var(freshSym.tvar, loc)
+      val tpeVal = optType match {
+        case None => NamedAst.Type.Var(freshSym.tvar, loc).toSuccess
         case Some(t) => visitType(t, tenv0)
       }
 
       // Construct the formal parameter.
-      NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      mapN(tpeVal) {
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      }
   }
 
   /**
@@ -1449,8 +1510,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given formal parameters `fparam0` under the given type environment `tenv0`.
     */
-  private def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit flix: Flix): List[NamedAst.FormalParam] = {
-    fparams0.map(p => visitFormalParam(p, tenv0))
+  private def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
+    traverse(fparams0)(visitFormalParam(_, tenv0))
   }
 
   /**
@@ -1536,8 +1597,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given type environment `tenv0`.
     */
-  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): NamedAst.Scheme = {
-    NamedAst.Scheme(tparams0.map(_.tpe), visitType(tpe, tenv0))
+  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+    mapN(visitType(tpe, tenv0)) {
+      case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
+    }
   }
 
 }
