@@ -334,7 +334,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("not") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Negative
     }
 
-    def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
+    def TypeParams: Rule1[ParsedAst.TypeParams] = {
       def ContextBound: Rule1[ParsedAst.ContextBound] = rule {
         SP ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, bound: Option[ParsedAst.Type], sp2: SourcePosition) => bound match {
           case None => ParsedAst.ContextBound(sp1, ident, Seq.empty, sp2)
@@ -344,8 +344,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         optional("[" ~ optWS ~ oneOrMore(ContextBound).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]") ~> ((o: Option[Seq[ParsedAst.ContextBound]]) => o match {
-          case None => Seq.empty
-          case Some(xs) => xs
+          case None => ParsedAst.TypeParams.Elided
+          case Some(xs) => ParsedAst.TypeParams.Explicit(xs.toList)
         })
       }
     }

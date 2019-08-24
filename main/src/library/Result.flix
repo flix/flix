@@ -31,7 +31,7 @@ namespace Result {
     ///
     /// Returns `true` iff `r` is `Ok(v)`.
     ///
-    pub def isOk[t, e](r: Result[t, e]): Bool = match r with {
+    pub def isOk(r: Result[t, e]): Bool = match r with {
         case Ok(_) => true
         case Err(_) => false
     }
@@ -39,7 +39,7 @@ namespace Result {
     ///
     /// Returns `true` iff `r` is `Err(w)`.
     ///
-    pub def isErr[t, e](r: Result[t, e]): Bool = match r with {
+    pub def isErr(r: Result[t, e]): Bool = match r with {
         case Ok(_) => false
         case Err(_) => true
     }
@@ -47,7 +47,7 @@ namespace Result {
     ///
     /// Returns `v` if `r` is `Ok(v)`. Otherwise returns `d`.
     ///
-    pub def getWithDefault[t, e](r: Result[t, e], d: t): t = match r with {
+    pub def getWithDefault(r: Result[t, e], d: t): t = match r with {
         case Ok(v) => v
         case Err(_) => d
     }
@@ -55,7 +55,7 @@ namespace Result {
     ///
     /// Returns `Ok(v)` if `r1` is `Ok(v)`. Otherwise returns `r2`.
     ///
-    pub def withDefault[t, e1, e2](r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 with {
+    pub def withDefault(r1: Result[t, e1], r2: Result[t, e2]): Result[t, e2] = match r1 with {
         case Ok(v) => Ok(v)
         case Err(_) => r2
     }
@@ -63,7 +63,7 @@ namespace Result {
     ///
     /// Returns `Ok(y)` if `r` is `Ok(x)`. Otherwise returns `r`.
     ///
-    pub def replace[t, e](x: t, y: t, r: Result[t, e]): Result[t, e] = match r with {
+    pub def replace(x: t, y: t, r: Result[t, e]): Result[t, e] = match r with {
         case Ok(v) => Ok(if (v == x) y else v)
         case Err(_) => r
     }
@@ -71,18 +71,18 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    pub def exists[t, e](f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
+    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
 
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
     ///
-    pub def forall[t, e](f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
+    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
 
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def map[t1, t2, e](f: t1 -> t2, r: Result[t1, e]): Result[t2, e] = match r with {
+    pub def map(f: t1 -> t2, r: Result[t1, e]): Result[t2, e] = match r with {
         case Ok(v) => Ok(f(v))
         case Err(w) => Err(w)
     }
@@ -90,7 +90,7 @@ namespace Result {
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def flatMap[t1, t2, e](f: t1 -> Result[t2, e], r: Result[t1, e]): Result[t2, e] = match r with {
+    pub def flatMap(f: t1 -> Result[t2, e], r: Result[t1, e]): Result[t2, e] = match r with {
         case Ok(v) => f(v)
         case Err(w) => Err(w)
     }
@@ -98,7 +98,7 @@ namespace Result {
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    pub def count[t, e](f: t -> Bool, r: Result[t, e]): Int32 = match r with {
+    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r with {
         case Ok(v) => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -106,7 +106,7 @@ namespace Result {
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
-    pub def find[t, e](f: t -> Bool, r: Result[t, e]): Option[t] = match r with {
+    pub def find(f: t -> Bool, r: Result[t, e]): Option[t] = match r with {
         case Ok(v) => if (f(v)) Some(v) else None
         case Err(_) => None
     }
@@ -114,7 +114,7 @@ namespace Result {
     ///
     /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft[t, e, a](f: (a, t) -> a, z: a, r: Result[t, e]): a = match r with {
+    pub def foldLeft(f: (a, t) -> a, z: a, r: Result[t, e]): a = match r with {
         case Ok(v) => f(z, v)
         case Err(_) => z
     }
@@ -122,7 +122,7 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight[t, e, a](f: (t, a) -> a, r: Result[t, e], z: a): a = match r with {
+    pub def foldRight(f: (t, a) -> a, r: Result[t, e], z: a): a = match r with {
         case Ok(v) => f(v, z)
         case Err(_) => z
     }
@@ -130,7 +130,7 @@ namespace Result {
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
     ///
-    pub def toList[t, e](r: Result[t, e]): List[t] = match r with {
+    pub def toList(r: Result[t, e]): List[t] = match r with {
         case Ok(v) => v :: Nil
         case Err(_) => Nil
     }
@@ -138,7 +138,7 @@ namespace Result {
     ///
     /// Returns a one-element set of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty set.
     ///
-    pub def toSet[t, e](r: Result[t, e]): Set[t] = match r with {
+    pub def toSet(r: Result[t, e]): Set[t] = match r with {
         case Ok(v)  => Set.singleton(v)
         case Err(_) => Set.empty()
     }
@@ -146,7 +146,7 @@ namespace Result {
     ///
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
-    pub def toMap[k, v, e](r: Result[(k, v), e]): Map[k, v] = match r with {
+    pub def toMap(r: Result[(k, v), e]): Map[k, v] = match r with {
         case Ok((k, v)) => Map.singleton(k, v)
         case Err(_)     => Map.empty()
     }
@@ -154,7 +154,7 @@ namespace Result {
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
     ///
-    pub def toOption[t, e](r: Result[t, e]): Option[t] = match r with {
+    pub def toOption(r: Result[t, e]): Option[t] = match r with {
         case Ok(v) => Some(v)
         case Err(_) => None
     }
@@ -167,7 +167,7 @@ namespace Result {
     ///
     /// Returns `true` if and only if `r1` and `r2` and equal.
     ///
-    def __eq[t, e](r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) with {
+    def __eq(r1: Result[t, e], r2: Result[t, e]): Bool = match (r1, r2) with {
         case (Ok(v1), Ok(v2)) => v1 == v2
         case (Err(w1), Err(w2)) => w1 == w2
         case _ => false
