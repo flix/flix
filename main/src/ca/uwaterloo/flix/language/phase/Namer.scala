@@ -125,7 +125,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 1: The effect does not already exist. Update it.
           val tparams = tparams0 match {
-            case WeededAst.TypeParams.Elided => Nil // TODO: Support elision?
+            case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
             case WeededAst.TypeParams.Explicit(tparams) => getExplicitTypeParams(tparams)
           }
           val tenv0 = getTypeEnv(tparams)
@@ -151,7 +151,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 1: The handler does not already exist. Update it.
           val tparams = tparams0 match {
-            case WeededAst.TypeParams.Elided => Nil // TODO: Support type elision?
+            case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
             case WeededAst.TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
           }
           val tenv0 = getTypeEnv(tparams)
@@ -334,7 +334,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      */
     case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
       val tparams = tparams0 match {
-        case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
         case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
       }
 
@@ -368,7 +368,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      */
     case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
       val tparams = tparams0 match {
-        case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
         case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
       }
 
@@ -510,7 +510,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
       val sym = Symbol.mkSigSym(classSym, ident)
       val tparams = tparams0 match {
-        case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+        case TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
         case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
       }
       val tenv = tenv0 ++ getTypeEnv(tparams)
@@ -1483,6 +1483,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // Compute the set of type variables.
     val typeVars = typeVarsArgs ++ typeVarsReturnType
+
+    // Construct a (sorted) list of type parameters.
+    typeVars.toList.sorted.map {
+      case name =>
+        val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+        val tvar = Type.freshTypeVar()
+        tvar.setText(name)
+        NamedAst.TypeParam(ident, tvar, loc)
+    }
+  }
+
+  /**
+    * Returns the implicit type parameters constructed from the given attributes.
+    */
+  private def getImplicitTypeParams(attrs: List[WeededAst.Attribute], loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    // Compute the type variables that occur in the formal parameters.
+    val typeVars = attrs.foldLeft(Set.empty[String]) {
+      case (acc, WeededAst.Attribute(_, tpe, _)) =>
+        freeVars(tpe).foldLeft(acc) {
+          case (innerAcc, ident) => innerAcc + ident.name
+        }
+    }
 
     // Construct a (sorted) list of type parameters.
     typeVars.toList.sorted.map {
