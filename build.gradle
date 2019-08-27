@@ -11,10 +11,6 @@ repositories {
     mavenCentral()
 }
 
-configurations {
-    fatJar
-}
-
 dependencies {
     implementation 'org.scala-lang:scala-library:2.13.0'
     implementation 'org.scala-lang:scala-reflect:2.13.0'
@@ -34,9 +30,6 @@ dependencies {
     compile files('lib/scala.collection.parallel-0.2.0.jar')
     compile files('lib/scala.xml-1.2.0.jar')
     compile files('lib/shapeless-2.3.3.jar')
-
-    fatJar 'org.scala-lang:scala-library-2.13.0'
-    fatJar 'org.scala-lang:scala-reflect:2.13.0'
 }
 
 tasks.withType(ScalaCompile) {
@@ -65,13 +58,3 @@ task testAll(dependsOn: ['testClasses'], type: JavaExec) {
 }
 
 test.dependsOn testAll
-
-task fatJar(type: Jar) {
-    manifest {
-        attributes 'Main-Class': mainClassName
-    }
-    baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
