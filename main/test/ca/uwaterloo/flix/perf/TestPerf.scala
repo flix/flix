@@ -57,11 +57,28 @@ object TestPerf {
 
       flix.compile() match {
         case Validation.Success(compilationResult) =>
+
+          // Check if we are in the last iteration.
+          if (i == Limit - 1) {
+            val totalLines = compilationResult.getTotalLines()
+            val totalTimeMillis = compilationResult.getTotalTime() / 1_000_000
+
+            // Print timings for each phase.
+            for (phase <- flix.phaseTimers) {
+              val name = phase.phase
+              val phaseTimeMillis = phase.time / 1_000_000
+              val throughput = totalLines / phaseTimeMillis
+              println(s"${name}, ${phaseTimeMillis}, ${throughput}")
+            }
+
+            // Print times for the whole compiler.
+
+          }
+
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
       }
     }
-
   }
 }
