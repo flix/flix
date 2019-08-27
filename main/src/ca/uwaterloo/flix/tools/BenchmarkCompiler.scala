@@ -4,31 +4,35 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
-object CompilerBenchmark {
+/**
+  * A collection of internal utilities to measure the performance of the Flix compiler itself.
+  */
+object BenchmarkCompiler {
 
-  val WarmupIterations = 20
+  /**
+    * The number of compilations to perform before the statistics are collected.
+    */
+  val WarmupIterations = 25
 
+  /**
+    * Outputs statistics about time spent in each compiler phase.
+    */
   def benchmarkPhases(): Unit = {
     val flix = newFlix();
     for (i <- 0 until WarmupIterations) {
       flix.compile() match {
         case Validation.Success(compilationResult) =>
-
           // Check if we are in the last iteration.
           if (i == WarmupIterations - 1) {
+            val currentTime = System.currentTimeMillis() / 1000
             val totalLines = compilationResult.getTotalLines()
 
-            // The current time.
-            val currentTime = System.currentTimeMillis() / 1000
-
-            // Print timings for each phase.
             for (phase <- flix.phaseTimers) {
               val name = phase.phase
               val phaseTimeNanos = phase.time
               println(s"${name}, ${currentTime}, ${phaseTimeNanos}")
             }
           }
-
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
@@ -36,21 +40,23 @@ object CompilerBenchmark {
     }
   }
 
+  /**
+    * Outputs statistics about the throughput of the overall compiler.
+    */
   def benchmarkThroughput(): Unit = {
     val flix = newFlix();
     for (i <- 0 until WarmupIterations) {
       flix.compile() match {
         case Validation.Success(compilationResult) =>
-
           // Check if we are in the last iteration.
           if (i == WarmupIterations - 1) {
             val currentTime = System.currentTimeMillis() / 1000
             val totalLines = compilationResult.getTotalLines()
             val totalTime = compilationResult.getTotalTime()
             val throughput = totalLines / (totalTime / 1_000_000_000)
+
             println(s"${currentTime}, ${throughput}")
           }
-
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
@@ -65,7 +71,8 @@ object CompilerBenchmark {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(writeClassFiles = false))
 
-    // A subset of test cases. Note: Many test cases are incompatible, hence we can only include some of them.
+    // A subset of test cases.
+    // Over time we should extend this list, but note that this will invalidate historical data.
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLength.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix")
@@ -106,4 +113,5 @@ object CompilerBenchmark {
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
   }
+
 }

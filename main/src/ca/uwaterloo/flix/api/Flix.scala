@@ -218,7 +218,7 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationError] = {
-    // Reset the phase information
+    // Reset the phase information.
     phaseTimers = ListBuffer.empty
 
     // Construct the compiler pipeline.
