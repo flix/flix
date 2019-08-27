@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.util.vt.TerminalContext
 
 object CompilerBenchmark {
 
-  val WarmupIterations = 25
+  val WarmupIterations = 20
 
   def benchmarkPhases(): Unit = {
     val flix = newFlix();
@@ -36,6 +36,27 @@ object CompilerBenchmark {
     }
   }
 
+  def benchmarkThroughput(): Unit = {
+    val flix = newFlix();
+    for (i <- 0 until WarmupIterations) {
+      flix.compile() match {
+        case Validation.Success(compilationResult) =>
+
+          // Check if we are in the last iteration.
+          if (i == WarmupIterations - 1) {
+            val currentTime = System.currentTimeMillis() / 1000
+            val totalLines = compilationResult.getTotalLines()
+            val totalTime = compilationResult.getTotalTime()
+            val throughput = totalLines / (totalTime / 1_000_000_000)
+            println(s"${currentTime}, ${throughput}")
+          }
+
+        case Validation.Failure(errors) =>
+          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
+          System.exit(1)
+      }
+    }
+  }
 
   /**
     * Returns a Flix object configured with the benchmark program.

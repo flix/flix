@@ -127,6 +127,12 @@ object Main {
       System.exit(0)
     }
 
+    // check if the -Xbenchmark-throughput flag was passed.
+    if (cmdOpts.xbenchmarkThroughput) {
+      CompilerBenchmark.benchmarkThroughput()
+      System.exit(0)
+    }
+
     // check if running in interactive mode.
     val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
     if (interactive) {
@@ -197,6 +203,7 @@ object Main {
                      verifier: Boolean = false,
                      xallowredundancies: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
+                     xbenchmarkThroughput: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
@@ -320,6 +327,10 @@ object Main {
       // Xbenchmark-phases
       opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
         text("[experimental] benchmarks each individual compiler phase.")
+
+      // Xbenchmark-throughput
+      opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
+        text("[experimental] benchmarks the throughput of the entire compiler.")
 
       // Xcore.
       opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).
