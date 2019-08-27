@@ -120,7 +120,7 @@ class Flix {
   /**
     * A map to track the time spent in each phase and sub-phase.
     */
-  val phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
+  var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
 
   /**
     * The current phase we are in. Initially null.
@@ -218,6 +218,9 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationError] = {
+    // Reset the phase information
+    phaseTimers = ListBuffer.empty
+
     // Construct the compiler pipeline.
     val pipeline =
       Reader |>
