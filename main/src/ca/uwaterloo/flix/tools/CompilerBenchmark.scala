@@ -65,7 +65,6 @@ object CompilerBenchmark {
           // Check if we are in the last iteration.
           if (i == Iterations - 1) {
             val totalLines = compilationResult.getTotalLines()
-            val totalTimeNanos = compilationResult.getTotalTime()
 
             // The current time.
             val currentTime = System.currentTimeMillis() / 1000
@@ -74,13 +73,8 @@ object CompilerBenchmark {
             for (phase <- flix.phaseTimers) {
               val name = phase.phase
               val phaseTimeNanos = phase.time
-              val throughputPerSec = ((totalLines.toDouble / (phaseTimeNanos.toDouble + 1.0)) * 1_000_000_000).toInt
-              println(s"${name}, ${currentTime}, ${phaseTimeNanos}, ${throughputPerSec}")
+              println(s"${name}, ${currentTime}, ${phaseTimeNanos}")
             }
-
-            // Print times for the whole compiler.
-            val throughputPerSec = ((totalLines.toDouble / (totalTimeNanos.toDouble + 1.0)) * 1_000_000_000).toInt
-            println(s"Total, ${currentTime}, ${totalTimeNanos}, ${throughputPerSec}")
           }
 
         case Validation.Failure(errors) =>
