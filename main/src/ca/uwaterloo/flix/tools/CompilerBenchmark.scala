@@ -75,12 +75,12 @@ object CompilerBenchmark {
               val name = phase.phase
               val phaseTimeNanos = phase.time
               val throughputPerSec = ((totalLines.toDouble / (phaseTimeNanos.toDouble + 1.0)) * 1_000_000_000).toInt
-              println(s"${name}, ${phaseTimeNanos}, ${throughputPerSec}, ${currentTime}")
+              println(s"${name}, ${currentTime}, ${phaseTimeNanos}, ${throughputPerSec}")
             }
 
             // Print times for the whole compiler.
             val throughputPerSec = ((totalLines.toDouble / (totalTimeNanos.toDouble + 1.0)) * 1_000_000_000).toInt
-            println(s"Total, ${totalTimeNanos}, ${throughputPerSec}, ${currentTime}")
+            println(s"Total, ${currentTime}, ${totalTimeNanos}, ${throughputPerSec}")
           }
 
         case Validation.Failure(errors) =>
