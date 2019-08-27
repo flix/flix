@@ -123,7 +123,7 @@ object Main {
 
     // check if the -Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
-      CompilerBenchmark.doit()
+      CompilerBenchmark.benchmarkPhases()
       System.exit(0)
     }
 
