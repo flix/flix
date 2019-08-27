@@ -1,18 +1,22 @@
-package ca.uwaterloo.flix.perf
+package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.{Validation, Verbosity}
 
-object TestPerf {
+object CompilerBenchmark {
 
-  val Limit = 25
+  val Iterations = 25
 
   def main(args: Array[String]): Unit = {
+    doit()
+  }
 
-    for (i <- 0 until Limit) {
+  def doit(): Unit = {
+
+    for (i <- 0 until Iterations) {
       val flix = new Flix()
-      flix.setOptions(opts = flix.options.copy(verbosity = Verbosity.Verbose, writeClassFiles = false))
+      flix.setOptions(opts = flix.options.copy(writeClassFiles = false))
 
       // A subset of test cases. Note: Many test cases are incompatible, hence we can only include some of them.
 
@@ -57,11 +61,32 @@ object TestPerf {
 
       flix.compile() match {
         case Validation.Success(compilationResult) =>
+
+          // Check if we are in the last iteration.
+          if (i == Iterations - 1) {
+            val totalLines = compilationResult.getTotalLines()
+            val totalTimeNanos = compilationResult.getTotalTime()
+
+            // The current time.
+            val currentTime = System.currentTimeMillis() / 1000
+
+            // Print timings for each phase.
+            for (phase <- flix.phaseTimers) {
+              val name = phase.phase
+              val phaseTimeNanos = phase.time
+              val throughputPerSec = ((totalLines.toDouble / (phaseTimeNanos.toDouble + 1.0)) * 1_000_000_000).toInt
+              println(s"${name}, ${currentTime}, ${phaseTimeNanos}, ${throughputPerSec}")
+            }
+
+            // Print times for the whole compiler.
+            val throughputPerSec = ((totalLines.toDouble / (totalTimeNanos.toDouble + 1.0)) * 1_000_000_000).toInt
+            println(s"Total, ${currentTime}, ${totalTimeNanos}, ${throughputPerSec}")
+          }
+
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
       }
     }
-
   }
 }

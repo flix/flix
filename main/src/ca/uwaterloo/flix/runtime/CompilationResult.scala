@@ -94,6 +94,20 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
   }
 
   /**
+    * Returns the total number of lines of compiled code.
+    */
+  def getTotalLines(): Int = getRoot.sources.foldLeft(0) {
+    case (acc, (_, sl)) => acc + sl.endLine
+  }
+
+  /**
+    * Returns the total compilation time in nanoseconds.
+    */
+  def getTotalTime(): Long = flix.phaseTimers.foldLeft(0L) {
+    case (acc, phase) => acc + phase.time
+  }
+
+  /**
     * Returns the result type of the given lambda type.
     */
   private def getResultType(tpe: Type): Type = tpe.typeArguments.last

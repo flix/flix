@@ -21,7 +21,7 @@ import java.nio.file.Paths
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools.{Benchmarker, Packager, SocketServer, Tester}
+import ca.uwaterloo.flix.tools.{Benchmarker, CompilerBenchmark, Packager, SocketServer, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -121,6 +121,12 @@ object Main {
         System.exit(1)
     }
 
+    // check if the -Xinternal-perf flag was passed.
+    if (cmdOpts.xinternalperf) {
+      CompilerBenchmark.doit()
+      System.exit(0)
+    }
+
     // check if running in interactive mode.
     val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
     if (interactive) {
@@ -194,6 +200,7 @@ object Main {
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xinternalperf: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
@@ -325,6 +332,10 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xinternal-perf.
+      opt[Unit]("Xinternal-perf").action((_, c) => c.copy(xinternalperf = true)).
+        text("[experimental] runs the internal performance tool.")
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
