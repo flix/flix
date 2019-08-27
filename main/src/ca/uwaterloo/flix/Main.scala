@@ -21,7 +21,7 @@ import java.nio.file.Paths
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools.{Benchmarker, CompilerBenchmark, Packager, SocketServer, Tester}
+import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -121,8 +121,8 @@ object Main {
         System.exit(1)
     }
 
-    // check if the -Xinternal-perf flag was passed.
-    if (cmdOpts.xinternalperf) {
+    // check if the -Xbenchmark-phases flag was passed.
+    if (cmdOpts.xbenchmarkPhases) {
       CompilerBenchmark.doit()
       System.exit(0)
     }
@@ -196,11 +196,11 @@ object Main {
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      xallowredundancies: Boolean = false,
+                     xbenchmarkPhases: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
-                     xinternalperf: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
@@ -317,6 +317,10 @@ object Main {
       opt[Unit]("Xallow-redundancies").action((_, c) => c.copy(xallowredundancies = true)).
         text("[experimental] disables the redundancies checker.")
 
+      // Xbenchmark-phases
+      opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
+        text("[experimental] benchmarks each individual compiler phase.")
+
       // Xcore.
       opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).
         text("[experimental] disables loading of all non-essential namespaces.")
@@ -332,10 +336,6 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
-
-      // Xinternal-perf.
-      opt[Unit]("Xinternal-perf").action((_, c) => c.copy(xinternalperf = true)).
-        text("[experimental] runs the internal performance tool.")
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
