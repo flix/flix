@@ -46,7 +46,7 @@ namespace BenchmarkList {
     /// create a list of integers, flatMap it over lists of integers, and compute the length of the result.
     ///
     @benchmark
-    pub def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(x, 100), List.range(0, 100))) `assertEq!` 10000
+    pub def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(x, 20), List.range(0, 20))) `assertEq!` 400
 
     ///
     /// create a list of integers and compute its sum via foldLeft.
@@ -89,10 +89,10 @@ namespace BenchmarkList {
     ///
     @benchmark
     pub def benchmark14(): Bool =
-        let xs = List.range(0, 100);
-        let ys = List.range(0, 100);
+        let xs = List.range(0, 50);
+        let ys = List.range(0, 50);
         let zs = List.map(y -> List.exists(x -> x * x == y, xs), ys);
-            List.length(zs) `assertEq!` 100
+            List.length(zs) `assertEq!` 50
 
     ///
     /// intersperses an integer into a list of integers.
