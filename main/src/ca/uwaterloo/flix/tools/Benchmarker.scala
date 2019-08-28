@@ -12,12 +12,12 @@ object Benchmarker {
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  val WarmupRounds = 100
+  val WarmupRounds = 25000
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  val ActualRounds = 50
+  val ActualRounds = 25000
 
   /**
     * Evaluates all benchmarks.
@@ -58,11 +58,11 @@ object Benchmarker {
        * Actual Rounds.
        */
       writer.println(s"    Actual Rounds: $ActualRounds")
-      writer.println(s"      Name:                Median (ms)")
+      writer.println(s"      Name:                Median (us)")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
         val timings = run(defn, ActualRounds)
-        val medianInMiliSeconds = median(timings).toDouble / (1000.0 * 1000.0)
-        writer.println(f"      ${sym.name} $medianInMiliSeconds%20.1f")
+        val medianInMicroSeconds = median(timings).toDouble / (1000.0)
+        writer.println(f"      ${sym.name} $medianInMicroSeconds%20.1f")
         sleepAndGC()
       }
 
