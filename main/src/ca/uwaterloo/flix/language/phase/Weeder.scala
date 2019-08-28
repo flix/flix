@@ -38,7 +38,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the whole program.
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = traverse(program.roots)(visitRoot)
+    val roots = parTraverse(program.roots)(visitRoot)
     val named = traverse(program.named) {
       case (sym, exp) => visitExp(exp).map(e => sym -> e)
     }
