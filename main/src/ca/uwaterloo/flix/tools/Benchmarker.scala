@@ -12,12 +12,12 @@ object Benchmarker {
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  val WarmupRounds = 25000
+  val WarmupRounds = 10_000
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  val ActualRounds = 25000
+  val ActualRounds = 100_000
 
   /**
     * Evaluates all benchmarks.
@@ -32,37 +32,22 @@ object Benchmarker {
      * Iterate through each namespace and evaluate each benchmark.
      */
     for ((ns, benchmarks) <- benchmarksByNamespace) {
-      if (ns.isEmpty) {
-        writer.println(s"-- Benchmarks for root -- ")
-      } else {
-        writer.println(s"-- Benchmarks for '${ns.mkString(".")}' -- ")
-      }
-
       /*
        * Warmup Rounds.
        */
-      writer.println(s"    Warmup Rounds: $WarmupRounds")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
-        writer.print("      ")
-        writer.print(sym.name)
-        writer.print(": ")
         for (i <- 0 until WarmupRounds) {
-          writer.print(".")
           defn()
         }
-        writer.println()
       }
-      writer.println()
 
       /*
        * Actual Rounds.
        */
-      writer.println(s"    Actual Rounds: $ActualRounds")
-      writer.println(s"      Name:                Median (us)")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
-        val timings = run(defn, ActualRounds)
-        val medianInMicroSeconds = median(timings).toDouble / (1000.0)
-        writer.println(f"      ${sym.name} $medianInMicroSeconds%20.1f")
+        val totalTime = run(defn, ActualRounds)
+        val averageTimeInNanoSeconds = totalTime / ActualRounds
+        writer.println(f"$sym,$averageTimeInNanoSeconds")
         sleepAndGC()
       }
 
@@ -73,17 +58,17 @@ object Benchmarker {
   /**
     * Returns the timings of evaluating `f` over `n` rounds.
     */
-  private def run(f: () => AnyRef, n: Int): List[Long] = {
-    var result = List.empty[Long]
+  private def run(f: () => AnyRef, n: Int): Long = {
     var i = 0
+    var s = 0L
     while (i < n) {
       val t = System.nanoTime()
       f()
       val e = System.nanoTime() - t
+      s = s + e
       i = i + 1
-      result = e :: result
     }
-    result
+    s
   }
 
   /**
