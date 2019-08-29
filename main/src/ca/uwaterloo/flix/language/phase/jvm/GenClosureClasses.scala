@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
+import scala.collection.parallel.CollectionConverters._
 
 /**
   * Generates byte code for the closure classes.
@@ -18,13 +19,13 @@ object GenClosureClasses {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
-    closures.foldLeft(Map.empty[JvmName, JvmClass]) {
+    closures.par.aggregate(Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
         val jvmType = JvmOps.getClosureClassType(closure)
         val jvmName = jvmType.name
         val bytecode = genByteCode(closure)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
-    }
+    }, _ ++ _)
   }
 
   /**
