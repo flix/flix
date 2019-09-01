@@ -238,8 +238,8 @@ public final class ConstraintSystem {
             String[][] data = relData.get(relSym).toArray(new String[0][]);
             AsciiTable table = new AsciiTable(headers, data);
 
-            sb.append(table);
-            sb.append("\n");
+            sb.append(relSym).append("\n");
+            sb.append(table).append("\n");
         }
 
         ///
@@ -251,8 +251,8 @@ public final class ConstraintSystem {
             String[][] data = latData.get(latSym).toArray(new String[0][]);
             AsciiTable table = new AsciiTable(headers, data);
 
-            sb.append(table);
-            sb.append("\n");
+            sb.append(latSym).append("\n");
+            sb.append(table).append("\n");
         }
 
         return sb.toString();
