@@ -20,6 +20,7 @@ import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.symbol.LatSym;
 import flix.runtime.fixpoint.symbol.RelSym;
+import flix.runtime.util.AsciiTable;
 
 import java.util.*;
 
@@ -170,7 +171,19 @@ public final class ConstraintSystem {
         for (var s : strings) {
             sj.add(s);
         }
-        return sj.toString();
+        //return sj.toString();
+
+        String[] headers = {"", "Name", "Diameter", "Mass", "Atmosphere"};
+        String[][] data = {
+                {"1", "Mercury", "0.382", "0.06", "minimal"},
+                {"2", "Venus", "0.949", "0.82", "Carbon dioxide, Nitrogen"},
+                {"3", "Earth", "1.000", "1.00", "Nitrogen, Oxygen, Argon"},
+                {"4", "Mars", "0.532", "0.11", "Carbon dioxide, Nitrogen, Argon"}};
+
+
+        AsciiTable table = new AsciiTable(headers, data);
+
+        return table.toString();
     }
 
     /**
