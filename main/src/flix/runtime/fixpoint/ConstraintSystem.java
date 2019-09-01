@@ -20,6 +20,7 @@ import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.symbol.LatSym;
 import flix.runtime.fixpoint.symbol.RelSym;
+import flix.runtime.fixpoint.term.Term;
 import flix.runtime.util.AsciiTable;
 
 import java.util.*;
@@ -106,7 +107,7 @@ public final class ConstraintSystem {
      * Returns all relation symbols in `this` constraint system.
      */
     public RelSym[] getRelationSymbols() {
-        var result = new ArrayList<RelSym>();
+        var result = new HashSet<RelSym>();
         for (AtomPredicate p : getAtomPredicates()) {
             if (p.getSym() instanceof RelSym) {
                 result.add((RelSym) p.getSym());
@@ -119,7 +120,7 @@ public final class ConstraintSystem {
      * Returns all lattice symbols in `this` constraint system.
      */
     public LatSym[] getLatticeSymbols() {
-        var result = new ArrayList<LatSym>();
+        var result = new HashSet<LatSym>();
         for (AtomPredicate p : getAtomPredicates()) {
             if (p.getSym() instanceof LatSym) {
                 result.add((LatSym) p.getSym());
@@ -159,31 +160,56 @@ public final class ConstraintSystem {
 
         // Otherwise pretty print the facts.
 
-        // Convert each fact to a string and sort them.
-        String[] strings = new String[facts.length];
-        for (var i = 0; i < strings.length; i++) {
-            strings[i] = facts[i].toString();
+        Map<RelSym, String[]> relHeaders = new HashMap<>();
+        for (RelSym sym : getRelationSymbols()) {
+            Attribute[] attributes = sym.getAttributes();
+            String[] headers = new String[attributes.length];
+            for (int i = 0; i < headers.length; i++) {
+                headers[i] = attributes[i].getName();
+            }
+            relHeaders.put(sym, headers);
         }
-        Arrays.sort(strings);
 
-        // Join the strings together with a delimiter, prefix, and suffix.
-        StringJoiner sj = new StringJoiner(" ", "{ ", " }");
-        for (var s : strings) {
-            sj.add(s);
+        Map<RelSym, ArrayList<String[]>> relData = new HashMap<>();
+        for (RelSym sym : getRelationSymbols()) {
+            relData.put(sym, new ArrayList<>());
         }
-        //return sj.toString();
 
-        String[] headers = {"#", "Name", "Diameter", "Mass", "Atmosphere"};
-        String[][] data = {
-                {"1", "Mercury", "0.382", "0.06", "minimal"},
-                {"2", "Venus", "0.949", "0.82", "Carbon dioxide, Nitrogen"},
-                {"3", "Earth", "1.000", "1.00", "Nitrogen, Oxygen, Argon"},
-                {"4", "Mars", "0.532", "0.11", "Carbon dioxide, Nitrogen, Argon"}};
+        // Process all facts.
+        for (Constraint fact : facts) {
+            var headPred = fact.getHeadPredicate();
+            if (headPred instanceof AtomPredicate) {
+                var atom = (AtomPredicate) headPred;
+                var terms = atom.getTerms();
 
+                var sym = atom.getSym();
+                if (sym instanceof RelSym) {
+                    var relSym = (RelSym) sym;
+                    var data = relData.get(relSym);
+                    var row = new String[terms.length];
+                    for (int i = 0; i < terms.length; i++) {
+                        row[i] = terms[i].toString();
+                    }
+                    data.add(row);
+                }
+            }
 
-        AsciiTable table = new AsciiTable(headers, data);
+        }
 
-        return table.toString();
+        var sb = new StringBuilder();
+
+        for (RelSym sym : getRelationSymbols()) {
+            // Retrieve the headers and data.
+            String[] headers = relHeaders.get(sym);
+            String[][] data = relData.get(sym).toArray(new String[0][]);
+
+            AsciiTable table = new AsciiTable(headers, data);
+
+            sb.append(table);
+            sb.append("\n");
+        }
+
+        return sb.toString();
     }
 
     /**

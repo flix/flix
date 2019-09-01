@@ -19,6 +19,11 @@ public class AsciiTable {
 
         // Compute the column width based on the data.
         for (String[] row : data) {
+            if (headers.length != row.length) {
+                throw new RuntimeException("Mismatched lengths of header and row.");
+            }
+
+            // Update the maximum column width.
             for (int j = 0; j < row.length; j++) {
                 String cell = row[j];
                 columns[j] = Math.max(columns[j], cell.length() + 1);
