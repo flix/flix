@@ -160,19 +160,40 @@ public final class ConstraintSystem {
 
         // Otherwise pretty print the facts.
 
+        ///
+        /// Relations
+        ///
         Map<RelSym, String[]> relHeaders = new HashMap<>();
-        for (RelSym sym : getRelationSymbols()) {
-            Attribute[] attributes = sym.getAttributes();
+        for (RelSym relSym : getRelationSymbols()) {
+            Attribute[] attributes = relSym.getAttributes();
             String[] headers = new String[attributes.length];
             for (int i = 0; i < headers.length; i++) {
                 headers[i] = attributes[i].getName();
             }
-            relHeaders.put(sym, headers);
+            relHeaders.put(relSym, headers);
+        }
+        Map<RelSym, ArrayList<String[]>> relData = new HashMap<>();
+        for (RelSym relSym : getRelationSymbols()) {
+            relData.put(relSym, new ArrayList<>());
         }
 
-        Map<RelSym, ArrayList<String[]>> relData = new HashMap<>();
-        for (RelSym sym : getRelationSymbols()) {
-            relData.put(sym, new ArrayList<>());
+        ///
+        /// Lattices
+        ///
+        Map<LatSym, String[]> latHeaders = new HashMap<>();
+        for (LatSym latSym : getLatticeSymbols()) {
+            Attribute[] keys = latSym.getKeys();
+            Attribute value = latSym.getValue();
+            String[] headers = new String[keys.length + 1];
+            for (int i = 0; i < keys.length; i++) {
+                headers[i] = keys[i].getName();
+            }
+            headers[keys.length] = value.getName();
+            latHeaders.put(latSym, headers);
+        }
+        Map<LatSym, ArrayList<String[]>> latData = new HashMap<>();
+        for (LatSym latSym : getLatticeSymbols()) {
+            latData.put(latSym, new ArrayList<>());
         }
 
         // Process all facts.
@@ -192,17 +213,42 @@ public final class ConstraintSystem {
                     }
                     data.add(row);
                 }
-            }
 
+                if (sym instanceof LatSym) {
+                    var latSym = (LatSym) sym;
+                    var data = latData.get(latSym);
+                    var row = new String[terms.length];
+                    for (int i = 0; i < terms.length; i++) {
+                        row[i] = terms[i].toString();
+                    }
+                    data.add(row);
+                }
+            }
         }
 
+        // Construct a string builder to concatenate all the ascii tables into.
         var sb = new StringBuilder();
 
-        for (RelSym sym : getRelationSymbols()) {
+        ///
+        /// Relations
+        ///
+        for (RelSym relSym : getRelationSymbols()) {
             // Retrieve the headers and data.
-            String[] headers = relHeaders.get(sym);
-            String[][] data = relData.get(sym).toArray(new String[0][]);
+            String[] headers = relHeaders.get(relSym);
+            String[][] data = relData.get(relSym).toArray(new String[0][]);
+            AsciiTable table = new AsciiTable(headers, data);
 
+            sb.append(table);
+            sb.append("\n");
+        }
+
+        ///
+        /// Lattices
+        ///
+        for (LatSym latSym : getLatticeSymbols()) {
+            // Retrieve the headers and data.
+            String[] headers = latHeaders.get(latSym);
+            String[][] data = latData.get(latSym).toArray(new String[0][]);
             AsciiTable table = new AsciiTable(headers, data);
 
             sb.append(table);
