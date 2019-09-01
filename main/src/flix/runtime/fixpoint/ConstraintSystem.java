@@ -173,7 +173,7 @@ public final class ConstraintSystem {
         }
         //return sj.toString();
 
-        String[] headers = {"", "Name", "Diameter", "Mass", "Atmosphere"};
+        String[] headers = {"#", "Name", "Diameter", "Mass", "Atmosphere"};
         String[][] data = {
                 {"1", "Mercury", "0.382", "0.06", "minimal"},
                 {"2", "Venus", "0.949", "0.82", "Carbon dioxide, Nitrogen"},
