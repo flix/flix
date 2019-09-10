@@ -54,13 +54,13 @@ impl PartialEq[Int32] {
 }
 
 impl PartialEq[(a, b)] <= PartialEq[a], PartialEq[b] {
-    def eq(x: (a, b), y: (a, b)): Bool = match (x, y) with {
+    def eq(x: (a, b), y: (a, b)): Bool = match (x, y) {
         case ((x1, x2), (y1, y2)) => eq(x1, y1) && eq(x2, y2)
     }
 }
 
 impl PartialEq[Option[a]] <= PartialEq[a] {
-    def eq(x: Option[a], y: Option[a]): Bool = match (x, y) with {
+    def eq(x: Option[a], y: Option[a]): Bool = match (x, y) {
         case (None, None)           => true
         case (Some(v1), Some(v2))   => eq(v1, v2)
         case _                      => false
@@ -68,7 +68,7 @@ impl PartialEq[Option[a]] <= PartialEq[a] {
 }
 
 impl PartialEq[List[a]] <= PartialEq[a] {
-    def eq(x: List[a], y: List[a]): Bool = match (x, y) with {
+    def eq(x: List[a], y: List[a]): Bool = match (x, y) {
         case (Nil, Nil)             => true
         case (v1 :: xs, v2 :: ys)   => eq(v1, v2) && eq(xs, ys)
         case _                      => false
@@ -76,7 +76,7 @@ impl PartialEq[List[a]] <= PartialEq[a] {
 }
 
 impl PartialEq[Result[a, b]] <= PartialEq[a], PartialEq[b] {
-    def eq(x: Result[a, b], y: Result[a, b]): Bool = match (x, y) with {
+    def eq(x: Result[a, b], y: Result[a, b]): Bool = match (x, y) {
         case (Ok(v1), Ok(v2))       => eq(v1, v2)
         case (Err(v1), Err(v2))     => eq(v1, v2)
         case _                      => false

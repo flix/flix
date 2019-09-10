@@ -82,7 +82,7 @@ namespace Map {
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
-    pub def memberOf(k: k, m: Map[k, v]): Bool = match m with {
+    pub def memberOf(k: k, m: Map[k, v]): Bool = match m {
         case Map(Nil) => false
         case Map((a, _) :: rs) => if (a == k) true else memberOf(k, Map(rs))
     }
@@ -169,7 +169,7 @@ namespace Map {
     ///
     pub def replace(x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
         let (k, v) = x;
-            match get(k, m) with {
+            match get(k, m) {
                 case None => m
                 case Some(w) => if (v == w) insert(fst(y), snd(y), delete(k, m)) else m
             }
@@ -450,8 +450,8 @@ namespace Map {
     pub def differenceWithKey(f: (k, v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         let diff = filterWithKey((k, _) -> !memberOf(k, m2), m1);
         let g = (k, v, m) -> if (memberOf(k, m1))
-                                match get(k, m1) with {
-                                    case Some(v1) => match f(k, v1, v) with {
+                                match get(k, m1) {
+                                    case Some(v1) => match f(k, v1, v) {
                                         case None => m
                                         case Some(w) => insert(k, w, m)
                                     }

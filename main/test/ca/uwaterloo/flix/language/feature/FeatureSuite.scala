@@ -64,7 +64,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Def.flix"),
 
   //new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"), // TODO
-  new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix"),
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix"),
   new FlixTest("Test.Expression.IfThenElse", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix"),
   new FlixTest("Test.Expression.Infix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Infix.flix"),
@@ -73,7 +72,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Tag.Lambda", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Tag.Lambda.flix"),
   //  new FlixTest("Test.Expression.TryCatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.TryCatch.flix"),
   new FlixTest("Test.Expression.Switch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Switch.flix"),
-  new FlixTest("Test.Expression.Match", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.flix"),
   new FlixTest("Test.Expression.Postfix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Postfix.flix"),
   new FlixTest("Test.Optimization.CompactEnum", "main/test/ca/uwaterloo/flix/language/feature/Test.Optimization.CompactEnum.flix"),
   new FlixTest("Test.Optimization.SingleCaseEnum", "main/test/ca/uwaterloo/flix/language/feature/Test.Optimization.SingleCaseEnum.flix"),
@@ -103,6 +101,13 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.VectorSliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoIndexes.flix"),
   new FlixTest("Test.Expression.VectorSliceNoEnd", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoEnd.flix"),
   new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix"),
+
+  //
+  // Pattern Match.
+  //
+  new FlixTest("Test.Expression.Match", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.flix"),
+  new FlixTest("Test.Expression.Match.Guard", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Guard.flix"),
+  new FlixTest("Test.Expression.Match.Wild", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Wild.flix"),
 
   //
   // Records.

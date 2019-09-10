@@ -623,7 +623,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("match") ~ WS ~ Expression ~ optional(WS ~ atomic("with") ~ WS) ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+        SP ~ atomic("match") ~ WS ~ Expression ~ optional(WS ~ atomic("with") ~ WS) ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
       }
     }
 
