@@ -6,36 +6,6 @@
 // (MkClosureRef, ApplyClosure, free variables).                           //
 /////////////////////////////////////////////////////////////////////////////
 
-def f01(): Int = match () with {
-  case _ => 11
-}
-
-@test
-def testMatchWildcard01(): Bool = assertEq!(f01(), 11)
-
-def f02(): Int = match 42 with {
-  case _ => 11
-}
-
-@test
-def testMatchWildcard02(): Bool = assertEq!(f02(), 11)
-
-def f03(x: Int): Int = match x with {
-  case _ => 11
-}
-
-@test
-def testMatchWildcard03(): Bool = assertEq!(f03(-1), 11)
-
-@test
-def testMatchWildcard04(): Bool = assertEq!(f03(0), 11)
-
-@test
-def testMatchWildcard05(): Bool = assertEq!(f03(1), 11)
-
-@test
-def testMatchWildcard06(): Bool = assertEq!(f03(99999), 11)
-
 def f04(x: Int): Int = match x with {
   case _ => 1
 }

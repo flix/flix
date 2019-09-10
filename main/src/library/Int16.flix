@@ -133,7 +133,7 @@ namespace Int16 {
     ///
     /// Helper function for `reverse`.
     ///
-    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(x, l), getBit(x, r)) with {
+    def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(x, l), getBit(x, r)) {
         case (1, 0) => clearBit(setBit(x, r), l)
         case (0, 1) => clearBit(setBit(x, l), r)
         case _ => x
