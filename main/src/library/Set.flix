@@ -185,7 +185,7 @@ namespace Set {
     ///
     /// Returns the union of the elements in `xs`.
     ///
-    pub def flatten(xs: Set[Set[a]]): Set[a] = match xs with {
+    pub def flatten(xs: Set[Set[a]]): Set[a] = match xs {
         case Set(Nil) => empty()
         case Set(x :: rs) => union(x, flatten(Set(rs)))
     }
@@ -258,7 +258,7 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def map(f: a -> b, xs: Set[a]): Set[b] = match xs with {
+    pub def map(f: a -> b, xs: Set[a]): Set[b] = match xs {
         case Set(Nil) => Set(Nil)
         case Set(x :: rs) => insert(f(x), map(f, Set(rs)))
     }
@@ -266,7 +266,7 @@ namespace Set {
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
-    pub def flatMap(f: a -> Set[b], xs: Set[a]): Set[b] = match xs with {
+    pub def flatMap(f: a -> Set[b], xs: Set[a]): Set[b] = match xs {
         case Set(Nil) => Set(Nil)
         case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
     }

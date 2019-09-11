@@ -149,7 +149,7 @@ namespace Path {
     ///
     /// Writes all lines in `l` to the writer `w`.
     ///
-    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit = match l with {
+    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit = match l {
         case Nil => ()
         case x :: xs =>
             native method java.io.PrintWriter.println(w, x : Str) as Unit;

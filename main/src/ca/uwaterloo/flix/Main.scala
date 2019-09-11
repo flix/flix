@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
+import java.net.BindException
 import java.nio.file.Paths
 
 import ca.uwaterloo.flix.api.{Flix, Version}
@@ -45,8 +46,19 @@ object Main {
 
     // check if the --listen flag was passed.
     if (cmdOpts.listen.nonEmpty) {
-      val socketServer = new SocketServer(cmdOpts.listen.get)
-      socketServer.run()
+      var successfulRun: Boolean = false
+      while (!successfulRun) {
+        try {
+          val socketServer = new SocketServer(cmdOpts.listen.get)
+          socketServer.run()
+          successfulRun = true
+        } catch {
+          case ex: BindException =>
+            Console.println(ex.getMessage)
+            Console.println("Retrying in 10 seconds.")
+            Thread.sleep(10_000)
+        }
+      }
       System.exit(0)
     }
 

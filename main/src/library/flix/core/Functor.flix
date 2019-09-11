@@ -4,7 +4,7 @@
 //
 //
 //impl Functor[Option[a]] {
-//    def map[b](f: a -> b, m: Option[a]): Option[b] = match m with {
+//    def map[b](f: a -> b, m: Option[a]): Option[b] = match m {
 //        case None       => None
 //        case Some(a)    => Some(f(a))
 //    }

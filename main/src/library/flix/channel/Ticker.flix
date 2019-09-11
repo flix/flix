@@ -76,7 +76,7 @@ namespace Ticker {
     /// Sleeps for `s` nanoseconds, sends the Unit value to the given channel `c`, and then repeats.
     ///
     def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int): Unit =
-        let (tickChannel, stopChannel) = match ticker with {
+        let (tickChannel, stopChannel) = match ticker {
           case Ticker(t, s) => (t, s)
         };
         
@@ -97,13 +97,13 @@ namespace Ticker {
     def newTicker(): Ticker = Ticker(chan Int 100, chan Unit 100)
 
     pub def stop(ticker: Ticker): Unit = {
-      match ticker with {
+      match ticker {
         case Ticker(_tickChannel, stopChannel) => stopChannel <- (); ()
       }
     }
 
     pub def tick(ticker: Ticker): Channel[Int] = {
-      match ticker with {
+      match ticker {
         case Ticker(tickChannel, _stopChannel) => tickChannel
       }
     }
