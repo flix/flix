@@ -65,4 +65,10 @@ namespace String {
     ///
     pub def toList(s: Str): List[Char] = List.map(i -> charAt(i, s), List.range(0, length(s)))
 
+    ///
+    /// Returns a copy of the string `s` without trailing and leading whitespaces.
+    /// Returns a new empty string if there is no characters in `s`.
+    ///
+    pub def trim(s: Str): Str = native method java.lang.String.trim(s) as Str
+
 }

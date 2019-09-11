@@ -23,3 +23,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Jonathan Starup](https://github.com/JonathanStarup)
 - [Simon Meldahl Schmidt](https://github.com/SimonMeldahl)
 - [Miguel Angelo Nicolau Fialho](https://github.com/ma-fialho)
+- [Frederik Arp Frandsen](https://github.com/fredeaf)
