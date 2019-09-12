@@ -145,14 +145,14 @@ object Packager {
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options)(implicit tc: TerminalContext): Option[CompilationResult] = {
+  def build(p: Path, o: Options, loadClasses: Boolean = true)(implicit tc: TerminalContext): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
 
     // Configure a new Flix object.
     val flix = new Flix()
-    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), writeClassFiles = true))
+    flix.setOptions(o.copy(targetDirectory = getBuildDirectory(p), loadClassFiles = loadClasses, writeClassFiles = true))
 
     // Copy all class files from the Flix runtime jar.
     copyRuntimeClassFiles(p)

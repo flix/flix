@@ -194,7 +194,7 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       }
     }
 
-    val loadClasses = true // TODO: Add an option to disable class loading.
+    val loadClasses = flix.options.loadClassFiles
 
     if (!loadClasses) {
       //
