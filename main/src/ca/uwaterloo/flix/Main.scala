@@ -104,7 +104,7 @@ object Main {
           System.exit(0)
 
         case Command.Build =>
-          Packager.build(cwd, options)
+          Packager.build(cwd, options, loadClasses = false)
           System.exit(0)
 
         case Command.BuildJar =>
