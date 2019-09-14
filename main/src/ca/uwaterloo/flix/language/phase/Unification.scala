@@ -104,23 +104,35 @@ object Unification {
       * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
     def ++(that: Substitution): Substitution = {
-      Substitution(
-        this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
-        this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
-      )
+      if (this.isEmpty) {
+        that
+      } else if (that.isEmpty) {
+        this
+      } else {
+        Substitution(
+          this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
+          this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
+        )
+      }
     }
 
     /**
       * Returns the composition of `this` substitution with `that` substitution.
       */
     def @@(that: Substitution): Substitution = {
-      val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
+      if (this.isEmpty) {
+        that
+      } else if (that.isEmpty) {
+        this
+      } else {
+        val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
+          case (macc, (x, t)) => macc.updated(x, this.apply(t))
+        }
+        val newEffectMap = that.effectMap.foldLeft(Map.empty[Eff.Var, Eff]) {
+          case (macc, (x, t)) => macc.updated(x, this.apply(t))
+        }
+        Substitution(newTypeMap, newEffectMap) ++ this
       }
-      val newEffectMap = that.effectMap.foldLeft(Map.empty[Eff.Var, Eff]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
-      }
-      Substitution(newTypeMap, newEffectMap) ++ this
     }
 
   }
