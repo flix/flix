@@ -51,9 +51,9 @@ object BenchmarkCompiler {
           // Check if we are in the last iteration.
           if (i == WarmupIterations - 1) {
             val currentTime = System.currentTimeMillis() / 1000
-            val totalLines = compilationResult.getTotalLines()
+            val totalLines = compilationResult.getTotalLines().toLong
             val totalTime = compilationResult.getTotalTime()
-            val throughput = totalLines / (totalTime / 1_000_000_000)
+            val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
             println(s"${currentTime}, ${throughput}")
           }

@@ -52,35 +52,41 @@ object Unification {
     /**
       * Returns `true` if `this` is the empty substitution.
       */
-    def isEmpty: Boolean = typeMap.isEmpty && effectMap.isEmpty
+    val isEmpty: Boolean = typeMap.isEmpty && effectMap.isEmpty
 
     /**
       * Applies `this` substitution to the given type `tpe0`.
       */
-    def apply(tpe0: Type): Type = tpe0 match {
-      case x: Type.Var =>
-        typeMap.get(x) match {
-          case None => x
-          case Some(y) if x.kind == tpe0.kind => y
-          case Some(y) if x.kind != tpe0.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${tpe0.kind}'.")
+    def apply(tpe0: Type): Type = {
+      def visit(t: Type): Type =
+        t match {
+          case x: Type.Var =>
+            typeMap.get(x) match {
+              case None => x
+              case Some(y) if x.kind == t.kind => y
+              case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
+            }
+          case Type.Cst(tc) => Type.Cst(tc)
+          case Type.Arrow(f, l) => Type.Arrow(f, l)
+          case Type.RecordEmpty => Type.RecordEmpty
+          case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
+          case Type.SchemaEmpty => Type.SchemaEmpty
+          case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
+          case Type.Zero => Type.Zero
+          case Type.Succ(n, t) => Type.Succ(n, visit(t))
+          case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
+          case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
+          case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
         }
-      case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(f, l) => Type.Arrow(f, l)
-      case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
-      case Type.SchemaEmpty => Type.SchemaEmpty
-      case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, apply(tpe), apply(rest))
-      case Type.Zero => Type.Zero
-      case Type.Succ(n, t) => Type.Succ(n, apply(t))
-      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map apply, kind)
-      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map apply, kind)
-      case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
+
+      // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
+      if (isEmpty) tpe0 else visit(tpe0)
     }
 
     /**
       * Applies `this` substitution to the given types `ts`.
       */
-    def apply(ts: List[Type]): List[Type] = ts map apply
+    def apply(ts: List[Type]): List[Type] = if (isEmpty) ts else ts map apply
 
     /**
       * Applies `this` substitution to the given effect `eff`.
@@ -98,23 +104,35 @@ object Unification {
       * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
     def ++(that: Substitution): Substitution = {
-      Substitution(
-        this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
-        this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
-      )
+      if (this.isEmpty) {
+        that
+      } else if (that.isEmpty) {
+        this
+      } else {
+        Substitution(
+          this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
+          this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
+        )
+      }
     }
 
     /**
       * Returns the composition of `this` substitution with `that` substitution.
       */
     def @@(that: Substitution): Substitution = {
-      val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
+      if (this.isEmpty) {
+        that
+      } else if (that.isEmpty) {
+        this
+      } else {
+        val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
+          case (macc, (x, t)) => macc.updated(x, this.apply(t))
+        }
+        val newEffectMap = that.effectMap.foldLeft(Map.empty[Eff.Var, Eff]) {
+          case (macc, (x, t)) => macc.updated(x, this.apply(t))
+        }
+        Substitution(newTypeMap, newEffectMap) ++ this
       }
-      val newEffectMap = that.effectMap.foldLeft(Map.empty[Eff.Var, Eff]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
-      }
-      Substitution(newTypeMap, newEffectMap) ++ this
     }
 
   }
