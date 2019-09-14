@@ -110,8 +110,9 @@ object Unification {
         this
       } else {
         Substitution(
-          this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
-          this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
+          // Left-biased merge.
+          this.typeMap concat that.typeMap,
+          this.effectMap concat that.effectMap
         )
       }
     }
