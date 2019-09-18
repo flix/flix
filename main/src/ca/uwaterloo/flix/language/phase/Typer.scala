@@ -1726,6 +1726,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
+
+    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
+      //
+      //  ------------------------------------------------------------
+      //  union exp : #{ ... }
+      //
+      for {
+        (typ, eff) <- inferExp(exp, program)
+        pureEff <- unifyEffM(Eff.Pure, eff, loc)
+      } yield mkAnySchemaType()
   }
 
   /**

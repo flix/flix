@@ -1040,6 +1040,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         e <- visitExp(exp, outerEnv, tenv0)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
       } yield NamedAst.Predicate.Head.Atom(qname, e, ts, Type.freshTypeVar(), loc)
+
+    case WeededAst.Predicate.Head.Union(exp, loc) =>
+      for {
+        e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
+      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVar(), loc)
   }
 
   /**

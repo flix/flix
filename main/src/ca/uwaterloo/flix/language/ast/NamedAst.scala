@@ -260,6 +260,8 @@ object NamedAst {
 
       case class Atom(name: Name.QName, exp: NamedAst.Expression, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
+      case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+
     }
 
     sealed trait Body extends NamedAst.Predicate

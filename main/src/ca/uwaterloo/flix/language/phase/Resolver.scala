@@ -861,8 +861,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
-            ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
+            ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
           } yield ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
+
+        case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
+          for {
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
+          } yield ResolvedAst.Predicate.Head.Union(e, tvar, loc)
       }
     }
 
