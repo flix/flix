@@ -678,6 +678,7 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def getPredicateSym(head0: Predicate.Head): Symbol.PredSym = head0 match {
     case Predicate.Head.Atom(pred, terms, tpe, loc) => pred.sym
+    case Predicate.Head.Union(exp, tpe, loc) => ??? // TODO: return option?
   }
 
   /**

@@ -1729,13 +1729,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
+      //  exp : typ
       //  ------------------------------------------------------------
       //  union exp : #{ ... }
       //
       for {
         (typ, eff) <- inferExp(exp, program)
         pureEff <- unifyEffM(Eff.Pure, eff, loc)
-      } yield mkAnySchemaType()
+      } yield typ
   }
 
   /**
@@ -1747,6 +1748,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val ts = terms.map(t => reassembleExp(t, program, subst0))
       val pred = TypedAst.PredicateWithParam(sym, e)
       TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
+
+    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
+      val e = reassembleExp(exp, program, subst0)
+      TypedAst.Predicate.Head.Union(e, subst0(tvar), loc)
   }
 
   /**
