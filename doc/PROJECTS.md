@@ -75,6 +75,24 @@ The aim of this project is to: (1) understand how the semi-naive evaluation algo
 
 
 
+# Type Classes
+Type classes, not to be confused with classes from object-oriented programming, provide a powerful and flexible 
+mechanism for polymorphism that allows overloading of functions. For example, we can define a type class "Eq" with a 
+function "equals" that determine if two values are equal, and then we can implement the "Eq" for booleans, integers, 
+strings, list of integers, pairs, tuples, and so forth, and actually have the compiler use the "right" Eq instance
+based on the type of an expression. Type classes have recently become quite popular and are being implemented in
+languages such as Scala and Rust.  
+
+The aim of this project is (1) explore the haskell implementation of type classes, (2) read and understand some
+of the research literature on type classes to understand the fundamental issues, and (3) lay the foundations for a
+simple implementation of type classes for the Flix programming language.
+
+
+### Literature
+- Philip Wadler: How to make ad-hoc polymorphism less ad hoc
+
+
+
 
 # Uniqueness / Ownership Typing 
 Resources, such a raw memory, file handles, sockets, database connections etc. must be carefully managed to ensure 
