@@ -1135,6 +1135,15 @@ object ParsedAst {
         */
       case class Atom(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
+      /**
+        * Atom Predicate.
+        *
+        * @param sp1 the position of the first character in the predicate.
+        * @param exp the expression to evaluate and union with the current constraint set.
+        * @param sp2 the position of the last character in the predicate.
+        */
+      case class Union(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Head
+
     }
 
     sealed trait Body extends ParsedAst.Predicate
