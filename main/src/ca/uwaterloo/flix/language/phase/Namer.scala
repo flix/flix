@@ -1309,6 +1309,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
     case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
   /**

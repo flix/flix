@@ -1328,7 +1328,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
 
       case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
-        val e = visitExp(e)
+        val e = visitExp(exp)
         SimplifiedAst.Predicate.Head.Union(e, tpe, loc)
     }
 

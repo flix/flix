@@ -102,6 +102,8 @@ object Uncurrier extends Phase[Root, Root] {
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       val ts = terms.map(visitHeadTerm(_, newDefs, root))
       Predicate.Head.Atom(pred, ts, tpe, loc)
+
+    case Predicate.Head.Union(exp, tpe, loc) => h
   }
 
   /**

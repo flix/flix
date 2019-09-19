@@ -563,6 +563,9 @@ object ClosureConv extends Phase[Root, Root] {
   private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       freeVars(pred.exp) ++ terms.flatMap(freeVars)
+
+    case Predicate.Head.Union(exp, tpe, loc) =>
+      freeVars(exp)
   }
 
   /**
@@ -902,6 +905,10 @@ object ClosureConv extends Phase[Root, Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm
         Predicate.Head.Atom(pred, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
