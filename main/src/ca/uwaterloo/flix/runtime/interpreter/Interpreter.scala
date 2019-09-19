@@ -754,6 +754,17 @@ object Interpreter {
       val predSym = newPredSym(pred, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
       AtomPredicate.of(predSym, true, terms)
+
+    case FinalAst.Predicate.Head.Union(exp, terms0, _, _) =>
+      val f = new function.Function[Array[Object], ProxyObject] {
+        override def apply(as: Array[Object]): ProxyObject = {
+          val clo = cast2closure(eval(exp, env0, henv0, lenv0, root))
+          // TODO: Not yet implemented.
+          throw InternalRuntimeException(s"Not yet supported.")
+        }
+      }
+      val ts = terms0.map(t => evalHeadTerm(t, env0))
+      UnionPredicate.of(f, ts.toArray)
   }
 
   /**

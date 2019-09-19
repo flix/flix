@@ -1706,7 +1706,7 @@ object GenExpression {
       newHeadTerms(terms, mv)
 
       // Instantiate a new filter predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.GuardPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/GuardPredicate;", false)
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.UnionPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/UnionPredicate;", false)
   }
 
   /**

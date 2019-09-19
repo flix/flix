@@ -162,6 +162,7 @@ object JvmName {
 
         val AtomPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/AtomPredicate")
         val GuardPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/GuardPredicate")
+        val UnionPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/UnionPredicate")
       }
 
       object Symbol {

@@ -546,6 +546,11 @@ object SimplifiedAstOps {
           checkHeadTerm(term, env0)
         }
         checkType(tpe)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
     }
 
     /**
