@@ -588,7 +588,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
 
       case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
-        val e = visitExp(exp)
+        val e = newLambdaWrapper(cparams, exp, loc)
         SimplifiedAst.Predicate.Head.Union(e, tpe, loc)
     }
 
@@ -627,7 +627,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
 
       // Construct the function type.
-      val lambdaType = Type.mkUncurriedArrow(fparams.map(_.tpe), Type.Cst(TypeConstructor.Bool))
+      val lambdaType = Type.mkUncurriedArrow(fparams.map(_.tpe), exp.tpe)
 
       // Assemble the lambda.
       SimplifiedAst.Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
