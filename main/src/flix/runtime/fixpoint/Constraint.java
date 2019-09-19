@@ -115,6 +115,8 @@ public final class Constraint {
                 bodyAtoms.add((AtomPredicate) b);
             } else if (b instanceof GuardPredicate) {
                 bodyFilters.add((GuardPredicate) b);
+            } else if (b instanceof UnionPredicate) {
+                throw new IllegalArgumentException("A union predicate cannot occur in the body.");
             }
         }
 
