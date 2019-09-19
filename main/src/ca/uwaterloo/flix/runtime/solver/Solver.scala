@@ -529,7 +529,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       // Evaluate the terms to actual arguments.
       val args = evalArgs(p.getArguments, env)
 
-      // Evaluate the filter function passing the arguments.
+      // Evaluate the guard passing the arguments.
       val result = p.getFunction()(args)
 
       // Return the result.
@@ -553,6 +553,14 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       interp += ((p.getSym, fact))
 
     case p: UnionPredicate =>
+      // Evaluate the terms to actual arguments.
+      val args = evalArgs(p.getArguments, env)
+
+      // Evaluate the guard passing the arguments.
+      val result = p.getFunction()(args).getValue.asInstanceOf[ConstraintSystem]
+
+      println(result)
+
       throw new RuntimeException("TODO: Union predicate! :)")
   }
 
