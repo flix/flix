@@ -364,6 +364,10 @@ object Synthesize extends Phase[Root, Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitExp
         Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     /**

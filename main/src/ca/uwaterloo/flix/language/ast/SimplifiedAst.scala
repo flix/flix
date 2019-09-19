@@ -276,6 +276,8 @@ object SimplifiedAst {
 
       case class Atom(pred: SimplifiedAst.PredicateWithParam, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
+      case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+
     }
 
     sealed trait Body extends SimplifiedAst.Predicate

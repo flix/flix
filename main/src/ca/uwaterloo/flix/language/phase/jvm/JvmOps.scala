@@ -982,6 +982,10 @@ object JvmOps {
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
+
+      case Predicate.Head.Union(exp, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
+
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {

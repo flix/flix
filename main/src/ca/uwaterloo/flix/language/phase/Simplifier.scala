@@ -586,6 +586,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
         SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Predicate.Head.Union(e, tpe, loc)
     }
 
     /**

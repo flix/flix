@@ -497,6 +497,12 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       val ts = terms.map(t => visitHeadTerm(t, m))
       val t = visitType(tpe)
       FinalAst.Predicate.Head.Atom(p, ts, t, loc)
+
+    case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
+      val e = visitExp(exp, m)
+      val ts = cparams0.map(cparam => FinalAst.Term.Head.QuantVar(cparam.sym, visitType(cparam.tpe), cparam.loc))
+      val t = visitType(tpe)
+      FinalAst.Predicate.Head.Union(e, ts, t, loc)
   }
 
   private def visitBodyPredicate(cparams0: List[SimplifiedAst.ConstraintParam], body0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = body0 match {
