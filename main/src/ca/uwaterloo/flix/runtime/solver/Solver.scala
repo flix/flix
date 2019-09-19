@@ -677,7 +677,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
     sym match {
       case r: RelSym =>
-        for ((rule, p) <- dependenciesOf(sym)) {
+        // TODO: It can happen that a constraint is extended with a new predicate symbol via union,
+        //  if so, the dependencies might be empty, but that should be okay.
+        for ((rule, p) <- dependenciesOf.getOrElse(sym, Set.empty)) {
           // unify all terms with their values.
           val env = unify(getVarArray(p), fact, fact.length, rule.getConstraintParameters.length)
           if (env != null) {
@@ -686,7 +688,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         }
 
       case l: LatSym =>
-        for ((rule, p) <- dependenciesOf(sym)) {
+        // TODO: It can happen that a constraint is extended with a new predicate symbol via union,
+        //  if so, the dependencies might be empty, but that should be okay.
+        for ((rule, p) <- dependenciesOf.getOrElse(sym, Set.empty)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys.length
           val env = unify(getVarArray(p), fact, numberOfKeys, rule.getConstraintParameters.length)
