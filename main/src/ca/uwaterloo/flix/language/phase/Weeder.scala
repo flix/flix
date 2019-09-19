@@ -504,29 +504,49 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
-      /*
-       * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
-       */
+      //
+      // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
+      //
       mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
-          // Let-binding.
-          // Check if there is a type annotation for the value expression.
-          tpe match {
-            case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
-            case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.freshEffVar(), value.loc)
-              WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
-          }
-        case (pattern, value, body) =>
+          // No pattern match.
+          WeededAst.Expression.Let(ident, withAscription(value, tpe), body, mkSL(sp1, sp2))
+        case (pat, value, body) =>
           // Full-blown pattern match.
-          val rule = WeededAst.MatchRule(pattern, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-          // Check if there is a type annotation for the value expression.
-          tpe match {
-            case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
-            case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.freshEffVar(), value.loc)
-              WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
-          }
+          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
+          WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
+      val loc = SourceLocation.mk(sp1, sp2)
+
+      //
+      // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap.
+      //
+      // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
+      //
+      val qname = Name.mkQName(Name.Ident(SourcePosition.Unknown, "flatMap", SourcePosition.Unknown))
+      val flatMap = WeededAst.Expression.VarOrDef(qname, loc)
+
+      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+          // No pattern match.
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
+          val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
+          WeededAst.Expression.Apply(inner, value, loc)
+        case (pat, value, body) =>
+          // Full-blown pattern match.
+          val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
+          val lambdaVar = WeededAst.Expression.VarOrDef(Name.mkQName(lambdaIdent), loc)
+
+          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
+          val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), mkSL(sp1, sp2))
+
+          val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
+          val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
+          WeededAst.Expression.Apply(inner, value, loc)
       }
 
     case ParsedAst.Expression.LetRec(sp1, ident, exp1, exp2, sp2) =>
@@ -1697,6 +1717,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
+    */
+  private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = tpe0 match {
+    case None => exp0
+    case Some(t) => WeededAst.Expression.Ascribe(exp0, visitType(t), Eff.freshEffVar(), exp0.loc)
+  }
+
+  /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
   private def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
@@ -1789,6 +1817,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
