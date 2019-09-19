@@ -155,6 +155,16 @@ def testUnion15(): Bool =
     let r = solve p;
     r |= B(2).
 
+@test
+def testUnion16(): Bool =
+    let f = (x: Int, y: Int) -> List.range(x, y) |> List.map(w -> C(w).) |> List.foldLeft((a, b) -> a <+> b, #{});
+    let p = #{
+        A(1). B(9).
+        union f(x, y) :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= C(5).
+
 pub rel A(x: Int)
 pub rel B(x: Int)
 pub rel C(x: Int)
