@@ -1093,6 +1093,8 @@ object ParsedAst {
       */
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
+    case class Array(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+
     /**
       * Nil Pattern (of list).
       *

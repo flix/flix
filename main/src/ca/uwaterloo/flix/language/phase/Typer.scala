@@ -1657,6 +1657,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           elementTypes <- seqM(elms map visit);
           resultType <- unifyTypM(tvar, Type.mkTuple(elementTypes), loc)
         ) yield resultType
+
+      case ResolvedAst.Pattern.Array(elms, tvar, loc) =>
+        for (
+          elementTypes <- seqM(elms map visit);
+          resultType <- unifyTypM(tvar, Type.mkArray(elementTypes), loc)
+        ) yield resultType
     }
 
     visit(pat0)

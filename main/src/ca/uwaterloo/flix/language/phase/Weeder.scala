@@ -1198,6 +1198,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
         }
 
+      case ParsedAst.Pattern.Array(sp1, pats, sp2) =>
+        /*
+         * Rewrites empty tuples to Unit and eliminate single-element tuples.
+         */
+        traverse(pats)(visit) map {
+          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        }
+
       case ParsedAst.Pattern.FNil(sp1, sp2) =>
         /*
          * Rewrites a `FNil` pattern into a tag pattern.
