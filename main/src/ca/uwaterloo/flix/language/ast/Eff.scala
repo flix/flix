@@ -32,7 +32,20 @@ object Eff {
   /**
     * Represents an effect variable.
     */
-  case class Var(id: Int) extends Eff
+  case class Var(id: Int) extends Eff {
+    /**
+      * Returns `true` if `this` type variable is equal to `o`.
+      */
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Var => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of `this` type variable.
+      */
+    override def hashCode(): Int = id
+  }
 
   /**
     * Represents a pure effect.
