@@ -1,5 +1,43 @@
 @test
 def testUnion01(): Bool =
+    let p = #{
+        union #{ A(1). B(1). }.
+        R(x, y) :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= R(1, 1).
+
+@test
+def testUnion02(): Bool =
+    let p = #{
+        union #{ A(1). }.
+        union #{ B(1). }.
+        R(x, y) :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= R(1, 1).
+
+@test
+def testUnion03(): Bool =
+    let p = #{
+        union #{ A(1). A(2). B(1). B(2). }.
+        R(x, y) :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= R(1, 2).
+
+@test
+def testUnion04(): Bool =
+    let p = #{
+        union #{ A(1). A(2). }.
+        union #{ B(1). B(2). }.
+        R(x, y) :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= R(1, 2).
+
+@test
+def testUnion10(): Bool =
     let f = (_: Unit) -> A(1).;
     let p = #{
         union f().
@@ -8,7 +46,7 @@ def testUnion01(): Bool =
     r |= A(1).
 
 @test
-def testUnion02(): Bool =
+def testUnion11(): Bool =
     let f = (_: Unit) -> A(1).;
     let g = (_: Unit) -> B(1).;
     let p = #{
@@ -20,7 +58,7 @@ def testUnion02(): Bool =
     r |= R(1, 1).
 
 @test
-def testUnion03(): Bool =
+def testUnion12(): Bool =
     let f = x -> R(x, x).;
     let p = #{
         A(1). A(2). A(3).
@@ -31,7 +69,7 @@ def testUnion03(): Bool =
     r |= R(2, 2).
 
 @test
-def testUnion04(): Bool =
+def testUnion13(): Bool =
     let f = x -> R(x, x).;
     let p = #{
         A(1). A(2). A(3).
@@ -43,7 +81,7 @@ def testUnion04(): Bool =
     r |= R(42, 42).
 
 @test
-def testUnion05(): Bool =
+def testUnion14(): Bool =
     let f = (x: Int, y: Int) -> {
         let z = x + y;
         #{C(z).}
@@ -57,7 +95,7 @@ def testUnion05(): Bool =
     r |= C(9).
 
 @test
-def testUnion06(): Bool =
+def testUnion15(): Bool =
     let f = _ -> B(2).;
     let p = #{
         A(1). A(2). A(3).
