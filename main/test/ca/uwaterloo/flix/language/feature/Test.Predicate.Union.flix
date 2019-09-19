@@ -42,11 +42,32 @@ def testUnion04(): Bool =
     let r = solve p;
     r |= R(42, 42).
 
+@test
+def testUnion05(): Bool =
+    let f = (x: Int, y: Int) -> {
+        let z = x + y;
+        #{C(z).}
+    };
+    let p = #{
+        A(1). A(2). A(3).
+        B(3). B(5). B(6).
+        union f(x, y) :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= C(9).
 
-
-
-
+@test
+def testUnion06(): Bool =
+    let f = _ -> B(2).;
+    let p = #{
+        A(1). A(2). A(3).
+        B(1).       B(3).
+        union f(x) :- A(x), not B(x).
+    };
+    let r = solve p;
+    r |= B(2).
 
 pub rel A(x: Int)
 pub rel B(x: Int)
+pub rel C(x: Int)
 pub rel R(x: Int, y: Int)
