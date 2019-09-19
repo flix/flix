@@ -556,12 +556,21 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       // Evaluate the terms to actual arguments.
       val args = evalArgs(p.getArguments, env)
 
-      // Evaluate the guard passing the arguments.
-      val result = p.getFunction()(args).getValue.asInstanceOf[ConstraintSystem]
+      // Evaluate the union function passing the arguments.
+      val result = p.getFunction()(args)
 
-      println(result)
+      // Cast to a constraint system
+      val cs = result.getValue.asInstanceOf[ConstraintSystem]
 
-      throw new RuntimeException("TODO: Union predicate! :)")
+      // Iterate through the facts.
+      for (constraint <- cs.getConstraints) {
+        if (constraint.isFact) {
+          evalHead(constraint.getHeadPredicate, Array.empty, interp)
+        }
+        if (constraint.isRule) {
+          throw InternalRuntimeException(s"Unexpected rule in union predicate: '$constraint'.")
+        }
+      }
   }
 
   /**
