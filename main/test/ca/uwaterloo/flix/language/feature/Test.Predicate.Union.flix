@@ -67,6 +67,26 @@ def testUnion07(): Bool =
     r |= R(1, 2).
 
 @test
+def testUnion08(): Bool =
+    let p = #{
+        A(1). A(2). A(3).
+        B(4). B(5). B(6).
+        union #{ R(x, y). } :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= R(2, 5).
+
+@test
+def testUnion09(): Bool =
+    let p = #{
+        A(1). A(2). A(3).
+        B(4). B(5). B(6).
+        union #{ R(x, y). R(y, x). } :- A(x), B(y).
+    };
+    let r = solve p;
+    r |= R(5, 2).
+
+@test
 def testUnion10(): Bool =
     let f = (_: Unit) -> A(1).;
     let p = #{
