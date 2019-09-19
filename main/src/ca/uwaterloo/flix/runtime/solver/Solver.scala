@@ -564,8 +564,8 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   /**
     * Evaluates the given `filter` and returns its result.
     */
-  private def evalFilter(filter: FilterPredicate, env: Env): Boolean = filter match {
-    case p: FilterPredicate =>
+  private def evalFilter(filter: GuardPredicate, env: Env): Boolean = filter match {
+    case p: GuardPredicate =>
       // Evaluate the arguments of the filter function predicate.
       val args = new Array[AnyRef](p.getArguments.length)
       var j = 0

@@ -779,7 +779,7 @@ object Interpreter {
         }
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
-      FilterPredicate.of(f, ts.toArray)
+      GuardPredicate.of(f, ts.toArray)
   }
 
   /**
