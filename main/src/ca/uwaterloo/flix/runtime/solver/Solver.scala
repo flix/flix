@@ -404,7 +404,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // complete, now functionals.
-      evalAllFilters(rule, env, interp)
+      evalAllGuards(rule, env, interp)
     case p :: xs =>
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
@@ -496,17 +496,17 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   }
 
   /**
-    * Evaluates all filters in the given `rule`.
+    * Evaluates all guards in the given `rule`.
     */
-  private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
+  private def evalAllGuards(rule: Constraint, env: Env, interp: Interpretation): Unit = {
     // Extract the filters function predicates from the rule.
-    val filters = rule.getFilters
+    val filters = rule.getGuards
 
     // Evaluate each filter function predicate one-by-one.
     var i = 0
     while (i < filters.length) {
       // Evaluate the current filter.
-      val result = evalFilter(filters(i), env)
+      val result = evalGuard(filters(i), env)
 
       // Return immediately if the filter function returned false.
       if (!result)
@@ -522,31 +522,12 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   }
 
   /**
-    * Evaluates the given `filter` and returns its result.
+    * Evaluates the given `guard` and returns its result.
     */
-  private def evalFilter(filter: GuardPredicate, env: Env): Boolean = filter match {
+  private def evalGuard(guard: GuardPredicate, env: Env): Boolean = guard match {
     case p: GuardPredicate =>
-      // Evaluate the arguments of the filter function predicate.
-      val args = new Array[AnyRef](p.getArguments.length)
-      var j = 0
-      // Iterate through each term of the filter function predicate.
-      while (j < args.length) {
-        // Compute the value of the term.
-        val value: ProxyObject = p.getArguments()(j) match {
-          case p: VarTerm =>
-            // A variable is replaced by its value from the environment.
-            env(p.getSym.getIndex)
-          case p: LitTerm =>
-            invoke(p.getFunction)
-          case p: WildTerm =>
-            // A wildcard should not appear as an argument to a filter function.
-            throw InternalRuntimeException("Wildcard not allowed here!")
-        }
-
-        // Store the value of the term into the argument array.
-        args(j) = value.getValue
-        j = j + 1
-      }
+      // Evaluate the terms to actual arguments.
+      val args = evalArgs(p.getArguments, env)
 
       // Evaluate the filter function passing the arguments.
       val result = p.getFunction()(args)
@@ -595,6 +576,34 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         }
         t.getFunction()(args)
       }
+  }
+
+  /**
+    * Evaluates the given terms `ts`.
+    */
+  private def evalArgs(ts: Array[Term], env: Env) = {
+    // Evaluate the arguments of the filter function predicate.
+    val args = new Array[AnyRef](ts.length)
+    var j = 0
+    // Iterate through each term of the filter function predicate.
+    while (j < args.length) {
+      // Compute the value of the term.
+      val value: ProxyObject = ts(j) match {
+        case p: VarTerm =>
+          // A variable is replaced by its value from the environment.
+          env(p.getSym.getIndex)
+        case p: LitTerm =>
+          invoke(p.getFunction)
+        case p: WildTerm =>
+          // A wildcard should not appear as an argument to a filter function.
+          throw InternalRuntimeException("Wildcard not allowed here!")
+      }
+
+      // Store the value of the term into the argument array.
+      args(j) = value.getValue
+      j = j + 1
+    }
+    args
   }
 
   /**

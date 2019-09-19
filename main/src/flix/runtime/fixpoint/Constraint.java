@@ -64,9 +64,9 @@ public final class Constraint {
     private final AtomPredicate[] bodyAtoms;
 
     /**
-     * The body filter predicates.
+     * The body guard predicates.
      */
-    private final GuardPredicate[] bodyFilters;
+    private final GuardPredicate[] bodyGuards;
 
     /**
      * Numbers of times the constraint has been evaluated.
@@ -83,10 +83,10 @@ public final class Constraint {
      */
     private Constraint(VarSym[] cparams, Predicate head, Predicate[] body) {
         //
-        // A head predicate cannot be a filter predicate.
+        // A head predicate cannot be a guard predicate.
         //
         if (head instanceof GuardPredicate) {
-            throw new IllegalArgumentException("A head predicate cannot be a filter predicate.");
+            throw new IllegalArgumentException("A head predicate cannot be a guard predicate.");
         }
 
         //
@@ -119,7 +119,7 @@ public final class Constraint {
         }
 
         this.bodyAtoms = bodyAtoms.toArray(new AtomPredicate[0]);
-        this.bodyFilters = bodyFilters.toArray(new GuardPredicate[0]);
+        this.bodyGuards = bodyFilters.toArray(new GuardPredicate[0]);
     }
 
     /**
@@ -207,10 +207,10 @@ public final class Constraint {
     }
 
     /**
-     * Returns the filter predicates in the body of `this` constraint.
+     * Returns the guard predicates in the body of `this` constraint.
      */
-    public GuardPredicate[] getFilters() {
-        return bodyFilters;
+    public GuardPredicate[] getGuards() {
+        return bodyGuards;
     }
 
     /**
