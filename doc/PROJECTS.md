@@ -1,11 +1,12 @@
 # Bachelor Project Proposals
 
 # Termination Analysis
-A common programming mistake is to write an unintentional infinite loop. 
+A common programming mistake is to unintentional write an infinite loop. 
 Most contemporary programming languages such as C, C++, C#, Java, Kotlin, Scala, etc. do not help programmers avoid such issues.
 Termination analysis or termination checkers describe a wide-range of techniques that can be used to verify that a program 
 (or part of a program) always terminates, for any input. These techniques range from sophisticated type systems to the use of
-SMT solvers. In the case of functional programming, such termination checkers may try to ensure termination by verifying that recursion is always on structurally smaller elements. 
+SMT solvers. In the case of functional programming, such termination checkers may try to ensure termination by 
+verifying that recursion is always on structurally smaller elements. 
 
 The aim of this project is to explore the design space of termination analysis for a functional language.
 The work will include reading papers, language design, and implementation in a real-world programming language.
@@ -19,11 +20,11 @@ Contact: Magnus Madsen <magnusm@cs.au.dk>
 
 
 
-# Package Manager
+# Package Management
 Today, programs are not written from scratch, but rather build on a large collection of external libraries.
 Different languages have different package ecosystems: Java has Maven, JavaScript has NPM, Rust has Cargo, and so forth.
 All of these languages offer some form of package manager that is used to download, install, upgrade, and keep track
-of the dependencies of a software project. The problem is highly non-trivial, for example, how should we handle the 
+of the dependencies of a software project. The problem is non-trivial: For example, how should we handle the 
 situation where a project depends on package A and package B, and A depends on C (version 1.0), but B depends on C
 (version 2.0)?
 
@@ -46,7 +47,7 @@ Integrated development environments (IDEs), such as Intellij IDEA, aid programme
 auto-completion for field and method names. Dependently-typed programming languages such as Agda and Idris take
 this a step further by allowing the programmer to have the compiler fill in entire expressions based on the
 types of the program. Effectively, the compiler searches for expressions that satisfy the requirements (e.g. types)
-of the "hole" in the program. If there are multiple candidates, the compiler uses heuristics to rank the different
+of a "hole" in the program. If there are multiple candidates, the compiler uses heuristics to rank the different
 choices.
 
 The aim of this project is to: (1) explore the design space of such program completions, and to 
@@ -67,9 +68,10 @@ model, a unique solution to any Datalog program. The "fixpoint engine" is the so
 the solution to a Datalog program. It is essentially a specialized form of database with support for parallel
 evaluation.
 
-The aim of this project is to: (1) understand how the semi-naive evaluation algorithm work, and to
+The aim of this project is to: (1) understand how the semi-naive evaluation algorithm works, and to
 (2) re-design and re-implemented the fixpoint engine in the Flix language to make it faster and easier to maintain.
 
+- Stefano Ceri: What you always wanted to know about Datalog (and never dared to ask)
 - https://flix.dev/programming-flix/#/fixpoints/ 
 
 
@@ -79,7 +81,7 @@ The aim of this project is to: (1) understand how the semi-naive evaluation algo
 Type classes, not to be confused with classes from object-oriented programming, provide a powerful and flexible 
 mechanism for polymorphism that allows overloading of functions. For example, we can define a type class "Eq" with a 
 function "equals" that determine if two values are equal, and then we can implement the "Eq" for booleans, integers, 
-strings, list of integers, pairs, tuples, and so forth, and actually have the compiler use the "right" Eq instance
+strings, list of integers, pairs, tuples, and so forth, and have the compiler use the "right" Eq instance
 based on the type of an expression. Type classes have recently become quite popular and are being implemented in
 languages such as Scala and Rust.  
 
