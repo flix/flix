@@ -1736,7 +1736,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         (typ, eff) <- inferExp(exp, program)
         pureEff <- unifyEffM(Eff.Pure, eff, loc)
-      } yield typ
+        resultType <- unifyTypM(tvar, typ, loc)
+      } yield resultType
   }
 
   /**

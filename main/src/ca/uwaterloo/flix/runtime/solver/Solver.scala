@@ -570,6 +570,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       }
 
       interp += ((p.getSym, fact))
+
+    case p: UnionPredicate =>
+      throw new RuntimeException("TODO: Union predicate! :)")
   }
 
   /**
@@ -888,6 +891,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     val constraintsWithStratum = constraintSystem.getConstraints.map {
       case c => c.getHeadPredicate match {
         case h: AtomPredicate => (c, stratification.getStratum(h.getSym))
+        case h: UnionPredicate => (c, stratification.getMaxStratum)
       }
 
     }

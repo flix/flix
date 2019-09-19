@@ -18,6 +18,7 @@ package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.symbol.PredSym;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +46,16 @@ public final class Stratification {
         }
 
         return result;
+    }
+
+    /**
+     * Returns the highest stratum.
+     */
+    public int getMaxStratum() {
+        if (stratification.isEmpty()) {
+            return 0;
+        }
+        return Collections.max(stratification.values());
     }
 
     /**
