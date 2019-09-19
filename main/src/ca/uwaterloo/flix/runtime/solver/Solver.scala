@@ -404,7 +404,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // complete, now functionals.
-      evalAllFunctionals(rule, env, interp)
+      evalAllFilters(rule, env, interp)
     case p :: xs =>
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
@@ -493,46 +493,6 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     }
 
     result
-  }
-
-  /**
-    * Computes the cross product of all functionals in the body.
-    */
-  private def evalAllFunctionals(rule: Constraint, env: Env, interp: Interpretation): Unit =
-    evalFunctionals(rule, rule.getFunctionals.toList, env, interp)
-
-  /**
-    * Evaluates a single functional.
-    */
-  private def evalFunctionals(rule: Constraint, ps: List[FunctionalPredicate], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // complete, now filter.
-      evalAllFilters(rule, env, interp)
-    case r :: rs =>
-      // compute the values of the arguments
-      val args = new Array[AnyRef](r.getArguments.length)
-      var i = 0
-      for (a <- r.getArguments) {
-        val v = env(a.getIndex)
-        args(i) = if (v == null) null else v.getValue
-        i = i + 1
-      }
-
-      // apply the function to obtain the array of values.
-      val values: Array[ProxyObject] =
-        if (r.getArguments.length == 0) {
-          // TODO: A small hack to deal with zero arity functions.
-          r.getFunction.apply(new Array[AnyRef](1))
-        } else {
-          r.getFunction.apply(args)
-        }
-
-      // iterate through each value.
-      for (value <- values) {
-        val newEnv = copy(env)
-        newEnv(r.getVarSym.getIndex) = value
-        evalFunctionals(rule, rs, newEnv, interp)
-      }
   }
 
   /**

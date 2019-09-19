@@ -69,11 +69,6 @@ public final class Constraint {
     private final GuardPredicate[] bodyFilters;
 
     /**
-     * The body functional predicates.
-     */
-    private final FunctionalPredicate[] bodyFunctionals;
-
-    /**
      * Numbers of times the constraint has been evaluated.
      */
     private final AtomicInteger hits = new AtomicInteger();
@@ -91,13 +86,6 @@ public final class Constraint {
         // A head predicate cannot be a filter predicate.
         //
         if (head instanceof GuardPredicate) {
-            throw new IllegalArgumentException("A head predicate cannot be a filter predicate.");
-        }
-
-        //
-        // A head predicate cannot be a functional predicate.
-        //
-        if (head instanceof FunctionalPredicate) {
             throw new IllegalArgumentException("A head predicate cannot be a filter predicate.");
         }
 
@@ -122,20 +110,16 @@ public final class Constraint {
         //
         var bodyAtoms = new ArrayList<AtomPredicate>();
         var bodyFilters = new ArrayList<GuardPredicate>();
-        var bodyFunctionals = new ArrayList<FunctionalPredicate>();
         for (Predicate b : body) {
             if (b instanceof AtomPredicate) {
                 bodyAtoms.add((AtomPredicate) b);
             } else if (b instanceof GuardPredicate) {
                 bodyFilters.add((GuardPredicate) b);
-            } else if (b instanceof FunctionalPredicate) {
-                bodyFunctionals.add((FunctionalPredicate) b);
             }
         }
 
         this.bodyAtoms = bodyAtoms.toArray(new AtomPredicate[0]);
         this.bodyFilters = bodyFilters.toArray(new GuardPredicate[0]);
-        this.bodyFunctionals = bodyFunctionals.toArray(new FunctionalPredicate[0]);
     }
 
     /**
@@ -227,13 +211,6 @@ public final class Constraint {
      */
     public GuardPredicate[] getFilters() {
         return bodyFilters;
-    }
-
-    /**
-     * Returns the functional predicates in the body of `this` constraint.
-     */
-    public FunctionalPredicate[] getFunctionals() {
-        return bodyFunctionals;
     }
 
     /**
