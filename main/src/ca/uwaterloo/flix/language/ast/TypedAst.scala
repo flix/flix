@@ -337,6 +337,8 @@ object TypedAst {
 
       case class Atom(pred: TypedAst.PredicateWithParam, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
+      case class Union(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+
     }
 
     sealed trait Body extends TypedAst.Predicate
@@ -359,7 +361,9 @@ object TypedAst {
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym
+
     def tpe: Type
+
     def loc: SourceLocation
   }
 

@@ -1258,6 +1258,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, ts) =>
           WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
       }
+
+    case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Head.Union(e, mkSL(sp1, sp2))
+      }
   }
 
   /**

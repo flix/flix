@@ -22,21 +22,21 @@ import flix.runtime.fixpoint.term.Term;
 import java.util.function.Function;
 
 /**
- * Represents a filter predicate with function `f` and arguments `terms`.
+ * Represents a guard predicate with function `f` and arguments `terms`.
  */
-public final class FilterPredicate implements Predicate {
+public final class GuardPredicate implements Predicate {
 
     /**
-     * Constructs a filter predicate for the given function and function arguments.
+     * Constructs a guard predicate for the given function and function arguments.
      */
-    public static FilterPredicate of(Function<Object[], ProxyObject> function, Term[] arguments) {
+    public static GuardPredicate of(Function<Object[], ProxyObject> function, Term[] arguments) {
         if (function == null)
             throw new IllegalArgumentException("'function' must be non-null.");
 
         if (arguments == null)
             throw new IllegalArgumentException("'arguments' must be non-null.");
 
-        return new FilterPredicate(function, arguments);
+        return new GuardPredicate(function, arguments);
     }
 
     /**
@@ -52,7 +52,7 @@ public final class FilterPredicate implements Predicate {
     /**
      * Private constructor.
      */
-    private FilterPredicate(Function<Object[], ProxyObject> function, Term[] arguments) {
+    private GuardPredicate(Function<Object[], ProxyObject> function, Term[] arguments) {
         this.function = function;
         this.arguments = arguments;
     }
@@ -76,7 +76,7 @@ public final class FilterPredicate implements Predicate {
      */
     @Override
     public String toString() {
-        return "<filter>";
+        return "<guard>";
     }
 
 }

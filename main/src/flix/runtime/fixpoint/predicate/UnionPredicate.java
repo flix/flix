@@ -17,72 +17,57 @@
 package flix.runtime.fixpoint.predicate;
 
 import flix.runtime.ProxyObject;
-import flix.runtime.fixpoint.symbol.VarSym;
+import flix.runtime.fixpoint.term.Term;
 
 import java.util.function.Function;
 
 /**
- * Represents a functional predicate of the form: sym <- function(args).
+ * Represents a union predicate with function `f` and arguments `terms`.
  */
-public final class FunctionalPredicate implements Predicate {
+public final class UnionPredicate implements Predicate {
 
     /**
-     * Constructs a functional predicate for the given symbol, function, and function arguments.
+     * Constructs a union predicate for the given function and function arguments.
      */
-    public static FunctionalPredicate of(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
-        if (sym == null)
-            throw new IllegalArgumentException("'sym' must be non-null.");
+    public static UnionPredicate of(Function<Object[], ProxyObject> function, Term[] arguments) {
         if (function == null)
             throw new IllegalArgumentException("'function' must be non-null.");
-        if (arguments == null) {
+
+        if (arguments == null)
             throw new IllegalArgumentException("'arguments' must be non-null.");
-        }
 
-        return new FunctionalPredicate(sym, function, arguments);
+        return new UnionPredicate(function, arguments);
     }
-
-    /**
-     * The variable.
-     */
-    private final VarSym sym;
 
     /**
      * The function.
      */
-    private final Function<Object[], ProxyObject[]> function;
+    private final Function<Object[], ProxyObject> function;
 
     /**
      * The function arguments.
      */
-    private final VarSym[] arguments;
+    private final Term[] arguments;
 
     /**
      * Private constructor.
      */
-    private FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
-        this.sym = sym;
+    private UnionPredicate(Function<Object[], ProxyObject> function, Term[] arguments) {
         this.function = function;
         this.arguments = arguments;
     }
 
     /**
-     * Returns the variable symbol.
-     */
-    public VarSym getVarSym() {
-        return sym;
-    }
-
-    /**
      * Returns the function.
      */
-    public Function<Object[], ProxyObject[]> getFunction() {
+    public Function<Object[], ProxyObject> getFunction() {
         return function;
     }
 
     /**
-     * Returns the function arguments.
+     * Returns the arguments.
      */
-    public VarSym[] getArguments() {
+    public Term[] getArguments() {
         return arguments;
     }
 
@@ -91,7 +76,7 @@ public final class FunctionalPredicate implements Predicate {
      */
     @Override
     public String toString() {
-        return "<functional>";
+        return "<union>";
     }
 
 }

@@ -668,16 +668,24 @@ object Stratifier extends Phase[Root, Root] {
     */
   private def dependencyGraphOfConstraint(c0: Constraint): DependencyGraph = c0 match {
     case Constraint(cparams, head, body, _) =>
-      val headSym = getPredicateSym(head)
-      val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
-      DependencyGraph(dependencies.toSet)
+      getPredicateSym(head) match {
+        case None => DependencyGraph.empty
+        case Some(headSym) =>
+          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
+          DependencyGraph(dependencies.toSet)
+      }
   }
 
   /**
-    * Returns the predicate symbol of the given head atom `head0`.
+    * Optionally returns the predicate symbol of the given head atom `head0`.
     */
-  private def getPredicateSym(head0: Predicate.Head): Symbol.PredSym = head0 match {
-    case Predicate.Head.Atom(pred, terms, tpe, loc) => pred.sym
+  private def getPredicateSym(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
+    case Predicate.Head.Atom(pred, terms, tpe, loc) => Some(pred.sym)
+    case Predicate.Head.Union(exp, tpe, loc) =>
+      // NB: The situation is actually more complicated.
+      // If the union expressions evaluates to predicate symbols A, B, C it could
+      // be argued that we should add dependency edges for each of these symbols.
+      None
   }
 
   /**

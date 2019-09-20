@@ -461,6 +461,9 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         terms.foldLeft(visitExp(pred.exp)) {
           case (acc, term) => acc ++ visitExp(term)
         }
+
+      case Head.Union(exp, _, _) =>
+        visitExp(exp)
     }
 
     /**

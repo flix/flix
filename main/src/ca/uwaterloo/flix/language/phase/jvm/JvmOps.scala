@@ -677,9 +677,17 @@ object JvmOps {
       * Returns the set of closures in the given constraint `c0`.
       */
     def visitConstraint(c0: Constraint): Set[ClosureInfo] = {
-      c0.body.foldLeft(Set.empty[ClosureInfo]) {
+      // TODO: Look for more closures.
+      val headClosures = c0.head match {
+        case Predicate.Head.Atom(_, _, _, _) => Set.empty
+        case Predicate.Head.Union(exp, terms, _, _) => visitExp(exp)
+      }
+
+      val bodyClosures = c0.body.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, b) => sacc ++ visitBodyAtom(b)
       }
+
+      headClosures ++ bodyClosures
     }
 
     /**
@@ -982,6 +990,10 @@ object JvmOps {
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
+
+      case Predicate.Head.Union(exp, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
+
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
