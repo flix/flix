@@ -507,11 +507,14 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
     case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
+
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
+
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = mutable.LinkedHashSet.empty ++ rules.flatMap {
-        case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
+        case SelectChannelRule(sym, chan, exp) => (freeVars(chan) ++ freeVars(exp)).filter(p => p._1 != sym)
       }
 
       val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
