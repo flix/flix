@@ -298,15 +298,6 @@ object Type {
     }
   }
 
-  /**
-    * Constructs the Array type [A, B, ...] where the types are drawn from the list `ts`.
-    */
-  def mkArray(ts: List[Type]): Type = {
-    val array = Type.Cst(TypeConstructor.Array(ts.length))
-    ts.foldLeft(array: Type) {
-      case (acc, x) => Apply(acc, x)
-    }
-  }
 
 
   /////////////////////////////////////////////////////////////////////////////
