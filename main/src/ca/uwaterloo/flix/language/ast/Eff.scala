@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Magnus Madsen
+ * Copyright 2019 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.ast
+
+import ca.uwaterloo.flix.api.Flix
 
 /**
   * Represents the computational effect of an expression.
   */
-sealed trait Eff {
-
-  def isPure: Boolean = this match {
-    case Eff.Pure => true
-    case Eff.Impure => false
-  }
-
-}
+sealed trait Eff
 
 object Eff {
 
   /**
-    * Represents the empty effect.
+    * Returns a fresh effect variable.
     */
-  val Empty: Eff = Impure
+  def freshEffVar()(implicit flix: Flix): Eff.Var = Eff.Var(flix.genSym.freshId())
 
+  /**
+    * Represents an effect variable.
+    */
+  case class Var(id: Int) extends Eff {
+    /**
+      * Returns `true` if `this` type variable is equal to `o`.
+      */
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Var => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of `this` type variable.
+      */
+    override def hashCode(): Int = id
+  }
+
+  /**
+    * Represents a pure effect.
+    */
   case object Pure extends Eff
 
+  /**
+    * Represents an impure effect.
+    */
   case object Impure extends Eff
 
 }

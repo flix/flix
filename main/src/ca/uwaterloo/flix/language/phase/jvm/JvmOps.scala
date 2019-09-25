@@ -19,11 +19,11 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
 
@@ -656,7 +656,9 @@ object JvmOps {
 
       case Expression.ProcessPanic(msg, tpe, loc) => Set.empty
 
-      case Expression.FixpointConstraint(con, tpe, loc) => Set.empty
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, constraint) => sacc ++ visitConstraint(constraint)
+      }
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
@@ -671,8 +673,33 @@ object JvmOps {
       case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
+    /**
+      * Returns the set of closures in the given constraint `c0`.
+      */
+    def visitConstraint(c0: Constraint): Set[ClosureInfo] = {
+      // TODO: Look for more closures.
+      val headClosures = c0.head match {
+        case Predicate.Head.Atom(_, _, _, _) => Set.empty
+        case Predicate.Head.Union(exp, terms, _, _) => visitExp(exp)
+      }
 
-    // TODO: Magnus: Look for closures in other places.
+      val bodyClosures = c0.body.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, b) => sacc ++ visitBodyAtom(b)
+      }
+
+      headClosures ++ bodyClosures
+    }
+
+    /**
+      * Returns the set of closures in the given body atom `b0`.
+      */
+    def visitBodyAtom(b0: Predicate.Body): Set[ClosureInfo] = b0 match {
+      case Body.Atom(_, _, _, _, _) => Set.empty
+
+      case Body.Guard(exp, _, _) => visitExp(exp)
+    }
+
+    // TODO: Look for closures in other places.
 
     // Visit every definition.
     root.defs.foldLeft(Set.empty[ClosureInfo]) {
@@ -707,8 +734,6 @@ object JvmOps {
     */
   def getTagsOf(tpe: MonoType)(implicit root: Root, flix: Flix): Set[TagInfo] = tpe match {
     case enumType@MonoType.Enum(sym, args) =>
-      implicit val genSym: GenSym = flix.genSym
-
       // Retrieve the enum.
       val enum = root.enums(enumType.sym)
 
@@ -716,7 +741,7 @@ object JvmOps {
       enum.cases.foldLeft(Set.empty[TagInfo]) {
         case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
           // TODO: Magnus: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unify(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
+          val subst = Unification.unifyTypes(hackMonoType2Type(enum.tpe), hackMonoType2Type(tpe)).get
           val tagType = subst(hackMonoType2Type(uninstantiatedTagType))
 
           sacc + TagInfo(enumSym, tagName.name, args, tpe, hackType2MonoType(tagType))
@@ -724,7 +749,7 @@ object JvmOps {
     case _ => Set.empty
   }
 
-  @deprecated("will be removed", "0.5")
+  // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
     case MonoType.Var(id) => Type.Var(id, Kind.Star)
     case MonoType.Unit => Type.Cst(TypeConstructor.Unit)
@@ -738,8 +763,8 @@ object JvmOps {
     case MonoType.Int64 => Type.Cst(TypeConstructor.Int64)
     case MonoType.BigInt => Type.Cst(TypeConstructor.BigInt)
     case MonoType.Str => Type.Cst(TypeConstructor.Str)
-    case MonoType.Array(elm) => Type.mkArray(hackMonoType2Type(elm))
-    case MonoType.Channel(elm) => Type.mkChannel(hackMonoType2Type(elm))
+    case MonoType.Array(elm) => Type.mkApply(Type.Cst(TypeConstructor.Array), hackMonoType2Type(elm) :: Nil)
+    case MonoType.Channel(elm) => Type.mkApply(Type.Cst(TypeConstructor.Channel), hackMonoType2Type(elm) :: Nil)
     case MonoType.Native(clazz) => Type.Cst(TypeConstructor.Native(clazz))
     case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
@@ -753,7 +778,7 @@ object JvmOps {
     case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }
 
-  @deprecated("will be removed", "0.5")
+  // TODO: Remove
   private def hackType2MonoType(tpe: Type): MonoType = Finalize.visitType(tpe)
 
   /**
@@ -942,7 +967,7 @@ object JvmOps {
 
       case Expression.ProcessPanic(msg, tpe, loc) => Set(tpe)
 
-      case Expression.FixpointConstraint(c, tpe, loc) => visitConstraint(c) + tpe
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set(tpe))((ts, c) => ts ++ visitConstraint(c))
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
@@ -965,16 +990,18 @@ object JvmOps {
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
+
+      case Predicate.Head.Union(exp, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
+
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
       case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
         visitExp(pred.exp) ++ terms.flatMap(visitBodyTerm)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        terms.flatMap(visitBodyTerm).toSet
-
-      case Predicate.Body.Functional(varSym, defSym, terms, loc) => Set.empty
+      case Predicate.Body.Guard(exp, terms, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet
     }
 
     def visitHeadTerm(t0: Term.Head): Set[MonoType] = t0 match {

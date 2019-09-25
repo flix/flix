@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
+import ca.uwaterloo.flix.language.ast.WeededAst.{Declaration, TypeParams}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -39,8 +38,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
   def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
-    implicit val _ = flix.genSym
-
     // compute all the source locations
     val locations = program.roots.foldLeft(Map.empty[Source, SourceLocation]) {
       case (macc, root) => macc + (root.loc.source -> root.loc)
@@ -86,7 +83,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
     */
-  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[NamedAst.Root, NameError] = decl0 match {
+  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = decl0 match {
     /*
      * Namespace.
      */
@@ -127,15 +124,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       effs.get(ident.name) match {
         case None =>
           // Case 1: The effect does not already exist. Update it.
-          val tparams = getTypeParams(tparams0)
+          val tparams = tparams0 match {
+            case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+            case WeededAst.TypeParams.Explicit(tparams) => getExplicitTypeParams(tparams)
+          }
           val tenv0 = getTypeEnv(tparams)
-          val fparams = getFormalParams(fparams0, tenv0)
-          val env0 = getVarEnv(fparams)
-
-          val sym = Symbol.mkEffSym(ns0, ident)
-          val sc = getScheme(tparams, tpe, tenv0)
-          val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, eff0, loc)
-          prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff)))).toSuccess
+          flatMapN(getFormalParams(fparams0, tenv0)) {
+            case fparams =>
+              val env0 = getVarEnv(fparams)
+              val sym = Symbol.mkEffSym(ns0, ident)
+              mapN(getScheme(tparams, tpe, tenv0)) {
+                case sc =>
+                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, eff0, loc)
+                  prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff))))
+              }
+          }
         case Some(eff) =>
           // Case 2: Duplicate effect.
           NameError.DuplicateEff(ident.name, eff.loc, ident.loc).toFailure
@@ -150,17 +153,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       handlers.get(ident.name) match {
         case None =>
           // Case 1: The handler does not already exist. Update it.
-          val tparams = getTypeParams(tparams0)
-          val tenv0 = getTypeEnv(tparams)
-          val fparams = getFormalParams(fparams0, tenv0)
-          val env0 = getVarEnv(fparams)
+          val tparams = tparams0 match {
+            case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+            case WeededAst.TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+          }
 
-          visitExp(exp, env0, tenv0) map {
-            case e =>
-              val sym = Symbol.mkEffSym(ns0, ident)
-              val sc = getScheme(tparams, tpe, tenv0)
-              val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, eff0, loc)
-              prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
+          val tenv0 = getTypeEnv(tparams)
+          flatMapN(getFormalParams(fparams0, tenv0)) {
+            case fparams =>
+              val env0 = getVarEnv(fparams)
+              mapN(visitExp(exp, env0, tenv0), getScheme(tparams, tpe, tenv0)) {
+                case (e, sc) =>
+                  val sym = Symbol.mkEffSym(ns0, ident)
+                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, eff0, loc)
+                  prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
+              }
           }
         case Some(handler) =>
           // Case 2: Duplicate handler.
@@ -181,8 +188,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None =>
           // Case 2.1: The enum does not exist in the namespace. Update it.
           val sym = Symbol.mkEnumSym(ns0, ident)
-          val tparams = tparams0 map {
-            case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+          val tparams = tparams0 match {
+            case TypeParams.Elided => Nil // TODO: Support type parameter elision?
+            case TypeParams.Explicit(tps) => tps map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+            }
           }
           val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
           val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
@@ -194,9 +204,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
             }
           }
-          val enum = NamedAst.Enum(doc, mod, sym, tparams, casesOf(cases, tenv), enumType, loc)
-          val enums = enums0 + (ident.name -> enum)
-          prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
+
+          mapN(casesOf(cases, tenv)) {
+            case cases =>
+              val enum = NamedAst.Enum(doc, mod, sym, tparams, cases, enumType, loc)
+              val enums = enums0 + (ident.name -> enum)
+              prog0.copy(enums = prog0.enums + (ns0 -> enums))
+          }
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
           NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
@@ -218,18 +232,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * BoundedLattice (deprecated).
      */
-    case WeededAst.Declaration.LatticeComponents(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+    case WeededAst.Declaration.LatticeComponents(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
       val botVal = visitExp(bot0, Map.empty, Map.empty)
       val topVal = visitExp(top0, Map.empty, Map.empty)
       val equVal = visitExp(equ0, Map.empty, Map.empty)
       val leqVal = visitExp(leq0, Map.empty, Map.empty)
       val lubVal = visitExp(lub0, Map.empty, Map.empty)
       val glbVal = visitExp(glb0, Map.empty, Map.empty)
+      val tpeVal = visitType(tpe0, Map.empty)
 
-      mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal) {
-        case (bot, top, equ, leq, lub, glb) =>
-          val lattice = NamedAst.LatticeComponents(visitType(tpe, Map.empty), bot, top, equ, leq, lub, glb, ns0, loc)
-          prog0.copy(latticeComponents = prog0.latticeComponents + (visitType(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
+      mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
+        case (bot, top, equ, leq, lub, glb, tpe) =>
+          val lattice = NamedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
+          prog0.copy(latticeComponents = prog0.latticeComponents + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
     //
@@ -282,8 +297,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tenv0 = typeEnvFromFreeVars(freeTypeVars)
 
       // Perform naming on the head and body class atoms.
-      val head = visitComplexClass(head0, ns0, tenv0)
-      val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
+      val headVal = visitComplexClass(head0, ns0, tenv0)
+      val bodyVal = traverse(body0)(visitComplexClass(_, ns0, tenv0))
 
       // Perform naming on the definitions in the implementation.
       val defsVal = Validation.fold(defs0, Map.empty[String, NamedAst.Def]) {
@@ -297,8 +312,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
-      defsVal map {
-        case defs =>
+      mapN(defsVal, headVal, bodyVal) {
+        case (defs, head, body) =>
           // Reassemble the implementation.
           val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
 
@@ -327,27 +342,38 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Relation.
      */
     case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
+      val tparams = tparams0 match {
+        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
+        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+      }
+
       // check if the table already exists.
       prog0.relations.get(ns0) match {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkRelSym(ns0, ident)
-          val tparams = getTypeParams(tparams0)
-          val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
-          val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
-          val relations = Map(ident.name -> relation)
-          prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
+          val tenv = getTypeEnv(tparams)
+          val attrVal = traverse(attr)(visitAttribute(_, tenv))
+          mapN(attrVal) {
+            case attr =>
+              val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
+              val relations = Map(ident.name -> relation)
+              prog0.copy(relations = prog0.relations + (ns0 -> relations))
+          }
         case Some(relations0) =>
           // Case 2: The namespace exists. Lookup the table.
           relations0.get(ident.name) match {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkRelSym(ns0, ident)
-              val tparams = getTypeParams(tparams0)
-              val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
-              val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
-              val relations = relations0 + (ident.name -> relation)
-              prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
+              val tenv = getTypeEnv(tparams)
+              val attrVal = traverse(attr)(visitAttribute(_, tenv))
+              mapN(attrVal) {
+                case attr =>
+                  val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
+                  val relations = relations0 + (ident.name -> relation)
+                  prog0.copy(relations = prog0.relations + (ns0 -> relations))
+              }
             case Some(table) =>
               // Case 2.2: Duplicate definition.
               NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -358,27 +384,38 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Lattice.
      */
     case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
+      val tparams = tparams0 match {
+        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
+        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+      }
+
       // check if the table already exists.
       prog0.lattices.get(ns0) match {
         case None =>
           // Case 1: The namespace does not yet exist. So the table does not yet exist.
           val sym = Symbol.mkLatSym(ns0, ident)
-          val tparams = getTypeParams(tparams0)
-          val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
-          val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
-          val lattices = Map(ident.name -> lattice)
-          prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
+          val tenv = getTypeEnv(tparams)
+          val attrVal = traverse(attr)(visitAttribute(_, tenv))
+          mapN(attrVal) {
+            case attr =>
+              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
+              val lattices = Map(ident.name -> lattice)
+              prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
+          }
         case Some(lattices0) =>
           // Case 2: The namespace exists. Lookup the table.
           lattices0.get(ident.name) match {
             case None =>
               // Case 2.1: The table does not exist in the namespace. Update it.
               val sym = Symbol.mkLatSym(ns0, ident)
-              val tparams = getTypeParams(tparams0)
-              val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
-              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
-              val lattices = lattices0 + (ident.name -> lattice)
-              prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
+              val tenv = getTypeEnv(tparams)
+              val attrVal = traverse(attr)(visitAttribute(_, tenv))
+              mapN(attrVal) {
+                case attr =>
+                  val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
+                  val lattices = lattices0 + (ident.name -> lattice)
+                  prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
+              }
             case Some(table) =>
               // Case 2.2: Duplicate definition.
               NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -390,7 +427,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given constraint `c0`.
     */
-  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Constraint, NameError] = c0 match {
+  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
     case WeededAst.Constraint(h, bs, loc) =>
       // Find the variables visible in the head and rule scope of the constraint.
       // Remove any variables already in the outer environment.
@@ -432,33 +469,43 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given `cases` map.
     */
-  private def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
-    case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
-      macc + (name -> NamedAst.Case(enum, tag, visitType(tpe, tenv0)))
+  private def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[String, NamedAst.Case], NameError] = {
+    val casesVal = cases map {
+      case (name, WeededAst.Case(enum, tag, tpe)) =>
+        mapN(visitType(tpe, tenv0)) {
+          case t => (name, NamedAst.Case(enum, tag, t))
+        }
+    }
+    mapN(sequence(casesVal))(_.toMap)
   }
 
   /**
     * Performs naming on the given definition declaration `decl0` with the given type environment `tenv0` in the given namespace `ns0`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      val tparams = getTypeParams(tparams0)
-      val tenv = tenv0 ++ getTypeEnv(tparams)
-      val fparams = getFormalParams(fparams0, tenv)
-      val env0 = getVarEnv(fparams)
+      val tparams = tparams0 match {
+        case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+        case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
+      }
 
-      visitExp(exp, env0, tenv) map {
-        case e =>
-          val sym = Symbol.mkDefnSym(ns0, ident)
-          val sc = getScheme(tparams, tpe, tenv)
-          NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+      val tenv = tenv0 ++ getTypeEnv(tparams)
+      flatMapN(getFormalParams(fparams0, tenv)) {
+        case fparams =>
+          val env0 = getVarEnv(fparams)
+
+          mapN(visitExp(exp, env0, tenv), getScheme(tparams, tpe, tenv)) {
+            case (e, sc) =>
+              val sym = Symbol.mkDefnSym(ns0, ident)
+              NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+          }
       }
   }
 
   /**
     * Performs naming on the given class declaration `decl0` in the given namespace `ns0`.
     */
-  private def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Class, NameError] = decl0 match {
+  private def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = decl0 match {
     case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
       // Compute the free type variables in the head and body atoms.
       val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
@@ -476,7 +523,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (macc, sig) =>
           val name = sig.ident.name
           macc.get(name) match {
-            case None => (macc + (sig.ident.name -> visitSig(sig, sym, tenv0, ns0))).toSuccess
+            case None =>
+              mapN(visitSig(sig, sym, tenv0, ns0)) {
+                case s => (macc + (sig.ident.name -> s))
+              }
             case Some(otherSig) => NameError.DuplicateSig(name, otherSig.sym.loc, sig.ident.loc).toFailure
           }
       }
@@ -490,14 +540,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given signature declaration `sig0` in the given namespace `ns0`.
     */
-  private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Sig = sig0 match {
+  private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig0 match {
     case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
       val sym = Symbol.mkSigSym(classSym, ident)
-      val tparams = getTypeParams(tparams0)
+      val tparams = tparams0 match {
+        case TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
+      }
       val tenv = tenv0 ++ getTypeEnv(tparams)
-      val fparams = getFormalParams(fparams0, tenv)
-      val sc = getScheme(tparams, tpe, tenv)
-      NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+
+      mapN(getFormalParams(fparams0, tenv), getScheme(tparams, tpe, tenv)) {
+        case (fparams, sc) => NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+      }
   }
 
   /**
@@ -512,16 +566,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given complex class atom `a`.
     */
-  private def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.ComplexClass = a match {
+  private def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.ComplexClass, NameError] = a match {
     case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
-      val targs = targs0.map(t => visitType(t, tenv0))
-      NamedAst.ComplexClass(qname, polarity, targs, loc)
+      mapN(traverse(targs0)(visitType(_, tenv0))) {
+        case targs => NamedAst.ComplexClass(qname, polarity, targs, loc)
+      }
   }
 
   /**
     * Returns a fresh type environment constructed from the given identifiers `idents`.
     */
-  private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit genSym: GenSym): Map[String, Type.Var] =
+  private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit flix: Flix): Map[String, Type.Var] =
     idents.foldLeft(Map.empty[String, Type.Var]) {
       case (macc, ident) => macc.get(ident.name) match {
         case None => macc + (ident.name -> Type.freshTypeVar())
@@ -532,26 +587,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given expression `exp0` under the given environment `env0`.
     */
-  private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Expression, NameError] = exp0 match {
-    case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
+  private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
+
+    case WeededAst.Expression.Wild(loc) =>
+      NamedAst.Expression.Wild(Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
 
     case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
       // lookup the variable name in the environment.
       env0.get(name.ident.name) match {
         case None =>
           // Case 1: reference.
-          NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
+          NamedAst.Expression.Def(name, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
         case Some(sym) =>
           // Case 2: variable.
-          NamedAst.Expression.Var(sym, loc).toSuccess
+          NamedAst.Expression.Var(sym, Eff.freshEffVar(), loc).toSuccess
       }
 
     case WeededAst.Expression.VarOrDef(name, loc) =>
-      NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.Def(name, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshTypeVar()
-      NamedAst.Expression.Hole(name, tpe, loc).toSuccess
+      NamedAst.Expression.Hole(name, tpe, Eff.freshEffVar(), loc).toSuccess
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
     case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
@@ -568,23 +625,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Apply(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
-      val fparam = visitFormalParam(fparam0, tenv0)
-      val env1 = env0 + (fparam.sym.text -> fparam.sym)
-      visitExp(exp, env1, tenv0) map {
-        case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
+      flatMapN(visitFormalParam(fparam0, tenv0)) {
+        case p =>
+          val env1 = env0 + (p.sym.text -> p.sym)
+          mapN(visitExp(exp, env1, tenv0)) {
+            case e => NamedAst.Expression.Lambda(p, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+          }
       }
 
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, tenv0) map {
-      case e => NamedAst.Expression.Unary(op, e, Type.freshTypeVar(), loc)
+      case e => NamedAst.Expression.Unary(op, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
     }
 
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -592,21 +651,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val e2 = visitExp(exp2, env0, tenv0)
       val e3 = visitExp(exp3, env0, tenv0)
       mapN(e1, e2, e3) {
-        NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), loc)
+        NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1, env0, tenv0)
       val e2 = visitExp(exp2, env0, tenv0)
       mapN(e1, e2) {
-        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), loc)
+        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) =>
@@ -614,7 +673,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.freshVarSym(ident)
       val env1 = env0 + (ident.name -> sym)
       mapN(visitExp(exp1, env1, tenv0), visitExp(exp2, env1, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -630,7 +689,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
+        case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Switch(rules, loc) =>
@@ -641,116 +700,116 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       rulesVal map {
-        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
+        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
       case None =>
         // Case 1: The tag does not have an expression. Nothing more to be done.
-        NamedAst.Expression.Tag(enum, tag, None, Type.freshTypeVar(), loc).toSuccess
+        NamedAst.Expression.Tag(enum, tag, None, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
       case Some(exp) =>
         // Case 2: The tag has an expression. Perform naming on it.
         visitExp(exp, env0, tenv0) map {
-          case e => NamedAst.Expression.Tag(enum, tag, Some(e), Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Tag(enum, tag, Some(e), Type.freshTypeVar(), Eff.freshEffVar(), loc)
         }
     }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
-        case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
       mapN(visitExp(value, env0, tenv0), visitExp(rest, env0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.RecordRestrict(label, rest, loc) =>
       mapN(visitExp(rest, env0, tenv0)) {
-        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVar(), loc)
+        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
-        case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ArrayNew(elm, len, loc) =>
       mapN(visitExp(elm, env0, tenv0), visitExp(len, env0, tenv0)) {
-        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, Type.freshTypeVar(), loc)
+        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLoad(base, index, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(index, env0, tenv0)) {
-        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
+        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(index, env0, tenv0), visitExp(elm, env0, tenv0)) {
-        case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), loc)
+        case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLength(base, loc) =>
       visitExp(base, env0, tenv0) map {
-        case (b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), loc)
+        case (b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(startIndex, env0, tenv0), visitExp(endIndex, env0, tenv0)) {
-        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
+        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.VectorLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
-        case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.VectorNew(elm, len, loc) =>
       visitExp(elm, env0, tenv0) map {
-        case e => NamedAst.Expression.VectorNew(e, len, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.VectorNew(e, len, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.VectorLoad(base, index, loc) =>
       visitExp(base, env0, tenv0) map {
-        case b => NamedAst.Expression.VectorLoad(b, index, Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.VectorLoad(b, index, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.VectorStore(base, index, elm, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(elm, env0, tenv0)) {
-        case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), loc)
+        case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.VectorLength(base, loc) =>
       visitExp(base, env0, tenv0) map {
-        case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.VectorSlice(base, startIndex, optEndIndex, loc) =>
       visitExp(base, env0, tenv0) map {
-        case b => NamedAst.Expression.VectorSlice(b, startIndex, optEndIndex, Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.VectorSlice(b, startIndex, optEndIndex, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Deref(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Deref(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.HandleWith(exp, bindings, loc) =>
@@ -762,30 +821,36 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(baseVal, bindingsVal) {
-        case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), loc)
+        case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.Existential(param, exp, loc) =>
-      val p = visitFormalParam(param, tenv0)
-      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-        case e =>
-          NamedAst.Expression.Existential(p, e, loc)
+      flatMapN(visitFormalParam(param, tenv0)) {
+        case p =>
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0)) {
+            case e =>
+              NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc)
+          }
       }
 
     case WeededAst.Expression.Universal(param, exp, loc) =>
-      val p = visitFormalParam(param, tenv0)
-      visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
-        case e =>
-          NamedAst.Expression.Universal(p, e, loc)
+      flatMapN(visitFormalParam(param, tenv0)) {
+        case p =>
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0)) {
+            case e =>
+              NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc)
+          }
       }
 
-    case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp, env0, tenv0) map {
-      case e => NamedAst.Expression.Ascribe(e, visitType(tpe, tenv0), eff, loc)
-    }
+    case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
+        case (e, t) => NamedAst.Expression.Ascribe(e, t, eff, loc)
+      }
 
-    case WeededAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp, env0, tenv0) map {
-      case e => NamedAst.Expression.Cast(e, visitType(tpe, tenv0), eff, loc)
-    }
+    case WeededAst.Expression.Cast(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
+        case (e, t) => NamedAst.Expression.Cast(e, t, eff, loc)
+      }
 
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
       val expVal = visitExp(exp, env0, tenv0)
@@ -802,44 +867,44 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), loc)
+        case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.NativeConstructor(className, args, loc) =>
       lookupNativeConstructor(className, args, loc) match {
         case Ok(constructor) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
-          case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), loc)
+          case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
         }
         case Err(e) => e.toFailure
       }
 
     case WeededAst.Expression.NativeField(className, fieldName, loc) =>
       lookupNativeField(className, fieldName, loc) match {
-        case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), loc).toSuccess
+        case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
         case Err(e) => e.toFailure
       }
 
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
       lookupNativeMethod(className, methodName, args, loc) match {
         case Ok(method) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
-          case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
+          case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
         }
         case Err(e) => e.toFailure
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.NewChannel(e, visitType(tpe, tenv0), loc)
+      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
+        case (e, t) => NamedAst.Expression.NewChannel(e, t, Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
@@ -861,52 +926,53 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(rulesVal, defaultVal) {
-        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), loc)
+        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ProcessSpawn(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ProcessSleep(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.ProcessPanic(msg, loc) =>
-      NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
 
-    case WeededAst.Expression.FixpointConstraint(con, loc) =>
-      visitConstraint(con, env0, tenv0) map {
-        case c => NamedAst.Expression.FixpointConstraint(c, Type.freshTypeVar(), loc)
+    case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
+      mapN(traverse(cs0)(visitConstraint(_, env0, tenv0))) {
+        case cs =>
+          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
       mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
-        case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), loc)
+        case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
   }
 
   /**
     * Names the given pattern `pat0` and returns map from variable names to variable symbols.
     */
-  private def visitPattern(pat0: WeededAst.Pattern)(implicit genSym: GenSym): (NamedAst.Pattern, Map[String, Symbol.VarSym]) = {
+  private def visitPattern(pat0: WeededAst.Pattern)(implicit flix: Flix): (NamedAst.Pattern, Map[String, Symbol.VarSym]) = {
     val m = mutable.Map.empty[String, Symbol.VarSym]
 
     def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
@@ -940,7 +1006,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     *
     * Every variable in the pattern must be bound by the environment.
     */
-  private def visitPattern(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym])(implicit genSym: GenSym): NamedAst.Pattern = {
+  private def visitPattern(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym])(implicit flix: Flix): NamedAst.Pattern = {
     def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
       case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Var(ident, loc) =>
@@ -968,35 +1034,33 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given head predicate `head` under the given environments.
     */
-  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
+  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) =>
       for {
         e <- visitExp(exp, outerEnv, tenv0)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
       } yield NamedAst.Predicate.Head.Atom(qname, e, ts, Type.freshTypeVar(), loc)
+
+    case WeededAst.Predicate.Head.Union(exp, loc) =>
+      for {
+        e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
+      } yield NamedAst.Predicate.Head.Union(e, Type.freshTypeVar(), loc)
   }
 
   /**
     * Names the given body predicate `body` under the given environments.
     */
-  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
+  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       for {
         e <- visitExp(exp, outerEnv, tenv0)
       } yield NamedAst.Predicate.Body.Atom(qname, e, polarity, ts, Type.freshTypeVar(), loc)
 
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
+    case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
-        ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Body.Filter(qname, ts, loc)
-
-    case WeededAst.Predicate.Body.Functional(ident, term, loc) =>
-      visitExp(term, outerEnv ++ ruleEnv0, tenv0) map {
-        case t =>
-          val sym = headEnv0(ident.name)
-          NamedAst.Predicate.Body.Functional(sym, t, loc)
-      }
+        e <- visitExp(exp, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0)
+      } yield NamedAst.Predicate.Body.Guard(e, loc)
   }
 
   /**
@@ -1004,8 +1068,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
-    case WeededAst.Predicate.Body.Functional(ident, term, loc) => ident :: Nil
+    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
   /**
@@ -1013,58 +1076,69 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
-    case WeededAst.Predicate.Body.Functional(ident, term, loc) => Nil
+    case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
   /**
     * Translates the given weeded type `tpe` into a named type under the given type environment `tenv0`.
     */
-  private def visitType(tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Type = {
+  private def visitType(tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
     /**
       * Inner visitor.
       */
-    def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): NamedAst.Type = tpe0 match {
-      case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
+    def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): Validation[NamedAst.Type, NameError] = tpe0 match {
+      case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
       case WeededAst.Type.Var(ident, loc) => env0.get(ident.name) match {
-        case None =>
-          throw InternalCompilerException(s"Unknown type variable '${ident.name}' near: ${loc.format}")
-        case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+        case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
+        case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
       }
 
       case WeededAst.Type.Ambiguous(qname, loc) =>
         if (qname.isUnqualified)
           env0.get(qname.ident.name) match {
-            case None => NamedAst.Type.Ambiguous(qname, loc)
-            case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+            case None => NamedAst.Type.Ambiguous(qname, loc).toSuccess
+            case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
           }
         else
-          NamedAst.Type.Ambiguous(qname, loc)
+          NamedAst.Type.Ambiguous(qname, loc).toSuccess
 
-      case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
+      case WeededAst.Type.Tuple(elms, loc) =>
+        mapN(traverse(elms)(visitType(_, env0))) {
+          case ts => NamedAst.Type.Tuple(ts, loc)
+        }
 
-      case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
+      case WeededAst.Type.RecordEmpty(loc) =>
+        NamedAst.Type.RecordEmpty(loc).toSuccess
 
       case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
-        val t = visit(value, env0)
-        val r = visit(rest, env0)
-        NamedAst.Type.RecordExtend(label, t, r, loc)
+        mapN(visit(value, env0), visit(rest, env0)) {
+          case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
+        }
 
-      case WeededAst.Type.SchemaEmpty(loc) => NamedAst.Type.SchemaEmpty(loc)
+      case WeededAst.Type.SchemaEmpty(loc) =>
+        NamedAst.Type.SchemaEmpty(loc).toSuccess
 
       case WeededAst.Type.Schema(ps, rest, loc) =>
-        val ts = ps.map(visit(_, env0))
-        val r = visit(rest, env0)
-        NamedAst.Type.Schema(ts, r, loc)
+        mapN(traverse(ps)(visitType(_, env0)), visitType(rest, env0)) {
+          case (ts, t) => NamedAst.Type.Schema(ts, t, loc)
+        }
 
-      case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
+      case WeededAst.Type.Nat(len, loc) =>
+        NamedAst.Type.Nat(len, loc).toSuccess
 
-      case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
+      case WeededAst.Type.Native(fqn, loc) =>
+        NamedAst.Type.Native(fqn, loc).toSuccess
 
-      case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)
+      case WeededAst.Type.Arrow(tparams, tresult, loc) =>
+        mapN(traverse(tparams)(visitType(_, env0)), visitType(tresult, env0)) {
+          case (ts, t) => NamedAst.Type.Arrow(ts, t, loc)
+        }
 
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env0), visit(tpe2, env0), loc)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
+        mapN(visit(tpe1, env0), visit(tpe2, env0)) {
+          case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
+        }
     }
 
     visit(tpe, tenv0)
@@ -1073,7 +1147,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given predicate with parameter `pred` under the given environment `env0` and type environment `tenv0`.
     */
-  private def visitPredicateWithParam(pred: WeededAst.PredicateWithParam, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.PredicateWithParam, NameError] = pred match {
+  private def visitPredicateWithParam(pred: WeededAst.PredicateWithParam, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.PredicateWithParam, NameError] = pred match {
     case WeededAst.PredicateWithParam(qname, exp) =>
       mapN(visitExp(exp, env0, tenv0)) {
         case e => NamedAst.PredicateWithParam(qname, e)
@@ -1169,7 +1243,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
+    case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
@@ -1235,6 +1309,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
     case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
   /**
@@ -1242,21 +1317,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
     case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(freeVars)
-    case WeededAst.Predicate.Body.Functional(ident, term, loc) => freeVars(term)
+    case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
   }
 
   /**
     * Translates the given weeded attribute to a named attribute.
     */
-  private def visitAttribute(attr: WeededAst.Attribute, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Attribute = attr match {
-    case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, visitType(tpe, tenv0), loc)
+  private def visitAttribute(attr: WeededAst.Attribute, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
+    case WeededAst.Attribute(ident, tpe0, loc) =>
+      mapN(visitType(tpe0, tenv0)) {
+        case tpe => NamedAst.Attribute(ident, tpe, loc)
+      }
   }
 
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.FormalParam = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = if (ident.name == "_")
@@ -1265,13 +1342,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         Symbol.freshVarSym(ident)
 
       // Compute the type of the formal parameter or use the type variable of the symbol.
-      val tpe = optType match {
-        case None => NamedAst.Type.Var(freshSym.tvar, loc)
+      val tpeVal = optType match {
+        case None => NamedAst.Type.Var(freshSym.tvar, loc).toSuccess
         case Some(t) => visitType(t, tenv0)
       }
 
       // Construct the formal parameter.
-      NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      mapN(tpeVal) {
+        case tpe => NamedAst.FormalParam(freshSym, mod, tpe, loc)
+      }
   }
 
   /**
@@ -1437,20 +1516,71 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given formal parameters `fparam0` under the given type environment `tenv0`.
     */
-  private def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): List[NamedAst.FormalParam] = {
-    fparams0.map(p => visitFormalParam(p, tenv0))
+  private def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
+    traverse(fparams0)(visitFormalParam(_, tenv0))
   }
 
   /**
-    * Performs naming on the given type parameters `tparams0`.
+    * Returns the explicit type parameters from the given type parameters.
     */
-  private def getTypeParams(tparams0: List[Name.Ident])(implicit genSym: GenSym): List[NamedAst.TypeParam] = tparams0 map {
+  private def getExplicitTypeParams(tparams0: List[Name.Ident])(implicit flix: Flix): List[NamedAst.TypeParam] = tparams0 map {
     case p =>
       // Generate a fresh type variable for the type parameter.
       val tvar = Type.freshTypeVar()
       // Remember the original textual name.
       tvar.setText(p.name)
       NamedAst.TypeParam(p, tvar, p.loc)
+  }
+
+  /**
+    * Returns the implicit type parameters constructed from the given formal parameters and return type.
+    */
+  private def getImplicitTypeParams(fparams: List[WeededAst.FormalParam], returnType: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    // Compute the type variables that occur in the formal parameters.
+    val typeVarsArgs = fparams.foldLeft(Set.empty[String]) {
+      case (acc, WeededAst.FormalParam(_, _, None, _)) => acc
+      case (acc, WeededAst.FormalParam(_, _, Some(tpe), _)) =>
+        freeVars(tpe).foldLeft(acc) {
+          case (innerAcc, ident) => innerAcc + ident.name
+        }
+    }
+
+    // Compute the type variables that occur in the return type.
+    val typeVarsReturnType = freeVars(returnType).map(_.name)
+
+    // Compute the set of type variables.
+    val typeVars = typeVarsArgs ++ typeVarsReturnType
+
+    // Construct a (sorted) list of type parameters.
+    typeVars.toList.sorted.map {
+      case name =>
+        val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+        val tvar = Type.freshTypeVar()
+        tvar.setText(name)
+        NamedAst.TypeParam(ident, tvar, loc)
+    }
+  }
+
+  /**
+    * Returns the implicit type parameters constructed from the given attributes.
+    */
+  private def getImplicitTypeParams(attrs: List[WeededAst.Attribute], loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    // Compute the type variables that occur in the formal parameters.
+    val typeVars = attrs.foldLeft(Set.empty[String]) {
+      case (acc, WeededAst.Attribute(_, tpe, _)) =>
+        freeVars(tpe).foldLeft(acc) {
+          case (innerAcc, ident) => innerAcc + ident.name
+        }
+    }
+
+    // Construct a (sorted) list of type parameters.
+    typeVars.toList.sorted.map {
+      case name =>
+        val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
+        val tvar = Type.freshTypeVar()
+        tvar.setText(name)
+        NamedAst.TypeParam(ident, tvar, loc)
+    }
   }
 
   /**
@@ -1473,8 +1603,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given type environment `tenv0`.
     */
-  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Scheme = {
-    NamedAst.Scheme(tparams0.map(_.tpe), visitType(tpe, tenv0))
+  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+    mapN(visitType(tpe, tenv0)) {
+      case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
+    }
   }
 
 }

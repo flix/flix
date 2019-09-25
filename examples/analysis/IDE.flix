@@ -117,7 +117,7 @@ namespace IDE {
 
     // Rules
     @test
-    def test(): Schema { EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, JumpFn, SummaryFn, ResultProc, InProc, Results } = solve {
+    def test(): #{ EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, JumpFn, SummaryFn, ResultProc, InProc, Results } = solve #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
         InProc(p,m) :- InProc(p,n), CFG(n,m).

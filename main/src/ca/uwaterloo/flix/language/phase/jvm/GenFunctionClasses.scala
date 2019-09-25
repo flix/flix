@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, MonoType}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
+import scala.collection.parallel.CollectionConverters._
 
 /**
   * Generates bytecode for the function classes.
@@ -34,7 +35,7 @@ object GenFunctionClasses {
     //
     // Generate a function class for each def and collect the results in a map.
     //
-    defs.foldLeft(Map.empty[JvmName, JvmClass]) {
+    defs.par.aggregate(Map.empty[JvmName, JvmClass])( {
       case (macc, (sym, defn)) if JvmOps.nonLaw(defn) =>
         // `JvmType` of the interface for `def.tpe`
         val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
@@ -47,7 +48,7 @@ object GenFunctionClasses {
         macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
 
       case (macc, (sym, defn)) => macc
-    }
+    }, _ ++ _)
   }
 
   /**

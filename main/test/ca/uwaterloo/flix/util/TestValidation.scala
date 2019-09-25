@@ -75,7 +75,7 @@ class TestValidation extends FunSuite {
     val result = ex.toFailure[String, Exception].map {
       case x => x.toUpperCase
     }
-    assertResult(Failure(Stream(ex)))(result)
+    assertResult(Failure(LazyList(ex)))(result)
   }
 
   test("flatMap01") {
@@ -101,7 +101,7 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Exception].flatMap {
       case x => ex.toFailure
     }
-    assertResult(Failure(Stream(ex)))(result)
+    assertResult(Failure(LazyList(ex)))(result)
   }
 
   test("flatMap04") {
@@ -119,11 +119,11 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Int].flatMap {
       case x => Success(x.toUpperCase)
     }.flatMap {
-      case y => Failure(Stream(4, 5, 6))
+      case y => Failure(LazyList(4, 5, 6))
     }.flatMap {
-      case z => Failure(Stream(7, 8, 9))
+      case z => Failure(LazyList(7, 8, 9))
     }
-    assertResult(Failure(Stream(4, 5, 6)))(result)
+    assertResult(Failure(LazyList(4, 5, 6)))(result)
   }
 
   test("traverse01") {
@@ -136,18 +136,18 @@ class TestValidation extends FunSuite {
 
   test("traverse02") {
     val result = traverse(List(1, 2, 3)) {
-      case x => Failure(Stream(42))
+      case x => Failure(LazyList(42))
     }
 
-    assertResult(Failure(Stream(42, 42, 42)))(result)
+    assertResult(Failure(LazyList(42, 42, 42)))(result)
   }
 
   test("traverse03") {
     val result = traverse(List(1, 2, 3)) {
-      case x => if (x % 2 == 1) Success(x) else Failure(Stream(x))
+      case x => if (x % 2 == 1) Success(x) else Failure(LazyList(x))
     }
 
-    assertResult(Failure(Stream(2)))(result)
+    assertResult(Failure(LazyList(2)))(result)
   }
 
   test("foldRight01") {

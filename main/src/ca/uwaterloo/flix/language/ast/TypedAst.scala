@@ -245,7 +245,7 @@ object TypedAst {
 
     case class ProcessPanic(msg: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointConstraint(c: TypedAst.Constraint, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -337,6 +337,8 @@ object TypedAst {
 
       case class Atom(pred: TypedAst.PredicateWithParam, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
+      case class Union(exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+
     }
 
     sealed trait Body extends TypedAst.Predicate
@@ -345,9 +347,7 @@ object TypedAst {
 
       case class Atom(pred: TypedAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
-
-      case class Functional(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Guard(exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 
     }
 
@@ -361,6 +361,10 @@ object TypedAst {
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym
+
+    def tpe: Type
+
+    def loc: SourceLocation
   }
 
   object ConstraintParam {

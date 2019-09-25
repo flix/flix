@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -120,7 +120,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
-        val freshSymbol = Symbol.freshDefnSym(name)(flix.genSym)
+        val freshSymbol = Symbol.freshDefnSym(name)
 
         // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty
@@ -337,9 +337,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
 
-      case Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0)
-        Expression.FixpointConstraint(c, tpe, loc)
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint)
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -391,6 +391,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm
         Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     /**
@@ -402,13 +406,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(visitBodyTerm)
         Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitBodyTerm)
-        Predicate.Body.Filter(sym, ts, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term)
-        Predicate.Body.Functional(sym, t, loc)
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Guard(e, loc)
     }
 
     /**

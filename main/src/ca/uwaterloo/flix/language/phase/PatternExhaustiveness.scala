@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -105,8 +105,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns an error message if a pattern match is not exhaustive
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
-    implicit val _ = flix.genSym
-
     for {
       _ <- sequence(root.defs.map { case (_, v) => checkPats(v, root) })
     } yield {
@@ -120,7 +118,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param tast The expression to check
     * @param root The AST root
     */
-  def checkPats(tast: TypedAst.LatticeComponents, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.LatticeComponents, CompilationError] = tast match {
+  def checkPats(tast: TypedAst.LatticeComponents, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.LatticeComponents, CompilationError] = tast match {
     case TypedAst.LatticeComponents(_, bot0, top0, equ0, leq0, lub0, glb0, _) =>
       for {
         _ <- Expressions.checkPats(bot0, root)
@@ -138,7 +136,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param tast The expression to check
     * @param root The AST root
     */
-  def checkPats(tast: TypedAst.Def, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Def, CompilationError] = for {
+  def checkPats(tast: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Def, CompilationError] = for {
     _ <- Expressions.checkPats(tast.exp, root)
   } yield tast
 
@@ -149,7 +147,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param tast The expression to check
       * @param root The AST root
       */
-    def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError] = {
+    def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
         case Expression.Wild(_, _, _) => tast.toSuccess
         case Expression.Var(_, _, _, _) => tast.toSuccess
@@ -344,9 +342,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ProcessPanic(_, _, _, _) =>
           tast.toSuccess
 
-        case Expression.FixpointConstraint(c, tpe, eff, loc) =>
+        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) =>
           for {
-            _ <- visitConstraint(c, root)
+            _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
@@ -377,7 +375,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Performs exhaustive checking on the given constraint `c`.
       */
-    def visitConstraint(c0: TypedAst.Constraint, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Constraint, CompilationError] = c0 match {
+    def visitConstraint(c0: TypedAst.Constraint, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Constraint, CompilationError] = c0 match {
       case TypedAst.Constraint(cparams, head0, body0, loc) =>
         for {
           head <- visitHeadPred(head0, root)
@@ -386,28 +384,28 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     }
 
-    def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
+    def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
       case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
         for {
           e <- checkPats(pred.exp, root)
           ts <- traverse(terms)(checkPats(_, root))
         } yield h0
+
+      case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
+        for {
+          e <- checkPats(exp, root)
+        } yield h0
     }
 
-    def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {
+    def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {
       case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
         for {
           e <- checkPats(pred.exp, root)
         } yield b0
 
-      case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
+      case TypedAst.Predicate.Body.Guard(exp, loc) =>
         for {
-          ts <- traverse(terms)(checkPats(_, root))
-        } yield b0
-
-      case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
-        for {
-          t <- checkPats(term, root)
+          e <- checkPats(exp, root)
         } yield b0
     }
 
@@ -658,7 +656,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         // other enums
         case TyCon.Enum(_, sym, _, _) => {
           root.enums.get(sym).get.cases.map(x => TyCon.Enum(x._1, sym, countTypeArgs(x._2.tpe), List.empty[TyCon]))
-        }.toList ::: xs
+          }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
          * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -718,7 +716,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.BigInt) => 0
       case Type.Cst(TypeConstructor.Str) => 0
       case Type.Cst(TypeConstructor.Ref) => 0
-      case Type.Arrow(length) => length
+      case Type.Arrow(_, length) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?

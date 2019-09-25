@@ -267,4 +267,21 @@ object NameError {
     }
   }
 
+  /**
+    * An error raised to indicate that the type variable was not found.
+    *
+    * @param name the name of the type variable.
+    * @param loc  the location of the method name.
+    */
+  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined type variable '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined type variable.") << NewLine
+    }
+  }
+
 }

@@ -226,7 +226,7 @@ object FinalAst {
 
     case class ProcessPanic(msg: String, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointConstraint(c: FinalAst.Constraint, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointConstraintSet(cs: List[FinalAst.Constraint], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointCompose(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -258,6 +258,8 @@ object FinalAst {
 
       case class Atom(pred: FinalAst.PredicateWithParam, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 
+      case class Union(exp: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
+
     }
 
     sealed trait Body extends FinalAst.Predicate
@@ -266,9 +268,7 @@ object FinalAst {
 
       case class Atom(pred: FinalAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
 
-      case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
-
-      case class Functional(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, terms: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class Guard(exp: FinalAst.Expression, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 
     }
 

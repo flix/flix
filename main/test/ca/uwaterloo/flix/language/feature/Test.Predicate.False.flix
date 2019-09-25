@@ -1,23 +1,25 @@
+rel False()
+
 @test
-def testFalsePredicate01(): Schema { False } =
+def testFalsePredicate01(): #{ False } =
     let x = False().;
     solve x
 
 @test
-def testFalsePredicate02(): Schema { False } =
+def testFalsePredicate02(): #{ False } =
     let x = False().;
     let u = x <+> x;
     solve u
 
 @test
-def testFalsePredicate03(): Schema { False } =
+def testFalsePredicate03(): #{ False } =
     let x = False().;
     let y = False().;
     let u = x <+> y;
     solve u
 
 @test
-def testFalsePredicate04(): Schema { False } =
+def testFalsePredicate04(): #{ False } =
     let x = False().;
     let y = False().;
     let u = x <+> y;
@@ -25,7 +27,7 @@ def testFalsePredicate04(): Schema { False } =
     solve u <+> v
 
 @test
-def testFalsePredicate05(): Schema { False } =
+def testFalsePredicate05(): #{ False } =
     let x = False().;
     let y = False().;
     let _ = x <+> y;
@@ -34,7 +36,7 @@ def testFalsePredicate05(): Schema { False } =
     solve w
 
 @test
-def testFalsePredicate06(): Schema { False } =
+def testFalsePredicate06(): #{ False } =
     let x = False().;
     let y = False().;
     let u = solve x;
@@ -42,7 +44,7 @@ def testFalsePredicate06(): Schema { False } =
     u <+> v
 
 @test
-def testFalsePredicate07(): Schema { False } =
+def testFalsePredicate07(): #{ False } =
     let x = False().;
     let y = False().;
     let u = solve (x <+> y);

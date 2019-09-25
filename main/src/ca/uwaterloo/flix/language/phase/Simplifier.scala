@@ -33,11 +33,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Simplifier") {
     //
-    // Put GenSym into the implicit scope.
-    //
-    implicit val _ = flix.genSym
-
-    //
     // A mutable map to contain fresh top-level definitions.
     //
     val toplevel: TopLevel = mutable.Map.empty
@@ -432,12 +427,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
-        val t = Type.mkArray(tpe.typeArguments.head)
+        val t = Type.mkApply(Type.Cst(TypeConstructor.Array), tpe.typeArguments.head :: Nil)
         SimplifiedAst.Expression.ArrayLit(es, t, loc)
 
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
         val e = visitExp(elm)
-        val t = Type.mkArray(elm.tpe)
+        val t = Type.mkApply(Type.Cst(TypeConstructor.Array), elm.tpe :: Nil)
         val i = SimplifiedAst.Expression.Int32(len)
         SimplifiedAst.Expression.ArrayNew(e, i, t, loc)
 
@@ -556,9 +551,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
-      case TypedAst.Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-        val c = visitConstraint(c0)
-        SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
+      case TypedAst.Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+        val cs = cs0.map(visitConstraint)
+        SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -591,6 +586,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
         SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
+        val e = newLambdaWrapper(cparams, exp, loc)
+        SimplifiedAst.Predicate.Head.Union(e, tpe, loc)
     }
 
     /**
@@ -602,15 +601,36 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
         SimplifiedAst.Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
+      case TypedAst.Predicate.Body.Guard(exp, loc) =>
+        val e = newLambdaWrapper(cparams, exp, loc)
+        SimplifiedAst.Predicate.Body.Guard(e, loc)
+    }
 
-      case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
-        val cps = cparams.filter {
-          case TypedAst.ConstraintParam.HeadParam(sym2, _, _) => sym != sym2
-          case TypedAst.ConstraintParam.RuleParam(sym2, _, _) => sym != sym2
-        }
-        SimplifiedAst.Predicate.Body.Functional(sym, exp2HeadTerm(term, cps), loc)
+    /**
+      * Wraps the given expression `exp` with the given constraint parameters `cparams` in a lambda expression.
+      */
+    def newLambdaWrapper(cparams: List[TypedAst.ConstraintParam], exp: TypedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
+      // Compute a mapping from the constraint parameters to fresh variable symbols.
+      val freshVars = cparams.map(cparam => cparam -> Symbol.freshVarSym(cparam.sym))
+
+      // Compute the formal parameters of the lambda.
+      val fparams = freshVars map {
+        case (cparam, newSym) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, cparam.tpe, cparam.loc)
+      }
+
+      // Compute the substitution.
+      val freshSubst = freshVars map {
+        case (cparam, newSym) => cparam.sym -> newSym
+      }
+
+      // Construct the body of the lambda.
+      val lambdaBody = substitute(visitExp(exp), freshSubst.toMap)
+
+      // Construct the function type.
+      val lambdaType = Type.mkUncurriedArrow(fparams.map(_.tpe), exp.tpe)
+
+      // Assemble the lambda.
+      SimplifiedAst.Expression.Lambda(fparams, lambdaBody, lambdaType, loc)
     }
 
     /**
@@ -646,64 +666,71 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         } else {
           // The expression is not a literal.
           // Must create a new top-level definition for the expression.
-
-          // Generate a fresh symbol for the new definition.
-          val freshSym = Symbol.freshDefnSym("head")
-
-          //
-          // Special Case: No constraint parameters.
-          //
-          if (cparams.isEmpty) {
-            // Construct the definition type.
-            val arrowType = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e0.tpe)
-
-            // Assemble the fresh definition.
-            val ann = Ast.Annotations.Empty
-            val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-
-            val varX = Symbol.freshVarSym("_unit")
-            val param = SimplifiedAst.FormalParam(varX, mod, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
-
-            val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(e0), arrowType, e0.loc)
-
-            // Add the fresh definition to the top-level.
-            toplevel += freshSym -> defn
-
-            // Return a head term that calls the freshly generated top-level definition.
-            return SimplifiedAst.Term.Head.App(freshSym, Nil, e0.tpe, e0.loc)
-          }
-
-          // Generate fresh symbols for the formal parameters of the definition.
-          val freshSymbols = cparams.map {
-            case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
-            case TypedAst.ConstraintParam.RuleParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
-          }
-
-          // Generate fresh formal parameters for the definition.
-          val formals = freshSymbols.map {
-            case (oldSym, (newSym, tpe)) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
-          }
-
-          // The expression of the fresh definition is simply `e0` with fresh local variables.
-          val exp = copyExp(visitExp(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
-
-          // Construct the definition type.
-          val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), e0.tpe)
-
-          // Assemble the fresh definition.
-          val ann = Ast.Annotations.Empty
-          val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-          val defn = SimplifiedAst.Def(ann, mod, freshSym, formals, exp, arrowType, e0.loc)
-
-          // Add the fresh definition to the top-level.
-          toplevel += freshSym -> defn
-
-          // Compute the argument symbols, i.e. the symbols of the rule.
-          val argSymbols = freshSymbols.map(_._1)
-
-          // Return a head term that calls the freshly generated top-level definition.
+          val (freshSym, argSymbols) = liftExp(e0, cparams)
           SimplifiedAst.Term.Head.App(freshSym, argSymbols, e0.tpe, e0.loc)
         }
+    }
+
+    /**
+      * Lifts the given expression `exp0` into a top-level function that takes the given constraint parameters `cparams0` as arguments.
+      */
+    def liftExp(exp0: TypedAst.Expression, cparams0: List[TypedAst.ConstraintParam]): (Symbol.DefnSym, List[Symbol.VarSym]) = {
+      // Generate a fresh symbol for the new definition.
+      val freshSym = Symbol.freshDefnSym("lifted")
+
+      //
+      // Special Case: No constraint parameters.
+      //
+      if (cparams0.isEmpty) {
+        // Construct the definition type.
+        val arrowType = Type.mkArrow(Type.Cst(TypeConstructor.Unit), exp0.tpe)
+
+        // Assemble the fresh definition.
+        val ann = Ast.Annotations.Empty
+        val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+
+        val varX = Symbol.freshVarSym("_unit")
+        val param = SimplifiedAst.FormalParam(varX, mod, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+
+        val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(exp0), arrowType, exp0.loc)
+
+        // Add the fresh definition to the top-level.
+        toplevel += freshSym -> defn
+
+        // Return a head term that calls the freshly generated top-level definition.
+        return (freshSym, Nil)
+      }
+
+      // Generate fresh symbols for the formal parameters of the definition.
+      val freshSymbols = cparams0.map {
+        case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
+        case TypedAst.ConstraintParam.RuleParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
+      }
+
+      // Generate fresh formal parameters for the definition.
+      val formals = freshSymbols.map {
+        case (oldSym, (newSym, tpe)) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
+      }
+
+      // The expression of the fresh definition is simply `e0` with fresh local variables.
+      val exp = substitute(visitExp(exp0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
+
+      // Construct the definition type.
+      val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), exp0.tpe)
+
+      // Assemble the fresh definition.
+      val ann = Ast.Annotations.Empty
+      val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+      val defn = SimplifiedAst.Def(ann, mod, freshSym, formals, exp, arrowType, exp0.loc)
+
+      // Add the fresh definition to the top-level.
+      toplevel += freshSym -> defn
+
+      // Compute the argument symbols, i.e. the symbols of the rule.
+      val argSymbols = freshSymbols.map(_._1)
+
+      // Return the def symbol and argument symbols.
+      (freshSym, argSymbols)
     }
 
     /**
@@ -1092,10 +1119,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
   }
 
   /**
-    * Returns a copy of the given expression `exp0` where every variable symbol
-    * has been replaced according to the given substitution `m`.
+    * Returns a copy of the given expression `exp0` where every variable symbol has been replaced according to the given substitution `m`.
     */
-  def copyExp(exp0: SimplifiedAst.Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expression = {
+  def substitute(exp0: SimplifiedAst.Expression, m: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Expression = {
 
     def visitExp(e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
       case SimplifiedAst.Expression.Unit => e
@@ -1184,9 +1210,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
       case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = copyExp(exp, m)
+        val e = visitExp(exp)
         val bs = bindings map {
-          case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, copyExp(handler, m))
+          case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
         }
         SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
@@ -1250,9 +1276,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0)
-        SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
+      case SimplifiedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint)
+        SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -1300,6 +1326,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms.map(visitHeadTerm)
         SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Predicate.Head.Union(e, tpe, loc)
     }
 
     def visitBodyPred(b0: SimplifiedAst.Predicate.Body): SimplifiedAst.Predicate.Body = b0 match {
@@ -1308,13 +1338,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(visitBodyTerm)
         SimplifiedAst.Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitBodyTerm)
-        SimplifiedAst.Predicate.Body.Filter(sym, ts, loc)
-
-      case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term)
-        SimplifiedAst.Predicate.Body.Functional(sym, t, loc)
+      case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Predicate.Body.Guard(e, loc)
     }
 
     def visitHeadTerm(t0: SimplifiedAst.Term.Head): SimplifiedAst.Term.Head = t0 match {

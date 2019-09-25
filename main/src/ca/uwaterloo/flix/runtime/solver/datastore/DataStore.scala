@@ -38,25 +38,15 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
     */
   val lattices = mutable.Map.empty[PredSym, IndexedLattice]
 
-  // Initialize relations for every relation symbol in the constraint system.
-  for (relSym <- constraintSet.getRelationSymbols()) {
-    relations += relSym -> initRelation(relSym)
-  }
+  def getRelations(): Iterable[IndexedRelation] = relations.values
 
-  // Initialize lattices for every lattice symbol in the constraint system.
-  for (latSym <- constraintSet.getLatticeSymbols()) {
-    lattices += (latSym -> initLattice(latSym))
-  }
+  def getRelation(r: PredSym): IndexedRelation = relations.getOrElseUpdate(r, initRelation(r.asInstanceOf[RelSym]))
 
-  def getRelations(): Traversable[IndexedRelation] = relations.values
+  def getLattices(): Iterable[IndexedLattice] = lattices.values
 
-  def getRelation(r: PredSym): IndexedRelation = relations(r)
+  def getLattice(l: PredSym): IndexedLattice = lattices.getOrElseUpdate(l, initLattice(l.asInstanceOf[LatSym]))
 
-  def getLattices(): Traversable[IndexedLattice] = lattices.values
-
-  def getLattice(l: PredSym): IndexedLattice = lattices(l)
-
-  def initRelation(relSym: RelSym): IndexedRelation = {
+  private def initRelation(relSym: RelSym): IndexedRelation = {
     val name = relSym.getName()
     val attributes = relSym.getAttributes()
 
@@ -68,7 +58,7 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
     new IndexedRelation(name, attributes, indexes, indexes.head)
   }
 
-  def initLattice(latSym: LatSym): IndexedLattice = {
+  private def initLattice(latSym: LatSym): IndexedLattice = {
     val name = latSym.getName()
     val keys = latSym.getKeys()
     val value = latSym.getValue()
@@ -117,55 +107,5 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
       relation.getNumberOfIndexedScans,
       relation.getNumberOfFullScans)
   }.toSeq.sortBy(_._3).reverse.toList
-
-
-  //  /**
-  //    * Returns a human readable string representation of the relation.
-  //    */
-  //  private def asString(r: Relation): String = {
-  //    val sb = new StringBuilder
-  //
-  //    // Construct an ASCII table with a column for each attribute.
-  //    val columns = attributes.map(_.getName())
-  //    val table = new AsciiTable().withTitle(name).withCols(columns: _*)
-  //
-  //    // Add each row to the ASCII table.
-  //    for (row <- indexedRelation.scan) {
-  //      table.mkRow(row.toList)
-  //    }
-  //
-  //    // Write the ASCII table to the string buffer.
-  //    val sw = new StringWriter()
-  //    table.write(new PrintWriter(sw))
-  //    sb.append(sw.toString)
-  //
-  //    sb.toString()
-  //  }
-  //
-  //  /**
-  //    * Returns a human readable string representation of the lattice.
-  //    */
-  //  override def toString: String = {
-  //    val sb = new StringBuilder
-  //
-  //    // Construct an ASCII table with a column for each attribute.
-  //    val attributes = keys.toList ::: value :: Nil
-  //    val columns = attributes.map(_.getName())
-  //    val table = new AsciiTable().withTitle(name).withCols(columns: _*)
-  //
-  //    // Add each row to the ASCII table.
-  //    for ((key, value) <- indexedLattice.scan) {
-  //      val row = key.toArray.toList ::: value :: Nil
-  //      table.mkRow(row)
-  //    }
-  //
-  //    // Write the ASCII table to the string buffer.
-  //    val sw = new StringWriter()
-  //    table.write(new PrintWriter(sw))
-  //    sb.append(sw.toString)
-  //
-  //    sb.toString()
-  //  }
-
 
 }

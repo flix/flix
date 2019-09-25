@@ -69,7 +69,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * A (possibly local) work list is a collection of (rule, env) pairs
     * specifying that the rule must be re-evaluated under the associated environment.
     */
-  type WorkList = mutable.ArrayStack[(Constraint, Env)]
+  type WorkList = mutable.Stack[(Constraint, Env)]
 
   /**
     * The type of a (partial) interpretation.
@@ -404,7 +404,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // complete, now functionals.
-      evalAllFunctionals(rule, env, interp)
+      evalAllGuards(rule, env, interp)
     case p :: xs =>
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
@@ -438,7 +438,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   /**
     * Returns a sequence of rows matched by the given atom `p`.
     */
-  private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
+  private def evalAtom(p: AtomPredicate, env: Env): Iterable[Env] = {
     // retrieve the terms.
     val terms = p.getTerms
 
@@ -496,57 +496,17 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   }
 
   /**
-    * Computes the cross product of all functionals in the body.
+    * Evaluates all guards in the given `rule`.
     */
-  private def evalAllFunctionals(rule: Constraint, env: Env, interp: Interpretation): Unit =
-    evalFunctionals(rule, rule.getFunctionals.toList, env, interp)
-
-  /**
-    * Evaluates a single functional.
-    */
-  private def evalFunctionals(rule: Constraint, ps: List[FunctionalPredicate], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil =>
-      // complete, now filter.
-      evalAllFilters(rule, env, interp)
-    case r :: rs =>
-      // compute the values of the arguments
-      val args = new Array[AnyRef](r.getArguments.length)
-      var i = 0
-      for (a <- r.getArguments) {
-        val v = env(a.getIndex)
-        args(i) = if (v == null) null else v.getValue
-        i = i + 1
-      }
-
-      // apply the function to obtain the array of values.
-      val values: Array[ProxyObject] =
-        if (r.getArguments.length == 0) {
-          // TODO: A small hack to deal with zero arity functions.
-          r.getFunction.apply(new Array[AnyRef](1))
-        } else {
-          r.getFunction.apply(args)
-        }
-
-      // iterate through each value.
-      for (value <- values) {
-        val newEnv = copy(env)
-        newEnv(r.getVarSym.getIndex) = value
-        evalFunctionals(rule, rs, newEnv, interp)
-      }
-  }
-
-  /**
-    * Evaluates all filters in the given `rule`.
-    */
-  private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
+  private def evalAllGuards(rule: Constraint, env: Env, interp: Interpretation): Unit = {
     // Extract the filters function predicates from the rule.
-    val filters = rule.getFilters
+    val filters = rule.getGuards
 
     // Evaluate each filter function predicate one-by-one.
     var i = 0
     while (i < filters.length) {
       // Evaluate the current filter.
-      val result = evalFilter(filters(i), env)
+      val result = evalGuard(filters(i), env)
 
       // Return immediately if the filter function returned false.
       if (!result)
@@ -562,33 +522,14 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   }
 
   /**
-    * Evaluates the given `filter` and returns its result.
+    * Evaluates the given `guard` and returns its result.
     */
-  private def evalFilter(filter: FilterPredicate, env: Env): Boolean = filter match {
-    case p: FilterPredicate =>
-      // Evaluate the arguments of the filter function predicate.
-      val args = new Array[AnyRef](p.getArguments.length)
-      var j = 0
-      // Iterate through each term of the filter function predicate.
-      while (j < args.length) {
-        // Compute the value of the term.
-        val value: ProxyObject = p.getArguments()(j) match {
-          case p: VarTerm =>
-            // A variable is replaced by its value from the environment.
-            env(p.getSym.getIndex)
-          case p: LitTerm =>
-            invoke(p.getFunction)
-          case p: WildTerm =>
-            // A wildcard should not appear as an argument to a filter function.
-            throw InternalRuntimeException("Wildcard not allowed here!")
-        }
+  private def evalGuard(guard: GuardPredicate, env: Env): Boolean = guard match {
+    case p: GuardPredicate =>
+      // Evaluate the terms to actual arguments.
+      val args = evalArgs(p.getArguments, env)
 
-        // Store the value of the term into the argument array.
-        args(j) = value.getValue
-        j = j + 1
-      }
-
-      // Evaluate the filter function passing the arguments.
+      // Evaluate the guard passing the arguments.
       val result = p.getFunction()(args)
 
       // Return the result.
@@ -610,6 +551,26 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       }
 
       interp += ((p.getSym, fact))
+
+    case p: UnionPredicate =>
+      // Evaluate the terms to actual arguments.
+      val args = evalArgs(p.getArguments, env)
+
+      // Evaluate the union function passing the arguments.
+      val result = p.getFunction()(args)
+
+      // Cast to a constraint system
+      val cs = result.getValue.asInstanceOf[ConstraintSystem]
+
+      // Iterate through the facts.
+      for (constraint <- cs.getConstraints) {
+        if (constraint.isFact) {
+          evalHead(constraint.getHeadPredicate, Array.empty, interp)
+        }
+        if (constraint.isRule) {
+          throw InternalRuntimeException(s"Unexpected rule in union predicate: '$constraint'.")
+        }
+      }
   }
 
   /**
@@ -632,6 +593,34 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         }
         t.getFunction()(args)
       }
+  }
+
+  /**
+    * Evaluates the given terms `ts`.
+    */
+  private def evalArgs(ts: Array[Term], env: Env) = {
+    // Evaluate the arguments of the filter function predicate.
+    val args = new Array[AnyRef](ts.length)
+    var j = 0
+    // Iterate through each term of the filter function predicate.
+    while (j < args.length) {
+      // Compute the value of the term.
+      val value: ProxyObject = ts(j) match {
+        case p: VarTerm =>
+          // A variable is replaced by its value from the environment.
+          env(p.getSym.getIndex)
+        case p: LitTerm =>
+          invoke(p.getFunction)
+        case p: WildTerm =>
+          // A wildcard should not appear as an argument to a filter function.
+          throw InternalRuntimeException("Wildcard not allowed here!")
+      }
+
+      // Store the value of the term into the argument array.
+      args(j) = value.getValue
+      j = j + 1
+    }
+    args
   }
 
   /**
@@ -688,7 +677,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
     sym match {
       case r: RelSym =>
-        for ((rule, p) <- dependenciesOf(sym)) {
+        // TODO: It can happen that a constraint is extended with a new predicate symbol via union,
+        //  if so, the dependencies might be empty, but that should be okay.
+        for ((rule, p) <- dependenciesOf.getOrElse(sym, Set.empty)) {
           // unify all terms with their values.
           val env = unify(getVarArray(p), fact, fact.length, rule.getConstraintParameters.length)
           if (env != null) {
@@ -697,7 +688,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         }
 
       case l: LatSym =>
-        for ((rule, p) <- dependenciesOf(sym)) {
+        // TODO: It can happen that a constraint is extended with a new predicate symbol via union,
+        //  if so, the dependencies might be empty, but that should be okay.
+        for ((rule, p) <- dependenciesOf.getOrElse(sym, Set.empty)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys.length
           val env = unify(getVarArray(p), fact, numberOfKeys, rule.getConstraintParameters.length)
@@ -724,7 +717,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         result(index) = interp
         index = index + 1
       }
-      result.toIterator
+      result.iterator
     }
   }
 
@@ -928,6 +921,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     val constraintsWithStratum = constraintSystem.getConstraints.map {
       case c => c.getHeadPredicate match {
         case h: AtomPredicate => (c, stratification.getStratum(h.getSym))
+        case h: UnionPredicate => (c, stratification.getMaxStratum)
       }
 
     }

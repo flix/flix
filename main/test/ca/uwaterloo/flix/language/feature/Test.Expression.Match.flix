@@ -6,36 +6,6 @@
 // (MkClosureRef, ApplyClosure, free variables).                           //
 /////////////////////////////////////////////////////////////////////////////
 
-def f01(): Int = match () with {
-  case _ => 11
-}
-
-@test
-def testMatchWildcard01(): Bool = assertEq!(f01(), 11)
-
-def f02(): Int = match 42 with {
-  case _ => 11
-}
-
-@test
-def testMatchWildcard02(): Bool = assertEq!(f02(), 11)
-
-def f03(x: Int): Int = match x with {
-  case _ => 11
-}
-
-@test
-def testMatchWildcard03(): Bool = assertEq!(f03(-1), 11)
-
-@test
-def testMatchWildcard04(): Bool = assertEq!(f03(0), 11)
-
-@test
-def testMatchWildcard05(): Bool = assertEq!(f03(1), 11)
-
-@test
-def testMatchWildcard06(): Bool = assertEq!(f03(99999), 11)
-
 def f04(x: Int): Int = match x with {
   case _ => 1
 }
@@ -485,15 +455,15 @@ def testMatchTag30(): Bool = assertEq!(f27(B27.BB27(A27.AB27(-1))), "bbb")
 enum Val28 { case Nip28, case Val28(Set[Int]) }
 
 def f28(x: Val28): Set[Int] = match x with {
-  case Val28.Nip28 => #{0}
+  case Val28.Nip28 => Set#{0}
   case Val28.Val28(s) => s
 }
 
 @test
-def testMatchTag31(): Bool = assertEq!(f28(Val28.Nip28), #{0})
+def testMatchTag31(): Bool = assertEq!(f28(Val28.Nip28), Set#{0})
 
 @test
-def testMatchTag32(): Bool = assertEq!(f28(Val28.Val28(#{1, 2, 3})), #{1, 2, 3})
+def testMatchTag32(): Bool = assertEq!(f28(Val28.Val28(Set#{1, 2, 3})), Set#{1, 2, 3})
 
 enum Val29 { case Val29(Int8) }
 
@@ -702,3 +672,16 @@ def testMatchTuple29(): Bool = assertEq!(f46(0, 2), 2)
 
 @test
 def testMatchTuple30(): Bool = assertEq!(f46(3, 4), 0)
+
+@test
+def testMatchTupleWithSep01(): Bool = match 0 with {
+    case 0 => true,
+    case 1 => true,
+    case 2 => true,
+    case _ => true
+}
+
+@test
+def testMatchTupleWithSep02(): Bool = match 0 with {
+    case 0 => true, case 1 => true, case 2 => true, case _ => true
+}

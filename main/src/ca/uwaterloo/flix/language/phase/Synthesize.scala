@@ -34,9 +34,6 @@ object Synthesize extends Phase[Root, Root] {
     * Performs synthesis on the given ast `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Synthesize") {
-    // Put the GenSym object into implicit scope.
-    implicit val _ = flix.genSym
-
     // A mutable map from symbols to definitions. Populated during traversal.
     val newDefs = mutable.Map.empty[Symbol.DefnSym, Def]
 
@@ -324,9 +321,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.ProcessPanic(msg, tpe, eff, loc) =>
         Expression.ProcessPanic(msg, tpe, eff, loc)
 
-      case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-        val c = visitConstraint(c0)
-        Expression.FixpointConstraint(c, tpe, eff, loc)
+      case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+        val cs = cs0.map(visitConstraint)
+        Expression.FixpointConstraintSet(cs, tpe, eff, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -367,6 +364,10 @@ object Synthesize extends Phase[Root, Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitExp
         Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     /**
@@ -377,13 +378,9 @@ object Synthesize extends Phase[Root, Root] {
         val p = visitPredicateWithParam(pred)
         Predicate.Body.Atom(p, polarity, pats, tpe, loc)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitExp)
-        Predicate.Body.Filter(sym, ts, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitExp(term)
-        Predicate.Body.Functional(sym, t, loc)
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Guard(e, loc)
     }
 
     /**
@@ -408,9 +405,9 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool)), ast.Eff.Empty, sl)
-      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Bool)), ast.Eff.Empty, sl)
-      val outer = Expression.Apply(inner, exp2, Type.Cst(TypeConstructor.Bool), ast.Eff.Empty, sl)
+      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool)), ast.Eff.Pure, sl)
+      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Bool)), ast.Eff.Pure, sl)
+      val outer = Expression.Apply(inner, exp2, Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
       outer
     }
 
@@ -424,7 +421,7 @@ object Synthesize extends Phase[Root, Root] {
       val e = mkApplyEq(exp1, exp2)
 
       // Negate the result.
-      Expression.Unary(UnaryOperator.LogicalNot, e, Type.Cst(TypeConstructor.Bool), ast.Eff.Empty, sl)
+      Expression.Unary(UnaryOperator.LogicalNot, e, Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
     }
 
     /**
@@ -437,7 +434,7 @@ object Synthesize extends Phase[Root, Root] {
       // TODO: [Equality]: We need to lookup the existence of any eq operator here. This may require monomorphization.
 
       // Introduce a fresh symbol for the equality operator.
-      val sym = Symbol.freshDefnSym("eq")
+      val sym = Symbol.freshDefnSym("__eq")
 
       // Immediately add the symbol to the equality map.
       // This is necessary to support recursive data types.
@@ -463,13 +460,13 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkArrow(tpe, Type.Cst(TypeConstructor.Bool)), ast.Eff.Empty, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkArrow(tpe, Type.Cst(TypeConstructor.Bool)), ast.Eff.Pure, sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -485,9 +482,9 @@ object Synthesize extends Phase[Root, Root] {
       /*
        * An ordinary binary equality test to be used for primitive types.
        */
-      val exp1 = Expression.Var(varX, tpe, ast.Eff.Empty, sl)
-      val exp2 = Expression.Var(varY, tpe, ast.Eff.Empty, sl)
-      val default = Expression.Binary(BinaryOperator.Equal, exp1, exp2, Type.Cst(TypeConstructor.Bool), ast.Eff.Empty, sl)
+      val exp1 = Expression.Var(varX, tpe, ast.Eff.Pure, sl)
+      val exp2 = Expression.Var(varY, tpe, ast.Eff.Pure, sl)
+      val default = Expression.Binary(BinaryOperator.Equal, exp1, exp2, Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
 
       /*
        * Match on the type to determine what equality expression to generate.
@@ -509,7 +506,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Enum Case.
           //
-          if (tpe.isEnum) {
+          if (isEnum(tpe)) {
             //
             // Assume we have an enum:
             //
@@ -534,7 +531,7 @@ object Synthesize extends Phase[Root, Root] {
             val enumDecl = root.enums(enumSym)
 
             // Construct the pair (e1, e2) to match against.
-            val matchValue = Expression.Tuple(List(exp1, exp2), Type.mkTuple(tpe, tpe), ast.Eff.Empty, sl)
+            val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), ast.Eff.Pure, sl)
 
             // Compute the cases specialized to the current type.
             val cases = casesOf(enumDecl, tpe)
@@ -554,14 +551,14 @@ object Synthesize extends Phase[Root, Root] {
                 val patY = Pattern.Tag(enumSym, tag, Pattern.Var(freshY, caseType, sl), tpe, sl)
 
                 // Generate the pattern: (Tag(freshX) and Tag(freshY)).
-                val p = Pattern.Tuple(List(patX, patY), Type.mkTuple(tpe, tpe), sl)
+                val p = Pattern.Tuple(List(patX, patY), mkTupleType(tpe, tpe), sl)
 
                 // Generate the guard (simply true).
                 val g = Expression.True(sl)
 
                 // Generate the rule body: freshX == freshY.
-                val expX = Expression.Var(freshX, caseType, ast.Eff.Empty, sl)
-                val expY = Expression.Var(freshY, caseType, ast.Eff.Empty, sl)
+                val expX = Expression.Var(freshX, caseType, ast.Eff.Pure, sl)
+                val expY = Expression.Var(freshY, caseType, ast.Eff.Pure, sl)
                 val b = mkApplyEq(expX, expY)
 
                 // Put the components together.
@@ -575,13 +572,13 @@ object Synthesize extends Phase[Root, Root] {
             val default = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs ::: default :: Nil, Type.Cst(TypeConstructor.Bool), ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rs ::: default :: Nil, Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
           }
 
           //
           // Tuple Case.
           //
-          if (tpe.isTuple) {
+          if (isTuple(tpe)) {
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -598,7 +595,7 @@ object Synthesize extends Phase[Root, Root] {
             val elementTypes = getElementTypes(tpe)
 
             // Construct the pair (e1, e2) to match against.
-            val matchValue = Expression.Tuple(List(exp1, exp2), Type.mkTuple(tpe, tpe), ast.Eff.Empty, sl)
+            val matchValue = Expression.Tuple(List(exp1, exp2), mkTupleType(tpe, tpe), ast.Eff.Pure, sl)
 
             // Introduce fresh variables for each component of the first tuple.
             val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
@@ -613,7 +610,7 @@ object Synthesize extends Phase[Root, Root] {
             val ys = Pattern.Tuple((freshVarsY zip elementTypes).map {
               case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
             }, tpe, sl)
-            val p = Pattern.Tuple(List(xs, ys), Type.mkTuple(tpe, tpe), sl)
+            val p = Pattern.Tuple(List(xs, ys), mkTupleType(tpe, tpe), sl)
 
             // The guard of the rule (simply true).
             val g = Expression.True(sl)
@@ -621,19 +618,19 @@ object Synthesize extends Phase[Root, Root] {
             // The body of the rule.
             val b = (freshVarsX zip freshVarsY zip elementTypes).foldRight(Expression.True(sl): Expression) {
               case (((freshX, freshY), elementType), eacc) =>
-                val expX = Expression.Var(freshX, elementType, ast.Eff.Empty, sl)
-                val expY = Expression.Var(freshY, elementType, ast.Eff.Empty, sl)
+                val expX = Expression.Var(freshX, elementType, ast.Eff.Pure, sl)
+                val expY = Expression.Var(freshY, elementType, ast.Eff.Pure, sl)
 
                 val e1 = mkApplyEq(expX, expY)
                 val e2 = eacc
-                Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Cst(TypeConstructor.Bool), ast.Eff.Empty, sl)
+                Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
             }
 
             // Put the components together.
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Bool), ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")
@@ -651,8 +648,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32)), ast.Eff.Empty, sl)
-      Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Int32), ast.Eff.Empty, sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32)), ast.Eff.Pure, sl)
+      Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
     }
 
     /**
@@ -660,7 +657,7 @@ object Synthesize extends Phase[Root, Root] {
       *
       * If no such definition exists, it is created.
       */
-    def getOrMkHash(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
+    def getOrMkHash(tpe: Type): Symbol.DefnSym = mutHashOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the hash operator.
       val sym = Symbol.freshDefnSym("hash")
 
@@ -689,7 +686,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -703,7 +700,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def mkHashExp(tpe: Type, varX: Symbol.VarSym): Expression = {
       // An expression that evaluates to the value of varX.
-      val exp0 = Expression.Var(varX, tpe, ast.Eff.Empty, sl)
+      val exp0 = Expression.Var(varX, tpe, ast.Eff.Pure, sl)
 
       // TODO: The quality of the generated hash function is not very good.
 
@@ -723,17 +720,17 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("hashCode")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Str) =>
           val method = classOf[java.lang.String].getMethod("hashCode")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
 
         case Type.Cst(TypeConstructor.Native(clazz)) =>
           val method = classOf[java.lang.Object].getMethod("hashCode")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
 
@@ -741,13 +738,13 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Arrow(_, l), _) => Expression.Int32(123, sl)
 
         case _ =>
           //
           // Enum case.
           //
-          if (tpe.isEnum) {
+          if (isEnum(tpe)) {
             //
             // Assume we have an enum:
             //
@@ -794,9 +791,9 @@ object Synthesize extends Phase[Root, Root] {
                 val b = Expression.Binary(
                   BinaryOperator.Plus,
                   Expression.Int32(index, sl),
-                  mkApplyHash(Expression.Var(freshX, caseType, ast.Eff.Empty, sl)),
+                  mkApplyHash(Expression.Var(freshX, caseType, ast.Eff.Pure, sl)),
                   Type.Cst(TypeConstructor.Int32),
-                  ast.Eff.Empty,
+                  ast.Eff.Pure,
                   sl
                 )
 
@@ -805,13 +802,13 @@ object Synthesize extends Phase[Root, Root] {
             }
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Cst(TypeConstructor.Int32), ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rs, Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
           }
 
           //
           // Tuple case.
           //
-          if (tpe.isTuple) {
+          if (isTuple(tpe)) {
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -843,7 +840,7 @@ object Synthesize extends Phase[Root, Root] {
 
             // The elements of the tuple.
             val inner = (freshVarsX zip elementTypes).map {
-              case (freshX, elementType) => mkApplyHash(Expression.Var(freshX, elementType, ast.Eff.Empty, sl))
+              case (freshX, elementType) => mkApplyHash(Expression.Var(freshX, elementType, ast.Eff.Pure, sl))
             }
 
             // Construct the sum expression e1 + e2 + e3
@@ -853,7 +850,7 @@ object Synthesize extends Phase[Root, Root] {
                 e1,
                 e2,
                 Type.Cst(TypeConstructor.Int32),
-                ast.Eff.Empty,
+                ast.Eff.Pure,
                 sl
               )
             }
@@ -862,7 +859,7 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Int32), ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")
@@ -880,8 +877,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkToString(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str)), ast.Eff.Empty, sl)
-      Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str)), ast.Eff.Pure, sl)
+      Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
     }
 
     /**
@@ -918,7 +915,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str))
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Empty, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, ast.Eff.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -932,7 +929,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def mkToStringExp(tpe: Type, varX: Symbol.VarSym): Expression = {
       // An expression that evaluates to the value of varX.
-      val exp0 = Expression.Var(varX, tpe, ast.Eff.Empty, sl)
+      val exp0 = Expression.Var(varX, tpe, ast.Eff.Pure, sl)
 
       // Determine the string representation based on the type `tpe`.
       tpe match {
@@ -941,55 +938,55 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Cst(TypeConstructor.Bool) =>
           val method = classOf[java.lang.Boolean].getMethod("toString", classOf[Boolean])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Char) =>
           val method = classOf[java.lang.Character].getMethod("toString", classOf[Char])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Float32) =>
           val method = classOf[java.lang.Float].getMethod("toString", classOf[Float])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Float64) =>
           val method = classOf[java.lang.Double].getMethod("toString", classOf[Double])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int8) =>
           val method = classOf[java.lang.Byte].getMethod("toString", classOf[Byte])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int16) =>
           val method = classOf[java.lang.Short].getMethod("toString", classOf[Short])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int32) =>
           val method = classOf[java.lang.Integer].getMethod("toString", classOf[Int])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int64) =>
           val method = classOf[java.lang.Long].getMethod("toString", classOf[Long])
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("toString")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Array) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Channel) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Native(clazz)) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Vector) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+          Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Zero => Expression.Str("<<Zero>>", sl)
 
@@ -1007,13 +1004,13 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 
-        case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
+        case Type.Apply(Type.Arrow(_, l), _) => Expression.Str("<<clo>>", sl)
 
         case _ =>
           //
           // Enum case.
           //
-          if (tpe.isEnum) {
+          if (isEnum(tpe)) {
             //
             // Assume we have an enum:
             //
@@ -1060,7 +1057,7 @@ object Synthesize extends Phase[Root, Root] {
                 val b = concatAll(List(
                   Expression.Str(tag, sl),
                   Expression.Str("(", sl),
-                  mkApplyToString(Expression.Var(freshX, caseType, ast.Eff.Empty, sl)),
+                  mkApplyToString(Expression.Var(freshX, caseType, ast.Eff.Pure, sl)),
                   Expression.Str(")", sl)
                 ))
 
@@ -1069,29 +1066,29 @@ object Synthesize extends Phase[Root, Root] {
             }
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rs, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           //
           // Relation case.
           //
-          if (tpe.isRelation) {
+          if (isRelation(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           //
           // Lattice case.
           //
-          if (tpe.isLattice) {
+          if (isLattice(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           //
           // Tuple case.
           //
-          if (tpe.isTuple) {
+          if (isTuple(tpe)) {
             //
             // Assume we have a tuple (a, b, c)
             //
@@ -1123,7 +1120,7 @@ object Synthesize extends Phase[Root, Root] {
 
             // The elements of the tuple.
             val inner = (freshVarsX zip elementTypes).map {
-              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, ast.Eff.Empty, sl))
+              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, ast.Eff.Pure, sl))
             }
 
             // Construct the string expression (e1, e2, e3, ...)
@@ -1137,13 +1134,13 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           //
           // Records
           //
-          if (tpe.isRecord) {
+          if (isRecord(tpe)) {
             // TODO: Implement toString for records.
             return Expression.Str("<<record>>", sl)
           }
@@ -1151,9 +1148,9 @@ object Synthesize extends Phase[Root, Root] {
           //
           // Schema
           //
-          if (tpe.isSchema) {
+          if (isSchema(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")
@@ -1194,11 +1191,82 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /**
+      * Returns `true` if `tpe` is a type variable.
+      */
+    def isVar(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Var(_, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is an arrow type.
+      */
+    def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Arrow(_, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is an enum type.
+      */
+    def isEnum(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a tuple type.
+      */
+    def isTuple(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Cst(TypeConstructor.Tuple(l)) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a relation type.
+      */
+    def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Relation(sym, _, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a lattice type.
+      */
+    def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Lattice(sym, _, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a record type.
+      */
+    def isRecord(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.RecordEmpty => true
+      case Type.RecordExtend(base, label, value) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a schema type.
+      */
+    def isSchema(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.SchemaEmpty => true
+      case Type.SchemaExtend(_, _, _) => true
+      case _ => false
+    }
+
+    /**
+      * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+      */
+    def mkTupleType(ts: Type*): Type = Type.mkTuple(ts.toList)
+
+    /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.
       */
     def casesOf(enum: Enum, tpe: Type): List[(String, Type)] = {
       // Compute a substitution for the parametric enum specialized to the specific type.
-      val subst = Unification.unify(enum.tpe, tpe).get
+      val subst = Unification.unifyTypes(enum.tpe, tpe).get
 
       // Apply the substitution to each case.
       enum.cases.map {
@@ -1210,7 +1278,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns an expression that computes the string concatenation of `exp1` and `exp2`.
       */
     def concat(exp1: Expression, exp2: Expression): Expression =
-      Expression.Binary(BinaryOperator.Plus, exp1, exp2, Type.Cst(TypeConstructor.Str), ast.Eff.Empty, sl)
+      Expression.Binary(BinaryOperator.Plus, exp1, exp2, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
     /**
       * Returns an expression that computes the string concatenation of the given expressions `exps`.
@@ -1234,8 +1302,8 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * (a) Every type that appears as return type of some definition.
      */
-    val typesInDefs: Set[Type] = root.defs.map {
-      case (_, Def(_, _, _, _, _, _, exp, _, _, _, _)) => exp.tpe
+    val typesInDefs: Set[Type] = root.defs.collect {
+      case (_, Def(_, ann, _, sym, _, _, exp, _, _, _, _)) if (ann.isBenchmark || ann.isTest || sym.name == "main") => exp.tpe
     }.toSet
 
     /*
@@ -1264,7 +1332,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce Equality special operators.
      */
     val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkEq(tpe))
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkEq(tpe))
       case (macc, tpe) => macc
     }
 
@@ -1272,7 +1340,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce Hash special operators.
      */
     val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkHash(tpe))
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkHash(tpe))
       case (macc, tpe) => macc
     }
 
@@ -1280,7 +1348,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce ToString special operators.
      */
     val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkToString(tpe))
+      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }
 

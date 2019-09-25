@@ -217,7 +217,9 @@ object TypedAstOps {
 
       case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
-      case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
+      case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+        case (macc, c) => macc ++ visitConstraint(c, env0)
+      }
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
@@ -245,6 +247,7 @@ object TypedAstOps {
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) => visitPredicateWithParam(pred, env0) ++ terms.flatMap(visitExp(_, env0))
+      case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
     /**
@@ -252,8 +255,7 @@ object TypedAstOps {
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
       case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => visitPredicateWithParam(pred, env0)
-      case Predicate.Body.Filter(sym, terms, loc) => Map.empty[Symbol.HoleSym, HoleContext] ++ terms.flatMap(visitExp(_, env0))
-      case Predicate.Body.Functional(sym, term, loc) => visitExp(term, env0)
+      case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
     }
 
     /**

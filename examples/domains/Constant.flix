@@ -302,21 +302,21 @@ namespace Domain/Constant {
     lat R(k: Int, y: Constant)
 
     @test
-    pub def testConstant01(): Schema { R } = solve {
+    pub def testConstant01(): #{ R } = solve #{
         R(1, Bot).
         R(2, Cst(42)).
         R(3, Top).
     }
 
     @test
-    pub def testConstant02(): Schema { R } = solve {
+    pub def testConstant02(): #{ R } = solve #{
         R(1, Cst(1)).
         R(1, Cst(2)).
         R(1, Cst(3)).
     }
 
     @test
-    pub def testConstant03(): Schema { L, R } = solve {
+    pub def testConstant03(): #{ L, R } = solve #{
         L(1, Cst(1)).
         L(2, Cst(2)).
         L(3, Cst(3)).

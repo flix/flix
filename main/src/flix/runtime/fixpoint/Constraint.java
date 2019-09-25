@@ -64,14 +64,9 @@ public final class Constraint {
     private final AtomPredicate[] bodyAtoms;
 
     /**
-     * The body filter predicates.
+     * The body guard predicates.
      */
-    private final FilterPredicate[] bodyFilters;
-
-    /**
-     * The body functional predicates.
-     */
-    private final FunctionalPredicate[] bodyFunctionals;
+    private final GuardPredicate[] bodyGuards;
 
     /**
      * Numbers of times the constraint has been evaluated.
@@ -88,17 +83,10 @@ public final class Constraint {
      */
     private Constraint(VarSym[] cparams, Predicate head, Predicate[] body) {
         //
-        // A head predicate cannot be a filter predicate.
+        // A head predicate cannot be a guard predicate.
         //
-        if (head instanceof FilterPredicate) {
-            throw new IllegalArgumentException("A head predicate cannot be a filter predicate.");
-        }
-
-        //
-        // A head predicate cannot be a functional predicate.
-        //
-        if (head instanceof FunctionalPredicate) {
-            throw new IllegalArgumentException("A head predicate cannot be a filter predicate.");
+        if (head instanceof GuardPredicate) {
+            throw new IllegalArgumentException("A head predicate cannot be a guard predicate.");
         }
 
         //
@@ -121,21 +109,19 @@ public final class Constraint {
         // Partition the body predicates based on their types. The joy of arrays.
         //
         var bodyAtoms = new ArrayList<AtomPredicate>();
-        var bodyFilters = new ArrayList<FilterPredicate>();
-        var bodyFunctionals = new ArrayList<FunctionalPredicate>();
+        var bodyFilters = new ArrayList<GuardPredicate>();
         for (Predicate b : body) {
             if (b instanceof AtomPredicate) {
                 bodyAtoms.add((AtomPredicate) b);
-            } else if (b instanceof FilterPredicate) {
-                bodyFilters.add((FilterPredicate) b);
-            } else if (b instanceof FunctionalPredicate) {
-                bodyFunctionals.add((FunctionalPredicate) b);
+            } else if (b instanceof GuardPredicate) {
+                bodyFilters.add((GuardPredicate) b);
+            } else if (b instanceof UnionPredicate) {
+                throw new IllegalArgumentException("A union predicate cannot occur in the body.");
             }
         }
 
         this.bodyAtoms = bodyAtoms.toArray(new AtomPredicate[0]);
-        this.bodyFilters = bodyFilters.toArray(new FilterPredicate[0]);
-        this.bodyFunctionals = bodyFunctionals.toArray(new FunctionalPredicate[0]);
+        this.bodyGuards = bodyFilters.toArray(new GuardPredicate[0]);
     }
 
     /**
@@ -223,17 +209,10 @@ public final class Constraint {
     }
 
     /**
-     * Returns the filter predicates in the body of `this` constraint.
+     * Returns the guard predicates in the body of `this` constraint.
      */
-    public FilterPredicate[] getFilters() {
-        return bodyFilters;
-    }
-
-    /**
-     * Returns the functional predicates in the body of `this` constraint.
-     */
-    public FunctionalPredicate[] getFunctionals() {
-        return bodyFunctionals;
+    public GuardPredicate[] getGuards() {
+        return bodyGuards;
     }
 
     /**

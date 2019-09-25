@@ -454,19 +454,20 @@ object GenExpression {
      there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
      a new one.
      */
+      // Creating a new instance of the class
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      visitor.visitInsn(DUP)
       if (JvmOps.isUnitTag(tagInfo)) {
-        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+          AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
       } else {
-        // Creating a new instance of the class
-        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-        visitor.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
         compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-        // Calling the constructor of the class
-        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
+      // Descriptor of the constructor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+      // Calling the constructor of the class
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
@@ -872,7 +873,16 @@ object GenExpression {
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
+      for (arg <- args) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        // Cast the argument to the right type.
+        arg.tpe match {
+          case MonoType.Native(clazz) =>
+            val argType = asm.Type.getInternalName(clazz)
+            visitor.visitTypeInsn(CHECKCAST, argType)
+          case _ => // nop
+        }
+      }
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
@@ -890,7 +900,15 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, visitor, currentClass, lenv0, entryPoint))
+      for ((arg, index) <- args.zipWithIndex) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+
+        // Cast the this parameter.
+        if (index == 0 && !Modifier.isStatic(method.getModifiers)) {
+          val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+          visitor.visitTypeInsn(CHECKCAST, thisType)
+        }
+      }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -1076,12 +1094,12 @@ object GenExpression {
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
-    case Expression.FixpointConstraint(con, tpe, loc) =>
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint.
-      newConstraintSystem(con, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newConstraintSystem(cs, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1604,6 +1622,29 @@ object GenExpression {
   }
 
   /**
+    * Emits code to instantiate a new constraint system for the given constraints `cs`.
+    */
+  private def newConstraintSystem(cs: List[Constraint], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // Instantiate a new array of appropriate length.
+    compileInt(mv, cs.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Constraint.toInternalName)
+    for ((constraint, index) <- cs.zipWithIndex) {
+      // Compile each attribute and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+
+      // Instantiate the attribute.
+      newConstraint(constraint, mv)
+
+      // Store the attribute in the array.
+      mv.visitInsn(AASTORE)
+    }
+
+    // Instantiate the constraint system object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "([Lflix/runtime/fixpoint/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+  }
+
+  /**
     * Emits code to instantiate a new constraint for the given constraint `c`.
     */
   private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
@@ -1653,6 +1694,19 @@ object GenExpression {
 
       // Instantiate a new atom predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+
+    case Predicate.Head.Union(exp, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the closure.
+      compileExpression(exp, mv, clazz, lenv0, entryPoint)
+
+      // Emit code for the terms.
+      newHeadTerms(terms, mv)
+
+      // Instantiate a new filter predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.UnionPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/UnionPredicate;", false)
   }
 
   /**
@@ -1679,35 +1733,18 @@ object GenExpression {
       // Instantiate a new atom predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
 
-    case Predicate.Body.Filter(sym, terms, loc) =>
+    case Predicate.Body.Guard(exp, terms, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Emit code for the function symbol.
-      AsmOps.compileDefSymbol(sym, mv)
+      // Emit code for the closure.
+      compileExpression(exp, mv, clazz, lenv0, entryPoint)
 
       // Emit code for the terms.
       newBodyTerms(terms, mv)
 
       // Instantiate a new filter predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false)
-
-    case Predicate.Body.Functional(varSym, defSym, args, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
-
-      // The variable symbol.
-      newVarSym(varSym, mv)
-
-      // The function object.
-      AsmOps.compileDefSymbol(defSym, mv)
-
-      // The function argument variables.
-      newVarSyms(args, mv)
-
-      // Instantiate a new functional predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false)
-
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.GuardPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/GuardPredicate;", false)
   }
 
   /**

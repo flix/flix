@@ -9,7 +9,7 @@ class TestTrivial extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.DefaultTest.copy(core = true)
 
-  test("TrivialExpression.LeftAdditionByZero") {
+  ignore("TrivialExpression.LeftAdditionByZero") {
     val input =
       """
         |pub def f(): Int = 0 + 123
@@ -19,7 +19,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.RightAdditionByZero") {
+  ignore("TrivialExpression.RightAdditionByZero") {
     val input =
       """
         |pub def f(): Int = 123 + 0
@@ -29,7 +29,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.SubtractionByZero") {
+  ignore("TrivialExpression.SubtractionByZero") {
     val input =
       """
         |pub def f(): Int = 123 - 0
@@ -49,7 +49,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.LeftMultiplicationByZero") {
+  ignore("TrivialExpression.LeftMultiplicationByZero") {
     val input =
       """
         |pub def f(): Int = 0 * 123
@@ -59,7 +59,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.RightMultiplicationByZero") {
+  ignore("TrivialExpression.RightMultiplicationByZero") {
     val input =
       """
         |pub def f(): Int = 123 * 0
@@ -69,7 +69,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.LeftMultiplicationByOne") {
+  ignore("TrivialExpression.LeftMultiplicationByOne") {
     val input =
       """
         |pub def f(): Int = 1 * 123
@@ -79,7 +79,7 @@ class TestTrivial extends FunSuite with TestUtils {
     expectError[TrivialError.TrivialExpression](result)
   }
 
-  test("TrivialExpression.RightMultiplicationByOne") {
+  ignore("TrivialExpression.RightMultiplicationByOne") {
     val input =
       """
         |pub def f(): Int = 123 * 1

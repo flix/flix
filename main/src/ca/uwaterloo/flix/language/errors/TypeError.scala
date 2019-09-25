@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt._
@@ -35,27 +34,7 @@ sealed trait TypeError extends CompilationError {
 object TypeError {
 
   /**
-    * Undefined Attribute Error.
-    *
-    * @param attribute the attribute name.
-    * @param loc       the location where the error occurred.
-    */
-  // TODO: Move?
-  case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined attribute '" << Red(attribute) << "' in table '" << Cyan(table) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "attribute not found.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent attribute?" << NewLine
-    }
-  }
-
-  /**
-    * Unification Error.
+    * Mismatches Types.
     *
     * @param baseType1 the first base type.
     * @param baseType2 the second base type.
@@ -63,12 +42,12 @@ object TypeError {
     * @param fullType2 the second full type.
     * @param loc       the location where the error occurred.
     */
-  case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
+  case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
+      vt << ">> Unable to unify the types: '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
@@ -78,7 +57,25 @@ object TypeError {
   }
 
   /**
-    * OccursCheck Error.
+    * Mismatches Effects.
+    *
+    * @param eff1 the first effect.
+    * @param eff2 the second effect.
+    * @param loc  the location where the error occurred.
+    */
+  case class MismatchedEffects(eff1: Eff, eff2: Eff, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify the effects: '" << Red(eff1.toString) << "' and '" << Red(eff2.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched effects.") << NewLine
+    }
+  }
+
+  /**
+    * Occurs Check.
     *
     * @param baseVar   the base type variable.
     * @param baseType  the base type.
@@ -192,7 +189,7 @@ object TypeError {
     case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
     case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
     case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)
-    case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
+    case (Type.Arrow(f1, l1), Type.Arrow(f2, l2)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       (diff(t11, t21), diff(t12, t22)) match {
         case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)

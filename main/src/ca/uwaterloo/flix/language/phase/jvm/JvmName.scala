@@ -161,10 +161,8 @@ object JvmName {
         val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
 
         val AtomPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/AtomPredicate")
-        val FilterPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FilterPredicate")
-        val FunctionalPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FunctionalPredicate")
-        val TruePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/TruePredicate")
-        val FalsePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FalsePredicate")
+        val GuardPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/GuardPredicate")
+        val UnionPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/UnionPredicate")
       }
 
       object Symbol {
@@ -210,7 +208,7 @@ case class JvmName(pkg: List[String], name: String) {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  def toDescriptor: String =
+  lazy val toDescriptor: String =
     if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
 
   /**
@@ -220,7 +218,7 @@ case class JvmName(pkg: List[String], name: String) {
     *
     * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
     */
-  def toBinaryName: String =
+  lazy val toBinaryName: String =
     if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
 
   /**
@@ -228,11 +226,11 @@ case class JvmName(pkg: List[String], name: String) {
     *
     * The internal name is of the form `java/lang/String`.
     */
-  def toInternalName: String =
+  lazy val toInternalName: String =
     if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
     * Returns the relative path of `this` Java name.
     */
-  def toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
+  lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 }

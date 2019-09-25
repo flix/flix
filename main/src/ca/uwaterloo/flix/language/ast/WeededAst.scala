@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 
+import scala.collection.immutable.List
+
 object WeededAst {
 
   case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym])
@@ -32,17 +34,17 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
+    case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
+    case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
+    case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
+    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -52,9 +54,9 @@ object WeededAst {
 
     case class Disallow(doc: Ast.Doc, body: List[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
+    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
+    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
     case class LatticeComponents(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -190,7 +192,7 @@ object WeededAst {
 
     case class ProcessPanic(msg: String, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointConstraint(c: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointConstraintSet(cs: List[WeededAst.Constraint], loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointCompose(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -252,6 +254,8 @@ object WeededAst {
 
       case class Atom(name: Name.QName, exp: WeededAst.Expression, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+      case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
+
     }
 
     sealed trait Body extends WeededAst.Predicate
@@ -260,9 +264,7 @@ object WeededAst {
 
       case class Atom(name: Name.QName, exp: WeededAst.Expression, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
-      case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
-
-      case class Functional(ident: Name.Ident, term: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
     }
 
@@ -295,6 +297,16 @@ object WeededAst {
     case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+  }
+
+  sealed trait TypeParams
+
+  object TypeParams {
+
+    case object Elided extends TypeParams
+
+    case class Explicit(tparams: List[Name.Ident]) extends TypeParams
 
   }
 

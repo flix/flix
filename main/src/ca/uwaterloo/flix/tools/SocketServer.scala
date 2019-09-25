@@ -15,15 +15,15 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Options, Result}
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -101,9 +101,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Invoked when an error occurs.
     */
-  override def onError(ws: WebSocket, e: Exception): Unit = {
-    log(s"Unexpected error: ${e.getMessage}")(ws)
-    e.printStackTrace()
+  override def onError(ws: WebSocket, e: Exception): Unit = e match {
+    case ex: InternalCompilerException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex: InternalRuntimeException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex => throw ex
   }
 
   /**

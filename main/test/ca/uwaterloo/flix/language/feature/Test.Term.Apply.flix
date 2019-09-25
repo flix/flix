@@ -1,24 +1,24 @@
 @test
-def testTransfer01(): Schema { R } = solve {
+def testTransfer01(): #{ R } = solve #{
     R(zer()).
     R(one()).
     R(two()).
 }
 
 @test
-def testTransfer02(): Schema { R } = solve {
+def testTransfer02(): #{ R } = solve #{
     R(inc(1)).
     R(dec(2)).
 }
 
 @test
-def testTransfer03(): Schema { R } = solve {
+def testTransfer03(): #{ R } = solve #{
     R(inc(dec(1))).
     R(dec(inc(2))).
 }
 
 @test
-def testTransfer04(): Schema { A, B, R } = solve {
+def testTransfer04(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -27,7 +27,7 @@ def testTransfer04(): Schema { A, B, R } = solve {
 }
 
 @test
-def testTransfer05(): Schema { A, B, R } = solve {
+def testTransfer05(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -35,7 +35,7 @@ def testTransfer05(): Schema { A, B, R } = solve {
 }
 
 @test
-def testTransfer06(): Schema { A, B, R } = solve {
+def testTransfer06(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -43,7 +43,7 @@ def testTransfer06(): Schema { A, B, R } = solve {
 }
 
 @test
-def testTransfer07(): Schema { A, B, R } = solve {
+def testTransfer07(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -51,7 +51,7 @@ def testTransfer07(): Schema { A, B, R } = solve {
 }
 
 @test
-def testTransfer08(): Schema { A, B, R } = solve {
+def testTransfer08(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -59,18 +59,18 @@ def testTransfer08(): Schema { A, B, R } = solve {
 }
 
 @test
-def testTransfer09(): Schema { R } = solve {
+def testTransfer09(): #{ R } = solve #{
     R(identity(42)).
 }
 
 @test
-def testTransfer10(): Schema { R } = solve {
+def testTransfer10(): #{ R } = solve #{
     R(fst((1, 2))).
     R(snd((1, 2))).
 }
 
 @test
-def testTransfer11(): Schema { R } = solve {
+def testTransfer11(): #{ R } = solve #{
     R(constant(42)(42)).
 }
 

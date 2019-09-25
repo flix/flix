@@ -38,7 +38,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the whole program.
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = traverse(program.roots)(visitRoot)
+    val roots = parTraverse(program.roots)(visitRoot)
     val named = traverse(program.named) {
       case (sym, exp) => visitExp(exp).map(e => sym -> e)
     }
@@ -117,7 +117,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
       val expVal = visitExp(exp0)
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt)
 
@@ -138,7 +138,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       val effVal = visitEff(effOpt)
 
@@ -158,7 +158,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val expVal = visitExp(exp0)
       val effVal = visitEff(effOpt)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
@@ -179,7 +179,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val expVal = visitExp(exp0)
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
 
       mapN(formalsVal, expVal) {
@@ -188,7 +188,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val t = mkArrowType(fs, visitType(tpe), loc)
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.Empty, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.freshEffVar(), loc))
       }
   }
 
@@ -199,7 +199,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, cases, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
 
       modVal flatMap {
         case mod =>
@@ -236,7 +236,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       modVal map {
         case mod =>
           val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, visitType(caze.tpe)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, Nil, cases, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, WeededAst.TypeParams.Explicit(Nil), cases, mkSL(sp1, sp2)))
       }
   }
 
@@ -247,7 +247,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attrs, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
 
       /*
        * Check for `DuplicateAttribute`.
@@ -265,7 +265,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
 
       /*
        * Check for `DuplicateAttribute`.
@@ -280,13 +280,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given constraint `c0`.
     */
-  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Constraint], WeederError] = c0 match {
+  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[WeededAst.Constraint, WeederError] = c0 match {
     case ParsedAst.Declaration.Constraint(sp1, head0, body0, sp2) =>
       val headVal = visitHeadPredicate(head0)
       val bodyVal = traverse(body0)(visitPredicateBody)
 
       mapN(headVal, bodyVal) {
-        case (h, bs) => List(WeededAst.Constraint(h, bs, mkSL(sp1, sp2)))
+        case (h, bs) => WeededAst.Constraint(h, bs, mkSL(sp1, sp2))
       }
   }
 
@@ -305,7 +305,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given class `d0`.
     */
-  private def visitClass(d0: ParsedAst.Declaration.Class): Validation[List[WeededAst.Declaration.Class], WeederError] = d0 match {
+  private def visitClass(d0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = d0 match {
     case ParsedAst.Declaration.Class(doc0, sp1, mod0, cc, decls, sp2) =>
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val ccVal = visitClassConstraint(cc)
@@ -504,29 +504,49 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
     case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
-      /*
-       * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
-       */
+      //
+      // Rewrites a let-match to a regular let-binding or a full-blown pattern match.
+      //
       mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
         case (WeededAst.Pattern.Var(ident, loc), value, body) =>
-          // Let-binding.
-          // Check if there is a type annotation for the value expression.
-          tpe match {
-            case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
-            case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Empty, value.loc)
-              WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
-          }
-        case (pattern, value, body) =>
+          // No pattern match.
+          WeededAst.Expression.Let(ident, withAscription(value, tpe), body, mkSL(sp1, sp2))
+        case (pat, value, body) =>
           // Full-blown pattern match.
-          val rule = WeededAst.MatchRule(pattern, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-          // Check if there is a type annotation for the value expression.
-          tpe match {
-            case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
-            case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Empty, value.loc)
-              WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
-          }
+          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
+          WeededAst.Expression.Match(withAscription(value, tpe), List(rule), mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.LetMatchStar(sp1, pat, tpe, exp1, exp2, sp2) =>
+      val loc = SourceLocation.mk(sp1, sp2)
+
+      //
+      // Rewrites a monadic let-match to a regular let-binding or a full-blown pattern match inside a flatMap.
+      //
+      // let* x = exp1; exp2     ==>   flatMap(x -> exp2)(exp1)
+      //
+      val qname = Name.mkQName(Name.Ident(SourcePosition.Unknown, "flatMap", SourcePosition.Unknown))
+      val flatMap = WeededAst.Expression.VarOrDef(qname, loc)
+
+      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+          // No pattern match.
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe.map(visitType), loc)
+          val lambda = WeededAst.Expression.Lambda(fparam, body, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
+          WeededAst.Expression.Apply(inner, value, loc)
+        case (pat, value, body) =>
+          // Full-blown pattern match.
+          val lambdaIdent = Name.Ident(SourcePosition.Unknown, "pat$0", SourcePosition.Unknown)
+          val lambdaVar = WeededAst.Expression.VarOrDef(Name.mkQName(lambdaIdent), loc)
+
+          val rule = WeededAst.MatchRule(pat, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
+          val lambdaBody = WeededAst.Expression.Match(withAscription(lambdaVar, tpe), List(rule), mkSL(sp1, sp2))
+
+          val fparam = WeededAst.FormalParam(lambdaIdent, Ast.Modifiers.Empty, tpe.map(visitType), loc)
+          val lambda = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
+          val inner = WeededAst.Expression.Apply(flatMap, lambda, loc)
+          WeededAst.Expression.Apply(inner, value, loc)
       }
 
     case ParsedAst.Expression.LetRec(sp1, ident, exp1, exp2, sp2) =>
@@ -986,18 +1006,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ProcessPanic(sp1, msg, sp2) =>
       WeededAst.Expression.ProcessPanic(msg.lit, mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs0, sp2) =>
+    case ParsedAst.Expression.FixpointConstraint(sp1, con, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      mapN(visitConstraint(con)) {
+        case c => WeededAst.Expression.FixpointConstraintSet(c :: Nil, loc)
+      }
+
+    case ParsedAst.Expression.FixpointConstraintSet(sp1, cs0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       traverse(cs0)(visitConstraint) map {
-        case cs =>
-          // Map each constraint into a constraint expression.
-          val constraintExps = cs.flatten.map(WeededAst.Expression.FixpointConstraint(_, loc))
-
-          // Combine all constraint expressions using compose.
-          constraintExps.reduceLeft[WeededAst.Expression] {
-            case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
-          }
+        case cs => WeededAst.Expression.FixpointConstraintSet(cs, loc)
       }
 
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
@@ -1238,6 +1258,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, ts) =>
           WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
       }
+
+    case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Head.Union(e, mkSL(sp1, sp2))
+      }
   }
 
   /**
@@ -1270,30 +1295,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Predicate.Body.Atom(qname, e, Polarity.Negative, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Filter(sp1, exp, sp2) =>
-      // TODO: Allow arbitrary expressions as filters.
-      ???
+    case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Body.Guard(e, mkSL(sp1, sp2))
+      }
 
-    case ParsedAst.Predicate.Body.ApplyFilter(sp1, qname, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
+      val loc = mkSL(sp1, sp2)
       traverse(terms)(visitExp) map {
         case ts =>
-          // Check if the term list is empty. If so, invoke the function with the unit value.
-          if (ts.isEmpty)
-            WeededAst.Predicate.Body.Filter(qname, List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), mkSL(sp1, sp2))
-          else
-            WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
+          // Check if the argument list is empty. If so, invoke the function with the Unit value.
+          val as = if (ts.isEmpty) List(WeededAst.Expression.Unit(loc)) else ts
+          val b = WeededAst.Expression.VarOrDef(qname, loc)
+          val e = mkApplyCurried(b, as, loc)
+          WeededAst.Predicate.Body.Guard(e, loc)
       }
-
-    case ParsedAst.Predicate.Body.Functional(sp1, ident, term, sp2) =>
-      visitExp(term) map {
-        case t => WeededAst.Predicate.Body.Functional(ident, t, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Predicate.Body.NotEqual(sp1, ident1, ident2, sp2) =>
-      val qname = Name.mkQName("neq", sp1, sp2)
-      val t1 = WeededAst.Expression.VarOrDef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
-      val t2 = WeededAst.Expression.VarOrDef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
-      WeededAst.Predicate.Body.Filter(qname, List(t1, t2), mkSL(sp1, sp2)).toSuccess
   }
 
   /**
@@ -1391,7 +1407,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       */
     def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Constraint], WeederError] = d0 match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
-      case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
+      case d: ParsedAst.Declaration.Constraint => visitConstraint(d).map(x => x :: Nil)
       case _ => Nil.toSuccess
     }
 
@@ -1498,11 +1514,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-  private def visitEff(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
-    case None => Eff.Empty.toSuccess
+  private def visitEff(effOpt: Option[ParsedAst.Effect])(implicit flix: Flix): Validation[Eff, WeederError] = effOpt match {
+    case None => Eff.Pure.toSuccess
     case Some(ParsedAst.Effect(xs)) =>
-      // TODO: Add support for effects.
-      Eff.Empty.toSuccess
+      if (xs.exists(_.name == "Pure"))
+        Eff.Impure.toSuccess
+      else if (xs.exists(_.name == "Impure"))
+        Eff.Impure.toSuccess
+      else if (xs.exists(_.name == "IO"))
+        Eff.Impure.toSuccess
+      else
+        throw InternalCompilerException(s"Unexpected effects: ${xs.mkString(" ,")}") // TODO: What effects to recognize?
   }
 
   /**
@@ -1607,14 +1629,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given signature `sig`.
     */
-  private def visitSig(sig: ParsedAst.Declaration.Sig): Validation[WeededAst.Declaration.Sig, WeederError] = sig match {
+  private def visitSig(sig: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[WeededAst.Declaration.Sig, WeederError] = sig match {
     case ParsedAst.Declaration.Sig(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
       val doc = visitDoc(doc0)
       val annVal = visitAnnotationOrProperty(ann0)
       // TODO: legalAnnotations
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
-      val tparams = tparams0.toList.map(_.ident)
+      val tparams = visitTypeParams(tparams0)
       val effVal = visitEff(effOpt)
 
       /*
@@ -1643,6 +1665,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       for {
         e <- visitExp(exp)
       } yield WeededAst.HandlerBinding(qname, e)
+  }
+
+  /**
+    * Weeds the given type parameters `tparams0`.
+    */
+  private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
+    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
+    case ParsedAst.TypeParams.Explicit(bounds) => WeededAst.TypeParams.Explicit(bounds.map(_.ident))
   }
 
   /**
@@ -1689,6 +1719,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def getApplyArgsCheckIfEmpty(args0: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): List[WeededAst.Expression] = args0 match {
     case Nil => List(WeededAst.Expression.Unit(mkSL(sp1, sp2)))
     case as => as
+  }
+
+  /**
+    * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
+    */
+  private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = tpe0 match {
+    case None => exp0
+    case Some(t) => WeededAst.Expression.Ascribe(exp0, visitType(t), Eff.freshEffVar(), exp0.loc)
   }
 
   /**
@@ -1784,6 +1822,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
@@ -1829,7 +1868,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ProcessSpawn(sp1, _, _) => sp1
     case ParsedAst.Expression.ProcessSleep(sp1, _, _) => sp1
     case ParsedAst.Expression.ProcessPanic(sp1, _, _) => sp1
-    case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
@@ -1912,7 +1952,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Introduces a main declaration that wraps the given constraints in a solve expression.
     */
-  private def mkMain(cs: List[WeededAst.Constraint]): WeededAst.Root = {
+  private def mkMain(cs: List[WeededAst.Constraint])(implicit flix: Flix): WeededAst.Root = {
     // Source positions and source locations for the generated main.
     val sp1 = SourcePosition.Unknown
     val sp2 = SourcePosition.Unknown
@@ -1925,16 +1965,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val ident = Name.Ident(sp1, "main", sp2)
 
     // Type and formal parameters for the generated main.
-    val tparams = Nil
+    val tparams = WeededAst.TypeParams.Explicit(Nil)
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
-    // Map each constraint into a constraint expression.
-    val constraintExps = cs.map(WeededAst.Expression.FixpointConstraint(_, loc))
-
-    // Combine all constraint expressions using compose.
-    val innerExp = constraintExps.reduceLeft[WeededAst.Expression] {
-      case (e, acc) => WeededAst.Expression.FixpointCompose(e, acc, loc)
-    }
+    // Collect all the constraints into a single constraint set.
+    val innerExp = WeededAst.Expression.FixpointConstraintSet(cs, loc)
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
@@ -1944,7 +1979,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
     val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
     val tpe = WeededAst.Type.Arrow(argumentType :: Nil, resultType, loc)
-    val eff = Eff.Empty
+    val eff = Eff.freshEffVar()
 
     // Construct the declaration.
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)

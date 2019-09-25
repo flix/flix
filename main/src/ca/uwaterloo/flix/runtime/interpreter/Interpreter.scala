@@ -316,8 +316,13 @@ object Interpreter {
     case Expression.ProcessPanic(msg, tpe, loc) =>
       throw new RuntimeException(msg)
 
-    case Expression.FixpointConstraint(c, tpe, loc) =>
-      evalConstraint(c, env0, henv0, lenv0)(flix, root)
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+      val empty = fixpoint.ConstraintSystem.of(Array.empty[fixpoint.Constraint])
+      cs.foldLeft(empty) {
+        case (v1, c) =>
+          val v2 = cast2constraintset(evalConstraint(c, env0, henv0, lenv0)(flix, root))
+          Solver.compose(v1, v2)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
@@ -749,6 +754,17 @@ object Interpreter {
       val predSym = newPredSym(pred, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
       AtomPredicate.of(predSym, true, terms)
+
+    case FinalAst.Predicate.Head.Union(exp, terms0, _, _) =>
+      val f = new function.Function[Array[Object], ProxyObject] {
+        override def apply(as: Array[Object]): ProxyObject = {
+          val clo = cast2closure(eval(exp, env0, henv0, lenv0, root))
+          // TODO: Not yet implemented.
+          throw InternalRuntimeException(s"Not yet supported.")
+        }
+      }
+      val ts = terms0.map(t => evalHeadTerm(t, env0))
+      UnionPredicate.of(f, ts.toArray)
   }
 
   /**
@@ -765,23 +781,16 @@ object Interpreter {
       val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
       AtomPredicate.of(predSym, polarity, terms)
 
-    case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
+    case FinalAst.Predicate.Body.Guard(exp, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {
         override def apply(as: Array[Object]): ProxyObject = {
-          val bool = link(sym, root).apply(as).getValue.asInstanceOf[java.lang.Boolean]
-          ProxyObject.of(bool, null, null, null)
+          val clo = cast2closure(eval(exp, env0, henv0, lenv0, root))
+          // TODO: Not yet implemented.
+          throw InternalRuntimeException(s"Not yet supported.")
         }
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
-      FilterPredicate.of(f, ts.toArray)
-
-    case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
-      val s = VarSym.of(varSym.text, varSym.getStackOffset)
-      val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
-        override def apply(as: Array[AnyRef]): Array[ProxyObject] = link(defSym, root).apply(as).getValue.asInstanceOf[Array[ProxyObject]]
-      }
-      val ts = terms.map(s => VarSym.of(s.text, s.getStackOffset))
-      FunctionalPredicate.of(s, f, ts.toArray)
+      GuardPredicate.of(f, ts.toArray)
   }
 
   /**
@@ -1011,7 +1020,7 @@ object Interpreter {
   /**
     * Returns the given array `result` with all its values wrapped in proxy object.
     */
-  private def getWrappedArray(result: AnyRef, tpe: MonoType, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
+  private def getWrappedArray(result: Any, tpe: MonoType, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
     // Wrap the array values in proxy objects.
     result match {
       case a: Array[Char] => a map (v => ProxyObject.of(Char.box(v), null, null, null))
@@ -1229,15 +1238,15 @@ object Interpreter {
   /**
     * Returns the given reference `ref` as a Java object.
     */
-  def toJava(ref: AnyRef): AnyRef = ref match {
-    case Value.Unit => scala.Unit
+  def toJava(ref: AnyRef): Any = ref match {
+    case Value.Unit => ()
     case Value.True => java.lang.Boolean.TRUE
     case Value.False => java.lang.Boolean.FALSE
-    case Value.Char(lit) => new java.lang.Character(lit)
-    case Value.Int8(lit) => new java.lang.Byte(lit)
-    case Value.Int16(lit) => new java.lang.Short(lit)
-    case Value.Int32(lit) => new java.lang.Integer(lit)
-    case Value.Int64(lit) => new java.lang.Long(lit)
+    case Value.Char(lit) => java.lang.Character.valueOf(lit)
+    case Value.Int8(lit) => java.lang.Byte.valueOf(lit)
+    case Value.Int16(lit) => java.lang.Short.valueOf(lit)
+    case Value.Int32(lit) => java.lang.Integer.valueOf(lit)
+    case Value.Int64(lit) => java.lang.Long.valueOf(lit)
     case Value.BigInt(lit) => lit
     case Value.Str(lit) => lit
     case Value.Arr(elms, tpe) =>
@@ -1268,7 +1277,6 @@ object Interpreter {
     * Returns the given reference `ref` as a Value object.
     */
   def fromJava(ref: AnyRef): AnyRef = ref match {
-    case scala.Unit => Value.Unit
     case o: java.lang.Boolean => if (o.booleanValue()) Value.True else Value.False
     case o: java.lang.Character => Value.Char(o.charValue())
     case o: java.lang.Byte => Value.Int8(o.byteValue())

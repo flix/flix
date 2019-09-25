@@ -2,6 +2,23 @@
 
 HEAD:
 
+Version 0.8:
+
+- Added Array, Channel, Random, and Path to the standard library.
+- Rewrote --doc to output JSON.
+- Accurately report negative cycles in the presence of stratified negation.
+
+Version 0.7:
+
+- Changed the syntax of constraint sets.
+- Changed syntax for sets and maps.
+- Improvements to tree shaking.
+- Check for dead and unreachable code.
+- Improved stratification of first-class constraints based on types.
+- Multiple bug fixes.
+- Upgrade to Scala 2.13
+- Added support for Gradle builds.
+
 Version 0.6:
 - Added preliminary support for a simple build system.
 

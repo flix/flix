@@ -458,11 +458,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ProcessPanic(msg, tpe, loc)
 
       //
-      // Constraint.
+      // ConstraintSet.
       //
-      case Expression.FixpointConstraint(c0, tpe, loc) =>
-        val c = visitConstraint(c0, env0)
-        Expression.FixpointConstraint(c, tpe, loc)
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint(_, env0))
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       //
       // Constraint Union.
@@ -528,6 +528,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred, env0)
         val ts = terms.map(visitHeadTerm(_, env0))
         Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     /**
@@ -539,13 +543,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val ts = terms.map(visitBodyTerm(_, env0))
         Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms.map(visitBodyTerm(_, env0))
-        Predicate.Body.Filter(sym, ts, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val t = visitHeadTerm(term, env0)
-        Predicate.Body.Functional(sym, t, loc)
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp, env0)
+        Predicate.Body.Guard(e, loc)
     }
 
     /**

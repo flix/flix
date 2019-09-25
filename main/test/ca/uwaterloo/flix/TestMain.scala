@@ -122,6 +122,18 @@ class TestMain extends FunSuite {
     assert(opts.xallowredundancies)
   }
 
+  test("--Xbenchmark-phases") {
+    val args = Array("--Xbenchmark-phases", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xbenchmarkPhases)
+  }
+
+  test("--Xbenchmark-throughput") {
+    val args = Array("--Xbenchmark-throughput", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xbenchmarkThroughput)
+  }
+
   test("--Xcore") {
     val args = Array("--Xcore", "p.flix")
     val opts = Main.parseCmdOpts(args).get

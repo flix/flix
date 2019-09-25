@@ -32,7 +32,7 @@ object Safety extends Phase[Root, Root] {
     if (errors.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(errors.toStream)
+      Validation.Failure(errors.to(LazyList))
   }
 
   /**
@@ -198,7 +198,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil
 
-    case Expression.FixpointConstraint(con, tpe, eff, loc) => checkConstraint(con)
+    case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.flatMap(checkConstraint)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
@@ -246,8 +246,8 @@ object Safety extends Phase[Root, Root] {
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       visitPredicateWithParam(pred) ::: checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
-    case Predicate.Body.Filter(sym, terms, loc) => Nil
-    case Predicate.Body.Functional(sym, term, loc) => Nil
+
+    case Predicate.Body.Guard(exp, loc) => visitExp(exp)
   }
 
   /**
@@ -284,8 +284,8 @@ object Safety extends Phase[Root, Root] {
         // Case 2: A negative atom does not positively define any variables.
         Set.empty
     }
-    case Predicate.Body.Filter(sym, terms, loc) => Set.empty
-    case Predicate.Body.Functional(sym, term, loc) => Set.empty
+
+    case Predicate.Body.Guard(exp, loc) => Set.empty
   }
 
 }

@@ -29,7 +29,7 @@ class TestSafety extends FunSuite with TestUtils {
         |rel A(x: Int)
         |rel B(x: Int)
         |
-        |def main(): Schema { A, B } = solve {
+        |def main(): #{ A, B } = solve {
         |    A(x) :- not B(x).
         |}
         |
@@ -44,7 +44,7 @@ class TestSafety extends FunSuite with TestUtils {
         |rel B(x: Int)
         |rel R(k: Int)
         |
-        |def main(): Schema { A, B, R } = solve {
+        |def main(): #{ A, B, R } = solve {
         |    R(x) :- A(x), not B(y).
         |}
         |
@@ -59,7 +59,7 @@ class TestSafety extends FunSuite with TestUtils {
         |rel B(x: Int)
         |rel R(k: Int)
         |
-        |def main(): Schema { A, B, R } = solve {
+        |def main(): #{ A, B, R } = solve {
         |    R(x) :- not A(x), not B(x).
         |}
         |
@@ -74,7 +74,7 @@ class TestSafety extends FunSuite with TestUtils {
         |rel B(x: Int)
         |rel R(k: Int)
         |
-        |def main(): Schema { A, B, R } = solve {
+        |def main(): #{ A, B, R } = solve {
         |    R(1) :- not A(x), not B(y).
         |}
         |

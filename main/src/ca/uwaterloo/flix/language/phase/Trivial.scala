@@ -25,12 +25,14 @@ import ca.uwaterloo.flix.language.errors.TrivialError.TrivialExpression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.collection.parallel.CollectionConverters._
+
 // TODO: Come up with better name.
 object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, TrivialError] = flix.phase("Trivial") {
 
-    // TODO: Introduce flag to disable
+    return root.toSuccess
 
     // Find the patterns
     val pats = Catalog.allPatterns(root, flix)
@@ -43,7 +45,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     if (trivial.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(trivial.toStream)
+      Validation.Failure(trivial.to(LazyList))
   }
 
   private object Catalog {
@@ -61,7 +63,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     val EmptyString: Expression = Expression.Str("", SL)
     val ListNil: Expression = Expression.Tag(Symbol.mkEnumSym("List"), "Nil", Unit, TInt32, Pure, SL)
 
-    def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym()(flix.genSym), TInt32, Pure, SL)
+    def mkVar()(implicit flix: Flix): Expression = Expression.Var(Symbol.freshVarSym(), TInt32, Pure, SL)
 
     def add(e1: Expression, e2: Expression): Expression =
       Binary(BinaryOperator.Plus, e1, e2, TInt32, Pure, SL)
@@ -88,7 +90,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def identity()(implicit flix: Flix): Expression = {
-      val sym = Symbol.freshVarSym()(flix.genSym)
+      val sym = Symbol.freshVarSym()(flix)
       val fparam = FormalParam(sym, Ast.Modifiers.Empty, TInt32, SL)
       val body = Var(sym, TInt32, Pure, SL)
       Lambda(fparam, body, TInt32, Pure, SL)
@@ -426,8 +428,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ProcessPanic(_, _, _, _) => Nil
 
-      case Expression.FixpointConstraint(c, _, _, _) =>
-        visitConstraint(c)
+      case Expression.FixpointConstraintSet(cs, _, _, _) =>
+        cs.flatMap(visitConstraint)
 
       case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
@@ -459,6 +461,9 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         terms.foldLeft(visitExp(pred.exp)) {
           case (acc, term) => acc ++ visitExp(term)
         }
+
+      case Head.Union(exp, _, _) =>
+        visitExp(exp)
     }
 
     /**
@@ -467,12 +472,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
     def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
       case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
 
-      case Body.Filter(_, terms, _) =>
-        terms.foldLeft(Nil: List[TrivialError]) {
-          case (acc, term) => acc ++ visitExp(term)
-        }
-
-      case Body.Functional(_, term, _) => visitExp(term)
+      case Body.Guard(exp, _) => visitExp(exp)
     }
 
     visitExp(exp0)
@@ -893,7 +893,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.ProcessPanic(msg, tpe, eff, loc) => e0
 
-        case Expression.FixpointConstraint(c, tpe, eff, loc) => ???
+        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => ???
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ???
 
