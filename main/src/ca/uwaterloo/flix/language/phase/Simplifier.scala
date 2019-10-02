@@ -1094,13 +1094,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case (TypedAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
           val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
           val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-          elms.zip(freshVars).zipWithIndex.foldRight(zero) {
-            case (((pat, name), idx), exp) =>
+          elms.zip(freshVars).foldRight(zero) {
+            case ((pat, name), exp) =>
               SimplifiedAst.Expression.Let(name,
                 SimplifiedAst.Expression.ArrayLoad(SimplifiedAst.Expression.Var(v,tpe,loc),
-                  SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc)
-                  , idx, pat.tpe, pat.loc),tpe,loc)
-                , exp, succ.tpe, loc)
+                  SimplifiedAst.Expression.Var(v, pat.tpe, pat.loc),tpe,loc), exp, succ.tpe, loc)
           }
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
