@@ -365,7 +365,7 @@ object Unification {
       def visit(x: List[Type], y: List[Type]): Result[Substitution, UnificationError] = (x, y) match {
         case (Nil, Nil) => Result.Ok(Substitution.empty)
         case (t1 :: rs1, t2 :: rs2) => unifyTypes(t1, t2) match {
-          case Result.Ok(subst1) => unifyAll(subst1(rs1), subst1(rs2)) match {
+          case Result.Ok(subst1) => visit(subst1(rs1), subst1(rs2)) match {
             case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
             case Result.Err(e) => Result.Err(e)
           }
