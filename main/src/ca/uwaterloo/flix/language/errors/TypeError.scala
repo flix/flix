@@ -34,7 +34,7 @@ sealed trait TypeError extends CompilationError {
 object TypeError {
 
   /**
-    * Mismatches Types.
+    * Mismatched Types.
     *
     * @param baseType1 the first base type.
     * @param baseType2 the second base type.
@@ -57,7 +57,7 @@ object TypeError {
   }
 
   /**
-    * Mismatches Effects.
+    * Mismatched Effects.
     *
     * @param eff1 the first effect.
     * @param eff2 the second effect.
@@ -75,7 +75,7 @@ object TypeError {
   }
 
   /**
-    * Mismatches Arity.
+    * Mismatched Arity.
     *
     * @param tpe1 the first type.
     * @param tpe2 the second type.
@@ -88,7 +88,7 @@ object TypeError {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Unable to unify the types: '" << Red(tpe1.show) << "' and '" << Red(tpe2.show) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "mismatched types.") << NewLine
+      vt << Code(loc, "mismatched arity of types.") << NewLine
     }
   }
 
