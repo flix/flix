@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
-import ca.uwaterloo.flix.util.vt._
 import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt._
 
 /**
   * A common super-type for type errors.
@@ -34,7 +34,7 @@ sealed trait TypeError extends CompilationError {
 object TypeError {
 
   /**
-    * Mismatches Types.
+    * Mismatched Types.
     *
     * @param baseType1 the first base type.
     * @param baseType2 the second base type.
@@ -57,7 +57,7 @@ object TypeError {
   }
 
   /**
-    * Mismatches Effects.
+    * Mismatched Effects.
     *
     * @param eff1 the first effect.
     * @param eff2 the second effect.
@@ -71,6 +71,24 @@ object TypeError {
       vt << ">> Unable to unify the effects: '" << Red(eff1.toString) << "' and '" << Red(eff2.toString) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched effects.") << NewLine
+    }
+  }
+
+  /**
+    * Mismatched Arity.
+    *
+    * @param tpe1 the first type.
+    * @param tpe2 the second type.
+    * @param loc  the location where the error occurred.
+    */
+  case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unable to unify the types: '" << Red(tpe1.show) << "' and '" << Red(tpe2.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "mismatched arity of types.") << NewLine
     }
   }
 
