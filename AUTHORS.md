@@ -24,3 +24,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Simon Meldahl Schmidt](https://github.com/SimonMeldahl)
 - [Miguel Angelo Nicolau Fialho](https://github.com/ma-fialho)
 - [Frederik Arp Frandsen](https://github.com/fredeaf)
+- [Quentin Stiévenart](https://github.com/acieroid)
