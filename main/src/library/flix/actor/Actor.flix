@@ -1,0 +1,2 @@
+rel Actor(name: Str)
+
