@@ -208,6 +208,8 @@ object NamedAst {
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class FixpointFold(constraints: NamedAst.Expression, init: NamedAst.Expression, f: NamedAst.Expression, tpe: MonoType, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern {

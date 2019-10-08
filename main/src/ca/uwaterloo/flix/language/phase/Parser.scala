@@ -604,7 +604,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | LetMatchStar | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
-        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve |
+        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
@@ -901,6 +901,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
+    def FixpointFold: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("fold") ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ WS ~> ParsedAst.Expression.FixpointFold
+    }
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
       def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
         atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.HandlerBinding
