@@ -221,6 +221,7 @@ object ResolvedAst {
 
     case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class FixpointFold(constraints: ResolvedAst.Expression, init: ResolvedAst.Expression, f: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
   }
 
   sealed trait Pattern {

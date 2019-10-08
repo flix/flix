@@ -467,6 +467,15 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
+        case Expression.FixpointFold(constraints, init, f, tpe, loc) =>
+          vt.text("fold(")
+          visitExp(constraints)
+          vt.text(", ")
+          visitExp(init)
+          vt.text(", ")
+          visitExp(f)
+          vt.text(")")
+
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
         case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
