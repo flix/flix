@@ -967,6 +967,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
+
+    case WeededAst.Expression.FixpointFold(constraints, init, f, loc) =>
+      mapN(visitExp(constraints, env0, tenv0), visitExp(init, env0, tenv0), visitExp(f, env0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(e1, e2, e3, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
   }
 
   /**

@@ -780,6 +780,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, evar, loc)
+
+        case NamedAst.Expression.FixpointFold(constraints, init, f, tvar, evar, loc) =>
+          for {
+            e1 <- visit(constraints, tenv0)
+            e2 <- visit(init, tenv0)
+            e3 <- visit(f, tenv0)
+          } yield ResolvedAst.Expression.FixpointFold(e1, e2, e3, tvar, evar, loc)
       }
 
       /**
