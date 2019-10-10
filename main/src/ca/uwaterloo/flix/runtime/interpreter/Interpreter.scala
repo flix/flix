@@ -346,6 +346,30 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
+      val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
+      val init = eval(exp1, env0, henv0, lenv0, root)
+      // TODO: what if it's not a closure? Do we have to cover both clo and def?
+      val f = cast2closure(eval(exp2, env0, henv0, lenv0, root)) // cast2closure or not?
+      val cs = cast2constraintset(eval(exp3, env0, henv0, lenv0, root))
+      val projected = Solver.project(predSym, cs)
+      // TODO: is there a better way to do that?
+      def toTuple(c : fixpoint.Constraint) : AnyRef = {
+        assert(c.isFact())
+        c.getHeadPredicate() match {
+            // TODO: there shouldn't be any other kind of predicate at this point?
+          case p: AtomPredicate => p.getTerms().map(t =>
+          t match {
+            // TODO: there shouldn't be any other kind of literals at this point?
+            case l: LitTerm => l.getFunction().apply(new Object)
+          })
+        }
+      }
+      // TODO: this is not yet correct and results in an java.lang.IllegalArgumentException raised from
+      cs.getFacts().foldRight(init)((c, acc) => {
+        val args = List(toTuple(c), acc)
+        invokeCloVal(f, args, env0, henv0, lenv0, root)
+      })
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)
 
     case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)
@@ -638,6 +662,21 @@ object Interpreter {
     }
   }
 
+  /**
+    * Invokes the given closure value `clo` with the given arguments (which have already been evaluated to values)
+    * TODO: this is really close to invokeClo, without the evalArgs part, there should be a better way to do this.
+    */
+  private def invokeCloVal(clo: AnyRef, args: List[AnyRef], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+    val Value.Closure(name, bindings) = cast2closure(clo)
+    val constant = root.defs(name)
+    val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
+      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+    }
+    val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
+      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+    }
+    eval(constant.exp, env2, henv0, Map.empty, root)
+  }
   /**
     * Invokes the given closure value `clo` with the given arguments `args` under the given environment `env0`.
     */
