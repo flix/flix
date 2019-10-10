@@ -574,6 +574,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
+      case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
+        val p = visitPredicateWithParam(pred)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        SimplifiedAst.Expression.FixpointFold(p, e1, e2, e3, tpe, loc)
+
       case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
     }

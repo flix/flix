@@ -346,6 +346,13 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.FixpointEntails(e1, e2, tpe, loc)
 
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
+      val p = visitPredicateWithParam(pred)
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expression.FixpointFold(p, e1, e2, e3, tpe, loc)
+
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
     case Expression.SwitchError(tpe, loc) => exp0
