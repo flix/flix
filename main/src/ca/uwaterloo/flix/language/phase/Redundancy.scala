@@ -588,6 +588,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val used1 = visitExp(exp1, env0)
       val used2 = visitExp(exp2, env0)
       used1 ++ used2
+
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, _, _, _) =>
+      val us1 = visitExp(pred.exp, env0)
+      val us2 = visitExp(exp1, env0)
+      val us3 = visitExp(exp2, env0)
+      val us4 = visitExp(exp3, env0)
+      Used.of(pred.sym) ++ us1 ++ us2 ++ us3 ++ us4
   }
 
   /**
