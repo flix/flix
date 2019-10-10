@@ -905,6 +905,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
 
         case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
+
+        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ???
       }
 
       // Check if the substitution is empty.
