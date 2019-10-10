@@ -416,6 +416,10 @@ object Stratifier extends Phase[Root, Root] {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, eff, loc)
       }
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
+      mapN(visitPredicateWithParam(pred), visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (p, e1, e2, e3) => Expression.FixpointFold(p, e1, e2, e3, tpe, eff, loc)
+      }
   }
 
   /**
@@ -654,6 +658,8 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, _, _, _) =>
+      dependencyGraphOfPredicateWithParam(pred) + dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
   }
 
   /**
