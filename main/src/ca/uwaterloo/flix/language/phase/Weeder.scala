@@ -1199,9 +1199,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Pattern.Array(sp1, pats, sp2) =>
-        /*
-         * Rewrites empty tuples to Unit and eliminate single-element tuples.
-         */
         traverse(pats)(visit) map {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }

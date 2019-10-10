@@ -1661,7 +1661,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Array(elms, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypM(elementTypes,loc);
+          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
     }
