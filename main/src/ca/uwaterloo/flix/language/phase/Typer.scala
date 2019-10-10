@@ -1231,43 +1231,35 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointFold(constraints, init, f, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, evar, loc) =>
         //
-        // constraints : #{a}    init : b   f : a' -> b -> b
+        // constraints : #{P : a | c}    init : b   f : a' -> b -> b
         // where a' is the tuple reification of relation a
         // ---------------------------------------------------
-        // fold constraints init f : b
+        // fold P init f constraints : b
         //
-        // TODO: this has to be cleaned
-        def tupleForSchema(schemaType: Type): InferMonad[Type] = {
-            schemaType match {
-              case Type.SchemaExtend(pred, tpe, Type.SchemaEmpty) =>
-                InferMonad((s: Substitution) =>
-                  pred match {
-                    case rel: Symbol.RelSym =>
-                      Ok((s, Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))))
-                    case _ => Err(TypeError.NonSchemaType(schemaType, loc))
-                  })
-              case Type.SchemaExtend(pred, tpe, a) =>
-                for {
-                  schemaType <- unifyTypM(a, Type.SchemaEmpty, loc)
-                  res <- tupleForSchema(Type.SchemaExtend(pred, tpe, schemaType))
-                } yield res
-              case _ =>
-                // TODO: this should rather be a different error (it's not that schemaType is not a Schema, but that it is not of the right form)
-                InferMonad((s: Substitution) => Err(TypeError.NonSchemaType(schemaType, loc)))
-            }
+        def tupleTypeForPred(pred: ResolvedAst.PredicateWithParam): Type = {
+          pred.sym match {
+            case rel: Symbol.RelSym =>
+              Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
+            case lat: Symbol.LatSym =>
+              /* TODO: what should be done in this case? */
+              ???
+          }
         }
+        val freshPredicateTypeVar = Type.freshTypeVar()
+        val freshRestTypeVar = Type.freshTypeVar()
         for {
-          (tpe1, eff1) <- visitExp(constraints)
-          (tpe2, eff2) <- visitExp(init)
-          (tpe3, eff3) <- visitExp(f)
-          schemaType <- unifyTypM(tpe1, mkAnySchemaType(), loc)  // tpe1 has to be a Schema type (TODO: with only one predicate)
-          tupleType <- tupleForSchema(schemaType) // tupleType is the constructed types of tuples for the relation we fold on
-          // f is of type tupleType -> tpe2 -> tpe2. It cannot have any effect.
-          fType <- unifyTypM(tpe3, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(tpe2, Eff.Pure, tpe2)), loc)
+          (initType, eff1) <- visitExp(init)
+          (fType, eff2) <- visitExp(f)
+          (constraintsType, eff3) <- visitExp(constraints)
+          // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
+          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshRestTypeVar), loc)
+          tupleType = tupleTypeForPred(pred)
+          // f is of type tupleType -> initType -> initType. It cannot have any effect.
+          fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
-          resultTyp = tpe2 // the result of the fold is tpe2
+          resultTyp = initType // the result of the fold is the same type as init
         } yield (resultTyp, resultEff)
     }
 
