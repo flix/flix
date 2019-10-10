@@ -469,6 +469,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointEntails(e1, e2, t, loc)
 
+      case SimplifiedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
+        val p = visitPredicateWithParam(pred, m)
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val e3 = visit(exp3)
+        val t = visitType(tpe)
+        FinalAst.Expression.FixpointFold(p, e1, e2, e3, t, loc)
+
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.HoleError(sym, t, loc)
