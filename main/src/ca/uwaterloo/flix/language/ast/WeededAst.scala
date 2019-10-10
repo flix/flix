@@ -202,7 +202,7 @@ object WeededAst {
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointFold(constraints: WeededAst.Expression, init: WeededAst.Expression, f: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointFold(pred: WeededAst.PredicateWithParam, init: WeededAst.Expression, f: WeededAst.Expression, constraints: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 

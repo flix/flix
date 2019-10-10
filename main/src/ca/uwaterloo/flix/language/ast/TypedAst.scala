@@ -255,7 +255,7 @@ object TypedAst {
 
     case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointFold(constraints: TypedAst.Expression, init: TypedAst.Expression, f: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointFold(pred: TypedAst.PredicateWithParam, init: TypedAst.Expression, f: TypedAst.Expression, constraints: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
   }
 

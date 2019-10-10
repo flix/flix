@@ -236,7 +236,7 @@ object FinalAst {
 
     case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointFold(constraints: FinalAst.Expression, init: FinalAst.Expression, f: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointFold(pred: FinalAst.PredicateWithParam, init: FinalAst.Expression, f: FinalAst.Expression, constraints: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
