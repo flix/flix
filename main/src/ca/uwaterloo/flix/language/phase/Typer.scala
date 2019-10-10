@@ -1591,6 +1591,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), subst0(evar), loc)
+
+      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, evar, loc) =>
+        val p = visitPredicateWithParam(pred)
+        val e1 = visitExp(init, subst0)
+        val e2 = visitExp(f, subst0)
+        val e3 = visitExp(constraints, subst0)
+        TypedAst.Expression.FixpointFold(p, e1, e2, e3, subst0(tvar), subst0(evar), loc)
     }
 
     /**
