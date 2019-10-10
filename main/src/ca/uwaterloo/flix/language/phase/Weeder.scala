@@ -1053,11 +1053,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointFold(sp1, pred, init, f, constraints, sp2) =>
+    case ParsedAst.Expression.FixpointFold(sp1, name, idx, init, f, constraints, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
-        case (e1, e2, e3) =>
-          WeededAst.Expression.FixpointFold(WeededAst.PredicateWithParam(pred, /* TODO: not sure about this argument */ WeededAst.Expression.Unit(loc)), e1, e2, e3, loc)
+      val paramExp = idx match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
+      }
+      mapN(paramExp, visitExp(init), visitExp(f), visitExp(constraints)) {
+        case (e1, e2, e3, e4) =>
+          val pred = WeededAst.PredicateWithParam(name, e1)
+          WeededAst.Expression.FixpointFold(pred, e2, e3, e4, loc)
       }
   }
 
@@ -1881,7 +1886,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
-    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _, _) => sp1
   }
 
   /**

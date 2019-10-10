@@ -894,7 +894,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointFold: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
+      SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
     }
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
       def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
