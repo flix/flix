@@ -30,6 +30,7 @@ object FormatPattern {
       case _ => tag + "(" + format(pat) + ")"
     }
     case TypedAst.Pattern.Tuple(elms, _, _) => "(" + elms.map(format).mkString(", ") + ")"
+    case TypedAst.Pattern.Array(elms, _, _) => "[" + elms.map(format).mkString(", ") + "]"
   }
 
 }

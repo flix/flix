@@ -676,6 +676,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
+    case Pattern.Array(elms,_,_) => elms.foldLeft(Set.empty[Symbol.VarSym]){
+      case (acc,pat) => acc ++ freeVars(pat)
+    }
   }
 
   /**

@@ -109,6 +109,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Match", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.flix"),
   new FlixTest("Test.Expression.Match.Guard", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Guard.flix"),
   new FlixTest("Test.Expression.Match.Wild", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Wild.flix"),
+  new FlixTest("Test.Expression.Match.Array", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Match.Array.flix"),
 
   //
   // Records.

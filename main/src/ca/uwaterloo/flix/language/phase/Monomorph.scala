@@ -513,6 +513,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Tuple(elms, tpe, loc) =>
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
+
+        case Pattern.Array(elms, tpe, loc) =>
+          val (ps,envs) = elms.map(p => visitPat(p)).unzip
+          (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_++_))
       }
 
       /**
