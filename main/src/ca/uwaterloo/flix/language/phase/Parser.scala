@@ -593,7 +593,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve |
@@ -615,6 +615,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
       SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatch
+    }
+
+    def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchStar] = rule {
+      SP ~ atomic("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -965,7 +969,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
-    Predicates.Head.Atom
+    Predicates.Head.Atom | Predicates.Head.Union
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
@@ -978,6 +982,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
         SP ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+      }
+
+      def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
+        SP ~ atomic("union") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Head.Union
       }
 
     }

@@ -262,7 +262,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val declaredScheme = defn0.sc
 
     // TODO: Some duplication
-    val argumentTypes = defn0.fparams.map(_.tpe)
+    val argumentTypes = defn0.fparams.map(_.tpe).map(openSchemaType)
 
     // TODO: Use resultEff
     val result = for (
@@ -1734,6 +1734,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
+
+    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
+      //
+      //  exp : typ
+      //  ------------------------------------------------------------
+      //  union exp : #{ ... }
+      //
+      for {
+        (typ, eff) <- inferExp(exp, program)
+        pureEff <- unifyEffM(Eff.Pure, eff, loc)
+        resultType <- unifyTypM(tvar, typ, loc)
+      } yield resultType
   }
 
   /**
@@ -1745,6 +1757,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val ts = terms.map(t => reassembleExp(t, program, subst0))
       val pred = TypedAst.PredicateWithParam(sym, e)
       TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
+
+    case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
+      val e = reassembleExp(exp, program, subst0)
+      TypedAst.Predicate.Head.Union(e, subst0(tvar), loc)
   }
 
   /**
@@ -1864,13 +1880,25 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     *
     * Performs type resolution of the declared type of each formal parameters.
     */
-  private def getSubstFromParams(params: List[ResolvedAst.FormalParam]): Unification.Substitution = {
+  private def getSubstFromParams(params: List[ResolvedAst.FormalParam])(implicit flix: Flix): Unification.Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
       case (macc, (ResolvedAst.FormalParam(sym, _, _, _), declaredType)) =>
-        macc ++ Substitution.singleton(sym.tvar, declaredType)
+        macc ++ Substitution.singleton(sym.tvar, openSchemaType(declaredType))
     }
+  }
+
+  /**
+    * Opens the given schema type `tpe0`.
+    */
+  // TODO: Open nested schema types?
+  // TODO: Replace by a more robust solution once we check type signatures more correctly.
+  def openSchemaType(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
+    case Type.SchemaEmpty => Type.freshTypeVar()
+    case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, tpe, openSchemaType(rest))
+    case Type.Apply(tpe1, tpe2) => Type.Apply(openSchemaType(tpe1), openSchemaType(tpe2))
+    case _ => tpe0
   }
 
   /**

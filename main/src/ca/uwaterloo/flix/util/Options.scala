@@ -40,6 +40,7 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
     verifier = false,
+    loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
     xnostratifier = false
@@ -69,6 +70,7 @@ object Options {
   * @param threads            selects the number of threads to use.
   * @param verbosity          selects the level of verbosity.
   * @param verifier           enables the verifier.
+  * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
   * @param xnostratifier      disables computation of stratification.
@@ -89,6 +91,7 @@ case class Options(core: Boolean,
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean,
+                   loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
                    xnostratifier: Boolean)

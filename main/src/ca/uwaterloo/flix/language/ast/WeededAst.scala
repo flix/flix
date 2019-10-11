@@ -256,6 +256,8 @@ object WeededAst {
 
       case class Atom(name: Name.QName, exp: WeededAst.Expression, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
+      case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
+
     }
 
     sealed trait Body extends WeededAst.Predicate

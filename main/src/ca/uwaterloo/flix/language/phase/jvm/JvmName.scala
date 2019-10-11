@@ -161,10 +161,8 @@ object JvmName {
         val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
 
         val AtomPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/AtomPredicate")
-        val FilterPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FilterPredicate")
-        val FunctionalPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FunctionalPredicate")
-        val TruePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/TruePredicate")
-        val FalsePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FalsePredicate")
+        val GuardPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/GuardPredicate")
+        val UnionPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/UnionPredicate")
       }
 
       object Symbol {

@@ -376,7 +376,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Expression.Var(sym, evar, loc) => tenv0.get(sym) match {
           case None => ResolvedAst.Expression.Var(sym, sym.tvar, evar, loc).toSuccess
-          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, evar, loc).toSuccess
+          case Some(tpe) =>
+            // We always open schema types.
+            ResolvedAst.Expression.Var(sym, Typer.openSchemaType(tpe), evar, loc).toSuccess
         }
 
         case NamedAst.Expression.Def(qname, tvar, evar, loc) =>
@@ -864,8 +866,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
-            ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
+            ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
           } yield ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
+
+        case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
+          for {
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
+          } yield ResolvedAst.Predicate.Head.Union(e, tvar, loc)
       }
     }
 

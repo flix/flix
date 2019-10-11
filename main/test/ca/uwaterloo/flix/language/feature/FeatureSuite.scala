@@ -36,6 +36,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Decl.Enum", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Enum.flix"),
   new FlixTest("Test.Expression.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.List.flix"),
   new FlixTest("Test.Expression.LetMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LetMatch.flix"),
+  new FlixTest("Test.Expression.LetMatchStar", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LetMatchStar.flix"),
   new FlixTest("Test.Pattern.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Pattern.List.flix"),
   new FlixTest("Test.Expression.LambdaMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LambdaMatch.flix"),
   new FlixTest("Test.Expression.Ascribe", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ascribe.flix"),
@@ -148,6 +149,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Predicate.Atom", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Atom.flix"),
   new FlixTest("Test.Predicate.Nullary", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Nullary.flix"),
   new FlixTest("Test.Predicate.Guard", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Guard.flix"),
+  new FlixTest("Test.Predicate.Union", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Union.flix"),
   new FlixTest("Test.Predicate.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Filter.flix"),
 
   //

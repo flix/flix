@@ -528,6 +528,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred, env0)
         val ts = terms.map(visitHeadTerm(_, env0))
         Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     /**

@@ -391,6 +391,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm
         Predicate.Head.Atom(p, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     /**

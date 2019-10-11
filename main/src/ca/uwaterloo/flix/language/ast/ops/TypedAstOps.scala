@@ -247,6 +247,7 @@ object TypedAstOps {
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) => visitPredicateWithParam(pred, env0) ++ terms.flatMap(visitExp(_, env0))
+      case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
     /**

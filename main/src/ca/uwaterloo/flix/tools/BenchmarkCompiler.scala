@@ -51,9 +51,9 @@ object BenchmarkCompiler {
           // Check if we are in the last iteration.
           if (i == WarmupIterations - 1) {
             val currentTime = System.currentTimeMillis() / 1000
-            val totalLines = compilationResult.getTotalLines()
+            val totalLines = compilationResult.getTotalLines().toLong
             val totalTime = compilationResult.getTotalTime()
-            val throughput = totalLines / (totalTime / 1_000_000_000)
+            val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
             println(s"${currentTime}, ${throughput}")
           }
@@ -69,7 +69,7 @@ object BenchmarkCompiler {
     */
   private def newFlix(): Flix = {
     val flix = new Flix()
-    flix.setOptions(opts = flix.options.copy(writeClassFiles = false))
+    flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
     // A subset of test cases.
     // Over time we should extend this list, but note that this will invalidate historical data.

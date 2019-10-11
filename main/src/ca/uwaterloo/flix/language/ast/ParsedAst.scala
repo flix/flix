@@ -549,6 +549,18 @@ object ParsedAst {
     case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * LetMatchStar Expression (monadic let-binding with pattern match).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param pat  the match pattern.
+      * @param tpe  the optional type annotation.
+      * @param exp1 the value expression.
+      * @param exp2 the body expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class LetMatchStar(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * LetRec Expression (recursive let-binding).
       *
       * @param sp1   the position of the first character in the expression.
@@ -1136,6 +1148,15 @@ object ParsedAst {
         * @param sp2   the position of the last character in the predicate.
         */
       case class Atom(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+
+      /**
+        * Union Predicate.
+        *
+        * @param sp1 the position of the first character in the predicate.
+        * @param exp the expression to evaluate and union with the current constraint set.
+        * @param sp2 the position of the last character in the predicate.
+        */
+      case class Union(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
     }
 
