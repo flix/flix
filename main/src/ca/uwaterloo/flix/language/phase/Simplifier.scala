@@ -1098,9 +1098,35 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
               SimplifiedAst.Expression.Let(name, SimplifiedAst.Expression.Index(SimplifiedAst.Expression.Var(v, tpe, loc), idx, pat.tpe, loc), exp, succ.tpe, loc)
           }
 
+        /**
+          * Matching an array may succeed or fail
+          *
+          * We generate an if clause checking array length for each pattern, and then for each
+          * array element we generate a fresh variable and let-binding for each variable in the
+          * array, which we load with ArrayLoad.
+          * We then recurse over the freshly generated variables as the true case of the if clause
+          */
+
+        case (TypedAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
+          val patternCheck = {
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val zero = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
+            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
+              case (((pat, name), idx), exp) =>
+                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
+                val index = SimplifiedAst.Expression.Int32(idx)
+                SimplifiedAst.Expression.Let(name,
+                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
+                  , exp, succ.tpe, loc)
+            }
+          }
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
+
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
       }
-
 
     //
     // Main computation.

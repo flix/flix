@@ -250,6 +250,8 @@ object NamedAst {
 
     case class Tuple(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
+    case class Array(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
+
   }
 
   sealed trait Predicate

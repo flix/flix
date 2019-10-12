@@ -82,6 +82,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case class Tuple(args: List[TyCon]) extends TyCon
 
+    case object Array  extends TyCon
+
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
   }
@@ -812,6 +814,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         TyCon.Enum(tag, sym, numArgs, args)
       }
       case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
+      case Pattern.Array(elm, _, _) => TyCon.Array
     }
 
     /**
