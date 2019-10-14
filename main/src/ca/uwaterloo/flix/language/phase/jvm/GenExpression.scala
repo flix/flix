@@ -1156,6 +1156,28 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
+    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Instantiate the predicate symbol.
+      newPredSym(pred, visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Compile the init argument
+      compileExpression(init, visitor, currentClass, lenv0, entryPoint)
+
+      // Compile the folded function
+      compileExpression(f, visitor, currentClass, lenv0, entryPoint)
+
+      // Compile the constraint system.
+      compileExpression(constraints, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit the fold
+      ??? // TODO
+      // Option 1: Call a method of ConstraintSystem. But that method has to be able to call function f, and to translate facts into tuples
+      // Option 2: Directly emit the code that loops over the facts, translates them into tuples, and calls function f
+      // Other options?
+
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
