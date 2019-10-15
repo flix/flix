@@ -1160,23 +1160,103 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
+      val ACC_VAR = 1
+      val FUN_VAR = 2
+      val FACTS_VAR = 3
+      val INDEX_VAR = 4
+
       // Instantiate the predicate symbol.
       newPredSym(pred, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      // stack: [predsymbol]
 
       // Compile the init argument
       compileExpression(init, visitor, currentClass, lenv0, entryPoint)
+      // stack: [predsymbol, init]
+      // Store init as the acc
+      // TODO: is it correct? What do the index correspond to?
+      visitor.visitVarInsn(ASTORE, ACC_VAR)
+      // stack: [predsymbol]
 
       // Compile the folded function
       compileExpression(f, visitor, currentClass, lenv0, entryPoint)
+      // stack: [predsymbol, f]
+      visitor.visitVarInsn(ASTORE, FUN_VAR)
+      // stack: [predsymbol]
 
       // Compile the constraint system.
       compileExpression(constraints, visitor, currentClass, lenv0, entryPoint)
+      // stack: [predsymbol, constraintsystem]
 
-      // Emit the fold
+      // The stack now contains 1. the predicate symbol, 2. the constraint system
+      // Invoke the project method on the constraint system
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project",
+        "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+      // stack: [projected]
+
+      // The stack now contains the projected constraint system
+      // Call getFacts on the constraint system
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Solver.toInternalName, "getFacts",
+        "()[Lflix/runtime/fixpoint/Constraint;", false)
+      // stack: [facts]
+      // Store the array of facts into variable 3
+      visitor.visitVarInsn(ASTORE, FACTS_VAR)
+      // stack: []
+
+      // store the current index into variable 4
+      visitor.visitInsn(ICONST_0)
+      // stack: [0]
+      visitor.visitVarInsn(ASTORE, INDEX_VAR)
+      // stack: []
+
+      // Label for the fold loop
+      val loop = new Label
+      // Label for the exit of the loop
+      val exitLabel = new Label
+
+      // Begin of the loop
+      visitor.visitLabel(loop)
+      // stack: []
+
+      // Check that the current index is < than the length of the array
+      visitor.visitVarInsn(ALOAD, INDEX_VAR) // stack: [index]
+      visitor.visitVarInsn(ALOAD, FACTS_VAR) // stack: [index, facts]
+      visitor.visitInsn(ARRAYLENGTH) // stack: [index, facts.len]
+      visitor.visitJumpInsn(IFGE, exitLabel) // stack: []
+
+      // Getting the next fact
+      ???
+
+      // Get the array of facts
+      visitor.visitVarInsn(ALOAD, FACTS_VAR)
+      // stack: [facts]
+
+      // Get the index
+      visitor.visitVarInsn(ALOAD, INDEX_VAR)
+      // stack: [facts, index]
+
+      // get facts[index]
+      visitor.visitInsn(AALOAD)
+      // stack: [constraint]
+
+      // TODO: transform the constraint into a tuple
+
+      // stack: [fact]
+
+      // Getting the acc value
+      visitor.visitVarInsn(ALOAD, ACC_VAR)
+      // stack: [fact, acc]
+
+      // Getting the function
+      visitor.visitVarInsn(ALOAD, FUN_VAR)
+      // stack: [fact, acc, fun]
+
+      // Call the function
       ??? // TODO
-      // Option 1: Call a method of ConstraintSystem. But that method has to be able to call function f, and to translate facts into tuples
-      // Option 2: Directly emit the code that loops over the facts, translates them into tuples, and calls function f
-      // Other options?
+
+      visitor.visitJumpInsn(GOTO, loop)
+
+      visitor.visitLabel(exitLabel)
+
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
