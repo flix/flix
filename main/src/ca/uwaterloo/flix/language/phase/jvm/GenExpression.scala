@@ -1160,53 +1160,43 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
-      val ACC_VAR = 1
-      val FUN_VAR = 2
-      val FACTS_VAR = 3
-      val INDEX_VAR = 4
-
       // Instantiate the predicate symbol.
       newPredSym(pred, visitor)(root, flix, currentClass, lenv0, entryPoint)
       // stack: [predsymbol]
 
       // Compile the init argument
       compileExpression(init, visitor, currentClass, lenv0, entryPoint)
-      // stack: [predsymbol, init]
-      // Store init as the acc
-      // TODO: is it correct? What do the index correspond to?
-      visitor.visitVarInsn(ASTORE, ACC_VAR)
-      // stack: [predsymbol]
+      // stack: [predsymbol, acc]
+
+      visitor.visitInsn(SWAP)
+      // stack: [acc, predsymbol]
 
       // Compile the folded function
       compileExpression(f, visitor, currentClass, lenv0, entryPoint)
-      // stack: [predsymbol, f]
-      visitor.visitVarInsn(ASTORE, FUN_VAR)
-      // stack: [predsymbol]
+      // stack: [acc, predsymbol, f]
+
+      visitor.visitInsn(SWAP)
+      // stack: [acc, f, predsymbol]
 
       // Compile the constraint system.
       compileExpression(constraints, visitor, currentClass, lenv0, entryPoint)
-      // stack: [predsymbol, constraintsystem]
+      // stack: [acc, f, predsymbol, constraintsystem]
 
-      // The stack now contains 1. the predicate symbol, 2. the constraint system
       // Invoke the project method on the constraint system
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project",
         "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
-      // stack: [projected]
+      // stack: [acc, f, projected]
 
-      // The stack now contains the projected constraint system
       // Call getFacts on the constraint system
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Solver.toInternalName, "getFacts",
         "()[Lflix/runtime/fixpoint/Constraint;", false)
-      // stack: [facts]
-      // Store the array of facts into variable 3
-      visitor.visitVarInsn(ASTORE, FACTS_VAR)
-      // stack: []
+      // stack: [acc, f, facts]
 
-      // store the current index into variable 4
+      // push the current index
       visitor.visitInsn(ICONST_0)
-      // stack: [0]
-      visitor.visitVarInsn(ASTORE, INDEX_VAR)
-      // stack: []
+      // stack: [acc, f, facts, index]
+      visitor.visitInsn(SWAP)
+      // stack: [acc, f, index, facts]
 
       // Label for the fold loop
       val loop = new Label
@@ -1215,48 +1205,50 @@ object GenExpression {
 
       // Begin of the loop
       visitor.visitLabel(loop)
-      // stack: []
+      // stack: [acc, f, index, facts]
 
       // Check that the current index is < than the length of the array
-      visitor.visitVarInsn(ALOAD, INDEX_VAR) // stack: [index]
-      visitor.visitVarInsn(ALOAD, FACTS_VAR) // stack: [index, facts]
-      visitor.visitInsn(ARRAYLENGTH) // stack: [index, facts.len]
-      visitor.visitJumpInsn(IFGE, exitLabel) // stack: []
+      visitor.visitInsn(DUP2) // stack: [acc, f, index, facts, index, facts]
+      visitor.visitInsn(ARRAYLENGTH) // stack: [acc, f, index, facts, index, facts.len]
+      // If facts.len <= index, exit the loop
+      visitor.visitJumpInsn(IF_ICMPLE, exitLabel)
 
-      // Getting the next fact
-      ???
-
-      // Get the array of facts
-      visitor.visitVarInsn(ALOAD, FACTS_VAR)
-      // stack: [facts]
-
-      // Get the index
-      visitor.visitVarInsn(ALOAD, INDEX_VAR)
-      // stack: [facts, index]
+      // stack: [acc, f, index, facts]
+      visitor.visitInsn(DUP2) // stack: [acc, f, index, facts, index, facts]
+      visitor.visitInsn(SWAP) // stack: [acc, f, index, facts, facts, index]
 
       // get facts[index]
       visitor.visitInsn(AALOAD)
-      // stack: [constraint]
+      // stack: [acc, f, index, facts, facts[index]]
 
-      // TODO: transform the constraint into a tuple
+      // Transform the constraint into a tuple
+      ??? // TODO
 
-      // stack: [fact]
+      // stack: [acc, f, index, facts, tuple]
 
-      // Getting the acc value
-      visitor.visitVarInsn(ALOAD, ACC_VAR)
-      // stack: [fact, acc]
+      // Getting the acc value at the right place
+      ??? // TODO. Does this even make sense? acc seems too far in the stack to be able to reorder it. It's also probably not the best solution in terms of stack operations.
+      // stack: [f, index, facts, acc, tuple]
 
-      // Getting the function
-      visitor.visitVarInsn(ALOAD, FUN_VAR)
-      // stack: [fact, acc, fun]
+      // Getting the folded function at the right place and keep it around
+      ??? // TODO
+      // stack: [index, facts, f, acc, facts[index], f]
 
       // Call the function
       ??? // TODO
 
+      // stack: [index, facts, acc, f]
+      // Reorder the stack for recursion
+      ??? // TODO
+      // stack: [acc, f, index, facts]
+
+
       visitor.visitJumpInsn(GOTO, loop)
 
       visitor.visitLabel(exitLabel)
-
+      // stack: [acc, f, facts]
+      visitor.visitInsn(POP2)
+      // stack: [acc]
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
