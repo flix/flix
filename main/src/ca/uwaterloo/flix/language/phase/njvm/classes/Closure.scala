@@ -16,15 +16,18 @@
 package ca.uwaterloo.flix.language.phase.njvm.classes
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Root
+import ca.uwaterloo.flix.language.ast.FinalAst.{FormalParam, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
-import ca.uwaterloo.flix.language.phase.jvm.{AsmOps, ClosureInfo, JvmClass, JvmName}
+import ca.uwaterloo.flix.language.phase.jvm.{ClosureInfo, JvmClass, JvmName, JvmOps}
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.Instructions._
 import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.MnemonicsTypes._
-import ca.uwaterloo.flix.language.phase.njvm.Mnemonics.{F, _}
-import ca.uwaterloo.flix.language.phase.njvm.NJvmType
+import ca.uwaterloo.flix.language.phase.njvm.Mnemonics._
+import ca.uwaterloo.flix.language.phase.njvm._
+import ca.uwaterloo.flix.language.phase.njvm.Api
 import ca.uwaterloo.flix.language.phase.njvm.NJvmType._
+import ca.uwaterloo.flix.language.phase.njvm.interfaces.ContinuationInterface
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm.Label
 
 import scala.reflect.runtime.universe._
 
@@ -34,7 +37,7 @@ import scala.reflect.runtime.universe._
   *
   * @param closure contains all the information about the closure
   */
-class Closure(closure: ClosureInfo)(implicit root: Root, flix: Flix) extends MnemonicsClass {
+class Closure(map: Map[JvmName, MnemonicsClass], closure: ClosureInfo)(implicit root: Root, flix: Flix) extends MnemonicsClass {
 
   //Extract the arguments and the result type from the closure
   private val MonoType.Arrow(targs, tresult) = closure.tpe
@@ -297,6 +300,407 @@ class Closure(closure: ClosureInfo)(implicit root: Root, flix: Flix) extends Mne
   private def getResultMethod[T1 <: MnemonicsPrimTypes : TypeTag]: Method1[Ref[Closure], T1] =
     new Method1(JvmModifier.InvokeVirtual, ct, "getResult")
 
+
+  val invokeMethod: VoidMethod2[Ref[Closure], Ref[Context]] = {
+
+    val defn = root.defs(closure.sym)
+    // Free variables
+    val frees = defn.formals.take(closure.freeVars.length).map(x => FreeVar(x.sym, x.tpe))
+
+    // Function parameters
+    val params = defn.formals.takeRight(defn.formals.length - closure.freeVars.length)
+    cg.mkVoidMethod2("invoke",
+      sig =>
+        sig.getArg1.LOAD[StackNil] |>>
+          DUP |>>
+          IF_ACMPEQ(
+            NEW[StackNil, Ref[MObject]](Reference(JvmName.Exception)) |>>
+              DUP |>>
+              LDC_STRING("Closure is called with a different Context") |>>
+              Api.Java.Lang.Exception.constructor.INVOKE |>>
+              THROW
+          ) |>>
+          frees.zipWithIndex.foldLeft(NO_OP[StackNil]) {
+            case (ins, (FreeVar(sym, tpe), ind)) =>
+              val erasedType = getErasedJvmType(tpe)
+              erasedType match {
+                case PrimBool =>
+                  val stackLocal = new Local[MBool](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MBool](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimChar =>
+                  val stackLocal = new Local[MChar](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MChar](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimByte =>
+                  val stackLocal = new Local[MByte](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MByte](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimShort =>
+                  val stackLocal = new Local[MShort](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MShort](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimInt =>
+                  val stackLocal = new Local[MInt](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MInt](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimLong =>
+                  val stackLocal = new Local[MLong](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MLong](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimFloat =>
+                  val stackLocal = new Local[MFloat](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MFloat](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimDouble =>
+                  val stackLocal = new Local[MDouble](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[MDouble](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case Reference(_) =>
+                  val stackLocal = new Local[Ref[MObject]](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getCloField[Ref[MObject]](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case _ => throw InternalCompilerException(s"Unexpected type $erasedType")
+              }
+          } |>>
+          params.zipWithIndex.foldLeft(NO_OP[StackNil]) {
+            case (ins, (FormalParam(sym, tpe), ind)) =>
+              val erasedType = getErasedJvmType(tpe)
+              erasedType match {
+                case PrimBool =>
+                  val stackLocal = new Local[MBool](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MBool](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimChar =>
+                  val stackLocal = new Local[MChar](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MChar](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimByte =>
+                  val stackLocal = new Local[MByte](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MByte](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimShort =>
+                  val stackLocal = new Local[MShort](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MShort](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimInt =>
+                  val stackLocal = new Local[MInt](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MInt](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimLong =>
+                  val stackLocal = new Local[MLong](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MLong](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimFloat =>
+                  val stackLocal = new Local[MFloat](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MFloat](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case PrimDouble =>
+                  val stackLocal = new Local[MDouble](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[MDouble](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case Reference(_) =>
+                  val stackLocal = new Local[Ref[MObject]](sym.getStackOffset + 3)
+                  ins |>>
+                    sig.getArg1.LOAD |>>
+                    getArgField[Ref[MObject]](ind).GET_FIELD |>>
+                    stackLocal.STORE
+                case _ => throw InternalCompilerException(s"Unexpected type $erasedType")
+              }
+          } |>>
+          (retTpe match {
+            case PrimBool =>
+              GenExpression.compileExpression[StackNil, MBool](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[MBool].PUT_FIELD
+            case PrimChar =>
+              GenExpression.compileExpression[StackNil, MChar](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[MChar].PUT_FIELD
+            case PrimByte =>
+              GenExpression.compileExpression[StackNil, MByte](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[MByte].PUT_FIELD
+            case PrimShort =>
+              GenExpression.compileExpression[StackNil, MShort](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[MShort].PUT_FIELD
+            case PrimInt =>
+              GenExpression.compileExpression[StackNil, MInt](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[MInt].PUT_FIELD
+            case PrimLong =>
+              GenExpression.compileExpression[StackNil, MLong](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                Unchecked_DUP_X2[StackNil ** MLong ** Ref[Closure], StackNil ** Ref[Closure] ** MLong ** MLong] |>>
+                POP |>>
+                getResultField[MLong].PUT_FIELD
+            case PrimFloat =>
+              GenExpression.compileExpression[StackNil, MFloat](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[MFloat].PUT_FIELD
+            case PrimDouble =>
+              GenExpression.compileExpression[StackNil, MDouble](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                Unchecked_DUP_X2[StackNil ** MDouble ** Ref[Closure], StackNil ** Ref[Closure] ** MDouble ** MDouble] |>>
+                POP |>>
+                getResultField[MDouble].PUT_FIELD
+            case Reference(_) =>
+              GenExpression.compileExpression[StackNil, Ref[MObject]](defn.exp, map, Map(), new Label()) |>>
+                sig.getArg1.LOAD |>>
+                SWAP |>>
+                getResultField[Ref[MObject]].PUT_FIELD
+            case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+          }) |>>
+          RETURN_VOID
+    )
+  }
+
+  val spawnMethod: VoidMethod1[Ref[MObject]] = {
+    val contextClass = map(getContextClassType.name).asInstanceOf[Context]
+    val contextLocal = new Local[Ref[Context]](1)
+    val continuationField = new ClassField[Ref[MObject]]("continuation", getContextClassType)
+
+    val defn = root.defs(closure.sym)
+    // Type of the function
+    val fnType = root.defs(defn.sym).tpe
+
+    // Type of the continuation interface
+    val cont =
+      retTpe match {
+        case PrimBool =>
+          getContinuationInterfaceType[MBool]
+        case PrimChar =>
+          getContinuationInterfaceType[MChar]
+        case PrimByte =>
+          getContinuationInterfaceType[MByte]
+        case PrimShort =>
+          getContinuationInterfaceType[MShort]
+        case PrimInt =>
+          getContinuationInterfaceType[MInt]
+        case PrimLong =>
+          getContinuationInterfaceType[MLong]
+        case PrimFloat =>
+          getContinuationInterfaceType[MFloat]
+        case PrimDouble =>
+          getContinuationInterfaceType[MDouble]
+        case Reference(_) =>
+          getContinuationInterfaceType[Ref[MObject]]
+        case _ => throw InternalCompilerException(s"Unexpected type $fnType")
+      }
+
+    cg.mkVoidMethod1("spawn",
+      sig =>
+        sig.getArg1.LOAD[StackNil] |>>
+          NEW[StackNil ** Ref[MObject], Ref[Context]](NJvmType.Context) |>>
+          DUP |>>
+          contextClass.defaultConstrutor.INVOKE |>>
+          contextLocal.STORE |>>
+
+          contextLocal.LOAD |>>
+          sig.getArg1.LOAD |>>
+          continuationField.PUT_FIELD |>>
+          IFNONNULL(
+            contextLocal.LOAD[StackNil ** Ref[MObject]] |>>
+              continuationField.GET_FIELD |>>
+
+              contextLocal.LOAD[StackNil ** Ref[MObject] ** Ref[MObject]] |>>
+              CONST_NULL[StackNil ** Ref[MObject] ** Ref[MObject] ** Ref[Context], Ref[MObject]] |>>
+              continuationField.PUT_FIELD |>>
+              (retTpe match {
+
+                case PrimBool =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MBool]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimChar =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MChar]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimByte =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MByte]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimShort =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MShort]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimInt =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MInt]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimLong =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MLong]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimFloat =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MFloat]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case PrimDouble =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[MDouble]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case Reference(_) =>
+                  val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+                  val invokeMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].invokeMethod
+                  CHECK_CAST2[StackNil ** Ref[MObject], Ref[MObject], Ref[ContinuationInterface[Ref[MObject]]]](cont) |>>
+                    DUP |>>
+                    ifoLocal.STORE |>>
+                    contextLocal.LOAD |>>
+                    invokeMethod.INVOKE
+                case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+              }) |>>
+
+              contextLocal.LOAD |>>
+              continuationField.GET_FIELD
+          ) |>>
+
+          (retTpe match {
+            case PrimBool =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MBool]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MBool]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Boolean.valueOf.INVOKE |>>
+                RETURN_VOID2
+
+            case PrimChar =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MChar]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MChar]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Character.valueOf.INVOKE |>>
+                RETURN_VOID2
+
+            case PrimByte =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MByte]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MByte]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Byte.valueOf.INVOKE |>>
+                RETURN_VOID2
+
+            case PrimShort =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MShort]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MShort]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Short.valueOf.INVOKE |>>
+                RETURN_VOID2
+            case PrimInt =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MInt]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MInt]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Integer.valueOf.INVOKE |>>
+                RETURN_VOID2
+            case PrimLong =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MLong]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MLong]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Long.valueOf.INVOKE |>>
+                RETURN_VOID2
+            case PrimFloat =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MFloat]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MFloat]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Float.valueOf.INVOKE |>>
+                RETURN_VOID2
+
+            case PrimDouble =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[MDouble]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[MDouble]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                Api.Java.Lang.Double.valueOf.INVOKE |>>
+                RETURN_VOID2
+
+            case Reference(_) =>
+              val ifoLocal = new Local[Ref[ContinuationInterface[Ref[MObject]]]](2)
+              val getResultMethod = map(cont.name).asInstanceOf[ContinuationInterface[Ref[MObject]]].getResultMethod
+              ifoLocal.LOAD[StackNil ** Ref[MObject]] |>>
+                getResultMethod.INVOKE |>>
+                RETURN_VOID2
+            case _ => throw InternalCompilerException(s"Unexpected type $retTpe")
+          })
+    )
+  }
+
   //Generate the class construtor
   //This method is unchecked as we can't know at the compile time the number of
   //arguments it takes. As it depends on the number of free variables the closure has.
@@ -378,6 +782,7 @@ class Closure(closure: ClosureInfo)(implicit root: Root, flix: Flix) extends Mne
           RETURN_VOID
     )
   }
+
   /**
     * Variable which generates the JvmClass (contains the class bytecode)
     */

@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
+import ca.uwaterloo.flix.language.phase.njvm.NJvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
@@ -259,7 +260,8 @@ class Flix {
       Finalize |>
       QuickChecker |>
       Verifier |>
-      JvmBackend |>
+//      JvmBackend |>
+      NJvmBackend |>
       Finish
 
     // Apply the pipeline to the parsed AST.

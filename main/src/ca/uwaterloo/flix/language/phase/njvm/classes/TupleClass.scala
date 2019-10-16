@@ -76,7 +76,7 @@ class TupleClass(map: Map[JvmName, MnemonicsClass], elms: List[NJvmType])(implic
     *   this.field1 = var2;
     * }
     */
-  val defaultConstrutor: UncheckedVoidMethod = {
+  val defaultConstructor: UncheckedVoidMethod = {
     //This method is unchecked as we don't know at compile time the number of arguments
     //The constructor calls super and sets each of the fields
     val setFields =

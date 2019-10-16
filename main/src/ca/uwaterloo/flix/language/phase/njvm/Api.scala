@@ -28,43 +28,110 @@ import ca.uwaterloo.flix.language.phase.njvm.NJvmType.Reference
 object Api {
 
   object Java {
-
+    object Math{
+      object BigIntger {
+        val constructor : VoidMethod2[Ref[MBigInt], Ref[MString]] = new VoidMethod2(JvmModifier.InvokeSpecial, NJvmType.BigInteger, "<init>")
+      }
+    }
     object Runtime {
+      object Channel {
+        val spawn : VoidMethod1[Ref[MSpawn]] = new VoidMethod1(JvmModifier.InvokeStatic, Reference(JvmName.Channel), "spawn")
+        val constructor : VoidMethod2[Ref[MChannel], MInt] = new VoidMethod2(JvmModifier.InvokeSpecial, Reference(JvmName.Channel), "<init>")
+      }
 
+      object FixPoint{
+        object Solver{
+          val entails : Method2[Ref[MConstraintSystem], Ref[MConstraintSystem], MBool] =
+            new Method2(JvmModifier.InvokeStatic, Reference(JvmName.Runtime.Fixpoint.Solver), "entails")
+
+          val compose : Method2[Ref[MConstraintSystem], Ref[MConstraintSystem], Ref[MConstraintSystem]] =
+            new Method2(JvmModifier.InvokeStatic, Reference(JvmName.Runtime.Fixpoint.Solver), "compose")
+        }
+      }
+      object HoleError{
+        val constructor1: VoidMethod3[Ref[MHoleError], Ref[MString], Ref[MRefiedSource]] =
+          new VoidMethod3(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.HoleError) , "<init>")
+        val constructor2: VoidMethod3[Ref[MObject], Ref[MString], Ref[MRefiedSource]] =
+          new VoidMethod3(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.HoleError) , "<init>")
+      }
+      object RefiedSourceLocation{
+        val constructor: VoidMethod6[Ref[MRefiedSource], Ref[MString], MInt, MInt, MInt, MInt] =
+          new VoidMethod6(JvmModifier.InvokeSpecial,Reference(JvmName.Runtime.ReifiedSourceLocation) , "<init>")
+      }
+      object ProxyObject {
+        val of : Method4[Ref[MObject], Ref[MFunction], Ref[MFunction], Ref[MFunction] , Ref[MProxyObject]] = new Method4(JvmModifier.InvokeStatic, Reference(JvmName.ProxyObject), "of")
+      }
       object Value {
-
         object Unit {
           val getInstance: Method0[Ref[MUnit]] = new Method0(JvmModifier.InvokeStatic, NJvmType.Unit, "getInstance")
         }
+      }
+    }
+    object Lang {
+      object Boolean {
+        val valueOf : Method1[MBool, Ref[MBool]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Boolean), "valueOf")
+        val booleanValue : Method1[Ref[MBool],MBool] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Boolean), "booleanValue")
 
       }
+      object Character {
+        val valueOf : Method1[MChar, Ref[MChar]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Character), "valueOf")
+        val charValue : Method1[Ref[MChar],MChar] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Character), "charValue")
 
-    }
+      }
+      object Float {
+        val valueOf : Method1[MFloat, Ref[MFloat]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Float), "valueOf")
+        val floatValue : Method1[Ref[MFloat], MFloat] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Float), "floatValue")
+      }
+      object Double {
+        val valueOf : Method1[MDouble, Ref[MDouble]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Double), "valueOf")
+        val doubleValue : Method1[Ref[MDouble],MDouble] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Double), "doubleValue")
 
-    object Lang {
+      }
+      object Byte {
+        val valueOf : Method1[MByte, Ref[MByte]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Byte), "valueOf")
+        val byteValue : Method1[Ref[MByte], MByte] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Byte), "byteValue")
+
+      }
+      object Short {
+        val valueOf : Method1[MShort, Ref[MShort]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Short), "valueOf")
+        val shortValue : Method1[Ref[MShort],MShort] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Short), "shortValue")
+
+      }
+      object Integer {
+        val valueOf : Method1[MInt, Ref[MInt]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Integer), "valueOf")
+        val intValue : Method1[Ref[MInt],MInt] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Integer), "intValue")
+
+      }
+      object Long {
+        val valueOf : Method1[MLong, Ref[MLong]] = new Method1(JvmModifier.InvokeStatic, Reference(JvmName.Long), "valueOf")
+        val longValue : Method1[Ref[MLong], MLong] = new Method1(JvmModifier.InvokeVirtual, Reference(JvmName.Long), "longValue")
+
+      }
 
       object Object {
         val constructor: VoidMethod1[Ref[MObject]] = new VoidMethod1(JvmModifier.InvokeSpecial, NJvmType.Object, "<init>")
       }
-
       object String {
-
         object equals {
           def INVOKE[S <: Stack]: F[S ** Ref[MString] ** Ref[MString]] => F[S ** MBool] =
             t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "equals", List(NJvmType.Object), NJvmType.PrimBool)
         }
 
+        object concat {
+          def INVOKE[S <: Stack]: F[S ** Ref[MString] ** Ref[MString]] => F[S ** Ref[MString]] =
+            t => t.emitInvoke(JvmModifier.InvokeVirtual, NJvmType.String.name.toInternalName, "concat", List(NJvmType.String), NJvmType.String)
+        }
       }
-
+      object Exception {
+        val constructor: VoidMethod2[Ref[MObject], Ref[MString]] =
+          new VoidMethod2(JvmModifier.InvokeSpecial, Reference(JvmName.Exception), "<init>")
+      }
       object UnsupportedOperationException {
         val constructor: VoidMethod2[Ref[MObject], Ref[MString]] =
           new VoidMethod2(JvmModifier.InvokeSpecial, Reference(JvmName.UnsupportedOperationException), "<init>")
       }
-
     }
-
   }
-
 }
 
 
