@@ -1664,6 +1664,35 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           elementType <- unifyTypAllowEmptyM(elementTypes,loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
+/*
+      case ResolvedAst.Pattern.TailSpread(elms, varSym, tvar, loc) =>
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
+          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
+        ) yield resultType
+
+      case ResolvedAst.Pattern.HeadSpread(varSym, elms, tvar, loc) =>
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
+          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
+        ) yield resultType
+
+      case ResolvedAst.Pattern.WildTailSpread(elms, tvar, loc) =>
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
+          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
+        ) yield resultType
+
+      case ResolvedAst.Pattern.WildHeadSpread(elms, tvar, loc) =>
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
+          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
+        ) yield resultType
+*/
     }
 
     visit(pat0)

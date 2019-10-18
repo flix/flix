@@ -932,7 +932,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Lit | Tuple | Array | Var
+      FNil | Tag | Lit | Tuple | Array | TailSpread | HeadSpread | Var
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -952,7 +952,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Array: Rule1[ParsedAst.Pattern.Array] = rule {
-     SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
+      SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
+    }
+
+    def TailSpread: Rule1[ParsedAst.Pattern.TailSpread] = rule {
+      SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "," ~ optWS ~ SP ~ ".." ~ Names.Variable ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.TailSpread
+    }
+
+    def HeadSpread: Rule1[ParsedAst.Pattern.HeadSpread] = rule {
+      SP ~ "[" ~ optWS  ~ Names.Variable ~ ".." ~ SP ~ optWS ~ "," ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.HeadSpread
     }
 
     def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {
