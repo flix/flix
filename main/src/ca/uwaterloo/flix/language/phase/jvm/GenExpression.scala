@@ -1222,6 +1222,79 @@ object GenExpression {
       // stack: [acc, f, index, facts, facts[index]]
 
       // Transform the constraint into a tuple
+      /* TODO: this is not yet complete, nor correct (it doesn't even compile yet)
+      // Extract the type of elements that are in the tuple
+      val tupleElmsTypes = root.relations(pred).attrs.map(_.tpe)
+      // Create a new tuple object
+      val classType= JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // stack: [acc, f, index, facts, facts[index], tupleType]
+      visitor.visitInsn(SWAP) // stack: [acc, f, index, facts, tupleType, facts[index]]
+
+      // call getHeadPredicate on the fact
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
+        "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
+      // stack [acc, f, index, facts, tupleType, headpred]
+      // cast the head predicate to an atom predicate
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.toInternalName, "cast",
+        "()Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+      // stack [acc, f, index, facts, tupleType, atompred]
+      // call getTerms on the atom predicate
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.toInternalName, "getTerms",
+        "()[Lflix/runtime/fixpoint/term/Term;", false)
+      // stack [acc, f, index, facts, tupleType, terms]
+      visitor.visitInsn(ICONST_0)
+      // stack [acc, f, index, facts, tupleType, terms, index]
+      val tupleLoop = new Label
+      val exitTupleLoop = new Label
+      visitLabel(tupleLoop)
+      visitor.visitInsn(DUP2)
+      // stack [acc, f, index, facts, tupleType, terms, index, terms, index]
+      visitor.visitInsn(SWAP)
+      // stack [acc, f, index, facts, tupleType, terms, index, index, terms]
+      visitor.visitInsn(ARRAYLENGTH)
+      // stack [acc, f, index, facts, tupleType, terms, index, index, terms.len]
+      // if terms.len <= index, exit the loop
+      visitor.visitJumpInsn(IF_ICMPLE, exitTupleLoop)
+      // stack: [acc, f, index, facts, tupleType, terms, index]
+      visitor.visitJumpInsn(SWAP)
+      // stack: [acc, f, index, facts, tupleType, index, terms]
+      visitor.visitJumpInsn(DUP_X1)
+      // stack: [acc, f, index, facts, tupleType, terms, index, terms]
+      // get terms[index]
+      visitor.visitInsn(AALOAD)
+      // stack: [acc, f, index, facts, tupleType, terms, terms[index]]
+      // cast it to a LitTerm
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.toInternalName, "cast",
+        "()Lflix/runtime/fixpoint/term/LitTerm;", false)
+      // stack: [acc, f, index, facts, tupleType, terms, litterm]
+      // call getFunction on it
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.LitTerm.toInternalName, "getFunction",
+        "()Ljava/util/function/Function;", false)
+      // stack: [acc, f, index, facts, tupleType, terms, function]
+      // call the function with a new object as argument
+      visitor.visitTypeInsn(NEW, JvmType.Object);
+      // stack: [acc, f, index, facts, tupleType, terms, function, object]
+      visitor.visitInsn(DUP)
+      // stack: [acc, f, index, facts, tupleType, terms, function, object, object]
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void))
+      // stack: [acc, f, index, facts, tupleType, terms, function, object]
+      // call apply
+      visitor.visitInsn(SWAP)
+      // stack: [acc, f, index, facts, tupleType, terms, object, function]
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Function.toInternalName, "apply",
+        "(Ljava/lang/Object;)Lflix/runtime/ProxyObject;", false)
+      // stack: [acc, f, index, facts, tupleType, terms, tupleelement]
+
+      // TODO: is it possible to have the Constrait object itself create the tuple?
+      // TODO: reorder the stack to have the right shape
+      // TODO: keep index on the stack.
+
+      visitor.visitJumpInsn(GOTO, tupleLoop)
+
+      visitLabel(exitTupleLoop)
+       */
+
       ??? // TODO
 
       // stack: [acc, f, index, facts, tuple]
