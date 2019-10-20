@@ -758,6 +758,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case TyCon.Str => "Str"
       case TyCon.Wild => "_"
       case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
+      case TyCon.Array => "Array"
       case TyCon.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TyCon.Tuple(args))
     }
 
