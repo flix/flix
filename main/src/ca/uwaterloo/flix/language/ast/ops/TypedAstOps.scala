@@ -26,6 +26,7 @@ object TypedAstOps {
     case Pattern.Str(lit, loc) => Set.empty
     case Pattern.Tag(sym, tag, pat, tpe, loc) => freeVarsOf(pat)
     case Pattern.Tuple(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
+    case Pattern.Array(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
   }
 
   /**
@@ -285,6 +286,9 @@ object TypedAstOps {
       case Pattern.Str(lit, loc) => Map.empty
       case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
       case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, elm) => macc ++ binds(elm)
+      }
+      case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
     }
