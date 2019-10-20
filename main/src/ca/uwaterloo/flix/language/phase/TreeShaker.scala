@@ -357,12 +357,13 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     reachableFunctions.add(Symbol.mkDefnSym("main"))
 
     /*
-     * (b) A function marked with @benchmark or @test is reachable.
+     * (b) A function marked with @benchmark, @test or as an entry point is reachable.
      */
     for ((sym, defn) <- root.defs) {
+      val isEntryPoint = defn.mod.isEntryPoint
       val isBenchmark = defn.ann.isBenchmark
       val isTest = defn.ann.isTest
-      if (isBenchmark || isTest) {
+      if (isEntryPoint || isBenchmark || isTest) {
         reachableFunctions.add(sym)
       }
     }
