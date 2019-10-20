@@ -382,9 +382,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Char: Rule1[ParsedAst.Literal.Char] = {
       def Normal: Rule1[String] = {
+        def Quote: Rule0 = rule("'")
         def Backslash: Rule0 = rule("\\")
         rule {
-          capture(!"'" ~ !Backslash ~ CharPredicate.All)
+          capture(!Quote ~ !Backslash ~ CharPredicate.All)
         }
       }
 
