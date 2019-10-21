@@ -1,6 +1,7 @@
 // TODO: Currently this file crashes the flix compiler due to the issues:
 
 // TODO [Synthesize]: Ensure that there is proper equality on records.
+// TODO [Synthesize]: Ensure that there is proper equality on lambdas.
 // TODO [Synthesize]: Ensure that there is proper equality on channels.
 
 
@@ -13,10 +14,10 @@ pub enum ActorResult[a] {
     case Crashed(a)
 }
 
-pub enum ActorMsg[a] {
+pub enum ActorMsg {
     case Start,
     case Stop,
-    case Msg(a)
+    case Msg(Str)
 }
 
 pub enum ActorSystem {
@@ -26,7 +27,7 @@ pub enum ActorSystem {
 
 // TODO: Define core relations here:
 // -----------------------------------------------------------------------------------------------
-pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg[s]], actor: s -> ActorResult[s])
+pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: s -> ActorResult[s])
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
 pub rel Crashed(actorName: Str)
@@ -48,17 +49,17 @@ pub def start(a: ActorSystem): Unit =
     // TODO: 4. Return a value that can be used for shutdown.
     ()
 
-pub def startActor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg[s]], actor: s -> ActorResult[s]): Unit =
+pub def startActor[s](_actorName: Str, _initialState: s, _mailbox: Channel[ActorMsg], _actor: s -> ActorResult[s]): Unit =
     // TODO: Spawn the actor using the initial state.
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
     ()
 
-pub def stop(a: ActorSystem): Unit =
+pub def stop(_a: ActorSystem): Unit =
     // TODO: Not unlike start, but also needs some running description of the actor system.
     ()
 
-pub def react(a: ActorSystem): Unit =
+pub def react(_a: ActorSystem): Unit =
     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
     ()
 
@@ -68,7 +69,7 @@ pub def react(a: ActorSystem): Unit =
 // -----------------------------------------------------------------------------------------------
 namespace CounterActorSystem{
 
-    def counterActor(n: Int, m: Channel[ActorMsg[Int]]): ActorResult[Int] =
+    pub def counterActor(n: Int, m: Channel[ActorMsg]): ActorResult[Int] =
         match <- m {
             case Start => ??? // TODO: Need to reply that we have started.
             case Stop => ???

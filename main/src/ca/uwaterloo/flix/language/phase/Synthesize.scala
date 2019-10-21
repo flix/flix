@@ -509,6 +509,15 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Cst(TypeConstructor.Str) => default
 
         case _ =>
+
+          //
+          // Channel Case.
+          //
+          if (isChannel(tpe)) {
+            val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
+            return Expression.NativeMethod(method, List(exp1, exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
+          }
+
           //
           // Enum Case.
           //
@@ -747,6 +756,15 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Arrow(_, l), _) => Expression.Int32(123, sl)
 
         case _ =>
+
+          //
+          // Channel Case.
+          //
+          if (isChannel(tpe)) {
+            val method = classOf[java.lang.Object].getMethod("hashCode")
+            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
+          }
+
           //
           // Enum case.
           //
@@ -1209,6 +1227,14 @@ object Synthesize extends Phase[Root, Root] {
       */
     def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
       case Type.Arrow(_, _) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a channel type.
+      */
+    def isChannel(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Cst(TypeConstructor.Channel) => true
       case _ => false
     }
 
