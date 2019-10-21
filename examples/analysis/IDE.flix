@@ -50,7 +50,7 @@ namespace IDE {
 
   def compose(t1: Transformer, t2: Transformer): Transformer = match (t1, t2) with {
     case (_,Transformer.BotTrans) => Transformer.BotTrans
-    case (Transformer.BotTrans, Transformer.NonBotTrans(a, b, c)) => match c with {
+    case (Transformer.BotTrans, Transformer.NonBotTrans(_, _, c)) => match c with {
       case Value.Bot => Transformer.BotTrans
       case Value.Top => Transformer.NonBotTrans(0,0,Value.Top)
       case Value.Cst(cc) => Transformer.NonBotTrans(0,cc,c)
@@ -85,7 +85,7 @@ namespace IDE {
 
     def transleq(e1: Transformer, e2: Transformer): Bool = e2 == translub(e1, e2)
 
-    def transglb(e1: Transformer, e2: Transformer): Transformer = ???: Transformer
+    def transglb(_: Transformer, _: Transformer): Transformer = ???: Transformer
 
     let Transformer<> = (Transformer.BotTrans, ???: Transformer, transequ, transleq, translub, transglb)
 
@@ -117,7 +117,7 @@ namespace IDE {
 
     // Rules
     @test
-    def test(): Schema { EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, JumpFn, SummaryFn, ResultProc, InProc, Results } = solve {
+    def test(): #{ EshIntra, EshCallStart, EshEndReturn, CFG, CallGraph, StartNode, EndNode, JumpFn, SummaryFn, ResultProc, InProc, Results } = solve #{
         // nodes in a given procedure
         InProc(p,start) :- StartNode(p, start).
         InProc(p,m) :- InProc(p,n), CFG(n,m).

@@ -45,6 +45,11 @@ namespace String {
     ///
     pub def startsWith(s1: Str, s2: Str): Bool = native method java.lang.String.startsWith(s1, s2) as Bool
 
+    ///
+    /// Splits the string `s` around matches of the regular expression `r`.
+    ///
+    pub def split(s: Str, r: Str): Array[Str] = native method java.lang.String.split(s, r) as Array[Str]
+
     //
     // Returns the lower case version of the string `s`.
     //
@@ -59,5 +64,11 @@ namespace String {
     /// Returns the given string `s` as a list of characters.
     ///
     pub def toList(s: Str): List[Char] = List.map(i -> charAt(i, s), List.range(0, length(s)))
+
+    ///
+    /// Returns a copy of the string `s` without trailing and leading whitespaces.
+    /// Returns a new empty string if there is no characters in `s`.
+    ///
+    pub def trim(s: Str): Str = native method java.lang.String.trim(s) as Str
 
 }

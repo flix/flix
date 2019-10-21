@@ -28,7 +28,7 @@ namespace Set {
     ///
     /// Returns the size of `xs`.
     ///
-    pub def size[a](xs: Set[a]): Int32 =
+    pub def size(xs: Set[a]): Int32 =
         let Set(s) = xs;
             List.length(s)
 
@@ -39,27 +39,29 @@ namespace Set {
 
     ///
     /// Returns the empty set.
-    /// `#{}` is syntactic sugar for `empty` (`#{} = empty()`).
     ///
-    pub def empty[a](): Set[a] = Set(Nil)
+    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
+    ///
+    pub def empty(): Set[a] = Set(Nil)
 
     ///
     /// Returns the singleton set containing `x`.
-    /// `#{x}` is syntactic sugar for `singleton` (`#{x} = singleton(x)`).
     ///
-    pub def singleton[a](x: a): Set[a] = Set(x :: Nil)
+    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
+    ///
+    pub def singleton(x: a): Set[a] = Set(x :: Nil)
 
     ///
     /// Adds `x` to `xs`.
     ///
-    pub def insert[a](x: a, xs: Set[a]): Set[a] =
+    pub def insert(x: a, xs: Set[a]): Set[a] =
         let Set(s) = xs;
             if (List.memberOf(x, s)) xs else Set(x :: s)
 
     ///
     /// Removes `x` from `xs`.
     ///
-    pub def delete[a](x: a, xs: Set[a]): Set[a] =
+    pub def delete(x: a, xs: Set[a]): Set[a] =
         let Set(s) = xs;
             Set(List.filter(e -> e != x, s))
 
@@ -71,45 +73,45 @@ namespace Set {
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
     ///
-    pub def isEmpty[a](xs: Set[a]): Bool =
+    pub def isEmpty(xs: Set[a]): Bool =
         let Set(s) = xs;
             List.isEmpty(s)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
-    pub def memberOf[a](x: a, xs: Set[a]): Bool =
+    pub def memberOf(x: a, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.memberOf(x, s)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
-    pub def isSubsetOf[a](xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
+    pub def isSubsetOf(xs: Set[a], ys: Set[a]): Bool = forall(x -> memberOf(x, ys), xs)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
-    pub def isProperSubsetOf[a](xs: Set[a], ys: Set[a]): Bool = if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false
+    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false
 
     ///
     /// Alias for `findLeft`.
     ///
-    pub def find[a](f: a -> Bool, xs: Set[a]): Option[a] =
+    pub def find(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.find(f, s)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
     ///
-    pub def findLeft[a](f: a -> Bool, xs: Set[a]): Option[a] =
+    pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.findLeft(f, s)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
     ///
-    pub def findRight[a](f: a -> Bool, xs: Set[a]): Option[a] =
+    pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.findRight(f, s)
 
@@ -121,30 +123,32 @@ namespace Set {
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold[a,b](f: (b, a) -> b, s: b, xs: Set[a]): b =
+    pub def fold(f: (b, a) -> b, s: b, xs: Set[a]): b =
         let Set(es) = xs;
             List.fold(f, s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft[a,b](f: (b, a) -> b, s: b, xs: Set[a]): b =
+    pub def foldLeft(f: (b, a) -> b, s: b, xs: Set[a]): b =
         let Set(es) = xs;
             List.foldLeft(f, s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight[a,b](f: (a, b) -> b, s: b, xs: Set[a]): b =
+    pub def foldRight(f: (a, b) -> b, s: b, xs: Set[a]): b =
         let Set(es) = xs;
             List.foldRight(f, s, es)
 
     ///
     /// Alias for `reduceLeftOpt`.
     ///
-    pub def reduce[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+    pub def reduce(f: (a, a) -> a, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.reduce(f, s)
 
@@ -153,7 +157,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceLeft[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+    pub def reduceLeft(f: (a, a) -> a, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.reduceLeft(f, s)
 
@@ -162,7 +166,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceRight[a](f: (a, a) -> a, xs: Set[a]): Option[a] =
+    pub def reduceRight(f: (a, a) -> a, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.reduceRight(f, s)
 
@@ -174,31 +178,33 @@ namespace Set {
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
-    pub def count[a](f: a -> Bool, xs: Set[a]): Int32 =
+    pub def count(f: a -> Bool, xs: Set[a]): Int32 =
         let Set(s) = xs;
             List.count(f, s)
 
     ///
     /// Returns the union of the elements in `xs`.
     ///
-    pub def flatten[a](xs: Set[Set[a]]): Set[a] = match xs with {
+    pub def flatten(xs: Set[Set[a]]): Set[a] = match xs {
         case Set(Nil) => empty()
         case Set(x :: rs) => union(x, flatten(Set(rs)))
     }
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    ///
     /// Returns `false` if `xs` is the empty set.
     ///
-    pub def exists[a](f: a -> Bool, xs: Set[a]): Bool =
+    pub def exists(f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.exists(f, s)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    ///
     /// Returns `true` if `xs` is the empty set.
     ///
-    pub def forall[a](f: a -> Bool, xs: Set[a]): Bool =
+    pub def forall(f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.forall(f, s)
 
@@ -210,28 +216,28 @@ namespace Set {
     ///
     /// Returns the union of `xs` and `ys`.
     ///
-    pub def union[a](xs: Set[a], ys: Set[a]): Set[a] =
+    pub def union(xs: Set[a], ys: Set[a]): Set[a] =
         let Set(s) = xs;
             List.foldRight(insert, ys, s)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
-    pub def intersection[a](xs: Set[a], ys: Set[a]): Set[a] =
+    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] =
         let Set(s) = xs;
             List.foldRight((x, y) -> if (memberOf(x, ys)) insert(x, y) else y, empty(), s)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
-    pub def difference[a](xs: Set[a], ys: Set[a]): Set[a] =
+    pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
         let Set(s) = xs;
             List.foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
 
     ///
     /// Returns all subsets of `xs`.
     ///
-    pub def subsets[a](xs: Set[a]): Set[Set[a]] =
+    pub def subsets(xs: Set[a]): Set[Set[a]] =
         let Set(s) = xs;
             Set(List.map(x -> Set(x), List.subsequences(s)))
 
@@ -243,15 +249,16 @@ namespace Set {
     ///
     /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
     ///
-    pub def filter[a](f: a -> Bool, xs: Set[a]): Set[a] =
+    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
         let Set(s) = xs;
             Set(List.filter(f, s))
 
     ///
     /// Returns the result of applying `f` to every element in `xs`.
+    ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def map[a, b](f: a -> b, xs: Set[a]): Set[b] = match xs with {
+    pub def map(f: a -> b, xs: Set[a]): Set[b] = match xs {
         case Set(Nil) => Set(Nil)
         case Set(x :: rs) => insert(f(x), map(f, Set(rs)))
     }
@@ -259,24 +266,25 @@ namespace Set {
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
-    pub def flatMap[a,b](f: a -> Set[b], xs: Set[a]): Set[b] = match xs with {
+    pub def flatMap(f: a -> Set[b], xs: Set[a]): Set[b] = match xs {
         case Set(Nil) => Set(Nil)
         case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
     }
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `xs`.
-    /// Otherwise, returns `xs`.
+    /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
+    ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def replace[a](x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
+    //
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
     ///
-    pub def partition[a](f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
+    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
         let Set(s) = xs;
         let (ys, zs) = List.partition(f, s);
             (Set(ys), Set(zs))
@@ -289,16 +297,17 @@ namespace Set {
     ///
     /// Returns the set `xs` as a list.
     ///
-    pub def toList[a](xs: Set[a]): List[a] =
+    pub def toList(xs: Set[a]): List[a] =
         let Set(s) = xs;
             s
 
     ///
     /// Returns the association set `xs` as a map.
+    ///
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap[a, b](xs: Set[(a, b)]): Map[a, b] =
+    pub def toMap(xs: Set[(a, b)]): Map[a, b] =
         let Set(s) = xs;
             List.toMap(s)
 
@@ -310,5 +319,5 @@ namespace Set {
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
     ///
-    pub def eq[a](xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
+    pub def __eq(xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
 }

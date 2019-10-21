@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
+import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy, Source}
 import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
 
 object SimplifiedAst {
@@ -33,7 +32,8 @@ object SimplifiedAst {
                   latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym])
+                  reachable: Set[Symbol.DefnSym],
+                  sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation)
 
@@ -238,21 +238,21 @@ object SimplifiedAst {
 
     case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ProcessSpawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Sleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ProcessSleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointConstraint(c: SimplifiedAst.Constraint, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ProcessPanic(msg: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class FixpointConstraintSet(cs: List[SimplifiedAst.Constraint], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointCompose(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointSolve(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointSolve(exp: SimplifiedAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointProject(pred: SimplifiedAst.PredicateWithParam, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -276,6 +276,8 @@ object SimplifiedAst {
 
       case class Atom(pred: SimplifiedAst.PredicateWithParam, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
+      case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+
     }
 
     sealed trait Body extends SimplifiedAst.Predicate
@@ -284,9 +286,7 @@ object SimplifiedAst {
 
       case class Atom(pred: SimplifiedAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class Filter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
-
-      case class Functional(sym: Symbol.VarSym, term: SimplifiedAst.Term.Head, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Guard(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
     }
 
@@ -330,7 +330,11 @@ object SimplifiedAst {
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body])
 
-  sealed trait ConstraintParam
+  sealed trait ConstraintParam {
+    def sym: Symbol.VarSym
+    def tpe: Type
+    def loc: SourceLocation
+  }
 
   object ConstraintParam {
 

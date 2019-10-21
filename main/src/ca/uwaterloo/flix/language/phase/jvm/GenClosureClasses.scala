@@ -5,6 +5,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
+import scala.collection.parallel.CollectionConverters._
 
 /**
   * Generates byte code for the closure classes.
@@ -18,13 +19,13 @@ object GenClosureClasses {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
-    closures.foldLeft(Map.empty[JvmName, JvmClass]) {
+    closures.par.aggregate(Map.empty[JvmName, JvmClass])({
       case (macc, closure) =>
         val jvmType = JvmOps.getClosureClassType(closure)
         val jvmName = jvmType.name
         val bytecode = genByteCode(closure)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
-    }
+    }, _ ++ _)
   }
 
   /**
@@ -114,6 +115,9 @@ object GenClosureClasses {
     // Spawn method of the class
     compileSpawnMethod(visitor, classType, root.defs(closure.sym), resultType)
 
+    // Execute method of the class.
+    compileApplyMethod(visitor, classType, root.defs(closure.sym), targs, tresult)
+
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
 
@@ -156,7 +160,7 @@ object GenClosureClasses {
 
     // invoke the constructor of the `Exception` object
     invokeMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Exception.toInternalName, "<init>",
-    AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+      AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
     // throw the exception
     invokeMethod.visitInsn(ATHROW)
@@ -327,6 +331,115 @@ object GenClosureClasses {
     AsmOps.boxIfPrim(mv, resultType)
 
     mv.visitInsn(RETURN)
+    mv.visitMaxs(65535, 65535)
+    mv.visitEnd()
+  }
+
+
+  /**
+    * Spawn method for the given `defn` and `classType`.
+    */
+  private def compileApplyMethod(visitor: ClassWriter,
+                                 classType: JvmType.Reference,
+                                 defn: Def, targs: List[MonoType], resultType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+    // The JVM result type
+    val jvmResultType = JvmOps.getErasedJvmType(resultType)
+
+    // Method header
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
+      AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
+
+    // Iterate through each formal argument and invoke `setArg`.
+    for ((tpe, index) <- targs.zipWithIndex) {
+      // Load the `this` value (to be used for the call below).
+      mv.visitVarInsn(ALOAD, 0)
+
+      // Load the array.
+      mv.visitVarInsn(ALOAD, 1)
+
+      // Cast to an array.
+      mv.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
+
+      // Push the array index.
+      mv.visitIntInsn(BIPUSH, index)
+
+      // Load the element at the index.
+      mv.visitInsn(AALOAD)
+
+      // Invoke the setArgX method on `this`.
+      val argErasedType = JvmOps.getErasedJvmType(tpe)
+
+      // Cast and unbox.
+      AsmOps.castIfNotPrimAndUnbox(argErasedType, mv)
+
+      // Invoke setArgX.
+      mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, s"setArg$index", AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), false)
+    }
+
+    // Put this on stack
+    mv.visitVarInsn(ALOAD, 0)
+
+    // Create new Context
+    mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
+    mv.visitVarInsn(ASTORE, 1)
+
+    // Label for the loop
+    val loop = new Label
+
+    // Type of the function
+    val fnType = root.defs(defn.sym).tpe
+
+    // Type of the continuation interface
+    val cont = JvmOps.getContinuationInterfaceType(fnType)
+
+    // Store this ifo to the continuation field.
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitVarInsn(ALOAD, 0)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Begin of the loop
+    mv.visitLabel(loop)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Setting `continuation` field of global to `null`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Cast to the continuation
+    mv.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+
+    // Duplicate
+    mv.visitInsn(DUP)
+
+    // Save it on the IFO local variable
+    mv.visitVarInsn(ASTORE, 2)
+
+    // Call invoke
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    mv.visitJumpInsn(IFNONNULL, loop)
+
+    // Load IFO from local variable and invoke `getResult` on it
+    mv.visitVarInsn(ALOAD, 2)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, jvmResultType), true)
+    AsmOps.boxIfPrim(mv, jvmResultType)
+
+    // Construct a proxy object.
+    AsmOps.newProxyObject(resultType, mv)
+
+    // Return the proxy object.
+    mv.visitInsn(ARETURN)
+
     mv.visitMaxs(65535, 65535)
     mv.visitEnd()
   }

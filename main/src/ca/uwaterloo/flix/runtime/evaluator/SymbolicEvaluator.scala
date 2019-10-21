@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.evaluator
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
@@ -80,11 +80,11 @@ object SymbolicEvaluator {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Environment, lenv0: LabelEnv, enumerator: Enumerator, root: FinalAst.Root)(implicit genSym: GenSym): Context = {
+  def eval(exp0: Expression, env0: Environment, lenv0: LabelEnv, enumerator: Enumerator, root: FinalAst.Root)(implicit flix: Flix): Context = {
     /*
       * Local visitor.
       */
-    def eval(pc0: PathConstraint, exp0: Expression, env0: Environment, lenv0: LabelEnv, qua0: Quantifiers)(implicit genSym: GenSym): Context = exp0 match {
+    def eval(pc0: PathConstraint, exp0: Expression, env0: Environment, lenv0: LabelEnv, qua0: Quantifiers)(implicit flix: Flix): Context = exp0 match {
       /**
         * Unit.
         */
@@ -857,43 +857,19 @@ object SymbolicEvaluator {
         */
       case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      // TODO SJ:
       case Expression.NewChannel(tpe, exp, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.GetChannel(exp ,tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.GetChannel(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.PutChannel(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.SelectChannel(rules, default, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.Spawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.Sleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.ProcessSpawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.ProcessSleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.ProcessPanic(msg, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Constraint.
-        */
-      case Expression.FixpointConstraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * ConstraintUnion.
-        */
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * Fixpoint Solve.
-        */
-      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * Fixpoint Project.
-        */
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointProject(pred, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * Fixpoint Entails.
-        */
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * User Error.
-        */
-      case Expression.UserError(tpe, loc) => throw new NotImplementedError(loc.reified)
 
       /**
         * Hole Error.
@@ -1087,7 +1063,7 @@ object SymbolicEvaluator {
       *
       * Evaluates from left to right.
       */
-    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = {
+    def evaln(pc0: PathConstraint, xs: Iterable[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = {
       /*
        * Local visitor.
        */

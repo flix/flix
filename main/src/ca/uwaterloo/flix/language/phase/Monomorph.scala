@@ -77,7 +77,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visit(t: Type): Type = t match {
         case Type.Cst(tc) => Type.Cst(tc)
         case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
-        case Type.Arrow(l) => Type.Arrow(l)
+        case Type.Arrow(f, l) => Type.Arrow(f, l)
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
@@ -103,8 +103,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
-    implicit val _ = flix.genSym
-
     /**
       * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
       *
@@ -164,7 +162,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeEffSym(sym, subst0(tpe))
           Expression.Eff(newSym, subst0(tpe), eff, loc)
 
-        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc)
+        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
         case Expression.True(loc) => Expression.True(loc)
@@ -209,7 +207,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
-          lookup("eq", eqType) match {
+          lookup("__eq", eqType) match {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
@@ -260,6 +258,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e3 = visitExp(exp3, env0)
           Expression.IfThenElse(e1, e2, e3, subst0(tpe), eff, loc)
 
+        case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.Stm(e1, e2, subst0(tpe), eff, loc)
+
         case Expression.Match(exp, rules, tpe, eff, loc) =>
           val rs = rules map {
             case MatchRule(pat, guard, body) =>
@@ -308,18 +311,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
           val e = visitExp(elm, env0)
           val ln = visitExp(len, env0)
-          Expression.ArrayNew(e, ln, tpe, eff, loc)
+          Expression.ArrayNew(e, ln, subst0(tpe), eff, loc)
 
         case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i = visitExp(index, env0)
-          Expression.ArrayLoad(b, i, tpe, eff, loc)
+          Expression.ArrayLoad(b, i, subst0(tpe), eff, loc)
 
         case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i = visitExp(index, env0)
           val e = visitExp(elm, env0)
-          Expression.ArrayStore(b, i, e, tpe, eff, loc)
+          Expression.ArrayStore(b, i, e, subst0(tpe), eff, loc)
 
         case Expression.ArrayLength(base, tpe, eff, loc) =>
           val b = visitExp(base, env0)
@@ -329,7 +332,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val b = visitExp(base, env0)
           val i1 = visitExp(startIndex, env0)
           val i2 = visitExp(endIndex, env0)
-          Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+          Expression.ArraySlice(b, i1, i2, subst0(tpe), eff, loc)
 
         case Expression.VectorLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
@@ -337,38 +340,38 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.VectorNew(elm, len, tpe, eff, loc) =>
           val e = visitExp(elm, env0)
-          Expression.VectorNew(e, len, tpe, eff, loc)
+          Expression.VectorNew(e, len, subst0(tpe), eff, loc)
 
         case Expression.VectorLoad(base, index, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.VectorLoad(b, index, tpe, eff, loc)
+          Expression.VectorLoad(b, index, subst0(tpe), eff, loc)
 
         case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val e = visitExp(elm, env0)
-          Expression.VectorStore(b, index, e, tpe, eff, loc)
+          Expression.VectorStore(b, index, e, subst0(tpe), eff, loc)
 
         case Expression.VectorLength(base, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.VectorLength(b, tpe, eff, loc)
+          Expression.VectorLength(b, subst0(tpe), eff, loc)
 
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i2 = visitExp(endIndex, env0)
-          Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
+          Expression.VectorSlice(b, startIndex, i2, subst0(tpe), eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Ref(e, tpe, eff, loc)
+          Expression.Ref(e, subst0(tpe), eff, loc)
 
         case Expression.Deref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Deref(e, tpe, eff, loc)
+          Expression.Deref(e, subst0(tpe), eff, loc)
 
         case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.Assign(e1, e2, tpe, eff, loc)
+          Expression.Assign(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -378,7 +381,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val e = visitExp(handler, env0)
               HandlerBinding(specializedSym, e)
           }
-          Expression.HandleWith(e, bs, tpe, eff, loc)
+          Expression.HandleWith(e, bs, subst0(tpe), eff, loc)
 
         case Expression.Existential(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
@@ -446,30 +449,29 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
 
-        case Expression.Spawn(exp, tpe, eff, loc) =>
+        case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Spawn(e, subst0(tpe), eff, loc)
+          Expression.ProcessSpawn(e, subst0(tpe), eff, loc)
 
-        case Expression.Sleep(exp, tpe, eff, loc) =>
+        case Expression.ProcessSleep(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Sleep(e, subst0(tpe), eff, loc)
+          Expression.ProcessSleep(e, subst0(tpe), eff, loc)
 
-        case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
-          val Constraint(cparams0, head0, body0, loc) = c0
-          val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
-          val head = visitHeadPredicate(head0, env0 ++ env1)
-          val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
-          val c = Constraint(cparams, head, body, loc)
-          Expression.FixpointConstraint(c, subst0(tpe), eff, loc)
+        case Expression.ProcessPanic(msg, tpe, eff, loc) =>
+          Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
+
+        case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+          val cs = cs0.map(visitConstraint(_, env0))
+          Expression.FixpointConstraintSet(cs, subst0(tpe), eff, loc)
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
-        case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointSolve(e, tpe, eff, loc)
+          Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
         case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
           val p = visitPredicateWithParam(pred, env0)
@@ -480,8 +482,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.FixpointEntails(e1, e2, tpe, eff, loc)
-
-        case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }
 
       /**
@@ -513,6 +513,21 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Tuple(elms, tpe, loc) =>
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
+
+        case Pattern.Array(elms, tpe, loc) =>
+          val (ps,envs) = elms.map(p => visitPat(p)).unzip
+          (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_++_))
+      }
+
+      /**
+        * Specializes the given constraint `c0` w.r.t. the given environment and current substitution.
+        */
+      def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): Constraint = {
+        val Constraint(cparams0, head0, body0, loc) = c0
+        val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
+        val head = visitHeadPredicate(head0, env0 ++ env1)
+        val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
+        Constraint(cparams, head, body, loc)
       }
 
       /**
@@ -523,6 +538,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val p = visitPredicateWithParam(pred, env0)
           val ts = terms.map(t => visitExp(t, env0))
           Predicate.Head.Atom(p, ts, tpe, loc)
+
+        case Predicate.Head.Union(exp, tpe, loc) =>
+          val e = visitExp(exp, env0)
+          Predicate.Head.Union(e, tpe, loc)
       }
 
       /**
@@ -554,14 +573,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             val ts = terms map visitPatTemporaryToBeRemoved
             Predicate.Body.Atom(pred, polarity, ts, tpe, loc)
 
-          case Predicate.Body.Filter(sym, terms, loc) =>
-            val ts = terms.map(t => visitExp(t, env0))
-            Predicate.Body.Filter(sym, ts, loc)
-
-          case Predicate.Body.Functional(sym, term, loc) =>
-            val s = env0(sym)
-            val t = visitExp(term, env0)
-            Predicate.Body.Functional(s, t, loc)
+          case Predicate.Body.Guard(exp, loc) =>
+            val e = visitExp(exp, env0)
+            Predicate.Body.Guard(e, loc)
         }
       }
 
@@ -583,15 +597,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     def specializeDefSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
       // Lookup the definition and its declared type.
       val defn = root.defs(sym)
-      val declaredType = defn.tpe
 
-      // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
-
-      // Check if the substitution is empty, if so there is no need for specialization.
-      if (subst.isEmpty) {
+      // Check if the function is non-polymorphic.
+      if (defn.tparams.isEmpty) {
         return sym
       }
+
+      // Unify the declared and actual type to obtain the substitution map.
+      val declaredType = defn.tpe
+      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
 
       // Check whether the function definition has already been specialized.
       def2def.get((sym, tpe)) match {
@@ -624,7 +638,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val declaredType = eff.tpe
 
       // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unify(declaredType, tpe).get)
+      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
 
       // Check if the substitution is empty, if so there is no need for specialization.
       if (subst.isEmpty) {
@@ -722,7 +736,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Check the function name.
         if (name == sym.name) {
           // Check whether the type unifies.
-          if (Unification.unify(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
+          if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
             // Match found!
             matches += sym
           }

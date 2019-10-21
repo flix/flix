@@ -23,6 +23,6 @@ def testTuple07(): (BigInt, Bool, Str) = (40ii + 2ii, !(-12 < 22), if (true) "hi
 def testTuple08(): (Char, Float32, Float64) = ('a', 1.2f32, 3.4f64)
 
 @test
-def testTuple09(): (Set[Int], Set[Char]) = (#{1, 2, 3}, #{'a', 'b'})
+def testTuple09(): (Set[Int], Set[Char]) = (Set#{1, 2, 3}, Set#{'a', 'b'})
 
 

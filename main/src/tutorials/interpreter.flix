@@ -20,9 +20,6 @@ enum AExp {
     // a binary multiplication expression: e1 * e2.
     case Times(AExp, AExp),
 
-    // a binary division expression: e1 / e2.
-    case Divide(AExp, AExp),
-
     //n a if-then-else expression: if (e1) e2 else e3.
     case IfThenElse(BExp, AExp, AExp)
 }
@@ -61,7 +58,6 @@ def evalAExp(e: AExp): Int = match e with {
     case Plus(e1, e2)           => evalAExp(e1) + evalAExp(e2)
     case Minus(e1, e2)          => evalAExp(e1) - evalAExp(e2)
     case Times(e1, e2)          => evalAExp(e1) * evalAExp(e2)
-    case Divide(e1, e2)         => evalAExp(e1) / evalAExp(e2)
     case IfThenElse(e1, e2, e3) =>
         let cond = evalBExp(e1);
             if (cond) evalAExp(e2) else evalAExp(e3)
@@ -73,7 +69,7 @@ def evalAExp(e: AExp): Int = match e with {
 def evalBExp(e: BExp): Bool = match e with {
     case True           => true
     case False          => false
-    case Not(e)         => !evalBExp(e)
+    case Not(e1)        => !evalBExp(e1)
     case Conj(e1, e2)   => evalBExp(e1) && evalBExp(e2)
     case Disj(e1, e2)   => evalBExp(e1) || evalBExp(e2)
     case Eq(e1, e2)     => evalAExp(e1) == evalAExp(e2)
@@ -87,16 +83,34 @@ def evalBExp(e: BExp): Bool = match e with {
 //   $ flix <file> --main testEvalAExp1
 //
 
+@test
 def testEvalAExp1(): Int = evalAExp(Cst(42))
+
+@test
 def testEvalAExp2(): Int = evalAExp(Plus(Cst(42), Cst(21)))
+
+@test
 def testEvalAExp3(): Int = evalAExp(Minus(Cst(42), Cst(21)))
+
+@test
 def testEvalAExp4(): Int = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
+
+@test
 def testEvalAExp5(): Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
+@test
 def testEvalBExp1(): Bool = evalBExp(True)
-def testEvalBExp2(): Bool = evalBExp(Not(True))
-def testEvalBExp3(): Bool = evalBExp(Conj(True, False))
+
+@test
+def testEvalBExp2(): Bool = !evalBExp(Not(True))
+
+@test
+def testEvalBExp3(): Bool = !evalBExp(Conj(True, False))
+
+@test
 def testEvalBExp4(): Bool = evalBExp(Disj(True, False))
+
+@test
 def testEvalBExp5(): Bool = evalBExp(Neq(Cst(1), Cst(2)))
 
 //
@@ -120,9 +134,6 @@ enum Inst {
 
     // an instruction that multiplies the top two operands on the stack.
     case Mul,
-
-    // an instruction that divides the top two operands on the stack.
-    case Div,
 
     // an instruction that negates the top operand on the stack.
     case Neg,
@@ -159,10 +170,6 @@ def compileAExp(e: AExp): List[Inst] = match e with {
         let is1 = compileAExp(e1);
         let is2 = compileAExp(e2);
             is2 ::: is1 ::: Mul :: Nil
-    case Divide(e1, e2)  =>
-        let is1 = compileAExp(e1);
-        let is2 = compileAExp(e2);
-            is2 ::: is1 ::: Div :: Nil
     case IfThenElse(e1, e2, e3)  =>
         let is1 = compileBExp(e1);
         let is2 = compileAExp(e2);
@@ -176,8 +183,8 @@ def compileAExp(e: AExp): List[Inst] = match e with {
 def compileBExp(e: BExp): List[Inst] = match e with {
     case True           => Push(1) :: Nil
     case False          => Push(0) :: Nil
-    case Not(e)         =>
-        let is = compileBExp(e);
+    case Not(e1)         =>
+        let is = compileBExp(e1);
             is ::: Neg :: Nil
     case Conj(e1, e2)   =>
         let is1 = compileBExp(e1);
@@ -200,16 +207,34 @@ def compileBExp(e: BExp): List[Inst] = match e with {
 //
 // We test each compiler by writing some tests:
 //
+@test
 def testCompileAExp1(): List[Inst] = compileAExp(Cst(42))
+
+@test
 def testCompileAExp2(): List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
+
+@test
 def testCompileAExp3(): List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
+
+@test
 def testCompileAExp4(): List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
+
+@test
 def testCompileAExp5(): List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
+@test
 def testCompileBExp1(): List[Inst] = compileBExp(True)
+
+@test
 def testCompileBExp2(): List[Inst] = compileBExp(Not(True))
+
+@test
 def testCompileBExp3(): List[Inst] = compileBExp(Conj(True, False))
+
+@test
 def testCompileBExp4(): List[Inst] = compileBExp(Disj(True, False))
+
+@test
 def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 
 //
@@ -221,7 +246,6 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
     case (Add :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 + i2) :: st)
     case (Sub :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 - i2) :: st)
     case (Mul :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 * i2) :: st)
-    case (Div :: rs, i1 :: i2 :: st) => evalInst(rs, (i1 / i2) :: st)
     case (Neg :: rs, i :: st) =>
         if (i == 0)
             evalInst(rs, 1 :: st)
@@ -242,7 +266,7 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
             evalInst(rs, 1 :: st)
         else
             evalInst(rs, 0 :: st)
-    case ((Branch(is1, is2)) :: rs, i :: st) =>
+    case ((Branch(is1, is2)) :: _, i :: st) =>
         if (i != 0)
             evalInst(is1, st)
         else
@@ -253,8 +277,20 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
 //
 // and we can test the compiler and interpreter:
 //
+@test
 def testCompileAndEval1(): Int = evalInst(compileAExp(Cst(42)), Nil)
+
+@test
 def testCompileAndEval2(): Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
+
+@test
 def testCompileAndEval3(): Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
+
+@test
 def testCompileAndEval4(): Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
+
+@test
 def testCompileAndEval5(): Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
+
+@test
+def testCompileAndEval6(): Int = evalInst(compileAExp(IfThenElse(Eq(Cst(1), Cst(2)), Cst(42), Times(Cst(21), Cst(82)))), Nil)

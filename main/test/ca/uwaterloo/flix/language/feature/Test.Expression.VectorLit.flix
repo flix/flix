@@ -104,7 +104,7 @@ def testVectorLit34(): Vector[Vector[Int, 3], 1] = [|[|1, 2, 3|]|]
 def testVectorLit35(): Vector[Vector[Int, 2], 2] = [|[|1, 2|], [|1, 2|]|]
 
 @test
-def testArrayLit36(): Vector[Vector[Int, 3], 3] = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]
+def testVectorLit36(): Vector[Vector[Int, 3], 3] = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]
 
 @test
 def testVectorLit37(): Vector[(Int, Int), 1] = [|(2, 1)|]

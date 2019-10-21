@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation._
@@ -103,6 +102,8 @@ object Uncurrier extends Phase[Root, Root] {
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       val ts = terms.map(visitHeadTerm(_, newDefs, root))
       Predicate.Head.Atom(pred, ts, tpe, loc)
+
+    case Predicate.Head.Union(exp, tpe, loc) => h
   }
 
   /**
@@ -110,18 +111,8 @@ object Uncurrier extends Phase[Root, Root] {
     */
   def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => b
-    case Predicate.Body.Functional(sym, term, loc) =>
-      val t = visitHeadTerm(term, newDefs, root)
-      Predicate.Body.Functional(sym, t, loc)
-    case Predicate.Body.Filter(sym, terms, loc) => terms match {
-      case Nil => b
-      case x :: Nil => b
-      case x :: y :: Nil =>
-        val freshSym = mkUncurried2(sym, newDefs, root)
-        Predicate.Body.Filter(freshSym, x :: y :: Nil, loc)
-      case _ =>
-        throw InternalCompilerException(s"Unable to uncurry definition of arity n > 2.")
-    }
+
+    case Predicate.Body.Guard(exp, loc) => b
   }
 
   /**
@@ -146,9 +137,6 @@ object Uncurrier extends Phase[Root, Root] {
     * Introduces an uncurried version of the given binary function definition.
     */
   def mkUncurried2(sym: Symbol.DefnSym, newDefs: TopLevel, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
-    // Put gensym into implicit scope.
-    implicit val _ = flix.genSym
-
     // Lookup the original definition.
     val defn = root.defs(sym)
 

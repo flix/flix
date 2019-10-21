@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
+import ca.uwaterloo.flix.language.ast.Ast.Source
+
 object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
@@ -29,7 +31,8 @@ object FinalAst {
                   latticeComponents: Map[MonoType, FinalAst.LatticeComponents],
                   properties: List[FinalAst.Property],
                   specialOps: Map[SpecialOperator, Map[MonoType, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym])
+                  reachable: Set[Symbol.DefnSym],
+                  sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) {
     var method: Method = null
@@ -217,21 +220,21 @@ object FinalAst {
 
     case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Spawn(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class ProcessSpawn(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Sleep(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class ProcessSleep(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointConstraint(c: FinalAst.Constraint, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class ProcessPanic(msg: String, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+
+    case class FixpointConstraintSet(cs: List[FinalAst.Constraint], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointCompose(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointSolve(uid: Ast.UId, exp: FinalAst.Expression, stf: Ast.Stratification, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointSolve(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointProject(pred: FinalAst.PredicateWithParam, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class UserError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -255,6 +258,8 @@ object FinalAst {
 
       case class Atom(pred: FinalAst.PredicateWithParam, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 
+      case class Union(exp: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
+
     }
 
     sealed trait Body extends FinalAst.Predicate
@@ -263,9 +268,7 @@ object FinalAst {
 
       case class Atom(pred: FinalAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
 
-      case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
-
-      case class Functional(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, terms: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class Guard(exp: FinalAst.Expression, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 
     }
 

@@ -221,20 +221,18 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.FixpointConstraint(c, tpe, loc) =>
-        // Assign a number to each constraint parameters.
-        // These are unrelated to the true stack offsets.
-        for ((cparam, index) <- c.cparams.zipWithIndex) {
-          cparam match {
-            case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
-            case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
-          }
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        i0
+
+      case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+        for (c <- cs) {
+          visitConstraint(c)
         }
         i0
 
@@ -242,7 +240,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp, i0)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val i1 = visitExp(pred.exp, i0)
@@ -252,7 +250,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0
@@ -270,6 +267,20 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case x :: xs =>
         val i2 = visitExp(x, i)
         visitExps(xs, i2)
+    }
+
+    /**
+      * Returns the next available stack offset.
+      */
+    def visitConstraint(c: Constraint): Unit = {
+      // Assign a number to each constraint parameters.
+      // These are unrelated to the true stack offsets.
+      for ((cparam, index) <- c.cparams.zipWithIndex) {
+        cparam match {
+          case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
+          case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
+        }
+      }
     }
 
     // Compute the stack offset for each formal parameter.

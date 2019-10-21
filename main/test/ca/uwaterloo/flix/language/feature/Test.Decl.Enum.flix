@@ -56,3 +56,24 @@ def testEnum12(): PolymorphicEnum[Bool] = Poly(true)
 
 @test
 def testEnum13(): PolymorphicEnum[Int] = Poly(42)
+
+enum ColorNoSep {
+    case Red
+    case Blu
+}
+
+@test
+def testEnum014(): ColorNoSep = Red
+
+@test
+def testEnum015(): ColorNoSep = Blu
+
+enum AnimalShort {
+    case Cat, Dog
+}
+
+@test
+def testEnum016(): AnimalShort = Cat
+
+@test
+def testEnum017(): AnimalShort = Dog

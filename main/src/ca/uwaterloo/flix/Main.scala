@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
+import java.net.BindException
 import java.nio.file.Paths
 
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.tools.{Benchmarker, Packager, SocketServer, Tester}
+import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -45,13 +46,24 @@ object Main {
 
     // check if the --listen flag was passed.
     if (cmdOpts.listen.nonEmpty) {
-      val socketServer = new SocketServer(cmdOpts.listen.get)
-      socketServer.run()
+      var successfulRun: Boolean = false
+      while (!successfulRun) {
+        try {
+          val socketServer = new SocketServer(cmdOpts.listen.get)
+          socketServer.run()
+          successfulRun = true
+        } catch {
+          case ex: BindException =>
+            Console.println(ex.getMessage)
+            Console.println("Retrying in 10 seconds.")
+            Thread.sleep(10_000)
+        }
+      }
       System.exit(0)
     }
 
     // the default color context.
-    implicit val _ = TerminalContext.AnsiTerminal
+    implicit val terminal = TerminalContext.AnsiTerminal
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
@@ -71,6 +83,7 @@ object Main {
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
+      xallowredundancies = cmdOpts.xallowredundancies,
       xnostratifier = cmdOpts.xnostratifier
     )
 
@@ -86,8 +99,12 @@ object Main {
           Packager.init(cwd, options)
           System.exit(0)
 
+        case Command.Check =>
+          Packager.check(cwd, options)
+          System.exit(0)
+
         case Command.Build =>
-          Packager.build(cwd, options)
+          Packager.build(cwd, options, loadClasses = false)
           System.exit(0)
 
         case Command.BuildJar =>
@@ -114,6 +131,18 @@ object Main {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
         System.exit(1)
+    }
+
+    // check if the -Xbenchmark-phases flag was passed.
+    if (cmdOpts.xbenchmarkPhases) {
+      BenchmarkCompiler.benchmarkPhases()
+      System.exit(0)
+    }
+
+    // check if the -Xbenchmark-throughput flag was passed.
+    if (cmdOpts.xbenchmarkThroughput) {
+      BenchmarkCompiler.benchmarkThroughput()
+      System.exit(0)
     }
 
     // check if running in interactive mode.
@@ -143,7 +172,7 @@ object Main {
               val evalTimer = new Timer(compilationResult.evalToString("main"))
               options.verbosity match {
                 case Verbosity.Normal => Console.println(evalTimer.getResult)
-                case Verbosity.Verbose => Console.println(s"main returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+                case Verbosity.Verbose => Console.println(evalTimer.getResult)
                 case Verbosity.Silent => // nop
               }
           }
@@ -157,7 +186,9 @@ object Main {
             Console.println(results.output.fmt)
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message.fmt))
+          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt))
+          println()
+          println(s"Compilation failed with ${errors.length} error(s).")
           System.exit(1)
       }
     } catch {
@@ -182,6 +213,9 @@ object Main {
                      test: Boolean = false,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
+                     xallowredundancies: Boolean = false,
+                     xbenchmarkPhases: Boolean = false,
+                     xbenchmarkThroughput: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
@@ -200,6 +234,8 @@ object Main {
     case object None extends Command
 
     case object Init extends Command
+
+    case object Check extends Command
 
     case object Build extends Command
 
@@ -228,6 +264,8 @@ object Main {
 
       // Command
       cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  create a new project in the current directory.")
+
+      cmd("check").action((_, c) => c.copy(command = Command.Check)).text("  type checks the current project.")
 
       cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  build the current project.")
 
@@ -293,6 +331,18 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // Xallow-redundancies.
+      opt[Unit]("Xallow-redundancies").action((_, c) => c.copy(xallowredundancies = true)).
+        text("[experimental] disables the redundancies checker.")
+
+      // Xbenchmark-phases
+      opt[Unit]("Xbenchmark-phases").action((_, c) => c.copy(xbenchmarkPhases = true)).
+        text("[experimental] benchmarks each individual compiler phase.")
+
+      // Xbenchmark-throughput
+      opt[Unit]("Xbenchmark-throughput").action((_, c) => c.copy(xbenchmarkThroughput = true)).
+        text("[experimental] benchmarks the throughput of the entire compiler.")
 
       // Xcore.
       opt[Unit]("Xcore").action((_, c) => c.copy(xcore = true)).

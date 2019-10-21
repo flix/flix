@@ -26,6 +26,7 @@ object TypedAstOps {
     case Pattern.Str(lit, loc) => Set.empty
     case Pattern.Tag(sym, tag, pat, tpe, loc) => freeVarsOf(pat)
     case Pattern.Tuple(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
+    case Pattern.Array(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
   }
 
   /**
@@ -78,6 +79,9 @@ object TypedAstOps {
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
+
+      case Expression.Stm(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.Match(matchExp, rules, tpe, eff, loc) =>
         val m = visitExp(matchExp, env0)
@@ -208,16 +212,20 @@ object TypedAstOps {
 
         rs ++ d
 
-      case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
+      case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+      case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
+      case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
+
+      case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+        case (macc, c) => macc ++ visitConstraint(c, env0)
+      }
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
@@ -226,8 +234,6 @@ object TypedAstOps {
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.UserError(tpe, eff, loc) => Map.empty
     }
 
     /**
@@ -242,6 +248,7 @@ object TypedAstOps {
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) => visitPredicateWithParam(pred, env0) ++ terms.flatMap(visitExp(_, env0))
+      case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
     /**
@@ -249,8 +256,7 @@ object TypedAstOps {
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
       case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => visitPredicateWithParam(pred, env0)
-      case Predicate.Body.Filter(sym, terms, loc) => Map.empty[Symbol.HoleSym, HoleContext] ++ terms.flatMap(visitExp(_, env0))
-      case Predicate.Body.Functional(sym, term, loc) => visitExp(term, env0)
+      case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
     }
 
     /**
@@ -280,6 +286,9 @@ object TypedAstOps {
       case Pattern.Str(lit, loc) => Map.empty
       case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
       case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, elm) => macc ++ binds(elm)
+      }
+      case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
     }

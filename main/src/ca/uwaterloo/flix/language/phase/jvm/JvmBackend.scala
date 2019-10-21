@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException, Validation}
 import flix.runtime.ProxyObject
 
+
 object JvmBackend extends Phase[Root, CompilationResult] {
 
   /**
@@ -41,140 +42,145 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("JvmBackend") {
-    //
-    // Immediately return if in interpreted mode.
-    //
-    if (flix.options.evaluation == Evaluation.Interpreted) {
-      return new CompilationResult(root, getInterpretedDefs(root)).toSuccess
-    }
-
-    //
-    // Immediately return if in verification mode.
-    //
-    if (flix.options.verifier) {
-      return new CompilationResult(root, Map.empty).toSuccess
-    }
 
     //
     // Put the AST root into implicit scope.
     //
-    implicit val _ = root
+    implicit val r: Root = root
 
-    //
-    // Compute the set of closures in the program.
-    //
-    val closures = JvmOps.closuresOf(root)
+    // Generate all classes.
+    val allClasses = flix.subphase("CodeGen") {
+      //
+      // Immediately return if in interpreted mode.
+      //
+      if (flix.options.evaluation == Evaluation.Interpreted) {
+        return new CompilationResult(root, getInterpretedDefs(root)).toSuccess
+      }
 
-    //
-    // Compute the set of namespaces in the program.
-    //
-    val namespaces = JvmOps.namespacesOf(root)
+      //
+      // Immediately return if in verification mode.
+      //
+      if (flix.options.verifier) {
+        return new CompilationResult(root, Map.empty).toSuccess
+      }
 
-    //
-    // Compute the set of instantiated tags in the program.
-    //
-    val tags = JvmOps.tagsOf(root)
+      //
+      // Compute the set of closures in the program.
+      //
+      val closures = JvmOps.closuresOf(root)
 
-    //
-    // Compute the set of types in the program.
-    //
-    val types = JvmOps.typesOf(root)
+      //
+      // Compute the set of namespaces in the program.
+      //
+      val namespaces = JvmOps.namespacesOf(root)
 
-    //
-    // Generate the main class.
-    //
-    val mainClass = GenMainClass.gen()
+      //
+      // Compute the set of instantiated tags in the program.
+      //
+      val tags = JvmOps.tagsOf(root)
 
-    //
-    // Generate the Context class.
-    //
-    val contextClass = GenContext.gen(namespaces)
+      //
+      // Compute the set of types in the program.
+      //
+      val types = JvmOps.typesOf(root)
 
-    //
-    // Generate the namespace classes.
-    //
-    val namespaceClasses = GenNamespaces.gen(namespaces)
+      //
+      // Generate the main class.
+      //
+      val mainClass = GenMainClass.gen()
 
-    //
-    // Generate continuation interfaces for each function type in the program.
-    //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types)
+      //
+      // Generate the Context class.
+      //
+      val contextClass = GenContext.gen(namespaces)
 
-    //
-    // Generate function interfaces for each function type in the program.
-    //
-    val functionInterfaces = GenFunctionInterfaces.gen(types)
+      //
+      // Generate the namespace classes.
+      //
+      val namespaceClasses = GenNamespaces.gen(namespaces)
 
-    //
-    // Generate function classes for each function in the program.
-    //
-    val functionClasses = GenFunctionClasses.gen(root.defs)
+      //
+      // Generate continuation interfaces for each function type in the program.
+      //
+      val continuationInterfaces = GenContinuationInterfaces.gen(types)
 
-    //
-    // Generate closure classes for each closure in the program.
-    //
-    val closureClasses = GenClosureClasses.gen(closures)
+      //
+      // Generate function interfaces for each function type in the program.
+      //
+      val functionInterfaces = GenFunctionInterfaces.gen(types)
 
-    //
-    // Generate enum interfaces for each enum type in the program.
-    //
-    val enumInterfaces = GenEnumInterfaces.gen(types)
+      //
+      // Generate function classes for each function in the program.
+      //
+      val functionClasses = GenFunctionClasses.gen(root.defs)
 
-    //
-    // Generate tag classes for each enum instantiation in the program.
-    //
-    val tagClasses = GenTagClasses.gen(tags)
+      //
+      // Generate closure classes for each closure in the program.
+      //
+      val closureClasses = GenClosureClasses.gen(closures)
 
-    //
-    // Generate tuple interfaces for each tuple type in the program.
-    //
-    val tupleInterfaces = GenTupleInterfaces.gen(types)
+      //
+      // Generate enum interfaces for each enum type in the program.
+      //
+      val enumInterfaces = GenEnumInterfaces.gen(types)
 
-    //
-    // Generate tuple classes for each tuple type in the program.
-    //
-    val tupleClasses = GenTupleClasses.gen(types)
+      //
+      // Generate tag classes for each enum instantiation in the program.
+      //
+      val tagClasses = GenTagClasses.gen(tags)
 
-    //
-    // Generate record interface.
-    //
-    val recordInterfaces = GenRecordInterfaces.gen()
+      //
+      // Generate tuple interfaces for each tuple type in the program.
+      //
+      val tupleInterfaces = GenTupleInterfaces.gen(types)
 
-    //
-    // Generate empty record class.
-    //
-    val recordEmptyClasses = GenRecordEmpty.gen()
+      //
+      // Generate tuple classes for each tuple type in the program.
+      //
+      val tupleClasses = GenTupleClasses.gen(types)
 
-    //
-    // Generate extended record classes for each (different) RecordExtend type in the program
-    //
-    val recordExtendClasses = GenRecordExtend.gen(types)
+      //
+      // Generate record interface.
+      //
+      val recordInterfaces = GenRecordInterfaces.gen()
 
-    //
-    // Generate references classes.
-    //
-    val refClasses = GenRefClasses.gen()
+      //
+      // Generate empty record class.
+      //
+      val recordEmptyClasses = GenRecordEmpty.gen()
 
-    //
-    // Collect all the classes and interfaces together.
-    //
-    val allClasses = List(
-      mainClass,
-      contextClass,
-      namespaceClasses,
-      continuationInterfaces,
-      functionInterfaces,
-      functionClasses,
-      closureClasses,
-      enumInterfaces,
-      tagClasses,
-      tupleInterfaces,
-      tupleClasses,
-      recordInterfaces,
-      recordEmptyClasses,
-      recordExtendClasses,
-      refClasses
-    ).reduce(_ ++ _)
+      //
+      // Generate extended record classes for each (different) RecordExtend type in the program
+      //
+      val recordExtendClasses = GenRecordExtend.gen(types)
+
+      //
+      // Generate references classes.
+      //
+
+      val refClasses = GenRefClasses.gen()
+
+      //
+      // Collect all the classes and interfaces together.
+      //
+      List(
+        mainClass,
+        contextClass,
+        namespaceClasses,
+        continuationInterfaces,
+        functionInterfaces,
+        functionClasses,
+        closureClasses,
+        enumInterfaces,
+        tagClasses,
+        tupleInterfaces,
+        tupleClasses,
+        recordInterfaces,
+        recordEmptyClasses,
+        recordExtendClasses,
+        refClasses
+      ).reduce(_ ++ _)
+    }
 
     //
     // Write each class (and interface) to disk.
@@ -188,15 +194,24 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       }
     }
 
-    //
-    // Loads all the generated classes into the JVM and decorates the AST.
-    //
-    Bootstrap.bootstrap(allClasses)
+    val loadClasses = flix.options.loadClassFiles
 
-    //
-    // Return the compilation result.
-    //
-    new CompilationResult(root, getCompiledDefs(root)).toSuccess
+    if (!loadClasses) {
+      //
+      // Do not load any classes.
+      //
+      new CompilationResult(root, Map.empty).toSuccess
+    } else {
+      //
+      // Loads all the generated classes into the JVM and decorates the AST.
+      //
+      Bootstrap.bootstrap(allClasses)
+
+      //
+      // Return the compilation result.
+      //
+      new CompilationResult(root, getCompiledDefs(root)).toSuccess
+    }
   }
 
   /**

@@ -126,7 +126,7 @@ class AsciiTable {
   /**
     * Returns the column widths of a sequence of rows.
     */
-  private def columnWidths(xs: List[List[String]]): List[Int] = (List.empty[Int] /: xs) {
+  private def columnWidths(xs: List[List[String]]): List[Int] = xs.foldLeft(List.empty[Int]) {
     case (acc, ys) => mergeWidths(acc, columnWidth(ys))
   }
 

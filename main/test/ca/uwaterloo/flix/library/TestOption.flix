@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace TestOption {
+
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -150,19 +152,19 @@ def toList02(): Bool = Option.toList(Some(1)) `assertEq!` 1 :: Nil
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = Option.toSet(None) `assertEq!` #{}
+def toSet01(): Bool = Option.toSet(None) `assertEq!` Set#{}
 
 @test
-def toSet02(): Bool = Option.toSet(Some(1)) `assertEq!` #{1}
+def toSet02(): Bool = Option.toSet(Some(1)) `assertEq!` Set#{1}
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = Option.toMap(None) `assertEq!` @{}
+def toMap01(): Bool = Option.toMap(None) `assertEq!` Map#{}
 
 @test
-def toMap02(): Bool = Option.toMap(Some((1, true))) `assertEq!` @{1 -> true}
+def toMap02(): Bool = Option.toMap(Some((1, true))) `assertEq!` Map#{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //
@@ -308,3 +310,5 @@ def unzip01(): Bool = Option.unzip(None) `assertEq!` (None, None)
 
 @test
 def unzip02(): Bool = Option.unzip(Some((1, true))) `assertEq!` (Some(1), Some(true))
+
+}

@@ -32,7 +32,7 @@ object Safety extends Phase[Root, Root] {
     if (errors.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(errors.toStream)
+      Validation.Failure(errors.to(LazyList))
   }
 
   /**
@@ -80,6 +80,8 @@ object Safety extends Phase[Root, Root] {
     case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2) ::: visitExp(exp3)
+
+    case Expression.Stm(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
@@ -190,21 +192,21 @@ object Safety extends Phase[Root, Root] {
 
       rs ++ d
 
-    case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointConstraint(con, tpe, eff, loc) => checkConstraint(con)
+    case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil
+
+    case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.flatMap(checkConstraint)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
 
     case Expression.FixpointProject(pred, exp, tpe, eff, loc) => visitPredicateWithParam(pred) ::: visitExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
-
-    case Expression.UserError(tpe, eff, loc) => Nil
 
   }
 
@@ -244,8 +246,8 @@ object Safety extends Phase[Root, Root] {
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       visitPredicateWithParam(pred) ::: checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
-    case Predicate.Body.Filter(sym, terms, loc) => Nil
-    case Predicate.Body.Functional(sym, term, loc) => Nil
+
+    case Predicate.Body.Guard(exp, loc) => visitExp(exp)
   }
 
   /**
@@ -282,8 +284,8 @@ object Safety extends Phase[Root, Root] {
         // Case 2: A negative atom does not positively define any variables.
         Set.empty
     }
-    case Predicate.Body.Filter(sym, terms, loc) => Set.empty
-    case Predicate.Body.Functional(sym, term, loc) => Set.empty
+
+    case Predicate.Body.Guard(exp, loc) => Set.empty
   }
 
 }

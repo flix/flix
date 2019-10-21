@@ -80,8 +80,7 @@ object MonoType {
 
   case class Native(clazz: Class[_]) extends MonoType
 
-
-  @deprecated("will be removed", "0.5")
+  // TODO: Should be removed.
   case class Var(id: Int) extends MonoType
 
 }

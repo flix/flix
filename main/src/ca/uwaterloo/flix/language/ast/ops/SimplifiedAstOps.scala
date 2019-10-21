@@ -457,51 +457,42 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // Spawn.
+      // ProcessSpawn.
       //
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
-      // Sleep.
+      // ProcessSleep.
       //
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
-      // Constraint.
+      // ProcessPanic.
       //
-      case Expression.FixpointConstraint(c, tpe, loc) =>
+      case Expression.ProcessPanic(msg, tpe, loc) =>
         checkType(tpe)
 
-      //
-      // ConstraintUnion.
-      //
+      case Expression.FixpointConstraintSet(_, tpe, _) =>
+        checkType(tpe)
+
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Fixpoint Solve.
-      //
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Fixpoint Project.
-      //
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         checkPredicateWithParam(pred, env0, ienv0)
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Fixpoint Project.
-      //
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
@@ -510,7 +501,6 @@ object SimplifiedAstOps {
       //
       // Error Expressions.
       //
-      case Expression.UserError(tpe, loc) => checkType(tpe)
       case Expression.HoleError(sym, tpe, loc) => checkType(tpe)
       case Expression.MatchError(tpe, loc) => checkType(tpe)
       case Expression.SwitchError(tpe, loc) => checkType(tpe)
@@ -556,6 +546,11 @@ object SimplifiedAstOps {
           checkHeadTerm(term, env0)
         }
         checkType(tpe)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
     }
 
     /**
@@ -569,13 +564,8 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        for (term <- terms) {
-          checkBodyTerm(term, env0)
-        }
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        checkHeadTerm(term, env0)
+      case Predicate.Body.Guard(exp, loc) =>
+        checkExp(exp, env0, ienv0)
     }
 
     /**

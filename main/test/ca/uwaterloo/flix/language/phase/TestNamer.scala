@@ -259,4 +259,46 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.AmbiguousNativeMethod](result)
   }
 
+  test("UndefinedTypeVar.Def.01") {
+    val input = "def f[a](): b = 123"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Def.02") {
+    val input = "def f[a](x: b): Int = 123"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Def.03") {
+    val input = "def f[a, b, c](x: Option[d]): Int = 123"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Rel.01") {
+    val input = "rel R[a](x: b)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Rel.02") {
+    val input = "rel R[a, b, c](x: a, y: d, z: c)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Lat.01") {
+    val input = "lat R[a](x: b)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Lat.02") {
+    val input = "lat R[a, b, c](x: a, y: d, z: c)"
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.UndefinedTypeVar](result)
+  }
+
 }

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.Flix
 
 import scala.concurrent.duration.{Duration => SDuration}
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object ParOps {
 
@@ -28,7 +28,7 @@ object ParOps {
     */
   def parMap[A, B](f: A => B, xs: List[A])(implicit flix: Flix): List[B] = {
     // Retrieve the execution context.
-    implicit val _ = flix.ec
+    implicit val executionContext: ExecutionContext = flix.ec
 
     // Apply the function `f` in parallel.
     val futures = xs.map(x => Future(f(x)))

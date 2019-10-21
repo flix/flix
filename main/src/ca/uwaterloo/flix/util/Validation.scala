@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import scala.collection.mutable
+import scala.collection.parallel.CollectionConverters._
 
 sealed trait Validation[+T, +E] {
 
@@ -56,7 +57,7 @@ sealed trait Validation[+T, +E] {
   /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
-  protected def errors: Stream[E]
+  protected def errors: LazyList[E]
 
 }
 
@@ -71,18 +72,18 @@ object Validation {
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
-    def errors: Stream[E] = Stream.empty
+    def errors: LazyList[E] = LazyList.empty
   }
 
   /**
     * Represents a failure with no value and `errors`.
     */
-  case class Failure[T, E](errors: Stream[E]) extends Validation[T, E]
+  case class Failure[T, E](errors: LazyList[E]) extends Validation[T, E]
 
   /**
     * Sequences the given list of validations `xs`.
     */
-  def sequence[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
+  def sequence[T, E](xs: Iterable[Validation[T, E]]): Validation[List[T], E] = {
     val zero = Success(List.empty[T]): Validation[List[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
@@ -97,21 +98,21 @@ object Validation {
   }
 
   /**
-    * Traverses `xs` while applying the function `f`.
+    * Traverses `xs` applying the function `f` to each element.
     */
-  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
+  def traverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
 
   /**
     * A fast implementation of traverse.
     */
-  private def fastTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
+  private def fastTraverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
     // Check if the sequence is empty.
     if (xs.isEmpty)
       return Validation.SuccessNil
 
     // Two mutable arrays to hold the intermediate results.
     val successValues = mutable.ArrayBuffer.empty[S]
-    val failureStream = mutable.ArrayBuffer.empty[Stream[E]]
+    val failureStream = mutable.ArrayBuffer.empty[LazyList[E]]
 
     // Apply f to each element and collect the results.
     for (x <- xs) {
@@ -125,9 +126,25 @@ object Validation {
     if (failureStream.isEmpty) {
       Success(successValues.toList)
     } else {
-      Failure(failureStream.foldLeft(Stream.empty[E])(_ #::: _))
+      Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
     }
+  }
 
+  /**
+    * Traverses `xs` in parallel applying the function `f` to each element.
+    */
+  def parTraverse[T, S, E](xs: Iterable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
+    @inline
+    def seq(x: Vector[Validation[S, E]], y: T): Vector[Validation[S, E]] = x :+ f(y)
+
+    @inline
+    def com(x: Vector[Validation[S, E]], y: Vector[Validation[S, E]]): Vector[Validation[S, E]] = x ++ y
+
+    // The sequence of validations.
+    val validations = xs.par.aggregate(Vector.empty[Validation[S, E]])(seq, com)
+
+    // Merge them into one validation.
+    sequence(validations)
   }
 
   /**
@@ -195,6 +212,18 @@ object Validation {
     }
 
   /**
+    * Maps over t1, t2, t3, t4, t5, t6, and t7.
+    */
+  def mapN[T1, T2, T3, T4, T5, T6, T7, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                             t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                             t7: Validation[T7, E])
+                                            (f: (T1, T2, T3, T4, T5, T6, T7) => U): Validation[U, E] =
+    (t1, t2, t3, t4, t5, t6, t7) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6), Success(v7)) => Success(f(v1, v2, v3, v4, v5, v6, v7))
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors #::: t7.errors)
+    }
+
+  /**
     * FlatMaps over t1.
     */
   def flatMapN[T1, U, E](t1: Validation[T1, E])(f: T1 => Validation[U, E]): Validation[U, E] =
@@ -245,7 +274,7 @@ object Validation {
     * Adds an implicit `toFailure` method.
     */
   implicit class ToFailure[+E](val e: E) {
-    def toFailure[V, F >: E]: Validation[V, F] = Failure(e #:: Stream.empty)
+    def toFailure[V, F >: E]: Validation[V, F] = Failure(e #:: LazyList.empty)
   }
 
   // TODO: Everything below this line is deprecated.

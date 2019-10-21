@@ -15,15 +15,15 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Options, Result}
-import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.TerminalContext
 import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -101,9 +101,14 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Invoked when an error occurs.
     */
-  override def onError(ws: WebSocket, e: Exception): Unit = {
-    log(s"Unexpected error: ${e.getMessage}")(ws)
-    e.printStackTrace()
+  override def onError(ws: WebSocket, e: Exception): Unit = e match {
+    case ex: InternalCompilerException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex: InternalRuntimeException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex => throw ex
   }
 
   /**
@@ -155,7 +160,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     */
   private def mkFlix(input: String)(implicit ws: WebSocket): Flix = {
     val flix = new Flix()
-    val opts = Options.Default.copy(writeClassFiles = false)
+    val opts = Options.Default.copy(writeClassFiles = false, xallowredundancies = true)
     flix.setOptions(opts)
     flix.addStr(input)
   }
@@ -166,7 +171,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   private def log(msg: String)(implicit ws: WebSocket): Unit = {
     val dateFormat = new SimpleDateFormat(DateFormat)
     val datePart = dateFormat.format(new Date())
-    val clientPart = ws.getRemoteSocketAddress
+    val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
     Console.println(s"[$datePart] [$clientPart]: $msg")
   }
 

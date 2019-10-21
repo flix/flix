@@ -8,7 +8,7 @@ import org.scalatest.FunSuite
 
 class TestPackager extends FunSuite {
 
-  private implicit val _ = TerminalContext.NoTerminal
+  private implicit val terminalContext: TerminalContext = TerminalContext.NoTerminal
 
   private val ProjectPrefix: String = "flix-project-"
 
@@ -17,6 +17,12 @@ class TestPackager extends FunSuite {
   test("init") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Packager.init(p, DefaultOptions)
+  }
+
+  test("check") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Packager.init(p, DefaultOptions)
+    Packager.check(p, DefaultOptions)
   }
 
   test("build") {

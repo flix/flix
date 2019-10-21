@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import java.nio.file.Path
 
-import ca.uwaterloo.flix.api.Flix
-
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
@@ -186,6 +184,11 @@ object Ast {
     */
   case class Modifiers(mod: List[Modifier]) {
     /**
+      * Returns `true` if these modifiers contain the entry point modifier.
+      */
+    def isEntryPoint: Boolean = mod contains Modifier.EntryPoint
+
+    /**
       * Returns `true` if these modifiers contain the inline modifier.
       */
     def isInline: Boolean = mod contains Modifier.Inline
@@ -207,6 +210,11 @@ object Ast {
   sealed trait Modifier
 
   object Modifier {
+
+    /**
+      * The entry point modifier.
+      */
+    case object EntryPoint extends Modifier
 
     /**
       * The inline modifier.
@@ -254,12 +262,12 @@ object Ast {
     /**
       * Represents a positive labelled edge.
       */
-    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
+    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym, loc: SourceLocation) extends DependencyEdge
 
     /**
       * Represents a negative labelled edge.
       */
-    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
+    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym, loc: SourceLocation) extends DependencyEdge
 
   }
 
@@ -267,15 +275,35 @@ object Ast {
     /**
       * The empty dependency graph.
       */
-    val Empty: DependencyGraph = DependencyGraph(Set.empty)
+    val empty: DependencyGraph = DependencyGraph(Set.empty)
 
   }
 
   /**
     * Represents a dependency graph; a set of dependency edges.
     */
-  case class DependencyGraph(xs: Set[DependencyEdge])
+  case class DependencyGraph(xs: Set[DependencyEdge]) {
+    /**
+      * Returns a dependency graph with all dependency edges in `this` and `that` dependency graph.
+      */
+    def +(that: DependencyGraph): DependencyGraph = {
+      if (this eq DependencyGraph.empty)
+        that
+      else if (that eq DependencyGraph.empty)
+        this
+      else
+        DependencyGraph(this.xs ++ that.xs)
+    }
 
+    /**
+      * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
+      */
+    def restrict(syms: Set[Symbol.PredSym]): DependencyGraph =
+      DependencyGraph(xs.filter {
+        case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
+        case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
+      })
+  }
 
   object Stratification {
     /**
@@ -303,33 +331,5 @@ object Ast {
     * Represents that the annotated element is eliminated by the class `clazz`.
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
-
-
-  /**
-    * Returns a fresh unique identifier.
-    */
-  def freshUId()(implicit flix: Flix): UId = {
-    new UId(flix.genSym.freshId())
-  }
-
-  /**
-    * A unique reference to an expression.
-    *
-    * @param id the globally unique name of the symbol.
-    */
-  final class UId(val id: Int) {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: UId => this.id == that.id
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = id
-  }
 
 }

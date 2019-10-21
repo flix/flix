@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+namespace TestList {
+
 /////////////////////////////////////////////////////////////////////////////
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
@@ -1671,40 +1673,42 @@ def findMap08(): Bool = List.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 0
 // toSet                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toSet01(): Bool = assert!(Set.eq(List.toSet(Nil), #{}))
+def toSet01(): Bool = assert!(List.toSet(Nil) == Set#{})
 
 @test
-def toSet02(): Bool = assert!(Set.eq(List.toSet(1 :: Nil), #{1}))
+def toSet02(): Bool = assert!(List.toSet(1 :: Nil) == Set#{1})
 
 @test
-def toSet03(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: Nil), #{1, 2}))
+def toSet03(): Bool = assert!(List.toSet(1 :: 2 :: Nil) == Set#{1, 2})
 
 @test
-def toSet04(): Bool = assert!(Set.eq(List.toSet(1 :: 1 :: Nil), #{1}))
+def toSet04(): Bool = assert!(List.toSet(1 :: 1 :: Nil) == Set#{1})
 
 @test
-def toSet05(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: 3 :: Nil), #{1, 2, 3}))
+def toSet05(): Bool = assert!(List.toSet(1 :: 2 :: 3 :: Nil) == Set#{1, 2, 3})
 
 @test
-def toSet06(): Bool = assert!(Set.eq(List.toSet(1 :: 2 :: 1 :: Nil), #{1, 2}))
+def toSet06(): Bool = assert!(List.toSet(1 :: 2 :: 1 :: Nil) == Set#{1, 2})
 
 @test
-def toSet07(): Bool = assert!(Set.eq(List.toSet(1 :: 1 :: 2 :: Nil), #{1, 2}))
+def toSet07(): Bool = assert!(List.toSet(1 :: 1 :: 2 :: Nil) == Set#{1, 2})
 
 @test
-def toSet08(): Bool = assert!(Set.eq(List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Nil), #{1, 2, 3, 4, 5, 6}))
+def toSet08(): Bool = assert!(List.toSet(2 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 3 :: 3 :: Nil) == Set#{1, 2, 3, 4, 5, 6})
 
 /////////////////////////////////////////////////////////////////////////////
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = assert!(Map.eq(List.toMap(Nil), @{}))
+def toMap01(): Bool = assert!(List.toMap(Nil) == Map#{})
 
 @test
-def toMap02(): Bool = assert!(Map.eq(List.toMap((1, true) :: Nil), @{1 -> true}))
+def toMap02(): Bool = assert!(List.toMap((1, true) :: Nil) == Map#{1 -> true})
 
 @test
-def toMap03(): Bool = assert!(Map.eq(List.toMap((1, true) :: (2, false) :: Nil), @{1 -> true, 2 -> false}))
+def toMap03(): Bool = assert!(List.toMap((1, true) :: (2, false) :: Nil) == Map#{1 -> true, 2 -> false})
 
 @test
-def toMap04(): Bool = assert!(Map.eq(List.toMap((1, true) :: (1, false) :: Nil), @{1 -> true}))
+def toMap04(): Bool = assert!(List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 -> true})
+
+}

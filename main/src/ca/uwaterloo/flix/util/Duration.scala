@@ -21,17 +21,20 @@ object Duration {
   /**
     * Returns the minimal duration of `xs`.
     */
-  def min(xs: Seq[Duration]): Duration = xs.min
+  def min(xs: Iterable[Duration]): Duration = xs.min
 
   /**
     * Returns the maximum duration of `xs`.
     */
-  def max(xs: Seq[Duration]): Duration = xs.max
+  def max(xs: Iterable[Duration]): Duration = xs.max
 
   /**
     * Returns the average duration of `xs`.
     */
-  def avg(xs: Seq[Duration]): Duration = new Duration(xs.map(_.d).sum / xs.length)
+  def avg(xs: Iterable[Duration]): Duration = {
+    val l = xs.toList
+    new Duration(l.map(_.d).sum / l.length)
+  }
 
   implicit val ordering: Ordering[Duration] = (x: Duration, y: Duration) => (x.d - y.d).asInstanceOf[Int]
 

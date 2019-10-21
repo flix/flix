@@ -85,21 +85,21 @@ namespace Domain/ConstantSign {
         case Top    => 0ii
         case Neg    => 1ii
         case Pos    => 1ii
-        case Cst(n) => 2ii
+        case Cst(_) => 2ii
         case Bot    => 3ii
     }
 
     ///
     /// Abstracts a concrete number into the domain.
     ///
-    def alpha(i: BigInt): ConstantSign = Cst(i)
+    pub def alpha(i: BigInt): ConstantSign = Cst(i)
 
     ///
     /// Over-approximates integer `increment`.
     ///
     #safe1(x -> x + 1ii)
     #strict1 #monotone1
-    def inc(e: ConstantSign): ConstantSign = match e with {
+    pub def inc(e: ConstantSign): ConstantSign = match e with {
         case Bot    => Bot
         case Cst(n) => Cst(n + 1ii)
         case Neg    => Top
@@ -112,7 +112,7 @@ namespace Domain/ConstantSign {
     ///
     #safe1(x -> x - 1ii)
     #strict1 #monotone1
-    def dec(e: ConstantSign): ConstantSign = match e with {
+    pub def dec(e: ConstantSign): ConstantSign = match e with {
         case Bot    => Bot
         case Cst(n) => Cst(n - 1ii)
         case Neg    => Neg
@@ -125,7 +125,7 @@ namespace Domain/ConstantSign {
     ///
     #safe2((x, y) -> x + y)
     #strict2 #monotone2 #commutative
-    def plus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
+    pub def plus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
@@ -143,7 +143,7 @@ namespace Domain/ConstantSign {
     ///
     #safe2((x, y) -> x - y)
     #strict2 #monotone2
-    def minus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
+    pub def minus(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
@@ -161,7 +161,7 @@ namespace Domain/ConstantSign {
     ///
     #safe2((x, y) -> x * y)
     #strict2 #monotone2 #commutative #associative
-    def times(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
+    pub def times(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
         case (Bot, _)           => Bot
         case (_, Bot)           => Bot
         case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
@@ -185,7 +185,7 @@ namespace Domain/ConstantSign {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def eq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) with {
+    pub def eq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
         case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
@@ -203,7 +203,7 @@ namespace Domain/ConstantSign {
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     #commutative
-    def neq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.not(eq(e1, e2))
+    pub def neq(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
     ///
     /// Over-approximates `less than`.
@@ -211,7 +211,7 @@ namespace Domain/ConstantSign {
     #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def less(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) with {
+    pub def less(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)           => Belnap/Belnap.Bot
         case (_, Bot)           => Belnap/Belnap.Bot
         case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
@@ -228,7 +228,7 @@ namespace Domain/ConstantSign {
     #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
     #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+    pub def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
     let ConstantSign<> = (Bot, Top, equ, leq, lub, glb)
 

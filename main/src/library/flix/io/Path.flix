@@ -14,10 +14,10 @@
                          //throws IOException
 
 // TODO: Where and how to define this?
-type IOError = IOError(Str)
+pub type IOError = IOError(Str)
 
 // TODO: Where and how to define this?
-type Charset = Charset(Str)
+pub type Charset = Charset(Str)
 
 type Path = Path(##java.nio.file.Path)
 
@@ -38,17 +38,17 @@ namespace Path {
         let shortPath = native method java.nio.file.Path.getFileName(javaPath);
         let myString = native method java.nio.file.Path.toString(shortPath);
         let dotIndex = native method java.lang.String.lastIndexOf(myString, "." : Str);
-        match dotIndex with {
+        match dotIndex {
             case -1 => None
-            case num => let actualIndex = dotIndex + 1;
-                        Some(native method java.lang.String.substring(myString, actualIndex) as Str)
+            case _ => let actualIndex = dotIndex + 1;
+                      Some(native method java.lang.String.substring(myString, actualIndex) as Str)
         }
     }
 
     ///
     /// Checks whether the given path `p` exists
     ///
-    def exists(p: Path): Bool = {
+    pub def exists(p: Path): Bool = {
         let Path(javaPath) = p;
         native method java.nio.file.Files.exists(javaPath, [ ] : Array[##java.nio.file.LinkOption]) as Bool
     }
@@ -63,12 +63,11 @@ namespace Path {
     ///
     handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = {
         let directoryResponse = isDirectory(path, result -> result);
-        match directoryResponse with {
+        match directoryResponse {
             case Ok(true) => let Path(javaPath) = path;
                              let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
                              let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
-                             let childList : List[Path] = Nil;
-                             let childList = childrenHelper(dirIterator, childList);
+                             let childList = childrenHelper(dirIterator, Nil);
                              //let _ = native method java.nio.file.DirectoryStream.close(dirStream); TODO: Have this line compile
                              k(Ok(childList))
             case Ok(false) => k(Err(IOError("The provided path is not a directory. Children is only available for directories")))
@@ -79,8 +78,7 @@ namespace Path {
     def childrenHelper(dirIterator: ##java.util.Iterator, childList: List[Path]): List[Path] = {
         if (native method java.util.Iterator.hasNext(dirIterator))
             let fetchedPath = native method java.util.Iterator.next(dirIterator);
-            let childList = Path(fetchedPath) :: childList;
-            childrenHelper(dirIterator, childList)
+            childrenHelper(dirIterator, Path(fetchedPath) :: childList)
         else
             List.reverse(childList)
     }
@@ -189,13 +187,13 @@ namespace Path {
     ///
     handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = {
         let directoryHandler = isDirectory(p, result -> result);
-        match directoryHandler with {
+        match directoryHandler {
             case Ok(true) =>  let Path(javaPath) = p;
                               let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
                               let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
                               k(Ok(!native method java.util.Iterator.hasNext(dirIterator)))
             case Ok(false) => let readLinesResponse = readLines(p, result -> result);
-                              match readLinesResponse with {
+                              match readLinesResponse {
                                   case Ok(Nil) => k(Ok(true))
                                   case Err(IOError(errorString)) => k(Err(IOError(errorString)))
                                   case _       => k(Ok(false))
@@ -336,11 +334,10 @@ namespace Path {
     ///
     handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = {
         let isRegularFileResponse = isRegularFile(p, result -> result);
-        match isRegularFileResponse with {
+        match isRegularFileResponse {
             case Ok(true)  => let Path(javaPath) = p;
                               let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
-                              let flixList: List[Str] = Nil;
-                              let flixList = readLinesHelper(flixList, reader);
+                              let flixList = readLinesHelper(Nil, reader);
                               let _ = native method java.io.BufferedReader.close(reader);
                               k(Ok(flixList))
             case Ok(false) => k(Err(IOError("Argument 'p' is not a regular file")))
@@ -353,8 +350,7 @@ namespace Path {
         if (native method java.util.Objects.isNull(readLine))
             List.reverse(fList)
         else
-            let fList = readLine :: fList;
-            readLinesHelper(fList, reader)
+            readLinesHelper(readLine :: fList, reader)
     }
 
     ///
@@ -440,7 +436,7 @@ namespace Path {
     ///
     handler copyFileTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = {
         let directoryResponse = isDirectory(src, result -> result);
-        match directoryResponse with {
+        match directoryResponse {
             case Ok(true)  => k(Err(IOError("Path 'src' is a directory and not a file")))
             case Ok(false) => if (exists(dst))
                                   k(Err(IOError("Path 'dst' already exists. Overwriting is not currently possible")))
@@ -465,7 +461,7 @@ namespace Path {
     ///
     handler copyDirectoryTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = {
         let directoryResponse = isDirectory(src, result -> result);
-        match directoryResponse with {
+        match directoryResponse {
             case Ok(true)  => if (exists(dst))
                                   k(Err(IOError("Path 'dst' already exists. Overwriting is not currently possible")))
                               else
@@ -491,7 +487,7 @@ namespace Path {
     handler moveFile[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = {
         try {
             let handlerResponse = isRegularFile(src, result -> result);
-            match handlerResponse with {
+            match handlerResponse {
                 case Ok(true)  => let Path(javaPath1) = src;
                                   let Path(javaPath2) = dst;
                                   let _ = native method java.nio.file.Files.move(javaPath1, javaPath2, [ ] : Array[##java.nio.file.StandardCopyOption]);
@@ -516,7 +512,7 @@ namespace Path {
     handler moveDirectory[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = {
         try {
             let handlerResponse = isDirectory(src, result -> result);
-            match handlerResponse with {
+            match handlerResponse {
                 case Ok(true)  => let Path(javaPath1) = src;
                                   let Path(javaPath2) = dst;
                                   let _ = native method java.nio.file.Files.move(javaPath1, javaPath2, [ ] : Array[##java.nio.file.StandardCopyOption]);
@@ -543,7 +539,7 @@ namespace Path {
         if (exists(p))
             let Path(javaPath) = p;
             let directoryResponse = isDirectory(p, result -> result);
-            match directoryResponse with {
+            match directoryResponse {
                 case Ok(true) => k(Err(IOError("The provided Path 'p' points to a directory and not a file")))
                 case Ok(false) => let _ = native method java.nio.file.Files.delete(javaPath);
                                   k(Ok(true))
@@ -564,7 +560,7 @@ namespace Path {
     handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = {
         try {
             let directoryResponse = isDirectory(p, result -> result);
-            match directoryResponse with {
+            match directoryResponse {
                 case Ok(true) => let Path(javaPath) = p;
                                  let _ = native method java.nio.file.Files.delete(javaPath);
                                  k(Ok(true))
@@ -590,7 +586,7 @@ namespace Path {
     ///
     handler size[a](p: Path, k: Result[Int64, IOError] -> a): a = {
         let handlerResponse = isRegularFile(p, result -> result);
-        match handlerResponse with {
+        match handlerResponse {
             case Ok(true)  => let Path(javaPath) = p;
                               let sizeAnswer = native method java.nio.file.Files.size(javaPath);
                               k(Ok(sizeAnswer))

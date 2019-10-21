@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2019 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,244 +22,195 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.tc.Show._
-import ca.uwaterloo.flix.util.{LocalResource, StreamOps, Validation}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
+
+import scala.annotation.tailrec
 
 object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
   /**
-    * The directory where to write the generated HTML documentation (and its resources).
+    * The title of the generated API.
+    */
+  val ApiTitle = "Flix Standard Library"
+
+  /**
+    * The directory where to write the ouput.
     */
   val OutputDirectory: Path = Paths.get("./target/api")
 
   /**
-    * Generates documentation for the given program `p`.
+    * Emits a JSON file with information about the definitions of the program.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
-      // Collect the definitions.
-      val defsByNS = root.defs.filterNot {
-        case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || !defn.mod.isPublic
+      // Collect all public definitions and group them by namespace.
+      val defsByNS = root.defs.filter {
+        case (sym, defn) => defn.mod.isPublic && !defn.ann.isBenchmark && !defn.ann.isLaw && !defn.ann.isTest
       }.groupBy(_._1.namespace)
 
-      // Collect the effects.
-      val effsByNS = root.effs.filterNot {
-        case (sym, defn) => !defn.mod.isPublic
-      }.groupBy(_._1.namespace)
-
-      // Collect the laws.
-      val lawsByNS = root.defs.filter {
-        case (sym, defn) => defn.ann.isLaw
-      }.groupBy(_._1.namespace)
-
-      // Collect the tests.
-      val testsByNS = root.defs.filter {
-        case (sym, defn) => defn.ann.isTest
-      }.groupBy(_._1.namespace)
-
-      // Collect the enums.
-      val enumsByNS = root.enums.groupBy(_._1.namespace)
-
-      // Collect the tables.
-      val tablesByNS = root.relations.groupBy(_._1.namespace) ++ root.lattices.groupBy(_._1.namespace)
-
-      // Collect the relations.
-      val relationsByNS = root.relations.values.groupBy(_.sym.namespace)
-
-      // Collect the lattices.
-      val latticesByNS = root.lattices.values.groupBy(_.sym.namespace)
-
-      // Compute the set of all available namespaces.
-      val namespaces = defsByNS.keySet ++ effsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
-
-      // Process each namespace.
-      val data = namespaces map {
-        case ns =>
-          val defs = defsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          val laws = lawsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          val effs = effsByNS.getOrElse(ns, Nil).toList.map(kv => mkEff(kv._2))
-          val tests = testsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
-          val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
-          val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
-          val lattices = latticesByNS.getOrElse(ns, Nil) map mkLattice
-
-          ns -> JObject(
-            JField("namespace", JString(ns.mkString("."))),
-            JField("types", JArray(enums)),
-            JField("definitions", JArray(defs)),
-            JField("effs", JArray(effs)),
-            JField("laws", JArray(laws)),
-            JField("tests", JArray(tests)),
-            JField("relations", JArray(relations.toList)),
-            JField("lattices", JArray(lattices.toList))
-          )
+      // Convert all definitions to JSON objects.
+      val jsonDefsByNs = defsByNS.foldRight(List.empty[(String, JObject)]) {
+        case ((ns, defs), acc) =>
+          val ds = defs.toList.map(kv => visitDef(kv._2))
+          (ns.mkString(".") -> JObject(JField("defs", JArray(ds)))) :: acc
       }
 
       // Create the output directory (and its parent directories).
       Files.createDirectories(OutputDirectory)
 
-      // Copy the JavaScript resource.
-      val javaScriptPath = OutputDirectory.resolve("__app__.js")
-      StreamOps.writeAll(LocalResource.Documentation.JavaScript, javaScriptPath)
+      // Construct the JSON object.
+      val json = JObject(
+        ("title", JString(ApiTitle)),
+        ("namespaces", JObject(jsonDefsByNs))
+      )
 
-      // Copy the StyleSheet resource.
-      val styleSheetPath = OutputDirectory.resolve("__app__.css")
-      StreamOps.writeAll(LocalResource.Documentation.StyleSheet, styleSheetPath)
+      // Serialize the JSON object to a string.
+      val s = JsonMethods.pretty(JsonMethods.render(json))
 
-      // Generate JSON for the menu.
-      val menu = JArray(mkMenu(namespaces.filter(_.nonEmpty)))
+      // The path to the file to write.
+      val p = OutputDirectory.resolve("api.js")
 
-      // Generate HTML files for each namespace.
-      for ((ns, page) <- data) {
-        writeString(mkHtmlPage(ns, menu, page), getHtmlPath(ns))
-      }
+      // Write the string to the path.
+      writeString(s, p)
     }
 
     root.toSuccess
   }
 
   /**
-    * Returns a JSON object of the available namespaces for the menu.
+    * Returns the given definition `defn0` as a JSON object.
     */
-  private def mkMenu(xs: Set[List[String]]): List[JObject] = {
-    val prelude = JObject(List(
-      JField("name", JString("Prelude")),
-      JField("link", JString("index.html"))
-    ))
-
-    val namespaces = xs map {
-      case ns => JObject(List(
-        JField("name", JString(ns.mkString("."))),
-        JField("link", JString(ns.mkString(".") + ".html"))
-      ))
-    }
-
-    prelude :: namespaces.toList
-  }
-
-  /**
-    * Returns the given definition `d` as a JSON object.
-    */
-  private def mkDefn(d: TypedAst.Def): JObject = {
-    // Process type parameters.
-    val tparams = d.tparams.map {
+  private def visitDef(defn0: Def): JObject = {
+    // Compute the type parameters.
+    val tparams = defn0.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
         JField("name", JString(ident.name))
       ))
     }
 
-    // Process formal parameters.
-    val fparams = d.fparams.map {
-      case FormalParam(psym, mod, tpe, loc) => JObject(
+    // Compute the formal parameters.
+    val fparams = getFormalParams(defn0).collect {
+      case FormalParam(psym, mod, tpe, loc) if tpe != Type.Cst(TypeConstructor.Unit) => JObject(
         JField("name", JString(psym.text)),
-        JField("tpe", JString(prettify(tpe)))
+        JField("type", JString(format(tpe)))
       )
     }
 
     // Compute return type.
-    val returnType = prettify(d.tpe.typeArguments.last)
+    val returnType = getReturnType(defn0.tpe)
 
+    // Construct the JSON object.
     JObject(List(
-      JField("name", JString(d.sym.name)),
+      JField("name", JString(defn0.sym.name)),
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
-      JField("result", JString(returnType)),
-      JField("comment", JString(d.doc.text))
+      JField("result", JString(format(returnType))),
+      JField("comment", JString(defn0.doc.text.trim))
     ))
-
   }
 
   /**
-    * Returns the given effect `d` as a JSON object.
+    * Returns the (uncurried) formal parameters of the given definition `defn0`.
     */
-  private def mkEff(eff: TypedAst.Eff): JObject = {
-    // Process type parameters.
-    val tparams = eff.tparams.map {
-      case TypeParam(ident, tpe, loc) => JObject(List(
-        JField("name", JString(ident.name))
-      ))
+  private def getFormalParams(defn0: Def): List[FormalParam] = {
+    /**
+      * Returns the formal parameters of the lambda expressions in the given expression `exp0`.
+      */
+    def uncurry(exp0: Expression): List[FormalParam] = exp0 match {
+      case Expression.Lambda(fparam, exp, _, _, _) => fparam :: uncurry(exp)
+      case _ => Nil
     }
 
-    // Process formal parameters.
-    val fparams = eff.fparams.map {
-      case FormalParam(psym, mod, tpe, loc) => JObject(
-        JField("name", JString(psym.text)),
-        JField("tpe", JString(prettify(tpe)))
-      )
+    defn0.fparams ::: uncurry(defn0.exp)
+  }
+
+  /**
+    * Returns the return type of the given function type `tpe0`.
+    */
+  @tailrec
+  private def getReturnType(tpe0: Type): Type = tpe0 match {
+    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
+    case _ => tpe0
+  }
+
+  /**
+    * Returns a string representation of the given type `tpe0`.
+    */
+  private def format(tpe0: Type): String = {
+    val base = tpe0.typeConstructor
+    val args = tpe0.typeArguments
+
+    base match {
+      case tvar: Type.Var => tvar.getText.getOrElse(tvar.id.toString)
+
+      case Type.Cst(tc) => tc match {
+        case TypeConstructor.Unit => "Unit"
+        case TypeConstructor.Bool => "Bool"
+        case TypeConstructor.Char => "Char"
+        case TypeConstructor.Float32 => "Float32"
+        case TypeConstructor.Float64 => "Float64"
+        case TypeConstructor.Int8 => "Int8"
+        case TypeConstructor.Int16 => "Int16"
+        case TypeConstructor.Int32 => "Int32"
+        case TypeConstructor.Int64 => "Int64"
+        case TypeConstructor.BigInt => "BigInt"
+        case TypeConstructor.Str => "Str"
+
+        case TypeConstructor.Array => "Array" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Channel => "Channel" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Enum(sym, kind) =>
+          if (args.isEmpty)
+            sym.toString
+          else
+            sym.toString + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Native(clazz) => clazz.getName + (if (args.isEmpty) "" else "[" + args.map(format).mkString(", ") + "]")
+
+        case TypeConstructor.Ref => "Ref" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Tuple(l) => "(" + args.map(format).mkString(", ") + ")"
+
+        case TypeConstructor.Vector => "Vector" + "[" + args.map(format).mkString(", ") + "]"
+      }
+
+      case Type.Zero => "Zero"
+
+      case Type.Succ(n, t) => n.toString + " " + t.toString
+
+      case Type.Arrow(_, l) =>
+        val argumentTypes = args.init
+        val resultType = args.last
+        if (argumentTypes.length == 1) {
+          format(argumentTypes.head) + " -> " + format(resultType)
+        } else {
+          "(" + argumentTypes.map(format).mkString(", ") + ") -> " + format(resultType)
+        }
+
+      case Type.RecordEmpty => "{ }"
+
+      case Type.RecordExtend(label, value, rest) =>
+        "{" + label + " = " + format(value) + " | " + format(rest) + "}"
+
+      case Type.SchemaEmpty => "Schema { }"
+
+      case Type.SchemaExtend(sym, t, rest) =>
+        "{" + sym + " = " + format(t) + " | " + format(rest) + "}"
+
+      case Type.Relation(sym, attr, _) =>
+        sym.toString + "(" + attr.map(format).mkString(", ") + ")"
+
+      case Type.Lattice(sym, attr, _) =>
+        sym.toString + "(" + attr.map(format).mkString(", ") + ")"
+
+      case Type.Apply(tpe1, tpe2) => format(tpe1) + "[" + format(tpe2) + "]"
     }
-
-    // Compute return type.
-    val returnType = prettify(eff.tpe.typeArguments.last)
-
-    JObject(List(
-      JField("name", JString(eff.sym.name)),
-      JField("tparams", JArray(tparams)),
-      JField("fparams", JArray(fparams)),
-      JField("result", JString(returnType)),
-      JField("comment", JString(eff.doc.text))
-    ))
-
-  }
-
-  /**
-    * Returns the given enum `e` as a JSON object.
-    */
-  private def mkEnum(e: TypedAst.Enum): JObject = {
-    JObject(List(
-      JField("name", JString(e.sym.name)),
-      JField("comment", JString(e.doc.text))
-    ))
-  }
-
-  /**
-    * Returns the given relation `r` as a JSON object.
-    */
-  private def mkRelation(r: Relation): JObject = {
-    val attributes = r.attr.map {
-      case Attribute(name, tpe, loc) => JObject(List(
-        JField("name", JString(name)),
-        JField("tpe", JString(prettify(tpe)))
-      ))
-    }
-
-    JObject(List(
-      JField("name", JString(r.sym.name)),
-      JField("attributes", JArray(attributes)),
-      JField("comment", JString(r.doc.text))
-    ))
-  }
-
-  /**
-    * Returns the given lattice `l` as a JSON object.
-    */
-  private def mkLattice(l: Lattice): JObject = {
-    val attributes = l.attr.map {
-      case Attribute(name, tpe, loc) => JObject(List(
-        JField("name", JString(name)),
-        JField("tpe", JString(prettify(tpe)))
-      ))
-    }
-
-    JObject(List(
-      JField("name", JString(l.sym.name)),
-      JField("attributes", JArray(attributes)),
-      JField("comment", JString(l.doc.text))
-    ))
-  }
-
-  /**
-    * Returns the path where the HTML file, for the given namespace, should be stored.
-    */
-  private def getHtmlPath(ns: List[String]): Path = {
-    if (ns.isEmpty)
-      OutputDirectory.resolve("index.html")
-    else
-      OutputDirectory.resolve(ns.mkString(".") + ".html")
   }
 
   /**
@@ -271,71 +222,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     writer.close()
   } catch {
     case ex: IOException => throw new RuntimeException(s"Unable to write to path '$p'.", ex)
-  }
-
-  /**
-    * Converts the given type into a pretty string.
-    */
-  private def prettify(t: Type): String = t.show
-
-  /**
-    * Returns the HTML fragment to use for the given namespace `ns`.
-    */
-  private def mkHtmlPage(ns: List[String], menu: JValue, page: JValue): String = {
-    // Compute the page title (if any).
-    val title = if (ns.isEmpty)
-      "Flix Standard Library"
-    else
-      "Flix Standard Library: " + ns.mkString(".")
-
-    // Render the menu JSON data into a string.
-    val menuStr = JsonMethods.pretty(JsonMethods.render(menu))
-
-    // Render the page JSON data into a string.
-    val pageStr = JsonMethods.pretty(JsonMethods.render(page))
-
-    // Compute the relative path path to the JSON file.
-    val path = if (ns.isEmpty) "./index.json" else "./" + ns.mkString(".") + ".json"
-    s"""<!DOCTYPE html>
-       |<html lang="en">
-       |<head>
-       |    <meta charset="UTF-8">
-       |    <title>$title</title>
-       |    <link href="__app__.css" rel="stylesheet" type="text/css"/>
-       |    <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/css?family=Oswald" rel="stylesheet">
-       |    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-       |</head>
-       |<body>
-       |
-        |<!-- Application Element -->
-       |<div id="app">
-       |  <div id="navbar"></div>
-       |</div>
-       |
-        |<!-- Menu Data -->
-       |<script type="application/ecmascript">
-       |window.menu = $menuStr;
-       |</script>
-       |
-        |<!-- Page Data -->
-       |<script type="application/ecmascript">
-       |window.page = $pageStr;
-       |</script>
-       |
-        |<!-- JavaScript Resource -->
-       |<script src="__app__.js" type="application/ecmascript">
-       |</script>
-       |
-        |<!-- Trigger Boot -->
-       |<script type="application/ecmascript">
-       |    bootstrap("$path");
-       |</script>
-       |
-        |</body>
-       |</html>
-   """.stripMargin
   }
 
 }

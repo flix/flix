@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -121,7 +121,7 @@ object ClosureConv extends Phase[Root, Root] {
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
       val newArgs = fvs.map {
         case (oldSym, ptype) =>
-          val newSym = Symbol.freshVarSym(oldSym)(flix.genSym)
+          val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
           FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
       } ++ args
@@ -312,29 +312,29 @@ object ClosureConv extends Phase[Root, Root] {
 
       Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.ProcessSpawn(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
+      Expression.ProcessSpawn(e, tpe, loc)
 
-    case Expression.Sleep(exp, tpe, loc) =>
+    case Expression.ProcessSleep(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.Sleep(e, tpe, loc)
+      Expression.ProcessSleep(e, tpe, loc)
 
-    case Expression.FixpointConstraint(c0, tpe, loc) =>
-      val Constraint(cparams0, head0, body0) = c0
-      val head = visitHeadPredicate(head0)
-      val body = body0 map visitBodyPredicate
-      val c = Constraint(cparams0, head, body)
-      Expression.FixpointConstraint(c, tpe, loc)
+    case Expression.ProcessPanic(msg, tpe, loc) =>
+      Expression.ProcessPanic(msg, tpe, loc)
+
+    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+      val cs = cs0.map(visitConstraint)
+      Expression.FixpointConstraintSet(cs, tpe, loc)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       Expression.FixpointCompose(e1, e2, tpe, loc)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val e = visitExp(exp)
-      Expression.FixpointSolve(e, tpe, loc)
+      Expression.FixpointSolve(e, stf, tpe, loc)
 
     case Expression.FixpointProject(pred, exp, tpe, loc) =>
       val p = visitPredicateWithParam(pred)
@@ -346,7 +346,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.FixpointEntails(e1, e2, tpe, loc)
 
-    case Expression.UserError(tpe, loc) => exp0
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
     case Expression.SwitchError(tpe, loc) => exp0
@@ -363,6 +362,16 @@ object ClosureConv extends Phase[Root, Root] {
   }
 
   /**
+    * Performs closure conversion on the given constraint `c0`.
+    */
+  private def visitConstraint(c0: Constraint)(implicit flix: Flix): Constraint = {
+    val Constraint(cparams0, head0, body0) = c0
+    val head = visitHeadPredicate(head0)
+    val body = body0 map visitBodyPredicate
+    Constraint(cparams0, head, body)
+  }
+
+  /**
     * Performs closure conversion on the given head predicate `head0`.
     */
   private def visitHeadPredicate(head0: Predicate.Head)(implicit flix: Flix): Predicate.Head = head0 match {
@@ -370,6 +379,10 @@ object ClosureConv extends Phase[Root, Root] {
       val p = visitPredicateWithParam(pred)
       val ts = terms map visitHeadTerm
       Predicate.Head.Atom(p, ts, tpe, loc)
+
+    case Predicate.Head.Union(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Predicate.Head.Union(e, tpe, loc)
   }
 
   /**
@@ -381,13 +394,9 @@ object ClosureConv extends Phase[Root, Root] {
       val ts = terms map visitBodyTerm
       Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-    case Predicate.Body.Filter(sym, terms, loc) =>
-      val ts = terms map visitBodyTerm
-      Predicate.Body.Filter(sym, ts, loc)
-
-    case Predicate.Body.Functional(sym, term, loc) =>
-      val t = visitHeadTerm(term)
-      Predicate.Body.Functional(sym, t, loc)
+    case Predicate.Body.Guard(exp0, loc) =>
+      val e = visitExp(exp0)
+      Predicate.Body.Guard(e, loc)
   }
 
   /**
@@ -498,29 +507,36 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
     case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
+
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
+
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+
     case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = mutable.LinkedHashSet.empty ++ rules.flatMap {
-        case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
+        case SelectChannelRule(sym, chan, exp) => (freeVars(chan) ++ freeVars(exp)).filter(p => p._1 != sym)
       }
 
       val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
 
       rs ++ d
-    case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
-    case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
 
-    case Expression.FixpointConstraint(con, tpe, loc) =>
-      val Constraint(cparams, head, body) = con
-      freeVars(head) ++ body.flatMap(freeVars)
+    case Expression.ProcessSpawn(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessSleep(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+      cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
+        case (m, c) => m ++ freeVars(c)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
+    case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
     case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(pred.exp) ++ freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
-    case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -537,11 +553,22 @@ object ClosureConv extends Phase[Root, Root] {
   }
 
   /**
+    * Returns the free variables in the given constraint `c0`.
+    */
+  private def freeVars(c0: Constraint): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = {
+    val Constraint(cparams, head, body) = c0
+    freeVars(head) ++ body.flatMap(freeVars)
+  }
+
+  /**
     * Returns the free variables in the given head predicate `head0`.
     */
   private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
     case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       freeVars(pred.exp) ++ terms.flatMap(freeVars)
+
+    case Predicate.Head.Union(exp, tpe, loc) =>
+      freeVars(exp)
   }
 
   /**
@@ -551,11 +578,8 @@ object ClosureConv extends Phase[Root, Root] {
     case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       freeVars(pred.exp) ++ terms.flatMap(freeVars)
 
-    case Predicate.Body.Filter(sym, terms, loc) =>
-      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-
-    case Predicate.Body.Functional(sym, term, loc) =>
-      freeVars(term)
+    case Predicate.Body.Guard(exp, loc) =>
+      freeVars(exp)
   }
 
   /**
@@ -820,37 +844,33 @@ object ClosureConv extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map(visitExp(_))
+        val d = default.map(visitExp)
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      case Expression.Spawn(exp, tpe, loc) =>
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Spawn(e, tpe, loc)
+        Expression.ProcessSpawn(e, tpe, loc)
 
-      case Expression.Sleep(exp, tpe, loc) =>
+      case Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Sleep(e, tpe, loc)
+        Expression.ProcessSleep(e, tpe, loc)
 
-      case Expression.FixpointConstraint(con, tpe, loc) =>
-        val Constraint(cparams0, head0, body0) = con
-        val cs = cparams0 map {
-          case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
-          case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
-        }
-        val head = visitHeadPredicate(head0)
-        val body = body0 map visitBodyPredicate
-        val c = Constraint(cs, head, body)
-        Expression.FixpointConstraint(c, tpe, loc)
+      case Expression.ProcessPanic(msg, tpe, loc) =>
+        Expression.ProcessPanic(msg, tpe, loc)
+
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
+        val cs = cs0.map(visitConstraint)
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
       case Expression.FixpointProject(pred, exp, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
@@ -862,7 +882,6 @@ object ClosureConv extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.UserError(tpe, loc) => e
       case Expression.HoleError(sym, tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e
@@ -873,11 +892,26 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 
+    def visitConstraint(c0: Constraint): Constraint = {
+      val Constraint(cparams0, head0, body0) = c0
+      val cs = cparams0 map {
+        case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
+        case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
+      }
+      val head = visitHeadPredicate(head0)
+      val body = body0 map visitBodyPredicate
+      Constraint(cs, head, body)
+    }
+
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.Atom(pred, terms, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm
         Predicate.Head.Atom(pred, ts, tpe, loc)
+
+      case Predicate.Head.Union(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Head.Union(e, tpe, loc)
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
@@ -886,14 +920,9 @@ object ClosureConv extends Phase[Root, Root] {
         val ts = terms map visitBodyTerm
         Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
-      case Predicate.Body.Filter(sym, terms, loc) =>
-        val ts = terms map visitBodyTerm
-        Predicate.Body.Filter(sym, ts, loc)
-
-      case Predicate.Body.Functional(sym, term, loc) =>
-        val s = subst.getOrElse(sym, sym)
-        val t = visitHeadTerm(term)
-        Predicate.Body.Functional(s, t, loc)
+      case Predicate.Body.Guard(exp, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Guard(e, loc)
     }
 
     def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
