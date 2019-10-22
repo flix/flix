@@ -498,11 +498,8 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
+      case Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
         checkPredicateWithParam(pred, env0, ienv0)
-        checkExp(init, env0, ienv0)
-        checkExp(f, env0, ienv0)
-        checkExp(constraints, env0, ienv0)
         checkType(tpe)
       //
       // Error Expressions.

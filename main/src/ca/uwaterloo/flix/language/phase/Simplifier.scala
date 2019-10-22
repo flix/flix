@@ -576,10 +576,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
         val p = visitPredicateWithParam(pred)
+        val var1 = Symbol.freshVarSym()
         val e1 = visitExp(exp1)
+        val var2 = Symbol.freshVarSym()
         val e2 = visitExp(exp2)
+        val var3 = Symbol.freshVarSym()
         val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.FixpointFold(p, e1, e2, e3, tpe, loc)
+        SimplifiedAst.Expression.Let(var1, e1,
+          SimplifiedAst.Expression.Let(var2, e2,
+            SimplifiedAst.Expression.Let(var3, e3,
+              SimplifiedAst.Expression.FixpointFold(p, var1, var2, var3, tpe, loc), tpe, loc), tpe, loc), tpe, loc)
 
       case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
@@ -1332,12 +1338,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.FixpointFold(p, e1, e2, e3, tpe, loc)
+        SimplifiedAst.Expression.FixpointFold(p, var1, var2, var3, tpe, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
