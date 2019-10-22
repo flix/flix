@@ -478,7 +478,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val var3 = Symbol.freshVarSym()
         val e3 = visit(exp3)
         val t = visitType(tpe)
-        FinalAst.Expression.Let(var1, e1, FinalAst.Expression.Let(var2, e2, FinalAst.Expression.Let(var3, e3, FinalAst.Expression.FixpointFold(p, var1, var2, var3, tpe, loc), tpe), tpe), tpe)
+        FinalAst.Expression.Let(var1, e1,
+          FinalAst.Expression.Let(var2, e2,
+            FinalAst.Expression.Let(var3, e3,
+              FinalAst.Expression.FixpointFold(p, var1, var2, var3, t, loc), t, loc), t, loc), t, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
