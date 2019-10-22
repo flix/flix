@@ -1107,9 +1107,9 @@ object ParsedAst {
 
     case class Array(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
-    case class TailSpread(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition, ident: Name.Ident, sp3: SourcePosition) extends ParsedAst.Pattern
+    case class ArrayTailSpread(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition, ident: Name.Ident, sp3: SourcePosition) extends ParsedAst.Pattern
 
-    case class HeadSpread(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition, elms: Seq[ParsedAst.Pattern], sp3: SourcePosition) extends ParsedAst.Pattern
+    case class ArrayHeadSpread(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition, elms: Seq[ParsedAst.Pattern], sp3: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Nil Pattern (of list).

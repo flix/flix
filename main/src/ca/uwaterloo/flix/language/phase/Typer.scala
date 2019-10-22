@@ -1664,35 +1664,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           elementType <- unifyTypAllowEmptyM(elementTypes,loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
-/*
-      case ResolvedAst.Pattern.TailSpread(elms, varSym, tvar, loc) =>
+
+      case ResolvedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
           elementType <- unifyTypAllowEmptyM(elementTypes,loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
 
-      case ResolvedAst.Pattern.HeadSpread(varSym, elms, tvar, loc) =>
+      case ResolvedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
           elementType <- unifyTypAllowEmptyM(elementTypes,loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
 
-      case ResolvedAst.Pattern.WildTailSpread(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
-        ) yield resultType
-
-      case ResolvedAst.Pattern.WildHeadSpread(elms, tvar, loc) =>
-        for (
-          elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-          resultType <- unifyTypM(tvar, mkArray(elementType), loc)
-        ) yield resultType
-*/
     }
 
     visit(pat0)
@@ -1730,6 +1716,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, tag, visit(pat), subst0(tvar), loc)
       case ResolvedAst.Pattern.Tuple(elms, tvar, loc) => TypedAst.Pattern.Tuple(elms map visit, subst0(tvar), loc)
       case ResolvedAst.Pattern.Array(elms, tvar, loc) => TypedAst.Pattern.Array(elms map visit, subst0(tvar), loc)
+      case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => TypedAst.Pattern.ArrayTailSpread(elms map visit, sym, subst0(tvar), loc)
+      case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => TypedAst.Pattern.ArrayHeadSpread(sym, elms map visit, subst0(tvar), loc)
+
     }
 
     visit(pat0)

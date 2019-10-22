@@ -1223,34 +1223,34 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Pattern.TailSpread(sp1, pats, sp2, ident, sp3) =>
+      case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, sp2, ident, sp3) =>
         val array = traverse(pats)(visit) map {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.TailSpread(array.get.elms, None, mkSL(sp2, sp3)).toSuccess
+          WeededAst.Pattern.ArrayTailSpread(array.get.elms, None, mkSL(sp2, sp3)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.TailSpread(array.get.elms, Some(ident), mkSL(sp1,sp3)).toSuccess
+              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1,sp3)).toSuccess
             case Some(otherIdent) =>
               NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp3)).toFailure
           }
         }
 
 
-      case ParsedAst.Pattern.HeadSpread(sp1, ident, sp2, pats, sp3) =>
+      case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, sp2, pats, sp3) =>
         val array = traverse(pats)(visit) map {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp2, sp3))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.HeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.HeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp3)).toSuccess
+              WeededAst.Pattern.ArrayHeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp3)).toSuccess
             case Some(otherIdent) =>
               NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp3)).toFailure
           }

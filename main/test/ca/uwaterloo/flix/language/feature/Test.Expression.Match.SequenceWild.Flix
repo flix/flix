@@ -1,95 +1,3 @@
-
-@test
-def matchEmptyIntArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Int]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyUnitArrayTailSpread(): Bool = match ([]:ArrayTailSpread[()]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyCharArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Char]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyBoolArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Bool]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyFloat32ArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Float32]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyFloat64ArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Float64]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyInt8ArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Int8]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyInt16ArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Int16]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyInt64ArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Int64]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyStrArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Str]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyBigIntArrayTailSpread(): Bool = match ([]:ArrayTailSpread[BigInt]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyOptionIntArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Option[Int]]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
-@test
-def matchEmptyResultArrayTailSpread(): Bool = match ([]:ArrayTailSpread[Result[Int, Str]]) {
-    case [x, ..xs] => false
-    case [] => true
-    case _ => false
-}
-
 @test
 def matchUnitArrayTailSpread1(): Bool = match [()] {
     case [(), ..xs] => true
@@ -613,13 +521,13 @@ def matchResultArrayTailSpread4(): Bool = match [[Ok(42)], [Err(23)]] {
 }
 
 @test
-def matchResultArrayTailSpread5(): Bool = match [Ok(42), Err(23), Ok(1), err(2)] {
+def matchResultArrayTailSpread5(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)] {
     case [Ok(42), Err(23), ..xs]  => true
     case _ => false
 }
 
 @test
 def matchResultArrayTailSpread6(): Bool = match [Ok(42)] {
-    case [Ok(42), Err(23) ..xs]  => false
+    case [Ok(42), Err(23), ..xs]  => false
     case _ => true
 }

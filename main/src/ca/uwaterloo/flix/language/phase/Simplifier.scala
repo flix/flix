@@ -1118,6 +1118,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
+
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
       }
 

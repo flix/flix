@@ -807,6 +807,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
       case Pattern.Array(elm, _, _) => TyCon.Array
+      case Pattern.ArrayTailSpread (elm, _, _, _) => TyCon.Array
+      case Pattern.ArrayHeadSpread (_, elm ,_ ,_) => TyCon.Array
     }
 
     /**
