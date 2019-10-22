@@ -90,6 +90,17 @@ public final class ConstraintSystem {
     }
 
     /**
+     * Return the fact indexed by `index` in `this` constraint system.
+     * Returns `null` if there is no fact at this index.
+     */
+    public Constraint getFact(int index) {
+        if (index >= 0 && index < facts.length) {
+            return facts[index];
+        }
+        return null;
+    }
+
+    /**
      * Returns all rules in `this` constraint system.
      */
     public Constraint[] getRules() {
