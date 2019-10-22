@@ -1228,12 +1228,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.WildTailSpread(array.get.elms,mkSL(sp2, sp3)).toSuccess
+          WeededAst.Pattern.TailSpread(array.get.elms, None, mkSL(sp2, sp3)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.TailSpread(array.get.elms, ident, mkSL(sp1,sp3)).toSuccess
+              WeededAst.Pattern.TailSpread(array.get.elms, Some(ident), mkSL(sp1,sp3)).toSuccess
             case Some(otherIdent) =>
               NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp3)).toFailure
           }
@@ -1245,12 +1245,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp2, sp3))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.WildHeadSpread(array.get.elms, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Pattern.HeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.HeadSpread(ident, array.get.elms, mkSL(sp1,sp3)).toSuccess
+              WeededAst.Pattern.HeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp3)).toSuccess
             case Some(otherIdent) =>
               NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp3)).toFailure
           }

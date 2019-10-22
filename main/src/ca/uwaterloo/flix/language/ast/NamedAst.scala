@@ -250,13 +250,11 @@ object NamedAst {
 
     case class Array(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class TailSpread(elms: scala.List[NamedAst.Pattern], sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
+    case class TailSpread(elms: scala.List[NamedAst.Pattern], sym: Option[Symbol.VarSym], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class HeadSpread(sym: Symbol.VarSym, elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
+    case class HeadSpread(sym: Option[Symbol.VarSym], elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class WildTailSpread(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-    case class WildHeadSpread(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
   }
 

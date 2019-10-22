@@ -997,18 +997,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
-      case WeededAst.Pattern.TailSpread(elms, ident, loc) =>
-        val sym = Symbol.freshVarSym(ident)
-        m += (ident.name -> sym)
-        NamedAst.Pattern.TailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
-      case WeededAst.Pattern.HeadSpread(ident, elms, loc) =>
-        val sym = Symbol.freshVarSym(ident)
-        m += (ident.name -> sym)
-        NamedAst.Pattern.HeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
-      case WeededAst.Pattern.WildTailSpread(elms, loc) =>
-        NamedAst.Pattern.WildTailSpread(elms map visit, Type.freshTypeVar(), loc)
-      case WeededAst.Pattern.WildHeadSpread(elms, loc) =>
-        NamedAst.Pattern.WildHeadSpread(elms map visit, Type.freshTypeVar(), loc)
+      case WeededAst.Pattern.TailSpread(elms, ident, loc) => ident match{
+        case Some(id) =>
+          val sym = Symbol.freshVarSym(id)
+          m += (id.name -> sym)
+          NamedAst.Pattern.TailSpread(elms map visit, Some(sym), Type.freshTypeVar(), loc)
+        case None => NamedAst.Pattern.TailSpread(elms map visit, None, Type.freshTypeVar(), loc)
+      }
+      case WeededAst.Pattern.HeadSpread(ident, elms, loc) => ident match{
+        case Some(id) =>
+          val sym = Symbol.freshVarSym(id)
+          m += (id.name -> sym)
+          NamedAst.Pattern.HeadSpread(Some(sym), elms map visit, Type.freshTypeVar(), loc)
+        case None => NamedAst.Pattern.TailSpread(elms map visit, None, Type.freshTypeVar(), loc)
+      }
     }
 
     (visit(pat0), m.toMap)

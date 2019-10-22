@@ -244,13 +244,9 @@ object WeededAst {
 
     case class Array(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class TailSpread(elms: scala.List[WeededAst.Pattern], ident: Name.Ident, loc: SourceLocation) extends WeededAst.Pattern
+    case class TailSpread(elms: scala.List[WeededAst.Pattern], ident: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Pattern
 
-    case class HeadSpread(ident: Name.Ident, elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class WildTailSpread(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
-
-    case class WildHeadSpread(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+    case class HeadSpread(ident: Option[Name.Ident], elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 
