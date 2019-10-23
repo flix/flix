@@ -1156,7 +1156,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(pred, init, f, fType, constraints, constraintsType, tpe, loc) => ???
+    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1165,7 +1165,7 @@ object GenExpression {
       // stack: [index]
 
       // Get the initial accumulator value
-      readVar(init, tpe, visitor)
+      readVar(init.sym, init.tpe, visitor)
       // stack: [index, acc]
 
       // Label for the fold loop
@@ -1183,7 +1183,7 @@ object GenExpression {
 
       // Get the projected constraint system
       // We assume the constraint system has been projected beforehand (this is done in Simplifier)
-      readVar(constraints, constraintsType, visitor)
+      readVar(constraints.sym, constraints.tpe, visitor)
       // stack: [index, acc, index, constraints]
 
       // get the fact at the current index
@@ -1243,18 +1243,18 @@ object GenExpression {
         "()Ljava/util/function/Function;", false)
       // stack: [index, acc, tupleElement*, terms, index, function]
       // call the function with a new object as argument
-      visitor.visitTypeInsn(NEW, JvmType.Object);
+      visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName);
       // stack: [index, acc, tupleElement*, terms, index, function, object]
       visitor.visitInsn(DUP)
       // stack: [index, acc, tupleElement*, terms, index, function, object, object]
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void))
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
       // stack: [index, acc, tupleElement*, terms, index, function, object]
       // prepare call to apply
       visitor.visitInsn(SWAP)
       // stack: [index, acc, tupleElement*, terms, index, object, function]
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Function.toInternalName, "apply",
         "(Ljava/lang/Object;)Lflix/runtime/ProxyObject;", false)
-      // stack: [index, acc, tupleType, terms, index, tupleElement]
+      // stack: [index, acc, tupleElement*, terms, index, tupleElement]
 
       // prepare for recursion
       visitor.visitInsn(DUP_X2)
@@ -1278,7 +1278,7 @@ object GenExpression {
       // stack: [index, acc, tupleElement*]
 
       // Extract the type of elements that are in the tuple
-      val tupleElmsTypes = root.relations(pred).attr.map(_.tpe)
+      val tupleElmsTypes = root.relations(pred.sym.asInstanceOf[Symbol.RelSym] /* TODO: not clean */).attr.map(_.tpe)
       // Create a new tuple object
       val classType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
       visitor.visitTypeInsn(NEW, classType.name.toInternalName)
@@ -1291,7 +1291,7 @@ object GenExpression {
       // stack: [index, acc, tuple]
 
       // Getting the folded function
-      readVar(f, fType, visitor)
+      readVar(f.sym, f.tpe, visitor)
       // stack: [index, acc, tuple, f]
 
       // Call the function
