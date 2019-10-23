@@ -498,10 +498,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Fixpoint Fold.
       //
-      case Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
+      case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
         val p = visitPredicateWithParam(pred, env0)
-        Expression.FixpointFold(p, var1, var2, var3, tpe, loc)
-
+        Expression.FixpointFold(p, var1, var2, var2tpe, var3, var3tpe, tpe, loc)
 
       //
       // Error Expressions.

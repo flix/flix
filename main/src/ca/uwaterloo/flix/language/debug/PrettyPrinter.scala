@@ -467,7 +467,7 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
-        case Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
+        case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
           vt.text("fold ")
           fmtPredicateWithParam(pred, vt)
           vt.text(" ")

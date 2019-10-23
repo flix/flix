@@ -1238,15 +1238,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // ---------------------------------------------------
         // fold P init f constraints : b
         //
-        def tupleTypeForPred(pred: ResolvedAst.PredicateWithParam): Type = {
-          pred.sym match {
-            case rel: Symbol.RelSym =>
-              Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
-            case lat: Symbol.LatSym =>
-              /* TODO: what should be done in this case? */
-              ???
-          }
-        }
         val freshPredicateTypeVar = Type.freshTypeVar()
         val freshRestTypeVar = Type.freshTypeVar()
         for {
@@ -1255,7 +1246,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (constraintsType, eff3) <- visitExp(constraints)
           // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
           constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshRestTypeVar), loc)
-          tupleType = tupleTypeForPred(pred)
+          tupleType = pred.sym match {
+            case rel: Symbol.RelSym =>
+              Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
+            case lat: Symbol.LatSym =>
+              /* TODO: what should be done in this case? */
+              ???
+          }
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)

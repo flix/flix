@@ -250,7 +250,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
+      case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
         visitExp(pred.exp, i0)
 
       case Expression.HoleError(sym, tpe, loc) => i0

@@ -215,7 +215,7 @@ object TypedAstOps {
 
       case Expression.FixpointFold(pred, init, f, constraints, tpe, eff, loc) =>
         visitPredicateWithParam(pred, env0)
-         visitExp(init, env0) ++ visitExp(f, env0) ++ visitExp(constraints, env0)
+        visitExp(init, env0) ++ visitExp(f, env0) ++ visitExp(constraints, env0)
     }
 
     /**
