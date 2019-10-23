@@ -467,15 +467,15 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
-        case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
+        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
           vt.text("fold ")
           fmtPredicateWithParam(pred, vt)
           vt.text(" ")
-          fmtSym(var1, vt)
+          visitExp(exp1)
           vt.text(" ")
-          fmtSym(var3, vt)
+          visitExp(exp2)
           vt.text(" ")
-          fmtSym(var3, vt)
+          visitExp(exp3)
 
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")

@@ -346,12 +346,12 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
-    case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
+    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
       val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
-      val init = env0.get(var1.toString).get
+      val init = env0.get(exp1.sym.toString).get
       // TODO: what if it's not a closure? Do we have to cover both clo and def?
-      val f = cast2closure(env0.get(var2.toString).get)
-      val cs = cast2constraintset(env0.get(var3.toString).get)
+      val f = cast2closure(env0.get(exp2.sym.toString).get)
+      val cs = cast2constraintset(env0.get(exp3.sym.toString).get)
       val projected = Solver.project(predSym, cs)
       projected.getFacts().foldRight(init)((c, acc) => {
         val tuple = c.getHeadPredicate() match {

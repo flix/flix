@@ -270,8 +270,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointEntails(exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointFold(pred, exp1, exp2, _, exp3, _, _, _) =>
-        Set.empty
+      case Expression.FixpointFold(pred, exp1, exp2, exp3, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.HoleError(_, _, _) =>
         Set.empty
