@@ -1168,8 +1168,6 @@ object GenExpression {
       readVar(init, tpe, visitor)
       // stack: [index, acc]
 
-      // TODO: remove the predSym in the SimplifiedAst, when project is added
-
       // Label for the fold loop
       val loop = new Label
       // Label for the exit of the loop
@@ -1184,7 +1182,7 @@ object GenExpression {
       visitor.visitInsn(DUP_X1) // stack: [index, acc, index]
 
       // Get the projected constraint system
-      // TODO: we assume the constraint system has been projected. It should be projected already when introducing the extra variable.
+      // We assume the constraint system has been projected beforehand (this is done in Simplifier)
       readVar(constraints, constraintsType, visitor)
       // stack: [index, acc, index, constraints]
 
@@ -1201,77 +1199,93 @@ object GenExpression {
       // stack: [index, acc, fact]
 
       // stack: [index, acc, fact]
+      // call getHeadPredicate on the fact
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
+        "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
+      // stack: [index, acc, headpred]
+      // cast the head predicate to an atom predicate
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.Predicate.toInternalName, "cast",
+        "()Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+      // stack: [index, acc, atompred]
+      // call getTerms on the atom predicate
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.Predicate.toInternalName, "getTerms",
+        "()[Lflix/runtime/fixpoint/term/Term;", false)
+      // stack: [index, acc, terms]
 
-      // Transform the constraint into a tuple
-      /* TODO: this is not yet complete, nor correct (it doesn't even compile yet)
-      {
-        // Extract the type of elements that are in the tuple
-        val tupleElmsTypes = root.relations(pred).attrs.map(_.tpe)
-        // Create a new tuple object
-        val classType= JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
-        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-        // stack: [acc, f, index, facts, facts[index], tupleType]
-        visitor.visitInsn(SWAP) // stack: [acc, f, index, facts, tupleType, facts[index]]
+      // We'll now loop over the terms, need an index for that
+      visitor.visitInsn(ICONST_0)
+      // stack: [index, acc, tupleElement*, terms, index] (tupleElement* is initially empty)
+      val tupleLoop = new Label
+      val exitTupleLoop = new Label
+      visitor.visitLabel(tupleLoop)
 
-        // call getHeadPredicate on the fact
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
-          "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
-        // stack [acc, f, index, facts, tupleType, headpred]
-        // cast the head predicate to an atom predicate
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.toInternalName, "cast",
-          "()Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
-        // stack [acc, f, index, facts, tupleType, atompred]
-        // call getTerms on the atom predicate
-          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.toInternalName, "getTerms",
-          "()[Lflix/runtime/fixpoint/term/Term;", false)
-        // stack [acc, f, index, facts, tupleType, terms]
-        visitor.visitInsn(ICONST_0)
-        // stack [acc, f, index, facts, tupleType, terms, index]
-        val tupleLoop = new Label
-        val exitTupleLoop = new Label
-        visitLabel(tupleLoop)
-        visitor.visitInsn(DUP2)
-        // stack [acc, f, index, facts, tupleType, terms, index, terms, index]
-        visitor.visitInsn(SWAP)
-        // stack [acc, f, index, facts, tupleType, terms, index, index, terms]
-        visitor.visitInsn(ARRAYLENGTH)
-        // stack [acc, f, index, facts, tupleType, terms, index, index, terms.len]
-        // if terms.len <= index, exit the loop
-        visitor.visitJumpInsn(IF_ICMPLE, exitTupleLoop)
-        // stack: [acc, f, index, facts, tupleType, terms, index]
-        visitor.visitInsn(SWAP)
-        // stack: [acc, f, index, facts, tupleType, index, terms]
-        visitor.visitJumpInsn(DUP_X1)
-        // stack: [acc, f, index, facts, tupleType, terms, index, terms]
-        // get terms[index]
-        visitor.visitInsn(AALOAD)
-        // stack: [acc, f, index, facts, tupleType, terms, terms[index]]
-        // cast it to a LitTerm
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.toInternalName, "cast",
-          "()Lflix/runtime/fixpoint/term/LitTerm;", false)
-        // stack: [acc, f, index, facts, tupleType, terms, litterm]
-        // call getFunction on it
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.LitTerm.toInternalName, "getFunction",
-          "()Ljava/util/function/Function;", false)
-        // stack: [acc, f, index, facts, tupleType, terms, function]
-        // call the function with a new object as argument
-        visitor.visitTypeInsn(NEW, JvmType.Object);
-        // stack: [acc, f, index, facts, tupleType, terms, function, object]
-        visitor.visitInsn(DUP)
-        // stack: [acc, f, index, facts, tupleType, terms, function, object, object]
-        visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void))
-        // stack: [acc, f, index, facts, tupleType, terms, function, object]
-        // call apply
-        visitor.visitInsn(SWAP)
-        // stack: [acc, f, index, facts, tupleType, terms, object, function]
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Function.toInternalName, "apply",
-          "(Ljava/lang/Object;)Lflix/runtime/ProxyObject;", false)
-        // stack: [acc, f, index, facts, tupleType, terms, tupleelement]
+      visitor.visitInsn(DUP2)
+      // stack: [index, acc, tupleElement*, terms, index, terms, index]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc, tupleElement*, terms, index, index, terms]
+      visitor.visitInsn(ARRAYLENGTH)
+      // stack: [index, acc, tupleElement*, terms, index, index, terms.len]
+      // if terms.len <= index, exit the loop
+      visitor.visitJumpInsn(IF_ICMPLE, exitTupleLoop)
+      // stack: [index, acc, tupleElement*, terms, index]
 
-        visitor.visitJumpInsn(GOTO, tupleLoop)
+      visitor.visitInsn(DUP2)
+      // stack: [index, acc, tupleElement*, terms, index, terms, index]
+      // get terms[index]
+      visitor.visitInsn(AALOAD)
+      // stack: [index, acc, tupleElement*, terms, index, term[index]]
+      // cast it to a LitTerm
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.Term.toInternalName, "cast",
+        "()Lflix/runtime/fixpoint/term/LitTerm;", false)
+      // stack: [index, acc, tupleElement*, terms, index, litterm]
+      // call getFunction on it
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
+        "()Ljava/util/function/Function;", false)
+      // stack: [index, acc, tupleElement*, terms, index, function]
+      // call the function with a new object as argument
+      visitor.visitTypeInsn(NEW, JvmType.Object);
+      // stack: [index, acc, tupleElement*, terms, index, function, object]
+      visitor.visitInsn(DUP)
+      // stack: [index, acc, tupleElement*, terms, index, function, object, object]
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void))
+      // stack: [index, acc, tupleElement*, terms, index, function, object]
+      // prepare call to apply
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc, tupleElement*, terms, index, object, function]
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Function.toInternalName, "apply",
+        "(Ljava/lang/Object;)Lflix/runtime/ProxyObject;", false)
+      // stack: [index, acc, tupleType, terms, index, tupleElement]
 
-        visitLabel(exitTupleLoop)
-      } */
+      // prepare for recursion
+      visitor.visitInsn(DUP_X2)
+      // stack: [index, acc, tupleElement*, terms, index, tupleElement]
+      visitor.visitInsn(POP)
+      // stack: [index, acc, tupleElement*, terms, index]
+      // increase index by one
+      visitor.visitInsn(ICONST_1)
+      // stack: [index, acc, tupleElement*, terms, index, 1]
+      visitor.visitInsn(IADD)
+      // stack: [index, acc, tupleElement*, terms, index+1]
+      // recursion
+      visitor.visitJumpInsn(GOTO, tupleLoop)
+
+      visitor.visitLabel(exitTupleLoop)
+      // stack: [index, acc, tupleElement*, terms, index]
+
+
+      // After exiting the loop, we have all the elements to construct the current tuple
+      visitor.visitInsn(POP2)
+      // stack: [index, acc, tupleElement*]
+
+      // Extract the type of elements that are in the tuple
+      val tupleElmsTypes = root.relations(pred).attr.map(_.tpe)
+      // Create a new tuple object
+      val classType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // stack: [index, acc, tupleElement*, tupleType]
+      val constructorDescriptor = AsmOps.getMethodDescriptor(??? /* TODO: this type should be the first type accepted by function f */, JvmType.Void)
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+      // stack: [index, acc] // TODO: at this point we lost the tuple... it should be created before the loop, and kept at the second position on the stack when recursing
 
       // Now we have the tuple on the top of the stack
       // stack: [index, acc, tuple]
@@ -1281,7 +1295,7 @@ object GenExpression {
       // stack: [index, acc, tuple, f]
 
       // Call the function
-      ??? // TODO
+      ??? // TODO: how to do this cleanly?
 
       // stack: [index, acc']
 
