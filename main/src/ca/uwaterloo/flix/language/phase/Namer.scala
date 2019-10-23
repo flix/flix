@@ -1032,6 +1032,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
       case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
+      case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
     }
 
     visit(pat0)
@@ -1277,6 +1278,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Pattern.Str(lit, loc) => Nil
     case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+    case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
   }
 
   /**

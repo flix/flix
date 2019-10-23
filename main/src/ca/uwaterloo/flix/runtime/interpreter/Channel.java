@@ -85,15 +85,16 @@ public final class Channel {
     // Create new Condition and channelLock the current thread
     Lock selectLock = new ReentrantLock();
     Condition condition = selectLock.newCondition();
-    selectLock.lock();
 
     // Sort channels to avoid deadlock when locking
     Channel[] sortedChannels = sortChannels(channels);
 
-    try {
-      while (!Thread.interrupted()) {
-        // Lock all channels in sorted order
-        lockAllChannels(sortedChannels);
+    while (!Thread.interrupted()) {
+      // Lock all channels in sorted order
+      lockAllChannels(sortedChannels);
+      try {
+        // Lock the select lock after the channels
+        selectLock.lock();
 
         try {
           // Check if any channel has an element
@@ -124,18 +125,16 @@ public final class Channel {
         }
 
         // Wait for an element to be added to any of the channels
-        try {
-          condition.await();
-        } catch (InterruptedException e) {
-          throw new RuntimeException("Thread interrupted");
-        }
+        condition.await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException("Thread interrupted");
+      } finally {
+        // Unlock the selectLock, which is relevant when a different thread wants to put
+        // an element into a channel that was not selected from the select.
+        // This other channel will then signal the condition from selectLock (in the put method),
+        // so it needs the lock.
+        selectLock.unlock();
       }
-    } finally {
-      // Unlock the selectLock, which is relevant when a different thread wants to put
-      // an element into a channel that was not selected from the select.
-      // This other channel will then signal the condition from selectLock (in the put method),
-      // so it needs the lock.
-      selectLock.unlock();
     }
 
     throw new RuntimeException("Thread interrupted");
@@ -172,7 +171,9 @@ public final class Channel {
    * @param channels the channels to unlock
    */
   private static void unlockAllChannels(Channel[] channels) {
-    for (Channel c : channels) c.channelLock.unlock();
+      for (Channel c : channels) {
+          c.channelLock.unlock();
+      }
   }
 
   /**

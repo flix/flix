@@ -381,8 +381,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Char: Rule1[ParsedAst.Literal.Char] = {
-      def Normal: Rule1[String] = rule {
-        capture(!"'" ~ !"\\" ~ CharPredicate.All)
+      def Normal: Rule1[String] = {
+        def Quote: Rule0 = rule("'")
+        def Backslash: Rule0 = rule("\\")
+        rule {
+          capture(!Quote ~ !Backslash ~ CharPredicate.All)
+        }
       }
 
       def Special: Rule1[String] = rule {
@@ -448,8 +452,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Sign ~ Digits ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
     }
 
-    def Str: Rule1[ParsedAst.Literal.Str] = rule {
-      SP ~ "\"" ~ capture(zeroOrMore(!"\"" ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+    def Str: Rule1[ParsedAst.Literal.Str] = {
+      def Quote: Rule0 = rule("\"")
+
+      rule {
+        SP ~ "\"" ~ capture(zeroOrMore(!Quote ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+      }
     }
 
     def Sign: Rule1[Boolean] = rule {
@@ -955,7 +963,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Array: Rule1[ParsedAst.Pattern.Array] = rule {
-     SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
+      SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
     }
 
     def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {
@@ -1393,8 +1401,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     /**
       * Parses a multi line start comment.
       */
-    def MultiLineComment: Rule0 = rule {
-      "/*" ~ zeroOrMore(!"*/" ~ ANY) ~ "*/"
+    def MultiLineComment: Rule0 = {
+      def SlashStar: Rule0 = rule("/*")
+      def StarSlash: Rule0 = rule("*/")
+
+      rule {
+        SlashStar ~ zeroOrMore(!StarSlash ~ ANY) ~ StarSlash
+      }
     }
   }
 
