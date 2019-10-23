@@ -1156,7 +1156,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) => ???
+    case Expression.FixpointFold(pred, init, f, fType, constraints, constraintsType, tpe, loc) => ???
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1185,7 +1185,7 @@ object GenExpression {
 
       // Get the projected constraint system
       // TODO: we assume the constraint system has been projected. It should be projected already when introducing the extra variable.
-      readVar(constraints, ??? /* TODO: type of constraints */, visitor)
+      readVar(constraints, constraintsType, visitor)
       // stack: [index, acc, index, constraints]
 
       // get the fact at the current index
@@ -1277,7 +1277,7 @@ object GenExpression {
       // stack: [index, acc, tuple]
 
       // Getting the folded function
-      readVar(f, ???, visitor)
+      readVar(f, fType, visitor)
       // stack: [index, acc, tuple, f]
 
       // Call the function

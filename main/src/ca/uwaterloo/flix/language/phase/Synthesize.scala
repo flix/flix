@@ -349,7 +349,7 @@ object Synthesize extends Phase[Root, Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(p, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(p, e1, e2, e3,  tpe, eff, loc)
     }
 
     /**

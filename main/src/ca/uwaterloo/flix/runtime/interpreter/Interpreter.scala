@@ -346,7 +346,7 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
-    case Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
+    case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
       val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
       val init = env0.get(var1.toString).get
       // TODO: what if it's not a closure? Do we have to cover both clo and def?

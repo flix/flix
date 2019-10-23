@@ -360,9 +360,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.FixpointFold(pred, var1, var2, var3, tpe, loc) =>
+      case Expression.FixpointFold(pred, var1, var2, var2tpe, var3, var3tpe, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
-        Expression.FixpointFold(p, var1, var2, var3, tpe, loc)
+        Expression.FixpointFold(p, var1, var2, var2tpe, var3, var3tpe, tpe, loc)
 
 
       case Expression.HoleError(sym, tpe, loc) => e
