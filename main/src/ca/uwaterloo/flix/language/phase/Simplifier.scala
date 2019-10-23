@@ -929,6 +929,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
+      * Returns an expression that subtracts e2 from e1
+      */
+    def mkSubtract(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression={
+      val sub = SemanticOperator.Int32Op.Sub
+      val tpe = Type.Cst(TypeConstructor.Int32)
+      SimplifiedAst.Expression.Binary(sub,BinaryOperator.Minus,e1 ,e2 ,tpe,loc)
+    }
+
+    /**
       * Eliminates pattern matching by translations to labels and jumps.
       */
     def patternMatchWithLabels(exp0: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, loc: SourceLocation): SimplifiedAst.Expression = {
@@ -1094,8 +1103,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         /**
           * Matching an array may succeed or fail
           *
-          * We generate an if clause checking array length for each pattern, and then for each
-          * array element we generate a fresh variable and let-binding for each variable in the
+          * We generate an if clause checking array length for each pattern, and then
+          * generate a fresh variable and let-binding for each variable in the
           * array, which we load with ArrayLoad.
           * We then recurse over the freshly generated variables as the true case of the if clause
           */
@@ -1116,6 +1125,68 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
+
+
+        case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val patternCheck = {
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
+            val zero = sym match {
+              case None =>  inner
+              case Some(symbol) => SimplifiedAst.Expression.Let(
+                symbol,
+                SimplifiedAst.Expression.ArraySlice(
+                  SimplifiedAst.Expression.Var(v, tpe, loc),
+                  mkSubtract(expectedArrayLengthExp, SimplifiedAst.Expression.Int32(1), loc),
+                  actualArrayLengthExp, tpe, loc),
+                inner, tpe, loc)
+            }
+            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
+              case (((pat, name), idx), exp) =>
+                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
+                val index = SimplifiedAst.Expression.Int32(idx)
+                SimplifiedAst.Expression.Let(name,
+                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
+                  , exp, succ.tpe, loc)
+            }
+          }
+          val op = SemanticOperator.Int32Op.Ge
+          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
+
+
+        case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val diff = mkSubtract(actualArrayLengthExp, expectedArrayLengthExp, loc)
+          val offset = mkSubtract(diff, SimplifiedAst.Expression.Int32(1), loc)
+          val patternCheck = {
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
+            val zero = sym match {
+              case None =>  inner
+              case Some(symbol) => SimplifiedAst.Expression.Let(
+                symbol,
+                SimplifiedAst.Expression.ArraySlice(
+                  SimplifiedAst.Expression.Var(v, tpe, loc),
+                  SimplifiedAst.Expression.Int32(0),
+                  mkSubtract(expectedArrayLengthExp, SimplifiedAst.Expression.Int32(1), loc), tpe, loc),
+                inner, tpe, loc)
+            }
+            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
+              case (((pat, name), idx), exp) =>
+                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
+                val index = mkSubtract(SimplifiedAst.Expression.Int32(idx), offset, loc)
+                SimplifiedAst.Expression.Let(name,
+                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
+                  , exp, succ.tpe, loc)
+            }
+          }
+          val ge = SemanticOperator.Int32Op.Ge
+          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
 
