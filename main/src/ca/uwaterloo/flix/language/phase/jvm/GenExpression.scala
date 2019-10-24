@@ -1223,8 +1223,10 @@ object GenExpression {
         "()[Lflix/runtime/fixpoint/term/Term;", false)
       // stack: [index, acc, tupleType, tupleType, terms]
 
-      var idx = tupleElmsTypes.length
-      tupleElmsTypes.foreach({ elmType =>
+      // this is equivalent to the following, where tupleElements* is empty
+      // stack: [index, acc, tupleType, tupleElements*, tupleType, terms]
+
+      for ((_, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
         // stack: [index, acc, tupleType, tupleElements*, tupleType, terms]
         visitor.visitInsn(DUP)
         // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, terms]
@@ -1256,15 +1258,14 @@ object GenExpression {
         // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, tupleElement]
         visitor.visitInsn(DUP_X2)
         // stack: [index, acc, tupleType, tupleElements*, tupleElement, tupleType, terms]
-        idx -= 1
-      })
+      }
 
       // stack: [index, acc, tupleType, tupleElements*, tupleType, terms]
       // we can forget terms now
       visitor.visitInsn(POP)
 
-       // stack: [index, acc, tupleType, tupleElement*, tupleType]
-      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(x => ??? /* TODO */), JvmType.Void)
+      // stack: [index, acc, tupleType, tupleElement*, tupleType]
+      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getJvmType), JvmType.Void)
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       // stack: [index, acc, tuple] (tupleType is actually the constructed tuple)
 
@@ -1276,7 +1277,8 @@ object GenExpression {
       // stack: [index, acc, tuple, f]
 
       // Call the function
-      ??? // TODO: how to do this cleanly?
+      visitor.visitInsn(POP) // TODO: dummy call to test (f(tuple, acc) -> acc')
+      // TODO: how to call f? Should it just be similar to ApplyClo?
 
       // stack: [index, acc']
 
@@ -1288,11 +1290,11 @@ object GenExpression {
       visitor.visitJumpInsn(GOTO, loop)
 
       visitor.visitLabel(exitLabel)
-      // stack: [index, acc, fact]
-      visitor.visitInsn(POP) // stack: [index, acc]
+      // stack: [index, acc]
       visitor.visitInsn(SWAP) // stack: [acc, index]
       visitor.visitInsn(POP) // stack: [acc]
-      // stack: [acc]*/
+      // stack: [acc]
+      
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)

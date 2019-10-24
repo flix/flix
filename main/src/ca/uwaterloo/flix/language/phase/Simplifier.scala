@@ -583,8 +583,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val var3 = Symbol.freshVarSym()
         val e3 = visitExp(exp3)
         SimplifiedAst.Expression.Let(var1, e1,
-          SimplifiedAst.Expression.Let(var2, SimplifiedAst.Expression.FixpointProject(p, e2, e2.tpe, loc),
-            SimplifiedAst.Expression.Let(var3, e3,
+          SimplifiedAst.Expression.Let(var2, e2,
+            SimplifiedAst.Expression.Let(var3, SimplifiedAst.Expression.FixpointProject(p, e3, e3.tpe, loc),
               SimplifiedAst.Expression.FixpointFold(p,
                 SimplifiedAst.Expression.Var(var1, e1.tpe, loc),
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
