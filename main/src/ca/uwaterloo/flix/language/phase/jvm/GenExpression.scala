@@ -1175,10 +1175,9 @@ object GenExpression {
 
       // Begin of the loop
       visitor.visitLabel(loop)
-      // stack: [index, acc]
+      // stack: [acc, index]
 
       // Rearrange the stack
-      visitor.visitInsn(SWAP) // stack: [acc, index]
       visitor.visitInsn(DUP_X1) // stack: [index, acc, index]
 
       // Get the projected constraint system
