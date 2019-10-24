@@ -1254,7 +1254,19 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
           "(Ljava/lang/Object;)Ljava/lang/Object;", true)
         visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
-        // TODO: we now have a ProxyObject, but this is not the type we want (e.g., we may want to construct a record of ints). How do we convert that to the appropriate type (tpe)?
+        // Cast the proxy object into an unboxed value if necessary
+        tpe match {
+          case MonoType.Int32 =>
+            // call Object ProxyObject.getValue()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
+            // cast Object into java.lang.Integer
+            visitor.visitTypeInsn(CHECKCAST, JvmName.Integer.toInternalName)
+            // call int java.lang.Integer.intValue()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Integer.toInternalName, "intValue", "()I", false)
+          case _ =>
+            println(s"Unsupported MonoType: $tpe, letting it in a proxy object")
+            // TODO: is there a way to automatically unbox what can be unboxed? and leave the rest untouched
+        }
 
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement]
         visitor.visitInsn(SWAP)
