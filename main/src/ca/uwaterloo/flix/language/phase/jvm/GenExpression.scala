@@ -1185,10 +1185,12 @@ object GenExpression {
       // We assume the constraint system has been projected beforehand (this is done in Simplifier)
       readVar(constraints.sym, constraints.tpe, visitor)
       // stack: [index, acc, index, constraints]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc, constraints, index]
 
       // get the fact at the current index
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getFact",
-        "(I;)Lflix/runtime/fixpoint/Constraint;", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "getFact",
+        "(I)Lflix/runtime/fixpoint/Constraint;", false)
       // stack: [index, acc, fact]
 
       visitor.visitInsn(DUP)
@@ -1215,56 +1217,61 @@ object GenExpression {
         "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
       // stack: [index, acc, tupleType, tupleType, headpred]
       // cast the head predicate to an atom predicate
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.Predicate.toInternalName, "cast",
-        "()Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
-      // stack: [index, acc, tupleType, tupleType, atompred]
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName)
       // call getTerms on the atom predicate
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.Predicate.toInternalName, "getTerms",
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "getTerms",
         "()[Lflix/runtime/fixpoint/term/Term;", false)
       // stack: [index, acc, tupleType, tupleType, terms]
 
       // this is equivalent to the following, where tupleElements* is empty
-      // stack: [index, acc, tupleType, tupleElements*, tupleType, terms]
+      // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
 
-      for ((_, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms]
+      for ((tpe, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
         visitor.visitInsn(DUP)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, terms]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms]
         visitor.visitIntInsn(BIPUSH, idx)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, terms, index]
+        println(s"push index $idx, element type is $tpe")
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms, index]
         // get terms[index]
         visitor.visitInsn(AALOAD)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, terms[index]]
+        println("aaloaded")
+
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms[index]]
         // cast it to a LitTerm
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.Term.toInternalName, "cast",
-          "()Lflix/runtime/fixpoint/term/LitTerm;", false)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, litterm]
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName)
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, litterm]
         // call getFunction on it
         visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
           "()Ljava/util/function/Function;", false)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, function]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function]
+        visitor.visitInsn(POP) // TODO debugging
+        /*
         // call the function with a new object as argument
         visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, function, object]
+        // stack: [index, acc, tupleType,  tupleType, tupleElements*, terms, function, object]
         visitor.visitInsn(DUP)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, function, object, object]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function, object, object]
         // first initialize the object
         visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, function, object]
-        visitor.visitInsn(SWAP)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, object, function]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function, object]
         visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Function.toInternalName, "apply",
           "(Ljava/lang/Object;)Lflix/runtime/ProxyObject;", false)
-        // stack: [index, acc, tupleType, tupleElements*, tupleType, terms, tupleElement]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement]
         visitor.visitInsn(DUP_X2)
-        // stack: [index, acc, tupleType, tupleElements*, tupleElement, tupleType, terms]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement, terms]
+        */
       }
 
-      // stack: [index, acc, tupleType, tupleElements*, tupleType, terms]
+      // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
       // we can forget terms now
       visitor.visitInsn(POP)
 
-      // stack: [index, acc, tupleType, tupleElement*, tupleType]
+      // TODO debug
+      visitor.visitInsn(ICONST_0)
+      visitor.visitInsn(ICONST_0)
+
+      // stack: [index, acc, tupleType, tupleType, tupleElement*]
       val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getJvmType), JvmType.Void)
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       // stack: [index, acc, tuple] (tupleType is actually the constructed tuple)
@@ -1275,9 +1282,13 @@ object GenExpression {
       // Getting the folded function
       readVar(f.sym, f.tpe, visitor)
       // stack: [index, acc, tuple, f]
+      visitor.visitInsn(DUP_X2)
+      // stack: [index, f, acc, tuple, f]
+      visitor.visitInsn(POP)
+      // stack: [index, f, acc, tuple]
 
       // Call the function
-      visitor.visitInsn(POP) // TODO: dummy call to test (f(tuple, acc) -> acc')
+      visitor.visitInsn(POP); visitor.visitInsn(SWAP); visitor.visitInsn(POP) // TODO: dummy call to test (f(tuple, acc) -> acc')
       // TODO: how to call f? Should it just be similar to ApplyClo?
 
       // stack: [index, acc']
@@ -1290,11 +1301,12 @@ object GenExpression {
       visitor.visitJumpInsn(GOTO, loop)
 
       visitor.visitLabel(exitLabel)
-      // stack: [index, acc]
+      // stack: [index, acc, fact]
+      visitor.visitInsn(POP) // stack: [index, acc]
       visitor.visitInsn(SWAP) // stack: [acc, index]
       visitor.visitInsn(POP) // stack: [acc]
+
       // stack: [acc]
-      
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
