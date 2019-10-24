@@ -1231,11 +1231,9 @@ object GenExpression {
         visitor.visitInsn(DUP)
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms]
         visitor.visitIntInsn(BIPUSH, idx)
-        println(s"push index $idx, element type is $tpe")
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms, index]
         // get terms[index]
         visitor.visitInsn(AALOAD)
-        println("aaloaded")
 
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms[index]]
         // cast it to a LitTerm
