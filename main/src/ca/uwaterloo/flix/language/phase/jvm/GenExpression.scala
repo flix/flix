@@ -1254,19 +1254,16 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
           "(Ljava/lang/Object;)Ljava/lang/Object;", true)
         visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
+        // TODO: we now have a ProxyObject, but this is not the type we want (e.g., we may want to construct a record of ints). How do we convert that to the appropriate type (tpe)?
+
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement]
-        /*visitor.visitInsn(DUP_X2)
+        visitor.visitInsn(SWAP)
         // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement, terms]
-        */
       }
 
       // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
       // we can forget terms now
       visitor.visitInsn(POP)
-
-      // TODO debug
-      visitor.visitInsn(ICONST_0)
-      visitor.visitInsn(ICONST_0)
 
       // stack: [index, acc, tupleType, tupleType, tupleElement*]
       val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getJvmType), JvmType.Void)
