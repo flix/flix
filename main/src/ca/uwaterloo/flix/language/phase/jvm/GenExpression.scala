@@ -1245,8 +1245,6 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
           "()Ljava/util/function/Function;", false)
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function]
-        visitor.visitInsn(POP) // TODO debugging
-        /*
         // call the function with a new object as argument
         visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
         // stack: [index, acc, tupleType,  tupleType, tupleElements*, terms, function, object]
@@ -1255,10 +1253,11 @@ object GenExpression {
         // first initialize the object
         visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function, object]
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Function.toInternalName, "apply",
-          "(Ljava/lang/Object;)Lflix/runtime/ProxyObject;", false)
+        visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
+          "(Ljava/lang/Object;)Ljava/lang/Object;", true)
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement]
-        visitor.visitInsn(DUP_X2)
+        /*visitor.visitInsn(DUP_X2)
         // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement, terms]
         */
       }
