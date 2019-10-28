@@ -1245,7 +1245,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp2, sp3))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp3)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>

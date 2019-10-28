@@ -937,6 +937,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       SimplifiedAst.Expression.Binary(sub,BinaryOperator.Minus,e1 ,e2 ,tpe,loc)
     }
 
+    def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression={
+      val add = SemanticOperator.Int32Op.Add
+      val tpe = Type.Cst(TypeConstructor.Int32)
+      SimplifiedAst.Expression.Binary(add,BinaryOperator.Plus,e1 ,e2 ,tpe,loc)
+    }
+
     /**
       * Eliminates pattern matching by translations to labels and jumps.
       */
@@ -1140,7 +1146,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                 symbol,
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
-                  mkSubtract(expectedArrayLengthExp, SimplifiedAst.Expression.Int32(1), loc),
+                  expectedArrayLengthExp,
                   actualArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
             }
@@ -1161,8 +1167,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
           val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
-          val diff = mkSubtract(actualArrayLengthExp, expectedArrayLengthExp, loc)
-          val offset = mkSubtract(diff, SimplifiedAst.Expression.Int32(1), loc)
+          val offset = mkSubtract(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
@@ -1173,13 +1178,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
                   SimplifiedAst.Expression.Int32(0),
-                  mkSubtract(expectedArrayLengthExp, SimplifiedAst.Expression.Int32(1), loc), tpe, loc),
+                  expectedArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
             }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
-                val index = mkSubtract(SimplifiedAst.Expression.Int32(idx), offset, loc)
+                val index = mkAdd(SimplifiedAst.Expression.Int32(idx), offset, loc)
                 SimplifiedAst.Expression.Let(name,
                   SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
                   , exp, succ.tpe, loc)
