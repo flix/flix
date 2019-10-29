@@ -254,8 +254,6 @@ object NamedAst {
 
     case class ArrayHeadSpread(sym: Option[Symbol.VarSym], elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
-
-
   }
 
   sealed trait Predicate

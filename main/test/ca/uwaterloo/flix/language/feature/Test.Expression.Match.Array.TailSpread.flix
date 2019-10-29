@@ -29,6 +29,18 @@ def matchUnitArrayTailSpread5(): Bool = match [()] {
 }
 
 @test
+def matchUnitArrayTailSpread6(): Bool = match [(), (), (), ()] {
+    case [(), (), ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchUnitArrayTailSpread7(): Bool = match [(), (), (), ()] {
+    case [(), (), ..xs] => xs[1] == ()
+    case _ => false
+}
+
+@test
 def matchIntArrayTailSpread1(): Bool = match [1] {
     case [1, ..xs] => true
     case _ => false
@@ -36,8 +48,8 @@ def matchIntArrayTailSpread1(): Bool = match [1] {
 
 @test
 def matchIntArrayTailSpread2(): Bool = match [1, 2] {
-    case [1, ..xs] => false
-    case _ => true
+    case [1, ..xs] => true
+    case _ => false
 }
 
 @test
@@ -95,6 +107,18 @@ def matchIntArrayTailSpread11(): Bool = match [1] {
 }
 
 @test
+def matchIntArrayTailSpread12(): Bool = match [1, 2, 3, 4] {
+    case [1, 2, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchIntArrayTailSpread13(): Bool = match [1, 2, 3, 4] {
+    case [1, 2, ..xs] => xs[1] == 4
+    case _ => false
+}
+
+@test
 def matchInt8ArrayTailSpread1(): Bool = match [1i8] {
     case [1i8, ..xs] => true
     case _ => false
@@ -128,6 +152,18 @@ def matchInt8ArrayTailSpread5(): Bool = match [1i8, 2i8, 3i8, 4i8] {
 def matchInt8ArrayTailSpread6(): Bool = match [1i8] {
     case [1i8, 2i8, ..xs] => false
     case _ => true
+}
+
+@test
+def matchInt8ArrayTailSpread7(): Bool = match [1i8, 2i8, 3i8, 4i8] {
+    case [1i8, 2i8, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchInt8ArrayTailSpread8(): Bool = match [1i8, 2i8, 3i8, 4i8] {
+    case [1i8, 2i8, ..xs] => xs[1] == 4i8
+    case _ => false
 }
 
 @test
@@ -167,6 +203,18 @@ def matchInt16ArrayTailSpread6(): Bool = match [1i16] {
 }
 
 @test
+def matchInt16ArrayTailSpread7(): Bool = match [1i16, 2i16, 3i16, 4i16] {
+    case [1i16, 2i16, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchInt16ArrayTailSpread8(): Bool = match [1i16, 2i16, 3i16, 4i16] {
+    case [1i16, 2i16, ..xs] => xs[1] == 4i16
+    case _ => false
+}
+
+@test
 def matchInt64ArrayTailSpread1(): Bool = match [1i64] {
     case [1i64, ..xs] => true
     case _ => false
@@ -203,8 +251,20 @@ def matchInt64ArrayTailSpread6(): Bool = match [1i64] {
 }
 
 @test
-def matchBigIntArrayTailSpread1(): Bool = match [1i8] {
-    case [1i8, ..xs] => true
+def matchInt64ArrayTailSpread7(): Bool = match [1i64, 2i64, 3i64, 4i64] {
+    case [1i64, 2i64, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchInt64ArrayTailSpread8(): Bool = match [1i64, 2i64, 3i64, 4i64] {
+    case [1i64, 2i64, ..xs] => xs[1] == 4i64
+    case _ => false
+}
+
+@test
+def matchBigIntArrayTailSpread1(): Bool = match [1ii] {
+    case [1ii, ..xs] => true
     case _ => false
 }
 
@@ -233,9 +293,21 @@ def matchBigIntArrayTailSpread5(): Bool = match [1ii, 2ii, 3ii, 4ii] {
 }
 
 @test
-def matchBigIntArrayTailSpread6(): Bool = match [1ii, 2ii] {
-    case [1ii, ..xs] => false
+def matchBigIntArrayTailSpread6(): Bool = match [1ii] {
+    case [1ii, 2ii, ..xs] => false
     case _ => true
+}
+
+@test
+def matchBigIntArrayTailSpread7(): Bool = match [1ii, 2ii, 3ii, 4ii] {
+    case [1ii, 2ii, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchBigIntArrayTailSpread8(): Bool = match [1ii, 2ii, 3ii, 4ii] {
+    case [1ii, 2ii, ..xs] => xs[1] == 4ii
+    case _ => false
 }
 
 @test
@@ -252,26 +324,38 @@ def matchStrArrayTailSpread2(): Bool = match ["one"] {
 
 @test
 def matchStrArrayTailSpread3(): Bool = match ["one", "two"] {
-    case ["one",  "two", ..xs] => true
+    case ["one", "two", ..xs] => true
     case _ => false
 }
 
 @test
 def matchStrArrayTailSpread4(): Bool = match [["one"], ["two"]] {
-    case [["one"],  ["two"], ..xs] => true
+    case [["one"], ["two"], ..xs] => true
     case _ => false
 }
 
 @test
 def matchStrArrayTailSpread5(): Bool = match ["one", "two", "three", "four"] {
-    case ["one",  "two", ..xs] => true
+    case ["one", "two", ..xs] => true
     case _ => false
 }
 
 @test
-def matchStrArrayTailSpread6(): Bool = match ["one", "two"] {
-    case ["one", ..xs] => false
+def matchStrArrayTailSpread6(): Bool = match ["one"] {
+    case ["one", "two", ..xs] => false
     case _ => true
+}
+
+@test
+def matchStrArrayTailSpread7(): Bool = match ["one", "two", "three", "four"] {
+    case ["one", "two", ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchStrArrayTailSpread8(): Bool = match ["one", "two", "three", "four"] {
+    case ["one", "two", ..xs] => xs[1] == "four"
+    case _ => false
 }
 
 @test
@@ -308,6 +392,18 @@ def matchBoolArrayTailSpread5(): Bool = match [true, false, false, true] {
 def matchBoolArrayTailSpread6(): Bool = match [true] {
     case [true, false, ..xs] => false
     case _ => true
+}
+
+@test
+def matchBoolArrayTailSpread7(): Bool = match [true, false, false, true] {
+    case [true, false, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchBoolArrayTailSpread8(): Bool = match [true, false, false, true] {
+    case [true, false, ..xs] => xs[1] == true
+    case _ => false
 }
 
 @test
@@ -353,6 +449,18 @@ def matchTupleArrayTailSpread7(): Bool = match [(1, "one")] {
 }
 
 @test
+def matchTupleArrayTailSpread8(): Bool = match [(1, "one"), (2, "two"), (3, "three"), (4, "four")] {
+    case [(1, "one"), (2, "two"), ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchTupleArrayTailSpread9(): Bool = match [(1, "one"), (2, "two"), (3, "three"), (4, "four")] {
+    case [(1, "one"), (2, "two"), ..xs] => xs[1] == (4, "four")
+    case _ => false
+}
+
+@test
 def matchFloatArrayTailSpread1(): Bool = match [1.1] {
     case [1.1, ..xs] => true
     case _ => false
@@ -386,6 +494,18 @@ def matchFloatArrayTailSpread5(): Bool = match [1.1, 2.2, 3.3, 4.4] {
 def matchFloatArrayTailSpread6(): Bool = match [1.1] {
     case [1.1, 2.2, ..xs] => false
     case _ => true
+}
+
+@test
+def matchFloatArrayTailSpread7(): Bool = match [1.1, 2.2, 3.3, 4.4] {
+    case [1.1, 2.2, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchFloatArrayTailSpread8(): Bool = match [1.1, 2.2, 3.3, 4.4] {
+    case [1.1, 2.2, ..xs] => xs[1] == 4.4
+    case _ => false
 }
 
 @test
@@ -425,6 +545,18 @@ def matchFloat32ArrayTailSpread6(): Bool = match [1.1f32] {
 }
 
 @test
+def matchFloat32ArrayTailSpread7(): Bool = match [1.1f32, 2.2f32, 3.3f32, 4.4f32] {
+    case [1.1f32, 2.2f32, ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchFloat32ArrayTailSpread8(): Bool = match [1.1f32, 2.2f32, 3.3f32, 4.4f32] {
+    case [1.1f32, 2.2f32, ..xs] => xs[1] == 4.4f32
+    case _ => false
+}
+
+@test
 def matchCharArrayTailSpread1(): Bool = match ['1'] {
     case ['1', ..xs] => true
     case _ => false
@@ -458,6 +590,18 @@ def matchCharArrayTailSpread5(): Bool = match ['1', '2', '3', '4'] {
 def matchCharArrayTailSpread6(): Bool = match ['1'] {
     case ['1', '2', ..xs] => false
     case _ => true
+}
+
+@test
+def matchCharArrayTailSpread7(): Bool = match ['1', '2', '3', '4'] {
+    case ['1', '2', ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchCharArrayTailSpread8(): Bool = match ['1', '2', '3', '4'] {
+    case ['1', '2', ..xs] => xs[1] == '4'
+    case _ => false
 }
 
 @test
@@ -497,6 +641,18 @@ def matchOptionArrayTailSpread6(): Bool = match [Some(1)] {
 }
 
 @test
+def matchOptionArrayTailSpread7(): Bool = match [Some(1), Some(2), None(), Some(42)] {
+    case [Some(1), Some(2), ..xs] => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchOptionArrayTailSpread8(): Bool = match [Some(1), Some(2), None(), Some(42)] {
+    case [Some(1), Some(2), ..xs] => xs[1] == Some(42)
+    case _ => false
+}
+
+@test
 def matchResultArrayTailSpread1(): Bool = match [Ok(42)] {
     case [Ok(42), ..xs]  => true
     case _ => false
@@ -531,3 +687,16 @@ def matchResultArrayTailSpread6(): Bool = match [Ok(42)] {
     case [Ok(42), Err(23), ..xs]  => false
     case _ => true
 }
+
+@test
+def matchResultArrayTailSpread7(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)] {
+    case [Ok(42), Err(23), ..xs]  => Array.length(xs) == 2
+    case _ => false
+}
+
+@test
+def matchResultArrayTailSpread8(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)] {
+    case [Ok(42), Err(23), ..xs]  => xs[1] == Err(2)
+    case _ => false
+}
+

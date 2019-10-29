@@ -998,18 +998,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match{
+        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(), loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, Some(sym), Type.freshTypeVar(), loc)
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(), loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match{
+        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(), loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayHeadSpread(Some(sym), elms map visit, Type.freshTypeVar(), loc)
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(), loc)
       }
     }
 

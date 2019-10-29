@@ -517,22 +517,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val (ps,envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
         case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => sym match{
+          case None =>
+            val (ps,envs) = elms.map(p => visitPat(p)).unzip
+            (Pattern.ArrayTailSpread(ps, None, subst0(tpe), loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
           case Some(symbol) =>
             val freshSym = Symbol.freshVarSym(symbol)
             val (ps,envs) = elms.map(p => visitPat(p)).unzip
             (Pattern.ArrayTailSpread(ps, Some(freshSym), subst0(tpe), loc), if(envs.isEmpty) Map(symbol -> freshSym) else envs.reduce(_ ++ _) ++ Map(symbol -> freshSym))
-          case None =>
-            val (ps,envs) = elms.map(p => visitPat(p)).unzip
-            (Pattern.ArrayTailSpread(ps, None, subst0(tpe), loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
         }
         case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => sym match {
-          case Some(symbol) =>
-          val freshSym = Symbol.freshVarSym (symbol)
-          val (ps, envs) = elms.map (p => visitPat (p) ).unzip
-          (Pattern.ArrayHeadSpread (Some(freshSym) ,ps, subst0 (tpe), loc), if (envs.isEmpty) Map(symbol -> freshSym) else envs.reduce (_ ++ _) ++ Map(symbol -> freshSym))
           case None =>
             val (ps, envs) = elms.map (p => visitPat (p) ).unzip
             (Pattern.ArrayHeadSpread (None, ps, subst0 (tpe), loc), if (envs.isEmpty) Map.empty else envs.reduce (_ ++ _) )
+          case Some(symbol) =>
+            val freshSym = Symbol.freshVarSym (symbol)
+            val (ps, envs) = elms.map (p => visitPat (p) ).unzip
+            (Pattern.ArrayHeadSpread (Some(freshSym) ,ps, subst0 (tpe), loc), if (envs.isEmpty) Map(symbol -> freshSym) else envs.reduce (_ ++ _) ++ Map(symbol -> freshSym))
         }
       }
 

@@ -679,33 +679,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Pattern.Array(elms,_,_) => elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
-    case Pattern.ArrayTailSpread(elms, sym, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
+    case Pattern.ArrayTailSpread(elms, _, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
-    case Pattern.ArrayHeadSpread(sym, elms, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
+    case Pattern.ArrayHeadSpread(_, elms, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
-
-    /*
-    case Pattern.ArrayTailSpread(elms, sym, _, _) =>
-      sym match {
-        case Some(symbol) => elms.foldLeft(Set(symbol)){
-          case (acc,pat) => acc ++ freeVars(pat)
-        }
-        case None => elms.foldLeft(Set.empty[Symbol.VarSym]){
-          case (acc,pat) => acc ++ freeVars(pat)
-        }
-      }
-    case Pattern.ArrayHeadSpread(sym, elms, _, _) =>
-      sym match {
-        case Some(symbol) => elms.foldLeft(Set(symbol)){
-          case (acc,pat) => acc ++ freeVars(pat)
-        }
-        case None => elms.foldLeft(Set.empty[Symbol.VarSym]){
-          case (acc,pat) => acc ++ freeVars(pat)
-        }
-      }
-    */
   }
 
   /**

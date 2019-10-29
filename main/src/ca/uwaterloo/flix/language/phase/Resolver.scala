@@ -850,16 +850,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Pattern.Array(es, tvar, loc)
 
         case NamedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) =>
-          val array = for {
+          for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Array(es, tvar, loc)
-          ResolvedAst.Pattern.ArrayTailSpread(array.get.elms, sym, array.get.tvar, loc).toSuccess
+          } yield ResolvedAst.Pattern.ArrayTailSpread(es, sym, tvar, loc)
 
         case NamedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) =>
-          val array = for {
+          for {
             es <- traverse(elms)(visit)
-          } yield ResolvedAst.Pattern.Array(es, tvar, loc)
-          ResolvedAst.Pattern.ArrayHeadSpread(sym, array.get.elms, array.get.tvar, loc).toSuccess
+          } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, tvar, loc)
       }
 
       visit(pat0)
