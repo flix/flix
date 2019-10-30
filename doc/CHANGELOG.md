@@ -2,6 +2,10 @@
 
 HEAD:
 
+Version 0.8.1:
+
+- Fixed several bugs. 
+
 Version 0.8:
 
 - Added Array, Channel, Random, and Path to the standard library.
