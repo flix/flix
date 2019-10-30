@@ -135,6 +135,26 @@ def termApp19(): Bool =
     let m = solve ho2(add);
     m |= R(6).
 
+@test
+def termApp20(): Bool =
+    let m = solve ho3(inc);
+    m |= P(4).
+
+@test
+def termApp21(): Bool =
+    let m = solve ho3(dec);
+    m |= P(0).
+
+@test
+def termApp22(): Bool =
+    let m = solve ho3(_ -> true);
+    m |= P(true).
+
+@test
+def termApp23(): Bool =
+    let m = solve ho3(_ -> "hello");
+    m |= P("hello").
+
 def zer(): Int = 0
 def one(): Int = 1
 def two(): Int = 2
@@ -152,6 +172,12 @@ pub def ho2(f: (Int, Int) -> Int): #{A, R} = #{
     R(f(x, y)) :- A(x), A(y).
 }
 
+pub def ho3(f: Int -> a): #{A, P[a]} = #{
+    A(1). A(2). A(3).
+    P(f(x)) :- A(x).
+}
+
 rel A(x: Int)
 rel B(x: Int)
 rel R(x: Int)
+rel P[a](a: a)
