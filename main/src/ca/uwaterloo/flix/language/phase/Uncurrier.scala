@@ -122,15 +122,7 @@ object Uncurrier extends Phase[Root, Root] {
     case Term.Head.QuantVar(sym, tpe, loc) => t
     case Term.Head.CapturedVar(sym, tpe, loc) => t
     case Term.Head.Lit(lit, tpe, loc) => t
-    case Term.Head.App(sym, terms, tpe, loc) => terms match {
-      case Nil => t
-      case x :: Nil => t
-      case x :: y :: Nil =>
-        val freshSym = mkUncurried2(sym, newDefs, root)
-        Term.Head.App(freshSym, x :: y :: Nil, tpe, loc)
-      case _ =>
-        throw InternalCompilerException(s"Unable to uncurry definition of arity n > 2.")
-    }
+    case Term.Head.App(exp, terms, tpe, loc) => t
   }
 
   /**

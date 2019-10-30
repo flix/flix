@@ -30,6 +30,7 @@ public final class GuardPredicate implements Predicate {
      * Constructs a guard predicate for the given function and function arguments.
      */
     public static GuardPredicate of(Function<Object[], ProxyObject> function, Term[] arguments) {
+        // TODO: Maybe the arguments should just be quantified variables?
         if (function == null)
             throw new IllegalArgumentException("'function' must be non-null.");
 

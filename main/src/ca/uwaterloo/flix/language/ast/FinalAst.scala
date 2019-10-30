@@ -286,7 +286,7 @@ object FinalAst {
 
       case class Lit(sym: Symbol.DefnSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
 
-      case class App(sym: Symbol.DefnSym, args: List[Symbol.VarSym], tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
+      case class App(exp: FinalAst.Expression, args: List[Symbol.VarSym], tpe: MonoType, loc: SourceLocation) extends FinalAst.Term.Head
 
     }
 

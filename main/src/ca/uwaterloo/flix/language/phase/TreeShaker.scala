@@ -319,7 +319,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
+        case SimplifiedAst.Term.Head.App(exp, args, tpe, loc) => visitExp(exp)
       }
     }
 
