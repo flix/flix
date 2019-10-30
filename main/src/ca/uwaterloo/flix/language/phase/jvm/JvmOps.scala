@@ -1021,7 +1021,7 @@ object JvmOps {
       case Term.Head.QuantVar(sym, tpe, loc) => Set(tpe)
       case Term.Head.CapturedVar(sym, tpe, loc) => Set(tpe)
       case Term.Head.Lit(sym, tpe, loc) => Set(tpe)
-      case Term.Head.App(sym, args, tpe, loc) => Set(tpe)
+      case Term.Head.App(exp, args, tpe, loc) => visitExp(exp) + tpe
     }
 
     def visitBodyTerm(t0: Term.Body): Set[MonoType] = t0 match {

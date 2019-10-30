@@ -1313,7 +1313,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Term.Head.Lit(e, tpe, loc)
 
-      case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => t0
+      case SimplifiedAst.Term.Head.App(exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Term.Head.App(e, args, tpe, loc)
     }
 
     def visitBodyTerm(t0: SimplifiedAst.Term.Body): SimplifiedAst.Term.Body = t0 match {

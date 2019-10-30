@@ -1,24 +1,24 @@
 @test
-def testTransfer01(): #{ R } = solve #{
+def termApp01(): #{ R } = solve #{
     R(zer()).
     R(one()).
     R(two()).
 }
 
 @test
-def testTransfer02(): #{ R } = solve #{
+def termApp02(): #{ R } = solve #{
     R(inc(1)).
     R(dec(2)).
 }
 
 @test
-def testTransfer03(): #{ R } = solve #{
+def termApp03(): #{ R } = solve #{
     R(inc(dec(1))).
     R(dec(inc(2))).
 }
 
 @test
-def testTransfer04(): #{ A, B, R } = solve #{
+def termApp04(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -27,7 +27,7 @@ def testTransfer04(): #{ A, B, R } = solve #{
 }
 
 @test
-def testTransfer05(): #{ A, B, R } = solve #{
+def termApp05(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -35,7 +35,7 @@ def testTransfer05(): #{ A, B, R } = solve #{
 }
 
 @test
-def testTransfer06(): #{ A, B, R } = solve #{
+def termApp06(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -43,7 +43,7 @@ def testTransfer06(): #{ A, B, R } = solve #{
 }
 
 @test
-def testTransfer07(): #{ A, B, R } = solve #{
+def termApp07(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -51,7 +51,7 @@ def testTransfer07(): #{ A, B, R } = solve #{
 }
 
 @test
-def testTransfer08(): #{ A, B, R } = solve #{
+def termApp08(): #{ A, B, R } = solve #{
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
@@ -59,20 +59,66 @@ def testTransfer08(): #{ A, B, R } = solve #{
 }
 
 @test
-def testTransfer09(): #{ R } = solve #{
+def termApp09(): #{ R } = solve #{
     R(identity(42)).
 }
 
 @test
-def testTransfer10(): #{ R } = solve #{
+def termApp10(): #{ R } = solve #{
     R(fst((1, 2))).
     R(snd((1, 2))).
 }
 
 @test
-def testTransfer11(): #{ R } = solve #{
-    R(constant(42)(42)).
-}
+def termApp11(): Bool =
+    let f = zer;
+    let m = solve #{
+        R(f()).
+    };
+    m |= R(0).
+
+@test
+def termApp12(): Bool =
+    let f = one;
+    let m = solve #{
+        R(f()).
+    };
+    m |= R(1).
+
+@test
+def termApp13(): Bool =
+    let f = two;
+    let m = solve #{
+        R(f()).
+    };
+    m |= R(2).
+
+@test
+def termApp14(): Bool =
+    let f = inc;
+    let m = solve #{
+        A(1). A(2). A(3).
+        R(f(x)) :- A(x).
+    };
+    m |= R(4).
+
+@test
+def termApp15(): Bool =
+    let f = dec;
+    let m = solve #{
+        A(1). A(2). A(3).
+        R(f(x)) :- A(x).
+    };
+    m |= R(0).
+
+@test
+def termApp16(): Bool =
+    let f = add;
+    let m = solve #{
+        A(1). A(2). A(3).
+        R(f(x, y)) :- A(x), A(y).
+    };
+    m |= R(6).
 
 def zer(): Int = 0
 def one(): Int = 1
