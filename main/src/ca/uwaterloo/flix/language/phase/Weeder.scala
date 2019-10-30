@@ -1223,36 +1223,36 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
 
-      case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, sp2, ident, sp3) =>
+      case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
         val array = traverse(pats)(visit) map {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.ArrayTailSpread(array.get.elms, None, mkSL(sp2, sp3)).toSuccess
+          WeededAst.Pattern.ArrayTailSpread(array.get.elms, None, mkSL(sp2, sp2)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1,sp3)).toSuccess
+              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1,sp2)).toSuccess
             case Some(otherIdent) =>
-              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp3)).toFailure
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
           }
         }
 
 
-      case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, sp2, pats, sp3) =>
+      case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
         val array = traverse(pats)(visit) map {
-          case xs => WeededAst.Pattern.Array(xs, mkSL(sp2, sp3))
+          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp3)).toSuccess
+          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.ArrayHeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp3)).toSuccess
+              WeededAst.Pattern.ArrayHeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp2)).toSuccess
             case Some(otherIdent) =>
-              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp3)).toFailure
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
           }
         }
 
