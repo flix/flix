@@ -952,7 +952,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Array: Rule1[ParsedAst.Pattern.Array] = rule {
-      SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
+     SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
     }
 
     def ArrayTailSpread: Rule1[ParsedAst.Pattern.ArrayTailSpread] = rule {
