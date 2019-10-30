@@ -120,12 +120,37 @@ def termApp16(): Bool =
     };
     m |= R(6).
 
+@test
+def termApp17(): Bool =
+    let m = solve ho1(inc);
+    m |= R(4).
+
+@test
+def termApp18(): Bool =
+    let m = solve ho1(dec);
+    m |= R(0).
+
+@test
+def termApp19(): Bool =
+    let m = solve ho2(add);
+    m |= R(6).
+
 def zer(): Int = 0
 def one(): Int = 1
 def two(): Int = 2
 def inc(x: Int): Int = x + 1
 def dec(x: Int): Int = x - 1
 def add(x: Int, y: Int): Int = x + y
+
+pub def ho1(f: Int -> Int): #{A, R} = #{
+    A(1). A(2). A(3).
+    R(f(x)) :- A(x), A(y).
+}
+
+pub def ho2(f: (Int, Int) -> Int): #{A, R} = #{
+    A(1). A(2). A(3).
+    R(f(x, y)) :- A(x), A(y).
+}
 
 rel A(x: Int)
 rel B(x: Int)
