@@ -85,47 +85,6 @@ object Uncurrier extends Phase[Root, Root] {
   }
 
   /**
-    * Uncurries all definitions inside the given constraint `c`.
-    */
-  def visitConstraint(c: Constraint, newDefs: TopLevel, root: Root)(implicit flix: Flix): Constraint = c match {
-    case Constraint(cparams, head0, body0) =>
-      // TODO: Currently we do not need to uncurry in the head because of an earlier transformation.
-      val head = head0
-      val body = body0.map(visitBodyPredicate(_, newDefs, root))
-      Constraint(cparams, head, body)
-  }
-
-  /**
-    * Uncurries all definitions inside the given head predicate `h`.
-    */
-  def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h match {
-    case Predicate.Head.Atom(pred, terms, tpe, loc) =>
-      val ts = terms.map(visitHeadTerm(_, newDefs, root))
-      Predicate.Head.Atom(pred, ts, tpe, loc)
-
-    case Predicate.Head.Union(exp, tpe, loc) => h
-  }
-
-  /**
-    * Uncurries all definitions inside the given body predicate `h`.
-    */
-  def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
-    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => b
-
-    case Predicate.Body.Guard(exp, loc) => b
-  }
-
-  /**
-    * Uncurries all definitions inside the given head term `t`.
-    */
-  def visitHeadTerm(t: Term.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Term.Head = t match {
-    case Term.Head.QuantVar(sym, tpe, loc) => t
-    case Term.Head.CapturedVar(sym, tpe, loc) => t
-    case Term.Head.Lit(lit, tpe, loc) => t
-    case Term.Head.App(exp, terms, tpe, loc) => t
-  }
-
-  /**
     * Introduces an uncurried version of the given binary function definition.
     */
   def mkUncurried2(sym: Symbol.DefnSym, newDefs: TopLevel, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
