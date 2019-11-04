@@ -246,7 +246,7 @@ object Type {
   /**
     * Constructs the arrow type A -> B.
     */
-  @deprecated("Use the effectful version of mkArrow", "0.6.0")
+  // TODO: Deprecated
   def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(Eff.Pure, 2), a), b) // TODO: Pure?
 
   /**
@@ -257,7 +257,7 @@ object Type {
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
-  @deprecated("Use the effectful version of mkArrow", "0.6.0")
+  // TODO: Deprecated
   def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
     as.foldRight(b)(mkArrow)
   }
@@ -297,7 +297,6 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
   }
-
 
 
   /////////////////////////////////////////////////////////////////////////////

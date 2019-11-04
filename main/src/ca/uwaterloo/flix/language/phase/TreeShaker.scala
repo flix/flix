@@ -319,7 +319,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
+        case SimplifiedAst.Term.Head.App(exp, args, tpe, loc) => visitExp(exp)
       }
     }
 
@@ -357,12 +357,13 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     reachableFunctions.add(Symbol.mkDefnSym("main"))
 
     /*
-     * (b) A function marked with @benchmark or @test is reachable.
+     * (b) A function marked with @benchmark, @test or as an entry point is reachable.
      */
     for ((sym, defn) <- root.defs) {
+      val isEntryPoint = defn.mod.isEntryPoint
       val isBenchmark = defn.ann.isBenchmark
       val isTest = defn.ann.isTest
-      if (isBenchmark || isTest) {
+      if (isEntryPoint || isBenchmark || isTest) {
         reachableFunctions.add(sym)
       }
     }

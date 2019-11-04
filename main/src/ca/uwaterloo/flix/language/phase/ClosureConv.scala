@@ -411,7 +411,9 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(lit)
       Term.Head.Lit(e, tpe, loc)
 
-    case Term.Head.App(sym, args, tpe, loc) => term0
+    case Term.Head.App(exp0, args, tpe, loc) =>
+      val e = visitExp(exp0)
+      Term.Head.App(e, args, tpe, loc)
   }
 
   /**
@@ -593,7 +595,7 @@ object ClosureConv extends Phase[Root, Root] {
       // Captured variables are by definition free.
       mutable.LinkedHashSet((sym, tpe))
     case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Head.App(sym, args, tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Head.App(exp, args, tpe, loc) => freeVars(exp)
   }
 
   /**
@@ -936,9 +938,10 @@ object ClosureConv extends Phase[Root, Root] {
 
       case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(lit, tpe, loc)
 
-      case Term.Head.App(sym, args, tpe, loc) =>
+      case Term.Head.App(exp, args, tpe, loc) =>
+        val e = visitExp(exp)
         val as = args.map(s => subst.getOrElse(s, s))
-        Term.Head.App(sym, as, tpe, loc)
+        Term.Head.App(e, as, tpe, loc)
     }
 
     def visitBodyTerm(term0: Term.Body): Term.Body = term0 match {
