@@ -35,6 +35,7 @@ object TypedAstOps {
       case Some(value) =>(elms flatMap freeVarsOf).toSet ++ Set(value)
       case None => (elms flatMap freeVarsOf).toSet
     }
+
   }
 
   /**
@@ -315,6 +316,7 @@ object TypedAstOps {
           case None => boundElms
           case Some(value) => Map(value -> tpe) ++ boundElms
       }
+
     }
 
     /**
