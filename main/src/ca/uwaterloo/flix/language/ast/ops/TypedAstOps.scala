@@ -307,7 +307,7 @@ object TypedAstOps {
           case None => boundElms
           case Some(value) => Map(value -> tpe) ++ boundElms
       }
-      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
         val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
           case (macc, elm) => macc ++ binds(elm)
         }
