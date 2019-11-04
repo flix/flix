@@ -29,11 +29,12 @@ object TypedAstOps {
     case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => sym match{
       case Some(value) =>(elms flatMap freeVarsOf).toSet ++ Set(value)
       case None => (elms flatMap freeVarsOf).toSet
-  }
+    }
     case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => sym match{
       case Some(value) =>(elms flatMap freeVarsOf).toSet ++ Set(value)
       case None => (elms flatMap freeVarsOf).toSet
-    }   }
+    }
+  }
 
   /**
     * Returns a map of the holes in the given ast `root`.
@@ -292,6 +293,9 @@ object TypedAstOps {
       case Pattern.Str(lit, loc) => Map.empty
       case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
       case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, elm) => macc ++ binds(elm)
+      }
+      case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
       case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
