@@ -1058,6 +1058,8 @@ object ParsedAst {
       case Pattern.Lit(sp1, _, _) => sp1
       case Pattern.Tag(sp1, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
+      case Pattern.ArrayHeadSpread(sp1, _, _, _) => sp1
+      case Pattern.ArrayTailSpread(sp1, _, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
     }
