@@ -1885,7 +1885,7 @@ object GenExpression {
   /**
     * Compiles the given head term `t0`.
     */
-  private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
+  private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = t0 match {
     case Term.Head.QuantVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
@@ -1907,12 +1907,12 @@ object GenExpression {
       // Compile the literal term.
       newLitTerm(sym, mv)
 
-    case Term.Head.App(sym, args, tpe, loc) =>
+    case Term.Head.App(exp, args, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Compile the application term.
-      newAppTerm(sym, args, mv)
+      newAppTerm(exp, args, mv)
   }
 
   /**
@@ -1951,7 +1951,7 @@ object GenExpression {
   /**
     * Emits code for the given head `terms`.
     */
-  private def newHeadTerms(terms: List[Term.Head], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newHeadTerms(terms: List[Term.Head], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     compileInt(mv, terms.length)
     mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Term.Term.toInternalName)
     for ((term, index) <- terms.zipWithIndex) {
@@ -2031,9 +2031,9 @@ object GenExpression {
   /**
     * Emits code to allocate a new app term for the given symbol `sym` and arguments `args`.
     */
-  private def newAppTerm(sym: Symbol.DefnSym, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newAppTerm(exp: FinalAst.Expression, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // The function object.
-    AsmOps.compileDefSymbol(sym, mv)
+    compileExpression(exp, mv, clazz, lenv0, entryPoint)
 
     // The function arguments.
     newVarSyms(args, mv)
