@@ -1297,6 +1297,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Pattern.Str(lit, loc) => Nil
     case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
+    case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) =>
       val freeElms = elms flatMap freeVars
       ident match {
