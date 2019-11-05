@@ -99,7 +99,7 @@ pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
     Start(actorRef) :- Crashed(actorRef).
 }
 
-
+// TODO: Does what we are doing work with scoped threads?
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Examples                                                                 //
@@ -156,3 +156,24 @@ namespace CounterActorSystem{
         }
 
 }
+
+///
+/// The Grand TODO List
+///
+/// Unassigned:
+/// - Add support for aggregation.
+/// - Implement framework
+/// - Implement examples
+///
+/// Magnus:
+/// - Remove indexed predicates.
+/// - Add support for type aliases.
+/// - Add equality on closures.
+/// - Add support for type aliases.
+/// - Introduce explicit support for lattices.
+/// - Refactor channel syntax.
+/// - Refactor types of relations and lattices :(
+///
+/// Quentin:
+/// - Add support for fold.
+///
