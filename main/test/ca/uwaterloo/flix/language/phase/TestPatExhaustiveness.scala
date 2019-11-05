@@ -179,11 +179,11 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     val input =
       """enum Evil {
         |  case Evil(Evil, Evil),
-        |  case Done
+        |  case Good
         |}
         |
         |def f(x: Evil): Evil = match x with {
-        |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Done, Done)
+        |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Good, Good)
         |}
       """.stripMargin
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
