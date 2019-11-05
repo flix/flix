@@ -471,7 +471,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case SimplifiedAst.Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
         val p = visitPredicateWithParam(pred, m)
-        val e1 = visit(exp1).asInstanceOf[FinalAst.Expression.Var] // TODO not the cleanest
+        val e1 = visit(exp1).asInstanceOf[FinalAst.Expression.Var]
         val e2 = visit(exp2).asInstanceOf[FinalAst.Expression.Var]
         val e3 = visit(exp3).asInstanceOf[FinalAst.Expression.Var]
         val t = visitType(tpe)

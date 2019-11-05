@@ -348,9 +348,9 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
       val p = visitPredicateWithParam(pred)
-      val e1 = visitExp(exp1).asInstanceOf[Expression.Var]
-      val e2 = visitExp(exp2).asInstanceOf[Expression.Var]
-      val e3 = visitExp(exp3).asInstanceOf[Expression.Var]
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
       Expression.FixpointFold(p, e1, e2, e3, tpe, loc)
 
     case Expression.HoleError(sym, tpe, loc) => exp0
@@ -894,9 +894,9 @@ object ClosureConv extends Phase[Root, Root] {
 
       case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
         val p = visitPredicateWithParam(pred)
-        val e1 = visitExp(exp1).asInstanceOf[Expression.Var]
-        val e2 = visitExp(exp2).asInstanceOf[Expression.Var]
-        val e3 = visitExp(exp3).asInstanceOf[Expression.Var]
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
         Expression.FixpointFold(p, e1, e2, e3, tpe, loc)
 
       case Expression.HoleError(sym, tpe, loc) => e
