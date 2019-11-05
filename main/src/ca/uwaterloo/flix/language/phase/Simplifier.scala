@@ -582,6 +582,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         val var3 = Symbol.freshVarSym()
         val e3 = visitExp(exp3)
+        // Simplifies a fold expression, which in the general case has this form:
+        // fold F exp1 exp2 exp3
+        // It becomes simplified into:
+        // let v1 = exp1; let v2 = exp2; let v3 = v3; fold F v1 v2 v3
+        // This enables simpler code generation without breaking the semantics
         SimplifiedAst.Expression.Let(var1, e1,
           SimplifiedAst.Expression.Let(var2, e2,
             SimplifiedAst.Expression.Let(var3, SimplifiedAst.Expression.FixpointProject(p, e3, e3.tpe, loc),

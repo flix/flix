@@ -91,14 +91,8 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
-      // Label for the loop
-      val loop = new Label
-      // Type of the continuation interface
-      val cont = JvmOps.getContinuationInterfaceType(exp.tpe)
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-      // Result type
-      val resultType = JvmOps.getErasedJvmType(tpe)
       // Put the closure on `continuation` field of `Context`
       visitor.visitVarInsn(ALOAD, 1)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -122,39 +116,7 @@ object GenExpression {
         }
       }
       visitor.visitInsn(POP)
-      // Saving args on the continuation interface in reverse
-      for ((arg, ind) <- args.zipWithIndex.reverse) {
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-      }
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Begin of the loop
-      visitor.visitLabel(loop)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Setting `continuation` field of global to `null`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitInsn(ACONST_NULL)
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Cast to the continuation
-      visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-      // Duplicate
-      visitor.visitInsn(DUP)
-      // Save it on the IFO local variable
-      visitor.visitVarInsn(ASTORE, 2)
-      // Call invoke
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      visitor.visitJumpInsn(IFNONNULL, loop)
-      // Load IFO from local variable and invoke `getResult` on it
-      visitor.visitVarInsn(ALOAD, 2)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      AsmOps.compileClosureApplication(visitor, exp.tpe, args.map(_.tpe), tpe)
 
     case Expression.ApplyDef(name, args, tpe, loc) =>
       // Label for the loop
@@ -1203,8 +1165,8 @@ object GenExpression {
       // Extract the type of elements that are in the tuple
       val tupleElmsTypes = root.relations(pred.sym.asInstanceOf[Symbol.RelSym] /* TODO: not clean */).attr.map(_.tpe)
       // Create a new tuple object
-      val classType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
-      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
+      visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
       // stack: [index, acc, fact, tupleType]
       visitor.visitInsn(DUP_X1)
       // stack: [index, acc, tupleType, fact, tupleType]
@@ -1254,18 +1216,10 @@ object GenExpression {
           "(Ljava/lang/Object;)Ljava/lang/Object;", true)
         visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
         // Cast the proxy object into an unboxed value if necessary
-        tpe match {
-          case MonoType.Int32 =>
-            // call Object ProxyObject.getValue()
-            visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
-            // cast Object into java.lang.Integer
-            visitor.visitTypeInsn(CHECKCAST, JvmName.Integer.toInternalName)
-            // call int java.lang.Integer.intValue()
-            visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Integer.toInternalName, "intValue", "()I", false)
-          case _ =>
-            println(s"Unsupported MonoType: $tpe, letting it in a proxy object")
-            // TODO: is there a way to automatically unbox what can be unboxed? and leave the rest untouched
-        }
+        // call Object ProxyObject.getValue()
+        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
+        // Cast it, and unbox it if necessary
+        AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
         // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement]
         visitor.visitInsn(SWAP)
@@ -1278,7 +1232,7 @@ object GenExpression {
 
       // stack: [index, acc, tupleType, tupleType, tupleElement*]
       val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getJvmType), JvmType.Void)
-      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+      visitor.visitMethodInsn(INVOKESPECIAL, tupleType.name.toInternalName, "<init>", constructorDescriptor, false)
       // stack: [index, acc, tuple] (tupleType is actually the constructed tuple)
 
       // Now we have the tuple on the top of the stack
@@ -1287,14 +1241,28 @@ object GenExpression {
       // Getting the folded function
       readVar(f.sym, f.tpe, visitor)
       // stack: [index, acc, tuple, f]
-      visitor.visitInsn(DUP_X2)
-      // stack: [index, f, acc, tuple, f]
-      visitor.visitInsn(POP)
-      // stack: [index, f, acc, tuple]
 
-      // Call the function
-      visitor.visitInsn(POP); visitor.visitInsn(SWAP); visitor.visitInsn(POP) // TODO: dummy call to test (f(tuple, acc) -> acc')
-      // TODO: how to call f? Should it just be similar to ApplyClo?
+      // Attempt 1: call f(tuple, acc) directly
+      /*
+      visitor.visitInsn(DUP_X2); visitor.visitInsn(POP); visitor.visitInsn(SWAP) // stack: [index, f, tuple, acc]
+      AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes), init.tpe), init.tpe)
+      */
+
+      // Attempt 2: call f(tuple)(acc) through two calls
+      /*
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc, f, tuple]
+      AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes)), MonoType.Arrow(List(init.tpe), init.tpe))
+      // stack: [index, acc, f(tuple)]
+      visitor.visitInsn(SWAP)
+      // stack: [index, f(tuple), acc]
+      AsmOps.compileClosureApplication(visitor, MonoType.Arrow(List(init.tpe), init.tpe), List(init.tpe), init.tpe)
+      // stack: [index, f(tuple, acc)]
+      */
+
+      // Attempt 0: Dummy call
+      visitor.visitInsn(POP)
+      visitor.visitInsn(POP)
 
       // stack: [index, acc']
 
