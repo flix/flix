@@ -1232,23 +1232,47 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Finds the table of the given `qname` in the namespace `ns`.
     */
   def lookupPredicateSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[Symbol.PredSym, ResolutionError] = {
-    val (relations, lattices) = if (qname.isUnqualified) {
-      // Lookup in the current namespace.
-      (prog0.relations.getOrElse(ns, Map.empty), prog0.lattices.getOrElse(ns, Map.empty))
-    } else {
-      // Lookup in the qualified namespace.
-      (prog0.relations.getOrElse(qname.namespace, Map.empty), prog0.lattices.getOrElse(qname.namespace, Map.empty))
-    }
-
-    // Lookup the relation/lattice in the maps.
-    val relationOpt = relations.get(qname.ident.name)
-    val latticeOpt = lattices.get(qname.ident.name)
+    // Lookup the relation and lattice.
+    val relationOpt = lookupRelSymbol(qname, ns, prog0)
+    val latticeOpt = lookupLatSymbol(qname, ns, prog0)
 
     (relationOpt, latticeOpt) match {
       case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
       case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc)
       case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc)
       case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
+    }
+  }
+
+  /**
+    * Finds the relation of the given `qname` in the namespace `ns`.
+    */
+  private def lookupRelSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Relation] = {
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.relations.getOrElse(ns, Map.empty).get(qname.ident.name).orElse {
+        // Lookup in the global namespace.
+        prog0.relations.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.relations.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
+    * Finds the lattice of the given `qname` in the namespace `ns`.
+    */
+  private def lookupLatSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Lattice] = {
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.lattices.getOrElse(ns, Map.empty).get(qname.ident.name).orElse {
+        // Lookup in the global namespace.
+        prog0.lattices.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.lattices.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
