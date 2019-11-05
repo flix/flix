@@ -47,17 +47,18 @@ pub enum Ready {
 /// A `shutdownPolicy` that describes how to shutdown the actor system in an orderly fashion.
 /// A `restartPolicy` that describes what should happen when an actor crashes.
 ///
-pub enum ActorSystem {
-    case ActorSystem({startPolicy: #{Actor}, shutdownPolicy: #{Actor}, restartPolicy: #{Actor}})
+pub enum ActorSystem[r1, r2, r3] {
+    case ActorSystem({startPolicy: #{Actor | r1}, shutdownPolicy: #{Actor | r2}, restartPolicy: #{Actor | r3}}) // TODO: The types here are a bit poor
 }
 
 // TODO: Define core relations here:
 // -----------------------------------------------------------------------------------------------
-pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: s -> ActorResult)
+pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: (s, Channel[ActorMsg]) -> ActorResult)
 
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
 pub rel Crashed(actorName: Str)
+
 pub rel Start(actorName: Str)
 
 // TODO: We dont really have proper support for type aliases, we might want to fix that.
@@ -65,7 +66,7 @@ pub rel Start(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start(a: ActorSystem): Unit =
+pub def start(a: ActorSystem[r1, r2, r3]): Unit =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let _startPolicy = r.startPolicy;
@@ -83,23 +84,18 @@ pub def startActor[s](_actorName: Str, _initialState: s, _mailbox: Channel[Actor
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
     ()
 
-pub def stop(_a: ActorSystem): Unit =
+pub def stop(_a: ActorSystem[r1, r2, r3]): Unit =
     // TODO: Not unlike start, but also needs some running description of the actor system.
     ()
 
-pub def react(_a: ActorSystem): Unit =
+pub def react(_a: ActorSystem[r1, r2, r3]): Unit =
     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
     ()
 
 ///
-/// Returns the default restart policy ...
+/// Returns the default restart policy.
 ///
-pub def defaultRestartPolicy(): #{Actor} = ???
-
-///
-/// ...
-///
-pub def restartPolicy(): #{Start, Crashed} = #{
+pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
     Start(actorRef) :- Crashed(actorRef).
 }
 
@@ -115,13 +111,19 @@ namespace CounterActorSystem{
         () // TODO: Start the actor system here.
 
 
-    pub def system(): ActorSystem = ActorSystem({
+    pub def system(): ActorSystem[_, _, _] = ActorSystem({
         startPolicy = #{
-            // TODO...
+            Start("counterActor").
+
+            Start("Worker1") :- Started("counterActor").
+            Start("Worker2") :- Started("counterActor").
+            Start("Worker3") :- Started("counterActor").
+
+// TODO: Problem with the type system...
+//            Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
+
         },
-        restartPolicy = #{
-            // TODO...
-        },
+        restartPolicy = defaultRestartPolicy(),
         shutdownPolicy = #{
             // TODO...
         }}
