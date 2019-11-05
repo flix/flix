@@ -16,14 +16,18 @@
 // TODO: Currently not polymorphic to keep it simple.
 
 pub enum ActorResult {
-    case Stopped(Str),
-    case Crashed(Str)
+    case Done,
+    case Crash(Str)
 }
 
 pub enum ActorMsg {
-    case Start,
+    case Start(Channel[Ready]),
     case Stop,
     case Msg(Str)
+}
+
+pub enum Ready {
+    case Ready
 }
 
 ///
@@ -98,23 +102,45 @@ pub def restartPolicy(): #{Start, Crashed} = #{
 namespace CounterActorSystem{
 
     pub def main(): Unit =
-        let startPolicy = #{
-            // TODO...
-        };
-        let restartPolicy = #{
-            // TODO...
-        };
-        let shutdownPolicy = #{
-            // TODO...
-        };
-        let _ = {startPolicy = startPolicy, restartPolicy = restartPolicy, shutdownPolicy = shutdownPolicy};
         () // TODO: Start the actor system here.
 
-    pub def counterActor(n: Int, m: Channel[ActorMsg]): ActorResult =
-        match <- m {
-            case Start  => ??? // TODO: Reply that we have started.
-            case Stop   => ???
-            case Msg(_) => ???
+
+    pub def system(): ActorSystem = ActorSystem({
+        startPolicy = #{
+            // TODO...
+        },
+        restartPolicy = #{
+            // TODO...
+        },
+        shutdownPolicy = #{
+            // TODO...
+        }}
+    )
+
+    ///
+    /// An actor that maintains an internal counter.
+    ///
+    /// The counter can be incremented, decrement, and its value retrieved.
+    ///
+    pub def counterActor(n: Int, mailbox: Channel[ActorMsg]): ActorResult =
+        match <- mailbox {
+            case Start(c)   => c <- Ready; counterActor(n, mailbox)
+            case Msg("GET") => ??? // TODO: How can we reply, when we dont have the sender?
+            case Msg("INC") => ???
+            case Msg("DEC") => ???
+            case Stop       => Done
+            case Msg(m)     => Crash("Unexpected message: " + m)
+        }
+
+    ///
+    /// An actor that occasionally requests the counter actor to increment its number.
+    ///
+    pub def workerActor(counterActor: Channel[ActorMsg], mailbox: Channel[ActorMsg]): ActorResult =
+        match <- mailbox {
+            case Start(c)       => c <- Ready; workerActor(counterActor, mailbox)
+            case Msg("wakeup")  => counterActor <- Msg("INC"); workerActor(counterActor, mailbox)
+            case Stop           => Done
+            case Msg(m)         => Crash("Unexpected message: " + m)
         }
 
 }
