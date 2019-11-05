@@ -17,7 +17,7 @@
 
 pub enum ActorResult {
     case Done,
-    case Crash(Str)
+    case Crash(Str) // TODO: Should probably crash with both a message and the current state?
 }
 
 pub enum ActorMsg {
@@ -125,10 +125,10 @@ namespace CounterActorSystem{
     pub def counterActor(n: Int, mailbox: Channel[ActorMsg]): ActorResult =
         match <- mailbox {
             case Start(c)   => c <- Ready; counterActor(n, mailbox)
-            case Msg("GET") => ??? // TODO: How can we reply, when we dont have the sender?
-            case Msg("INC") => ???
-            case Msg("DEC") => ???
             case Stop       => Done
+            case Msg("GET") => ??? // TODO: How can we reply, when we dont have the sender?
+            case Msg("INC") => counterActor(n + 1, mailbox)
+            case Msg("DEC") => counterActor(n - 1, mailbox)
             case Msg(m)     => Crash("Unexpected message: " + m)
         }
 
@@ -138,8 +138,8 @@ namespace CounterActorSystem{
     pub def workerActor(counterActor: Channel[ActorMsg], mailbox: Channel[ActorMsg]): ActorResult =
         match <- mailbox {
             case Start(c)       => c <- Ready; workerActor(counterActor, mailbox)
-            case Msg("wakeup")  => counterActor <- Msg("INC"); workerActor(counterActor, mailbox)
             case Stop           => Done
+            case Msg("wakeup")  => counterActor <- Msg("INC"); workerActor(counterActor, mailbox)
             case Msg(m)         => Crash("Unexpected message: " + m)
         }
 
