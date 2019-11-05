@@ -15,15 +15,25 @@
 
 // TODO: Currently not polymorphic to keep it simple.
 
+///
+/// Represents the result of an actor.
+///
 pub enum ActorResult {
+    ///
+    /// Indicates that the actor successfully completed it works and terminated normally.
+    ///
     case Done,
+
+    ///
+    /// Indicates that the actor terminated abnormally.
+    ///
     case Crash(Str) // TODO: Should probably crash with both a message and the current state?
 }
 
 pub enum ActorMsg {
     case Start(Channel[Ready]),
     case Stop,
-    case Msg(Str)
+    case Msg(Channel[ActorMsg], Str)
 }
 
 pub enum Ready {
@@ -124,12 +134,12 @@ namespace CounterActorSystem{
     ///
     pub def counterActor(n: Int, mailbox: Channel[ActorMsg]): ActorResult =
         match <- mailbox {
-            case Start(c)   => c <- Ready; counterActor(n, mailbox)
-            case Stop       => Done
-            case Msg("GET") => ??? // TODO: How can we reply, when we dont have the sender?
-            case Msg("INC") => counterActor(n + 1, mailbox)
-            case Msg("DEC") => counterActor(n - 1, mailbox)
-            case Msg(m)     => Crash("Unexpected message: " + m)
+            case Start(c)       => c <- Ready; counterActor(n, mailbox)
+            case Stop           => Done
+            case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
+            case Msg(_, "INC")  => counterActor(n + 1, mailbox)
+            case Msg(_, "DEC")  => counterActor(n - 1, mailbox)
+            case Msg(_, m)      => Crash("Unexpected message: " + m)
         }
 
     ///
@@ -137,10 +147,10 @@ namespace CounterActorSystem{
     ///
     pub def workerActor(counterActor: Channel[ActorMsg], mailbox: Channel[ActorMsg]): ActorResult =
         match <- mailbox {
-            case Start(c)       => c <- Ready; workerActor(counterActor, mailbox)
-            case Stop           => Done
-            case Msg("wakeup")  => counterActor <- Msg("INC"); workerActor(counterActor, mailbox)
-            case Msg(m)         => Crash("Unexpected message: " + m)
+            case Start(c)           => c <- Ready; workerActor(counterActor, mailbox)
+            case Stop               => Done
+            case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
+            case Msg(_, m)          => Crash("Unexpected message: " + m)
         }
 
 }
