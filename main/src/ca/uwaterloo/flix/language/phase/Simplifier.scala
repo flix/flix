@@ -1085,12 +1085,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            val zero = SimplifiedAst.Expression.Let(sym,
+            val zero = sym.text match {
+              case "_" =>  inner
+              case _ => SimplifiedAst.Expression.Let(sym,
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
                   expectedArrayLengthExp,
                   actualArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
+            }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
@@ -1122,12 +1125,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            val zero =  SimplifiedAst.Expression.Let( sym,
+            val zero = sym.text match {
+              case "_" =>  inner
+              case _ => SimplifiedAst.Expression.Let(sym,
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
                   SimplifiedAst.Expression.Int32(0),
                   expectedArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
+            }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
