@@ -1085,16 +1085,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            val zero = sym match {
-              case None =>  inner
-              case Some(symbol) => SimplifiedAst.Expression.Let(
-                symbol,
+            val zero = SimplifiedAst.Expression.Let(sym,
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
                   expectedArrayLengthExp,
                   actualArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
-            }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)
@@ -1109,7 +1105,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
-          * Matching an array with a TailSpread may succeed or fail
+          * Matching an array with a HeadSpread may succeed or fail
           *
           * We generate an if clause checking that array length is at least the length of
           * each pattern, and generate a fresh variable and let-binding for each variable
@@ -1126,16 +1122,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
             val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
-            val zero = sym match {
-              case None =>  inner
-              case Some(symbol) => SimplifiedAst.Expression.Let(
-                symbol,
+            val zero =  SimplifiedAst.Expression.Let( sym,
                 SimplifiedAst.Expression.ArraySlice(
                   SimplifiedAst.Expression.Var(v, tpe, loc),
                   SimplifiedAst.Expression.Int32(0),
                   expectedArrayLengthExp, tpe, loc),
                 inner, tpe, loc)
-            }
             elms.zip(freshVars).zipWithIndex.foldRight(zero) {
               case (((pat, name), idx), exp) =>
                 val base = SimplifiedAst.Expression.Var(v, tpe, loc)

@@ -998,18 +998,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match{
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(), loc)
+        case None =>
+          val sym = Symbol.freshVarSym("_")
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
           m += (id.name -> sym)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, Some(sym), Type.freshTypeVar(), loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match{
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(), loc)
+        case None =>
+          val sym = Symbol.freshVarSym("_")
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
         case Some(id) =>
           val sym = Symbol.freshVarSym(id)
           m += (id.name -> sym)
-          NamedAst.Pattern.ArrayHeadSpread(Some(sym), elms map visit, Type.freshTypeVar(), loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
       }
     }
 
@@ -1043,16 +1047,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, None, Type.freshTypeVar(),loc)
+        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshTypeVar(),loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, Some(sym), Type.freshTypeVar(),loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(),loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayHeadSpread(None, elms map visit, Type.freshTypeVar(),loc)
+        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshTypeVar(),loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayHeadSpread(Some(sym), elms map visit, Type.freshTypeVar(),loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(),loc)
       }
     }
 

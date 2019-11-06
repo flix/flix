@@ -31,14 +31,12 @@ object FormatPattern {
     }
     case TypedAst.Pattern.Tuple(elms, _, _) => "(" + elms.map(format).mkString(", ") + ")"
     case TypedAst.Pattern.Array(elms, _, _) => "[" + elms.map(format).mkString(", ") + "]"
-    case TypedAst.Pattern.ArrayTailSpread(elms, sym, _, _) => sym match {
-      case Some(symbol) => "[" + elms.map(format).mkString(", ") + ", .." + symbol.text + "]"
-      case None => "[" + elms.map(format).mkString(", ") + ", .._]"
-    }
-    case TypedAst.Pattern.ArrayHeadSpread(sym, elms, _, _) => sym match {
-      case Some(symbol) => "[" + symbol.text + ".., " + elms.map(format).mkString(", ") + "]"
-      case None => "[ _.., " + elms.map(format).mkString(", ") + "]"
-    }
+    case TypedAst.Pattern.ArrayTailSpread(elms, sym, _, _) =>
+      "[" + elms.map(format).mkString(", ") + ", .." + sym.text + "]"
+
+    case TypedAst.Pattern.ArrayHeadSpread(sym, elms, _, _) =>
+      "[" + sym.text + ".., " + elms.map(format).mkString(", ") + "]"
+
   }
 
 }

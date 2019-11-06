@@ -292,18 +292,14 @@ object TypedAstOps {
       val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
-      sym match {
-        case None => boundElms
-        case Some(value) => Map(value -> tpe) ++ boundElms
-      }
+       Map(sym -> tpe) ++ boundElms
+
     case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
       val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
-      sym match {
-        case None => boundElms
-        case Some(value) => Map(value -> tpe) ++ boundElms
-      }
+      Map(sym -> tpe) ++ boundElms
+
 
   }
 

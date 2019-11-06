@@ -516,24 +516,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Array(elms, tpe, loc) =>
           val (ps,envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
-        case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => sym match{
-          case None =>
+        case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+            val freshSym = Symbol.freshVarSym(sym)
             val (ps,envs) = elms.map(p => visitPat(p)).unzip
-            (Pattern.ArrayTailSpread(ps, None, subst0(tpe), loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
-          case Some(symbol) =>
-            val freshSym = Symbol.freshVarSym(symbol)
-            val (ps,envs) = elms.map(p => visitPat(p)).unzip
-            (Pattern.ArrayTailSpread(ps, Some(freshSym), subst0(tpe), loc), if(envs.isEmpty) Map(symbol -> freshSym) else envs.reduce(_ ++ _) ++ Map(symbol -> freshSym))
-        }
-        case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => sym match {
-          case None =>
+            (Pattern.ArrayTailSpread(ps, freshSym, subst0(tpe), loc),
+              if(envs.isEmpty) Map(sym -> freshSym)
+              else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
+        case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
+            val freshSym = Symbol.freshVarSym (sym)
             val (ps, envs) = elms.map (p => visitPat (p) ).unzip
-            (Pattern.ArrayHeadSpread (None, ps, subst0 (tpe), loc), if (envs.isEmpty) Map.empty else envs.reduce (_ ++ _) )
-          case Some(symbol) =>
-            val freshSym = Symbol.freshVarSym (symbol)
-            val (ps, envs) = elms.map (p => visitPat (p) ).unzip
-            (Pattern.ArrayHeadSpread (Some(freshSym) ,ps, subst0 (tpe), loc), if (envs.isEmpty) Map(symbol -> freshSym) else envs.reduce (_ ++ _) ++ Map(symbol -> freshSym))
-        }
+            (Pattern.ArrayHeadSpread (freshSym ,ps, subst0 (tpe), loc),
+              if (envs.isEmpty) Map(sym -> freshSym)
+              else envs.reduce (_ ++ _) ++ Map(sym -> freshSym))
       }
 
       /**

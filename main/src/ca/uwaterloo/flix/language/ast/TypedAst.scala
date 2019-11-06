@@ -325,9 +325,9 @@ object TypedAst {
 
     case class Array(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class ArrayTailSpread(elms: List[TypedAst.Pattern], sym: Option[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class ArrayTailSpread(elms: List[TypedAst.Pattern], sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
-    case class ArrayHeadSpread(sym: Option[Symbol.VarSym], elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
   }
 

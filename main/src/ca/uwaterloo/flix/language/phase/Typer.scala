@@ -1666,38 +1666,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ) yield resultType
 
       case ResolvedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-        varSym match {
-          case None =>
-            for (
-              elementTypes <- seqM(elms map visit);
-              elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-              resultType <- unifyTypM(tvar, mkArray(elementType), loc)
-            ) yield resultType
-          case Some(vSym) =>
             for (
               elementTypes <- seqM(elms map visit);
               elementType <- unifyTypAllowEmptyM(elementTypes,loc);
               arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
-              resultType <- unifyTypM(vSym.tvar,arrayType,loc)
+              resultType <- unifyTypM(varSym.tvar,arrayType,loc)
             ) yield resultType
-        }
 
       case ResolvedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-        varSym match {
-          case None =>
-            for (
-              elementTypes <- seqM(elms map visit);
-              elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-              resultType <- unifyTypM(tvar, mkArray(elementType), loc)
-            ) yield resultType
-          case Some(vSym) =>
             for (
               elementTypes <- seqM(elms map visit);
               elementType <- unifyTypAllowEmptyM(elementTypes,loc);
               arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
-              resultType <- unifyTypM(vSym.tvar,arrayType,loc)
+              resultType <- unifyTypM(varSym.tvar,arrayType,loc)
             ) yield resultType
-        }
+
     }
 
     visit(pat0)
