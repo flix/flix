@@ -1023,7 +1023,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case Pattern.Tag(sym, tag, pat, tpe, loc) => Pattern.Tag(sym, tag, apply(pat), tpe, loc)
       case Pattern.Tuple(elms, tpe, loc) => Pattern.Tuple(apply(elms), tpe, loc)
       case Pattern.Array(elms, tpe, loc) => Pattern.Array(apply(elms), tpe, loc)
-      //TODO: rewrite spread cases
+      //TODO: The sym is not handled correctly.
       case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => sym match {
         case None => Pattern.ArrayTailSpread(apply(elms), None, tpe, loc)
         case Some(value) => m.get(value) match {

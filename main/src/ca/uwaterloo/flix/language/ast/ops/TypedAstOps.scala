@@ -6,37 +6,6 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
 
 object TypedAstOps {
 
-  /**
-    * Returns the free variables in the given pattern `pat0`.
-    */
-  def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = pat0 match {
-    case Pattern.Wild(tpe, loc) => Set.empty
-    case Pattern.Var(sym, tpe, loc) => Set(sym)
-    case Pattern.Unit(loc) => Set.empty
-    case Pattern.True(loc) => Set.empty
-    case Pattern.False(loc) => Set.empty
-    case Pattern.Char(lit, loc) => Set.empty
-    case Pattern.Float32(lit, loc) => Set.empty
-    case Pattern.Float64(lit, loc) => Set.empty
-    case Pattern.Int8(lit, loc) => Set.empty
-    case Pattern.Int16(lit, loc) => Set.empty
-    case Pattern.Int32(lit, loc) => Set.empty
-    case Pattern.Int64(lit, loc) => Set.empty
-    case Pattern.BigInt(lit, loc) => Set.empty
-    case Pattern.Str(lit, loc) => Set.empty
-    case Pattern.Tag(sym, tag, pat, tpe, loc) => freeVarsOf(pat)
-    case Pattern.Tuple(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
-    case Pattern.Array(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
-    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => sym match{
-      case Some(value) =>(elms flatMap freeVarsOf).toSet ++ Set(value)
-      case None => (elms flatMap freeVarsOf).toSet
-    }
-    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => sym match{
-      case Some(value) =>(elms flatMap freeVarsOf).toSet ++ Set(value)
-      case None => (elms flatMap freeVarsOf).toSet
-    }
-
-  }
 
   /**
     * Returns a map of the holes in the given ast `root`.
@@ -276,50 +245,6 @@ object TypedAstOps {
     }
 
     /**
-      * Returns the set of variable symbols bound by the given pattern `pat0`.
-      */
-    def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
-      case Pattern.Wild(tpe, loc) => Map.empty
-      case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
-      case Pattern.Unit(loc) => Map.empty
-      case Pattern.True(loc) => Map.empty
-      case Pattern.False(loc) => Map.empty
-      case Pattern.Char(lit, loc) => Map.empty
-      case Pattern.Float32(lit, loc) => Map.empty
-      case Pattern.Float64(lit, loc) => Map.empty
-      case Pattern.Int8(lit, loc) => Map.empty
-      case Pattern.Int16(lit, loc) => Map.empty
-      case Pattern.Int32(lit, loc) => Map.empty
-      case Pattern.Int64(lit, loc) => Map.empty
-      case Pattern.BigInt(lit, loc) => Map.empty
-      case Pattern.Str(lit, loc) => Map.empty
-      case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
-      case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, elm) => macc ++ binds(elm)
-      }
-      case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (macc, elm) => macc ++ binds(elm)
-      }
-      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-        val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-          case (macc, elm) => macc ++ binds(elm)
-        }
-        sym match{
-          case None => boundElms
-          case Some(value) => Map(value -> tpe) ++ boundElms
-      }
-      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-        val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-          case (macc, elm) => macc ++ binds(elm)
-        }
-        sym match{
-          case None => boundElms
-          case Some(value) => Map(value -> tpe) ++ boundElms
-      }
-
-    }
-
-    /**
       * Returns the set of variables bound by the given list of formal parameters `fparams`.
       */
     def getEnvFromParams(fparams: List[FormalParam]): Map[Symbol.VarSym, Type] =
@@ -332,5 +257,55 @@ object TypedAstOps {
       case (macc, (sym, defn)) => macc ++ visitExp(defn.exp, getEnvFromParams(defn.fparams))
     }
   }
+
+  /**
+    * Returns the free variables in the given pattern `pat0`.
+    */
+  def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = binds(pat0).keySet
+
+  /**
+    * Returns the set of variable symbols bound by the given pattern `pat0`.
+    */
+  def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
+    case Pattern.Wild(tpe, loc) => Map.empty
+    case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
+    case Pattern.Unit(loc) => Map.empty
+    case Pattern.True(loc) => Map.empty
+    case Pattern.False(loc) => Map.empty
+    case Pattern.Char(lit, loc) => Map.empty
+    case Pattern.Float32(lit, loc) => Map.empty
+    case Pattern.Float64(lit, loc) => Map.empty
+    case Pattern.Int8(lit, loc) => Map.empty
+    case Pattern.Int16(lit, loc) => Map.empty
+    case Pattern.Int32(lit, loc) => Map.empty
+    case Pattern.Int64(lit, loc) => Map.empty
+    case Pattern.BigInt(lit, loc) => Map.empty
+    case Pattern.Str(lit, loc) => Map.empty
+    case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
+    case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      case (macc, elm) => macc ++ binds(elm)
+    }
+    case Pattern.Array(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      case (macc, elm) => macc ++ binds(elm)
+    }
+    case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+      val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, elm) => macc ++ binds(elm)
+      }
+      sym match {
+        case None => boundElms
+        case Some(value) => Map(value -> tpe) ++ boundElms
+      }
+    case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
+      val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, elm) => macc ++ binds(elm)
+      }
+      sym match {
+        case None => boundElms
+        case Some(value) => Map(value -> tpe) ++ boundElms
+      }
+
+  }
+
 
 }
