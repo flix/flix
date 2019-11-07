@@ -264,8 +264,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointSolve(exp, _, _, _) =>
         visitExp(exp)
 
-      case Expression.FixpointProject(pred, exp, _, _) =>
-        visitExp(pred.exp) ++ visitExp(exp)
+      case Expression.FixpointProject(_, exp, _, _) =>
+        visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
@@ -299,13 +299,16 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitConstraint(c0: SimplifiedAst.Constraint): Set[Symbol.DefnSym] = {
       val headSymbols = c0.head match {
-        case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) => terms.map(visitHeadTerm).fold(visitExp(pred.exp))(_ ++ _)
-        case SimplifiedAst.Predicate.Head.Union(exp, _, _) => visitExp(exp)
+        case SimplifiedAst.Predicate.Head.Atom(_, terms, tpe, loc) =>
+          terms.map(visitHeadTerm).fold(Set.empty)(_ ++ _)
+
+        case SimplifiedAst.Predicate.Head.Union(exp, _, _) =>
+          visitExp(exp)
       }
 
       val bodySymbols = c0.body.map {
-        case SimplifiedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
-          terms.map(visitBodyTerm).fold(visitExp(pred.exp))(_ ++ _)
+        case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+          terms.map(visitBodyTerm).fold(Set.empty)(_ ++ _)
 
         case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
           visitExp(exp)

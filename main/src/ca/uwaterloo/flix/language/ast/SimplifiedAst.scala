@@ -250,11 +250,11 @@ object SimplifiedAst {
 
     case class FixpointSolve(exp: SimplifiedAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointProject(pred: SimplifiedAst.PredicateWithParam, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointProject(sym: Symbol.PredSym, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointFold(pred: SimplifiedAst.PredicateWithParam, init: SimplifiedAst.Expression, f: SimplifiedAst.Expression, constraints: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointFold(sym: Symbol.PredSym, init: SimplifiedAst.Expression, f: SimplifiedAst.Expression, constraints: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -276,7 +276,7 @@ object SimplifiedAst {
 
     object Head {
 
-      case class Atom(pred: SimplifiedAst.PredicateWithParam, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Atom(sym: Symbol.PredSym, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
       case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
@@ -286,7 +286,7 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Atom(pred: SimplifiedAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Atom(sym: Symbol.PredSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Guard(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
@@ -334,7 +334,9 @@ object SimplifiedAst {
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym
+
     def tpe: Type
+
     def loc: SourceLocation
   }
 
@@ -353,7 +355,5 @@ object SimplifiedAst {
   case class FreeVar(sym: Symbol.VarSym, tpe: Type)
 
   case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression)
-
-  case class PredicateWithParam(sym: Symbol.PredSym, exp: SimplifiedAst.Expression)
 
 }
