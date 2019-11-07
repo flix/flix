@@ -217,11 +217,12 @@ object ResolvedAst {
 
     case class FixpointSolve(exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointProject(pred: ResolvedAst.PredicateWithParam, exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointProject(sym: Symbol.PredSym, exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointFold(pred: ResolvedAst.PredicateWithParam, init: ResolvedAst.Expression, f: ResolvedAst.Expression, constraints: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointFold(sym: Symbol.PredSym, init: ResolvedAst.Expression, f: ResolvedAst.Expression, constraints: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
   }
 
   sealed trait Pattern {
@@ -278,7 +279,7 @@ object ResolvedAst {
 
     object Head {
 
-      case class Atom(sym: Symbol.PredSym, exp: ResolvedAst.Expression, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Atom(sym: Symbol.PredSym, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
       case class Union(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
@@ -288,7 +289,7 @@ object ResolvedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, exp: ResolvedAst.Expression, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Atom(sym: Symbol.PredSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Guard(exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
@@ -322,8 +323,6 @@ object ResolvedAst {
   case class HandlerBinding(sym: Symbol.EffSym, exp: ResolvedAst.Expression)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
-
-  case class PredicateWithParam(sym: Symbol.PredSym, exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 

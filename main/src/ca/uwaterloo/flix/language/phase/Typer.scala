@@ -1199,21 +1199,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
-        //  project P<exp1> exp2 : #{ P : a | c }
+        //  project P exp2 : #{ P : a | c }
         //
         val freshPredicateTypeVar = Type.freshTypeVar()
         val freshRestSchemaTypeVar = Type.freshTypeVar()
         val freshResultSchemaTypeVar = Type.freshTypeVar()
 
         for {
-          (parameterType, paramEff) <- visitExp(pred.exp)
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
@@ -1231,7 +1230,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointFold(sym, init, f, constraints, tvar, evar, loc) =>
         //
         // constraints : #{P : a | c}    init : b   f : a' -> b -> b
         // where a' is the tuple reification of relation a
@@ -1245,8 +1244,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (fType, eff2) <- visitExp(f)
           (constraintsType, eff3) <- visitExp(constraints)
           // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
-          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshRestTypeVar), loc)
-          tupleType = pred.sym match {
+          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestTypeVar), loc)
+          tupleType = sym match {
             case rel: Symbol.RelSym =>
               Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
             case lat: Symbol.LatSym =>
@@ -1581,7 +1580,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.FixpointProject(sym.sym, e, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointProject(sym, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
@@ -1592,7 +1591,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e1 = visitExp(init, subst0)
         val e2 = visitExp(f, subst0)
         val e3 = visitExp(constraints, subst0)
-        TypedAst.Expression.FixpointFold(sym.sym, e1, e2, e3, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointFold(sym, e1, e2, e3, subst0(tvar), subst0(evar), loc)
     }
 
     /**
@@ -1752,7 +1751,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = head match {
-    case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
       //  ------------------------------------------------------------
@@ -1770,9 +1769,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       // Infer the types of the terms.
       for {
-        (paramType, paramEff) <- inferExp(exp, program)
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
-        pureParamEff <- unifyEffM(Eff.Pure, paramEff, loc)
         pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
@@ -1794,8 +1791,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
-      val e = reassembleExp(exp, program, subst0)
+    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
       val ts = terms.map(t => reassembleExp(t, program, subst0))
       TypedAst.Predicate.Head.Atom(sym, ts, subst0(tvar), loc)
 
@@ -1813,7 +1809,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  ------------------------------------------------------------
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
-    case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
       // Lookup the type scheme.
       val scheme = sym match {
         case x: Symbol.RelSym => program.relations(x).sc
@@ -1825,8 +1821,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       // Infer the types of the terms.
       for {
-        (paramType, paramEff) <- inferExp(exp, program)
-        pureParamEff <- unifyEffM(Eff.Pure, paramEff, loc)
         termTypes <- seqM(terms.map(inferPattern(_, program)))
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
@@ -1849,8 +1843,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-    case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
-      val e = reassembleExp(exp, program, subst0)
+    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
       TypedAst.Predicate.Body.Atom(sym, polarity, ts, subst0(tvar), loc)
 

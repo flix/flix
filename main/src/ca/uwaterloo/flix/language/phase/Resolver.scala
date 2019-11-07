@@ -793,12 +793,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given predicate with parameter `pred`.
         */
-      def visitPredicateWithParam(pred: NamedAst.PredicateWithParam, symToType: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.PredicateWithParam, ResolutionError] = pred match {
-        case NamedAst.PredicateWithParam(qname, exp) => for {
-          sym <- lookupPredicateSymbol(qname, ns0, prog0)
-          e <- visit(exp, tenv0)
-        } yield ResolvedAst.PredicateWithParam(sym, e)
-      }
+      def visitPredicateWithParam(pred: NamedAst.PredicateWithParam, symToType: Map[Symbol.VarSym, Type]): Validation[Symbol.PredSym, ResolutionError] =
+        lookupPredicateSymbol(pred.qname, ns0, prog0)
 
       visit(exp0, Map.empty)
     }
@@ -885,7 +881,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
-          } yield ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(sym, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -904,7 +900,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
-          } yield ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(sym, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
