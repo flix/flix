@@ -1124,7 +1124,10 @@ object GenExpression {
 
       // Start constructing the tuple
       // Extract the type of elements that are in the tuple
-      val tupleElmsTypes = root.relations(pred.sym.asInstanceOf[Symbol.RelSym] /* TODO: not clean */).attr.map(_.tpe)
+      val tupleElmsTypes = f.tpe match {
+        case MonoType.Arrow(List(MonoType.Tuple(ts)), _) => ts
+        case _ => ??? // should not happen because f has been type-checked
+      }
       // Create a new tuple object
       val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
       visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
