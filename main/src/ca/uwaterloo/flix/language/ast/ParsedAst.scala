@@ -203,6 +203,19 @@ object ParsedAst {
     case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
+      * Type Alias Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the opaque type.
+      * @param tparams the type parameters of the opaque type.
+      * @param tpe     the type of the opaque type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
       * Relation Declaration.
       *
       * @param doc     the optional comment associated with the definition.

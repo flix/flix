@@ -151,6 +151,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Law |
       Declarations.Enum |
       Declarations.OpaqueType |
+      Declarations.TypeAlias |
       Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
@@ -219,6 +220,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
       Documentation ~ Modifiers ~ SP ~ atomic("opaque") ~ WS ~ atomic("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
+    }
+
+    def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ atomic("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {

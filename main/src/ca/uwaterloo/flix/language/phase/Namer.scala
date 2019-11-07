@@ -49,6 +49,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       effs = Map.empty,
       handlers = Map.empty,
       enums = Map.empty,
+      typealiases = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
       relations = Map.empty,
@@ -214,6 +215,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
           NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
+      }
+
+    /*
+     * Type Alias.
+     */
+    case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+      val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+      typealiases0.get(ident.name) match {
+        case None =>
+          // Case 1: The type alias does not exist in the namespace. Add it.
+          mapN(visitType(tpe0, Map.empty)) {
+            case tpe =>
+              val tparams = tparams0 match {
+                case TypeParams.Elided => Nil
+                case TypeParams.Explicit(tps) => tps map {
+                  case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+                }
+              }
+              val typealias = NamedAst.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+              val typealiases = typealiases0 + (ident.name -> typealias)
+              prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+          }
+        case Some(typealias) =>
+          // Case 2: Duplicate type alias.
+          NameError.DuplicateTypeAlias(ident.name, typealias.ident.loc, ident.loc).toFailure
       }
 
     /*

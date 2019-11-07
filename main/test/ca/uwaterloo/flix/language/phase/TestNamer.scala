@@ -187,6 +187,42 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateClass](result)
   }
 
+  test("DuplicateTypeAlias.01") {
+    val input =
+      s"""
+         |type alias USD = Int
+         |type alias USD = Int
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateTypeAlias](result)
+  }
+
+  test("DuplicateTypeAlias.02") {
+    val input =
+      s"""
+         |type alias USD = Int
+         |type alias USD = Int
+         |type alias USD = Int
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateTypeAlias](result)
+  }
+
+  test("DuplicateTypeAlias.03") {
+    val input =
+      s"""
+         |namespace A {
+         |  type alias USD = Int
+         |}
+         |
+         |namespace A {
+         |  type alias USD = Int
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateTypeAlias](result)
+  }
+
   test("UndefinedNativeClass.01") {
     val input = "def f(): Int = native field java.lang.Foo"
     val result = new Flix().addStr(input).compile()
