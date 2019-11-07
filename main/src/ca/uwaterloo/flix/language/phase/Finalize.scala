@@ -545,9 +545,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       val t = visitType(tpe)
       FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, m), t, loc)
 
-    case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) =>
+    case SimplifiedAst.Term.Head.App(exp, args, tpe, loc) =>
+      val e = visitExp(exp, m)
       val t = visitType(tpe)
-      FinalAst.Term.Head.App(sym, args, t, loc)
+      FinalAst.Term.Head.App(e, args, t, loc)
   }
 
   private def visitBodyTerm(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Body = t0 match {

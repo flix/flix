@@ -431,7 +431,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Term.Head.Lit(e, tpe, loc)
 
-      case Term.Head.App(sym, args, tpe, loc) => term0
+      case Term.Head.App(exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        Term.Head.App(e, args, tpe, loc)
     }
 
     /**

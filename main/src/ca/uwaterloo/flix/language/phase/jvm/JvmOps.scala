@@ -20,6 +20,7 @@ import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.FinalAst.Term.Head
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
@@ -681,7 +682,9 @@ object JvmOps {
     def visitConstraint(c0: Constraint): Set[ClosureInfo] = {
       // TODO: Look for more closures.
       val headClosures = c0.head match {
-        case Predicate.Head.Atom(_, _, _, _) => Set.empty
+        case Predicate.Head.Atom(_, terms, _, _) => terms.foldLeft(Set.empty[ClosureInfo]) {
+          case (sacc, t) => sacc ++ visitHeadTerm(t)
+        }
         case Predicate.Head.Union(exp, terms, _, _) => visitExp(exp)
       }
 
@@ -699,6 +702,16 @@ object JvmOps {
       case Body.Atom(_, _, _, _, _) => Set.empty
 
       case Body.Guard(exp, _, _) => visitExp(exp)
+    }
+
+    /**
+      * Returns the set of closures in the given head term `t0`.
+      */
+    def visitHeadTerm(h0: Term.Head): Set[ClosureInfo] = h0 match {
+      case Head.QuantVar(_, _, _) => Set.empty
+      case Head.CapturedVar(_, _, _) => Set.empty
+      case Head.Lit(_, _, _) => Set.empty
+      case Head.App(exp, _, _, _) => visitExp(exp)
     }
 
     // TODO: Look for closures in other places.
@@ -1012,7 +1025,7 @@ object JvmOps {
       case Term.Head.QuantVar(sym, tpe, loc) => Set(tpe)
       case Term.Head.CapturedVar(sym, tpe, loc) => Set(tpe)
       case Term.Head.Lit(sym, tpe, loc) => Set(tpe)
-      case Term.Head.App(sym, args, tpe, loc) => Set(tpe)
+      case Term.Head.App(exp, args, tpe, loc) => visitExp(exp) + tpe
     }
 
     def visitBodyTerm(t0: Term.Body): Set[MonoType] = t0 match {

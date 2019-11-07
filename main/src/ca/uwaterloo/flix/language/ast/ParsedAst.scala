@@ -190,16 +190,30 @@ object ParsedAst {
     case class Enum(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Type Declaration. A type declaration is syntactic sugar for a singleton enum declaration.
+      * Opaque Type Declaration.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param ident the name of the type.
-      * @param caze  the singleton case of the type.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the opaque type.
+      * @param tparams the type parameters of the opaque type.
+      * @param tpe     the type of the opaque type.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Type(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, caze: ParsedAst.Case, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Type Alias Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the opaque type.
+      * @param tparams the type parameters of the opaque type.
+      * @param tpe     the type of the opaque type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Relation Declaration.
@@ -1051,6 +1065,7 @@ object ParsedAst {
       * @param f           the function to fold.
       */
     case class FixpointFold(sp1: SourcePosition, name: Name.QName, index: Option[ParsedAst.Expression], init: ParsedAst.Expression, f: ParsedAst.Expression, constraints: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**
@@ -1067,6 +1082,8 @@ object ParsedAst {
       case Pattern.Tag(sp1, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.Array(sp1, _, _) => sp1
+      case Pattern.ArrayHeadSpread(sp1, _, _, _) => sp1
+      case Pattern.ArrayTailSpread(sp1, _, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
     }
@@ -1115,6 +1132,10 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     case class Array(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+
+    case class ArrayTailSpread(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
+
+    case class ArrayHeadSpread(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Nil Pattern (of list).

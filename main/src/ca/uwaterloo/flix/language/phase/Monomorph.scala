@@ -520,10 +520,21 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Tuple(elms, tpe, loc) =>
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
-
         case Pattern.Array(elms, tpe, loc) =>
           val (ps,envs) = elms.map(p => visitPat(p)).unzip
-          (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_++_))
+          (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
+        case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+            val freshSym = Symbol.freshVarSym(sym)
+            val (ps,envs) = elms.map(p => visitPat(p)).unzip
+            (Pattern.ArrayTailSpread(ps, freshSym, subst0(tpe), loc),
+              if(envs.isEmpty) Map(sym -> freshSym)
+              else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
+        case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
+            val freshSym = Symbol.freshVarSym (sym)
+            val (ps, envs) = elms.map (p => visitPat (p) ).unzip
+            (Pattern.ArrayHeadSpread (freshSym ,ps, subst0 (tpe), loc),
+              if (envs.isEmpty) Map(sym -> freshSym)
+              else envs.reduce (_ ++ _) ++ Map(sym -> freshSym))
       }
 
       /**

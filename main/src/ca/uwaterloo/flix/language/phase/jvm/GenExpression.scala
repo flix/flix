@@ -119,8 +119,6 @@ object GenExpression {
       AsmOps.compileClosureApplication(visitor, exp.tpe, args.map(_.tpe), tpe)
 
     case Expression.ApplyDef(name, args, tpe, loc) =>
-      // Label for the loop
-      val loop = new Label
       // Namespace of the Def
       val ns = JvmOps.getNamespace(name)
       // JvmType of `ns`
@@ -133,8 +131,6 @@ object GenExpression {
       val defJvmType = JvmOps.getFunctionDefinitionClassType(name)
       // Type of the function
       val fnType = root.defs(name).tpe
-      // Type of the continuation interface
-      val cont = JvmOps.getContinuationInterfaceType(fnType)
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
       // Put the closure on `continuation` field of `Context`
@@ -145,8 +141,6 @@ object GenExpression {
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
       // Load `continuation`
       visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
-      // Result type
-      val resultType = JvmOps.getErasedJvmType(tpe)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       visitor.visitInsn(DUP)
@@ -166,40 +160,7 @@ object GenExpression {
         }
       }
       visitor.visitInsn(POP)
-      // Saving args on the continuation interface in reverse
-      for ((arg, ind) <- args.zipWithIndex.reverse) {
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-      }
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Begin of the loop
-      visitor.visitLabel(loop)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-      // Setting `continuation` field of global to `null`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitInsn(ACONST_NULL)
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Cast to the continuation
-      visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-      // Duplicate
-      visitor.visitInsn(DUP)
-      // Save it on the IFO local variable
-      visitor.visitVarInsn(ASTORE, 2)
-      // Call invoke
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      visitor.visitJumpInsn(IFNONNULL, loop)
-      // Load IFO from local variable and invoke `getResult` on it
-      visitor.visitVarInsn(ALOAD, 2)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
 
     case Expression.ApplyEff(sym, args, tpe, loc) =>
       throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
@@ -1163,7 +1124,10 @@ object GenExpression {
 
       // Start constructing the tuple
       // Extract the type of elements that are in the tuple
-      val tupleElmsTypes = root.relations(pred.sym.asInstanceOf[Symbol.RelSym] /* TODO: not clean */).attr.map(_.tpe)
+      val tupleElmsTypes = f.tpe match {
+        case MonoType.Arrow(List(MonoType.Tuple(ts)), _) => ts
+        case _ => ??? // should not happen because f has been type-checked
+      }
       // Create a new tuple object
       val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
       visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
@@ -1238,32 +1202,38 @@ object GenExpression {
       // Now we have the tuple on the top of the stack
       // stack: [index, acc, tuple]
 
+      // Get the context
+      visitor.visitVarInsn(ALOAD, 1)
+      // stack: [index, acc, tuple, Context]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc, Context, tuple]
+
       // Getting the folded function
       readVar(f.sym, f.tpe, visitor)
-      // stack: [index, acc, tuple, f]
+      // stack: [index, acc, Context, tuple, f]
 
-      // Attempt 1: call f(tuple, acc) directly
-      /*
-      visitor.visitInsn(DUP_X2); visitor.visitInsn(POP); visitor.visitInsn(SWAP) // stack: [index, f, tuple, acc]
-      AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes), init.tpe), init.tpe)
-      */
+      // Call f(tuple)(acc) through two calls
+      // stack: [index, acc, Context, tuple, f]
 
-      // Attempt 2: call f(tuple)(acc) through two calls
-      /*
+      val functionInterface = JvmOps.getFunctionInterfaceType(f.tpe)
+      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      visitor.visitInsn(DUP_X1)
       visitor.visitInsn(SWAP)
-      // stack: [index, acc, f, tuple]
+      // stack: [index, acc, Context, f, f, tuple]
       AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes)), MonoType.Arrow(List(init.tpe), init.tpe))
       // stack: [index, acc, f(tuple)]
+
+      visitor.visitVarInsn(ALOAD, 1)
+      // stack: [index, acc, f(tuple), Context]
+      visitor.visitInsn(DUP_X2)
+      // stack: [index, Context, acc, f(tuple), Context]
+      visitor.visitInsn(POP)
+      // stack: [index, Context, acc, f(tuple)]
+      visitor.visitInsn(DUP_X1)
+      // stack: [index, Context, f(tuple), acc, f(tuple)]
       visitor.visitInsn(SWAP)
-      // stack: [index, f(tuple), acc]
+      // stack: [index, Context, f(tuple), f(tuple), acc]
       AsmOps.compileClosureApplication(visitor, MonoType.Arrow(List(init.tpe), init.tpe), List(init.tpe), init.tpe)
-      // stack: [index, f(tuple, acc)]
-      */
-
-      // Attempt 0: Dummy call
-      visitor.visitInsn(POP)
-      visitor.visitInsn(POP)
-
       // stack: [index, acc']
 
       // Increase the index
@@ -2010,7 +1980,7 @@ object GenExpression {
   /**
     * Compiles the given head term `t0`.
     */
-  private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
+  private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = t0 match {
     case Term.Head.QuantVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
@@ -2032,12 +2002,12 @@ object GenExpression {
       // Compile the literal term.
       newLitTerm(sym, mv)
 
-    case Term.Head.App(sym, args, tpe, loc) =>
+    case Term.Head.App(exp, args, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Compile the application term.
-      newAppTerm(sym, args, mv)
+      newAppTerm(exp, args, mv)
   }
 
   /**
@@ -2076,7 +2046,7 @@ object GenExpression {
   /**
     * Emits code for the given head `terms`.
     */
-  private def newHeadTerms(terms: List[Term.Head], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newHeadTerms(terms: List[Term.Head], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     compileInt(mv, terms.length)
     mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Term.Term.toInternalName)
     for ((term, index) <- terms.zipWithIndex) {
@@ -2156,9 +2126,9 @@ object GenExpression {
   /**
     * Emits code to allocate a new app term for the given symbol `sym` and arguments `args`.
     */
-  private def newAppTerm(sym: Symbol.DefnSym, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newAppTerm(exp: FinalAst.Expression, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // The function object.
-    AsmOps.compileDefSymbol(sym, mv)
+    compileExpression(exp, mv, clazz, lenv0, entryPoint)
 
     // The function arguments.
     newVarSyms(args, mv)

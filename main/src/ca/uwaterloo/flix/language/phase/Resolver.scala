@@ -856,6 +856,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.Array(es, tvar, loc)
+
+        case NamedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) =>
+          for {
+            es <- traverse(elms)(visit)
+          } yield ResolvedAst.Pattern.ArrayTailSpread(es, sym, tvar, loc)
+
+        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) =>
+          for {
+            es <- traverse(elms)(visit)
+          } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, tvar, loc)
       }
 
       visit(pat0)
@@ -1335,24 +1345,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root)) match {
+        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
           // Case 1: Not Found.
-          case (None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+          case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None, None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
 
           // Case 3: Relation.
-          case (None, Some(rel), None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
+          case (None, Some(rel), None, None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
 
           // Case 4: Lattice.
-          case (None, None, Some(lat)) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
+          case (None, None, Some(lat), None) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
 
-          // Case 5: Errors.
-          case (Some(enum), Some(rel), None) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc), loc).toFailure
-          case (Some(enum), None, Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, lat.loc), loc).toFailure
-          case (None, Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(rel.loc, lat.loc), loc).toFailure
-          case (Some(enum), Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc, lat.loc), loc).toFailure
+          // Case 5: TypeAlias.
+          case (None, None, None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
+
+          // Case 6: Errors.
+          case (x, y, z, w) =>
+            val loc1 = x.map(_.loc)
+            val loc2 = y.map(_.loc)
+            val loc3 = z.map(_.loc)
+            val loc4 = w.map(_.loc)
+            val locs = List(loc1, loc2, loc3, loc4).flatten
+            ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
         }
     }
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
@@ -1469,6 +1485,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     latticesInNS.get(name) orElse {
       val latticesInRootNS = root.lattices.getOrElse(Name.RootNS, Map.empty)
       latticesInRootNS.get(name)
+    }
+  }
+
+  /**
+    * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupTypeAlias(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
+    val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+    typeAliasesInNamespace.get(typeName) orElse {
+      val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+      typeAliasesInRootNS.get(typeName)
     }
   }
 
@@ -1705,6 +1732,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case attr => mkRelationOrLattice(sym, attr)
       }
     }
+  }
+
+  /**
+    * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    // TODO: We should check if the type alias is accessible.
+    // TODO: We should be careful to avoid infinite recursion.
+    lookupType(alia0.tpe, /* TODO: Incorrect, should use the declared namespace */ ns0, root)
   }
 
   /**

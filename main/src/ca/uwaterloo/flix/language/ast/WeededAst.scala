@@ -46,6 +46,8 @@ object WeededAst {
 
     case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
+    case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Class(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.SimpleClass, body: List[WeededAst.SimpleClass], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Law], loc: SourceLocation) extends WeededAst.Declaration
@@ -245,6 +247,10 @@ object WeededAst {
     case class Tuple(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
     case class Array(elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class ArrayTailSpread(elms: scala.List[WeededAst.Pattern], ident: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Pattern
+
+    case class ArrayHeadSpread(ident: Option[Name.Ident], elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
   }
 

@@ -322,7 +322,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedEnumSym.03") {
     val input =
       s"""
-         |type USD = USD(Int)
+         |opaque type USD = Int
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)

@@ -572,8 +572,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp, env0)
         Term.Head.Lit(e, tpe, loc)
 
-      case Term.Head.App(sym, args, tpe, loc) =>
-        Term.Head.App(sym, args, tpe, loc)
+      case Term.Head.App(exp, args, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Term.Head.App(e, args, tpe, loc)
     }
 
     /**

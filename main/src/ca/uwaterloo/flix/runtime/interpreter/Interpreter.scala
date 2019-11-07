@@ -856,13 +856,9 @@ object Interpreter {
     //
     // Applications.
     //
-    case FinalAst.Term.Head.App(sym, args, _, _) =>
+    case FinalAst.Term.Head.App(exp, args, _, _) =>
       // Construct a function that when invoked applies the underlying function.
-      val f = new java.util.function.Function[Array[AnyRef], ProxyObject] {
-        override def apply(args: Array[AnyRef]): ProxyObject = link(sym, root).apply(args)
-      }
-      val as = args.map(s => VarSym.of(s.text, s.getStackOffset))
-      AppTerm.of(f, as.toArray)
+      ??? // TODO
   }
 
   /**

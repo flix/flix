@@ -87,7 +87,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
 
-    case d: ParsedAst.Declaration.Type => visitTypeDecl(d)
+    case d: ParsedAst.Declaration.OpaqueType => visitOpaqueType(d)
+
+    case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
     case d: ParsedAst.Declaration.Relation => visitRelation(d)
 
@@ -223,20 +225,40 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Performs weeding on the given type declaration `d0`.
+    * Performs weeding on the given opaque type declaration `d0`.
     */
-  private def visitTypeDecl(d0: ParsedAst.Declaration.Type)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Type(doc0, mods, sp1, ident, caze, sp2) =>
+  private def visitOpaqueType(d0: ParsedAst.Declaration.OpaqueType)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
+    case ParsedAst.Declaration.OpaqueType(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       /*
-       * Rewrites a type alias to a singleton enum declaration.
+       * Rewrites an opaque type to an enum declaration.
        */
       val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
 
       modVal map {
         case mod =>
-          val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, visitType(caze.tpe)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, WeededAst.TypeParams.Explicit(Nil), cases, mkSL(sp1, sp2)))
+          val tparams = visitTypeParams(tparams0)
+          val cases = Map(ident.name -> WeededAst.Case(ident, ident, visitType(tpe0)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
+      }
+  }
+
+  /**
+    * Performs weeding on the given type alias declaration `d0`.
+    */
+  private def visitTypeAlias(d0: ParsedAst.Declaration.TypeAlias)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = d0 match {
+    case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
+      /*
+       * Rewrites an opaque type to an enum declaration.
+       */
+      val doc = visitDoc(doc0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+
+      modVal map {
+        case mod =>
+          val tparams = visitTypeParams(tparams0)
+          val tpe = visitType(tpe0)
+          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
       }
   }
 
@@ -1233,6 +1255,39 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Pattern.Array(sp1, pats, sp2) =>
         traverse(pats)(visit) map {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        }
+
+      case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
+        val array = traverse(pats)(visit) map {
+          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        }
+        if (ident.name == "_") {
+          WeededAst.Pattern.ArrayTailSpread(array.get.elms, None, mkSL(sp2, sp2)).toSuccess
+        } else {
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1,sp2)).toSuccess
+            case Some(otherIdent) =>
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+          }
+        }
+
+
+      case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
+        val array = traverse(pats)(visit) map {
+          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        }
+        if (ident.name == "_") {
+          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
+        } else {
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              WeededAst.Pattern.ArrayHeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp2)).toSuccess
+            case Some(otherIdent) =>
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+          }
         }
 
       case ParsedAst.Pattern.FNil(sp1, sp2) =>

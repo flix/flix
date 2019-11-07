@@ -674,10 +674,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         else
           SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc)
 
-      case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), exp, tpe, eff, loc) if exp.isInstanceOf[TypedAst.Expression.Var] =>
-        val v = exp.asInstanceOf[TypedAst.Expression.Var]
-        SimplifiedAst.Term.Head.App(sym, List(v.sym), tpe, loc)
-
       case _ =>
         // Determine if the expression is a literal.
         if (isExpLiteral(e0)) {
@@ -686,72 +682,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           SimplifiedAst.Term.Head.Lit(lit, e0.tpe, e0.loc)
         } else {
           // The expression is not a literal.
-          // Must create a new top-level definition for the expression.
-          val (freshSym, argSymbols) = liftExp(e0, cparams)
-          SimplifiedAst.Term.Head.App(freshSym, argSymbols, e0.tpe, e0.loc)
+          val e = newLambdaWrapper(cparams, e0, e0.loc)
+          SimplifiedAst.Term.Head.App(e, cparams.map(_.sym), e0.tpe, e0.loc)
         }
-    }
-
-    /**
-      * Lifts the given expression `exp0` into a top-level function that takes the given constraint parameters `cparams0` as arguments.
-      */
-    def liftExp(exp0: TypedAst.Expression, cparams0: List[TypedAst.ConstraintParam]): (Symbol.DefnSym, List[Symbol.VarSym]) = {
-      // Generate a fresh symbol for the new definition.
-      val freshSym = Symbol.freshDefnSym("lifted")
-
-      //
-      // Special Case: No constraint parameters.
-      //
-      if (cparams0.isEmpty) {
-        // Construct the definition type.
-        val arrowType = Type.mkArrow(Type.Cst(TypeConstructor.Unit), exp0.tpe)
-
-        // Assemble the fresh definition.
-        val ann = Ast.Annotations.Empty
-        val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-
-        val varX = Symbol.freshVarSym("_unit")
-        val param = SimplifiedAst.FormalParam(varX, mod, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
-
-        val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(exp0), arrowType, exp0.loc)
-
-        // Add the fresh definition to the top-level.
-        toplevel += freshSym -> defn
-
-        // Return a head term that calls the freshly generated top-level definition.
-        return (freshSym, Nil)
-      }
-
-      // Generate fresh symbols for the formal parameters of the definition.
-      val freshSymbols = cparams0.map {
-        case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
-        case TypedAst.ConstraintParam.RuleParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
-      }
-
-      // Generate fresh formal parameters for the definition.
-      val formals = freshSymbols.map {
-        case (oldSym, (newSym, tpe)) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
-      }
-
-      // The expression of the fresh definition is simply `e0` with fresh local variables.
-      val exp = substitute(visitExp(exp0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
-
-      // Construct the definition type.
-      val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), exp0.tpe)
-
-      // Assemble the fresh definition.
-      val ann = Ast.Annotations.Empty
-      val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-      val defn = SimplifiedAst.Def(ann, mod, freshSym, formals, exp, arrowType, exp0.loc)
-
-      // Add the fresh definition to the top-level.
-      toplevel += freshSym -> defn
-
-      // Compute the argument symbols, i.e. the symbols of the rule.
-      val argSymbols = freshSymbols.map(_._1)
-
-      // Return the def symbol and argument symbols.
-      (freshSym, argSymbols)
     }
 
     /**
@@ -950,6 +883,24 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
+      * Returns an expression that adds e2 to e1
+      */
+    def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression={
+      val add = SemanticOperator.Int32Op.Add
+      val tpe = Type.Cst(TypeConstructor.Int32)
+      SimplifiedAst.Expression.Binary(add, BinaryOperator.Plus, e1 ,e2 ,tpe, loc)
+    }
+
+    /**
+      * Returns an expression that subtracts e2 from e1
+      */
+    def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression={
+      val sub = SemanticOperator.Int32Op.Sub
+      val tpe = Type.Cst(TypeConstructor.Int32)
+      SimplifiedAst.Expression.Binary(sub, BinaryOperator.Minus, e1 ,e2 ,tpe, loc)
+    }
+
+    /**
       * Eliminates pattern matching by translations to labels and jumps.
       */
     def patternMatchWithLabels(exp0: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, loc: SourceLocation): SimplifiedAst.Expression = {
@@ -1115,12 +1066,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         /**
           * Matching an array may succeed or fail
           *
-          * We generate an if clause checking array length for each pattern, and then for each
-          * array element we generate a fresh variable and let-binding for each variable in the
+          * We generate an if clause checking array length for each pattern, and then
+          * generate a fresh variable and let-binding for each variable in the
           * array, which we load with ArrayLoad.
           * We then recurse over the freshly generated variables as the true case of the if clause
           */
-
         case (TypedAst.Pattern.Array(elms, tpe, loc) :: ps, v :: vs) =>
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
@@ -1138,6 +1088,86 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
+
+        /**
+          * Matching an array with a TailSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
+        case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val patternCheck = {
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
+            val zero = sym.text match {
+              case "_" =>  inner
+              case _ => SimplifiedAst.Expression.Let(sym,
+                SimplifiedAst.Expression.ArraySlice(
+                  SimplifiedAst.Expression.Var(v, tpe, loc),
+                  expectedArrayLengthExp,
+                  actualArrayLengthExp, tpe, loc),
+                inner, tpe, loc)
+            }
+            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
+              case (((pat, name), idx), exp) =>
+                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
+                val index = SimplifiedAst.Expression.Int32(idx)
+                SimplifiedAst.Expression.Let(name,
+                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
+                  , exp, succ.tpe, loc)
+            }
+          }
+          val op = SemanticOperator.Int32Op.Ge
+          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
+
+        /**
+          * Matching an array with a HeadSpread may succeed or fail
+          *
+          * We generate an if clause checking that array length is at least the length of
+          * each pattern, and generate a fresh variable and let-binding for each variable
+          * in the array, which we load with ArrayLoad.
+          * We then check whether the Spread is a variable, creating a let-binding for the
+          * appropriate ArraySlice to the spread, if it is.
+          * We then recurse over the freshly generated variables as the true case of the previously
+          * created if clause
+          */
+        case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
+          val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
+          val patternCheck = {
+            val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
+            val inner = patternMatchList(elms ::: ps, freshVars ::: vs, guard, succ, fail)
+            val zero = sym.text match {
+              case "_" =>  inner
+              case _ => SimplifiedAst.Expression.Let(sym,
+                SimplifiedAst.Expression.ArraySlice(
+                  SimplifiedAst.Expression.Var(v, tpe, loc),
+                  SimplifiedAst.Expression.Int32(0),
+                  expectedArrayLengthExp, tpe, loc),
+                inner, tpe, loc)
+            }
+            elms.zip(freshVars).zipWithIndex.foldRight(zero) {
+              case (((pat, name), idx), exp) =>
+                val base = SimplifiedAst.Expression.Var(v, tpe, loc)
+                val index = mkAdd(SimplifiedAst.Expression.Int32(idx), offset, loc)
+                SimplifiedAst.Expression.Let(name,
+                  SimplifiedAst.Expression.ArrayLoad(base, index, pat.tpe, loc)
+                  , exp, succ.tpe, loc)
+            }
+          }
+          val ge = SemanticOperator.Int32Op.Ge
+          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
+
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
       }
@@ -1408,7 +1438,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Term.Head.Lit(e, tpe, loc)
 
-      case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => t0
+      case SimplifiedAst.Term.Head.App(exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Term.Head.App(e, args, tpe, loc)
     }
 
     def visitBodyTerm(t0: SimplifiedAst.Term.Body): SimplifiedAst.Term.Body = t0 match {

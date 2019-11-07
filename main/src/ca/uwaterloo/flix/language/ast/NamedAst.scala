@@ -29,6 +29,7 @@ object NamedAst {
                   effs: Map[Name.NName, Map[String, NamedAst.Eff]],
                   handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
+                  typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   classes: Map[Name.NName, Map[String, NamedAst.Class]],
                   impls: Map[Name.NName, List[NamedAst.Impl]],
                   relations: Map[Name.NName, Map[String, NamedAst.Relation]],
@@ -51,6 +52,8 @@ object NamedAst {
   case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
+
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
@@ -251,6 +254,10 @@ object NamedAst {
     case class Tuple(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
     case class Array(elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
+
+    case class ArrayTailSpread(elms: scala.List[NamedAst.Pattern], sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
+
+    case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Pattern
 
   }
 

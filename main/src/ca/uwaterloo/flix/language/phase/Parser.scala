@@ -150,7 +150,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Handler |
       Declarations.Law |
       Declarations.Enum |
-      Declarations.TypeDecl |
+      Declarations.OpaqueType |
+      Declarations.TypeAlias |
       Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
@@ -217,20 +218,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TypeDecl: Rule1[ParsedAst.Declaration.Type] = {
-      def UnitCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
-          ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
-      }
+    def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("opaque") ~ WS ~ atomic("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
+    }
 
-      def NestedCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
-      }
-
-      rule {
-        // NB: NestedCase must be parsed before UnitCase.
-        Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
-      }
+    def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ atomic("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
@@ -943,7 +936,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Lit | Tuple | Array | Var
+      FNil | Tag | Lit | Tuple | Array | ArrayTailSpread | ArrayHeadSpread | Var
     }
 
     def Var: Rule1[ParsedAst.Pattern.Var] = rule {
@@ -964,6 +957,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Array: Rule1[ParsedAst.Pattern.Array] = rule {
       SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.Array
+    }
+
+    def ArrayTailSpread: Rule1[ParsedAst.Pattern.ArrayTailSpread] = rule {
+      SP ~ "[" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "," ~ optWS ~ ".." ~ Names.Variable ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.ArrayTailSpread
+    }
+
+    def ArrayHeadSpread: Rule1[ParsedAst.Pattern.ArrayHeadSpread] = rule {
+      SP ~ "[" ~ optWS  ~ Names.Variable ~ ".." ~ optWS ~ "," ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.ArrayHeadSpread
     }
 
     def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {

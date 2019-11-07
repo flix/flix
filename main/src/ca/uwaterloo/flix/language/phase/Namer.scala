@@ -49,6 +49,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       effs = Map.empty,
       handlers = Map.empty,
       enums = Map.empty,
+      typealiases = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
       relations = Map.empty,
@@ -214,6 +215,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
           NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
+      }
+
+    /*
+     * Type Alias.
+     */
+    case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+      val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+      typealiases0.get(ident.name) match {
+        case None =>
+          // Case 1: The type alias does not exist in the namespace. Add it.
+          mapN(visitType(tpe0, Map.empty)) {
+            case tpe =>
+              val tparams = tparams0 match {
+                case TypeParams.Elided => Nil
+                case TypeParams.Explicit(tps) => tps map {
+                  case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+                }
+              }
+              val typealias = NamedAst.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+              val typealiases = typealiases0 + (ident.name -> typealias)
+              prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+          }
+        case Some(typealias) =>
+          // Case 2: Duplicate type alias.
+          NameError.DuplicateTypeAlias(ident.name, typealias.ident.loc, ident.loc).toFailure
       }
 
     /*
@@ -1002,6 +1028,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
+      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match{
+        case None =>
+          val sym = Symbol.freshVarSym("_")
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
+        case Some(id) =>
+          val sym = Symbol.freshVarSym(id)
+          m += (id.name -> sym)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
+      }
+      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match{
+        case None =>
+          val sym = Symbol.freshVarSym("_")
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
+        case Some(id) =>
+          val sym = Symbol.freshVarSym(id)
+          m += (id.name -> sym)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
+      }
     }
 
     (visit(pat0), m.toMap)
@@ -1033,6 +1077,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
+      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
+        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshTypeVar(),loc)
+        case Some(value) =>
+          val sym = env0(value.name)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(),loc)
+      }
+      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
+        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshTypeVar(),loc)
+        case Some(value) =>
+          val sym = env0(value.name)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(),loc)
+      }
     }
 
     visit(pat0)
@@ -1279,6 +1335,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Pattern.Tag(enumName, tagName, p, loc) => freeVars(p)
     case WeededAst.Pattern.Tuple(elms, loc) => elms flatMap freeVars
     case WeededAst.Pattern.Array(elms, loc) => elms flatMap freeVars
+    case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) =>
+      val freeElms = elms flatMap freeVars
+      ident match {
+        case None => freeElms
+        case Some(value) =>  freeElms.appended(value)
+      }
+    case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) =>
+      val freeElms = elms flatMap freeVars
+      ident match {
+        case None => freeElms
+        case Some(value) =>freeElms.appended(value)
+      }
   }
 
   /**

@@ -585,7 +585,8 @@ object SimplifiedAstOps {
       case Term.Head.Lit(exp, tpe, loc) =>
         checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
         checkType(tpe)
-      case Term.Head.App(sym, args, tpe, loc) =>
+      case Term.Head.App(exp, args, tpe, loc) =>
+        checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
         checkType(tpe)
     }
 

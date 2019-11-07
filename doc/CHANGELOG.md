@@ -1,6 +1,11 @@
 # Changelog
 
 HEAD:
+- Added support for opaque types (newtype declarations).
+
+Version 0.8.1:
+
+- Fixed several bugs. 
 
 Version 0.8:
 
