@@ -1345,24 +1345,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root)) match {
+        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
           // Case 1: Not Found.
-          case (None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+          case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None, None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
 
           // Case 3: Relation.
-          case (None, Some(rel), None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
+          case (None, Some(rel), None, None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
 
           // Case 4: Lattice.
-          case (None, None, Some(lat)) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
+          case (None, None, Some(lat), None) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
 
-          // Case 5: Errors.
-          case (Some(enum), Some(rel), None) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc), loc).toFailure
-          case (Some(enum), None, Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, lat.loc), loc).toFailure
-          case (None, Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(rel.loc, lat.loc), loc).toFailure
-          case (Some(enum), Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc, lat.loc), loc).toFailure
+          // Case 5: TypeAlias.
+          case (None, None, None, Some(typealias)) => ??? // TODO
+
+          // Case 6: Errors.
+          case (x, y, z, w) =>
+            val loc1 = x.map(_.loc)
+            val loc2 = y.map(_.loc)
+            val loc3 = z.map(_.loc)
+            val loc4 = w.map(_.loc)
+            val locs = List(loc1, loc2, loc3, loc4).flatten
+            ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
         }
     }
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
@@ -1480,6 +1486,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       val latticesInRootNS = root.lattices.getOrElse(Name.RootNS, Map.empty)
       latticesInRootNS.get(name)
     }
+  }
+
+  /**
+    * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupTypeAlias(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
+// TODO
+    None
+    //    val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
+    //    enumsInNamespace.get(typeName) orElse {
+    //      val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
+    //      enumsInRootNS.get(typeName)
+    //    }
   }
 
   /**
