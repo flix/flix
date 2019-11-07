@@ -1359,7 +1359,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           case (None, None, Some(lat), None) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
 
           // Case 5: TypeAlias.
-          case (None, None, None, Some(typealias)) => ??? // TODO
+          case (None, None, None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
 
           // Case 6: Errors.
           case (x, y, z, w) =>
@@ -1492,13 +1492,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
   private def lookupTypeAlias(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
-// TODO
-    None
-    //    val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
-    //    enumsInNamespace.get(typeName) orElse {
-    //      val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
-    //      enumsInRootNS.get(typeName)
-    //    }
+    val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+    typeAliasesInNamespace.get(typeName) orElse {
+      val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+      typeAliasesInRootNS.get(typeName)
+    }
   }
 
   /**
@@ -1734,6 +1732,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case attr => mkRelationOrLattice(sym, attr)
       }
     }
+  }
+
+  /**
+    * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    // TODO: We should check if the type alias is accessible.
+    // TODO: We should be careful to avoid infinite recursion.
+    lookupType(alia0.tpe, /* TODO: Incorrect, should use the declared namespace */ ns0, root)
   }
 
   /**
