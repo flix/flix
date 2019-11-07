@@ -32,14 +32,12 @@ public final class LatSym implements PredSym {
     /**
      * An internal cache of lattice symbols.
      */
-    private static final Map<NameAndParameter, LatSym> INTERNAL_CACHE = new HashMap<>();
+    private static final Map<String, LatSym> INTERNAL_CACHE = new HashMap<>();
 
     /**
-     * Returns the lattice symbol for the given `name` with the given `parameter` and `attributes`.
-     * <p>
-     * The parameter may be null.
+     * Returns the lattice symbol for the given `name` and `attributes`.
      */
-    public synchronized static LatSym of(String name, ProxyObject parameter, Attribute[] keys, Attribute value, LatticeOps ops) {
+    public synchronized static LatSym of(String name, Attribute[] keys, Attribute value, LatticeOps ops) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (keys == null)
@@ -49,13 +47,12 @@ public final class LatSym implements PredSym {
         if (ops == null)
             throw new IllegalArgumentException("'ops' must be non-null.");
 
-        var key = new NameAndParameter(name, parameter);
-        var lookup = INTERNAL_CACHE.get(key);
+        var lookup = INTERNAL_CACHE.get(name);
         if (lookup != null) {
             return lookup;
         }
-        var sym = new LatSym(name, parameter, keys, value, ops);
-        INTERNAL_CACHE.put(key, sym);
+        var sym = new LatSym(name, keys, value, ops);
+        INTERNAL_CACHE.put(name, sym);
         return sym;
     }
 
@@ -63,11 +60,6 @@ public final class LatSym implements PredSym {
      * The name of the lattice symbol.
      */
     private final String name;
-
-    /**
-     * The parameter of the lattice symbol.
-     */
-    private final ProxyObject parameter;
 
     /**
      * The keys of the lattice symbol.
@@ -85,11 +77,10 @@ public final class LatSym implements PredSym {
     private final LatticeOps ops;
 
     /**
-     * Constructs a fresh lattice symbol with the given `name` and `parameter`.
+     * Constructs a fresh lattice symbol with the given `name`.
      */
-    private LatSym(String name, ProxyObject parameter, Attribute[] keys, Attribute value, LatticeOps ops) {
+    private LatSym(String name, Attribute[] keys, Attribute value, LatticeOps ops) {
         this.name = name;
-        this.parameter = parameter;
         this.keys = keys;
         this.value = value;
         this.ops = ops;
@@ -100,13 +91,6 @@ public final class LatSym implements PredSym {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Returns the parameter of the relation symbol.
-     */
-    public ProxyObject getParameter() {
-        return parameter;
     }
 
     /**
@@ -131,21 +115,11 @@ public final class LatSym implements PredSym {
     }
 
     /**
-     * Returns the parameterless version of `this` lattice symbol.
-     */
-    public LatSym getParameterless() {
-        return of(name, null, keys, value, ops);
-    }
-
-    /**
      * Returns a human-readable representation of `this` lattice symbol.
      */
     @Override
     public String toString() {
-        if (parameter == null || parameter.getValue() == Unit.getInstance())
-            return name;
-        else
-            return name + "<" + parameter.toString() + ">";
+        return name;
     }
 
     /* equality by identity */
