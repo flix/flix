@@ -164,14 +164,14 @@ namespace CounterActorSystem{
 /// - Add support for aggregation.
 /// - Implement framework
 /// - Implement examples
+/// - is it possible to support impredicate types?
 ///
 /// Magnus:
 /// - Remove indexed predicates.
 /// - Add support for type aliases.
 /// - Add equality on closures.
-/// - Add support for type aliases.
-/// - Introduce explicit support for lattices.
 /// - Refactor channel syntax.
+/// - Introduce explicit support for lattices.
 /// - Refactor types of relations and lattices :(
 ///
 /// Quentin:

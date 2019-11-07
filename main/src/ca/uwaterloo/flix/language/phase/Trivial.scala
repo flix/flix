@@ -437,14 +437,14 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.FixpointSolve(exp, _, _, _, _) =>
         visitExp(exp)
 
-      case Expression.FixpointProject(pred, exp, _, _, _) =>
-        visitExp(pred.exp) ++ visitExp(exp)
+      case Expression.FixpointProject(_, exp, _, _, _) =>
+        visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, _, _, _) =>
-        visitExp(pred.exp) ++ visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     })
 
@@ -460,8 +460,8 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * Finds trivial computations in the given head predicate `head0`.
       */
     def visitHeadPred(head0: TypedAst.Predicate.Head)(implicit root: Root, flix: Flix): List[TrivialError] = head0 match {
-      case Head.Atom(pred, terms, _, _) =>
-        terms.foldLeft(visitExp(pred.exp)) {
+      case Head.Atom(_, terms, _, _) =>
+        terms.foldLeft(List.empty[TrivialError]) {
           case (acc, term) => acc ++ visitExp(term)
         }
 
@@ -473,7 +473,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * Finds trivial computations in the given body predicate `body0`.
       */
     def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
-      case Body.Atom(pred, _, terms, _, _) => visitExp(pred.exp)
+      case Body.Atom(pred, _, terms, _, _) => Nil
 
       case Body.Guard(exp, _) => visitExp(exp)
     }

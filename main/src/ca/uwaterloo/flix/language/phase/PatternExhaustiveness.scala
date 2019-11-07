@@ -360,9 +360,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+        case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
           for {
-            _ <- checkPats(pred.exp, root)
             _ <- checkPats(exp, root)
           } yield tast
 
@@ -372,9 +371,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp2, root)
           } yield tast
 
-        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
+        case Expression.FixpointFold(_, exp1, exp2, exp3, tpe, eff, loc) =>
           for {
-            _ <- checkPats(pred.exp, root)
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
             _ <- checkPats(exp3, root)
@@ -395,9 +393,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
-      case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+      case TypedAst.Predicate.Head.Atom(_, terms, tpe, loc) =>
         for {
-          e <- checkPats(pred.exp, root)
           ts <- traverse(terms)(checkPats(_, root))
         } yield h0
 
@@ -408,10 +405,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {
-      case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
-        for {
-          e <- checkPats(pred.exp, root)
-        } yield b0
+      case TypedAst.Predicate.Body.Atom(_, polarity, terms, tpe, loc) => b0.toSuccess
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         for {

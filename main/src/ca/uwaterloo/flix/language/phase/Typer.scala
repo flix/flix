@@ -1579,22 +1579,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.FixpointSolve(e, Stratification.Empty, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, evar, loc) =>
-        val p = visitPredicateWithParam(pred)
+      case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.FixpointProject(p, e, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointProject(sym.sym, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, evar, loc) =>
-        val p = visitPredicateWithParam(pred)
+      case ResolvedAst.Expression.FixpointFold(sym, init, f, constraints, tvar, evar, loc) =>
         val e1 = visitExp(init, subst0)
         val e2 = visitExp(f, subst0)
         val e3 = visitExp(constraints, subst0)
-        TypedAst.Expression.FixpointFold(p, e1, e2, e3, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointFold(sym.sym, e1, e2, e3, subst0(tvar), subst0(evar), loc)
     }
 
     /**
@@ -1625,15 +1623,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitParam(param: ResolvedAst.FormalParam): TypedAst.FormalParam =
       TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.loc)
-
-    /**
-      * Applies the substitution to the predicate with parameter `pred`.
-      */
-    def visitPredicateWithParam(pred: ResolvedAst.PredicateWithParam): TypedAst.PredicateWithParam = pred match {
-      case ResolvedAst.PredicateWithParam(sym, exp) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.PredicateWithParam(sym, e)
-    }
 
     visitExp(exp0, subst0)
   }
@@ -1808,8 +1797,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      val pred = TypedAst.PredicateWithParam(sym, e)
-      TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1864,8 +1852,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      val pred = TypedAst.PredicateWithParam(sym, e)
-      TypedAst.Predicate.Body.Atom(pred, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)

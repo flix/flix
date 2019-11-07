@@ -334,22 +334,20 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
-        val p = visitPredicateWithParam(pred)
+      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(p, e, tpe, eff, loc)
+        Expression.FixpointProject(sym, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) =>
-        val p = visitPredicateWithParam(pred)
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(p, e1, e2, e3,  tpe, eff, loc)
+        Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
     }
 
     /**
@@ -366,10 +364,9 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
-        val p = visitPredicateWithParam(pred)
+      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
         val ts = terms map visitExp
-        Predicate.Head.Atom(p, ts, tpe, loc)
+        Predicate.Head.Atom(sym, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -380,22 +377,12 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(pred, polarity, pats, tpe, loc) =>
-        val p = visitPredicateWithParam(pred)
-        Predicate.Body.Atom(p, polarity, pats, tpe, loc)
+      case Predicate.Body.Atom(sym, polarity, pats, tpe, loc) =>
+        Predicate.Body.Atom(sym, polarity, pats, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
         Predicate.Body.Guard(e, loc)
-    }
-
-    /**
-      * Performs synthesis on the given predicate with param `p0`.
-      */
-    def visitPredicateWithParam(p0: PredicateWithParam): PredicateWithParam = p0 match {
-      case PredicateWithParam(sym, exp) =>
-        val e = visitExp(exp)
-        PredicateWithParam(sym, e)
     }
 
     /**
