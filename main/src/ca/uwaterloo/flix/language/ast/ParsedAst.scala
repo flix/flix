@@ -190,16 +190,17 @@ object ParsedAst {
     case class Enum(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Type Declaration. A type declaration is syntactic sugar for a singleton enum declaration.
+      * Opaque Type Declaration.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param ident the name of the type.
-      * @param caze  the singleton case of the type.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the opaque type.
+      * @param tparams the type parameters of the opaque type.
+      * @param tpe     the type of the opaque type.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Type(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, caze: ParsedAst.Case, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Relation Declaration.
@@ -1051,6 +1052,7 @@ object ParsedAst {
       * @param f           the function to fold.
       */
     case class FixpointFold(sp1: SourcePosition, name: Name.QName, index: Option[ParsedAst.Expression], init: ParsedAst.Expression, f: ParsedAst.Expression, constraints: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

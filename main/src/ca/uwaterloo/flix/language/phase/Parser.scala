@@ -150,7 +150,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Handler |
       Declarations.Law |
       Declarations.Enum |
-      Declarations.TypeDecl |
+      Declarations.OpaqueType |
       Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
@@ -217,20 +217,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TypeDecl: Rule1[ParsedAst.Declaration.Type] = {
-      def UnitCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
-          ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
-      }
-
-      def NestedCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
-      }
-
-      rule {
-        // NB: NestedCase must be parsed before UnitCase.
-        Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
-      }
+    def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("opaque") ~ WS ~ atomic("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {

@@ -87,7 +87,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
 
-    case d: ParsedAst.Declaration.Type => visitTypeDecl(d)
+    case d: ParsedAst.Declaration.OpaqueType => visitOpaqueType(d)
 
     case d: ParsedAst.Declaration.Relation => visitRelation(d)
 
@@ -223,20 +223,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Performs weeding on the given type declaration `d0`.
+    * Performs weeding on the given opaque type declaration `d0`.
     */
-  private def visitTypeDecl(d0: ParsedAst.Declaration.Type)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Type(doc0, mods, sp1, ident, caze, sp2) =>
+  private def visitOpaqueType(d0: ParsedAst.Declaration.OpaqueType)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
+    case ParsedAst.Declaration.OpaqueType(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       /*
-       * Rewrites a type alias to a singleton enum declaration.
+       * Rewrites an opaque type to an enum declaration.
        */
       val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
 
       modVal map {
         case mod =>
-          val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, visitType(caze.tpe)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, WeededAst.TypeParams.Explicit(Nil), cases, mkSL(sp1, sp2)))
+          val tparams = visitTypeParams(tparams0)
+          val cases = Map(ident.name -> WeededAst.Case(ident, ident, visitType(tpe0)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
       }
   }
 

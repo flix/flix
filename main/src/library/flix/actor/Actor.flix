@@ -170,7 +170,6 @@ namespace CounterActorSystem{
 /// - Add support for type aliases.
 /// - Add equality on closures.
 /// - Add support for type aliases.
-/// - And remove the Type definition.
 /// - Introduce explicit support for lattices.
 /// - Refactor channel syntax.
 /// - Refactor types of relations and lattices :(
