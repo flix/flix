@@ -28,7 +28,7 @@ import java.util.Map;
 public final class Stratification {
 
     /**
-     * A map from parameterless predicate symbols to their stratum.
+     * A map from predicate symbols to their stratum.
      */
     private final Map<PredSym, Integer> stratification = new HashMap<>();
 

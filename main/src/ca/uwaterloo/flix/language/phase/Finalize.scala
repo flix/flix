@@ -526,10 +526,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       FinalAst.Predicate.Body.Guard(e, ts, loc)
   }
 
-  private def visitPredicateWithParam(p0: SimplifiedAst.PredicateWithParam, m: TopLevel)(implicit flix: Flix): FinalAst.PredicateWithParam = p0 match {
+  // TODO: Remove
+  private def visitPredicateWithParam(p0: SimplifiedAst.PredicateWithParam, m: TopLevel)(implicit flix: Flix): Symbol.PredSym = p0 match {
     case SimplifiedAst.PredicateWithParam(sym, exp) =>
-      val e = visitExp(exp, m)
-      FinalAst.PredicateWithParam(sym, e)
+      sym
   }
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Head = t0 match {

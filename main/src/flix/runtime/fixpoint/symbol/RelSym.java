@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents a parameterized relation symbol.
+ * Represents a relation symbol.
  */
 public final class RelSym implements PredSym {
 

@@ -1249,7 +1249,7 @@ object GenExpression {
       visitor.visitInsn(SWAP) // stack: [acc, index]
       visitor.visitInsn(POP) // stack: [acc]
 
-      // stack: [acc]
+    // stack: [acc]
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
@@ -1843,27 +1843,18 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate with parameter `p0`.
+    * Emits code for the given predicate symbol `sym`.
     */
-  private def newPredSym(p0: PredicateWithParam, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = p0 match {
-    case PredicateWithParam(sym, exp) => sym match {
-      case sym: Symbol.RelSym => newRelSym(sym, Some(exp), mv)
-      case sym: Symbol.LatSym => newLatSym(sym, Some(exp), mv)
+  private def newPredSym(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit =
+    sym match {
+      case sym: Symbol.RelSym => newRelSym(sym, mv)
+      case sym: Symbol.LatSym => newLatSym(sym, mv)
     }
-  }
 
   /**
-    * Emits code for the given predicate symbol without any parameter `sym`.
+    * Emits code for the given relation symbol `sym`.
     */
-  private def newPredSymWithoutParameter(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = sym match {
-    case sym: Symbol.RelSym => newRelSym(sym, None, mv)
-    case sym: Symbol.LatSym => newLatSym(sym, None, mv)
-  }
-
-  /**
-    * Emits code for the given relation symbol with the given optional parameter expression `exp`.
-    */
-  private def newRelSym(sym: Symbol.RelSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newRelSym(sym: Symbol.RelSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
@@ -1875,9 +1866,9 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given lattice symbol with the given optional parameter expression `exp`.
+    * Emits code for the given lattice symbol `sym`.
     */
-  private def newLatSym(sym: Symbol.LatSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newLatSym(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
@@ -2162,7 +2153,7 @@ object GenExpression {
     // Add every predicate symbol with its stratum.
     for ((predSym, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSymWithoutParameter(predSym, mv)
+      newPredSym(predSym, mv)
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }

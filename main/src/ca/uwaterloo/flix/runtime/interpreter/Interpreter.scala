@@ -898,20 +898,17 @@ object Interpreter {
   /**
     * Returns the predicate symbol of the given predicate with parameter `p0`.
     */
-  def newPredSym(p0: FinalAst.PredicateWithParam, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = p0 match {
-    case PredicateWithParam(sym, exp0) =>
-      val value = eval(exp0, env0, henv0, lenv0, root)
-      val param = wrapValueInProxyObject(value, exp0.tpe)
+  def newPredSym(sym: Symbol.PredSym, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = {
       sym match {
-        case sym: Symbol.RelSym => newRelSym(sym, param)
-        case sym: Symbol.LatSym => newLatSym(sym, param)
+        case sym: Symbol.RelSym => newRelSym(sym)
+        case sym: Symbol.LatSym => newLatSym(sym)
       }
   }
 
   /**
     * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
     */
-  private def newRelSym(sym: Symbol.RelSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
+  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
@@ -921,7 +918,7 @@ object Interpreter {
   /**
     * Returns the lattice value associated with the given lattice symbol `sym` and parameter `param` (may be null).
     */
-  private def newLatSym(sym: Symbol.LatSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
+  private def newLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => fixpoint.Attribute.of(a.name))
@@ -938,8 +935,8 @@ object Interpreter {
     val result = new Stratification()
     for ((predSym, stratum) <- stf.m) {
       val sym = predSym match {
-        case sym: Symbol.RelSym => newRelSym(sym, null)
-        case sym: Symbol.LatSym => newLatSym(sym, null)
+        case sym: Symbol.RelSym => newRelSym(sym)
+        case sym: Symbol.LatSym => newLatSym(sym)
       }
       result.setStratum(sym, stratum)
     }

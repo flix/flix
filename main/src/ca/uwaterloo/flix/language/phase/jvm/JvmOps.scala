@@ -665,7 +665,7 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
+      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
@@ -988,7 +988,7 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp) + tpe
+      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
@@ -1005,8 +1005,8 @@ object JvmOps {
     }
 
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
-        visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
+      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+        Set(tpe) ++ terms.flatMap(visitHeadTerm)
 
       case Predicate.Head.Union(exp, terms, tpe, loc) =>
         visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
@@ -1014,8 +1014,8 @@ object JvmOps {
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
-      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
-        visitExp(pred.exp) ++ terms.flatMap(visitBodyTerm)
+      case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+        terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Guard(exp, terms, loc) =>
         visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet

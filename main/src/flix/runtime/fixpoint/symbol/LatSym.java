@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents a parameterized lattice symbol.
+ * Represents a lattice symbol.
  */
 public final class LatSym implements PredSym {
 
