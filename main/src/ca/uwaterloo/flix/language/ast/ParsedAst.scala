@@ -1059,6 +1059,8 @@ object ParsedAst {
       case Pattern.Tag(sp1, _, _, _) => sp1
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.Array(sp1, _, _) => sp1
+      case Pattern.ArrayHeadSpread(sp1, _, _, _) => sp1
+      case Pattern.ArrayTailSpread(sp1, _, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
     }
@@ -1107,6 +1109,10 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     case class Array(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
+
+    case class ArrayTailSpread(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Pattern
+
+    case class ArrayHeadSpread(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
     /**
       * Nil Pattern (of list).

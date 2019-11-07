@@ -679,6 +679,12 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Pattern.Array(elms,_,_) => elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
+    case Pattern.ArrayTailSpread(elms, _, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
+      case (acc,pat) => acc ++ freeVars(pat)
+    }
+    case Pattern.ArrayHeadSpread(_, elms, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
+      case (acc,pat) => acc ++ freeVars(pat)
+    }
   }
 
   /**
@@ -1017,6 +1023,15 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case Pattern.Tag(sym, tag, pat, tpe, loc) => Pattern.Tag(sym, tag, apply(pat), tpe, loc)
       case Pattern.Tuple(elms, tpe, loc) => Pattern.Tuple(apply(elms), tpe, loc)
       case Pattern.Array(elms, tpe, loc) => Pattern.Array(apply(elms), tpe, loc)
+      //TODO: The sym is not handled correctly.
+      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => m.get(sym) match {
+          case None => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
+          case Some(pat) => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
+        }
+      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => m.get(sym) match {
+          case None => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
+          case Some(pat) => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
+        }
     }
 
     /**

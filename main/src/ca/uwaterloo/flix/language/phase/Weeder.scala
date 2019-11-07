@@ -1223,6 +1223,39 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
 
+      case ParsedAst.Pattern.ArrayTailSpread(sp1, pats, ident, sp2) =>
+        val array = traverse(pats)(visit) map {
+          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        }
+        if (ident.name == "_") {
+          WeededAst.Pattern.ArrayTailSpread(array.get.elms, None, mkSL(sp2, sp2)).toSuccess
+        } else {
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1,sp2)).toSuccess
+            case Some(otherIdent) =>
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+          }
+        }
+
+
+      case ParsedAst.Pattern.ArrayHeadSpread(sp1, ident, pats, sp2) =>
+        val array = traverse(pats)(visit) map {
+          case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
+        }
+        if (ident.name == "_") {
+          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
+        } else {
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              WeededAst.Pattern.ArrayHeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp2)).toSuccess
+            case Some(otherIdent) =>
+              NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
+          }
+        }
+
       case ParsedAst.Pattern.FNil(sp1, sp2) =>
         /*
          * Rewrites a `FNil` pattern into a tag pattern.

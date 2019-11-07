@@ -848,6 +848,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.Array(es, tvar, loc)
+
+        case NamedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) =>
+          for {
+            es <- traverse(elms)(visit)
+          } yield ResolvedAst.Pattern.ArrayTailSpread(es, sym, tvar, loc)
+
+        case NamedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) =>
+          for {
+            es <- traverse(elms)(visit)
+          } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, tvar, loc)
       }
 
       visit(pat0)
