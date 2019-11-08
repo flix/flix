@@ -73,6 +73,13 @@ public final class RelSym implements PredSym {
     }
 
     /**
+     * Returns the arity of the relation symbol.
+     */
+    public int getArity() {
+        return attributes.length;
+    }
+
+    /**
      * Returns the attributes of the relation symbol.
      */
     public String[] getAttributes() {

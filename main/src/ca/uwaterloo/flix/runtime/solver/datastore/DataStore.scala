@@ -55,7 +55,7 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
     val indexes = idx map {
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }
-    new IndexedRelation(name, attributes, indexes, indexes.head)
+    new IndexedRelation(name, relSym.getArity, indexes, indexes.head)
   }
 
   private def initLattice(latSym: LatSym): IndexedLattice = {
@@ -70,7 +70,7 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }
 
-    new IndexedLattice(name, keys, value, indexes, ops)
+    new IndexedLattice(name, latSym.getArity, indexes, ops)
   }
 
   /**
@@ -87,25 +87,10 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
     return result
   }
 
-  def indexHits: List[(String, String, Int)] = relations.flatMap {
-    case (pred, relation) => relation.getIndexHits.map {
-      case (index, count) => (pred.getName(), "{" + index.mkString(", ") + "}", count)
-    }
-  }.toSeq.sortBy(_._3).reverse.toList
+  def indexHits: List[(String, String, Int)] = Nil // TODO: Currently broken
 
-  def indexMisses: List[(String, String, Int)] = relations.flatMap {
-    case (pred, relation) => relation.getIndexMisses.map {
-      case (index, count) => (pred.getName(), "{" + index.mkString(", ") + "}", count)
-    }
-  }.toSeq.sortBy(_._3).reverse.toList
+  def indexMisses: List[(String, String, Int)] = Nil // TODO: Currently broken
 
-  def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
-    case (pred, relation) => (
-      pred.getName(),
-      relation.getSize,
-      relation.getNumberOfIndexedLookups,
-      relation.getNumberOfIndexedScans,
-      relation.getNumberOfFullScans)
-  }.toSeq.sortBy(_._3).reverse.toList
+  def predicateStats: List[(String, Int, Int, Int, Int)] = Nil // TODO: Currently broken
 
 }

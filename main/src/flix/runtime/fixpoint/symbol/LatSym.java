@@ -91,6 +91,13 @@ public final class LatSym implements PredSym {
     }
 
     /**
+     * Returns the arity of the lattice symbol.
+     */
+    public int getArity() {
+        return keys.length + 1;
+    }
+
+    /**
      * Returns the keys of the lattice symbol.
      */
     public String[] getKeys() {

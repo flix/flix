@@ -24,7 +24,7 @@ import flix.runtime.fixpoint.LatticeOps
 import scala.annotation.switch
 import scala.collection.mutable
 
-class IndexedLattice(val name: String, val keys: Array[String], val value: String, indexes: Set[Int], ops: LatticeOps) extends IndexedCollection {
+class IndexedLattice(val name: String, val arity: Int, indexes: Set[Int], ops: LatticeOps) extends IndexedCollection {
 
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to an element):
@@ -36,7 +36,7 @@ class IndexedLattice(val name: String, val keys: Array[String], val value: Strin
   /**
     * The number of key columns in the lattice.
     */
-  private val numberOfKeys = keys.length
+  private val numberOfKeys = arity - 1
 
   /**
     * The lattice operations.
