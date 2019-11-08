@@ -174,6 +174,7 @@ class FeatureSuite extends Suites(
   // Equality
   //
   new FlixTest("Test.Equality", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.flix"),
+  new FlixTest("Test.Equality.Channel", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.Channel.flix"),
   new FlixTest("Test.Equality.Closure", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.Closure.flix"),
 
   //

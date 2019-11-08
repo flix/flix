@@ -168,7 +168,6 @@ namespace CounterActorSystem{
 ///
 /// Magnus:
 /// - Add support for type aliases.
-/// - Refactor channel syntax.
 /// - Introduce explicit support for lattices.
 /// - Refactor types of relations and lattices :(
 ///
