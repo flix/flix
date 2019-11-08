@@ -31,6 +31,11 @@ import scala.collection.mutable
 object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
   /**
+    * The maximum depth to which type aliases are unfolded.
+    */
+  val RecursionLimit: Int = 25
+
+  /**
     * Performs name resolution on the given program `prog0`.
     */
   def run(prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = flix.phase("Resolver") {
@@ -1307,8 +1312,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  // TODO: Add support for Higher-Kinded types.
-  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
+  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
     case NamedAst.Type.Unit(loc) => Type.Cst(TypeConstructor.Unit).toSuccess
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
@@ -1727,10 +1731,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     *
     * Otherwise fails with a resolution error.
     */
-  def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+  def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit recursionDepth: Int): Validation[Type, ResolutionError] = {
+    ///
+    /// Check whether we have hit the recursion limit while unfolding the type alias.
+    ///
+    if (recursionDepth == RecursionLimit) {
+      return ResolutionError.RecursionLimit(alia0.ident, RecursionLimit, alia0.loc).toFailure
+    }
+
     // TODO: We should check if the type alias is accessible.
     // TODO: We should be careful to avoid infinite recursion.
-    lookupType(alia0.tpe, /* TODO: Incorrect, should use the declared namespace */ ns0, root)
+    lookupType(alia0.tpe, /* TODO: Incorrect, should use the declared namespace */ ns0, root)(recursionDepth + 1)
   }
 
   /**
