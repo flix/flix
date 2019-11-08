@@ -1862,7 +1862,7 @@ object GenExpression {
     newAttributesArray(root.relations(sym).attr, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
   }
 
   /**
@@ -1876,13 +1876,13 @@ object GenExpression {
     newAttributesArray(root.lattices(sym).attr.init, mv)
 
     // Emit code for the value.
-    newAttribute(root.lattices(sym).attr.last, mv)
+    mv.visitLdcInsn(root.lattices(sym).attr.last.name)
 
     // Emit code for the lattice operations.
     newLatticeOps(sym, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
   }
 
   /**
@@ -1891,29 +1891,18 @@ object GenExpression {
   private def newAttributesArray(as: List[FinalAst.Attribute], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Instantiate a new array of appropriate length.
     compileInt(mv, as.length)
-    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Attribute.toInternalName)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.String.toInternalName)
     for ((attribute, index) <- as.zipWithIndex) {
       // Compile each attribute and store it in the array.
       mv.visitInsn(DUP)
       compileInt(mv, index)
 
-      // Instantiate the attribute.
-      newAttribute(attribute, mv)
+      // Emit code for the attribute.
+      mv.visitLdcInsn(attribute.name)
 
       // Store the attribute in the array.
       mv.visitInsn(AASTORE)
     }
-  }
-
-  /**
-    * Emits code to instantiate the given attribute `a`.
-    */
-  private def newAttribute(a: FinalAst.Attribute, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // The name of the attribute.
-    mv.visitLdcInsn(a.name)
-
-    // Instantiate a fresh attribute object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
   }
 
   /**

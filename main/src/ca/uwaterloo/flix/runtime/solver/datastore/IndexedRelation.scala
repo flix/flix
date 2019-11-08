@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.util.BitOps
 import flix.runtime.ProxyObject
-import flix.runtime.fixpoint.Attribute
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -32,7 +31,7 @@ import scala.collection.mutable.ArrayBuffer
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation(val name: String, val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val name: String, val attributes: Array[String], indexes: Set[Int], default: Int) extends IndexedCollection {
   // TODO: Getter for name?
 
   /**
@@ -107,7 +106,7 @@ final class IndexedRelation(val name: String, val attributes: Array[Attribute], 
   def getIndexHits: Map[Seq[String], Int] = indexHits.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => attributes(column).getName())
+      val names = columns map (column => attributes(column))
       names -> count
   }
 
@@ -117,7 +116,7 @@ final class IndexedRelation(val name: String, val attributes: Array[Attribute], 
   def getIndexMisses: Map[Seq[String], Int] = indexMisses.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => attributes(column).getName())
+      val names = columns map (column => attributes(column))
       names -> count
   }
 

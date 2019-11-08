@@ -19,12 +19,12 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 import java.util
 
 import flix.runtime.ProxyObject
-import flix.runtime.fixpoint.{Attribute, LatticeOps}
+import flix.runtime.fixpoint.LatticeOps
 
 import scala.annotation.switch
 import scala.collection.mutable
 
-class IndexedLattice(val name: String, val keys: Array[Attribute], val value: Attribute, indexes: Set[Int], ops: LatticeOps) extends IndexedCollection {
+class IndexedLattice(val name: String, val keys: Array[String], val value: String, indexes: Set[Int], ops: LatticeOps) extends IndexedCollection {
 
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to an element):

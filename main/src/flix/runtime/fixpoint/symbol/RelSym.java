@@ -16,10 +16,6 @@
 
 package flix.runtime.fixpoint.symbol;
 
-import flix.runtime.fixpoint.Attribute;
-import flix.runtime.ProxyObject;
-import flix.runtime.value.Unit;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +32,7 @@ public final class RelSym implements PredSym {
     /**
      * Returns the relation symbol for the given `name` and `attributes`.
      */
-    public synchronized static RelSym of(String name, Attribute[] attributes) {
+    public synchronized static RelSym of(String name, String[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (attributes == null)
@@ -59,12 +55,12 @@ public final class RelSym implements PredSym {
     /**
      * The attributes of the relation symbol.
      */
-    private final Attribute[] attributes;
+    private final String[] attributes;
 
     /**
      * Constructs a fresh relation symbol with the given `name`.
      */
-    private RelSym(String name, Attribute[] attributes) {
+    private RelSym(String name, String[] attributes) {
         this.name = name;
         this.attributes = attributes;
     }
@@ -79,7 +75,7 @@ public final class RelSym implements PredSym {
     /**
      * Returns the attributes of the relation symbol.
      */
-    public Attribute[] getAttributes() {
+    public String[] getAttributes() {
         return attributes;
     }
 

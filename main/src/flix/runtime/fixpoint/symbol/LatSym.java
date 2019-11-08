@@ -17,9 +17,6 @@
 package flix.runtime.fixpoint.symbol;
 
 import flix.runtime.fixpoint.LatticeOps;
-import flix.runtime.fixpoint.Attribute;
-import flix.runtime.ProxyObject;
-import flix.runtime.value.Unit;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +34,7 @@ public final class LatSym implements PredSym {
     /**
      * Returns the lattice symbol for the given `name` and `attributes`.
      */
-    public synchronized static LatSym of(String name, Attribute[] keys, Attribute value, LatticeOps ops) {
+    public synchronized static LatSym of(String name, String[] keys, String value, LatticeOps ops) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (keys == null)
@@ -64,12 +61,12 @@ public final class LatSym implements PredSym {
     /**
      * The keys of the lattice symbol.
      */
-    private final Attribute[] keys;
+    private final String[] keys;
 
     /**
      * The value of the lattice symbol.
      */
-    private final Attribute value;
+    private final String value;
 
     /**
      * The lattice operations of the lattice symbol.
@@ -79,7 +76,7 @@ public final class LatSym implements PredSym {
     /**
      * Constructs a fresh lattice symbol with the given `name`.
      */
-    private LatSym(String name, Attribute[] keys, Attribute value, LatticeOps ops) {
+    private LatSym(String name, String[] keys, String value, LatticeOps ops) {
         this.name = name;
         this.keys = keys;
         this.value = value;
@@ -96,14 +93,14 @@ public final class LatSym implements PredSym {
     /**
      * Returns the keys of the lattice symbol.
      */
-    public Attribute[] getKeys() {
+    public String[] getKeys() {
         return keys;
     }
 
     /**
      * Returns the value of the lattice symbol.
      */
-    public Attribute getValue() {
+    public String getValue() {
         return value;
     }
 

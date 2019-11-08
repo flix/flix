@@ -911,7 +911,7 @@ object Interpreter {
   private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
+      val as = attr.map(_.name).toArray
       RelSym.of(name, as)
   }
 
@@ -921,7 +921,7 @@ object Interpreter {
   private def newLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => fixpoint.Attribute.of(a.name))
+      val as = attr.map(a => a.name)
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)

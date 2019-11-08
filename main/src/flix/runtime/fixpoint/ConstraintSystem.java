@@ -165,10 +165,10 @@ public final class ConstraintSystem {
         ///
         Map<RelSym, String[]> relHeaders = new HashMap<>();
         for (RelSym relSym : getRelationSymbols()) {
-            Attribute[] attributes = relSym.getAttributes();
+            String[] attributes = relSym.getAttributes();
             String[] headers = new String[attributes.length];
             for (int i = 0; i < headers.length; i++) {
-                headers[i] = attributes[i].getName();
+                headers[i] = attributes[i];
             }
             relHeaders.put(relSym, headers);
         }
@@ -182,13 +182,13 @@ public final class ConstraintSystem {
         ///
         Map<LatSym, String[]> latHeaders = new HashMap<>();
         for (LatSym latSym : getLatticeSymbols()) {
-            Attribute[] keys = latSym.getKeys();
-            Attribute value = latSym.getValue();
+            String[] keys = latSym.getKeys();
+            String value = latSym.getValue();
             String[] headers = new String[keys.length + 1];
             for (int i = 0; i < keys.length; i++) {
-                headers[i] = keys[i].getName();
+                headers[i] = keys[i];
             }
-            headers[keys.length] = value.getName();
+            headers[keys.length] = value;
             latHeaders.put(latSym, headers);
         }
         Map<LatSym, ArrayList<String[]>> latData = new HashMap<>();

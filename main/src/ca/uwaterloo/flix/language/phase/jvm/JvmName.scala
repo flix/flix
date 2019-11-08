@@ -148,7 +148,6 @@ object JvmName {
 
     object Fixpoint {
 
-      val Attribute: JvmName = mk("flix/runtime/fixpoint/Attribute")
       val Constraint: JvmName = mk("flix/runtime/fixpoint/Constraint")
       val ConstraintSystem: JvmName = mk("flix/runtime/fixpoint/ConstraintSystem")
       val ConstantFunction: JvmName = mk("flix/runtime/fixpoint/ConstantFunction")
