@@ -335,7 +335,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckRel(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc, loc) =>
+    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, loc) =>
       val tparams = getTypeParams(tparams0)
       for {
         attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
@@ -348,7 +348,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckLat(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc, loc) =>
+    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, loc) =>
       val tparams = getTypeParams(tparams0)
       for {
         attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
@@ -1683,25 +1683,25 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Array(elms, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
+          elementType <- unifyTypAllowEmptyM(elementTypes, loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
 
       case ResolvedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-            for (
-              elementTypes <- seqM(elms map visit);
-              elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-              arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
-              resultType <- unifyTypM(varSym.tvar,arrayType,loc)
-            ) yield resultType
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes, loc);
+          arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
+          resultType <- unifyTypM(varSym.tvar, arrayType, loc)
+        ) yield resultType
 
       case ResolvedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-            for (
-              elementTypes <- seqM(elms map visit);
-              elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-              arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
-              resultType <- unifyTypM(varSym.tvar,arrayType,loc)
-            ) yield resultType
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes, loc);
+          arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
+          resultType <- unifyTypM(varSym.tvar, arrayType, loc)
+        ) yield resultType
 
     }
 
@@ -1757,21 +1757,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //  ------------------------------------------------------------
       //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
-
-      // Lookup the type scheme.
-      val scheme = sym match {
-        case x: Symbol.RelSym => program.relations(x).sc
-        case x: Symbol.LatSym => program.lattices(x).sc
-      }
-
-      // Instantiate the type scheme.
-      val declaredType = Scheme.instantiate(scheme)
-
-      // Infer the types of the terms.
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
         pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
+        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -1810,19 +1799,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
     case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
-      // Lookup the type scheme.
-      val scheme = sym match {
-        case x: Symbol.RelSym => program.relations(x).sc
-        case x: Symbol.LatSym => program.lattices(x).sc
-      }
-
-      // Instantiate the type scheme.
-      val declaredType = Scheme.instantiate(scheme)
-
-      // Infer the types of the terms.
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
+        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
     //
@@ -1853,34 +1832,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns the relation or lattice type of `sym` with the term types `ts` applied to the appropriate number of type variables.
-    *
-    * For example, if there is a relation:
-    *
-    * rel R[w](x: Int, y: Int, w: w)
-    *
-    * and this function is called with R and List(Int, Int) then it returns:
-    *
-    * Apply(R(List(Int, Int)), a)
-    *
-    * where a is a fresh type variable.
+    * Returns the relation or lattice type of `sym` with the term types `ts`.
     */
   private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = {
-    val quantifiers = sym match {
-      case x: Symbol.RelSym => program.relations(x).sc.quantifiers
-      case x: Symbol.LatSym => program.lattices(x).sc.quantifiers
-    }
+    sym match {
+      case sym: Symbol.RelSym =>
+        val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+        val args = Type.mkTuple(ts)
+        Type.Apply(base, args)
 
-    val zero = sym match {
-      case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
-      case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+      case sym: Symbol.LatSym =>
+        val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+        val args = Type.mkTuple(ts)
+        Type.Apply(base, args)
     }
-
-    val result = quantifiers.foldLeft(zero) {
-      case (tacc, _) => Type.Apply(tacc, Type.freshTypeVar())
-    }
-
-    result
   }
 
   /**
@@ -1895,7 +1860,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getRelationSignature(sym: Symbol.RelSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.relations(sym) match {
-      case ResolvedAst.Relation(_, _, _, tparams, attr, sc, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Relation(_, _, _, _, attr, _) => Ok(attr.map(_.tpe))
     }
   }
 
@@ -1904,7 +1869,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getLatticeSignature(sym: Symbol.LatSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.lattices(sym) match {
-      case ResolvedAst.Lattice(_, _, _, _, attr, sc, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Lattice(_, _, _, _, attr, _) => Ok(attr.map(_.tpe))
     }
   }
 

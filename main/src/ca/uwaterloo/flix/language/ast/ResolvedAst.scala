@@ -69,9 +69,9 @@ object ResolvedAst {
 
   // TODO: Disallow.
 
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[ResolvedAst.TypeParam], attr: List[ResolvedAst.Attribute], sc: ast.Scheme, loc: SourceLocation)
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[ResolvedAst.TypeParam], attr: List[ResolvedAst.Attribute], loc: SourceLocation)
 
-  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[ResolvedAst.TypeParam], attr: List[ResolvedAst.Attribute], sc: ast.Scheme, loc: SourceLocation)
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[ResolvedAst.TypeParam], attr: List[ResolvedAst.Attribute], loc: SourceLocation)
 
   case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
 

@@ -161,6 +161,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.BigInt => "BigInt"
         case TypeConstructor.Str => "Str"
 
+        case TypeConstructor.Relation(sym) => sym.toString
+
+        case TypeConstructor.Lattice(sym) => sym.toString
+
         case TypeConstructor.Array => "Array" + "[" + args.map(format).mkString(", ") + "]"
 
         case TypeConstructor.Channel => "Channel" + "[" + args.map(format).mkString(", ") + "]"
@@ -203,11 +207,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.SchemaExtend(sym, t, rest) =>
         "{" + sym + " = " + format(t) + " | " + format(rest) + "}"
 
-      case Type.Relation(sym, attr, _) =>
-        sym.toString + "(" + attr.map(format).mkString(", ") + ")"
-
-      case Type.Lattice(sym, attr, _) =>
-        sym.toString + "(" + attr.map(format).mkString(", ") + ")"
+      case Type.Abs(tvar, tpe) => tvar.toString + " => " + format(tpe)
 
       case Type.Apply(tpe1, tpe2) => format(tpe1) + "[" + format(tpe2) + "]"
     }

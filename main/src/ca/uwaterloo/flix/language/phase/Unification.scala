@@ -74,8 +74,7 @@ object Unification {
           case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
           case Type.Zero => Type.Zero
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
-          case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
-          case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
+          case Type.Abs(tvar, tpe) => Type.Abs(tvar, visit(tpe)) // TODO: Should the substitution be filtered?
           case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
         }
 
@@ -342,10 +341,6 @@ object Unification {
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
-
-      case (Type.Relation(sym1, attr1, kind1), Type.Relation(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
-
-      case (Type.Lattice(sym1, attr1, kind1), Type.Lattice(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
 
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {

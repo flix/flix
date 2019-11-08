@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.Function.const
@@ -721,6 +721,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.BigInt) => 0
       case Type.Cst(TypeConstructor.Str) => 0
       case Type.Cst(TypeConstructor.Ref) => 0
+      case Type.Cst(TypeConstructor.Relation(_)) => 0
+      case Type.Cst(TypeConstructor.Lattice(_)) => 0
       case Type.Arrow(_, length) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
@@ -734,9 +736,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
-      case Type.Relation(sym, attr, kind) => 0
-      case Type.Lattice(sym, attr, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
+      case Type.Abs(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
     /**

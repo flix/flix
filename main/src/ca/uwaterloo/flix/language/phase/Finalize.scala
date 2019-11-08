@@ -595,6 +595,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Cst(TypeConstructor.Int64) => MonoType.Int64
       case Type.Cst(TypeConstructor.BigInt) => MonoType.BigInt
       case Type.Cst(TypeConstructor.Str) => MonoType.Str
+      case Type.Cst(TypeConstructor.Relation(sym)) => MonoType.Relation(sym, args)
+      case Type.Cst(TypeConstructor.Lattice(sym)) => MonoType.Lattice(sym, args)
 
       // Compound Types.
       case Type.Cst(TypeConstructor.Array) => MonoType.Array(args.head)
@@ -621,16 +623,13 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.SchemaExtend(sym, tpe, rest) => MonoType.SchemaExtend(sym, visitType(tpe), visitType(rest))
 
-      case Type.Relation(sym, attr, _) => MonoType.Relation(sym, attr map visitType)
-
-      case Type.Lattice(sym, attr, _) => MonoType.Lattice(sym, attr map visitType)
-
       case Type.Zero => MonoType.Unit
 
       case Type.Succ(l, t) => MonoType.Unit
 
       case Type.Var(id, kind) => MonoType.Var(id) // TODO: Should never happen.
 
+      case Type.Abs(_, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
       case Type.Apply(_, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
     }
   }

@@ -75,8 +75,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Cst(tc) => Type.Cst(tc)
         case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
+        case Type.Cst(tc) => Type.Cst(tc)
         case Type.Arrow(f, l) => Type.Arrow(f, l)
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
@@ -90,9 +90,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
-        case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
-        case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
+        case Type.Abs(_, _) => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
       visit(s(tpe))
@@ -289,20 +288,20 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.Tuple(es, subst0(tpe), eff, loc)
 
         case Expression.RecordEmpty(tpe, eff, loc) =>
-          Expression.RecordEmpty(tpe, eff, loc)
+          Expression.RecordEmpty(subst0(tpe), eff, loc)
 
         case Expression.RecordSelect(base, label, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.RecordSelect(b, label, tpe, eff, loc)
+          Expression.RecordSelect(b, label, subst0(tpe), eff, loc)
 
         case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
           val v = visitExp(value, env0)
           val r = visitExp(rest, env0)
-          Expression.RecordExtend(label, v, r, tpe, eff, loc)
+          Expression.RecordExtend(label, v, r, subst0(tpe), eff, loc)
 
         case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
           val r = visitExp(rest, env0)
-          Expression.RecordRestrict(label, r, tpe, eff, loc)
+          Expression.RecordRestrict(label, r, subst0(tpe), eff, loc)
 
         case Expression.ArrayLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
@@ -326,7 +325,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.ArrayLength(base, tpe, eff, loc) =>
           val b = visitExp(base, env0)
-          Expression.ArrayLength(b, tpe, eff, loc)
+          Expression.ArrayLength(b, subst0(tpe), eff, loc)
 
         case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
           val b = visitExp(base, env0)
@@ -409,7 +408,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val b = visitExp(body, env1)
               CatchRule(freshSym, clazz, b)
           }
-          Expression.TryCatch(e, rs, tpe, eff, loc)
+          Expression.TryCatch(e, rs, subst0(tpe), eff, loc)
 
         case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
@@ -467,26 +466,26 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.FixpointCompose(e1, e2, tpe, eff, loc)
+          Expression.FixpointCompose(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointSolve(e, stf, tpe, eff, loc)
+          Expression.FixpointSolve(e, stf, subst0(tpe), eff, loc)
 
         case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointProject(sym, e, tpe, eff, loc)
+          Expression.FixpointProject(sym, e, subst0(tpe), eff, loc)
 
         case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+          Expression.FixpointEntails(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           val e3 = visitExp(exp3, env0)
-          Expression.FixpointFold(sym, e1, e2,  e3, tpe, eff, loc)
+          Expression.FixpointFold(sym, e1, e2, e3, subst0(tpe), eff, loc)
       }
 
       /**
@@ -519,20 +518,20 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
         case Pattern.Array(elms, tpe, loc) =>
-          val (ps,envs) = elms.map(p => visitPat(p)).unzip
-          (Pattern.Array(ps,subst0(tpe),loc), if(envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
+          val (ps, envs) = elms.map(p => visitPat(p)).unzip
+          (Pattern.Array(ps, subst0(tpe), loc), if (envs.isEmpty) Map.empty else envs.reduce(_ ++ _))
         case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
-            val freshSym = Symbol.freshVarSym(sym)
-            val (ps,envs) = elms.map(p => visitPat(p)).unzip
-            (Pattern.ArrayTailSpread(ps, freshSym, subst0(tpe), loc),
-              if(envs.isEmpty) Map(sym -> freshSym)
-              else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
+          val freshSym = Symbol.freshVarSym(sym)
+          val (ps, envs) = elms.map(p => visitPat(p)).unzip
+          (Pattern.ArrayTailSpread(ps, freshSym, subst0(tpe), loc),
+            if (envs.isEmpty) Map(sym -> freshSym)
+            else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
         case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
-            val freshSym = Symbol.freshVarSym (sym)
-            val (ps, envs) = elms.map (p => visitPat (p) ).unzip
-            (Pattern.ArrayHeadSpread (freshSym ,ps, subst0 (tpe), loc),
-              if (envs.isEmpty) Map(sym -> freshSym)
-              else envs.reduce (_ ++ _) ++ Map(sym -> freshSym))
+          val freshSym = Symbol.freshVarSym(sym)
+          val (ps, envs) = elms.map(p => visitPat(p)).unzip
+          (Pattern.ArrayHeadSpread(freshSym, ps, subst0(tpe), loc),
+            if (envs.isEmpty) Map(sym -> freshSym)
+            else envs.reduce(_ ++ _) ++ Map(sym -> freshSym))
       }
 
       /**
@@ -552,11 +551,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
         case Predicate.Head.Atom(sym, terms, tpe, loc) =>
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.Atom(sym, ts, tpe, loc)
+          Predicate.Head.Atom(sym, ts, subst0(tpe), loc)
 
         case Predicate.Head.Union(exp, tpe, loc) =>
           val e = visitExp(exp, env0)
-          Predicate.Head.Union(e, tpe, loc)
+          Predicate.Head.Union(e, subst0(tpe), loc)
       }
 
       /**
@@ -585,7 +584,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         b0 match {
           case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.Atom(sym, polarity, ts, tpe, loc)
+            Predicate.Body.Atom(sym, polarity, ts, subst0(tpe), loc)
 
           case Predicate.Body.Guard(exp, loc) =>
             val e = visitExp(exp, env0)

@@ -47,8 +47,8 @@ pub enum Ready {
 /// A `shutdownPolicy` that describes how to shutdown the actor system in an orderly fashion.
 /// A `restartPolicy` that describes what should happen when an actor crashes.
 ///
-pub enum ActorSystem[r1, r2, r3] {
-    case ActorSystem({startPolicy: #{Actor | r1}, shutdownPolicy: #{Actor | r2}, restartPolicy: #{Actor | r3}}) // TODO: The types here are a bit poor
+pub enum ActorSystem[s, r1, r2, r3] {
+    case ActorSystem({startPolicy: #{Actor[s] | r1}, shutdownPolicy: #{Actor[s] | r2}, restartPolicy: #{Actor[s] | r3}}) // TODO: The types here are a bit poor
 }
 
 // TODO: Define core relations here:
@@ -66,7 +66,7 @@ pub rel Start(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start(a: ActorSystem[r1, r2, r3]): Unit =
+pub def start(a: ActorSystem[s, r1, r2, r3]): Unit =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let _startPolicy = r.startPolicy;
@@ -111,7 +111,7 @@ namespace CounterActorSystem{
         () // TODO: Start the actor system here.
 
 
-    pub def system(): ActorSystem[_, _, _] = ActorSystem({
+    pub def system(): ActorSystem[_, _, _, _] = ActorSystem({
         startPolicy = #{
             Start("counterActor").
 
@@ -172,7 +172,8 @@ namespace CounterActorSystem{
 /// - Introduce explicit support for lattices.
 /// - Refactor types of relations and lattices :(
 ///   - Refactor the code not to depend on relations and lattices maps.
-///   - Add arity to Rel and LatSym.
+///   - Document simplify in Resolver
+///   - TODO: How should the types of a declared relation be included? In the typer?
 ///
 /// Quentin:
 /// - Add support for fold.

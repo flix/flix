@@ -1253,7 +1253,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a relation type.
       */
     def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Relation(sym, _, _) => true
+      case Type.Cst(TypeConstructor.Relation(sym)) => true
       case _ => false
     }
 
@@ -1261,7 +1261,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a lattice type.
       */
     def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Lattice(sym, _, _) => true
+      case Type.Cst(TypeConstructor.Lattice(sym)) => true
       case _ => false
     }
 
