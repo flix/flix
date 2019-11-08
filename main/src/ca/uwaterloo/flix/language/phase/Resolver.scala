@@ -769,11 +769,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, tvar, evar, loc)
 
-        case NamedAst.Expression.FixpointProject(pred, exp, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointProject(qname, exp, tvar, evar, loc) =>
           for {
-            p <- visitPredicateWithParam(pred, tenv0)
+            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(p, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.FixpointProject(sym, e, tvar, evar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
           for {
@@ -781,20 +781,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, evar, loc)
 
-        case NamedAst.Expression.FixpointFold(pred, init, f, constraints, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointFold(qname, init, f, constraints, tvar, evar, loc) =>
           for {
-            p <- visitPredicateWithParam(pred, tenv0)
+            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e1 <- visit(init, tenv0)
             e2 <- visit(f, tenv0)
             e3 <- visit(constraints, tenv0)
-          } yield ResolvedAst.Expression.FixpointFold(p, e1, e2, e3, tvar, evar, loc)
+          } yield ResolvedAst.Expression.FixpointFold(sym, e1, e2, e3, tvar, evar, loc)
       }
-
-      /**
-        * Performs name resolution on the given predicate with parameter `pred`.
-        */
-      def visitPredicateWithParam(pred: NamedAst.PredicateWithParam, symToType: Map[Symbol.VarSym, Type]): Validation[Symbol.PredSym, ResolutionError] =
-        lookupPredicateSymbol(pred.qname, ns0, prog0)
 
       visit(exp0, Map.empty)
     }
@@ -876,10 +870,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(qname, exp, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
-            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
           } yield ResolvedAst.Predicate.Head.Atom(sym, ts, tvar, loc)
 
@@ -895,10 +888,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(qname, exp, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(qname, polarity, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
-            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield ResolvedAst.Predicate.Body.Atom(sym, polarity, ts, tvar, loc)
 

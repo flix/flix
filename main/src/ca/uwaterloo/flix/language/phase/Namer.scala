@@ -984,9 +984,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
-      mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
-        case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+    case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.FixpointProject(qname.qname, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
@@ -994,9 +994,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointFold(pred, init, f, constraints, loc) =>
-      mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(init, env0, tenv0), visitExp(f, env0, tenv0), visitExp(constraints, env0, tenv0)) {
-        case (p, e1, e2, e3) => NamedAst.Expression.FixpointFold(p, e1, e2, e3, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+    case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
+      mapN(visitExp(init, env0, tenv0), visitExp(f, env0, tenv0), visitExp(constraints, env0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname.qname, e1, e2, e3, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
   }
 
@@ -1028,7 +1028,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
-      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match{
+      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
           val sym = Symbol.freshVarSym("_")
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
@@ -1037,7 +1037,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
       }
-      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match{
+      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
           val sym = Symbol.freshVarSym("_")
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
@@ -1078,16 +1078,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshTypeVar(),loc)
+        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshTypeVar(), loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(),loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshTypeVar(),loc)
+        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshTypeVar(), loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(),loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
       }
     }
 
@@ -1102,7 +1102,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         e <- visitExp(exp, outerEnv, tenv0)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, e, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -1118,7 +1118,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       for {
         e <- visitExp(exp, outerEnv, tenv0)
-      } yield NamedAst.Predicate.Body.Atom(qname, e, polarity, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Body.Atom(qname, polarity, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1205,16 +1205,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     visit(tpe, tenv0)
-  }
-
-  /**
-    * Performs naming on the given predicate with parameter `pred` under the given environment `env0` and type environment `tenv0`.
-    */
-  private def visitPredicateWithParam(pred: WeededAst.PredicateWithParam, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.PredicateWithParam, NameError] = pred match {
-    case WeededAst.PredicateWithParam(qname, exp) =>
-      mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.PredicateWithParam(qname, e)
-      }
   }
 
   /**
@@ -1339,13 +1329,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val freeElms = elms flatMap freeVars
       ident match {
         case None => freeElms
-        case Some(value) =>  freeElms.appended(value)
+        case Some(value) => freeElms.appended(value)
       }
     case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) =>
       val freeElms = elms flatMap freeVars
       ident match {
         case None => freeElms
-        case Some(value) =>freeElms.appended(value)
+        case Some(value) => freeElms.appended(value)
       }
   }
 
