@@ -1736,7 +1736,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     /// Check whether we have hit the recursion limit while unfolding the type alias.
     ///
     if (recursionDepth == RecursionLimit) {
-      return ResolutionError.RecursionLimit(alia0.ident, RecursionLimit, alia0.loc).toFailure
+      return ResolutionError.RecursionLimit(alia0.sym, RecursionLimit, alia0.loc).toFailure
     }
 
     // TODO: We should check if the type alias is accessible.

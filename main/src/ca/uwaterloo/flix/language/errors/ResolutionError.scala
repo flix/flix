@@ -275,11 +275,11 @@ object ResolutionError {
   /**
     * Recursion Limit Error.
     *
-    * @param ident the name of the type alias.
+    * @param ident the type alias symbol.
     * @param limit the current recursion limit.
     * @param loc   the location where the error occurred.
     */
-  case class RecursionLimit(ident: Name.Ident, limit: Int, loc: SourceLocation) extends ResolutionError {
+  case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal

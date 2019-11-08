@@ -193,6 +193,13 @@ object Symbol {
   }
 
   /**
+    * Returns the type alias symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkTypeAliasSym(ns: NName, ident: Ident): TypeAliasSym = {
+    new TypeAliasSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Variable Symbol.
     *
     * @param id   the globally unique name of the symbol.
@@ -478,6 +485,29 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = "?" + (if (namespace.isEmpty) name else namespace.mkString("/") + "." + name)
+  }
+
+  /**
+    * TypeAlias Symbol.
+    */
+  final class TypeAliasSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: TypeAliasSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = name
   }
 
   /**

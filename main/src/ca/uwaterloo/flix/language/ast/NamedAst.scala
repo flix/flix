@@ -53,7 +53,7 @@ object NamedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
-  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 

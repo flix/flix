@@ -233,13 +233,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
                   case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
                 }
               }
-              val typealias = NamedAst.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+              val sym = Symbol.mkTypeAliasSym(ns0, ident)
+              val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
               val typealiases = typealiases0 + (ident.name -> typealias)
               prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
           }
         case Some(typealias) =>
           // Case 2: Duplicate type alias.
-          NameError.DuplicateTypeAlias(ident.name, typealias.ident.loc, ident.loc).toFailure
+          NameError.DuplicateTypeAlias(ident.name, typealias.sym.loc, ident.loc).toFailure
       }
 
     /*
