@@ -167,9 +167,7 @@ namespace CounterActorSystem{
 /// - is it possible to support impredicate types?
 ///
 /// Magnus:
-/// - Remove indexed predicates.
 /// - Add support for type aliases.
-/// - Add equality on closures.
 /// - Refactor channel syntax.
 /// - Introduce explicit support for lattices.
 /// - Refactor types of relations and lattices :(

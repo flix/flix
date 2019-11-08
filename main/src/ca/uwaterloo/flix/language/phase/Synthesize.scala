@@ -498,6 +498,14 @@ object Synthesize extends Phase[Root, Root] {
         case _ =>
 
           //
+          // Arrow Case.
+          //
+          if (isArrow(tpe)) {
+            val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
+            return Expression.NativeMethod(method, List(exp1, exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
+          }
+
+          //
           // Channel Case.
           //
           if (isChannel(tpe)) {

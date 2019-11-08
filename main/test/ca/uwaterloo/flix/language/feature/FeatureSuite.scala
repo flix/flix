@@ -29,7 +29,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Stm", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Stm.flix"),
 
   new FlixTest("TestCurrying", "main/test/ca/uwaterloo/flix/language/feature/TestCurrying.flix"),
-  new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
 
   new FlixTest("Test.Expression.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.List.flix"),
   new FlixTest("Test.Expression.LetMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LetMatch.flix"),
@@ -170,6 +169,12 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Term.Lit.Set", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Set.flix"),
   new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix"),
   new FlixTest("Test.Term.WildVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.WildVar.flix"),
+
+  //
+  // Equality
+  //
+  new FlixTest("Test.Equality", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.flix"),
+  new FlixTest("Test.Equality.Closure", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.Closure.flix"),
 
   //
   // Unused
