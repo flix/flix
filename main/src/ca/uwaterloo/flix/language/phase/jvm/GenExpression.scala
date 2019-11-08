@@ -1053,12 +1053,12 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+    case Expression.FixpointProject(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(pred, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newPredSym(sym, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1079,7 +1079,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(pred, init, f, constraints, tpe, loc) =>
+    case Expression.FixpointFold(sym, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1774,12 +1774,12 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+    case Predicate.Head.Atom(sym, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(pred, mv)
+      newPredSym(sym, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1809,12 +1809,12 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(pred, mv)
+      newPredSym(sym, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {

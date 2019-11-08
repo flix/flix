@@ -271,7 +271,7 @@ object Safety extends Phase[Root, Root] {
     * Returns all positively defined variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => polarity match {
+    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet

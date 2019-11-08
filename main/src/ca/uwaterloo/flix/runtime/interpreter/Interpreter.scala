@@ -335,8 +335,8 @@ object Interpreter {
       val o = newOptions()
       Solver.solve(s, t, o)
 
-    case Expression.FixpointProject(pred, exp, tpe, loc) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
+    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)(root, flix)
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       Solver.project(predSym, cs)
 
@@ -346,8 +346,8 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
-    case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
+    case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)(root, flix)
       val init = env0.get(exp1.sym.toString).get
       // TODO: what if it's not a closure? Do we have to cover both clo and def?
       val f = cast2closure(env0.get(exp2.sym.toString).get)
@@ -782,8 +782,8 @@ object Interpreter {
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.Atom(pred, terms0, _, _) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)
+    case FinalAst.Predicate.Head.Atom(sym, terms0, _, _) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
       AtomPredicate.of(predSym, true, terms)
 
@@ -804,8 +804,8 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
 
-    case FinalAst.Predicate.Body.Atom(pred, polarity0, terms0, _, _) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)
+    case FinalAst.Predicate.Body.Atom(sym, polarity0, terms0, _, _) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)
       val polarity = polarity0 match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false

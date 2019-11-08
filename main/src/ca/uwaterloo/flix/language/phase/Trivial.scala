@@ -473,7 +473,7 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
       * Finds trivial computations in the given body predicate `body0`.
       */
     def visitBodyPred(body0: TypedAst.Predicate.Body)(implicit root: Root, flix: Flix): List[TrivialError] = body0 match {
-      case Body.Atom(pred, _, terms, _, _) => Nil
+      case Body.Atom(sym, _, terms, _, _) => Nil
 
       case Body.Guard(exp, _) => visitExp(exp)
     }
@@ -902,11 +902,11 @@ object Trivial extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
 
-        case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ???
+        case Expression.FixpointProject(sym, exp, tpe, eff, loc) => ???
 
         case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ???
 
-        case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, eff, loc) => ???
+        case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) => ???
       }
 
       // Check if the substitution is empty.

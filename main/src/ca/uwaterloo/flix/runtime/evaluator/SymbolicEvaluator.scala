@@ -868,9 +868,9 @@ object SymbolicEvaluator {
       case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointProject(pred, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointProject(sym, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointFold(pred, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Hole Error.
