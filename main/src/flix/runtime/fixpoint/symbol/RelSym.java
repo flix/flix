@@ -30,9 +30,9 @@ public final class RelSym implements PredSym {
     private static final Map<String, RelSym> INTERNAL_CACHE = new HashMap<>();
 
     /**
-     * Returns the relation symbol for the given `name` and `attributes`.
+     * Returns the relation symbol for the given `name`.
      */
-    public synchronized static RelSym of(String name, String[] attributes) {
+    public synchronized static RelSym of(String name, int arity, String[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (attributes == null)
@@ -42,7 +42,7 @@ public final class RelSym implements PredSym {
         if (lookup != null) {
             return lookup;
         }
-        var sym = new RelSym(name, attributes);
+        var sym = new RelSym(name, arity, attributes);
         INTERNAL_CACHE.put(name, sym);
         return sym;
     }
@@ -53,15 +53,21 @@ public final class RelSym implements PredSym {
     private final String name;
 
     /**
+     * The arity of the relation symbol.
+     */
+    private final int arity;
+
+    /**
      * The attributes of the relation symbol.
      */
     private final String[] attributes;
 
     /**
-     * Constructs a fresh relation symbol with the given `name`.
+     * Constructs a fresh relation symbol with the given `name`, `arity`, and `attributes`.
      */
-    private RelSym(String name, String[] attributes) {
+    private RelSym(String name, int arity, String[] attributes) {
         this.name = name;
+        this.arity = arity;
         this.attributes = attributes;
     }
 
@@ -76,7 +82,7 @@ public final class RelSym implements PredSym {
      * Returns the arity of the relation symbol.
      */
     public int getArity() {
-        return attributes.length;
+        return arity;
     }
 
     /**

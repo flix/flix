@@ -1858,11 +1858,14 @@ object GenExpression {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
+    // Emit code for the arity.
+    mv.visitLdcInsn(root.relations(sym).attr.length)
+
     // Emit code for the attributes.
     newAttributesArray(root.relations(sym).attr, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;I[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
   }
 
   /**
@@ -1871,6 +1874,9 @@ object GenExpression {
   private def newLatSym(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
+
+    // Emit code for the arity.
+    mv.visitLdcInsn(root.lattices(sym).attr.length)
 
     // Emit code for the keys.
     newAttributesArray(root.lattices(sym).attr.init, mv)
@@ -1882,7 +1888,7 @@ object GenExpression {
     newLatticeOps(sym, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;I[Ljava/lang/String;Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
   }
 
   /**

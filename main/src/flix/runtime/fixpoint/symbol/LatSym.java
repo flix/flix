@@ -32,9 +32,9 @@ public final class LatSym implements PredSym {
     private static final Map<String, LatSym> INTERNAL_CACHE = new HashMap<>();
 
     /**
-     * Returns the lattice symbol for the given `name` and `attributes`.
+     * Returns the lattice symbol for the given `name`.
      */
-    public synchronized static LatSym of(String name, String[] keys, String value, LatticeOps ops) {
+    public synchronized static LatSym of(String name, int arity, String[] keys, String value, LatticeOps ops) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (keys == null)
@@ -48,7 +48,7 @@ public final class LatSym implements PredSym {
         if (lookup != null) {
             return lookup;
         }
-        var sym = new LatSym(name, keys, value, ops);
+        var sym = new LatSym(name, arity, keys, value, ops);
         INTERNAL_CACHE.put(name, sym);
         return sym;
     }
@@ -57,6 +57,11 @@ public final class LatSym implements PredSym {
      * The name of the lattice symbol.
      */
     private final String name;
+
+    /**
+     * The arity of the lattice symbol.
+     */
+    private final int arity;
 
     /**
      * The keys of the lattice symbol.
@@ -74,10 +79,11 @@ public final class LatSym implements PredSym {
     private final LatticeOps ops;
 
     /**
-     * Constructs a fresh lattice symbol with the given `name`.
+     * Constructs a fresh lattice symbol with the given `name`, `arity`, `keys`, `value`, and `ops`.
      */
-    private LatSym(String name, String[] keys, String value, LatticeOps ops) {
+    private LatSym(String name, int arity, String[] keys, String value, LatticeOps ops) {
         this.name = name;
+        this.arity = arity;
         this.keys = keys;
         this.value = value;
         this.ops = ops;
@@ -94,7 +100,7 @@ public final class LatSym implements PredSym {
      * Returns the arity of the lattice symbol.
      */
     public int getArity() {
-        return keys.length + 1;
+        return arity;
     }
 
     /**

@@ -912,7 +912,7 @@ object Interpreter {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(_.name).toArray
-      RelSym.of(name, as)
+      RelSym.of(name, as.length, as)
   }
 
   /**
@@ -925,7 +925,7 @@ object Interpreter {
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, keys, value, ops)
+      LatSym.of(name, keys.length + 1, keys, value, ops)
   }
 
   /**
