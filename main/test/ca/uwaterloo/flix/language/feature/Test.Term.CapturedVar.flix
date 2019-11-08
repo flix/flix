@@ -300,7 +300,7 @@ rel OptionRel(x: Option[Int])
 
 @test
 def testOptionCapturedVar01(): Bool =
-    let c = None;
+    let c = None: Option[Int];
     let x = OptionRel(c).;
     let y = OptionRel(c) :- OptionRel(c).;
     let r = solve x <+> y;
@@ -321,7 +321,7 @@ rel ResultRel(x: Result[Int, Str])
 
 @test
 def testResultCapturedVar01(): Bool =
-    let c = Ok(123);
+    let c = Ok(123): Result[Int, Str];
     let x = ResultRel(c).;
     let y = ResultRel(c) :- ResultRel(c).;
     let r = solve x <+> y;
@@ -329,7 +329,7 @@ def testResultCapturedVar01(): Bool =
 
 @test
 def testResultCapturedVar02(): Bool =
-    let c = Err("goodbye world!");
+    let c = Err("goodbye world!"): Result[Int, Str];
     let x = ResultRel(c).;
     let y = ResultRel(c) :- ResultRel(c).;
     let r = solve x <+> y;
