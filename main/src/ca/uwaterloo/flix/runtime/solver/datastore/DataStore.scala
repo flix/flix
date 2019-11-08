@@ -60,11 +60,10 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
 
   private def initLattice(latSym: LatSym): IndexedLattice = {
     val name = latSym.getName()
-    val keys = latSym.getKeys()
     val ops = latSym.getOps()
 
     // NB: Just an index on the first attribute and on all the keys.
-    val idx = Set(Seq(0), keys.indices)
+    val idx = Set(Seq(0), Range(0, latSym.getArity - 1))
     val indexes = idx map {
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }

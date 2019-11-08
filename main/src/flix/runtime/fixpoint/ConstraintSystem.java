@@ -186,20 +186,14 @@ public final class ConstraintSystem {
         ///
         Map<LatSym, String[]> latHeaders = new HashMap<>();
         for (LatSym latSym : getLatticeSymbols()) {
-            String[] keys = latSym.getKeys();
-            String value = latSym.getValue();
+            String[] attributes = latSym.getAttributes();
             String[] headers = new String[latSym.getArity()];
-            for (int i = 0; i < keys.length; i++) {
-                if (keys != null) {
-                    headers[i] = keys[i];
+            for (int i = 0; i < headers.length; i++) {
+                if (attributes != null) {
+                    headers[i] = attributes[i];
                 } else {
-                    headers[i] = "key" + i;
+                    headers[i] = "col" + i;
                 }
-            }
-            if (value != null) {
-                headers[keys.length] = value;
-            } else {
-                headers[keys.length] = "val";
             }
 
             latHeaders.put(latSym, headers);

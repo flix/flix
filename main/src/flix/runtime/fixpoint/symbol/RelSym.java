@@ -32,11 +32,11 @@ public final class RelSym implements PredSym {
     /**
      * Returns the relation symbol for the given `name`.
      */
-    public synchronized static RelSym of(String name, int arity, String[] attributes) {
+    public synchronized static RelSym of(String name, int arity, /* nullable */ String[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
-        if (attributes == null)
-            throw new IllegalArgumentException("'attributes' must be non-null.");
+        if (attributes != null && attributes.length != arity)
+            throw new IllegalArgumentException("'attributes' must have the same length as 'arity'.");
 
         var lookup = INTERNAL_CACHE.get(name);
         if (lookup != null) {
@@ -58,7 +58,7 @@ public final class RelSym implements PredSym {
     private final int arity;
 
     /**
-     * The attributes of the relation symbol.
+     * The optional attributes of the relation symbol.
      */
     private final String[] attributes;
 

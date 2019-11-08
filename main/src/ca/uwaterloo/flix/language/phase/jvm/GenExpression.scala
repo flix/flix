@@ -1878,17 +1878,14 @@ object GenExpression {
     // Emit code for the arity.
     mv.visitLdcInsn(root.lattices(sym).attr.length)
 
-    // Emit code for the keys.
-    newAttributesArray(root.lattices(sym).attr.init, mv)
-
-    // Emit code for the value.
-    mv.visitLdcInsn(root.lattices(sym).attr.last.name)
+    // Emit code for the attributes.
+    newAttributesArray(root.lattices(sym).attr, mv)
 
     // Emit code for the lattice operations.
     newLatticeOps(sym, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;I[Ljava/lang/String;Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;I[Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
   }
 
   /**

@@ -692,7 +692,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         //  if so, the dependencies might be empty, but that should be okay.
         for ((rule, p) <- dependenciesOf.getOrElse(sym, Set.empty)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.getKeys.length
+          val numberOfKeys = l.getArity - 1
           val env = unify(getVarArray(p), fact, numberOfKeys, rule.getConstraintParameters.length)
           if (env != null) {
             localWorkList.push((rule, env))

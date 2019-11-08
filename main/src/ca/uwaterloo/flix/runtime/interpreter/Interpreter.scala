@@ -922,10 +922,8 @@ object Interpreter {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => a.name)
-      val keys = as.init.toArray
-      val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, keys.length + 1, keys, value, ops)
+      LatSym.of(name, as.length, as.toArray, ops)
   }
 
   /**
