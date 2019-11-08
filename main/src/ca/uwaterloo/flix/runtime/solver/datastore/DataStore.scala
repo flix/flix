@@ -61,7 +61,6 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
   private def initLattice(latSym: LatSym): IndexedLattice = {
     val name = latSym.getName()
     val keys = latSym.getKeys()
-    val value = latSym.getValue()
     val ops = latSym.getOps()
 
     // NB: Just an index on the first attribute and on all the keys.
