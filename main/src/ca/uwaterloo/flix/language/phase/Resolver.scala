@@ -1739,9 +1739,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       return ResolutionError.RecursionLimit(alia0.sym, RecursionLimit, alia0.loc).toFailure
     }
 
+    // Retrieve the declaring namespace.
+    val declNS = getNS(alia0.sym.namespace)
+
     // TODO: We should check if the type alias is accessible.
-    // TODO: We should be careful to avoid infinite recursion.
-    lookupType(alia0.tpe, /* TODO: Incorrect, should use the declared namespace */ ns0, root)(recursionDepth + 1)
+    lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)
   }
 
   /**

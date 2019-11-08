@@ -225,14 +225,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       typealiases0.get(ident.name) match {
         case None =>
           // Case 1: The type alias does not exist in the namespace. Add it.
-          mapN(visitType(tpe0, Map.empty)) {
+          val tparams = tparams0 match {
+            case TypeParams.Elided => Nil
+            case TypeParams.Explicit(tps) => tps map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+            }
+          }
+          val tenv = getTypeEnv(tparams)
+          mapN(visitType(tpe0, tenv)) {
             case tpe =>
-              val tparams = tparams0 match {
-                case TypeParams.Elided => Nil
-                case TypeParams.Explicit(tps) => tps map {
-                  case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
-                }
-              }
               val sym = Symbol.mkTypeAliasSym(ns0, ident)
               val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
               val typealiases = typealiases0 + (ident.name -> typealias)
