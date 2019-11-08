@@ -1042,11 +1042,10 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the expression.
       * @param name the name of the predicate.
-      * @param exp1 the optional constraint parameter.
-      * @param exp2 the constraint expression.
+      * @param exp  the constraint expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp1: Option[ParsedAst.Expression], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Entails expression.
@@ -1064,7 +1063,7 @@ object ParsedAst {
       * @param init        the initial value.
       * @param f           the function to fold.
       */
-    case class FixpointFold(sp1: SourcePosition, name: Name.QName, index: Option[ParsedAst.Expression], init: ParsedAst.Expression, f: ParsedAst.Expression, constraints: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointFold(sp1: SourcePosition, name: Name.QName, init: ParsedAst.Expression, f: ParsedAst.Expression, constraints: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1173,11 +1172,10 @@ object ParsedAst {
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
-        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Union Predicate.
@@ -1199,22 +1197,20 @@ object ParsedAst {
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
-        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Positive(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Positive(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Negative Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
-        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Negative(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Negative(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.

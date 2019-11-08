@@ -1054,17 +1054,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProject(sp1, qname, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.FixpointProject(sp1, qname, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = exp1 match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, visitExp(exp2)) {
-        case (e1, e2) =>
-          WeededAst.Expression.FixpointProject(qname, e2, mkSL(sp1, sp2))
+      mapN(visitExp(exp)) {
+        case e =>
+          WeededAst.Expression.FixpointProject(qname, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1074,15 +1069,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointFold(sp1, qname, idx, init, f, constraints, sp2) =>
+    case ParsedAst.Expression.FixpointFold(sp1, qname, init, f, constraints, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val paramExp = idx match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-      mapN(paramExp, visitExp(init), visitExp(f), visitExp(constraints)) {
-        case (e1, e2, e3, e4) =>
-          WeededAst.Expression.FixpointFold(qname, e2, e3, e4, loc)
+
+      mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
+        case (e1, e2, e3) =>
+          WeededAst.Expression.FixpointFold(qname, e1, e2, e3, loc)
       }
   }
 
@@ -1316,16 +1308,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given head predicate.
     */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-    case ParsedAst.Predicate.Head.Atom(sp1, qname, expOpt, terms, sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = expOpt match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, traverse(terms)(visitExp)) {
-        case (e, ts) =>
+      mapN(traverse(terms)(visitExp)) {
+        case ts =>
           WeededAst.Predicate.Head.Atom(qname, ts, loc)
       }
 
@@ -1339,29 +1326,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Positive(sp1, qname, expOpt, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Positive(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = expOpt match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, traverse(terms)(visitPattern)) {
-        case (e, ts) =>
+      mapN(traverse(terms)(visitPattern)) {
+        case ts =>
           WeededAst.Predicate.Body.Atom(qname, Polarity.Positive, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Negative(sp1, qname, expOpt, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Negative(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = expOpt match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, traverse(terms)(visitPattern)) {
-        case (e, ts) =>
+      mapN(traverse(terms)(visitPattern)) {
+        case ts =>
           WeededAst.Predicate.Body.Atom(qname, Polarity.Negative, ts, loc)
       }
 
@@ -1942,9 +1919,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
-    case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
-    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _) => sp1
   }
 
   /**
