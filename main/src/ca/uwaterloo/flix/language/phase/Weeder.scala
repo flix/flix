@@ -1054,7 +1054,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProject(sp1, name, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.FixpointProject(sp1, qname, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       val paramExp = exp1 match {
@@ -1064,8 +1064,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(paramExp, visitExp(exp2)) {
         case (e1, e2) =>
-          val pred = WeededAst.PredicateWithParam(name, e1)
-          WeededAst.Expression.FixpointProject(pred, e2, mkSL(sp1, sp2))
+          WeededAst.Expression.FixpointProject(qname, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1075,7 +1074,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointFold(sp1, name, idx, init, f, constraints, sp2) =>
+    case ParsedAst.Expression.FixpointFold(sp1, qname, idx, init, f, constraints, sp2) =>
       val loc = mkSL(sp1, sp2)
       val paramExp = idx match {
         case None => WeededAst.Expression.Unit(loc).toSuccess
@@ -1083,8 +1082,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
       mapN(paramExp, visitExp(init), visitExp(f), visitExp(constraints)) {
         case (e1, e2, e3, e4) =>
-          val pred = WeededAst.PredicateWithParam(name, e1)
-          WeededAst.Expression.FixpointFold(pred, e2, e3, e4, loc)
+          WeededAst.Expression.FixpointFold(qname, e2, e3, e4, loc)
       }
   }
 
@@ -1267,7 +1265,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1,sp2)).toSuccess
+              WeededAst.Pattern.ArrayTailSpread(array.get.elms, Some(ident), mkSL(sp1, sp2)).toSuccess
             case Some(otherIdent) =>
               NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
           }
@@ -1279,12 +1277,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case xs => WeededAst.Pattern.Array(xs, mkSL(sp1, sp2))
         }
         if (ident.name == "_") {
-          WeededAst.Pattern.ArrayHeadSpread(None,array.get.elms, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Pattern.ArrayHeadSpread(None, array.get.elms, mkSL(sp1, sp2)).toSuccess
         } else {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.ArrayHeadSpread( Some(ident), array.get.elms, mkSL(sp1,sp2)).toSuccess
+              WeededAst.Pattern.ArrayHeadSpread(Some(ident), array.get.elms, mkSL(sp1, sp2)).toSuccess
             case Some(otherIdent) =>
               NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)).toFailure
           }
@@ -1328,7 +1326,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(paramExp, traverse(terms)(visitExp)) {
         case (e, ts) =>
-          WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
+          WeededAst.Predicate.Head.Atom(qname, ts, loc)
       }
 
     case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
@@ -1351,7 +1349,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(paramExp, traverse(terms)(visitPattern)) {
         case (e, ts) =>
-          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Positive, ts, loc)
+          WeededAst.Predicate.Body.Atom(qname, Polarity.Positive, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Negative(sp1, qname, expOpt, terms, sp2) =>
@@ -1364,7 +1362,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(paramExp, traverse(terms)(visitPattern)) {
         case (e, ts) =>
-          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Negative, ts, loc)
+          WeededAst.Predicate.Body.Atom(qname, Polarity.Negative, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>

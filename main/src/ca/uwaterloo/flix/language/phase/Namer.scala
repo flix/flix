@@ -986,7 +986,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProject(qname.qname, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
@@ -996,7 +996,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
       mapN(visitExp(init, env0, tenv0), visitExp(f, env0, tenv0), visitExp(constraints, env0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname.qname, e1, e2, e3, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
   }
 
@@ -1098,9 +1098,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
       for {
-        e <- visitExp(exp, outerEnv, tenv0)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
       } yield NamedAst.Predicate.Head.Atom(qname, ts, Type.freshTypeVar(), loc)
 
@@ -1114,11 +1113,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      for {
-        e <- visitExp(exp, outerEnv, tenv0)
-      } yield NamedAst.Predicate.Body.Atom(qname, polarity, ts, Type.freshTypeVar(), loc)
+      NamedAst.Predicate.Body.Atom(qname, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1130,7 +1127,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1138,7 +1135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1299,9 +1296,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
+    case WeededAst.Expression.FixpointProject(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.FixpointFold(pred, exp1, exp2, exp3, loc) => freeVars(pred) ++ freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case WeededAst.Expression.FixpointFold(qname, exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
   }
 
   /**
@@ -1357,12 +1354,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
   }
 
-  /**
-    * Returns the free variables in the given predicate with parameter `pred`.
-    */
-  private def freeVars(pred: WeededAst.PredicateWithParam): List[Name.Ident] = pred match {
-    case WeededAst.PredicateWithParam(qname, exp) => freeVars(exp)
-  }
 
   /**
     * Returns the free variables in the given constraint `c0`.
@@ -1375,7 +1366,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given head predicate `h0`.
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
-    case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Atom(qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
@@ -1383,7 +1374,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
   }
 

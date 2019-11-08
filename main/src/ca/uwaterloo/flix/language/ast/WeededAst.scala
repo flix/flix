@@ -200,11 +200,11 @@ object WeededAst {
 
     case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointProject(pred: WeededAst.PredicateWithParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointProject(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointFold(pred: WeededAst.PredicateWithParam, init: WeededAst.Expression, f: WeededAst.Expression, constraints: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointFold(qname: Name.QName, init: WeededAst.Expression, f: WeededAst.Expression, constraints: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -262,7 +262,7 @@ object WeededAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, exp: WeededAst.Expression, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -272,7 +272,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, exp: WeededAst.Expression, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(name: Name.QName, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
@@ -333,8 +333,6 @@ object WeededAst {
   case class HandlerBinding(qname: Name.QName, exp: WeededAst.Expression)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
-
-  case class PredicateWithParam(qname: Name.QName, exp: WeededAst.Expression)
 
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
