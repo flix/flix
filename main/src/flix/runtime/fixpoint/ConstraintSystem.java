@@ -31,17 +31,6 @@ import java.util.*;
 public final class ConstraintSystem {
 
     /**
-     * Constructs a new constraint system of the given constraint `c`.
-     */
-    // TODO: Deprecated
-    public static ConstraintSystem of(Constraint c) {
-        if (c == null)
-            throw new IllegalArgumentException("'c' must be non-null.");
-
-        return of(new Constraint[]{c});
-    }
-
-    /**
      * Constructs a new constraint system of the given constraints `cs`.
      */
     public static ConstraintSystem of(Constraint[] cs) {

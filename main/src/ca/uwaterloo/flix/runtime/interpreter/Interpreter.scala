@@ -775,7 +775,7 @@ object Interpreter {
 
     val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray)
 
-    ConstraintSystem.of(constraint)
+    ConstraintSystem.of(Array(constraint))
   }
 
   /**

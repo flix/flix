@@ -168,8 +168,12 @@ namespace CounterActorSystem{
 ///
 /// Magnus:
 /// - Add support for type aliases.
+///   - Introduce support for Type Lambda and an eval function inside resolver.
 /// - Introduce explicit support for lattices.
 /// - Refactor types of relations and lattices :(
+///   - Refactor the code not to depend on relations and lattices maps.
+///   - Add arity to Rel and LatSym.
+///   - Remove Attribute class.
 ///
 /// Quentin:
 /// - Add support for fold.
