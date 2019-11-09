@@ -753,6 +753,14 @@ object Synthesize extends Phase[Root, Root] {
         case _ =>
 
           //
+          // Closure Case.
+          //
+          if (isArrow(tpe)) {
+            val method = classOf[java.lang.Object].getMethod("hashCode")
+            return Expression.NativeMethod(method, List(exp0), Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
+          }
+
+          //
           // Channel Case.
           //
           if (isChannel(tpe)) {

@@ -83,7 +83,7 @@ public final class ConstraintSystem {
      * Returns `null` if there is no fact at this index.
      */
     public Constraint getFact(int index) {
-        if (index >= 0 && index < facts.length) {
+        if (0 <= index && index < facts.length) {
             return facts[index];
         }
         return null;
