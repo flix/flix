@@ -1769,8 +1769,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Returns the given type `tpe` wrapped in a type lambda for the given type parameters `tparam`.
     */
   private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type): Type =
-    tparams.foldLeft(tpe) {
-      case (acc, tparam) => Type.Lambda(tparam.tpe, acc)
+    tparams.foldRight(tpe) {
+      case (tparam, acc) => Type.Lambda(tparam.tpe, acc)
     }
 
   /**
