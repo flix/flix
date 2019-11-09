@@ -2,6 +2,8 @@
 
 HEAD:
 - Added support for opaque types (newtype declarations).
+- Added support for type aliases.
+- Fixed a few bugs.
 
 Version 0.8.1:
 
