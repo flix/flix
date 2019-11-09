@@ -1059,11 +1059,11 @@ object ParsedAst {
     /**
       * Fixpoint Fold expression.
       *
-      * @param constraints the constraints over which to fold.
-      * @param init        the initial value.
-      * @param f           the function to fold.
+      * @param exp1 the initial value.
+      * @param exp2 the function to fold.
+      * @param exp3 the constraints over which to fold.
       */
-    case class FixpointFold(sp1: SourcePosition, name: Name.QName, init: ParsedAst.Expression, f: ParsedAst.Expression, constraints: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointFold(sp1: SourcePosition, name: Name.QName, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

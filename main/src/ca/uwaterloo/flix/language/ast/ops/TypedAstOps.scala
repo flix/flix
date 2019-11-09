@@ -212,8 +212,8 @@ object TypedAstOps {
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointFold(sym, init, f, constraints, tpe, eff, loc) =>
-        visitExp(init, env0) ++ visitExp(f, env0) ++ visitExp(constraints, env0)
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
     }
 
     /**
@@ -287,7 +287,7 @@ object TypedAstOps {
       val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
-       Map(sym -> tpe) ++ boundElms
+      Map(sym -> tpe) ++ boundElms
 
     case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
       val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {

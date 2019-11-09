@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
@@ -48,8 +49,8 @@ object Scheme {
       case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
-      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, visit(tpe)) // TODO: Should the subst. be filtered?
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
+      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
     }
 
     visit(tpe)

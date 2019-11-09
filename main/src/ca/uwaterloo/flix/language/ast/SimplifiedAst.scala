@@ -254,7 +254,7 @@ object SimplifiedAst {
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointFold(sym: Symbol.PredSym, init: SimplifiedAst.Expression, f: SimplifiedAst.Expression, constraints: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointFold(sym: Symbol.PredSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

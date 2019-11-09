@@ -204,7 +204,7 @@ object WeededAst {
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointFold(qname: Name.QName, init: WeededAst.Expression, f: WeededAst.Expression, constraints: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointFold(qname: Name.QName, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
