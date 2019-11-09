@@ -33,6 +33,16 @@ opaque type B = Result[Int, Str]
  */
 opaque type Pair[a, b] = (a, b)
 
+/**
+ * An opaque type for a polymorphic Result.
+ */
+opaque type C[a] = Result[a, Int]
+
+/**
+ * An opaque type for a polymorphic Result.
+ */
+opaque type D[a, b, c] = Map[a, Result[b, c]]
+
 @test
 def opaqueType01(): Celsius = Celsius(123)
 
@@ -112,3 +122,20 @@ def opaqueType19(): Pair[Bool, Int] = Pair((true, 42))
 def opaqueType20(): Bool = match Pair((true, 42)) {
     case Pair(x) => x == (true, 42)
 }
+
+@test
+def opaqueType21(): C[Bool] = C(Ok(true))
+
+@test
+def opaqueType22(): Bool = match C(Ok(true)) {
+    case C(x) => x == Ok(true)
+}
+
+@test
+def opaqueType23(): D[Bool, Int, Str] = D(Map#{})
+
+@test
+def opaqueType24(): D[Bool, Int, Str] = D(Map#{true -> Ok(123)})
+
+@test
+def opaqueType25(): D[Bool, Int, Str] = D(Map#{true -> Err("Hello World")})
