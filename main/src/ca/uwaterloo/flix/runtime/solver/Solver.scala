@@ -21,14 +21,12 @@ import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
 import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
-import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.{ConstantFunction, Constraint, ConstraintSystem, Stratification}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
-import flix.runtime.{ProxyObject, ReifiedSourceLocation, RuleError, TimeoutError}
+import flix.runtime.{ProxyObject, TimeoutError}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -122,11 +120,6 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * The global work list.
     */
   val worklist: WorkList = mkWorkList()
-
-  /**
-    * The performance monitor.
-    */
-  val monitor = new Monitor(this)
 
   /**
     * The current state of the solver.
@@ -252,13 +245,6 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * Initialize the solver by starting the monitor, debugger, etc.
     */
   private def initSolver(): Unit = {
-    if (options.isMonitored) {
-      monitor.start()
-
-      val restServer = new RestServer(this)
-      restServer.start()
-    }
-
     totalTime = System.nanoTime()
   }
 
@@ -314,11 +300,6 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     // spin down thread pools.
     readersPool.shutdownNow()
     writersPool.shutdownNow()
-
-    // stop the debugger (if enabled).
-    if (options.isMonitored) {
-      monitor.stop()
-    }
 
     totalTime = System.nanoTime() - totalTime
   }

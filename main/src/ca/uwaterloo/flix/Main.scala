@@ -78,7 +78,6 @@ object Main {
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       optimizations = optimizations,
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
-      monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
@@ -207,7 +206,6 @@ object Main {
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
-                     monitor: Boolean = false,
                      quickchecker: Boolean = false,
                      release: Boolean = false,
                      test: Boolean = false,
@@ -300,10 +298,6 @@ object Main {
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
         text("listens on the given port.")
-
-      // Monitor.
-      opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
-        text("enables the debugger and profiler.")
 
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).

@@ -947,7 +947,6 @@ object Interpreter {
   private def newOptions()(implicit flix: Flix): Options = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new Options
-    options.setMonitored(flix.options.monitor)
     options.setThreads(flix.options.threads)
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
     options

@@ -80,12 +80,6 @@ class TestMain extends FunSuite {
     assert(opts.listen.nonEmpty)
   }
 
-  test("--monitor") {
-    val args = Array("--monitor", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.monitor)
-  }
-
   test("--quickchecker") {
     val args = Array("--quickchecker")
     val opts = Main.parseCmdOpts(args).get

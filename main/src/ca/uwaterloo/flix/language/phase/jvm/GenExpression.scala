@@ -2162,15 +2162,6 @@ object GenExpression {
     // Invoke the constructor.
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "<init>", "()V", false)
 
-    // Monitor
-    mv.visitInsn(DUP)
-    if (flix.options.monitor) {
-      mv.visitInsn(ICONST_1)
-    } else {
-      mv.visitInsn(ICONST_0)
-    }
-    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setMonitored", "(Z)V", false)
-
     // Threads
     mv.visitInsn(DUP)
     mv.visitIntInsn(BIPUSH, flix.options.threads)
