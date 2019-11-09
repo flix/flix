@@ -1,11 +1,6 @@
 // TODO: Independent Tasks:
 
-// TODO: Add pattern matching on records. (Magnus has a student that may get this done).
 // TODO: Add equality on records (if we want to use them in facts).
-
-// TODO: Add equality on closures.
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Actor System Implementation                                              //
@@ -173,7 +168,6 @@ namespace CounterActorSystem{
 /// - Refactor types of relations and lattices :(
 ///   - Refactor the code not to depend on relations and lattices maps.
 ///   - Document simplify in Resolver
-///   - TODO: How should the types of a declared relation be included? In the typer?
 ///
 /// Quentin:
 /// - Add support for fold.

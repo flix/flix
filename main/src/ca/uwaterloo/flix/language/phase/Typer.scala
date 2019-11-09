@@ -335,7 +335,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckRel(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, loc) =>
+    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc0, loc) =>
       val tparams = getTypeParams(tparams0)
       for {
         attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
@@ -348,7 +348,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckLat(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, loc) =>
+    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc0, loc) =>
       val tparams = getTypeParams(tparams0)
       for {
         attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
@@ -1757,10 +1757,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //  ------------------------------------------------------------
       //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
+
+      // Lookup the declared type of the relation/lattice (if it exists).
+      val declaredType = sym match {
+        case x: Symbol.RelSym => program.relations.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(rel) => Scheme.instantiate(rel.sc)
+        }
+        case x: Symbol.LatSym => program.lattices.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(lat) => Scheme.instantiate(lat.sc)
+        }
+      }
+
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
         pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), loc)
+        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -1799,9 +1812,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
     case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+
+      // Lookup the declared type of the relation/lattice (if it exists).
+      val declaredType = sym match {
+        case x: Symbol.RelSym => program.relations.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(rel) => Scheme.instantiate(rel.sc)
+        }
+        case x: Symbol.LatSym => program.lattices.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(lat) => Scheme.instantiate(lat.sc)
+        }
+      }
+
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), loc)
+        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
     //
@@ -1860,7 +1886,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getRelationSignature(sym: Symbol.RelSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.relations(sym) match {
-      case ResolvedAst.Relation(_, _, _, _, attr, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Relation(_, _, _, _, attr, _, _) => Ok(attr.map(_.tpe))
     }
   }
 
@@ -1869,7 +1895,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getLatticeSignature(sym: Symbol.LatSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.lattices(sym) match {
-      case ResolvedAst.Lattice(_, _, _, _, attr, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Lattice(_, _, _, _, attr, _, _) => Ok(attr.map(_.tpe))
     }
   }
 

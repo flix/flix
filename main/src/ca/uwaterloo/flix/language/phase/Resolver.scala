@@ -324,7 +324,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield ResolvedAst.Relation(doc, mod, sym, tparams, attributes, loc)
+      } yield {
+        val ts = attributes.map(_.tpe)
+        val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+        val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
+        val args = ts.foldLeft(init) {
+          case (acc, t) => Type.Apply(acc, t)
+        }
+        val tpe = Type.Apply(base, args)
+
+        val quantifiers = tparams.map(_.tpe)
+        val scheme = Scheme(quantifiers, tpe)
+
+        ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
+      }
   }
 
   /**
@@ -335,7 +348,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
+      } yield {
+        val ts = attributes.map(_.tpe)
+        val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+        val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
+        val args = ts.foldLeft(init) {
+          case (acc, t) => Type.Apply(acc, t)
+        }
+        val tpe = Type.Apply(base, args)
+
+        val quantifiers = tparams.map(_.tpe)
+        val scheme = Scheme(quantifiers, tpe)
+
+        ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
+      }
   }
 
   /**
