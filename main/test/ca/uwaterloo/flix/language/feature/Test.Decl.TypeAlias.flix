@@ -102,3 +102,54 @@ def typeAlias19(): E[Bool] = Err("Hello World")
 
 @test
 def typeAlias20(): E[Int] = Err("Hello World")
+
+/**
+ * An opaque type for Int.
+ */
+opaque type X = Int
+
+/**
+ * An opaque type for Option.
+ */
+opaque type Y[a] = Option[a]
+
+/**
+ * An opaque type for Result.
+ */
+opaque type Z[a, b] = Result[a, b]
+
+/**
+ * A type alias for an opaque type.
+ */
+type alias U = X
+
+/**
+ * A type alias for a polymorphic opaque type.
+ */
+type alias V[a] = Y[a]
+
+/**
+ * A type alias for a polymorphic opaque type.
+ */
+type alias W[a, b] = Z[a, b]
+
+@test
+def typeAlias21(): U = X(123)
+
+@test
+def typeAlias22(): V[Bool] = Y(None)
+
+@test
+def typeAlias23(): V[Bool] = Y(Some(true))
+
+@test
+def typeAlias24(): V[Int] = Y(None)
+
+@test
+def typeAlias25(): V[Int] = Y(Some(123))
+
+@test
+def typeAlias26(): W[Bool, Int] = Z(Ok(true))
+
+@test
+def typeAlias27(): W[Bool, Int] = Z(Err(123))
