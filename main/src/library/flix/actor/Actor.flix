@@ -162,12 +162,9 @@ namespace CounterActorSystem{
 /// - is it possible to support impredicate types?
 ///
 /// Magnus:
-/// - Add support for type aliases.
-///   - Introduce support for Type Lambda and an eval function inside resolver.
 /// - Introduce explicit support for lattices.
 /// - Refactor types of relations and lattices :(
 ///   - Refactor the code not to depend on relations and lattices maps.
-///   - Document simplify in Resolver
 ///
 /// Quentin:
 /// - Add support for fold.

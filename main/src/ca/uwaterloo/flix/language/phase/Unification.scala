@@ -74,7 +74,7 @@ object Unification {
           case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
           case Type.Zero => Type.Zero
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
-          case Type.Abs(tvar, tpe) => Type.Abs(tvar, visit(tpe)) // TODO: Should the substitution be filtered?
+          case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, visit(tpe)) // TODO: Should the substitution be filtered?
           case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
         }
 

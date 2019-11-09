@@ -737,7 +737,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
-      case Type.Abs(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
     /**

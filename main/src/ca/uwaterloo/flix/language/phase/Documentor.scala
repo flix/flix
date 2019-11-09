@@ -207,7 +207,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.SchemaExtend(sym, t, rest) =>
         "{" + sym + " = " + format(t) + " | " + format(rest) + "}"
 
-      case Type.Abs(tvar, tpe) => tvar.toString + " => " + format(tpe)
+      case Type.Lambda(tvar, tpe) => tvar.toString + " => " + format(tpe)
 
       case Type.Apply(tpe1, tpe2) => format(tpe1) + "[" + format(tpe2) + "]"
     }

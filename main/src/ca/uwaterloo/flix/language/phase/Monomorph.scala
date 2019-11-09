@@ -91,7 +91,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
-        case Type.Abs(_, _) => throw InternalCompilerException(s"Unexpected type: '$t'.")
+        case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
       visit(s(tpe))

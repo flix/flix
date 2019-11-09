@@ -23,6 +23,11 @@ type alias CAD = Float64
  */
 type alias MaybeInt = Option[Int]
 
+/**
+ * A type alias for a polymorphic Result.
+ */
+type alias ResultOrString[a] = Result[a, Str]
+
 @test
 def typeAlias01(): Celsius = 123
 
@@ -40,4 +45,10 @@ def typeAlias05(): MaybeInt = None
 
 @test
 def typeAlias06(): MaybeInt = Some(123)
+
+@test
+def typeAlias07(): ResultOrString[Bool] = Ok(true)
+
+@test
+def typeAlias08(): ResultOrString[Int] = Ok(123)
 

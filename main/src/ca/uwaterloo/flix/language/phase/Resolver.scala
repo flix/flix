@@ -1408,7 +1408,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           // Lookup the type and check that is either a relation or lattice type.
           flatMapN(lookupType(predType, ns0, root)) {
             case t =>
-              // Simplify the type.
+              // Simplify the type. Required to get the appropriate type constructor.
               val s = simplify(t)
 
               // Determine the type of predicate symbol.
@@ -1437,7 +1437,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for (
         tpe1 <- lookupType(base0, ns0, root);
         tpe2 <- lookupType(targ0, ns0, root)
-      ) yield Type.Apply(tpe1, tpe2)
+      ) yield simplify(Type.Apply(tpe1, tpe2))
 
   }
 
@@ -1758,7 +1758,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(alia0.sym.namespace)
 
     // TODO: We should check if the type alias is accessible.
-    lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)
+
+    // Construct a type lambda for each type parameter.
+    mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
+      case base => mkTypeLambda(alia0.tparams, base)
+    }
   }
 
   /**
@@ -1766,13 +1770,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type): Type =
     tparams.foldLeft(tpe) {
-      case (acc, tparam) => Type.Abs(tparam.tpe, acc)
+      case (acc, tparam) => Type.Lambda(tparam.tpe, acc)
     }
 
   /**
-    * TODO: DOC
+    * Returns a simplified (evaluated) form of the given type `tpe0`.
+    *
+    * Performs beta-reduction of type abstractions and applications.
     */
-  // TODO: Concerns about variable capture.
   private def simplify(tpe0: Type): Type = {
     def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
@@ -1798,10 +1803,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       case Type.Succ(len, t) => Type.Succ(len, eval(t, subst))
 
-      case Type.Abs(tvar, tpe) => Type.Abs(tvar, eval(tpe, subst))
+      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
 
+      // TODO: Does not take variable capture into account.
       case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
-        case (Type.Abs(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
+        case (Type.Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
         case (t1, t2) => Type.Apply(t1, t2)
       }
     }

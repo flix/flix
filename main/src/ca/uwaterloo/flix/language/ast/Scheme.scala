@@ -48,7 +48,7 @@ object Scheme {
       case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
-      case Type.Abs(tvar, tpe) => Type.Abs(tvar, visit(tpe)) // TODO: Should the subst. be filtered?
+      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, visit(tpe)) // TODO: Should the subst. be filtered?
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
     }
 

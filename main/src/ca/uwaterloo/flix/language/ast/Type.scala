@@ -42,7 +42,7 @@ sealed trait Type {
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
-    case Type.Abs(tvar, tpe) => tpe.typeVars - tvar
+    case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -95,7 +95,7 @@ sealed trait Type {
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
     case Type.SchemaExtend(sym, tpe, rest) => "Schema { " + sym + " : " + tpe + " | " + rest + " }"
-    case Type.Abs(tvar, tpe) => s"$tvar => $tpe"
+    case Type.Lambda(tvar, tpe) => s"$tvar => $tpe"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -199,13 +199,15 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
-  // TODO: DOC
-  case class Abs(tvar: Type.Var, tpe: Type) extends Type {
-    def kind: Kind = ???
+  /**
+    * A type expression that represents a type abstraction [x] => tpe.
+    */
+  case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
+    def kind: Kind = ??? // TODO
   }
 
   /**
-    * A type expression that a type application tpe1[tpe2].
+    * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type) extends Type {
     /**
@@ -379,7 +381,7 @@ object Type {
           //
           // Abstraction.
           //
-          case Type.Abs(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
+          case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
 
           //
           // Application.
