@@ -248,9 +248,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitTypeAlias(d0: ParsedAst.Declaration.TypeAlias)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = d0 match {
     case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
-      /*
-       * Rewrites an opaque type to an enum declaration.
-       */
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
 
