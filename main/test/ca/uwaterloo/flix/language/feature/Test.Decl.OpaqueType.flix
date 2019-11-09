@@ -139,3 +139,60 @@ def opaqueType24(): D[Bool, Int, Str] = D(Map#{true -> Ok(123)})
 
 @test
 def opaqueType25(): D[Bool, Int, Str] = D(Map#{true -> Err("Hello World")})
+
+/**
+ * A type alias for Bool.
+ */
+type alias X = Bool
+
+/**
+ * A type alias for Int.
+ */
+type alias Y = Int
+
+/**
+ * A polymorphic type alias for Option.
+ */
+type alias Z[a] = Option[a]
+
+/**
+ * An opaque type for with a type alias.
+ */
+opaque type U = Option[X]
+
+/**
+ * An opaque type for with a type alias.
+ */
+opaque type V = Result[X, Y]
+
+@test
+def opaqueType26(): U = U(None)
+
+@test
+def opaqueType27(): Bool = match U(None) {
+    case U(x) => x == None
+}
+
+@test
+def opaqueType28(): U = U(Some(true))
+
+@test
+def opaqueType29(): Bool = match U(Some(true)) {
+    case U(x) => x == Some(true)
+}
+
+@test
+def opaqueType30(): V = V(Ok(true))
+
+@test
+def opaqueType31(): Bool = match V(Ok(true)) {
+    case V(x) => x == Ok(true)
+}
+
+@test
+def opaqueType32(): V = V(Err(123))
+
+@test
+def opaqueType33(): Bool = match V(Err(123)) {
+    case V(x) => x == Err(123)
+}
