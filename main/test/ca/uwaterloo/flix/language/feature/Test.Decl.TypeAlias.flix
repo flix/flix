@@ -21,12 +21,22 @@ type alias CAD = Float64
 /**
  * A type alias for Option of Int.
  */
-type alias MaybeInt = Option[Int]
+type alias A = Option[Int]
 
 /**
- * A type alias for a polymorphic Result.
+ * A type alias for a Result.
  */
-type alias ResultOrString[a] = Result[a, Str]
+type alias B = Result[Bool, Int]
+
+/**
+ * A polymorphic type alias for a Option.
+ */
+type alias C[a] = Option[a]
+
+/**
+ * A polymorphic type alias for a Option.
+ */
+type alias D[a, b] = Result[a, b]
 
 @test
 def typeAlias01(): Celsius = 123
@@ -35,20 +45,38 @@ def typeAlias01(): Celsius = 123
 def typeAlias02(): Fahrenheit = 123
 
 @test
-def typeAlias03(): USD = 123.456
+def typeAlias03(): Int = (123: Celsius) + (123: Fahrenheit)
 
 @test
-def typeAlias04(): CAD = 123.456
+def typeAlias04(): USD = 123.456
 
 @test
-def typeAlias05(): MaybeInt = None
+def typeAlias05(): CAD = 123.456
 
 @test
-def typeAlias06(): MaybeInt = Some(123)
+def typeAlias06(): Float64 = (123.456: USD) + (123.456: CAD)
 
 @test
-def typeAlias07(): ResultOrString[Bool] = Ok(true)
+def typeAlias07(): A = None
 
 @test
-def typeAlias08(): ResultOrString[Int] = Ok(123)
+def typeAlias08(): A = Some(123)
+
+@test
+def typeAlias09(): B = Ok(true)
+
+@test
+def typeAlias10(): B = Err(123)
+
+@test
+def typeAlias11(): C[Bool] = None
+
+@test
+def typeAlias12(): C[Bool] = Some(true)
+
+@test
+def typeAlias13(): C[Int] = None
+
+@test
+def typeAlias14(): C[Int] = Some(123)
 
