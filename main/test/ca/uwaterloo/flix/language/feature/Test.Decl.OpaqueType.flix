@@ -19,79 +19,75 @@ opaque type USD = Float64
 opaque type CAD = Float64
 
 /**
- * An opaque type for an Option of Int.
+ * An opaque type for an Option.
  */
-opaque type MaybeInt = Option[Int]
+opaque type A = Option[Int]
 
 /**
- * An opaque type for a polymorphic Result.
+ * An opaque type for a Result.
  */
-opaque type ResultOrString[a] = Result[a, Str]
+opaque type B = Result[Int, Str]
 
 @test
 def opaqueType01(): Celsius = Celsius(123)
 
 @test
-def opaqueType02(): Fahrenheit = Fahrenheit(123)
-
-@test
-def opaqueType03(): USD = USD(123.456)
-
-@test
-def opaqueType04(): CAD = CAD(123.456)
-
-@test
-def opaqueType05(): MaybeInt = MaybeInt(None)
-
-@test
-def opaqueType06(): MaybeInt = MaybeInt(Some(123))
-
-@test
-def opaqueType07(): ResultOrString[Int] = ResultOrString(Ok(123))
-
-@test
-def opaqueType08(): ResultOrString[Int] = ResultOrString(Err("hello world"))
-
-@test
-def opaqueType09(): Bool = match Celsius(123) with {
+def opaqueType02(): Bool = match Celsius(123) {
     case Celsius(x) => x == 123
 }
 
 @test
-def opaqueType10(): Bool = match Fahrenheit(123) with {
+def opaqueType03(): Fahrenheit = Fahrenheit(123)
+
+@test
+def opaqueType04(): Bool = match Fahrenheit(123) {
     case Fahrenheit(x) => x == 123
 }
 
 @test
-def opaqueType11(): Bool = match USD(123.456) with {
+def opaqueType05(): USD = USD(123.456)
+
+@test
+def opaqueType06(): Bool = match USD(123.456) {
     case USD(x) => x == 123.456
 }
 
 @test
-def opaqueType12(): Bool = match CAD(123.456) with {
+def opaqueType07(): CAD = CAD(123.456)
+
+@test
+def opaqueType08(): Bool = match CAD(123.456) {
     case CAD(x) => x == 123.456
 }
 
 @test
-def opaqueType13(): Bool = match MaybeInt(None) with {
-    case MaybeInt(None) => true
-    case _              => false
+def opaqueType09(): A = A(None)
+
+@test
+def opaqueType10(): A = A(Some(123))
+
+@test
+def opaqueType11(): Bool = match A(None) {
+    case A(x) => x == None
 }
 
 @test
-def opaqueType14(): Bool = match MaybeInt(Some(123)) with {
-    case MaybeInt(Some(123))    => true
-    case _                      => false
+def opaqueType12(): Bool = match A(Some(123)) {
+    case A(x) => x == Some(123)
 }
 
 @test
-def opaqueType15(): Bool = match ResultOrString(Ok(123)) with {
-    case ResultOrString(Ok(123))    => true
-    case _                          => false
+def opaqueType13(): B = B(Ok(123))
+
+@test
+def opaqueType14(): B = B(Err("Hello World"))
+
+@test
+def opaqueType15(): Bool = match B(Ok(123)) {
+    case B(x) => x == Ok(123)
 }
 
 @test
-def opaqueType16(): Bool = match ResultOrString(Err("hello world")) with {
-    case ResultOrString(Err("hello world")) => true
-    case _                                  => false
+def opaqueType16(): Bool = match B(Err("Hello World")) {
+    case B(x) => x == Err("Hello World")
 }
