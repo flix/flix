@@ -28,6 +28,11 @@ opaque type A = Option[Int]
  */
 opaque type B = Result[Int, Str]
 
+/**
+ * An opaque type for a polymorphic pair.
+ */
+opaque type Pair[a, b] = (a, b)
+
 @test
 def opaqueType01(): Celsius = Celsius(123)
 
@@ -90,4 +95,20 @@ def opaqueType15(): Bool = match B(Ok(123)) {
 @test
 def opaqueType16(): Bool = match B(Err("Hello World")) {
     case B(x) => x == Err("Hello World")
+}
+
+@test
+def opaqueType17(): Pair[Int, Int] = Pair((21, 42))
+
+@test
+def opaqueType18(): Bool = match Pair((21, 42)) {
+    case Pair(x) => x == (21, 42)
+}
+
+@test
+def opaqueType19(): Pair[Bool, Int] = Pair((true, 42))
+
+@test
+def opaqueType20(): Bool = match Pair((true, 42)) {
+    case Pair(x) => x == (true, 42)
 }
