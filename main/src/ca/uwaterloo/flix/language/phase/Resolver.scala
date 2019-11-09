@@ -794,12 +794,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, evar, loc)
 
-        case NamedAst.Expression.FixpointFold(qname, init, f, constraints, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointFold(qname, exp1, exp2, exp3, tvar, evar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
-            e1 <- visit(init, tenv0)
-            e2 <- visit(f, tenv0)
-            e3 <- visit(constraints, tenv0)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.FixpointFold(sym, e1, e2, e3, tvar, evar, loc)
       }
 
@@ -1747,6 +1747,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Otherwise fails with a resolution error.
     */
   private def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit recursionDepth: Int): Validation[Type, ResolutionError] = {
+    // TODO: We should check if the type alias is accessible.
+
     ///
     /// Check whether we have hit the recursion limit while unfolding the type alias.
     ///
@@ -1756,8 +1758,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     // Retrieve the declaring namespace.
     val declNS = getNS(alia0.sym.namespace)
-
-    // TODO: We should check if the type alias is accessible.
 
     // Construct a type lambda for each type parameter.
     mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
