@@ -34,9 +34,14 @@ type alias B = Result[Bool, Int]
 type alias C[a] = Option[a]
 
 /**
- * A polymorphic type alias for a Option.
+ * A polymorphic type alias for a Result.
  */
 type alias D[a, b] = Result[a, b]
+
+/**
+ * A partially polymorphic type alias for a Result.
+ */
+type alias E[a] = Result[a, Str]
 
 @test
 def typeAlias01(): Celsius = 123
@@ -80,3 +85,20 @@ def typeAlias13(): C[Int] = None
 @test
 def typeAlias14(): C[Int] = Some(123)
 
+@test
+def typeAlias15(): D[Bool, Int] = Ok(true)
+
+@test
+def typeAlias16(): D[Bool, Int] = Err(123)
+
+@test
+def typeAlias17(): E[Bool] = Ok(true)
+
+@test
+def typeAlias18(): E[Int] = Ok(123)
+
+@test
+def typeAlias19(): E[Bool] = Err("Hello World")
+
+@test
+def typeAlias20(): E[Int] = Err("Hello World")
