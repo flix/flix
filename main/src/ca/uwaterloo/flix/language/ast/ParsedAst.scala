@@ -1114,6 +1114,8 @@ object ParsedAst {
 
     case class ArrayHeadSpread(sp1: SourcePosition, ident: Name.Ident, elms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
+    case class Record(sp1: SourcePosition, elms: Seq[ParsedAst.RecordPatternField], sp2: SourcePosition) extends ParsedAst.Pattern
+
     /**
       * Nil Pattern (of list).
       *
@@ -1583,4 +1585,5 @@ object ParsedAst {
     */
   case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
+  case class RecordPatternField(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: RecordPatternField)
 }
