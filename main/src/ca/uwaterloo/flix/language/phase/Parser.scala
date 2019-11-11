@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
+import org.parboiled2.RuleTrace.ZeroOrMore
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -973,9 +974,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Record: Rule1[ParsedAst.Pattern.Record] = {
       def RecordPatternField: Rule1[ParsedAst.RecordPatternField] = rule{
-        Simple ~ optional(optWS ~ SP ~ atomic(",") ~ SP ~ optWS ~ RecordPatternField ~> ParsedAst.RecordPatternField )
+        SP ~ Names.Variable ~ SP ~> ParsedAst.RecordPatternField
       }
-      rule { SP ~ "{" ~ optWS ~ RecordPatternField ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
+      rule { SP ~ "{" ~ optWS ~ zeroOrMore(RecordPatternField).separatedBy(optWS ~ "," ~  optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
       }
     }
 
