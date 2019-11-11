@@ -23,20 +23,31 @@ pub enum ActorResult[s, e] {
     ///
     /// Indicates that the actor was unable to complete it works and aborted.
     ///
-    case Crash(s, e) // TODO: Should probably crash with both a message and the current state?
+    case Crash(s, e)
 }
+
+///
+/// An actor, while running, communicates with the actor system by sending control messages.
+///
+/// An actor must send the `Ready` message when it has started and is ready to receive messages.
+///
+pub enum ControlMsg {
+    ///
+    /// Indicates that the actor has started and is ready to receive messages.
+    ///
+    case Ready
+}
+
 
 
 
 pub enum ActorMsg {
-    case Start(Channel[Ready]),
+    case Start(Channel[ControlMsg]),
     case Stop,
     case Msg(Channel[ActorMsg], Str)
 }
 
-pub enum Ready {
-    case Ready
-}
+
 
 ///
 /// An actor system is essentially a triple that consists of:
