@@ -1255,7 +1255,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
-          resultTyp = initType // the result of the fold is the same type as init
+          resultTyp <- unifyTypM(tvar, initType, loc) // the result of the fold is the same type as init
         } yield (resultTyp, resultEff)
     }
 
