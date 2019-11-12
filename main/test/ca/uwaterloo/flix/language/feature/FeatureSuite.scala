@@ -146,6 +146,7 @@ class FeatureSuite extends Suites(
   //
   new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix"),
   new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix"),
+  new FlixTest("Test.Expression.FixpointFold", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointFold.flix"),
 
   //
   // Predicates
