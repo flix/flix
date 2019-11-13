@@ -1208,7 +1208,7 @@ object GenExpression {
       visitor.visitInsn(POP)
 
       // stack: [index, acc+, tupleType, tupleType, tupleElement*]
-      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getJvmType), JvmType.Void)
+      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getErasedJvmType), JvmType.Void)
       visitor.visitMethodInsn(INVOKESPECIAL, tupleType.name.toInternalName, "<init>", constructorDescriptor, false)
       // stack: [index, acc+, tuple] (tupleType is actually the constructed tuple)
 
