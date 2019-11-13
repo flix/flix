@@ -26,63 +26,7 @@ import ca.uwaterloo.flix.util.Validation._
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, LinterError] = flix.phase("Linter") {
-    for {
-      codePatterns <- getCodePatterns(root)
-    } yield {
-      for (p <- codePatterns) {
-        println(formatPattern(p))
-      }
-      println("total patterns: " + codePatterns.length)
-      root
-    }
+    // TODO: Implement the linter.
+    root.toSuccess
   }
-
-
-  /**
-    * Returns all code patterns in the given AST `root`.
-    */
-  private def getCodePatterns(root: Root): Validation[List[CodePattern], LinterError] = {
-    sequence(root.defs.values.collect {
-      case defn if defn.ann.isTheorem => defn.exp match {
-        case e: Expression.Universal => getCodePattern(e)
-        case e => NotYetSupportedPattern.toSuccess
-      }
-    })
-  }
-
-  // TODO
-  private def getCodePattern(exp0: Expression): Validation[CodePattern, LinterError] = exp0 match {
-    case Expression.Universal(_, e, _, _) => getCodePattern(e)
-    case Expression.Binary(BinaryOperator.Equal, exp1, exp2, _, _, _) =>
-      mapN(getSymAndArgs(exp1)) {
-        case (sym, args) => EqPattern(sym, args, exp2)
-      }
-    case _ => NotYetSupportedPattern.toSuccess
-  }
-
-  // TODO
-  private def getSymAndArgs(exp0: Expression): Validation[(Symbol.DefnSym, List[Expression]), LinterError] = exp0 match {
-    case Expression.Def(sym, _, _, _) => (sym, Nil).toSuccess
-    case Expression.Apply(exp1, exp2, _, _, _) =>
-      mapN(getSymAndArgs(exp1)) {
-        case (sym, args) => (sym, args ::: exp2 :: Nil) // TODO: Use accumulator.
-      }
-    case Expression.Binary(_, _, _, _, _, _) => (null, Nil).toSuccess // TODO
-    case e => (null, Nil).toSuccess // TODO
-  }
-
-  sealed trait CodePattern
-
-  // TODO: Put in object
-
-  // TODO: Probably need to universal variables, so that we can instantiate them...
-  case class EqPattern(sym: Symbol.DefnSym, args: List[Expression], result: Expression) extends CodePattern
-
-  case object NotYetSupportedPattern extends CodePattern
-
-  def formatPattern(p: CodePattern): String = p match {
-    case EqPattern(sym, args, result) => s"EqPattern($sym, ${args.map(FormatExpression.format)}, ${FormatExpression.format(result)}"
-    case NotYetSupportedPattern => "NotYetSupportedPattern"
-  }
-
 }
