@@ -49,6 +49,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       effs = Map.empty,
       handlers = Map.empty,
       enums = Map.empty,
+      typealiases = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
       relations = Map.empty,
@@ -214,6 +215,33 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Some(enum) =>
           // Case 2.2: Duplicate definition.
           NameError.DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
+      }
+
+    /*
+     * Type Alias.
+     */
+    case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+      val typealiases0 = prog0.typealiases.getOrElse(ns0, Map.empty)
+      typealiases0.get(ident.name) match {
+        case None =>
+          // Case 1: The type alias does not exist in the namespace. Add it.
+          val tparams = tparams0 match {
+            case TypeParams.Elided => Nil
+            case TypeParams.Explicit(tps) => tps map {
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+            }
+          }
+          val tenv = getTypeEnv(tparams)
+          mapN(visitType(tpe0, tenv)) {
+            case tpe =>
+              val sym = Symbol.mkTypeAliasSym(ns0, ident)
+              val typealias = NamedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+              val typealiases = typealiases0 + (ident.name -> typealias)
+              prog0.copy(typealiases = prog0.typealiases + (ns0 -> typealiases))
+          }
+        case Some(typealias) =>
+          // Case 2: Duplicate type alias.
+          NameError.DuplicateTypeAlias(ident.name, typealias.sym.loc, ident.loc).toFailure
       }
 
     /*
@@ -958,14 +986,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointProject(pred, exp, loc) =>
-      mapN(visitPredicateWithParam(pred, env0, tenv0), visitExp(exp, env0, tenv0)) {
-        case (p, e) => NamedAst.Expression.FixpointProject(p, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+    case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
+
+    case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
+      mapN(visitExp(init, env0, tenv0), visitExp(f, env0, tenv0), visitExp(constraints, env0, tenv0)) {
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
   }
 
@@ -997,7 +1030,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
-      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match{
+      case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
         case None =>
           val sym = Symbol.freshVarSym("_")
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
@@ -1006,7 +1039,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
       }
-      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match{
+      case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
         case None =>
           val sym = Symbol.freshVarSym("_")
           NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
@@ -1047,16 +1080,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshTypeVar(),loc)
+        case None => NamedAst.Pattern.ArrayTailSpread(elms map visit, Symbol.freshVarSym("_"), Type.freshTypeVar(), loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(),loc)
+          NamedAst.Pattern.ArrayTailSpread(elms map visit, sym, Type.freshTypeVar(), loc)
       }
       case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) => ident match {
-        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshTypeVar(),loc)
+        case None => NamedAst.Pattern.ArrayHeadSpread(Symbol.freshVarSym("_"), elms map visit, Type.freshTypeVar(), loc)
         case Some(value) =>
           val sym = env0(value.name)
-          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(),loc)
+          NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
       }
     }
 
@@ -1067,11 +1100,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
       for {
-        e <- visitExp(exp, outerEnv, tenv0)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, e, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -1083,11 +1115,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      for {
-        e <- visitExp(exp, outerEnv, tenv0)
-      } yield NamedAst.Predicate.Body.Atom(qname, e, polarity, ts, Type.freshTypeVar(), loc)
+      NamedAst.Predicate.Body.Atom(qname, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1099,7 +1129,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1107,7 +1137,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1174,16 +1204,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     visit(tpe, tenv0)
-  }
-
-  /**
-    * Performs naming on the given predicate with parameter `pred` under the given environment `env0` and type environment `tenv0`.
-    */
-  private def visitPredicateWithParam(pred: WeededAst.PredicateWithParam, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.PredicateWithParam, NameError] = pred match {
-    case WeededAst.PredicateWithParam(qname, exp) =>
-      mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.PredicateWithParam(qname, e)
-      }
   }
 
   /**
@@ -1278,8 +1298,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.FixpointProject(pred, exp, loc) => freeVars(pred) ++ freeVars(exp)
+    case WeededAst.Expression.FixpointProject(qname, exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointFold(qname, exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
   }
 
   /**
@@ -1307,13 +1328,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val freeElms = elms flatMap freeVars
       ident match {
         case None => freeElms
-        case Some(value) =>  freeElms.appended(value)
+        case Some(value) => freeElms.appended(value)
       }
     case WeededAst.Pattern.ArrayHeadSpread(ident, elms, loc) =>
       val freeElms = elms flatMap freeVars
       ident match {
         case None => freeElms
-        case Some(value) =>freeElms.appended(value)
+        case Some(value) => freeElms.appended(value)
       }
   }
 
@@ -1335,12 +1356,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
   }
 
-  /**
-    * Returns the free variables in the given predicate with parameter `pred`.
-    */
-  private def freeVars(pred: WeededAst.PredicateWithParam): List[Name.Ident] = pred match {
-    case WeededAst.PredicateWithParam(qname, exp) => freeVars(exp)
-  }
 
   /**
     * Returns the free variables in the given constraint `c0`.
@@ -1353,7 +1368,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given head predicate `h0`.
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
-    case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Atom(qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
@@ -1361,7 +1376,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
   }
 

@@ -335,7 +335,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckRel(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc, loc) =>
+    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc0, loc) =>
       val tparams = getTypeParams(tparams0)
       for {
         attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
@@ -348,7 +348,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns [[Err]] if a type is unresolved.
     */
   private def typeCheckLat(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc, loc) =>
+    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc0, loc) =>
       val tparams = getTypeParams(tparams0)
       for {
         attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
@@ -1199,21 +1199,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
-        //  project P<exp1> exp2 : #{ P : a | c }
+        //  project P exp2 : #{ P : a | c }
         //
         val freshPredicateTypeVar = Type.freshTypeVar()
         val freshRestSchemaTypeVar = Type.freshTypeVar()
         val freshResultSchemaTypeVar = Type.freshTypeVar()
 
         for {
-          (parameterType, paramEff) <- visitExp(pred.exp)
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(pred.sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
@@ -1231,6 +1230,33 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
+      case ResolvedAst.Expression.FixpointFold(sym, init, f, constraints, tvar, evar, loc) =>
+        //
+        // constraints : #{P : a | c}    init : b   f : a' -> b -> b
+        // where a' is the tuple reification of relation a
+        // ---------------------------------------------------
+        // fold P init f constraints : b
+        //
+        val freshPredicateTypeVar = Type.freshTypeVar()
+        val freshRestTypeVar = Type.freshTypeVar()
+        for {
+          (initType, eff1) <- visitExp(init)
+          (fType, eff2) <- visitExp(f)
+          (constraintsType, eff3) <- visitExp(constraints)
+          // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
+          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestTypeVar), loc)
+          tupleType = sym match {
+            case rel: Symbol.RelSym =>
+              Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
+            case lat: Symbol.LatSym =>
+              /* TODO: what should be done in this case? */
+              ???
+          }
+          // f is of type tupleType -> initType -> initType. It cannot have any effect.
+          fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
+          resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
+          resultTyp <- unifyTypM(tvar, initType, loc) // the result of the fold is the same type as init
+        } yield (resultTyp, resultEff)
     }
 
     /**
@@ -1552,15 +1578,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.FixpointSolve(e, Stratification.Empty, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.FixpointProject(pred, exp, tvar, evar, loc) =>
-        val p = visitPredicateWithParam(pred)
+      case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.FixpointProject(p, e, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointProject(sym, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), subst0(evar), loc)
+
+      case ResolvedAst.Expression.FixpointFold(sym, init, f, constraints, tvar, evar, loc) =>
+        val e1 = visitExp(init, subst0)
+        val e2 = visitExp(f, subst0)
+        val e3 = visitExp(constraints, subst0)
+        TypedAst.Expression.FixpointFold(sym, e1, e2, e3, subst0(tvar), subst0(evar), loc)
     }
 
     /**
@@ -1591,15 +1622,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitParam(param: ResolvedAst.FormalParam): TypedAst.FormalParam =
       TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.loc)
-
-    /**
-      * Applies the substitution to the predicate with parameter `pred`.
-      */
-    def visitPredicateWithParam(pred: ResolvedAst.PredicateWithParam): TypedAst.PredicateWithParam = pred match {
-      case ResolvedAst.PredicateWithParam(sym, exp) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.PredicateWithParam(sym, e)
-    }
 
     visitExp(exp0, subst0)
   }
@@ -1661,25 +1683,25 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Array(elms, tvar, loc) =>
         for (
           elementTypes <- seqM(elms map visit);
-          elementType <- unifyTypAllowEmptyM(elementTypes,loc);
+          elementType <- unifyTypAllowEmptyM(elementTypes, loc);
           resultType <- unifyTypM(tvar, mkArray(elementType), loc)
         ) yield resultType
 
       case ResolvedAst.Pattern.ArrayTailSpread(elms, varSym, tvar, loc) =>
-            for (
-              elementTypes <- seqM(elms map visit);
-              elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-              arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
-              resultType <- unifyTypM(varSym.tvar,arrayType,loc)
-            ) yield resultType
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes, loc);
+          arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
+          resultType <- unifyTypM(varSym.tvar, arrayType, loc)
+        ) yield resultType
 
       case ResolvedAst.Pattern.ArrayHeadSpread(varSym, elms, tvar, loc) =>
-            for (
-              elementTypes <- seqM(elms map visit);
-              elementType <- unifyTypAllowEmptyM(elementTypes,loc);
-              arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
-              resultType <- unifyTypM(varSym.tvar,arrayType,loc)
-            ) yield resultType
+        for (
+          elementTypes <- seqM(elms map visit);
+          elementType <- unifyTypAllowEmptyM(elementTypes, loc);
+          arrayType <- unifyTypM(tvar, mkArray(elementType), loc);
+          resultType <- unifyTypM(varSym.tvar, arrayType, loc)
+        ) yield resultType
 
     }
 
@@ -1729,27 +1751,27 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = head match {
-    case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
       //  ------------------------------------------------------------
       //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
 
-      // Lookup the type scheme.
-      val scheme = sym match {
-        case x: Symbol.RelSym => program.relations(x).sc
-        case x: Symbol.LatSym => program.lattices(x).sc
+      // Lookup the declared type of the relation/lattice (if it exists).
+      val declaredType = sym match {
+        case x: Symbol.RelSym => program.relations.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(rel) => Scheme.instantiate(rel.sc)
+        }
+        case x: Symbol.LatSym => program.lattices.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(lat) => Scheme.instantiate(lat.sc)
+        }
       }
 
-      // Instantiate the type scheme.
-      val declaredType = Scheme.instantiate(scheme)
-
-      // Infer the types of the terms.
       for {
-        (paramType, paramEff) <- inferExp(exp, program)
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
-        pureParamEff <- unifyEffM(Eff.Pure, paramEff, loc)
         pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
@@ -1771,11 +1793,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
-      val e = reassembleExp(exp, program, subst0)
+    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      val pred = TypedAst.PredicateWithParam(sym, e)
-      TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1791,20 +1811,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  ------------------------------------------------------------
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
-    case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
-      // Lookup the type scheme.
-      val scheme = sym match {
-        case x: Symbol.RelSym => program.relations(x).sc
-        case x: Symbol.LatSym => program.lattices(x).sc
+    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+
+      // Lookup the declared type of the relation/lattice (if it exists).
+      val declaredType = sym match {
+        case x: Symbol.RelSym => program.relations.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(rel) => Scheme.instantiate(rel.sc)
+        }
+        case x: Symbol.LatSym => program.lattices.get(x) match {
+          case None => Type.freshTypeVar()
+          case Some(lat) => Scheme.instantiate(lat.sc)
+        }
       }
 
-      // Instantiate the type scheme.
-      val declaredType = Scheme.instantiate(scheme)
-
-      // Infer the types of the terms.
       for {
-        (paramType, paramEff) <- inferExp(exp, program)
-        pureParamEff <- unifyEffM(Eff.Pure, paramEff, loc)
         termTypes <- seqM(terms.map(inferPattern(_, program)))
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
@@ -1827,11 +1848,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-    case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
-      val e = reassembleExp(exp, program, subst0)
+    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      val pred = TypedAst.PredicateWithParam(sym, e)
-      TypedAst.Predicate.Body.Atom(pred, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1839,34 +1858,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns the relation or lattice type of `sym` with the term types `ts` applied to the appropriate number of type variables.
-    *
-    * For example, if there is a relation:
-    *
-    * rel R[w](x: Int, y: Int, w: w)
-    *
-    * and this function is called with R and List(Int, Int) then it returns:
-    *
-    * Apply(R(List(Int, Int)), a)
-    *
-    * where a is a fresh type variable.
+    * Returns the relation or lattice type of `sym` with the term types `ts`.
     */
   private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = {
-    val quantifiers = sym match {
-      case x: Symbol.RelSym => program.relations(x).sc.quantifiers
-      case x: Symbol.LatSym => program.lattices(x).sc.quantifiers
-    }
+    sym match {
+      case sym: Symbol.RelSym =>
+        val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+        val args = Type.mkTuple(ts)
+        Type.Apply(base, args)
 
-    val zero = sym match {
-      case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
-      case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+      case sym: Symbol.LatSym =>
+        val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+        val args = Type.mkTuple(ts)
+        Type.Apply(base, args)
     }
-
-    val result = quantifiers.foldLeft(zero) {
-      case (tacc, _) => Type.Apply(tacc, Type.freshTypeVar())
-    }
-
-    result
   }
 
   /**
@@ -1881,7 +1886,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getRelationSignature(sym: Symbol.RelSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.relations(sym) match {
-      case ResolvedAst.Relation(_, _, _, tparams, attr, sc, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Relation(_, _, _, _, attr, _, _) => Ok(attr.map(_.tpe))
     }
   }
 
@@ -1890,7 +1895,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getLatticeSignature(sym: Symbol.LatSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.lattices(sym) match {
-      case ResolvedAst.Lattice(_, _, _, _, attr, sc, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Lattice(_, _, _, _, attr, _, _) => Ok(attr.map(_.tpe))
     }
   }
 

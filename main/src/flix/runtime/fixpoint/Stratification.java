@@ -28,7 +28,7 @@ import java.util.Map;
 public final class Stratification {
 
     /**
-     * A map from parameterless predicate symbols to their stratum.
+     * A map from predicate symbols to their stratum.
      */
     private final Map<PredSym, Integer> stratification = new HashMap<>();
 
@@ -40,9 +40,9 @@ public final class Stratification {
             throw new IllegalArgumentException("'sym' must be non-null.");
 
         // Retrieve the stratum.
-        var result = stratification.get(sym.getParameterless());
+        var result = stratification.get(sym);
         if (result == null) {
-            return 0; // TODO: Need to verify that this matches the control flow analysis.
+            return 0;
         }
 
         return result;
@@ -65,7 +65,7 @@ public final class Stratification {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
 
-        stratification.put(sym.getParameterless(), stratum);
+        stratification.put(sym, stratum);
     }
 
 }

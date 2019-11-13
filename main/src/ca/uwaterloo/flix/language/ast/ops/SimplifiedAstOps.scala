@@ -488,8 +488,7 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointProject(pred, exp, tpe, loc) =>
-        checkPredicateWithParam(pred, env0, ienv0)
+      case Expression.FixpointProject(sym, exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
@@ -498,6 +497,11 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkExp(exp3, env0, ienv0)
+        checkType(tpe)
       //
       // Error Expressions.
       //
@@ -540,8 +544,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given head predicate `h0`.
       */
     def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = h0 match {
-      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
-        checkPredicateWithParam(pred, env0, ienv0)
+      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
@@ -557,8 +560,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = b0 match {
-      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
-        checkPredicateWithParam(pred, env0, ienv0)
+      case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
@@ -611,13 +613,6 @@ object SimplifiedAstOps {
       */
     def checkFormalParam(p0: FormalParam): Unit = {
       checkType(p0.tpe)
-    }
-
-    /**
-      * Checks invariants of the given predicate with param `p`.
-      */
-    def checkPredicateWithParam(p: PredicateWithParam, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = p match {
-      case PredicateWithParam(sym, exp) => checkExp(exp, env0, ienv0)
     }
 
     /**

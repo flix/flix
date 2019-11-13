@@ -29,6 +29,7 @@ object NamedAst {
                   effs: Map[Name.NName, Map[String, NamedAst.Eff]],
                   handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
+                  typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
                   classes: Map[Name.NName, Map[String, NamedAst.Class]],
                   impls: Map[Name.NName, List[NamedAst.Impl]],
                   relations: Map[Name.NName, Map[String, NamedAst.Relation]],
@@ -51,6 +52,8 @@ object NamedAst {
   case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
+
+  case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
@@ -204,9 +207,11 @@ object NamedAst {
 
     case class FixpointSolve(exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProject(pred: NamedAst.PredicateWithParam, exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProject(qname: Name.QName, exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class FixpointFold(qname: Name.QName, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
 
@@ -264,7 +269,7 @@ object NamedAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, exp: NamedAst.Expression, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(name: Name.QName, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
       case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
@@ -274,7 +279,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, exp: NamedAst.Expression, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
@@ -345,8 +350,6 @@ object NamedAst {
   case class HandlerBinding(qname: Name.QName, exp: NamedAst.Expression)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression)
-
-  case class PredicateWithParam(qname: Name.QName, exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
 

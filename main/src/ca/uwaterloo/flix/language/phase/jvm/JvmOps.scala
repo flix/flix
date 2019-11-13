@@ -665,9 +665,11 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
+      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
@@ -782,8 +784,23 @@ object JvmOps {
     case MonoType.Ref(elm) => Type.Apply(Type.Cst(TypeConstructor.Ref), hackMonoType2Type(elm))
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
-    case MonoType.Relation(sym, attr) => Type.Relation(sym, attr map hackMonoType2Type, Kind.Star)
-    case MonoType.Lattice(sym, attr) => Type.Lattice(sym, attr map hackMonoType2Type, Kind.Star)
+
+    case MonoType.Relation(sym, attr) =>
+      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+      val init = Type.Cst(TypeConstructor.Tuple(attr.length)): Type
+      val args = attr.foldLeft(init) {
+        case (acc, t) => Type.Apply(acc, hackMonoType2Type(t))
+      }
+      Type.Apply(base, args)
+
+    case MonoType.Lattice(sym, attr) =>
+      val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+      val init = Type.Cst(TypeConstructor.Tuple(attr.length)): Type
+      val args = attr.foldLeft(init) {
+        case (acc, t) => Type.Apply(acc, hackMonoType2Type(t))
+      }
+      Type.Apply(base, args)
+
     case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
@@ -986,9 +1003,11 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp) + tpe
+      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
       case Expression.MatchError(tpe, loc) => Set(tpe)
@@ -1001,8 +1020,8 @@ object JvmOps {
     }
 
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
-        visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
+      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+        Set(tpe) ++ terms.flatMap(visitHeadTerm)
 
       case Predicate.Head.Union(exp, terms, tpe, loc) =>
         visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
@@ -1010,8 +1029,8 @@ object JvmOps {
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
-      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
-        visitExp(pred.exp) ++ terms.flatMap(visitBodyTerm)
+      case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+        terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Guard(exp, terms, loc) =>
         visitExp(exp) ++ terms.flatMap(visitBodyTerm).toSet

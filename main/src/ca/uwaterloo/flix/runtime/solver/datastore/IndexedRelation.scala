@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.util.BitOps
 import flix.runtime.ProxyObject
-import flix.runtime.fixpoint.Attribute
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -32,7 +31,7 @@ import scala.collection.mutable.ArrayBuffer
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation(val name: String, val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val name: String, val arity: Int, indexes: Set[Int], default: Int) extends IndexedCollection {
   // TODO: Getter for name?
 
   /**
@@ -68,7 +67,7 @@ final class IndexedRelation(val name: String, val attributes: Array[Attribute], 
   /**
     * Whether the relation is nullary.
     */
-  private val isNullary = attributes.isEmpty
+  private val isNullary = arity == 0
 
   /**
     * Whether the nullary fact is present.
@@ -99,26 +98,6 @@ final class IndexedRelation(val name: String, val attributes: Array[Attribute], 
     }
 
     "{ " + rows.mkString(", ") + " }"
-  }
-
-  /**
-    * Returns the number of indexed lookups.
-    */
-  def getIndexHits: Map[Seq[String], Int] = indexHits.toMap.map {
-    case (idx, count) =>
-      val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => attributes(column).getName())
-      names -> count
-  }
-
-  /**
-    * Returns the number of indexed misses.
-    */
-  def getIndexMisses: Map[Seq[String], Int] = indexMisses.toMap.map {
-    case (idx, count) =>
-      val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => attributes(column).getName())
-      names -> count
   }
 
   /**

@@ -335,8 +335,8 @@ object Interpreter {
       val o = newOptions()
       Solver.solve(s, t, o)
 
-    case Expression.FixpointProject(pred, exp, tpe, loc) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
+    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)(root, flix)
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       Solver.project(predSym, cs)
 
@@ -346,6 +346,38 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
+    case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)(root, flix)
+      val init = env0.get(exp1.sym.toString).get
+      // TODO: what if it's not a closure? Do we have to cover both clo and def?
+      val f = cast2closure(env0.get(exp2.sym.toString).get)
+      val cs = cast2constraintset(env0.get(exp3.sym.toString).get)
+      val projected = Solver.project(predSym, cs)
+      projected.getFacts().foldRight(init)((c, acc) => {
+        val tuple = c.getHeadPredicate() match {
+          // TODO: match may not be complete?
+          case p: AtomPredicate => p.getTerms().map({
+            // TODO: match may not be complete?
+            case l: LitTerm => l.getFunction().apply(new Object)
+          })
+        }
+        // TODO: maybe not the cleanest. The idea is the following:
+        // evaluate f into a closure
+        val Value.Closure(name, bindings) = cast2closure(f)
+        val constant = root.defs(name)
+        // it results in a closure that takes one argument
+        assert(constant.formals.size == 1)
+        // feed it the tuple as the first argument
+        val env1 = env0 + (constant.formals.head.sym.toString -> tuple)
+        // and evaluate f applied to the tuple
+        val Value.Closure(name2, bindings2) = cast2closure(eval(constant.exp, env1, henv0, Map.empty, root))
+        val constant2 = root.defs(name2)
+        // this results into a closure that again takes one argument
+        assert(constant2.formals.size == 1)
+        // we feed it the acc as second argument and call it
+        val env2 = env1 + (constant2.formals.head.sym.toString -> acc)
+        eval(constant2.exp, env2, henv0, Map.empty, root)
+      })
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)
 
     case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)
@@ -743,15 +775,15 @@ object Interpreter {
 
     val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray)
 
-    ConstraintSystem.of(constraint)
+    ConstraintSystem.of(Array(constraint))
   }
 
   /**
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.Atom(pred, terms0, _, _) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)
+    case FinalAst.Predicate.Head.Atom(sym, terms0, _, _) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
       AtomPredicate.of(predSym, true, terms)
 
@@ -772,8 +804,8 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
 
-    case FinalAst.Predicate.Body.Atom(pred, polarity0, terms0, _, _) =>
-      val predSym = newPredSym(pred, env0, henv0, lenv0)
+    case FinalAst.Predicate.Body.Atom(sym, polarity0, terms0, _, _) =>
+      val predSym = newPredSym(sym, env0, henv0, lenv0)
       val polarity = polarity0 match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -866,37 +898,32 @@ object Interpreter {
   /**
     * Returns the predicate symbol of the given predicate with parameter `p0`.
     */
-  def newPredSym(p0: FinalAst.PredicateWithParam, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = p0 match {
-    case PredicateWithParam(sym, exp0) =>
-      val value = eval(exp0, env0, henv0, lenv0, root)
-      val param = wrapValueInProxyObject(value, exp0.tpe)
+  def newPredSym(sym: Symbol.PredSym, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = {
       sym match {
-        case sym: Symbol.RelSym => newRelSym(sym, param)
-        case sym: Symbol.LatSym => newLatSym(sym, param)
+        case sym: Symbol.RelSym => newRelSym(sym)
+        case sym: Symbol.LatSym => newLatSym(sym)
       }
   }
 
   /**
     * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
     */
-  private def newRelSym(sym: Symbol.RelSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
+  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
-      RelSym.of(name, param, as)
+      val as = attr.map(_.name).toArray
+      RelSym.of(name, as.length, as)
   }
 
   /**
     * Returns the lattice value associated with the given lattice symbol `sym` and parameter `param` (may be null).
     */
-  private def newLatSym(sym: Symbol.LatSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
+  private def newLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => fixpoint.Attribute.of(a.name))
-      val keys = as.init.toArray
-      val value = as.last
+      val as = attr.map(a => a.name)
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, null, keys, value, ops)
+      LatSym.of(name, as.length, as.toArray, ops)
   }
 
   /**
@@ -906,8 +933,8 @@ object Interpreter {
     val result = new Stratification()
     for ((predSym, stratum) <- stf.m) {
       val sym = predSym match {
-        case sym: Symbol.RelSym => newRelSym(sym, null)
-        case sym: Symbol.LatSym => newLatSym(sym, null)
+        case sym: Symbol.RelSym => newRelSym(sym)
+        case sym: Symbol.LatSym => newLatSym(sym)
       }
       result.setStratum(sym, stratum)
     }
@@ -920,7 +947,6 @@ object Interpreter {
   private def newOptions()(implicit flix: Flix): Options = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new Options
-    options.setMonitored(flix.options.monitor)
     options.setThreads(flix.options.threads)
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
     options

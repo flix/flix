@@ -601,4 +601,68 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UnhandledEffect](result)
   }
 
+  test("RecursionLimit.01") {
+    val input =
+      s"""
+         |type alias Foo = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.02") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.03") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Baz
+         |type alias Baz = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.04") {
+    val input =
+      s"""
+         |type alias Foo = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.05") {
+    val input =
+      s"""
+         |type alias Foo = Option[Bar]
+         |type alias Bar = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
 }

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern}
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.Function.const
@@ -360,9 +360,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+        case Expression.FixpointProject(_, exp, tpe, eff, loc) =>
           for {
-            _ <- checkPats(pred.exp, root)
             _ <- checkPats(exp, root)
           } yield tast
 
@@ -370,6 +369,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           for {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
+          } yield tast
+
+        case Expression.FixpointFold(_, exp1, exp2, exp3, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+            _ <- checkPats(exp3, root)
           } yield tast
       }
     }
@@ -387,9 +393,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
-      case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+      case TypedAst.Predicate.Head.Atom(_, terms, tpe, loc) =>
         for {
-          e <- checkPats(pred.exp, root)
           ts <- traverse(terms)(checkPats(_, root))
         } yield h0
 
@@ -400,10 +405,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {
-      case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
-        for {
-          e <- checkPats(pred.exp, root)
-        } yield b0
+      case TypedAst.Predicate.Body.Atom(_, polarity, terms, tpe, loc) => b0.toSuccess
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         for {
@@ -719,6 +721,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.BigInt) => 0
       case Type.Cst(TypeConstructor.Str) => 0
       case Type.Cst(TypeConstructor.Ref) => 0
+      case Type.Cst(TypeConstructor.Relation(_)) => 0
+      case Type.Cst(TypeConstructor.Lattice(_)) => 0
       case Type.Arrow(_, length) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
@@ -732,9 +736,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
-      case Type.Relation(sym, attr, kind) => 0
-      case Type.Lattice(sym, attr, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
+      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
     /**

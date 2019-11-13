@@ -190,16 +190,30 @@ object ParsedAst {
     case class Enum(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Type Declaration. A type declaration is syntactic sugar for a singleton enum declaration.
+      * Opaque Type Declaration.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param ident the name of the type.
-      * @param caze  the singleton case of the type.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the opaque type.
+      * @param tparams the type parameters of the opaque type.
+      * @param tpe     the type of the opaque type.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Type(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, caze: ParsedAst.Case, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class OpaqueType(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Type Alias Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the opaque type.
+      * @param tparams the type parameters of the opaque type.
+      * @param tpe     the type of the opaque type.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Relation Declaration.
@@ -1028,11 +1042,10 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the expression.
       * @param name the name of the predicate.
-      * @param exp1 the optional constraint parameter.
-      * @param exp2 the constraint expression.
+      * @param exp  the constraint expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp1: Option[ParsedAst.Expression], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Entails expression.
@@ -1042,6 +1055,15 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Fold expression.
+      *
+      * @param exp1 the initial value.
+      * @param exp2 the function to fold.
+      * @param exp3 the constraints over which to fold.
+      */
+    case class FixpointFold(sp1: SourcePosition, name: Name.QName, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1150,11 +1172,10 @@ object ParsedAst {
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
-        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Union Predicate.
@@ -1176,22 +1197,20 @@ object ParsedAst {
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
-        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Positive(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Positive(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Negative Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
-        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Negative(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Negative(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.

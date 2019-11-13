@@ -42,8 +42,7 @@ sealed trait Type {
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
-    case Type.Relation(_, ts, _) => ts.flatMap(_.typeVars).toSet
-    case Type.Lattice(_, ts, _) => ts.flatMap(_.typeVars).toSet
+    case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -92,12 +91,11 @@ sealed trait Type {
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Arrow(eff, l) => s"Arrow($eff, $l)"
-    case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
-    case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
     case Type.SchemaExtend(sym, tpe, rest) => "Schema { " + sym + " : " + tpe + " | " + rest + " }"
+    case Type.Lambda(tvar, tpe) => s"$tvar => $tpe"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -160,24 +158,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents a relation with attributes of the given types.
-    *
-    * @param sym  the symbol of the relation.
-    * @param attr the attribute types of the relation.
-    * @param kind the kind of the relation.
-    */
-  case class Relation(sym: Symbol.RelSym, attr: List[Type], kind: Kind) extends Type
-
-  /**
-    * A type constructor that represents a lattice with attributes of the given types.
-    *
-    * @param sym  the symbol of the lattice.
-    * @param attr the attribute types of the relation.
-    * @param kind the kind of the lattice.
-    */
-  case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
-
-  /**
     * A type constructor that represents the empty record type.
     */
   case object RecordEmpty extends Type {
@@ -220,7 +200,14 @@ object Type {
   }
 
   /**
-    * A type expression that a type application tpe1[tpe2].
+    * A type expression that represents a type abstraction [x] => tpe.
+    */
+  case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
+    * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type) extends Type {
     /**
@@ -320,7 +307,7 @@ object Type {
           //
           // Type Variable.
           //
-          case Type.Var(id, kind) => m(id)
+          case Type.Var(id, kind) => m.getOrElse(id, id.toString)
 
           //
           // Array
@@ -392,16 +379,9 @@ object Type {
             "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
 
           //
-          // Relation.
+          // Abstraction.
           //
-          case Type.Relation(sym, attr, _) =>
-            sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
-
-          //
-          // Lattice.
-          //
-          case Type.Lattice(sym, attr, _) =>
-            sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
+          case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
 
           //
           // Application.

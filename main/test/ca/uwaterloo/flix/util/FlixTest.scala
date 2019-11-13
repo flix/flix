@@ -32,7 +32,7 @@ class FlixTest(name: String, paths: String*)(implicit options: Options = Options
   /**
     * Attempts to initialize all the tests.
     */
-  private def init(): Unit = {
+  private def init(): Unit = try {
     // Options and Flix object.
     val flix = new Flix().setOptions(options)
 
@@ -52,6 +52,12 @@ class FlixTest(name: String, paths: String*)(implicit options: Options = Options
           fail(s"Unable to compile FlixTest for test suite: '$name'. Failed with: ${errors.length} errors.")
         }
     }
+  } catch {
+    case ex: Throwable =>
+      ex.printStackTrace()
+      test("!!! Compiler Crashed !!!") {
+        fail(s"Unable to load: '$name'.")
+      }
   }
 
   /**

@@ -579,15 +579,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.FixpointProject(pred, exp, _, _, _) =>
-      val us1 = visitExp(pred.exp, env0)
-      val us2 = visitExp(exp, env0)
-      Used.of(pred.sym) ++ us1 ++ us2
+    case Expression.FixpointProject(sym, exp, _, _, _) =>
+      val us = visitExp(exp, env0)
+      Used.of(sym) ++ us
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       val used1 = visitExp(exp1, env0)
       val used2 = visitExp(exp2, env0)
       used1 ++ used2
+
+    case Expression.FixpointFold(sym, exp1, exp2, exp3, _, _, _) =>
+      val us1 = visitExp(exp1, env0)
+      val us2 = visitExp(exp2, env0)
+      val us3 = visitExp(exp3, env0)
+      Used.of(sym) ++ us1 ++ us2 ++ us3
   }
 
   /**
@@ -613,8 +618,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
-    case Head.Atom(pred, terms, _, _) =>
-      Used.of(pred.sym) ++ visitExp(pred.exp, env0) ++ visitExps(terms, env0)
+    case Head.Atom(sym, terms, _, _) =>
+      Used.of(sym) ++ visitExps(terms, env0)
 
     case Head.Union(exp, _, _) =>
       visitExp(exp, env0)
@@ -624,8 +629,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
-    case Body.Atom(pred, _, terms, _, _) =>
-      Used.of(pred.sym) ++ visitExp(pred.exp, env0)
+    case Body.Atom(sym, _, terms, _, _) =>
+      Used.of(sym)
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
@@ -676,14 +681,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Pattern.Tuple(pats, _, _) => pats.foldLeft(Set.empty[Symbol.VarSym]) {
       case (acc, pat) => acc ++ freeVars(pat)
     }
-    case Pattern.Array(elms,_,_) => elms.foldLeft(Set.empty[Symbol.VarSym]){
-      case (acc,pat) => acc ++ freeVars(pat)
+    case Pattern.Array(elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
     }
-    case Pattern.ArrayTailSpread(elms, _, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
-      case (acc,pat) => acc ++ freeVars(pat)
+    case Pattern.ArrayTailSpread(elms, _, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
     }
-    case Pattern.ArrayHeadSpread(_, elms, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
-      case (acc,pat) => acc ++ freeVars(pat)
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (acc, pat) => acc ++ freeVars(pat)
     }
   }
 
@@ -1025,13 +1030,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case Pattern.Array(elms, tpe, loc) => Pattern.Array(apply(elms), tpe, loc)
       //TODO: The sym is not handled correctly.
       case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => m.get(sym) match {
-          case None => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
-          case Some(pat) => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
-        }
+        case None => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
+        case Some(pat) => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
+      }
       case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => m.get(sym) match {
-          case None => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
-          case Some(pat) => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
-        }
+        case None => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
+        case Some(pat) => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
+      }
     }
 
     /**

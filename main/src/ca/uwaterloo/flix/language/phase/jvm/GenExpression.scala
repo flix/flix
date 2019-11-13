@@ -91,14 +91,8 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
-      // Label for the loop
-      val loop = new Label
-      // Type of the continuation interface
-      val cont = JvmOps.getContinuationInterfaceType(exp.tpe)
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
-      // Result type
-      val resultType = JvmOps.getErasedJvmType(tpe)
       // Put the closure on `continuation` field of `Context`
       visitor.visitVarInsn(ALOAD, 1)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -122,43 +116,9 @@ object GenExpression {
         }
       }
       visitor.visitInsn(POP)
-      // Saving args on the continuation interface in reverse
-      for ((arg, ind) <- args.zipWithIndex.reverse) {
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-      }
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Begin of the loop
-      visitor.visitLabel(loop)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Setting `continuation` field of global to `null`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitInsn(ACONST_NULL)
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Cast to the continuation
-      visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-      // Duplicate
-      visitor.visitInsn(DUP)
-      // Save it on the IFO local variable
-      visitor.visitVarInsn(ASTORE, 2)
-      // Call invoke
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      visitor.visitJumpInsn(IFNONNULL, loop)
-      // Load IFO from local variable and invoke `getResult` on it
-      visitor.visitVarInsn(ALOAD, 2)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      AsmOps.compileClosureApplication(visitor, exp.tpe, args.map(_.tpe), tpe)
 
     case Expression.ApplyDef(name, args, tpe, loc) =>
-      // Label for the loop
-      val loop = new Label
       // Namespace of the Def
       val ns = JvmOps.getNamespace(name)
       // JvmType of `ns`
@@ -171,8 +131,6 @@ object GenExpression {
       val defJvmType = JvmOps.getFunctionDefinitionClassType(name)
       // Type of the function
       val fnType = root.defs(name).tpe
-      // Type of the continuation interface
-      val cont = JvmOps.getContinuationInterfaceType(fnType)
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
       // Put the closure on `continuation` field of `Context`
@@ -183,8 +141,6 @@ object GenExpression {
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
       // Load `continuation`
       visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
-      // Result type
-      val resultType = JvmOps.getErasedJvmType(tpe)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       visitor.visitInsn(DUP)
@@ -204,40 +160,7 @@ object GenExpression {
         }
       }
       visitor.visitInsn(POP)
-      // Saving args on the continuation interface in reverse
-      for ((arg, ind) <- args.zipWithIndex.reverse) {
-        val argErasedType = JvmOps.getErasedJvmType(arg.tpe)
-        visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
-          AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
-      }
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Begin of the loop
-      visitor.visitLabel(loop)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-
-      // Setting `continuation` field of global to `null`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitInsn(ACONST_NULL)
-      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // Cast to the continuation
-      visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-      // Duplicate
-      visitor.visitInsn(DUP)
-      // Save it on the IFO local variable
-      visitor.visitVarInsn(ASTORE, 2)
-      // Call invoke
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
-      // Getting `continuation` field on `Context`
-      visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      visitor.visitJumpInsn(IFNONNULL, loop)
-      // Load IFO from local variable and invoke `getResult` on it
-      visitor.visitVarInsn(ALOAD, 2)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
 
     case Expression.ApplyEff(sym, args, tpe, loc) =>
       throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
@@ -1130,12 +1053,12 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+    case Expression.FixpointProject(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(pred, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newPredSym(sym, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1155,6 +1078,228 @@ object GenExpression {
 
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
+
+    case Expression.FixpointFold(sym, init, f, constraints, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Get the initial accumulator value
+      val accErasedType = JvmOps.getErasedJvmType(init.tpe)
+      readVar(init.sym, init.tpe, visitor)
+      // stack: [acc]
+
+      // push the initial loop index
+      visitor.visitInsn(ICONST_0)
+      // stack: [acc+, index]
+
+      // Label for the fold loop
+      val loop = new Label
+      // Label for the exit of the loop
+      val exitLabel = new Label
+
+      // Begin of the loop
+      visitor.visitLabel(loop)
+      // stack: [acc+, index]
+
+      // Rearrange the stack
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(DUP_X1) // stack: [index, acc+, index]
+      } else {
+        // stack: [acc, acc', index]
+        visitor.visitInsn(DUP_X2)
+        // stack: [index, acc, acc', index]
+      }
+      // stack: [index, acc+, index]
+
+      // Get the projected constraint system
+      // We assume the constraint system has been projected beforehand (this is done in Simplifier)
+      readVar(constraints.sym, constraints.tpe, visitor)
+      // stack: [index, acc+, index, constraints]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc+, constraints, index]
+
+      // get the fact at the current index
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "getFact",
+        "(I)Lflix/runtime/fixpoint/Constraint;", false)
+      // stack: [index, acc+, fact]
+
+      visitor.visitInsn(DUP)
+      // stack: [index, acc+, fact, fact]
+
+      // if fact is null, there is no more fact to handle, exit the loop
+      visitor.visitJumpInsn(IFNULL, exitLabel)
+      // stack: [index, acc+, fact]
+
+      // Start constructing the tuple
+      // Extract the type of elements that are in the tuple
+      val tupleElmsTypes = f.tpe match {
+        case MonoType.Arrow(List(MonoType.Tuple(ts)), _) => ts
+        case _ => ??? // should not happen because f has been type-checked
+      }
+      // Create a new tuple object
+      val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
+      visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
+      // stack: [index, acc+, fact, tupleType]
+      visitor.visitInsn(DUP_X1)
+      // stack: [index, acc+, tupleType, fact, tupleType]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc+, tupleType, tupleType, fact]
+
+      // call getHeadPredicate on the fact
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
+        "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
+      // stack: [index, acc+, tupleType, tupleType, headpred]
+      // cast the head predicate to an atom predicate
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName)
+      // call getTerms on the atom predicate
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "getTerms",
+        "()[Lflix/runtime/fixpoint/term/Term;", false)
+      // stack: [index, acc+, tupleType, tupleType, terms]
+
+      // this is equivalent to the following, where tupleElements* is empty
+      // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
+
+      for ((tpe, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
+        visitor.visitInsn(DUP)
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms]
+        visitor.visitIntInsn(BIPUSH, idx)
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms, index]
+        // get terms[index]
+        visitor.visitInsn(AALOAD)
+
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms[index]]
+        // cast it to a LitTerm
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName)
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, litterm]
+        // call getFunction on it
+        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
+          "()Ljava/util/function/Function;", false)
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function]
+        // call the function with a new object as argument
+        visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
+        // stack: [index, acc+, tupleType,  tupleType, tupleElements*, terms, function, object]
+        visitor.visitInsn(DUP)
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object, object]
+        // first initialize the object
+        visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object]
+        visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
+          "(Ljava/lang/Object;)Ljava/lang/Object;", true)
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
+        // Cast the proxy object into an unboxed value if necessary
+        // call Object ProxyObject.getValue()
+        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
+        // Cast it, and unbox it if necessary
+        AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
+
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement+]
+        if (AsmOps.getStackSize(JvmOps.getErasedJvmType(tpe)) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement+, terms]
+      }
+
+      // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
+      // we can forget terms now
+      visitor.visitInsn(POP)
+
+      // stack: [index, acc+, tupleType, tupleType, tupleElement*]
+      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getErasedJvmType), JvmType.Void)
+      visitor.visitMethodInsn(INVOKESPECIAL, tupleType.name.toInternalName, "<init>", constructorDescriptor, false)
+      // stack: [index, acc+, tuple] (tupleType is actually the constructed tuple)
+
+      // Now we have the tuple on the top of the stack
+      // stack: [index, acc+, tuple]
+
+      // Get the context
+      visitor.visitVarInsn(ALOAD, 1)
+      // stack: [index, acc+, tuple, Context]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc+, Context, tuple]
+
+      // Getting the folded function
+      readVar(f.sym, f.tpe, visitor)
+      // stack: [index, acc+, Context, tuple, f]
+
+      // Call f(tuple)(acc) through two calls
+      // stack: [index, acc+, Context, tuple, f]
+
+      val functionInterface = JvmOps.getFunctionInterfaceType(f.tpe)
+      visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      // stack: [index, acc+, Context, tuple, f]
+      visitor.visitInsn(DUP_X1)
+      // stack: [index, acc+, Context, f, tuple, f]
+      visitor.visitInsn(SWAP)
+      // stack: [index, acc+, Context, f, f, tuple]
+      AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes)), MonoType.Arrow(List(init.tpe), init.tpe))
+      // stack: [index, acc+, f(tuple)]
+
+      visitor.visitVarInsn(ALOAD, 1)
+      // stack: [index, acc+, f(tuple), Context]
+
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(DUP_X2)
+        // stack32: [index, Context, acc, f(tuple), Context)
+        visitor.visitInsn(POP)
+        // stack32: [index, Context, acc, f(tuple)]
+        visitor.visitInsn(DUP_X1)
+        // stack: [index, Context, f(tuple), acc, f(tuple)]
+        visitor.visitInsn(SWAP)
+        // stack: [index, Context, f(tuple), f(tuple), acc]
+      } else {
+        visitor.visitInsn(SWAP)
+        // stack: [index, acc+, Context, f(tuple)]
+        visitor.visitInsn(DUP2_X2)
+        // stack: [index, Context, f(tuple), acc+, Context, f(tuple)]
+        visitor.visitInsn(SWAP)
+        // stack: [index, Context, f(tuple), acc+, f(tuple), Context)
+        visitor.visitInsn(POP)
+        // stack: [index, Context, f(tuple), acc+, f(tuple)]
+        visitor.visitInsn(DUP)
+        // stack: [index, Content, f(tuple), acc1, acc2, f(tuple), f(tuple)]
+        visitor.visitInsn(DUP2_X2)
+        // stack: [index, Content, f(tuple), f(tuple), f(tuple), acc1, acc2, f(tuple), f(tuple)]
+        visitor.visitInsn(POP2)
+        // stack: [index, Content, f(tuple), f(tuple), f(tuple), acc1, acc2]
+        visitor.visitInsn(DUP2_X1)
+        // stack: [index, Content, f(tuple), f(tuple), acc1, acc2, f(tuple), acc1, acc2]
+        visitor.visitInsn(POP2)
+        // stack: [index, Content, f(tuple), f(tuple), acc1, acc2, f(tuple)]
+        visitor.visitInsn(POP)
+        // stack: [index, Content, f(tuple), f(tuple), acc1, acc2]
+      }
+      // stack: [index, Content, f(tuple), f(tuple), acc]
+      AsmOps.compileClosureApplication(visitor, MonoType.Arrow(List(init.tpe), init.tpe), List(init.tpe), init.tpe)
+      // stack: [index, acc']
+
+      // Increase the index
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(SWAP) // stack: [acc', index]
+      } else {
+        visitor.visitInsn(DUP2_X1)
+        visitor.visitInsn(POP2)
+      }
+      visitor.visitInsn(ICONST_1) // stack: [acc', index, 1]
+      visitor.visitInsn(IADD) // stack: [acc', index']
+
+      visitor.visitJumpInsn(GOTO, loop)
+
+      visitor.visitLabel(exitLabel)
+      // stack: [index, acc, fact]
+      visitor.visitInsn(POP) // stack: [index, acc]
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(SWAP) // stack: [acc, index]
+      } else {
+        visitor.visitInsn(DUP2_X1)
+        visitor.visitInsn(POP2)
+      }
+      visitor.visitInsn(POP) // stack: [acc]
+
+    // stack: [acc]
 
     case Expression.HoleError(sym, _, loc) =>
       addSourceLine(visitor, loc)
@@ -1679,12 +1824,12 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+    case Predicate.Head.Atom(sym, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(pred, mv)
+      newPredSym(sym, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1714,12 +1859,12 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(pred, mv)
+      newPredSym(sym, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -1748,80 +1893,49 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate with parameter `p0`.
+    * Emits code for the given predicate symbol `sym`.
     */
-  private def newPredSym(p0: PredicateWithParam, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = p0 match {
-    case PredicateWithParam(sym, exp) => sym match {
-      case sym: Symbol.RelSym => newRelSym(sym, Some(exp), mv)
-      case sym: Symbol.LatSym => newLatSym(sym, Some(exp), mv)
+  private def newPredSym(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit =
+    sym match {
+      case sym: Symbol.RelSym => newRelSym(sym, mv)
+      case sym: Symbol.LatSym => newLatSym(sym, mv)
     }
-  }
 
   /**
-    * Emits code for the given predicate symbol without any parameter `sym`.
+    * Emits code for the given relation symbol `sym`.
     */
-  private def newPredSymWithoutParameter(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = sym match {
-    case sym: Symbol.RelSym => newRelSym(sym, None, mv)
-    case sym: Symbol.LatSym => newLatSym(sym, None, mv)
-  }
-
-  /**
-    * Emits code for the given relation symbol with the given optional parameter expression `exp`.
-    */
-  private def newRelSym(sym: Symbol.RelSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newRelSym(sym: Symbol.RelSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
-    // Emit code for the parameter.
-    newParam(optExp, mv)
+    // Emit code for the arity.
+    mv.visitLdcInsn(root.relations(sym).attr.length)
 
     // Emit code for the attributes.
     newAttributesArray(root.relations(sym).attr, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;I[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
   }
 
   /**
-    * Emits code for the given lattice symbol with the given optional parameter expression `exp`.
+    * Emits code for the given lattice symbol `sym`.
     */
-  private def newLatSym(sym: Symbol.LatSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newLatSym(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
-    // Emit code for the parameter.
-    newParam(optExp, mv)
+    // Emit code for the arity.
+    mv.visitLdcInsn(root.lattices(sym).attr.length)
 
-    // Emit code for the keys.
-    newAttributesArray(root.lattices(sym).attr.init, mv)
-
-    // Emit code for the value.
-    newAttribute(root.lattices(sym).attr.last, mv)
+    // Emit code for the attributes.
+    newAttributesArray(root.lattices(sym).attr, mv)
 
     // Emit code for the lattice operations.
     newLatticeOps(sym, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
-  }
-
-  /**
-    * Emits code for the given optional predicate parameter.
-    */
-  private def newParam(optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
-    optExp match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(exp) =>
-        // Emit code for the expression.
-        compileExpression(exp, mv, clazz, lenv0, entryPoint)
-
-        // Box, if necessary.
-        AsmOps.boxIfPrim(JvmOps.getErasedJvmType(exp.tpe), mv)
-
-        // Emit code for the proxy object.
-        AsmOps.newProxyObject(exp.tpe, mv)
-    }
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;I[Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
   }
 
   /**
@@ -1830,29 +1944,18 @@ object GenExpression {
   private def newAttributesArray(as: List[FinalAst.Attribute], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Instantiate a new array of appropriate length.
     compileInt(mv, as.length)
-    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Attribute.toInternalName)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.String.toInternalName)
     for ((attribute, index) <- as.zipWithIndex) {
       // Compile each attribute and store it in the array.
       mv.visitInsn(DUP)
       compileInt(mv, index)
 
-      // Instantiate the attribute.
-      newAttribute(attribute, mv)
+      // Emit code for the attribute.
+      mv.visitLdcInsn(attribute.name)
 
       // Store the attribute in the array.
       mv.visitInsn(AASTORE)
     }
-  }
-
-  /**
-    * Emits code to instantiate the given attribute `a`.
-    */
-  private def newAttribute(a: FinalAst.Attribute, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // The name of the attribute.
-    mv.visitLdcInsn(a.name)
-
-    // Instantiate a fresh attribute object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
   }
 
   /**
@@ -2092,7 +2195,7 @@ object GenExpression {
     // Add every predicate symbol with its stratum.
     for ((predSym, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSymWithoutParameter(predSym, mv)
+      newPredSym(predSym, mv)
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }
@@ -2108,15 +2211,6 @@ object GenExpression {
 
     // Invoke the constructor.
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "<init>", "()V", false)
-
-    // Monitor
-    mv.visitInsn(DUP)
-    if (flix.options.monitor) {
-      mv.visitInsn(ICONST_1)
-    } else {
-      mv.visitInsn(ICONST_0)
-    }
-    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setMonitored", "(Z)V", false)
 
     // Threads
     mv.visitInsn(DUP)

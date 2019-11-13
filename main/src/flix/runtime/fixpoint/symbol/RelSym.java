@@ -16,41 +16,34 @@
 
 package flix.runtime.fixpoint.symbol;
 
-import flix.runtime.fixpoint.Attribute;
-import flix.runtime.ProxyObject;
-import flix.runtime.value.Unit;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents a parameterized relation symbol.
+ * Represents a relation symbol.
  */
 public final class RelSym implements PredSym {
 
     /**
      * An internal cache of relation symbols.
      */
-    private static final Map<NameAndParameter, RelSym> INTERNAL_CACHE = new HashMap<>();
+    private static final Map<String, RelSym> INTERNAL_CACHE = new HashMap<>();
 
     /**
-     * Returns the relation symbol for the given `name` with the given `parameter` and `attributes`.
-     * <p>
-     * The parameter may be null.
+     * Returns the relation symbol for the given `name`.
      */
-    public synchronized static RelSym of(String name, ProxyObject parameter, Attribute[] attributes) {
+    public synchronized static RelSym of(String name, int arity, /* nullable */ String[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
-        if (attributes == null)
-            throw new IllegalArgumentException("'attributes' must be non-null.");
+        if (attributes != null && attributes.length != arity)
+            throw new IllegalArgumentException("'attributes' must have the same length as 'arity'.");
 
-        var key = new NameAndParameter(name, parameter);
-        var lookup = INTERNAL_CACHE.get(key);
+        var lookup = INTERNAL_CACHE.get(name);
         if (lookup != null) {
             return lookup;
         }
-        var sym = new RelSym(name, parameter, attributes);
-        INTERNAL_CACHE.put(key, sym);
+        var sym = new RelSym(name, arity, attributes);
+        INTERNAL_CACHE.put(name, sym);
         return sym;
     }
 
@@ -60,21 +53,21 @@ public final class RelSym implements PredSym {
     private final String name;
 
     /**
-     * The parameter of the relation symbol.
+     * The arity of the relation symbol.
      */
-    private final ProxyObject parameter;
+    private final int arity;
 
     /**
-     * The attributes of the relation symbol.
+     * The optional attributes of the relation symbol.
      */
-    private final Attribute[] attributes;
+    private final String[] attributes;
 
     /**
-     * Constructs a fresh relation symbol with the given `name` and `parameter`.
+     * Constructs a fresh relation symbol with the given `name`, `arity`, and `attributes`.
      */
-    private RelSym(String name, ProxyObject parameter, Attribute[] attributes) {
+    private RelSym(String name, int arity, String[] attributes) {
         this.name = name;
-        this.parameter = parameter;
+        this.arity = arity;
         this.attributes = attributes;
     }
 
@@ -86,24 +79,17 @@ public final class RelSym implements PredSym {
     }
 
     /**
-     * Returns the parameter of the relation symbol.
+     * Returns the arity of the relation symbol.
      */
-    public ProxyObject getParameter() {
-        return parameter;
+    public int getArity() {
+        return arity;
     }
 
     /**
      * Returns the attributes of the relation symbol.
      */
-    public Attribute[] getAttributes() {
+    public String[] getAttributes() {
         return attributes;
-    }
-
-    /**
-     * Returns the parameterless version of `this` relation symbol.
-     */
-    public RelSym getParameterless() {
-        return of(name, null, attributes);
     }
 
     /**
@@ -111,10 +97,7 @@ public final class RelSym implements PredSym {
      */
     @Override
     public String toString() {
-        if (parameter == null || parameter.getValue() == Unit.getInstance())
-            return name;
-        else
-            return name + "<" + parameter.toString() + ">";
+        return name;
     }
 
     /* equality by identity */

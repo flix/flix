@@ -1,8 +1,8 @@
-type Celsius = Celsius(Int)
-type Fahrenheit = Fahrenheit(Int)
+opaque type Celsius = Int
+opaque type Fahrenheit = Int
 
-type EU = EU(Celsius)
-type US = US(Fahrenheit)
+opaque type EU = Celsius
+opaque type US = Fahrenheit
 
 @test
 def testMatchLambda01(): Int -> Int = match x -> x

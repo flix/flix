@@ -31,6 +31,11 @@ import scala.collection.mutable
 object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
   /**
+    * The maximum depth to which type aliases are unfolded.
+    */
+  val RecursionLimit: Int = 25
+
+  /**
     * Performs name resolution on the given program `prog0`.
     */
   def run(prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = flix.phase("Resolver") {
@@ -320,11 +325,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
-        val quantifiers = tparams.map(_.tpe)
-        val zero = mkRelationOrLattice(sym, attributes.map(_.tpe))
-        val tpe = quantifiers.foldLeft(zero) {
-          case (tacc, tvar) => Type.Apply(tacc, tvar)
+        val ts = attributes.map(_.tpe)
+        val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+        val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
+        val args = ts.foldLeft(init) {
+          case (acc, t) => Type.Apply(acc, t)
         }
+        val tpe = Type.Apply(base, args)
+
+        val quantifiers = tparams.map(_.tpe)
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -340,11 +349,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
-        val quantifiers = tparams.map(_.tpe)
-        val zero = mkRelationOrLattice(sym, attributes.map(_.tpe))
-        val tpe = quantifiers.foldLeft(zero) {
-          case (tacc, tvar) => Type.Apply(tacc, tvar)
+        val ts = attributes.map(_.tpe)
+        val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+        val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
+        val args = ts.foldLeft(init) {
+          case (acc, t) => Type.Apply(acc, t)
         }
+        val tpe = Type.Apply(base, args)
+
+        val quantifiers = tparams.map(_.tpe)
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -769,27 +782,25 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, tvar, evar, loc)
 
-        case NamedAst.Expression.FixpointProject(pred, exp, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointProject(qname, exp, tvar, evar, loc) =>
           for {
-            p <- visitPredicateWithParam(pred, tenv0)
+            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(p, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.FixpointProject(sym, e, tvar, evar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, evar, loc)
-      }
 
-      /**
-        * Performs name resolution on the given predicate with parameter `pred`.
-        */
-      def visitPredicateWithParam(pred: NamedAst.PredicateWithParam, symToType: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.PredicateWithParam, ResolutionError] = pred match {
-        case NamedAst.PredicateWithParam(qname, exp) => for {
-          sym <- lookupPredicateSymbol(qname, ns0, prog0)
-          e <- visit(exp, tenv0)
-        } yield ResolvedAst.PredicateWithParam(sym, e)
+        case NamedAst.Expression.FixpointFold(qname, exp1, exp2, exp3, tvar, evar, loc) =>
+          for {
+            sym <- lookupPredicateSymbol(qname, ns0, prog0)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
+          } yield ResolvedAst.Expression.FixpointFold(sym, e1, e2, e3, tvar, evar, loc)
       }
 
       visit(exp0, Map.empty)
@@ -872,12 +883,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(qname, exp, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
-            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
-          } yield ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(sym, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -891,12 +901,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(qname, exp, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(qname, polarity, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
-            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
-          } yield ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(sym, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
@@ -1234,23 +1243,47 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Finds the table of the given `qname` in the namespace `ns`.
     */
   def lookupPredicateSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[Symbol.PredSym, ResolutionError] = {
-    val (relations, lattices) = if (qname.isUnqualified) {
-      // Lookup in the current namespace.
-      (prog0.relations.getOrElse(ns, Map.empty), prog0.lattices.getOrElse(ns, Map.empty))
-    } else {
-      // Lookup in the qualified namespace.
-      (prog0.relations.getOrElse(qname.namespace, Map.empty), prog0.lattices.getOrElse(qname.namespace, Map.empty))
-    }
-
-    // Lookup the relation/lattice in the maps.
-    val relationOpt = relations.get(qname.ident.name)
-    val latticeOpt = lattices.get(qname.ident.name)
+    // Lookup the relation and lattice.
+    val relationOpt = lookupRelSymbol(qname, ns, prog0)
+    val latticeOpt = lookupLatSymbol(qname, ns, prog0)
 
     (relationOpt, latticeOpt) match {
       case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
       case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc)
       case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc)
       case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
+    }
+  }
+
+  /**
+    * Finds the relation of the given `qname` in the namespace `ns`.
+    */
+  private def lookupRelSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Relation] = {
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.relations.getOrElse(ns, Map.empty).get(qname.ident.name).orElse {
+        // Lookup in the global namespace.
+        prog0.relations.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.relations.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
+    * Finds the lattice of the given `qname` in the namespace `ns`.
+    */
+  private def lookupLatSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Lattice] = {
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.lattices.getOrElse(ns, Map.empty).get(qname.ident.name).orElse {
+        // Lookup in the global namespace.
+        prog0.lattices.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.lattices.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -1287,8 +1320,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
-  // TODO: Add support for Higher-Kinded types.
-  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
+  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
     case NamedAst.Type.Unit(loc) => Type.Cst(TypeConstructor.Unit).toSuccess
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
@@ -1313,24 +1345,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root)) match {
+        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
           // Case 1: Not Found.
-          case (None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+          case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None, None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
 
           // Case 3: Relation.
-          case (None, Some(rel), None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
+          case (None, Some(rel), None, None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
 
           // Case 4: Lattice.
-          case (None, None, Some(lat)) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
+          case (None, None, Some(lat), None) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
 
-          // Case 5: Errors.
-          case (Some(enum), Some(rel), None) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc), loc).toFailure
-          case (Some(enum), None, Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, lat.loc), loc).toFailure
-          case (None, Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(rel.loc, lat.loc), loc).toFailure
-          case (Some(enum), Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc, lat.loc), loc).toFailure
+          // Case 5: TypeAlias.
+          case (None, None, None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
+
+          // Case 6: Errors.
+          case (x, y, z, w) =>
+            val loc1 = x.map(_.loc)
+            val loc2 = y.map(_.loc)
+            val loc3 = z.map(_.loc)
+            val loc4 = w.map(_.loc)
+            val locs = List(loc1, loc2, loc3, loc4).flatten
+            ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
         }
     }
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
@@ -1369,30 +1407,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case (predType, acc) =>
           // Lookup the type and check that is either a relation or lattice type.
           flatMapN(lookupType(predType, ns0, root)) {
-            case t => t.typeConstructor match {
-              case Type.Relation(sym, attr, _) =>
-                // Retrieve the declaration and use it to match type parameters and type arguments.
-                val rel = root.relations(ns0)(sym.name)
-                val tvars = rel.tparams.map(_.tpe)
-                val targs = t.typeArguments
-                val subst = Substitution((tvars zip targs).foldLeft(Map.empty[Type.Var, Type]) {
-                  case (macc, (tvar, targ)) => macc + (tvar -> targ)
-                }, Map.empty)
-                Type.SchemaExtend(sym, subst(t), acc).toSuccess
+            case t =>
+              // Simplify the type. Required to get the appropriate type constructor.
+              val s = simplify(t)
 
-              case Type.Lattice(sym, _, _) =>
-                // Retrieve the declaration and use it to match type parameters and type arguments.
-                val lat = root.lattices(ns0)(sym.name)
-                val tvars = lat.tparams.map(_.tpe)
-                val targs = t.typeArguments
-                val subst = Substitution((tvars zip targs).foldLeft(Map.empty[Type.Var, Type]) {
-                  case (macc, (tvar, targ)) => macc + (tvar -> targ)
-                }, Map.empty)
-                Type.SchemaExtend(sym, subst(t), acc).toSuccess
-
-              case nonRelationOrLatticeType =>
-                ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
-            }
+              // Determine the type of predicate symbol.
+              s.typeConstructor match {
+                case Type.Cst(TypeConstructor.Relation(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
+                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
+                case nonRelationOrLatticeType => ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
+              }
           }
       }
 
@@ -1413,7 +1437,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for (
         tpe1 <- lookupType(base0, ns0, root);
         tpe2 <- lookupType(targ0, ns0, root)
-      ) yield Type.Apply(tpe1, tpe2)
+      ) yield simplify(Type.Apply(tpe1, tpe2))
 
   }
 
@@ -1447,6 +1471,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     latticesInNS.get(name) orElse {
       val latticesInRootNS = root.lattices.getOrElse(Name.RootNS, Map.empty)
       latticesInRootNS.get(name)
+    }
+  }
+
+  /**
+    * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupTypeAlias(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
+    val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+    typeAliasesInNamespace.get(typeName) orElse {
+      val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+      typeAliasesInRootNS.get(typeName)
     }
   }
 
@@ -1665,7 +1700,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(rel0.sym.namespace)
     getRelationIfAccessible(rel0, ns0, loc) flatMap {
       case sym => traverse(rel0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => mkRelationOrLattice(sym, attr)
+        case attr => mkRelationOrLattice(sym, rel0.tparams, attr)
       }
     }
   }
@@ -1680,7 +1715,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(lat0.sym.namespace)
     getLatticeIfAccessible(lat0, ns0, loc) flatMap {
       case sym => traverse(lat0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => mkRelationOrLattice(sym, attr)
+        case attr => mkRelationOrLattice(sym, lat0.tparams, attr)
       }
     }
   }
@@ -1688,9 +1723,96 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
     */
-  private def mkRelationOrLattice(predSym: Symbol.PredSym, ts: List[Type]): Type = predSym match {
-    case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
-    case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+  private def mkRelationOrLattice(predSym: Symbol.PredSym, tparams: List[NamedAst.TypeParam], ts: List[Type]): Type = predSym match {
+    case sym: Symbol.RelSym =>
+      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+      val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
+      val args = ts.foldLeft(init) {
+        case (acc, t) => Type.Apply(acc, t)
+      }
+      mkTypeLambda(tparams, Type.Apply(base, args))
+
+    case sym: Symbol.LatSym =>
+      val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+      val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
+      val args = ts.foldLeft(init) {
+        case (acc, t) => Type.Apply(acc, t)
+      }
+      mkTypeLambda(tparams, Type.Apply(base, args))
+  }
+
+  /**
+    * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  private def getTypeAliasIfAccessible(alia0: NamedAst.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit recursionDepth: Int): Validation[Type, ResolutionError] = {
+    // TODO: We should check if the type alias is accessible.
+
+    ///
+    /// Check whether we have hit the recursion limit while unfolding the type alias.
+    ///
+    if (recursionDepth == RecursionLimit) {
+      return ResolutionError.RecursionLimit(alia0.sym, RecursionLimit, alia0.loc).toFailure
+    }
+
+    // Retrieve the declaring namespace.
+    val declNS = getNS(alia0.sym.namespace)
+
+    // Construct a type lambda for each type parameter.
+    mapN(lookupType(alia0.tpe, declNS, root)(recursionDepth + 1)) {
+      case base => mkTypeLambda(alia0.tparams, base)
+    }
+  }
+
+  /**
+    * Returns the given type `tpe` wrapped in a type lambda for the given type parameters `tparam`.
+    */
+  private def mkTypeLambda(tparams: List[NamedAst.TypeParam], tpe: Type): Type =
+    tparams.foldRight(tpe) {
+      case (tparam, acc) => Type.Lambda(tparam.tpe, acc)
+    }
+
+  /**
+    * Returns a simplified (evaluated) form of the given type `tpe0`.
+    *
+    * Performs beta-reduction of type abstractions and applications.
+    */
+  private def simplify(tpe0: Type): Type = {
+    def eval(t: Type, subst: Map[Type.Var, Type]): Type = t match {
+      case tvar: Type.Var => subst.getOrElse(tvar, tvar)
+      case Type.Cst(_) => t
+
+      case Type.Arrow(_, _) => t
+
+      case Type.RecordEmpty => t
+
+      case Type.RecordExtend(label, value, rest) =>
+        val t1 = eval(value, subst)
+        val t2 = eval(rest, subst)
+        Type.RecordExtend(label, t1, t2)
+
+      case Type.SchemaEmpty => t
+
+      case Type.SchemaExtend(sym, tpe, rest) =>
+        val t1 = eval(tpe, subst)
+        val t2 = eval(rest, subst)
+        Type.SchemaExtend(sym, t1, t2)
+
+      case Type.Zero => t
+
+      case Type.Succ(len, t) => Type.Succ(len, eval(t, subst))
+
+      case Type.Lambda(tvar, tpe) => Type.Lambda(tvar, eval(tpe, subst))
+
+      // TODO: Does not take variable capture into account.
+      case Type.Apply(tpe1, tpe2) => (eval(tpe1, subst), eval(tpe2, subst)) match {
+        case (Type.Lambda(tvar, tpe3), t2) => eval(tpe3, subst + (tvar -> t2))
+        case (t1, t2) => Type.Apply(t1, t2)
+      }
+    }
+
+    eval(tpe0, Map.empty)
   }
 
   /**

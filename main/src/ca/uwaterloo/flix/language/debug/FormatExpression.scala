@@ -78,8 +78,9 @@ object FormatExpression {
     case TypedAst.Expression.FixpointConstraintSet(cs, tpe, eff, loc) => s"FixpointConstraintSet($cs})"
     case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => s"FixpointCompose($exp1, $exp2)"
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"
-    case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) => s"FixpointProject($pred, $exp)"
+    case TypedAst.Expression.FixpointProject(sym, exp, tpe, eff, loc) => s"FixpointProject($sym, $exp)"
     case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => s"FixpointEntails($exp1, $exp2)"
+    case TypedAst.Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) => s"FixpointFold($sym, $exp1, $exp2, $exp3)"
   }
 
 }

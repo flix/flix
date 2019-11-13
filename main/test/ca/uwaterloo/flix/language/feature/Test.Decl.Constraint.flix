@@ -9,5 +9,5 @@ Parent("Bjarke", "Frits").
 Parent("Frits", "Orla").
 
 GrandParent(x, z) :- Parent(x, y), Parent(y, z).
-Ancestor(x, z) :- Ancestor(x, y), Parent(y, z).
+Ancestor(x, z) :- Parent(x, y), Parent(y, z).
 
