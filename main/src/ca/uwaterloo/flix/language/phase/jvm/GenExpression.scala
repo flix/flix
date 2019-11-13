@@ -1083,13 +1083,14 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
+      // Get the initial accumulator value
+      val accErasedType = JvmOps.getErasedJvmType(init.tpe)
+      readVar(init.sym, init.tpe, visitor)
+      // stack: [acc]
+
       // push the initial loop index
       visitor.visitInsn(ICONST_0)
-      // stack: [index]
-
-      // Get the initial accumulator value
-      readVar(init.sym, init.tpe, visitor)
-      // stack: [index, acc]
+      // stack: [acc+, index]
 
       // Label for the fold loop
       val loop = new Label
@@ -1098,29 +1099,36 @@ object GenExpression {
 
       // Begin of the loop
       visitor.visitLabel(loop)
-      // stack: [acc, index]
+      // stack: [acc+, index]
 
       // Rearrange the stack
-      visitor.visitInsn(DUP_X1) // stack: [index, acc, index]
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(DUP_X1) // stack: [index, acc+, index]
+      } else {
+        // stack: [acc, acc', index]
+        visitor.visitInsn(DUP_X2)
+        // stack: [index, acc, acc', index]
+      }
+      // stack: [index, acc+, index]
 
       // Get the projected constraint system
       // We assume the constraint system has been projected beforehand (this is done in Simplifier)
       readVar(constraints.sym, constraints.tpe, visitor)
-      // stack: [index, acc, index, constraints]
+      // stack: [index, acc+, index, constraints]
       visitor.visitInsn(SWAP)
-      // stack: [index, acc, constraints, index]
+      // stack: [index, acc+, constraints, index]
 
       // get the fact at the current index
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "getFact",
         "(I)Lflix/runtime/fixpoint/Constraint;", false)
-      // stack: [index, acc, fact]
+      // stack: [index, acc+, fact]
 
       visitor.visitInsn(DUP)
-      // stack: [index, acc, fact, fact]
+      // stack: [index, acc+, fact, fact]
 
       // if fact is null, there is no more fact to handle, exit the loop
       visitor.visitJumpInsn(IFNULL, exitLabel)
-      // stack: [index, acc, fact]
+      // stack: [index, acc+, fact]
 
       // Start constructing the tuple
       // Extract the type of elements that are in the tuple
@@ -1131,51 +1139,51 @@ object GenExpression {
       // Create a new tuple object
       val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
       visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
-      // stack: [index, acc, fact, tupleType]
+      // stack: [index, acc+, fact, tupleType]
       visitor.visitInsn(DUP_X1)
-      // stack: [index, acc, tupleType, fact, tupleType]
+      // stack: [index, acc+, tupleType, fact, tupleType]
       visitor.visitInsn(SWAP)
-      // stack: [index, acc, tupleType, tupleType, fact]
+      // stack: [index, acc+, tupleType, tupleType, fact]
 
       // call getHeadPredicate on the fact
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
         "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
-      // stack: [index, acc, tupleType, tupleType, headpred]
+      // stack: [index, acc+, tupleType, tupleType, headpred]
       // cast the head predicate to an atom predicate
       visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName)
       // call getTerms on the atom predicate
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "getTerms",
         "()[Lflix/runtime/fixpoint/term/Term;", false)
-      // stack: [index, acc, tupleType, tupleType, terms]
+      // stack: [index, acc+, tupleType, tupleType, terms]
 
       // this is equivalent to the following, where tupleElements* is empty
-      // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
+      // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
 
       for ((tpe, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
         visitor.visitInsn(DUP)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms]
         visitor.visitIntInsn(BIPUSH, idx)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms, index]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms, index]
         // get terms[index]
         visitor.visitInsn(AALOAD)
 
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, terms[index]]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms[index]]
         // cast it to a LitTerm
         visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, litterm]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, litterm]
         // call getFunction on it
         visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
           "()Ljava/util/function/Function;", false)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function]
         // call the function with a new object as argument
         visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
-        // stack: [index, acc, tupleType,  tupleType, tupleElements*, terms, function, object]
+        // stack: [index, acc+, tupleType,  tupleType, tupleElements*, terms, function, object]
         visitor.visitInsn(DUP)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function, object, object]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object, object]
         // first initialize the object
         visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, function, object]
+        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object]
         visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
           "(Ljava/lang/Object;)Ljava/lang/Object;", true)
         visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
@@ -1185,59 +1193,96 @@ object GenExpression {
         // Cast it, and unbox it if necessary
         AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement]
-        visitor.visitInsn(SWAP)
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement, terms]
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement+]
+        if (AsmOps.getStackSize(JvmOps.getErasedJvmType(tpe)) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+        // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement+, terms]
       }
 
-      // stack: [index, acc, tupleType, tupleType, tupleElements*, terms]
+      // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
       // we can forget terms now
       visitor.visitInsn(POP)
 
-      // stack: [index, acc, tupleType, tupleType, tupleElement*]
-      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getJvmType), JvmType.Void)
+      // stack: [index, acc+, tupleType, tupleType, tupleElement*]
+      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getErasedJvmType), JvmType.Void)
       visitor.visitMethodInsn(INVOKESPECIAL, tupleType.name.toInternalName, "<init>", constructorDescriptor, false)
-      // stack: [index, acc, tuple] (tupleType is actually the constructed tuple)
+      // stack: [index, acc+, tuple] (tupleType is actually the constructed tuple)
 
       // Now we have the tuple on the top of the stack
-      // stack: [index, acc, tuple]
+      // stack: [index, acc+, tuple]
 
       // Get the context
       visitor.visitVarInsn(ALOAD, 1)
-      // stack: [index, acc, tuple, Context]
+      // stack: [index, acc+, tuple, Context]
       visitor.visitInsn(SWAP)
-      // stack: [index, acc, Context, tuple]
+      // stack: [index, acc+, Context, tuple]
 
       // Getting the folded function
       readVar(f.sym, f.tpe, visitor)
-      // stack: [index, acc, Context, tuple, f]
+      // stack: [index, acc+, Context, tuple, f]
 
       // Call f(tuple)(acc) through two calls
-      // stack: [index, acc, Context, tuple, f]
+      // stack: [index, acc+, Context, tuple, f]
 
       val functionInterface = JvmOps.getFunctionInterfaceType(f.tpe)
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
+      // stack: [index, acc+, Context, tuple, f]
       visitor.visitInsn(DUP_X1)
+      // stack: [index, acc+, Context, f, tuple, f]
       visitor.visitInsn(SWAP)
-      // stack: [index, acc, Context, f, f, tuple]
+      // stack: [index, acc+, Context, f, f, tuple]
       AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes)), MonoType.Arrow(List(init.tpe), init.tpe))
-      // stack: [index, acc, f(tuple)]
+      // stack: [index, acc+, f(tuple)]
 
       visitor.visitVarInsn(ALOAD, 1)
-      // stack: [index, acc, f(tuple), Context]
-      visitor.visitInsn(DUP_X2)
-      // stack: [index, Context, acc, f(tuple), Context]
-      visitor.visitInsn(POP)
-      // stack: [index, Context, acc, f(tuple)]
-      visitor.visitInsn(DUP_X1)
-      // stack: [index, Context, f(tuple), acc, f(tuple)]
-      visitor.visitInsn(SWAP)
-      // stack: [index, Context, f(tuple), f(tuple), acc]
+      // stack: [index, acc+, f(tuple), Context]
+
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(DUP_X2)
+        // stack32: [index, Context, acc, f(tuple), Context)
+        visitor.visitInsn(POP)
+        // stack32: [index, Context, acc, f(tuple)]
+        visitor.visitInsn(DUP_X1)
+        // stack: [index, Context, f(tuple), acc, f(tuple)]
+        visitor.visitInsn(SWAP)
+        // stack: [index, Context, f(tuple), f(tuple), acc]
+      } else {
+        visitor.visitInsn(SWAP)
+        // stack: [index, acc+, Context, f(tuple)]
+        visitor.visitInsn(DUP2_X2)
+        // stack: [index, Context, f(tuple), acc+, Context, f(tuple)]
+        visitor.visitInsn(SWAP)
+        // stack: [index, Context, f(tuple), acc+, f(tuple), Context)
+        visitor.visitInsn(POP)
+        // stack: [index, Context, f(tuple), acc+, f(tuple)]
+        visitor.visitInsn(DUP)
+        // stack: [index, Content, f(tuple), acc1, acc2, f(tuple), f(tuple)]
+        visitor.visitInsn(DUP2_X2)
+        // stack: [index, Content, f(tuple), f(tuple), f(tuple), acc1, acc2, f(tuple), f(tuple)]
+        visitor.visitInsn(POP2)
+        // stack: [index, Content, f(tuple), f(tuple), f(tuple), acc1, acc2]
+        visitor.visitInsn(DUP2_X1)
+        // stack: [index, Content, f(tuple), f(tuple), acc1, acc2, f(tuple), acc1, acc2]
+        visitor.visitInsn(POP2)
+        // stack: [index, Content, f(tuple), f(tuple), acc1, acc2, f(tuple)]
+        visitor.visitInsn(POP)
+        // stack: [index, Content, f(tuple), f(tuple), acc1, acc2]
+      }
+      // stack: [index, Content, f(tuple), f(tuple), acc]
       AsmOps.compileClosureApplication(visitor, MonoType.Arrow(List(init.tpe), init.tpe), List(init.tpe), init.tpe)
       // stack: [index, acc']
 
       // Increase the index
-      visitor.visitInsn(SWAP) // stack: [acc', index]
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(SWAP) // stack: [acc', index]
+      } else {
+        visitor.visitInsn(DUP2_X1)
+        visitor.visitInsn(POP2)
+      }
       visitor.visitInsn(ICONST_1) // stack: [acc', index, 1]
       visitor.visitInsn(IADD) // stack: [acc', index']
 
@@ -1246,7 +1291,12 @@ object GenExpression {
       visitor.visitLabel(exitLabel)
       // stack: [index, acc, fact]
       visitor.visitInsn(POP) // stack: [index, acc]
-      visitor.visitInsn(SWAP) // stack: [acc, index]
+      if (AsmOps.getStackSize(accErasedType) == 1) {
+        visitor.visitInsn(SWAP) // stack: [acc, index]
+      } else {
+        visitor.visitInsn(DUP2_X1)
+        visitor.visitInsn(POP2)
+      }
       visitor.visitInsn(POP) // stack: [acc]
 
     // stack: [acc]
