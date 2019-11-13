@@ -1824,7 +1824,7 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+    case Predicate.Head.RelAtom(sym, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
@@ -1839,6 +1839,23 @@ object GenExpression {
 
       // Instantiate a new atom predicate object.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+
+    case Predicate.Head.LatAtom(sym, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the predicate symbol.
+      newPredSym(sym, mv)
+
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      mv.visitInsn(ICONST_1)
+
+      // Emit code for the head terms.
+      newHeadTerms(terms, mv)
+
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+
 
     case Predicate.Head.Union(exp, terms, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1859,7 +1876,26 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+    case Predicate.Body.RelAtom(sym, polarity, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the predicate symbol.
+      newPredSym(sym, mv)
+
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      polarity match {
+        case Polarity.Positive => mv.visitInsn(ICONST_1)
+        case Polarity.Negative => mv.visitInsn(ICONST_0)
+      }
+
+      // Emit code for the terms.
+      newBodyTerms(terms, mv)
+
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+
+    case Predicate.Body.LatAtom(sym, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 

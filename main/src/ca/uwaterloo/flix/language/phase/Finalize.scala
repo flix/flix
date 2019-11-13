@@ -501,7 +501,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case SimplifiedAst.Predicate.Head.Atom(sym, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
       val t = visitType(tpe)
-      FinalAst.Predicate.Head.Atom(sym, ts, t, loc)
+      sym match {
+        case s: Symbol.RelSym => FinalAst.Predicate.Head.RelAtom(s, ts, t, loc)
+        case s: Symbol.LatSym => FinalAst.Predicate.Head.LatAtom(s, ts, t, loc)
+      }
 
     case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
       val e = visitExp(exp, m)
@@ -514,7 +517,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val t = visitType(tpe)
-      FinalAst.Predicate.Body.Atom(sym, polarity, ts, t, loc)
+      sym match {
+        case s: Symbol.RelSym => FinalAst.Predicate.Body.RelAtom(s, polarity, ts, t, loc)
+        case s: Symbol.LatSym => FinalAst.Predicate.Body.LatAtom(s, polarity, ts, t, loc)
+      }
 
     case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
       val e = visitExp(exp, m)
