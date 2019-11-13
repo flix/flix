@@ -270,22 +270,55 @@ def foldRight04(): Bool = assertNot!(Option.foldRight((i, b) -> if (i == 2 && b)
 def foldRight05(): Bool = assert!(Option.foldRight((i, b) -> if (i == 2 && b) true else false, Some(2), true))
 
 /////////////////////////////////////////////////////////////////////////////
-// isNone                                                                  //
+// sequence                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isNone01(): Bool = assert!(Option.isNone(None))
+def sequence01(): Bool = Option.sequence(Nil) == Some(Nil)
 
 @test
-def isNone02(): Bool = assertNot!(Option.isNone(Some(1)))
+def sequence02(): Bool = Option.sequence(Some(1) :: Nil) == Some(1 :: Nil)
+
+@test
+def sequence03(): Bool = Option.sequence(Some(1) :: Some(2) :: Nil) == Some(1 :: 2 :: Nil)
+
+@test
+def sequence04(): Bool = Option.sequence(Some(1) :: Some(2) :: Some(3) :: Nil) == Some(1 :: 2 :: 3 :: Nil)
+
+@test
+def sequence05(): Bool = Option.sequence(None :: Some(2) :: Some(3) :: Nil) == None
+
+@test
+def sequence06(): Bool = Option.sequence(Some(1) :: Some(2) :: None :: Nil) == None
+
+@test
+def sequence07(): Bool = Option.sequence(Some(1) :: None :: Some(3) :: Nil) == None
 
 /////////////////////////////////////////////////////////////////////////////
-// isSome                                                                  //
+// traverse                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isSome01(): Bool = assertNot!(Option.isSome(None))
+def traverse01(): Bool = Option.traverse(x -> Some(x + 1), Nil) == Some(Nil)
 
 @test
-def isSome02(): Bool = assert!(Option.isSome(Some(1)))
+def traverse02(): Bool = Option.traverse(x -> Some(x + 1), 1 :: Nil) == Some(2 :: Nil)
+
+@test
+def traverse03(): Bool = Option.traverse(x -> Some(x + 1), 1 :: 2 :: Nil) == Some(2 :: 3 :: Nil)
+
+@test
+def traverse04(): Bool = Option.traverse(x -> Some(x + 1), 1 :: 2 :: 3 :: Nil) == Some(2 :: 3 :: 4 :: Nil)
+
+@test
+def traverse05(): Bool = Option.traverse(x -> if (x == 1) None else Some(x), 1 :: 2 :: 3 :: Nil) == None
+
+@test
+def traverse06(): Bool = Option.traverse(x -> if (x == 3) None else Some(x), 1 :: 2 :: 3 :: Nil) == None
+
+@test
+def traverse07(): Bool = Option.traverse(x -> if (x == 2) None else Some(x), 1 :: 2 :: 3 :: Nil) == None
+
+@test
+def traverse08(): Bool = Option.traverse(_ -> Some(42), 1 :: 2 :: 3 :: Nil) == Some(42 :: 42 :: 42 :: Nil)
 
 /////////////////////////////////////////////////////////////////////////////
 // zip                                                                     //

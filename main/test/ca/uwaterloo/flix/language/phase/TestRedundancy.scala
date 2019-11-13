@@ -63,7 +63,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Existential.01") {
     val input =
       s"""
-         |def main(): Bool = \\exists (_x: Int). _x == 123
+         |def main(): Bool = exists (_x: Int). _x == 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -73,7 +73,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Universal.01") {
     val input =
       s"""
-         |def main(): Bool = \\forall (_x: Int). _x == 123
+         |def main(): Bool = forall (_x: Int). _x == 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -238,7 +238,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Bool =
         |    let x = 123;
-        |    \exists (x: Int). x == 0
+        |    exists (x: Int). x == 0
         |
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -250,7 +250,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Bool =
         |    let x = 123;
-        |    \forall (x: Int). x == 0
+        |    forall (x: Int). x == 0
         |
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -451,7 +451,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Forall.01") {
     val input =
       s"""
-         |pub def f(): Bool = \\forall(x: Int). true
+         |pub def f(): Bool = forall(x: Int). true
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -461,7 +461,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Exists.01") {
     val input =
       s"""
-         |pub def f(): Bool = \\exists(x: Int). true
+         |pub def f(): Bool = exists(x: Int). true
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -806,252 +806,6 @@ class TestRedundancy extends FunSuite with TestUtils {
          |
        """.stripMargin
     compile(input, DefaultOptions).get
-  }
-
-  ignore("UselessExpression.Literal.01") {
-    val input =
-      s"""
-         |def main(): Int = (); 123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.Literal.02") {
-    val input =
-      s"""
-         |def main(): Int = 123; 123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.ArrayLit.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  [1, 2, 3];
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.ArrayNew.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  ["Hello World"; 10];
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.ArraySlice.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  let a = ["Hello World"; 10];
-         |  a[3..5];
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.VectorLit.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  [|1, 2, 3|];
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.VectorNew.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  [|"Hello World"; 10|];
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.VectorSlice.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  let a = [|"Hello World"; 10|];
-         |  a[|3..5|];
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.Ref.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  ref 123;
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  ignore("UselessExpression.NewChannel.01") {
-    val input =
-      s"""
-         |def main(): Int =
-         |  chan Int 0;
-         |  123
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  test("UselessPatternMatch.01") {
-    val input =
-      s"""
-         |enum Color {
-         |    case Red,
-         |    case Blu
-         |}
-         |
-         |def main(): Int =
-         |    let c = Red;
-         |    match c with {
-         |        case Red => 123
-         |        case Blu => match c with {
-         |            case Red => 123
-         |            case Blu => 456
-         |        }
-         |    }
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessPatternMatch](result)
-  }
-
-  test("UselessPatternMatch.02") {
-    val input =
-      s"""
-         |enum Color {
-         |    case Red(Int),
-         |    case Blu(Int)
-         |}
-         |
-         |def main(): Int =
-         |    let c = Red(123);
-         |    match c with {
-         |        case Red(_) => 123
-         |        case Blu(_) => match c with {
-         |            case Red(_) => 123
-         |            case Blu(_) => 123
-         |        }
-         |    }
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessPatternMatch](result)
-  }
-
-  test("UselessPatternMatch.03") {
-    val input =
-      s"""
-         |enum Color {
-         |    case Red,
-         |    case Blu
-         |}
-         |
-         |enum Shape {
-         |    case Circle(Color),
-         |    case Square(Color)
-         |}
-         |
-         |def main(): Int =
-         |    let s = Circle(Red);
-         |    match s with {
-         |        case Circle(Red) => 123
-         |        case Square(Blu) => match s with {
-         |            case Circle(_) => 123
-         |            case Square(_) => 456
-         |        }
-         |        case _ => 789
-         |    }
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessPatternMatch](result)
-  }
-
-  test("UselessPatternMatch.04") {
-    val input =
-      s"""
-         |enum Color {
-         |    case Red,
-         |    case Blu
-         |}
-         |
-         |enum Shape {
-         |    case Circle(Color),
-         |    case Square(Color)
-         |}
-         |
-         |def main(): Int =
-         |    let s = Circle(Red);
-         |    match s with {
-         |        case Circle(Red) => 123
-         |        case Square(Blu) => match s with {
-         |            case Square(Red) => 123
-         |            case _           => 456
-         |        }
-         |        case _ => 789
-         |    }
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessPatternMatch](result)
-  }
-
-  test("UselessPatternMatch.StablePath.01") {
-    val input =
-      s"""
-         |enum Color {
-         |    case Red,
-         |    case Blu
-         |}
-         |
-         |def main(): Int =
-         |    let r = { c = Red };
-         |    match r.c with {
-         |        case Red => 123
-         |        case Blu => match r.c with {
-         |            case Red => 123
-         |            case Blu => 456
-         |        }
-         |    }
-         |
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessPatternMatch](result)
   }
 
 }

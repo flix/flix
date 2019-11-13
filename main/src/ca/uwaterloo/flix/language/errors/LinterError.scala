@@ -9,18 +9,18 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A common super-type for trivial errors.
   */
-sealed trait TrivialError extends CompilationError {
+sealed trait LinterError extends CompilationError {
   val kind = "Trivial Error"
 }
 
-object TrivialError {
+object LinterError {
 
   /**
     * An error raised to indicate that an expression is trivial.
     *
     * @param loc the location of the expression.
     */
-  case class TrivialExpression(loc: SourceLocation) extends TrivialError {
+  case class TrivialExpression(loc: SourceLocation) extends LinterError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal

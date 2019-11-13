@@ -25,7 +25,7 @@ class PhaseSuite extends Suites(
   new TestResolver,
   new TestSafety,
   new TestStratifier,
-  new TestTrivial,
+  new TestLinter,
   new TestUnification,
   new TestWeeder
 ) with ParallelTestExecution {

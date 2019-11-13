@@ -512,10 +512,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      val tparams = tparams0 match {
-        case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-        case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
-      }
+      val tparams = getTypeParams(tparams0, fparams0, tpe, loc)
 
       val tenv = tenv0 ++ getTypeEnv(tparams)
       flatMapN(getFormalParams(fparams0, tenv)) {
@@ -852,21 +849,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.Existential(param, exp, loc) =>
-      flatMapN(visitFormalParam(param, tenv0)) {
+    case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
+      // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
+      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+      flatMapN(visitFormalParam(fparam, tenv0 ++ getTypeEnv(tparams))) {
         case p =>
-          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0)) {
-            case e =>
-              NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc)
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
+            // TODO: Preserve type parameters in NamedAst?
+            case e => NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc)
           }
       }
 
-    case WeededAst.Expression.Universal(param, exp, loc) =>
-      flatMapN(visitFormalParam(param, tenv0)) {
+    case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
+      // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
+      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
+      flatMapN(visitFormalParam(fparam, tenv0 ++ getTypeEnv(tparams))) {
         case p =>
-          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0)) {
-            case e =>
-              NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc)
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
+            // TODO: Preserve type parameters in NamedAst?
+            case e => NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc)
           }
       }
 
@@ -1271,8 +1272,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.HandleWith(exp, bindings, loc) => freeVars(exp) ++ bindings.flatMap(b => freeVars(b.exp))
-    case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-    case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
+    case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
+    case WeededAst.Expression.Universal(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1578,6 +1579,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam(_, tenv0))
+  }
+
+  /**
+    * Performs naming on the given type parameters parameters `tparam0` under the given type environment `tenv0`.
+    */
+  private def getTypeParams(tparams0: WeededAst.TypeParams, fparams0: List[WeededAst.FormalParam], tpe: WeededAst.Type, loc: SourceLocation)(implicit flix: Flix): List[NamedAst.TypeParam] = {
+    tparams0 match {
+      case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
+      case WeededAst.TypeParams.Explicit(tparams0) => getExplicitTypeParams(tparams0)
+    }
   }
 
   /**

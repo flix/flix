@@ -28,7 +28,7 @@ object FormatExpression {
     case TypedAst.Expression.Def(sym, _, _, _) => s"Def($sym)"
     case TypedAst.Expression.Eff(sym, _, _, _) => s"Eff($sym)"
     case TypedAst.Expression.Hole(sym, tpe, eff, loc) => s"Hole($sym)"
-    case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) => s"Lambda($fparam, $exp)"
+    case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) => s"Lambda(${FormatFormalParam.format(fparam)}, $exp)"
     case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) => s"Apply($exp1, $exp2)"
     case TypedAst.Expression.Unary(op, exp, tpe, eff, loc) => s"Unary($op, $exp)"
     case TypedAst.Expression.Binary(op, exp1, exp2, tpe, eff, loc) => s"Binary($op, $exp1, $exp2)"
