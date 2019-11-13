@@ -37,22 +37,6 @@ namespace Option {
     }
 
     ///
-    /// Returns `true` iff `o` is `None`.
-    ///
-    pub def isNone(o: Option[a]): Bool = match o {
-        case None => true
-        case Some(_) => false
-    }
-
-    ///
-    /// Returns `true` iff `o` is `Some(v)`.
-    ///
-    pub def isSome(o: Option[a]): Bool = match o {
-        case None => false
-        case Some(_) => true
-    }
-
-    ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
     pub def getWithDefault(o: Option[a], d: a): a = match o {
@@ -171,6 +155,26 @@ namespace Option {
     }
 
     ///
+    /// Returns `Some(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Some(v_i)`. Otherwise returns `None`.
+    ///
+    pub def sequence(xs: List[Option[a]]): Option[List[a]] = match xs {
+        case Nil            => Some(Nil)
+        case None :: _      => None
+        case Some(y) :: ys  => map(zs -> y :: zs, sequence(ys))
+    }
+
+    ///
+    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
+    ///
+    pub def traverse(f: a -> Option[b], xs: List[a]): Option[List[b]] = match xs {
+        case Nil        => Some(Nil)
+        case y :: ys    =>
+            let* z = f(y);
+            let* zs = traverse(f, ys);
+            Some(z :: zs)
+    }
+
+    ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
     ///
     pub def toList(o: Option[a]): List[a] = match o {
@@ -210,8 +214,6 @@ namespace Option {
         case None => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
     }
-
-
 
     ///
     /// Returns `true` if and only if `o1` and `o2` and equal.

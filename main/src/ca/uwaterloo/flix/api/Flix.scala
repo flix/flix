@@ -96,6 +96,10 @@ class Flix {
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
 
+    "CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
+
+    "Vec.flix" -> LocalResource.get("/library/Vec.flix"),
+
     //"flix/actor/Actor.flix" -> LocalResource.get("/library/flix/actor/Actor.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
@@ -234,7 +238,7 @@ class Flix {
         Stratifier |>
         PatternExhaustiveness |>
         Redundancy |>
-        Trivial |>
+        Linter |>
         Safety
 
     // Apply the pipeline to the parsed AST.

@@ -20,13 +20,13 @@ def testVectorLoad06(): Int = let x = [|1; 20|]; x[|19|]
 def testVectorLoad07(): Bool = let x = [|true|]; x[|0|]
 
 @test
-def testVectorLoad08(): Bool = let x = [|false; 1|]; x[|0|]
+def testVectorLoad08(): Bool = let x = [|false; 1|]; !x[|0|]
 
 @test
 def testVectorLoad09(): Bool = let x = [|true; 2|]; x[|1|]
 
 @test
-def testVectorLoad10(): Bool = let x = [|false; 3|]; x[|2|]
+def testVectorLoad10(): Bool = let x = [|false; 3|]; !x[|2|]
 
 @test
 def testVectorLoad11(): Bool = let x = [|true; 5|]; x[|3|]

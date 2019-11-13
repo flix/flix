@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.collection.mutable
 
@@ -876,7 +877,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         bs <- visitHandlerBindings(handlers)
       } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
 
-    case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
+    case ParsedAst.Expression.Existential(sp1, tparams, fparams, exp, sp2) =>
       /*
        * Checks for `IllegalExistential`.
        */
@@ -891,11 +892,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites the multi-parameter existential to nested single-parameter existentials.
          */
         fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
+          case (param, eacc) => WeededAst.Expression.Existential(/* TODO */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
         }
       }
 
-    case ParsedAst.Expression.Universal(sp1, fparams, exp, sp2) =>
+    case ParsedAst.Expression.Universal(sp1, tparams, fparams, exp, sp2) =>
       /*
        * Checks for `IllegalUniversal`.
        */
@@ -910,7 +911,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites the multi-parameter universal to nested single-parameter universals.
          */
         fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
+          case (param, eacc) => WeededAst.Expression.Universal(/* TODO */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
         }
       }
 
@@ -1389,6 +1390,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case "benchmark" => Ast.Annotation.Benchmark(loc).toSuccess
       case "law" => Ast.Annotation.Law(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
+      case "theorem" => Ast.Annotation.Theorem(loc).toSuccess
       case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
       case name => WeederError.UndefinedAnnotation(name, loc).toFailure
     }
@@ -1897,8 +1899,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.HandleWith(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.Universal(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
@@ -1924,6 +1926,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Returns the left most source position in the sub-tree of the type `tpe`.
     */
+  @tailrec
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
     case ParsedAst.Type.Unit(sp1, _) => sp1
     case ParsedAst.Type.Var(sp1, _, _) => sp1
