@@ -275,11 +275,50 @@ def testFixpointFold37(): Bool =
   let res = fold Fs "" adds (solve p);
   res == "foo"
 
-@tes
+@test
 def testFixpointFold38(): Bool =
-  let p = #{Fs("foo", "bar"). Fs("baz", "qux")};
-  let res = Fold Fs "" adds (solve p);
+  let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
+  let res = fold Fs "" adds (solve p);
   !String.isEmpty(res)
 
-// rel Fo(x: Option[Int], y: Option[Int])
-// rel Fr(x: Result[Bool, Int], y: Result[Bool, Int])
+////////////
+// Option //
+////////////
+rel Fo(x: Option[Int], y: Option[Int])
+def addo(entry: (Option[Int], Option[Int]), acc: Option[Int]): Option[Int] =
+  let (x, y) = entry;
+  Option.withDefault(x, Option.withDefault(y, acc))
+
+@test
+def testFixpointFold39(): Bool =
+  let p = #{Fo(None, None). Fo(None, Some(4)).};
+  let res = fold Fo None addo (solve p);
+  Option.getWithDefault(res, -1) == 4
+
+@test
+def testFixpointFold40(): Bool =
+  let p = #{Fo(Some(1), Some(3)). Fo(Some(2), None).};
+  let res = fold Fo None addo (solve p);
+  Option.isSome(res)
+
+////////////
+// Result //
+////////////
+rel Fr(x: Result[Int, Str], y: Result[Int, Str])
+def addr(entry: (Result[Int, Str], Result[Int, Str]), acc: Result[Int, Str]): Result[Int, Str] =
+  let (x, y) = entry;
+  Result.withDefault(x, Result.withDefault(y, acc))
+
+@test
+def testFixpointFold41(): Bool =
+  let p = #{Fr(Err("foo"), Err("bar")). Fr(Err("baz"), Ok(4)).};
+  let res = fold Fr Ok(0) addr (solve p);
+  Result.getWithDefault(res, -1) == 0
+
+@test
+def testFixpointFold42(): Bool =
+  let p = #{Fr(Ok(1), Ok(3)). Fr(Ok(2), Err("foo")).};
+  let res = fold Fr Err("foo") addr (solve p);
+  Result.isOk(res)
+
+
