@@ -63,7 +63,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Existential.01") {
     val input =
       s"""
-         |def main(): Bool = \\exists (_x: Int). _x == 123
+         |def main(): Bool = exists (_x: Int). _x == 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -73,7 +73,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Universal.01") {
     val input =
       s"""
-         |def main(): Bool = \\forall (_x: Int). _x == 123
+         |def main(): Bool = forall (_x: Int). _x == 123
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -238,7 +238,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Bool =
         |    let x = 123;
-        |    \exists (x: Int). x == 0
+        |    exists (x: Int). x == 0
         |
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -250,7 +250,7 @@ class TestRedundancy extends FunSuite with TestUtils {
       """
         |def main(): Bool =
         |    let x = 123;
-        |    \forall (x: Int). x == 0
+        |    forall (x: Int). x == 0
         |
       """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -451,7 +451,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Forall.01") {
     val input =
       s"""
-         |pub def f(): Bool = \\forall(x: Int). true
+         |pub def f(): Bool = forall(x: Int). true
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)
@@ -461,7 +461,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedFormalParam.Exists.01") {
     val input =
       s"""
-         |pub def f(): Bool = \\exists(x: Int). true
+         |pub def f(): Bool = exists(x: Int). true
          |
        """.stripMargin
     val result = compile(input, DefaultOptions)

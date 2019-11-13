@@ -892,7 +892,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites the multi-parameter existential to nested single-parameter existentials.
          */
         fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Existential(/* TODO */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
+          case (param, eacc) => WeededAst.Expression.Existential(/* TODO: Pass type params. */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
         }
       }
 
@@ -911,7 +911,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites the multi-parameter universal to nested single-parameter universals.
          */
         fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Universal(/* TODO */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
+          case (param, eacc) => WeededAst.Expression.Universal(/* TODO: Pass type params. */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
         }
       }
 

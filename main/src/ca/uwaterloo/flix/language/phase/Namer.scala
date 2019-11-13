@@ -850,22 +850,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
-      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc) // TODO: Using Unit here is a simplification.
+      // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
+      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
       flatMapN(visitFormalParam(fparam, tenv0 ++ getTypeEnv(tparams))) {
         case p =>
           mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
-            case e =>
-              NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc) // TODO: Should this have tparams and also not be curried?
+            // TODO: Preserve type parameters in NamedAst?
+            case e => NamedAst.Expression.Existential(p, e, Eff.freshEffVar(), loc)
           }
       }
 
     case WeededAst.Expression.Universal(tparams0, fparam, exp, loc) =>
-      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc) // TODO: Using Unit here is a simplification.
+      // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
+      val tparams = getTypeParams(tparams0, List(fparam), WeededAst.Type.Unit(loc), loc)
       flatMapN(visitFormalParam(fparam, tenv0 ++ getTypeEnv(tparams))) {
         case p =>
-          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) { // TODO: Using Unit here is a simplification.
-            case e =>
-              NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc) // TODO: Should this have tparams and also not be curried?
+          mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
+            // TODO: Preserve type parameters in NamedAst?
+            case e => NamedAst.Expression.Universal(p, e, Eff.freshEffVar(), loc)
           }
       }
 
