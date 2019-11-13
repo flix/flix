@@ -96,7 +96,7 @@ class Flix {
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
 
-    "flix/actor/Actor.flix" -> LocalResource.get("/library/flix/actor/Actor.flix"),
+    //"flix/actor/Actor.flix" -> LocalResource.get("/library/flix/actor/Actor.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
