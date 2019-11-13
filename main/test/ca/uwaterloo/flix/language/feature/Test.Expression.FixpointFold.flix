@@ -299,7 +299,7 @@ def testFixpointFold39(): Bool =
 def testFixpointFold40(): Bool =
   let p = #{Fo(Some(1), Some(3)). Fo(Some(2), None).};
   let res = fold Fo None addo (solve p);
-  Option.isSome(res)
+  !Option.isEmpty(res)
 
 ////////////
 // Result //
