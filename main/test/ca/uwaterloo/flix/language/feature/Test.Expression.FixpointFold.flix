@@ -251,7 +251,35 @@ def testFixpointFold34(): Bool =
   let p = #{Ff64(0.0f64, 1.0f64). Ff64(1.0f64, 1.0f64).};
   ((fold Ff64 0.0f64 addf64 (solve p)) - 3.0f64) < 0.001f64
 
-// TODO
-// rel Fs(x: Str, y: Str)
+/////////
+// Str //
+/////////
+rel Fs(x: Str, y: Str)
+def adds(entry: (Str, Str), _acc: Str): Str =
+  let (x, _) = entry;
+  x
+
+@test
+def testFixpointFold35(): Str =
+  let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
+  fold Fs "" adds (solve p)
+
+@test
+def testFixpointFold36(): Str =
+  let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
+  fold Fs "" ((_entry, acc) -> acc) (solve p)
+
+@test
+def testFixpointFold37(): Bool =
+  let p = #{Fs("foo", "bar").};
+  let res = fold Fs "" adds (solve p);
+  res == "foo"
+
+@tes
+def testFixpointFold38(): Bool =
+  let p = #{Fs("foo", "bar"). Fs("baz", "qux")};
+  let res = Fold Fs "" adds (solve p);
+  !String.isEmpty(res)
+
 // rel Fo(x: Option[Int], y: Option[Int])
 // rel Fr(x: Result[Bool, Int], y: Result[Bool, Int])
