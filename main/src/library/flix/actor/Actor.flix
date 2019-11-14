@@ -87,25 +87,25 @@ pub rel Start(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start(a: ActorSystem[s, r1, r2, r3]): Unit =
+pub def start(a: ActorSystem[s, r1, r2, r3]): Unit /* Set[Channel[ActorMsg]] */ =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy;
-    fold Actor () ((_actor, _) ->
+    fold Actor () ((_actor, _acc) ->
       // TODO: This is what should happen, but this does not compile (init of empty list)
       // let (actorName, initialState, mailbox, behavior) = actor;
-      // startActor(actorName, initialState, mailbox, behavior))
+      // let channel = startActor(actorName, initialState, mailbox, behavior));
+      // Set.insert(channel, acc)
       ())
       (solve startPolicy)
     // TODO: Return a value that can be used for shutdown.
     //       That value could be all actor's mailboxes (we can send a stop message on all of them at shutdown)
 
-pub def startActor[s](_actorName: Str, _initialState: s, _mailbox: Channel[ActorMsg], _actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str]): Unit =
-    let channel = Channel.new();
-    spawn (actor(initialState));
+pub def startActor[s](_actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str]): Channel[ActorMsg] =
+    spawn (actor(initialState, mailbox));
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
-    ()
+    mailbox
 
 pub def stop(_a: ActorSystem[r1, r2, r3]): Unit =
     // TODO: Not unlike start, but also needs some running description of the actor system.
