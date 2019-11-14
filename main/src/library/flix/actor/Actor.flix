@@ -90,12 +90,13 @@ pub rel Start(actorName: Str)
 pub def start(a: ActorSystem[s, r1, r2, r3]): Unit =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
-    let _startPolicy = r.startPolicy;
-    ()
-    //fold Actor () ((actor, _) ->
-    //  let (actorName, initialState, mailbox, behavior) = actor;
-    //  startActor(actorName, initialState, mailbox, behavior))
-    //  (solve startPolicy)
+    let startPolicy = r.startPolicy;
+    fold Actor () ((_actor, _) ->
+      // TODO: This is what should happen, but this does not compile (init of empty list)
+      // let (actorName, initialState, mailbox, behavior) = actor;
+      // startActor(actorName, initialState, mailbox, behavior))
+      ())
+      (solve startPolicy)
     // TODO: Return a value that can be used for shutdown.
 
 pub def startActor[s, e](_actorName: Str, _initialState: s, _mailbox: Channel[ActorMsg], _actor: s -> ActorResult[s, e]): Unit =
