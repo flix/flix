@@ -62,8 +62,8 @@ pub enum ActorMsg {
 /// A `shutdownPolicy` that describes how to shutdown the actor system in an orderly fashion.
 /// A `restartPolicy` that describes what should happen when an actor crashes.
 ///
-pub enum ActorSystem[s, r1, r2, r3] {
-    case ActorSystem({startPolicy: #{Actor[s] | r1}, shutdownPolicy: #{Stop | r2}, restartPolicy: #{Start, Crashed | r3}})
+pub enum ActorSystem[s, r1, r2, r3, r4] {
+    case ActorSystem({actors: #{Actor[s] | r1}, startPolicy: #{Start | r2}, shutdownPolicy: #{Stop | r3}, restartPolicy: #{Start, Crashed | r4}})
 }
 
 // TODO: Define core relations here:
@@ -88,10 +88,10 @@ pub rel Stop(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start(a: ActorSystem[s, r1, r2, r3]): Unit /* Set[Channel[ActorMsg]] */ =
+pub def start(a: ActorSystem[_, _, _, _, _]): Unit /* Set[Channel[ActorMsg]] */ =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
-    let startPolicy = r.startPolicy;
+    let startPolicy = r.startPolicy; // TODO: <+> r.actors;
     fold Actor () ((_actor, _acc) ->
       // TODO: This is what should happen, but this does not compile (init of empty list)
       // let (actorName, initialState, mailbox, behavior) = actor;
@@ -108,78 +108,89 @@ pub def startActor[s](_actorName: Str, initialState: s, mailbox: Channel[ActorMs
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
     mailbox
 
-pub def stop(_a: ActorSystem[r1, r2, r3]): Unit =
+pub def stop(_a: ActorSystem[_, _, _, _, _]): Unit =
     // TODO: Not unlike start, but also needs some running description of the actor system.
     ()
 
-pub def react(_a: ActorSystem[r1, r2, r3]): Unit =
+pub def react(_a: ActorSystem[_, _, _, _, _]): Unit =
     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
     ()
 
 ///
 /// Returns the default restart policy.
+/// This policy restarts any actor that has crashed.
 ///
 pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
     Start(actorRef) :- Crashed(actorRef).
 }
 
+///
+/// Returns the default start policy.
+/// This policy starts all actors.
+///
+pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
+    Start(actorRef) :- Actor(actorRef, _, _, _).
+}
 // TODO: Does what we are doing work with scoped threads?
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Examples                                                                 //
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace CounterActorSystem{
-
-    pub def main(): Unit =
-        () // start(system()) // TODO: Start the actor system here.
-
-
-    pub def system(): ActorSystem[_, _, _, _] = ActorSystem({
-        startPolicy = #{
-            Start("counterActor").
-
-            Start("Worker1") :- Started("counterActor").
-            Start("Worker2") :- Started("counterActor").
-            Start("Worker3") :- Started("counterActor").
-            // TODO: Problem wit the type system
-            // Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
-
-        },
-        restartPolicy = defaultRestartPolicy(),
-        shutdownPolicy = #{
-            Stop("counterActor").
-            Stop("Worker1"). Stop("Worker2"). Stop("Worker3").
-        }}
-    )
-
-    ///
-    /// An actor that maintains an internal counter.
-    ///
-    /// The counter can be incremented, decrement, and its value retrieved.
-    ///
-    pub def counterActor(n: Int, mailbox: Channel[ActorMsg]): ActorResult[Int, Str] =
-        match <- mailbox {
-            case Start(c)       => c <- Ready; counterActor(n, mailbox)
-            case Stop           => Done
-            case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
-            case Msg(_, "INC")  => counterActor(n + 1, mailbox)
-            case Msg(_, "DEC")  => counterActor(n - 1, mailbox)
-            case Msg(_, m)      => Crash(n, "Unexpected message: " + m)
-        }
-
-    ///
-    /// An actor that occasionally requests the counter actor to increment its number.
-    ///
-    pub def workerActor(counterActor: Channel[ActorMsg], mailbox: Channel[ActorMsg]): ActorResult[Unit, Str] =
-        match <- mailbox {
-            case Start(c)           => c <- Ready; workerActor(counterActor, mailbox)
-            case Stop               => Done
-            case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
-            case Msg(_, m)          => Crash((), "Unexpected message: " + m)
-        }
-
-}
+// namespace CounterActorSystem{
+// 
+//     pub def main(): Unit =
+//         () // start(system()) // TODO: Start the actor system here.
+// 
+// 
+//     pub def system(): ActorSystem[_, _, _, _] = ActorSystem({
+//         actors = #{
+//             Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
+//             Actor("Worker1", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
+//             Actor("Worker2", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
+//             Actor("Worker3", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
+//         },
+//         startPolicy = #{
+//             Start("counterActor").
+// 
+//             Start("Worker1") :- Started("counterActor").
+//             Start("Worker2") :- Started("counterActor").
+//             Start("Worker3") :- Started("counterActor").
+//         },
+//         restartPolicy = defaultRestartPolicy(),
+//         shutdownPolicy = #{
+//             Stop("counterActor").
+//             Stop("Worker1"). Stop("Worker2"). Stop("Worker3").
+//         }}
+//     )
+// 
+//     ///
+//     /// An actor that maintains an internal counter.
+//     ///
+//     /// The counter can be incremented, decrement, and its value retrieved.
+//     ///
+//     pub def counterActor(n: Int, mailbox: Channel[ActorMsg]): ActorResult[Int, Str] =
+//         match <- mailbox {
+//             case Start(c)       => c <- Ready; counterActor(n, mailbox)
+//             case Stop           => Done
+//             case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
+//             case Msg(_, "INC")  => counterActor(n + 1, mailbox)
+//             case Msg(_, "DEC")  => counterActor(n - 1, mailbox)
+//             case Msg(_, m)      => Crash(n, "Unexpected message: " + m)
+//         }
+// 
+//     ///
+//     /// An actor that occasionally requests the counter actor to increment its number.
+//     ///
+//     pub def workerActor(counterActor: Channel[ActorMsg], mailbox: Channel[ActorMsg]): ActorResult[Unit, Str] =
+//         match <- mailbox {
+//             case Start(c)           => c <- Ready; workerActor(counterActor, mailbox)
+//             case Stop               => Done
+//             case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
+//             case Msg(_, m)          => Crash((), "Unexpected message: " + m)
+//         }
+// 
+// }
 
 ///
 /// The Grand TODO List
