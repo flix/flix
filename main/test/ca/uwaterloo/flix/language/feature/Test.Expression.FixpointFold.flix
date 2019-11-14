@@ -322,3 +322,12 @@ def testFixpointFold42(): Bool =
   Result.isOk(res)
 
 
+// Mixed types
+rel F(x: Str, y: Int)
+
+def main(): Unit =
+  let p = #{F("foo", 1). F("bar", 2).};
+  fold F 0 ((entry, acc) ->
+     let (_x, y) = entry;
+     acc + y)
+     (solve p)
