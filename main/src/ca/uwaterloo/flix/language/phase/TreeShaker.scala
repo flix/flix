@@ -299,7 +299,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitConstraint(c0: SimplifiedAst.Constraint): Set[Symbol.DefnSym] = {
       val headSymbols = c0.head match {
-        case SimplifiedAst.Predicate.Head.Atom(_, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Head.Atom(_, _, terms, tpe, loc) =>
           terms.map(visitHeadTerm).fold(Set.empty)(_ ++ _)
 
         case SimplifiedAst.Predicate.Head.Union(exp, _, _) =>
@@ -307,7 +307,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       }
 
       val bodySymbols = c0.body.map {
-        case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) =>
           terms.map(visitBodyTerm).fold(Set.empty)(_ ++ _)
 
         case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>

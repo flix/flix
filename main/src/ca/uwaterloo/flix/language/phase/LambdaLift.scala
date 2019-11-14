@@ -393,9 +393,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs lambda lifting on the given head predicate `head0`.
       */
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.Atom(sym, ts, tpe, loc)
+        Predicate.Head.Atom(sym, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -406,9 +406,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs lambda lifting on the given body predicate `body0`.
       */
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(visitBodyTerm)
-        Predicate.Body.Atom(sym, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(sym, den, polarity, ts, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

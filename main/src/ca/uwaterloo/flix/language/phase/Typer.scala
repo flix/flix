@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Stratification
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -1794,8 +1794,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
     case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
+      val den = sym match {
+        case s: Symbol.RelSym => Denotation.Relational
+        case s: Symbol.LatSym => Denotation.Latticenal
+      }
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      TypedAst.Predicate.Head.Atom(sym, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym, den, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1849,8 +1853,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
     case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+      val den = sym match {
+        case s: Symbol.RelSym => Denotation.Relational
+        case s: Symbol.LatSym => Denotation.Latticenal
+      }
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      TypedAst.Predicate.Body.Atom(sym, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym, den, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
