@@ -90,14 +90,13 @@ pub rel Start(actorName: Str)
 pub def start(a: ActorSystem[s, r1, r2, r3]): Unit =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
-    let _startPolicy = r.startPolicy;
-    // TODO: 1. Compute the fixpoint of startPolicy
-    // TODO: 2. Compute a fold over the Start relation (?)
-    //          TODO: Requires support for fold in the language.
-    //          TODO: A better idea might be a toSet primitive that converts a relation to a set of tuples?
-    // TODO: 3. Start each actor.
-    // TODO: 4. Return a value that can be used for shutdown.
+    let startPolicy = r.startPolicy;
     ()
+    //fold Actor () ((actor, _) ->
+    //  let (actorName, initialState, mailbox, behavior) = actor;
+    //  startActor(actorName, initialState, mailbox, behavior))
+    //  (solve startPolicy)
+    // TODO: Return a value that can be used for shutdown.
 
 pub def startActor[s, e](_actorName: Str, _initialState: s, _mailbox: Channel[ActorMsg], _actor: s -> ActorResult[s, e]): Unit =
     // TODO: Spawn the actor using the initial state.
