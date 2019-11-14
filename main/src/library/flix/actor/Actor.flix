@@ -98,9 +98,11 @@ pub def start(a: ActorSystem[s, r1, r2, r3]): Unit =
       ())
       (solve startPolicy)
     // TODO: Return a value that can be used for shutdown.
+    //       That value could be all actor's mailboxes (we can send a stop message on all of them at shutdown)
 
-pub def startActor[s, e](_actorName: Str, _initialState: s, _mailbox: Channel[ActorMsg], _actor: s -> ActorResult[s, e]): Unit =
-    // TODO: Spawn the actor using the initial state.
+pub def startActor[s](_actorName: Str, _initialState: s, _mailbox: Channel[ActorMsg], _actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str]): Unit =
+    let channel = Channel.new();
+    spawn (actor(initialState));
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
     ()
