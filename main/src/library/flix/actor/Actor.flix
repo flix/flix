@@ -39,7 +39,7 @@ pub enum ControlMsg {
 }
 
 
-
+// TODO: Do we want to two types of messages depending on whether we need a reply channel?
 pub enum ActorMsg {
     case Start(Channel[ControlMsg]),
     case Stop,
