@@ -63,7 +63,7 @@ pub enum ActorMsg {
 /// A `restartPolicy` that describes what should happen when an actor crashes.
 ///
 pub enum ActorSystem[s, r1, r2, r3] {
-    case ActorSystem({startPolicy: #{Actor[s] | r1}, shutdownPolicy: #{Actor[s] | r2}, restartPolicy: #{Actor[s] | r3}}) // TODO: The types here are a bit poor
+    case ActorSystem({startPolicy: #{Actor[s] | r1}, shutdownPolicy: #{Stop | r2}, restartPolicy: #{Start, Crashed | r3}})
 }
 
 // TODO: Define core relations here:
@@ -81,6 +81,7 @@ pub rel Stopped(actorName: Str)
 pub rel Crashed(actorName: Str)
 
 pub rel Start(actorName: Str)
+pub rel Stop(actorName: Str)
 
 // TODO: We dont really have proper support for type aliases, we might want to fix that.
 
@@ -131,7 +132,7 @@ pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
 namespace CounterActorSystem{
 
     pub def main(): Unit =
-        () // TODO: Start the actor system here.
+        () // start(system()) // TODO: Start the actor system here.
 
 
     pub def system(): ActorSystem[_, _, _, _] = ActorSystem({
@@ -141,14 +142,14 @@ namespace CounterActorSystem{
             Start("Worker1") :- Started("counterActor").
             Start("Worker2") :- Started("counterActor").
             Start("Worker3") :- Started("counterActor").
-
-// TODO: Problem with the type system...
-//            Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
+            // TODO: Problem wit the type system
+            // Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
 
         },
         restartPolicy = defaultRestartPolicy(),
         shutdownPolicy = #{
-            // TODO...
+            Stop("counterActor").
+            Stop("Worker1"). Stop("Worker2"). Stop("Worker3").
         }}
     )
 
