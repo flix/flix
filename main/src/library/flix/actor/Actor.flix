@@ -90,7 +90,7 @@ pub rel Start(actorName: Str)
 pub def start(a: ActorSystem[s, r1, r2, r3]): Unit =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
-    let startPolicy = r.startPolicy;
+    let _startPolicy = r.startPolicy;
     ()
     //fold Actor () ((actor, _) ->
     //  let (actorName, initialState, mailbox, behavior) = actor;
