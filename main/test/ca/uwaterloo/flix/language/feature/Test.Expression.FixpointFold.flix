@@ -323,11 +323,13 @@ def testFixpointFold42(): Bool =
 
 
 // Mixed types
-rel F(x: Str, y: Int)
+rel Fm(x: Str, y: Int)
 
-def main(): Unit =
-  let p = #{F("foo", 1). F("bar", 2).};
-  fold F 0 ((entry, acc) ->
+@test
+def testFixpointFold43(): Int =
+  let p = #{Fm("foo", 1). Fm("bar", 2).};
+  fold Fm 0 ((entry, acc) ->
      let (_x, y) = entry;
      acc + y)
      (solve p)
+
