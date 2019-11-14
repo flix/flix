@@ -39,7 +39,14 @@ pub enum ControlMsg {
 }
 
 
-// TODO: Do we want to two types of messages depending on whether we need a reply channel?
+/// An actor receives messages of type ActorMsg.
+/// These can either be a message indicating to start (`Start`) or stop (`Stop`) the actor, or an actuall application-level message (`Msg`).
+/// Upon reception of a `Start` message, the actor has to reply on the given channel with a `Ready` message.
+/// Upon reception of `Stop` message, the actor has to ends its execution. TODO: does it? If not, what happens?
+/// When receiving a `Msg` message, the actor can reply to the sender of the message using the argument channel.
+
+// TODO: Do we want two types of messages depending on whether we need a reply channel?
+// Q: I would not have two types of messages, otherwise it is not clear from the sender what to send (imagine an actor that uses the control channel and then changes its behaviour to not using the control channel)
 pub enum ActorMsg {
     case Start(Channel[ControlMsg]),
     case Stop,
@@ -61,6 +68,12 @@ pub enum ActorSystem[s, r1, r2, r3] {
 
 // TODO: Define core relations here:
 // -----------------------------------------------------------------------------------------------
+
+/// An actor has:
+///   - `actorName`: a name identifying the actor
+///   - `initialState`: the initial state of the actor, used when (re)starting the actor
+///   - `mailbox`: a channel where the actor receives messages from
+///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
 pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str])
 
 pub rel Started(actorName: Str)
@@ -182,3 +195,7 @@ namespace CounterActorSystem{
 /// Quentin:
 /// - Add support for fold.
 ///
+
+// Properties of actors:
+// - FIFO / First that match
+// - Extending actors
