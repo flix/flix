@@ -54,6 +54,8 @@ pub enum ActorMsg {
 }
 
 
+// TODO: Introduce a type alias for Channel[ActorMsg] called Mailbox.
+// TODO: Introduce an use the definition of Actor in the definition of Actor.
 
 ///
 /// An actor system is essentially a triple that consists of:
@@ -74,6 +76,7 @@ pub enum ActorSystem[s, r1, r2, r3] {
 ///   - `initialState`: the initial state of the actor, used when (re)starting the actor
 ///   - `mailbox`: a channel where the actor receives messages from
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
+// TODO: Rename to ActorDef or similar?
 pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str])
 
 pub rel Started(actorName: Str)
