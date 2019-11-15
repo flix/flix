@@ -96,15 +96,14 @@ pub rel Stop(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): Set[Mailbox] =
+pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[Mailbox] =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy <+> r.actors;
-    fold Actor (Set.empty()) ((actor, acc) ->
+    fold Actor Nil ((actor, acc) ->
       let (actorName, initialState, mailbox, behavior) = actor;
-      let channel = startActor(actorName, initialState, mailbox, behavior);
-      Set.insert(channel, acc)
-      )
+      let actor = startActor(actorName, initialState, mailbox, behavior);
+      actor :: acc)
       (solve startPolicy)
 
 pub def startActor[s](_actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str]): Mailbox =
@@ -212,7 +211,6 @@ pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
 ///   - Refactor the code not to depend on relations and lattices maps.
 ///
 /// Quentin:
-/// - Add support for fold.
 ///
 
 // Properties of actors:
