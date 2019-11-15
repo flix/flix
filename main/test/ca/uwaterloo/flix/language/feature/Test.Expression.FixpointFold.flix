@@ -322,3 +322,15 @@ def testFixpointFold42(): Bool =
   Result.isOk(res)
 
 
+// Mixed types
+// TODO: fails because tuples seem incorrectly constructed
+// rel Fm(x: Str, y: Int)
+// 
+// @test
+// def testFixpointFold43(): Int =
+//   let p = #{Fm("foo", 1). Fm("bar", 2).};
+//   fold Fm 0 ((entry, acc) ->
+//      let (_x, y) = entry;
+//      acc + y)
+//      (solve p)
+
