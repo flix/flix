@@ -82,6 +82,8 @@ pub enum ActorSystem[s, r1, r2, r3, r4] {
 // TODO: Rename to ActorDef or similar?
 pub rel Actor[s](actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str])
 
+// TODO: Mailboxes should disappear from the Actor relation (which also needs a new name).
+
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
 pub rel Crashed(actorName: Str)
@@ -94,10 +96,10 @@ pub rel Stop(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start(a: ActorSystem[_, _, _, _, _]): Unit /* Set[Channel[ActorMsg]] */ =
+pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): Unit /* Set[Channel[ActorMsg]] */ =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
-    let startPolicy = r.startPolicy; // TODO: <+> r.actors;
+    let startPolicy = r.startPolicy <+> r.actors;
     fold Actor () ((_actor, _acc) ->
       // TODO: This is what should happen, but this does not compile (init of empty list)
       // let (actorName, initialState, mailbox, behavior) = actor;
