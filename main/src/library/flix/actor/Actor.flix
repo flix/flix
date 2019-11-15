@@ -50,11 +50,14 @@ pub enum ControlMsg {
 pub enum ActorMsg {
     case Start(Channel[ControlMsg]),
     case Stop,
-    case Msg(Channel[ActorMsg], Str)
+    case Msg(Mailbox, Str)
 }
 
+///
+/// A mailbox is a type alias for a channel of actor messages.
+///
+type alias Mailbox = Channel[ActorMsg]
 
-// TODO: Introduce a type alias for Channel[ActorMsg] called Mailbox.
 // TODO: Introduce an use the definition of Actor in the definition of Actor.
 
 ///
@@ -77,7 +80,7 @@ pub enum ActorSystem[s, r1, r2, r3, r4] {
 ///   - `mailbox`: a channel where the actor receives messages from
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
 // TODO: Rename to ActorDef or similar?
-pub rel Actor[s](actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str])
+pub rel Actor[s](actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str])
 
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
@@ -105,7 +108,7 @@ pub def start(a: ActorSystem[_, _, _, _, _]): Unit /* Set[Channel[ActorMsg]] */ 
     // TODO: Return a value that can be used for shutdown.
     //       That value could be all actor's mailboxes (we can send a stop message on all of them at shutdown)
 
-pub def startActor[s](_actorName: Str, initialState: s, mailbox: Channel[ActorMsg], actor: (s, Channel[ActorMsg]) -> ActorResult[s, Str]): Channel[ActorMsg] =
+pub def startActor[s](_actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str]): Mailbox =
     spawn (actor(initialState, mailbox));
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
@@ -172,7 +175,7 @@ pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
 //     ///
 //     /// The counter can be incremented, decrement, and its value retrieved.
 //     ///
-//     pub def counterActor(n: Int, mailbox: Channel[ActorMsg]): ActorResult[Int, Str] =
+//     pub def counterActor(n: Int, mailbox: Mailbox: ActorResult[Int, Str] =
 //         match <- mailbox {
 //             case Start(c)       => c <- Ready; counterActor(n, mailbox)
 //             case Stop           => Done
@@ -185,7 +188,7 @@ pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
 //     ///
 //     /// An actor that occasionally requests the counter actor to increment its number.
 //     ///
-//     pub def workerActor(counterActor: Channel[ActorMsg], mailbox: Channel[ActorMsg]): ActorResult[Unit, Str] =
+//     pub def workerActor(counterActor: Mailbox, mailbox: Mailbox): ActorResult[Unit, Str] =
 //         match <- mailbox {
 //             case Start(c)           => c <- Ready; workerActor(counterActor, mailbox)
 //             case Stop               => Done
