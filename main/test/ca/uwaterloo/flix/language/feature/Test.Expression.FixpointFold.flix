@@ -269,11 +269,11 @@ def testFixpointFold36(): Str =
   let p = #{Fs("foo", "bar"). Fs("baz", "qux").};
   fold Fs "" ((_entry, acc) -> acc) (solve p)
 
-// TODO: @test: Test is broken?
-// def testFixpointFold37(): Bool =
-//  let p = #{Fs("foo", "bar").};
-//  let res = fold Fs "" adds (solve p);
-//  res == "foo"
+@test
+def testFixpointFold37(): Bool =
+ let p = #{Fs("foo", "bar").};
+ let res = fold Fs "" adds (solve p);
+ res == "foo"
 
 @test
 def testFixpointFold38(): Bool =
@@ -309,11 +309,11 @@ def addr(entry: (Result[Int, Str], Result[Int, Str]), acc: Result[Int, Str]): Re
   let (x, y) = entry;
   Result.withDefault(x, Result.withDefault(y, acc))
 
-// TODO: @test: Test is broken?
-//def testFixpointFold41(): Bool =
-//  let p = #{Fr(Err("foo"), Err("bar")). Fr(Err("baz"), Ok(4)).};
-//  let res = fold Fr Ok(0) addr (solve p);
-//  Result.getWithDefault(res, -1) == 0
+@test
+def testFixpointFold41(): Bool =
+  let p = #{Fr(Err("foo"), Err("bar")). Fr(Err("baz"), Ok(4)).};
+  let res = fold Fr Ok(0) addr (solve p);
+  Result.getWithDefault(res, -1) == 4
 
 @test
 def testFixpointFold42(): Bool =
@@ -323,14 +323,13 @@ def testFixpointFold42(): Bool =
 
 
 // Mixed types
-// TODO: fails because tuples seem incorrectly constructed
-// rel Fm(x: Str, y: Int)
-// 
-// @test
-// def testFixpointFold43(): Int =
-//   let p = #{Fm("foo", 1). Fm("bar", 2).};
-//   fold Fm 0 ((entry, acc) ->
-//      let (_x, y) = entry;
-//      acc + y)
-//      (solve p)
+rel Fm(x: Str, y: Int)
+
+@test
+def testFixpointFold43(): Int =
+  let p = #{Fm("foo", 1). Fm("bar", 2).};
+  fold Fm 0 ((entry, acc) ->
+     let (_x, y) = entry;
+     acc + y)
+     (solve p)
 
