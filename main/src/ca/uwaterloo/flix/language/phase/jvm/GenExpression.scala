@@ -1159,7 +1159,7 @@ object GenExpression {
       // this is equivalent to the following, where tupleElements* is empty
       // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
 
-      for ((tpe, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
+      for ((tpe, idx) <- tupleElmsTypes.zipWithIndex) {
         // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
         visitor.visitInsn(DUP)
         // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms]
