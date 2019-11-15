@@ -96,19 +96,16 @@ pub rel Stop(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): Unit /* Set[Channel[ActorMsg]] */ =
+pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): Set[Mailbox] =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy <+> r.actors;
-    fold Actor () ((_actor, _acc) ->
-      // TODO: This is what should happen, but this does not compile (init of empty list)
-      // let (actorName, initialState, mailbox, behavior) = actor;
-      // let channel = startActor(actorName, initialState, mailbox, behavior));
-      // Set.insert(channel, acc)
-      ())
+    fold Actor (Set.empty()) ((actor, acc) ->
+      let (actorName, initialState, mailbox, behavior) = actor;
+      let channel = startActor(actorName, initialState, mailbox, behavior);
+      Set.insert(channel, acc)
+      )
       (solve startPolicy)
-    // TODO: Return a value that can be used for shutdown.
-    //       That value could be all actor's mailboxes (we can send a stop message on all of them at shutdown)
 
 pub def startActor[s](_actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str]): Mailbox =
     spawn (actor(initialState, mailbox));
