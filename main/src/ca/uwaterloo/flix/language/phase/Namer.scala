@@ -1015,6 +1015,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
       }
+/*
+      case WeededAst.Pattern.RecordExtend(ident, rest, loc) =>
+
+      case WeededAst.Pattern.RecordEmpty(loc) =>
+      */
+
     }
 
     (visit(pat0), m.toMap)
@@ -1058,6 +1064,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val sym = env0(value.name)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(),loc)
       }
+      case WeededAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
+      //case WeededAst.Pattern.RecordExtend(ident, rest, loc) => NamedAst.Pattern.RecordExtend()
     }
 
     visit(pat0)

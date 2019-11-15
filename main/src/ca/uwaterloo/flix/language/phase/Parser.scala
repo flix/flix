@@ -974,7 +974,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Record: Rule1[ParsedAst.Pattern.Record] = {
       def RecordPatternField: Rule1[ParsedAst.RecordPatternField] = rule{
-        SP ~ Names.Variable ~ SP ~> ParsedAst.RecordPatternField
+        SP ~ optional( Pattern ~ optWS ~ atomic("=") ~ optWS) ~ Names.Variable ~ SP ~> ParsedAst.RecordPatternField
       }
       rule { SP ~ "{" ~ optWS ~ zeroOrMore(RecordPatternField).separatedBy(optWS ~ "," ~  optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.Record
       }

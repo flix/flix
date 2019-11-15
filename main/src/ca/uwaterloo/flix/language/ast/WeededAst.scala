@@ -248,6 +248,10 @@ object WeededAst {
 
     case class ArrayHeadSpread(ident: Option[Name.Ident], elms: scala.List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Pattern
 
+    case class RecordEmpty(loc: SourceLocation) extends WeededAst.Pattern
+
+    case class RecordExtend(pat: WeededAst.Pattern, ident: Name.Ident, rest: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+
   }
 
   sealed trait Predicate
