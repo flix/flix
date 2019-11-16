@@ -109,7 +109,7 @@ LocalVar(r)[alpha(c)] :- LitStm(r, c).
 //
 // Here sum is a reference to a transfer function implemented below.
 //
-LocalVar(r, sum(v1, v2)) :- AddStm(r, x, y),
+LocalVar(r)[sum(v1, v2)] :- AddStm(r, x, y),
                             LocalVar(x)[v1],
                             LocalVar(y)[v2].
 

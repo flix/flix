@@ -1793,10 +1793,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.Atom(sym, den, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, den0, terms, tvar, loc) =>
       val den = sym match {
-        case s: Symbol.RelSym => Denotation.Relational
-        case s: Symbol.LatSym => Denotation.Latticenal
+        case s: Symbol.RelSym =>
+          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Relational
+        case s: Symbol.LatSym =>
+          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Latticenal
       }
       val ts = terms.map(t => reassembleExp(t, program, subst0))
       TypedAst.Predicate.Head.Atom(sym, den, ts, subst0(tvar), loc)

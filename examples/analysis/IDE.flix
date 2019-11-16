@@ -143,7 +143,7 @@ namespace IDE {
             nonbottom(nonbottom2).
 
         // compute summary
-        SummaryFn(call,d4,d5,compose(compose(cs,se),er)) :-
+        SummaryFn(call,d4,d5)[compose(compose(cs,se),er)] :-
             CallGraph(call,target),
             StartNode(target,start),
             EndNode(target,end),
@@ -203,8 +203,8 @@ namespace IDE {
         EshIntra("n9","a","a")[id()].
         EshIntra("n9","a","x")[Transformer.NonBotTrans(-2,5,Value.Bot)].
 
-        EshCallStart(call,"zero",target,"zero",id()) :- CallGraph(call,target).
-        EshEndReturn(target,"zero",call,"zero",id()) :- CallGraph(call,target).
+        EshCallStart(call,"zero",target,"zero")[id()] :- CallGraph(call,target).
+        EshEndReturn(target,"zero",call,"zero")[id()] :- CallGraph(call,target).
 
         EshCallStart("n1","zero","p","a")[Transformer.NonBotTrans(0,7,Value.Bot)].
         EshCallStart("n1","x","p","x")[id()].
