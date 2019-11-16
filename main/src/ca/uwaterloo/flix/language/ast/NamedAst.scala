@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 
 import scala.collection.immutable.List
 
@@ -269,7 +269,7 @@ object NamedAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(name: Name.QName, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
       case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
@@ -279,7 +279,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(name: Name.QName, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 

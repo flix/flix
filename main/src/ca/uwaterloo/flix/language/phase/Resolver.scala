@@ -883,11 +883,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(qname, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, den, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
-          } yield ResolvedAst.Predicate.Head.Atom(sym, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(sym, den, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -901,11 +901,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(qname, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(qname, den, polarity, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
-          } yield ResolvedAst.Predicate.Body.Atom(sym, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(sym, den, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {

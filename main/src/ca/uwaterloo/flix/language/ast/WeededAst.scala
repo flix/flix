@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 
 import scala.collection.immutable.List
 
@@ -262,7 +263,7 @@ object WeededAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(name: Name.QName, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -272,7 +273,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(name: Name.QName, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 

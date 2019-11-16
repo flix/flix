@@ -1101,10 +1101,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -1116,9 +1116,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      NamedAst.Predicate.Body.Atom(qname, polarity, ts, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1130,7 +1130,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1138,7 +1138,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1369,7 +1369,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given head predicate `h0`.
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
-    case WeededAst.Predicate.Head.Atom(qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
@@ -1377,7 +1377,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
   }
 
