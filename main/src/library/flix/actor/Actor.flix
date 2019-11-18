@@ -76,19 +76,52 @@ type alias ActorRef = Mailbox
 // TODO: Introduce an use the definition of Actor in the definition of Actor.
 
 ///
-/// An actor system is essentially a triple that consists of:
+/// An actor system is a record that consists of four fields:
 ///
-/// A `startPolicy` that describes the actors in the system and how to start them.
-/// A `shutdownPolicy` that describes how to shutdown the actor system in an orderly fashion.
-/// A `restartPolicy` that describes what should happen when an actor crashes.
+/// A `actors`          field that declares the actors in the system.
+/// A `startPolicy`     field that describes how to start the actors.
+/// A `shutdownPolicy`  field that describes how to stop the actors.
+/// A `restartPolicy`   field that describes the actions to take when an actor crashes.
 ///
-pub enum ActorSystem {
-    // TODO: reintroduce polymorphism
-    case ActorSystem({actors: #{ActorDef, Start, Started}, startPolicy: #{Start, Started, ActorDef}, shutdownPolicy: #{Stop}, restartPolicy: #{Start, Crashed}})
+type alias ActorSystem = {actors: #{ActorDef, Start, Started, MailboxOf}, startPolicy: #{Start, Started, ActorDef, MailboxOf}, shutdownPolicy: #{Stop}, restartPolicy: #{Start, Crashed}}
+
+///
+/// Returns an actor system with the default configuration.
+///
+pub def defaultActorSystem(): ActorSystem = {
+    actors          = #{},
+    startPolicy     = defaultStartPolicy(),
+    shutdownPolicy  = defaultShutdownPolicy(),
+    restartPolicy   = defaultRestartPolicy()
 }
 
-// TODO: Define core relations here:
-// -----------------------------------------------------------------------------------------------
+///
+/// Returns the default start policy.
+///
+pub def defaultStartPolicy(): #{Start, Started, ActorDef, MailboxOf} = #{
+    // TODO
+    Start(actorRef) :- ActorDef(actorRef, _).
+}
+
+///
+/// Returns the default shutdown policy.
+///
+pub def defaultShutdownPolicy(): #{Stop} = #{
+    // TODO
+}
+
+
+///
+/// Returns the default restart policy.
+///
+pub def defaultRestartPolicy(): #{Start, Crashed} = #{
+    // TODO
+    Start(actorRef) :- Crashed(actorRef).
+}
+
+
+
+
 
 /// An actor has:
 ///   - `actorName`: a name identifying the actor
@@ -124,8 +157,7 @@ type alias ControlChannel = Channel[ControlMsg]
 pub def start(a: ActorSystem): ControlChannel =
     let control = chan ControlMsg 10;
     // TODO: We lack pattern matching on records.
-    let ActorSystem(r) = a;
-    let startPolicy = r.startPolicy <+> r.actors;
+    let startPolicy = a.startPolicy <+> a.actors;
     let _actors = fold ActorDef Nil ((actor, acc) ->
       let (actorName, behavior) = actor;
       startActor(control, actorName, behavior) :: acc)
@@ -159,54 +191,26 @@ pub def react(_a: ActorSystem[_, _, _, _, _]): Unit =
     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
     ()
 
-///
-/// Returns the default restart policy.
-/// This policy restarts any actor that has crashed.
-///
-pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
-    Start(actorRef) :- Crashed(actorRef).
-}
 
-///
-/// Returns the default start policy.
-/// This policy starts all actors.
-///
-pub def defaultStartPolicy[r](): #{Start, ActorDef | r} = #{
-    Start(actorRef) :- ActorDef(actorRef, _).
-}
 // TODO: Does what we are doing work with scoped threads?
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Examples                                                                 //
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace CounterActorSystem{
+namespace CounterActorSystem {
 
     pub def main(): Unit =
         let _control = start(system());
         ()
 
-    pub def system(): ActorSystem = ActorSystem({
-        actors = #{
-            ActorDef("counterActor", counterActor(0i32)).
-            // TODO: this fails to unify Unit with Channel[ACtorMsg]
-            // ActorDef("Worker1", c, workerActor) :- MailboxOf("counterActor", c).
-            // ActorDef("Worker2", c, workerActor) :- MailboxOf("counterActor", c).
-            // ActorDef("Worker3", c, workerActor) :- MailboxOf("counterActor", c).
-        },
-        startPolicy = #{
-            Start("counterActor").
-
-            Start("Worker1") :- Started("counterActor").
-            Start("Worker2") :- Started("counterActor").
-            Start("Worker3") :- Started("counterActor").
-        },
-        restartPolicy = defaultRestartPolicy(),
-        shutdownPolicy = #{
-            Stop("counterActor").
-            Stop("Worker1"). Stop("Worker2"). Stop("Worker3").
-        }}
-    )
+    pub def system(): ActorSystem = {
+            actors = #{
+                ActorDef("counterActor", counterActor(0i32)).
+                ActorDef("Worker1", workerActor(m)) :- MailboxOf("counterActor", m).
+                ActorDef("Worker2", workerActor(m)) :- MailboxOf("counterActor", m).
+                ActorDef("Worker3", workerActor(m)) :- MailboxOf("counterActor", m).
+            } | defaultActorSystem() }
 
     ///
     /// An actor that maintains an internal counter.
