@@ -40,7 +40,7 @@ pub enum ControlMsg {
     ///
     /// Indicates that an actor has crashed
     ///
-    case Crashed(Str),
+    case Crashed(Str),  // TODO: Quentin: I can see the use for these, but by having them in the same ADT as Ready that means an actor could send one of these messages, which is probably not something we want?
 
     ///
     /// Indicates that an actor has successfully terminated
@@ -79,7 +79,7 @@ type alias ActorRef = Mailbox
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Start, Started, ActorDef, MailboxOf, Crashed}
+type alias ActorPolicy = #{Start, Started, ActorDef, MailboxOf, Crashed, DependsOn} // TODO: sort by some sane order
 
 ///
 /// An actor system is a record that consists of four fields:
@@ -105,7 +105,7 @@ pub def defaultActorSystem(): ActorSystem = {
 /// Returns the default start policy.
 ///
 pub def defaultStartPolicy(): ActorPolicy = #{
-    // TODO
+    // TODO: incorporate DependsOn and deal with cyclic dependencies.
     Start(actorRef) :- ActorDef(actorRef, _).
 }
 
@@ -128,18 +128,28 @@ pub def defaultRestartPolicy(): ActorPolicy = #{
 
 
 
-
+///
 /// An actor has:
 ///   - `actorName`: a name identifying the actor
 ///   - `mailbox`: a channel where the actor receives messages from
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
 /// TODO: initial state
-pub rel ActorDef(actorName: Str, actor: Mailbox -> ActorResult[Str])
+pub rel ActorDef(actorName: Str, actor: Mailbox -> ActorResult[Str]) // TODO: introduce type alias?
 
 // TODO: what is the identity of an actor? Possibilities:
 // 1. A name, given as a string. That's really fragile and begs for troubles when e.g., combining actor systems
 // 2. A channel. That's probably better, but what if we want multiple actors to use the same channel? Then probably we need a channel + a number, in order to support worker actors that share a channel.
+// TODO: Quentin: Why/where do we even need a notation of identity? Can we just not maintain appropriate lists and maps?
 
+///
+/// A relation that represents a partial order of actor dependencies.
+///
+/// If an actor `a1` depends on an actor `a2` then `a1` is started before `a2`.
+/// If there is a cyclic dependency then both actors are started at the same time.
+///
+pub rel DependsOn(actor1: Str, actor2: Str)
+
+// TODO: Refactor these into an enum instead and have one State predicate?
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
 pub rel Crashed(actorName: Str)
@@ -147,8 +157,8 @@ pub rel Crashed(actorName: Str)
 pub rel Start(actorName: Str)
 pub rel Stop(actorName: Str)
 
-pub rel MailboxOf(actorName: Str, mailbox: Mailbox)
-// TODO: how to populate this relation?
+pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
+// TODO: how to populate this relation? Should be done by the actor system somehow...
 
 type alias ControlChannel = Channel[ControlMsg]
 
@@ -201,16 +211,22 @@ pub def react(_a: ActorSystem[_, _, _, _, _]): Unit =
 
 namespace CounterActorSystem {
 
+    ///
+    /// The main entry point for the counter actor system.
+    ///
     pub def main(): Unit =
         let _control = start(system());
         ()
 
+    ///
+    /// Returns an actor system with one counter actor and several worker actors.
+    ///
     pub def system(): ActorSystem = {
             actors = #{
                 ActorDef("counterActor", counterActor(0i32)).
-                ActorDef("Worker1", workerActor(m)) :- MailboxOf("counterActor", m).
-                ActorDef("Worker2", workerActor(m)) :- MailboxOf("counterActor", m).
-                ActorDef("Worker3", workerActor(m)) :- MailboxOf("counterActor", m).
+                ActorDef("worker1", workerActor(m)) :- MailboxOf("counterActor", m).
+                ActorDef("worker2", workerActor(m)) :- MailboxOf("counterActor", m).
+                ActorDef("worker3", workerActor(m)) :- MailboxOf("counterActor", m).
             } | defaultActorSystem() }
 
     ///
@@ -240,6 +256,10 @@ namespace CounterActorSystem {
         }
 
 }
+
+
+
+
 
 ///
 /// The Grand TODO List
