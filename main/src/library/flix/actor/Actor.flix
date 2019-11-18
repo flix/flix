@@ -79,7 +79,11 @@ type alias ActorRef = Mailbox
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn} // TODO: sort by some sane order
+type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn, WaitingOn} // TODO: sort by some sane order
+
+// TODO: List of auxilliary predicates. It would be nice if these could be better "hidden":
+rel WaitingOn(actor1: Str, actor2: Str)
+
 
 ///
 /// An actor system is a record that consists of four fields:
@@ -105,24 +109,52 @@ pub def defaultActorSystem(): ActorSystem = {
 /// Returns the default start policy.
 ///
 pub def defaultStartPolicy(): ActorPolicy = #{
+    // TODO: better variable names.
+    WaitingOn(actor, dep) :- DependsOn(actor, dep), ActorState(dep, Pending). // TODO: here not Started(dep) might have been better?
+    Start(actor) :- ActorDef(actor, _), ActorDef(dep, _), not WaitingOn(actor, dep).
+
     // TODO: incorporate DependsOn and deal with cyclic dependencies.
-    Start(actorRef) :- ActorDef(actorRef, _).
+}
+
+///
+/// Returns a policy that immediately starts all actors regardless of their dependencies.
+///
+pub def immediatelyStartAllPolicy(): ActorPolicy = #{
+    Start(actor) :- ActorDef(actor, _).
 }
 
 ///
 /// Returns the default shutdown policy.
 ///
 pub def defaultShutdownPolicy(): ActorPolicy = #{
-    // TODO
+    // TODO: incorporate DependsOn and deal with cyclic dependencies.
+    Stop(actor) :- ActorState(actor, Running).
 }
 
+///
+/// Returns a policy that immediately shuts down all actors regardless of their dependencies.
+///
+pub def immediatelyShutdownAllPolicy(): ActorPolicy = #{
+    Stop(actor) :- ActorState(actor, Running).
+}
 
 ///
 /// Returns the default restart policy.
 ///
-pub def defaultRestartPolicy(): ActorPolicy = #{
-    // TODO
-    Start(actorRef) :- ActorState(actorRef, Crashed).
+pub def defaultRestartPolicy(): ActorPolicy = oneForOneRestartPolicy()
+
+///
+/// Returns a restart policy that restarts an actor when it crashes.
+///
+pub def oneForOneRestartPolicy(): ActorPolicy = #{
+    Start(actor) :- ActorState(actor, Crashed).
+}
+
+///
+/// Returns a restart policy that restarts an actor along with its siblings when it crashes.
+///
+pub def oneForAllRestartPolicy(): ActorPolicy = #{
+    // TODO: Need some notion of restart here? A stop followed by a start... (?)
 }
 
 ///
@@ -155,7 +187,8 @@ pub rel DependsOn(actor1: Str, actor2: Str)
 /// An actor is in one of the following states.
 ///
 pub enum State {
-    case Started,
+    case Pending,
+    case Running,
     case Stopped,
     case Crashed
 }
@@ -163,6 +196,7 @@ pub enum State {
 /// TODO: DOC
 pub rel ActorState(actorName: Str, state: State)
 
+// TODO: Should there be a difference between Start and Resume?
 pub rel Start(actorName: Str)
 pub rel Stop(actorName: Str)
 
