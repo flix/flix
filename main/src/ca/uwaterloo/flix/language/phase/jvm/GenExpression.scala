@@ -485,6 +485,9 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getField",
         AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
 
+      // Cast the field value to the expected type.
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
     case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
