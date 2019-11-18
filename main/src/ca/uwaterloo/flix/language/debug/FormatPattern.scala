@@ -33,9 +33,10 @@ object FormatPattern {
     case TypedAst.Pattern.Array(elms, _, _) => "[" + elms.map(format).mkString(", ") + "]"
     case TypedAst.Pattern.ArrayTailSpread(elms, sym, _, _) =>
       "[" + elms.map(format).mkString(", ") + ", .." + sym.text + "]"
-
     case TypedAst.Pattern.ArrayHeadSpread(sym, elms, _, _) =>
       "[" + sym.text + ".., " + elms.map(format).mkString(", ") + "]"
+    case TypedAst.Pattern.RecordEmpty(tpe, loc) => "{}"
+    case TypedAst.Pattern.RecordExtend(sym, pat, tpe, rest, loc) => "{"+sym.text+"="+format(pat)+"|"+format(rest)+"}"
 
   }
 

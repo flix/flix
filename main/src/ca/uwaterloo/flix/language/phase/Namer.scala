@@ -1015,12 +1015,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           m += (id.name -> sym)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(), loc)
       }
-/*
-      case WeededAst.Pattern.RecordExtend(ident, rest, loc) =>
-
-      case WeededAst.Pattern.RecordEmpty(loc) =>
-      */
-
+      case WeededAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(Type.freshTypeVar(), loc)
+      case WeededAst.Pattern.RecordExtend(ident, pat, rest, loc) =>
+        val sym = Symbol.freshVarSym(ident)
+        m += (ident.name -> sym)
+        NamedAst.Pattern.RecordExtend(sym, visit(pat), Type.freshTypeVar(), visit(rest), loc)
     }
 
     (visit(pat0), m.toMap)
@@ -1064,8 +1063,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val sym = env0(value.name)
           NamedAst.Pattern.ArrayHeadSpread(sym, elms map visit, Type.freshTypeVar(),loc)
       }
-      case WeededAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
-      //case WeededAst.Pattern.RecordExtend(ident, rest, loc) => NamedAst.Pattern.RecordExtend()
+      case WeededAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(Type.freshTypeVar(), loc)
+      case WeededAst.Pattern.RecordExtend(ident, pat, rest, loc) =>
+        val sym = env0(ident.name)
+        NamedAst.Pattern.RecordExtend(sym, visit(pat), sym.tvar, visit(rest), loc)
     }
 
     visit(pat0)
@@ -1323,6 +1324,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case None => freeElms
         case Some(value) =>freeElms.appended(value)
       }
+    case WeededAst.Pattern.RecordEmpty(loc) => Nil
+    case WeededAst.Pattern.RecordExtend(ident, pat, rest, loc) => List(ident).appendedAll(freeVars(pat)).appendedAll(freeVars(rest))
   }
 
   /**

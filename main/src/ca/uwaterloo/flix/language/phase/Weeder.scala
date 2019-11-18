@@ -1261,15 +1261,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Pattern.Record(sp1, fields, sp2) =>
         val init = WeededAst.Pattern.RecordEmpty(mkSL(sp1, sp2)).toSuccess
         fields.foldRight(init: Validation[WeededAst.Pattern,WeederError]){
-          case (ParsedAst.RecordPatternField(ssp1, pat, ident, ssp2), acc) =>
+          case (ParsedAst.RecordPatternField(ssp1, ident, pat, ssp2), acc) =>
             seen.get(ident.name) match {
               case None =>
                 seen += (ident.name -> ident)
                 pat match {
-                  case Some(pat) => WeededAst.Pattern.RecordExtend (visit(pat).get,
-                    ident, acc.get, mkSL (ssp1, ssp2)).toSuccess
-                  case None => WeededAst.Pattern.RecordExtend (WeededAst.Pattern.Wild(mkSL(ssp1, ssp2)),
-                    ident, acc.get, mkSL (ssp1, ssp2)).toSuccess
+                  case Some(pat) => WeededAst.Pattern.RecordExtend (ident, visit(pat).get,
+                    acc.get, mkSL (ssp1, ssp2)).toSuccess
+                  case None => WeededAst.Pattern.RecordExtend (ident, WeededAst.Pattern.Var(ident, mkSL(ssp1, ssp2)),
+                    acc.get, mkSL (ssp1, ssp2)).toSuccess
                 }
               case Some(otherIdent) =>
                 NonLinearPattern(ident.name, otherIdent.loc, mkSL(ssp1,ssp2)).toFailure

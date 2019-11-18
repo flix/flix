@@ -250,7 +250,7 @@ object WeededAst {
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Pattern
 
-    case class RecordExtend(pat: WeededAst.Pattern, ident: Name.Ident, rest: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
+    case class RecordExtend(ident: Name.Ident, pat: WeededAst.Pattern, rest: WeededAst.Pattern, loc: SourceLocation) extends WeededAst.Pattern
 
   }
 

@@ -1681,6 +1681,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               resultType <- unifyTypM(varSym.tvar,arrayType,loc)
             ) yield resultType
 
+      case ResolvedAst.Pattern.RecordEmpty(tvar, loc) => liftM(tvar)
+
+      case ResolvedAst.Pattern.RecordExtend(sym, pat, tvar, rest, loc) =>unifyTypM(sym.tvar, tvar, loc)
+
+
     }
 
     visit(pat0)
@@ -1720,6 +1725,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Array(elms, tvar, loc) => TypedAst.Pattern.Array(elms map visit, subst0(tvar), loc)
       case ResolvedAst.Pattern.ArrayTailSpread(elms, sym, tvar, loc) => TypedAst.Pattern.ArrayTailSpread(elms map visit, sym, subst0(tvar), loc)
       case ResolvedAst.Pattern.ArrayHeadSpread(sym, elms, tvar, loc) => TypedAst.Pattern.ArrayHeadSpread(sym, elms map visit, subst0(tvar), loc)
+      case ResolvedAst.Pattern.RecordEmpty(tvar, loc) => TypedAst.Pattern.RecordEmpty(subst0(tvar), loc)
+      case ResolvedAst.Pattern.RecordExtend(sym, pat, tvar, rest, loc) => TypedAst.Pattern.RecordExtend(sym, visit(pat), subst0(tvar), visit(rest), loc)
     }
 
     visit(pat0)

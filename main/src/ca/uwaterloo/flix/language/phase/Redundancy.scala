@@ -679,12 +679,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Pattern.Array(elms,_,_) => elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
-    case Pattern.ArrayTailSpread(elms, _, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
+    case Pattern.ArrayTailSpread(elms, _, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
-    case Pattern.ArrayHeadSpread(_, elms, _, _) =>elms.foldLeft(Set.empty[Symbol.VarSym]){
+    case Pattern.ArrayHeadSpread(_, elms, _, _) => elms.foldLeft(Set.empty[Symbol.VarSym]){
       case (acc,pat) => acc ++ freeVars(pat)
     }
+    case Pattern.RecordEmpty(tpe, loc) => Set.empty
+    case Pattern.RecordExtend(sym, pat, tpe, rest, loc) => freeVars(rest) ++ freeVars(pat)
   }
 
   /**

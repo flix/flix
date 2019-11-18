@@ -528,6 +528,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             (Pattern.ArrayHeadSpread (freshSym ,ps, subst0 (tpe), loc),
               if (envs.isEmpty) Map(sym -> freshSym)
               else envs.reduce (_ ++ _) ++ Map(sym -> freshSym))
+        case Pattern.RecordEmpty(tpe, loc) => (Pattern.RecordEmpty(tpe, loc), Map.empty)
+        case Pattern.RecordExtend(sym, pat, tpe, rest, loc) =>
+          val freshSym = Symbol.freshVarSym(sym)
+          val (p, pm) = visitPat(pat)
+          val (r, rm) = visitPat(rest)
+          (Pattern.RecordExtend(freshSym, p, subst0(tpe), r, loc), Map(sym -> freshSym)++pm++rm)
       }
 
       /**

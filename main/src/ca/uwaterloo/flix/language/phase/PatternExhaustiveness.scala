@@ -84,6 +84,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case object Array  extends TyCon
 
+    case object Record extends TyCon
+
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
   }
@@ -759,6 +761,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case TyCon.Wild => "_"
       case TyCon.Tuple(args) => "(" + args.foldRight("")((x, xs) => if (xs == "") prettyPrintCtor(x) + xs else prettyPrintCtor(x) + ", " + xs) + ")"
       case TyCon.Array => "Array"
+      case TyCon.Record => "Record"
       case TyCon.Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(TyCon.Tuple(args))
     }
 
@@ -811,6 +814,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Pattern.Array(elm, _, _) => TyCon.Array
       case Pattern.ArrayTailSpread (elm, _, _, _) => TyCon.Array
       case Pattern.ArrayHeadSpread (_, elm ,_ ,_) => TyCon.Array
+      case Pattern.RecordEmpty(tpe, loc) => TyCon.Record
+      case Pattern.RecordExtend(sym, pat, tpe, rest, loc) => TyCon.Record
     }
 
     /**

@@ -267,6 +267,10 @@ object ResolvedAst {
 
     case class ArrayHeadSpread(sym: Symbol.VarSym, elms: scala.List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
 
+    case class RecordEmpty(tvar:ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
+
+    case class RecordExtend(sym: Symbol.VarSym, pat: ResolvedAst.Pattern, tvar: ast.Type.Var, rest: ResolvedAst.Pattern, loc: SourceLocation) extends ResolvedAst.Pattern
+
   }
 
   sealed trait Predicate

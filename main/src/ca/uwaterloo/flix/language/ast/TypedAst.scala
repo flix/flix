@@ -329,6 +329,9 @@ object TypedAst {
 
     case class ArrayHeadSpread(sym: Symbol.VarSym, elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
+    case class RecordExtend(sym: Symbol.VarSym, pat: TypedAst.Pattern, tpe: Type, rest: TypedAst.Pattern, loc: SourceLocation) extends TypedAst.Pattern
   }
 
   sealed trait Predicate {

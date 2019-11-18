@@ -1585,5 +1585,5 @@ object ParsedAst {
     */
   case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
-  case class RecordPatternField(sp1: SourcePosition, pat: Option[ParsedAst.Pattern], ident: Name.Ident, sp2: SourcePosition)
+  case class RecordPatternField(sp1: SourcePosition, ident: Name.Ident, pat: Option[ParsedAst.Pattern], sp2: SourcePosition)
 }

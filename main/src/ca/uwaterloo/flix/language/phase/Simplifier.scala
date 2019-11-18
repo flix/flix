@@ -1147,6 +1147,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
+        /**
+         * Matching a RecordEmpty is guaranteed to succeed
+         *
+         * It doesn't match a variable, and we therefore proceed to match all variables
+         * with the remaining patterns
+         */
+        case (TypedAst.Pattern.RecordEmpty(tpe, loc) :: ps, v :: vs) =>
+          patternMatchList(ps,v :: vs, guard, succ, fail)
+
+        case (TypedAst.Pattern.RecordExtend(sym, pat, tpe, rest, loc) :: ps, v :: vs) =>
+          patternMatchList(ps, vs, guard, succ, fail)//TODO: replace wildcard behavior
 
         case p => throw InternalCompilerException(s"Unsupported pattern '$p'.")
       }

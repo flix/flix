@@ -858,6 +858,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.ArrayHeadSpread(sym, es, tvar, loc)
+
+        case NamedAst.Pattern.RecordEmpty(tvar, loc) => ResolvedAst.Pattern.RecordEmpty(tvar, loc).toSuccess
+
+        case NamedAst.Pattern.RecordExtend(sym, pat, tvar, rest, loc) =>
+          ResolvedAst.Pattern.RecordExtend(sym, visit(pat).get, tvar, visit(rest).get, loc).toSuccess
       }
 
       visit(pat0)
