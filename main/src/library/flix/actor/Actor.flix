@@ -40,7 +40,7 @@ pub enum ControlMsg {
     ///
     /// Indicates that an actor has crashed
     ///
-    case Crashed(Str),  // TODO: Quentin: I can see the use for these, but by having them in the same ADT as Ready that means an actor could send one of these messages, which is probably not something we want?
+    case CCrashed(Str),  // TODO: Quentin: I can see the use for these, but by having them in the same ADT as Ready that means an actor could send one of these messages, which is probably not something we want?
 
     ///
     /// Indicates that an actor has successfully terminated
@@ -79,7 +79,7 @@ type alias ActorRef = Mailbox
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Start, Started, ActorDef, MailboxOf, Crashed, DependsOn} // TODO: sort by some sane order
+type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn} // TODO: sort by some sane order
 
 ///
 /// An actor system is a record that consists of four fields:
@@ -122,11 +122,13 @@ pub def defaultShutdownPolicy(): ActorPolicy = #{
 ///
 pub def defaultRestartPolicy(): ActorPolicy = #{
     // TODO
-    Start(actorRef) :- Crashed(actorRef).
+    Start(actorRef) :- ActorState(actorRef, Crashed).
 }
 
-
-
+///
+/// An actor is a function from a mailbox to an actor result.
+///
+type alias Actor = Mailbox -> ActorResult[Str]
 
 ///
 /// An actor has:
@@ -134,7 +136,7 @@ pub def defaultRestartPolicy(): ActorPolicy = #{
 ///   - `mailbox`: a channel where the actor receives messages from
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
 /// TODO: initial state
-pub rel ActorDef(actorName: Str, actor: Mailbox -> ActorResult[Str]) // TODO: introduce type alias?
+pub rel ActorDef(actorName: Str, actor: Actor)
 
 // TODO: what is the identity of an actor? Possibilities:
 // 1. A name, given as a string. That's really fragile and begs for troubles when e.g., combining actor systems
@@ -149,10 +151,17 @@ pub rel ActorDef(actorName: Str, actor: Mailbox -> ActorResult[Str]) // TODO: in
 ///
 pub rel DependsOn(actor1: Str, actor2: Str)
 
-// TODO: Refactor these into an enum instead and have one State predicate?
-pub rel Started(actorName: Str)
-pub rel Stopped(actorName: Str)
-pub rel Crashed(actorName: Str)
+///
+/// An actor is in one of the following states.
+///
+pub enum State {
+    case Started,
+    case Stopped,
+    case Crashed
+}
+
+/// TODO: DOC
+pub rel ActorState(actorName: Str, state: State)
 
 pub rel Start(actorName: Str)
 pub rel Stop(actorName: Str)
@@ -178,7 +187,7 @@ pub def start(a: ActorSystem): ControlChannel =
 ///
 /// Starts a single actor. Returns its reference.
 ///
-pub def startActor(control: ControlChannel, actorName: Str, behavior: Mailbox -> ActorResult[Str]): ActorRef =
+pub def startActor(control: ControlChannel, actorName: Str, behavior: Actor): ActorRef =
     let mailbox = chan ActorMsg 10;
     spawn (
       match behavior(mailbox) with {
@@ -186,7 +195,7 @@ pub def startActor(control: ControlChannel, actorName: Str, behavior: Mailbox ->
           // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
           control <- Terminated(actorName)
         case Crash(_) =>
-          control <- Crashed(actorName)
+          control <- CCrashed(actorName)
       }
     );
     // TODO: Use a channel to wait for termination.

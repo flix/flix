@@ -753,10 +753,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         else
           SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc)
 
-      case _ => if (isPatLiteral(p))
-        SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
-      else
-        ???
+      case _ => SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
+
     }
 
     /**
