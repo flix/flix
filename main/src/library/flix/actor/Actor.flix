@@ -96,6 +96,10 @@ pub enum ActorSystem[s, r1, r2, r3, r4] {
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
 pub rel ActorDef[s](actorName: Str, initialState: s, actor: (s, Mailbox) -> ActorResult[s, Str])
 
+// TODO: what is the identity of an actor? Possibilities:
+// 1. A name, given as a string. That's really fragile and begs for troubles when e.g., combining actor systems
+// 2. A channel. That's probably better, but what if we want multiple actors to use the same channel? Then probably we need a channel + a number, in order to support worker actors that share a channel.
+
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
 pub rel Crashed(actorName: Str)
