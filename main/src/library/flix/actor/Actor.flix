@@ -75,6 +75,12 @@ type alias ActorRef = Mailbox
 
 // TODO: Introduce an use the definition of Actor in the definition of Actor.
 
+
+///
+/// A type alias for the row type of an actor policy.
+///
+type alias ActorPolicy = #{Start, Started, ActorDef, MailboxOf, Crashed}
+
 ///
 /// An actor system is a record that consists of four fields:
 ///
@@ -83,7 +89,7 @@ type alias ActorRef = Mailbox
 /// A `shutdownPolicy`  field that describes how to stop the actors.
 /// A `restartPolicy`   field that describes the actions to take when an actor crashes.
 ///
-type alias ActorSystem = {actors: #{ActorDef, Start, Started, MailboxOf}, startPolicy: #{Start, Started, ActorDef, MailboxOf}, shutdownPolicy: #{Stop}, restartPolicy: #{Start, Crashed}}
+type alias ActorSystem = {actors: ActorPolicy, startPolicy: ActorPolicy, shutdownPolicy: ActorPolicy, restartPolicy: ActorPolicy}
 
 ///
 /// Returns an actor system with the default configuration.
@@ -98,7 +104,7 @@ pub def defaultActorSystem(): ActorSystem = {
 ///
 /// Returns the default start policy.
 ///
-pub def defaultStartPolicy(): #{Start, Started, ActorDef, MailboxOf} = #{
+pub def defaultStartPolicy(): ActorPolicy = #{
     // TODO
     Start(actorRef) :- ActorDef(actorRef, _).
 }
@@ -106,7 +112,7 @@ pub def defaultStartPolicy(): #{Start, Started, ActorDef, MailboxOf} = #{
 ///
 /// Returns the default shutdown policy.
 ///
-pub def defaultShutdownPolicy(): #{Stop} = #{
+pub def defaultShutdownPolicy(): ActorPolicy = #{
     // TODO
 }
 
@@ -114,7 +120,7 @@ pub def defaultShutdownPolicy(): #{Stop} = #{
 ///
 /// Returns the default restart policy.
 ///
-pub def defaultRestartPolicy(): #{Start, Crashed} = #{
+pub def defaultRestartPolicy(): ActorPolicy = #{
     // TODO
     Start(actorRef) :- Crashed(actorRef).
 }
@@ -143,11 +149,6 @@ pub rel Stop(actorName: Str)
 
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox)
 // TODO: how to populate this relation?
-
-// TODO: We dont really have proper support for type aliases, we might want to fix that.
-
-// TODO: Define core functions here
-// -----------------------------------------------------------------------------------------------
 
 type alias ControlChannel = Channel[ControlMsg]
 
