@@ -35,7 +35,17 @@ pub enum ControlMsg {
     ///
     /// Indicates that the actor has started and is ready to receive messages.
     ///
-    case Ready
+    case Ready(Str),
+
+    ///
+    /// Indicates that an actor has crashed
+    ///
+    case Crashed(Str),
+
+    ///
+    /// Indicates that an actor has successfully terminated
+    ///
+    case Terminated(Str)
 }
 
 
@@ -101,26 +111,37 @@ pub rel MailboxOf(actorName: Str, mailbox: Mailbox)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
+type alias ControlChannel = Channel[ControlMsg]
 
 ///
-/// Starts an actor system `a`. Returns the list of actors created.
+/// Starts an actor system `a`. Returns a channel to control this actor system.
 ///
-pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[ActorRef] =
+pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): ControlChannel =
+    let control = chan ControlMsg 10;
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy <+> r.actors;
-    fold ActorDef Nil ((actor, acc) ->
-      let (actorName, initialState, mailbox, behavior) = actor;
-      let actor = startActor(actorName, initialState, mailbox, behavior);
+    let actors = fold ActorDef Nil ((actor, acc) ->
+      let (actorName, initialState, behavior) = actor;
+      let actor = startActor(control, actorName, initialState, behavior);
       actor :: acc)
-      (solve startPolicy)
+      (solve startPolicy);
+    control
 
 ///
 /// Starts a single actor. Returns its reference.
 ///
-pub def startActor[s](_actorName: Str, initialState: s, actor: (s, Mailbox) -> ActorResult[s, Str]): ActorRef =
+pub def startActor[s](control: ControlChannel, actorName: Str, initialState: s, actor: (s, Mailbox) -> ActorResult[s, Str]): ActorRef =
     let mailbox = chan ActorMsg 10;
-    spawn (actor(initialState, mailbox));
+    spawn (
+      match actor(initialState, mailbox) with {
+        case Done =>
+          // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
+          control <- Terminated(actorName)
+        case Crash(s, e) =>
+          control <- Crashed(actorName) // TODO: what do we do with the state?
+      }
+    );
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
     // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
