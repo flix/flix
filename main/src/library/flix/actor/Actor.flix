@@ -84,10 +84,7 @@ pub enum ActorSystem[s, r1, r2, r3, r4] {
 ///   - `initialState`: the initial state of the actor, used when (re)starting the actor
 ///   - `mailbox`: a channel where the actor receives messages from
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
-// TODO: Rename to ActorDef or similar?
-pub rel Actor[s](actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str])
-
-// TODO: Mailboxes should disappear from the Actor relation (which also needs a new name).
+pub rel ActorDef[s](actorName: Str, initialState: s, actor: (s, Mailbox) -> ActorResult[s, Str])
 
 pub rel Started(actorName: Str)
 pub rel Stopped(actorName: Str)
@@ -95,6 +92,9 @@ pub rel Crashed(actorName: Str)
 
 pub rel Start(actorName: Str)
 pub rel Stop(actorName: Str)
+
+pub rel MailboxOf(actorName: Str, mailbox: Mailbox)
+// TODO: how to populate this relation?
 
 // TODO: We dont really have proper support for type aliases, we might want to fix that.
 
@@ -109,7 +109,7 @@ pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[ActorR
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy <+> r.actors;
-    fold Actor Nil ((actor, acc) ->
+    fold ActorDef Nil ((actor, acc) ->
       let (actorName, initialState, mailbox, behavior) = actor;
       let actor = startActor(actorName, initialState, mailbox, behavior);
       actor :: acc)
@@ -118,7 +118,8 @@ pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[ActorR
 ///
 /// Starts a single actor. Returns its reference.
 ///
-pub def startActor[s](_actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str]): ActorRef =
+pub def startActor[s](_actorName: Str, initialState: s, actor: (s, Mailbox) -> ActorResult[s, Str]): ActorRef =
+    let mailbox = chan ActorMsg 10;
     spawn (actor(initialState, mailbox));
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
@@ -145,8 +146,8 @@ pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
 /// Returns the default start policy.
 /// This policy starts all actors.
 ///
-pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
-    Start(actorRef) :- Actor(actorRef, _, _, _).
+pub def defaultStartPolicy[s, r](): #{Start, ActorDef[s] | r} = #{
+    Start(actorRef) :- ActorDef(actorRef, _, _, _).
 }
 // TODO: Does what we are doing work with scoped threads?
 
