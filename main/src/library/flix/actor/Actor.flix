@@ -115,10 +115,14 @@ pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[ActorR
       actor :: acc)
       (solve startPolicy)
 
-pub def startActor[s](_actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str]): Mailbox =
+///
+/// Starts a single actor. Returns its reference.
+///
+pub def startActor[s](_actorName: Str, initialState: s, mailbox: Mailbox, actor: (s, Mailbox) -> ActorResult[s, Str]): ActorRef =
     spawn (actor(initialState, mailbox));
     // TODO: Use a channel to wait for termination.
     // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
+    // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
     mailbox
 
 pub def stop(_a: ActorSystem[_, _, _, _, _]): Unit =
@@ -153,10 +157,10 @@ pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
 // namespace CounterActorSystem{
 // 
 //     pub def main(): Unit =
-//         () // start(system()) // TODO: Start the actor system here.
+//         let actors = start(system());
+//         ()
 // 
-// 
-//     pub def system(): ActorSystem[_, _, _, _] = ActorSystem({
+//     pub def system[s, r1, r2, r3, r4](): ActorSystem[s, r1, r2, r3, r4] = ActorSystem({
 //         actors = #{
 //             Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
 //             Actor("Worker1", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
@@ -182,7 +186,7 @@ pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
 //     ///
 //     /// The counter can be incremented, decrement, and its value retrieved.
 //     ///
-//     pub def counterActor(n: Int, mailbox: Mailbox: ActorResult[Int, Str] =
+//     pub def counterActor(n: Int, mailbox: Mailbox): ActorResult[Int, Str] =
 //         match <- mailbox {
 //             case Start(c)       => c <- Ready; counterActor(n, mailbox)
 //             case Stop           => Done
@@ -220,7 +224,7 @@ pub def defaultStartPolicy[s, r](): #{Start, Actor[s] | r} = #{
 ///   - Refactor the code not to depend on relations and lattices maps.
 ///
 /// Quentin:
-///
+/// - Add a master control channel
 
 // Properties of actors:
 // - FIFO / First that match
