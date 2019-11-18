@@ -83,7 +83,7 @@ type alias ActorRef = Mailbox
 /// A `restartPolicy` that describes what should happen when an actor crashes.
 ///
 pub enum ActorSystem[s, r1, r2, r3, r4] {
-    case ActorSystem({actors: #{Actor[s] | r1}, startPolicy: #{Start | r2}, shutdownPolicy: #{Stop | r3}, restartPolicy: #{Start, Crashed | r4}})
+    case ActorSystem({actors: #{ActorDef[s] | r1}, startPolicy: #{Start | r2}, shutdownPolicy: #{Stop | r3}, restartPolicy: #{Start, Crashed | r4}})
 }
 
 // TODO: Define core relations here:
@@ -121,7 +121,7 @@ pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): ControlChan
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy <+> r.actors;
-    let actors = fold ActorDef Nil ((actor, acc) ->
+    let _actors = fold ActorDef Nil ((actor, acc) ->
       let (actorName, initialState, behavior) = actor;
       let actor = startActor(control, actorName, initialState, behavior);
       actor :: acc)
@@ -138,7 +138,7 @@ pub def startActor[s](control: ControlChannel, actorName: Str, initialState: s, 
         case Done =>
           // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
           control <- Terminated(actorName)
-        case Crash(s, e) =>
+        case Crash(_, _) =>
           control <- Crashed(actorName) // TODO: what do we do with the state?
       }
     );
@@ -168,7 +168,7 @@ pub def defaultRestartPolicy[r](): #{Start, Crashed | r} = #{
 /// This policy starts all actors.
 ///
 pub def defaultStartPolicy[s, r](): #{Start, ActorDef[s] | r} = #{
-    Start(actorRef) :- ActorDef(actorRef, _, _, _).
+    Start(actorRef) :- ActorDef(actorRef, _, _).
 }
 // TODO: Does what we are doing work with scoped threads?
 
@@ -179,15 +179,16 @@ pub def defaultStartPolicy[s, r](): #{Start, ActorDef[s] | r} = #{
 // namespace CounterActorSystem{
 // 
 //     pub def main(): Unit =
-//         let actors = start(system());
+//         let _control = start(system());
 //         ()
 // 
 //     pub def system[s, r1, r2, r3, r4](): ActorSystem[s, r1, r2, r3, r4] = ActorSystem({
 //         actors = #{
-//             Actor("counterActor", 0i32, chan ActorMsg 10, counterActor).
-//             Actor("Worker1", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
-//             Actor("Worker2", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
-//             Actor("Worker3", c, chan ActorMsg 10, workerActor) :- Actor("counterActor", _, c, _).
+//             ActorDef("counterActor", 0i32, counterActor).
+//             // TODO: this fails to unify Unit with Channel[ACtorMsg]
+//             // ActorDef("Worker1", c, workerActor) :- MailboxOf("counterActor", c).
+//             // ActorDef("Worker2", c, workerActor) :- MailboxOf("counterActor", c).
+//             // ActorDef("Worker3", c, workerActor) :- MailboxOf("counterActor", c).
 //         },
 //         startPolicy = #{
 //             Start("counterActor").
@@ -210,7 +211,7 @@ pub def defaultStartPolicy[s, r](): #{Start, ActorDef[s] | r} = #{
 //     ///
 //     pub def counterActor(n: Int, mailbox: Mailbox): ActorResult[Int, Str] =
 //         match <- mailbox {
-//             case Start(c)       => c <- Ready; counterActor(n, mailbox)
+//             case Start(c)       => c <- Ready("counterActor"); counterActor(n, mailbox)
 //             case Stop           => Done
 //             case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
 //             case Msg(_, "INC")  => counterActor(n + 1, mailbox)
@@ -223,7 +224,7 @@ pub def defaultStartPolicy[s, r](): #{Start, ActorDef[s] | r} = #{
 //     ///
 //     pub def workerActor(counterActor: Mailbox, mailbox: Mailbox): ActorResult[Unit, Str] =
 //         match <- mailbox {
-//             case Start(c)           => c <- Ready; workerActor(counterActor, mailbox)
+//             case Start(c)           => c <- Ready("workerActor"); workerActor(counterActor, mailbox)
 //             case Stop               => Done
 //             case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
 //             case Msg(_, m)          => Crash((), "Unexpected message: " + m)
