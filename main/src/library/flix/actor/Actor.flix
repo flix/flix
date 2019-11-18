@@ -58,6 +58,11 @@ pub enum ActorMsg {
 ///
 type alias Mailbox = Channel[ActorMsg]
 
+///
+/// An actor is identifiedby its mailbox
+///
+type alias ActorRef = Mailbox
+
 // TODO: Introduce an use the definition of Actor in the definition of Actor.
 
 ///
@@ -96,7 +101,11 @@ pub rel Stop(actorName: Str)
 // TODO: Define core functions here
 // -----------------------------------------------------------------------------------------------
 
-pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[Mailbox] =
+
+///
+/// Starts an actor system `a`. Returns the list of actors created.
+///
+pub def start[s, r1, r2, r3, r4](a: ActorSystem[s, r1, r2, r3, r4]): List[ActorRef] =
     // TODO: We lack pattern matching on records.
     let ActorSystem(r) = a;
     let startPolicy = r.startPolicy <+> r.actors;
