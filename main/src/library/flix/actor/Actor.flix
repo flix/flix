@@ -242,12 +242,10 @@ pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this 
 ///
 pub def start(a: ActorSystem): Channel[ActorEvent] =
     let control = chan ActorEvent 10;
-    // TODO: We lack pattern matching on records.
-    let startPolicy = a.startPolicy <+> a.actors;
     let _actors = fold ActorDef Nil ((actor, acc) ->
       let (actorName, behavior) = actor;
       startActor(control, actorName, behavior) :: acc)
-      (solve startPolicy);
+      (solve (a.startPolicy <+> a.actors));
     control
 
 ///
@@ -287,8 +285,16 @@ namespace CounterActorSystem {
     /// The main entry point for the counter actor system.
     ///
     pub def main(): Unit =
-        let _control = start(system());
-        ()
+      let _sys = start(system());
+      // let master = getActor(sys, "counterActor");
+      // let replyChan = chan 10 ActorMsg;
+      // master <- Msg(replyChan, "INC");
+      // master <- Msg(replyChan, "INC");
+      // master <- Msg(replyChan, "GET");
+      // let v = <- replyChan;
+      // Console.printLine(v);
+      // shutdown(sys)
+      ()
 
     ///
     /// Returns an actor system with one counter actor and several worker actors.
@@ -349,7 +355,3 @@ namespace CounterActorSystem {
 ///
 /// Quentin:
 /// - Add a master control channel
-
-// Properties of actors:
-// - FIFO / First that match
-// - Extending actors
