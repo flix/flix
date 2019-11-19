@@ -249,8 +249,9 @@ pub def start(a: ActorSystem): RunningActorSystem =
         (actorName, startActor(control, actorName, behavior)) :: acc)
         (solve (a.startPolicy <+> a.actors)) }
 
-// pub def getActor(sys: RunningActorSystem, actorName: Str): ActorRef =
-
+pub def getActor(sys: RunningActorSystem, actorName: Str): Option[ActorRef] =
+    Option.map((pair -> let (_, ref) = pair; ref),
+        List.find((pair -> let (name, _) = pair; name == actorName), sys.actors))
 
 ///
 /// Starts a single actor. Returns its reference.
@@ -289,16 +290,21 @@ namespace CounterActorSystem {
     /// The main entry point for the counter actor system.
     ///
     pub def main(): Unit =
-      let _sys = start(system());
-      // let master = getActor(sys, "counterActor");
-      // let replyChan = chan 10 ActorMsg;
-      // master <- Msg(replyChan, "INC");
-      // master <- Msg(replyChan, "INC");
-      // master <- Msg(replyChan, "GET");
-      // let v = <- replyChan;
-      // Console.printLine(v);
-      // shutdown(sys)
-      ()
+        let sys = start(system());
+        match getActor(sys, "counterActor") {
+            case Some(master) =>
+                let replyChan = chan ActorMsg 10;
+                master <- Msg(replyChan, "INC");
+                master <- Msg(replyChan, "INC");
+                master <- Msg(replyChan, "GET");
+                match <- replyChan {
+                    case Msg(_, msg) => Console.printLine(msg)
+                    case _ => Console.printLine("unexpected message")
+                }
+            case None => Console.printLine("did not find counterActor")
+        }
+      // TODO: shutdown(sys)
+
 
     ///
     /// Returns an actor system with one counter actor and several worker actors.
