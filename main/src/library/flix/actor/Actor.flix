@@ -237,17 +237,18 @@ pub rel Stop(actorName: Str)
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
 // TODO: how to populate this relation? Should be done by the actor system somehow...
 
-pub type alias RunningActorSystem = {control: Channel[ActorEvent], actors: List[(Str, ActorRef)]}
+pub type alias RunningActorSystem = {control: Channel[ActorEvent], actors: List[(Str, ActorRef)], system: ActorSystem}
 ///
 /// Starts an actor system `a`. Returns a channel to control this actor system.
 ///
-pub def start(a: ActorSystem): RunningActorSystem =
+pub def start(system: ActorSystem): RunningActorSystem =
     let control = chan ActorEvent 10;
     { control = control,
       actors = fold ActorDef Nil ((actor, acc) ->
         let (actorName, behavior) = actor;
         (actorName, startActor(control, actorName, behavior)) :: acc)
-        (solve (a.startPolicy <+> a.actors)) }
+        (solve (system.startPolicy <+> system.actors)),
+      system = system }
 
 pub def getActor(sys: RunningActorSystem, actorName: Str): Option[ActorRef] =
     Option.map((pair -> let (_, ref) = pair; ref),
@@ -272,11 +273,28 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
     // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
     mailbox
 
-pub def stop(_a: ActorSystem): Unit =
-    // TODO: Not unlike start, but also needs some running description of the actor system.
-    ()
+pub def shutdown(system: RunningActorSystem): Unit =
+  // TODO: fails to compile due to not being able to unify Str with (Str) (a 1-tuple)
+  //let stopped = fold Stop Nil ((actorName, acc) ->
+  //  match getActor(system, actorName) {
+  //    case Some(actorRef) =>
+  //      // TODO: What if the actor just ignores this message? Or if it crashes when stopping?
+  //      actorRef <- Stop;
+  //      actorName :: acc
+  //    case None =>
+  //      Console.printLine("Actor not found: " + actorName);
+  //      acc
+  //  }) (solve (system.system.shutdownPolicy /* TODO: this should be the composed with current status of the ActorState relation */));
+  //if (List.length(stopped) == 0) {
+  //  ()
+  //} else {
+  //  // TODO: wait a bit before recursing?
+  //  // TODO: keep the current status of the ActorState relation somewhere
+  //  shutdown(system)
+  //}
+  ()
 
-pub def react(_a: ActorSystem): Unit =
+pub def react(_system: RunningActorSystem): Unit =
     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
     ()
 
@@ -303,7 +321,7 @@ namespace CounterActorSystem {
                 }
             case None => Console.printLine("did not find counterActor")
         }
-      // TODO: shutdown(sys)
+      // shutdown(sys)
 
 
     ///
