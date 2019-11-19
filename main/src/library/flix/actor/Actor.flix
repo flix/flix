@@ -79,10 +79,11 @@ type alias ActorRef = Mailbox
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn, WaitingOn} // TODO: sort by some sane order
+type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn, WaitingOnDependency, DependsOnTrans} // TODO: sort by some sane order
 
 // TODO: List of auxilliary predicates. It would be nice if these could be better "hidden":
-rel WaitingOn(actor1: Str, actor2: Str)
+rel WaitingOnDependency(actor: Str)
+rel DependsOnTrans(actor1: Str, actor2: Str)
 
 
 ///
@@ -109,11 +110,20 @@ pub def defaultActorSystem(): ActorSystem = {
 /// Returns the default start policy.
 ///
 pub def defaultStartPolicy(): ActorPolicy = #{
-    // TODO: better variable names.
-    WaitingOn(actor, dep) :- DependsOn(actor, dep), ActorState(dep, Pending). // TODO: here not Started(dep) might have been better?
-    Start(actor) :- ActorDef(actor, _), ActorDef(dep, _), not WaitingOn(actor, dep).
+    // Compute the actors that are waiting for a dependency to start.
+    WaitingOnDependency(actor1) :- DependsOn(actor1, actor2), ActorState(actor2, Pending).
 
-    // TODO: incorporate DependsOn and deal with cyclic dependencies.
+    // Start all actors whose dependencies are already running.
+    Start(actor) :- ActorDef(actor, _), not WaitingOnDependency(actor).
+
+    // Compute the transitive closure of the dependency relation.
+    DependsOnTrans(x, y) :- DependsOn(x, y).
+    DependsOnTrans(x, z) :- DependsOnTrans(x, y), DependsOn(y, z).
+
+    // Start actors that have a cyclic dependency.
+    Start(actor) :- ActorDef(actor, _), DependsOnTrans(actor, actor).
+
+    // TODO: We actually want to do something better. We want to start all actors on a cycle, but only if their deps. have started.
 }
 
 ///
@@ -196,9 +206,10 @@ pub enum State {
 /// TODO: DOC
 pub rel ActorState(actorName: Str, state: State)
 
-// TODO: Should there be a difference between Start and Resume?
 pub rel Start(actorName: Str)
 pub rel Stop(actorName: Str)
+// TODO: Add resume?
+// TODO: Use an enum instead and call it ActorAction?
 
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
 // TODO: how to populate this relation? Should be done by the actor system somehow...
