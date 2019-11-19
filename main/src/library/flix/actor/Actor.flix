@@ -26,27 +26,6 @@ pub enum ActorResult[e] {
     case Crash(e)
 }
 
-///
-/// An actor, while running, communicates with the actor system by sending control messages.
-///
-/// An actor must send the `Ready` message when it has started and is ready to receive messages.
-///
-pub enum ControlMsg {
-    ///
-    /// Indicates that the actor has started and is ready to receive messages.
-    ///
-    case Ready(Str),
-
-    ///
-    /// Indicates that an actor has crashed
-    ///
-    case CCrashed(Str),  // TODO: Quentin: I can see the use for these, but by having them in the same ADT as Ready that means an actor could send one of these messages, which is probably not something we want?
-
-    ///
-    /// Indicates that an actor has successfully terminated
-    ///
-    case Terminated(Str)
-}
 
 
 /// An actor receives messages of type ActorMsg.
@@ -58,9 +37,39 @@ pub enum ControlMsg {
 // TODO: Do we want two types of messages depending on whether we need a reply channel?
 // Q: I would not have two types of messages, otherwise it is not clear from the sender what to send (imagine an actor that uses the control channel and then changes its behaviour to not using the control channel)
 pub enum ActorMsg {
-    case Start(Channel[ControlMsg]),
+    case Start(Channel[Ready]),
     case Stop,
     case Msg(Mailbox, Str)
+}
+
+///
+/// A message sent to indicate that an actor is ready to receive messages.
+///
+pub enum Ready {
+    case Ready
+}
+
+///
+/// An actor, while running, communicates with the actor system by sending control messages.
+///
+/// An actor must send the `Ready` message when it has started and is ready to receive messages.
+///
+// TODO: These are internal events to the actor system.
+pub enum ActorEvent {
+    ///
+    /// Indicates that the actor has started and is ready to receive messages.
+    ///
+    case ActorReady(Str),
+
+    ///
+    /// Indicates that an actor has crashed.
+    ///
+    case ActorCrashed(Str),
+
+    ///
+    /// Indicates that an actor has terminated.
+    ///
+    case ActorTerminated(Str)
 }
 
 ///
@@ -214,13 +223,11 @@ pub rel Stop(actorName: Str)
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
 // TODO: how to populate this relation? Should be done by the actor system somehow...
 
-type alias ControlChannel = Channel[ControlMsg]
-
 ///
 /// Starts an actor system `a`. Returns a channel to control this actor system.
 ///
-pub def start(a: ActorSystem): ControlChannel =
-    let control = chan ControlMsg 10;
+pub def start(a: ActorSystem): Channel[ActorEvent] =
+    let control = chan ActorEvent 10;
     // TODO: We lack pattern matching on records.
     let startPolicy = a.startPolicy <+> a.actors;
     let _actors = fold ActorDef Nil ((actor, acc) ->
@@ -232,15 +239,15 @@ pub def start(a: ActorSystem): ControlChannel =
 ///
 /// Starts a single actor. Returns its reference.
 ///
-pub def startActor(control: ControlChannel, actorName: Str, behavior: Actor): ActorRef =
+pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor): ActorRef =
     let mailbox = chan ActorMsg 10;
     spawn (
       match behavior(mailbox) with {
         case Done =>
           // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
-          control <- Terminated(actorName)
+          control <- ActorTerminated(actorName)
         case Crash(_) =>
-          control <- CCrashed(actorName)
+          control <- ActorCrashed(actorName)
       }
     );
     // TODO: Use a channel to wait for termination.
@@ -290,7 +297,7 @@ namespace CounterActorSystem {
     ///
     pub def counterActor(n: Int, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
-            case Start(c)       => c <- Ready("counterActor"); counterActor(n, mailbox)
+            case Start(c)       => c <- Ready; counterActor(n, mailbox)
             case Stop           => Done
             case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
             case Msg(_, "INC")  => counterActor(n + 1, mailbox)
@@ -303,7 +310,7 @@ namespace CounterActorSystem {
     ///
     pub def workerActor(counterActor: Mailbox, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
-            case Start(c)           => c <- Ready("workerActor"); workerActor(counterActor, mailbox)
+            case Start(c)           => c <- Ready(); workerActor(counterActor, mailbox)
             case Stop               => Done
             case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
             case Msg(_, m)          => Crash("Unexpected message: " + m)
