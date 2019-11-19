@@ -237,16 +237,20 @@ pub rel Stop(actorName: Str)
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
 // TODO: how to populate this relation? Should be done by the actor system somehow...
 
+pub type alias RunningActorSystem = {control: Channel[ActorEvent], actors: List[(Str, ActorRef)]}
 ///
 /// Starts an actor system `a`. Returns a channel to control this actor system.
 ///
-pub def start(a: ActorSystem): Channel[ActorEvent] =
+pub def start(a: ActorSystem): RunningActorSystem =
     let control = chan ActorEvent 10;
-    let _actors = fold ActorDef Nil ((actor, acc) ->
-      let (actorName, behavior) = actor;
-      startActor(control, actorName, behavior) :: acc)
-      (solve (a.startPolicy <+> a.actors));
-    control
+    { control = control,
+      actors = fold ActorDef Nil ((actor, acc) ->
+        let (actorName, behavior) = actor;
+        (actorName, startActor(control, actorName, behavior)) :: acc)
+        (solve (a.startPolicy <+> a.actors)) }
+
+// pub def getActor(sys: RunningActorSystem, actorName: Str): ActorRef =
+
 
 ///
 /// Starts a single actor. Returns its reference.
