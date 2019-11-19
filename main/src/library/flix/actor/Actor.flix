@@ -78,7 +78,7 @@ pub enum ActorEvent {
 type alias Mailbox = Channel[ActorMsg]
 
 ///
-/// An actor is identifiedby its mailbox
+/// An actor is identified by its mailbox
 ///
 type alias ActorRef = Mailbox
 
@@ -186,7 +186,6 @@ type alias Actor = Mailbox -> ActorResult[Str]
 ///   - `actorName`: a name identifying the actor
 ///   - `mailbox`: a channel where the actor receives messages from
 ///   - `actor`: the behavior of the actor as a function that takes the current state and mailbox, and returns when the actor is done or has crashed
-/// TODO: initial state
 pub rel ActorDef(actorName: Str, actor: Actor)
 
 // TODO: what is the identity of an actor? Possibilities:
@@ -203,7 +202,12 @@ pub rel ActorDef(actorName: Str, actor: Actor)
 pub rel DependsOn(actor1: Str, actor2: Str)
 
 ///
-/// An actor is in one of the following states.
+/// An actor in the actor system is in one of the following statesÆ
+///
+/// - Pending: the actor has been declared, but never started.
+/// - Running: the actor is running and processing messages.
+/// - Stopped: the actor is gracefully stopped.
+/// - Crashed: the actor has crashed.
 ///
 pub enum State {
     case Pending,
@@ -212,8 +216,15 @@ pub enum State {
     case Crashed
 }
 
-/// TODO: DOC
+
+///
+/// A predicate that describes the current state of an actor.
+///
+/// @param actorName the name of the actor.
+/// @param state     the state of the actor. (An actor has exactly one state).
+///
 pub rel ActorState(actorName: Str, state: State)
+
 
 pub rel Start(actorName: Str)
 pub rel Stop(actorName: Str)
@@ -255,16 +266,13 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
     // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
     mailbox
 
-pub def stop(_a: ActorSystem[_, _, _, _, _]): Unit =
+pub def stop(_a: ActorSystem): Unit =
     // TODO: Not unlike start, but also needs some running description of the actor system.
     ()
 
-pub def react(_a: ActorSystem[_, _, _, _, _]): Unit =
+pub def react(_a: ActorSystem): Unit =
     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
     ()
-
-
-// TODO: Does what we are doing work with scoped threads?
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Examples                                                                 //
