@@ -34,4 +34,5 @@ pub enum ActorEvent {
 
 }
 
+// TODO: Since this is private, maybe move it into a more appropriate namespace?
 // TODO: Naming should be made more consistent with ActorResult.
