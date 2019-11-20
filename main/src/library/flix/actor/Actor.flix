@@ -95,25 +95,7 @@ rel WaitingOnDependency(actor: Str)
 rel DependsOnTrans(actor1: Str, actor2: Str)
 
 
-///
-/// An actor system is a record that consists of four fields:
-///
-/// A `actors`          field that declares the actors in the system.
-/// A `startPolicy`     field that describes how to start the actors.
-/// A `shutdownPolicy`  field that describes how to stop the actors.
-/// A `restartPolicy`   field that describes the actions to take when an actor crashes.
-///
-type alias ActorSystem = {actors: ActorPolicy, startPolicy: ActorPolicy, shutdownPolicy: ActorPolicy, restartPolicy: ActorPolicy}
 
-///
-/// Returns an actor system with the default configuration.
-///
-pub def defaultActorSystem(): ActorSystem = {
-    actors          = #{},
-    startPolicy     = defaultStartPolicy(),
-    shutdownPolicy  = defaultShutdownPolicy(),
-    restartPolicy   = defaultRestartPolicy()
-}
 
 ///
 /// Returns the default start policy.
@@ -333,7 +315,7 @@ namespace CounterActorSystem {
                 ActorDef("worker1", workerActor(m)) :- MailboxOf("counterActor", m).
                 ActorDef("worker2", workerActor(m)) :- MailboxOf("counterActor", m).
                 ActorDef("worker3", workerActor(m)) :- MailboxOf("counterActor", m).
-            } | defaultActorSystem() }
+            } | ActorSystem.default() }
 
     ///
     /// An actor that maintains an internal counter.
