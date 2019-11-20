@@ -4,13 +4,6 @@
 type alias Actor = Mailbox -> ActorResult[Str]
 
 ///
-/// A message sent to indicate that an actor is ready to receive messages.
-///
-pub enum Ready {
-    case Ready
-}
-
-///
 /// An actor is identified by its mailbox
 ///
 type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
