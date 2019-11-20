@@ -11,29 +11,6 @@ pub enum Ready {
 }
 
 ///
-/// An actor, while running, communicates with the actor system by sending control messages.
-///
-/// An actor must send the `Ready` message when it has started and is ready to receive messages.
-///
-// TODO: These are internal events to the actor system.
-pub enum ActorEvent {
-    ///
-    /// Indicates that the actor has started and is ready to receive messages.
-    ///
-    case ActorReady(Str),
-
-    ///
-    /// Indicates that an actor has crashed.
-    ///
-    case ActorCrashed(Str),
-
-    ///
-    /// Indicates that an actor has terminated.
-    ///
-    case ActorTerminated(Str)
-}
-
-///
 /// An actor is identified by its mailbox
 ///
 type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
@@ -126,7 +103,7 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
       match behavior(mailbox) with {
         case Done =>
           // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
-          control <- ActorTerminated(actorName)
+          control <- ActorStopped(actorName)
         case Crash(_) =>
           control <- ActorCrashed(actorName)
         case Fatal(_) => ??? // TODO
