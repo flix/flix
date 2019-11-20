@@ -273,7 +273,7 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
     // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
     mailbox
 
-pub def shutdown(system: RunningActorSystem): Unit =
+pub def shutdown(_system: RunningActorSystem): Unit =
   // TODO: fails to compile due to not being able to unify Str with (Str) (a 1-tuple)
   //let stopped = fold Stop Nil ((actorName, acc) ->
   //  match getActor(system, actorName) {
