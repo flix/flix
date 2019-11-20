@@ -15,7 +15,6 @@ pub enum Ready {
 ///
 type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
 
-
 ///
 /// A type alias for the row type of an actor policy.
 ///
@@ -24,11 +23,6 @@ type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, Depends
 // TODO: List of auxilliary predicates. It would be nice if these could be better "hidden":
 rel WaitingOnDependency(actor: Str)
 rel DependsOnTrans(actor1: Str, actor2: Str)
-
-
-
-
-
 
 ///
 /// An actor has:
@@ -52,30 +46,6 @@ pub rel ActorDef(actorName: Str, actor: Actor)
 /// If there is a cyclic dependency then both actors are started at the same time.
 ///
 pub rel DependsOn(actor1: Str, actor2: Str)
-
-///
-/// An actor in the actor system is in one of the following statesÆ
-///
-/// - Pending: the actor has been declared, but never started.
-/// - Running: the actor is running and processing messages.
-/// - Stopped: the actor is gracefully stopped.
-/// - Crashed: the actor has crashed.
-///
-pub enum State {
-    case Pending,
-    case Running,
-    case Stopped,
-    case Crashed
-}
-
-
-///
-/// A predicate that describes the current state of an actor.
-///
-/// @param actorName the name of the actor.
-/// @param state     the state of the actor. (An actor has exactly one state).
-///
-pub rel ActorState(actorName: Str, state: State)
 
 
 pub rel Start(actorName: Str)
@@ -106,7 +76,7 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
           control <- ActorStopped(actorName)
         case Crash(_) =>
           control <- ActorCrashed(actorName)
-        case Fatal(_) => ??? // TODO
+        case FatalCrash(_) => ??? // TODO
       }
     );
     // TODO: Use a channel to wait for termination.
@@ -171,7 +141,7 @@ namespace CounterActorSystem {
                 if (n < 2147483647)
                     counterActor(n + 1, mailbox)
                 else
-                    Fatal("Counter overflowed.")
+                    FatalCrash("Counter overflowed.")
             case Msg("DEC", _)  => counterActor(n - 1, mailbox)
             case Msg(m, _)      => Crash(counterActor(n), "Unexpected message: " + m)
         }

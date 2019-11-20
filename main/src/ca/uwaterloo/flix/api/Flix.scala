@@ -106,6 +106,7 @@ class Flix {
     "flix/actor/ActorSystem.flix" -> LocalResource.get("/library/flix/actor/ActorSystem.flix"),
     "flix/actor/Mailbox.flix" -> LocalResource.get("/library/flix/actor/Mailbox.flix"),
     "flix/actor/Message.flix" -> LocalResource.get("/library/flix/actor/Message.flix"),
+    "flix/actor/State.flix" -> LocalResource.get("/library/flix/actor/State.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),

@@ -24,12 +24,12 @@ pub enum ActorResult[e] {
     /// @param k the continuation that can be used to restart the actor.
     /// @param e the error value.
     ///
-    case Crash(Actor, e),
+    case Crash(Actor, e), // TODO: Rename to ResumableError?
 
     ///
     /// Indicates that the actor crashed with error value `e` and cannot be restarted.
     ///
     /// @param e the error value.
     ///
-    case Fatal(e)
+    case FatalCrash(e)    // TODO: Rename to NonResumableError?
 }
