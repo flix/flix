@@ -32,20 +32,6 @@ pub rel ActorDef(actorName: Str, actor: Actor)
 //         b) identifying running actors in an ActorSystem that has been started: if we want to shutdown actors, we need to send them a message (mailbox identity)
 //       Basically, the identity allows us better control over the actor than with its name. Ideally, it would be a process identifier + mailbox reference.
 
-///
-/// A relation that represents a partial order of actor dependencies.
-///
-/// If an actor `a1` depends on an actor `a2` then `a1` is started before `a2`.
-/// If there is a cyclic dependency then both actors are started at the same time.
-///
-pub rel DependsOn(actor1: Str, actor2: Str)
-
-
-pub rel Start(actorName: Str)
-pub rel Stop(actorName: Str)
-// TODO: Add resume?
-// TODO: Use an enum instead and call it ActorAction?
-
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
 // TODO: how to populate this relation? Should be done by the actor system somehow...
 

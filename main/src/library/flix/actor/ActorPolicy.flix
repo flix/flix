@@ -1,4 +1,28 @@
 ///
+/// A relation that represents the dependencies between actors.
+///
+/// If an actor `x` depends on an actor `y` then `x` is started before `y`.
+///
+/// If there is a cyclic dependency then both actors are started at the same time.
+///
+pub rel DependsOn(name1: Str, name2: Str)
+
+///
+/// A relation used to specify the actors that should be started by an actor policy.
+///
+pub rel Start(name: Str)
+
+///
+/// A relation used to specify the actors that should be stopped by an actor policy.
+///
+pub rel Stop(name: Str)
+
+///
+/// A relation used to specify the actors that should be resume (from their last known good state) by an actor policy.
+///
+pub rel Resume(name: Str)
+
+///
 /// Returns the default start policy.
 ///
 pub def defaultStartPolicy(): ActorPolicy = #{
