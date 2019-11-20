@@ -1,10 +1,10 @@
 ///
 /// An actor system is a type alias for a record that consists of four fields:
 ///
-/// `actors`          that declares the actors in the system.
-/// `startPolicy`     that describes the policy for how actors are started.
-/// `restartPolicy`   that describes the policy for how actors are restarted if they crash.
-/// `shutdownPolicy`  that describes the policy for how actors are stopped.
+/// @field `actors`          that declares the actors in the system.
+/// @field `startPolicy`     that describes the policy for how actors are started.
+/// @field `restartPolicy`   that describes the policy for how actors are restarted if they crash.
+/// @field `shutdownPolicy`  that describes the policy for how actors are stopped.
 ///
 type alias ActorSystem = {
     actors: ActorPolicy, startPolicy: ActorPolicy, restartPolicy: ActorPolicy, shutdownPolicy: ActorPolicy
