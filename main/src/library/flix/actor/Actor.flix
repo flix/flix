@@ -1,20 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-/// Actor System                                                             //
-///////////////////////////////////////////////////////////////////////////////
+///
+/// An actor is defined by its behavior, which is a function from a mailbox to an actor result.
+///
+type alias Actor = Mailbox -> ActorResult[Str]
 
-/// An actor receives messages of type ActorMsg.
-/// These can either be a message indicating to start (`Start`) or stop (`Stop`) the actor, or an actuall application-level message (`Msg`).
-/// Upon reception of a `Start` message, the actor has to reply on the given channel with a `Ready` message.
-/// Upon reception of `Stop` message, the actor has to ends its execution. TODO: does it? If not, what happens?
-/// When receiving a `Msg` message, the actor can reply to the sender of the message using the argument channel.
 
-// TODO: Do we want two types of messages depending on whether we need a reply channel?
-// Q: I would not have two types of messages, otherwise it is not clear from the sender what to send (imagine an actor that uses the control channel and then changes its behaviour to not using the control channel)
-pub enum ActorMsg {
-    case Start(Channel[Ready]),
-    case Stop,
-    case Msg(Mailbox, Str)
-}
+
 
 ///
 /// A message sent to indicate that an actor is ready to receive messages.
@@ -47,16 +37,9 @@ pub enum ActorEvent {
 }
 
 ///
-/// A mailbox is a type alias for a channel of actor messages.
-///
-type alias Mailbox = Channel[ActorMsg]
-
-///
 /// An actor is identified by its mailbox
 ///
-type alias ActorRef = Mailbox
-
-// TODO: Introduce an use the definition of Actor in the definition of Actor.
+type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
 
 
 ///
@@ -132,10 +115,7 @@ pub def oneForAllRestartPolicy(): ActorPolicy = #{
     // TODO: Need some notion of restart here? A stop followed by a start... (?)
 }
 
-///
-/// An actor is defined by its behavior, which is a function from a mailbox to an actor result.
-///
-type alias Actor = Mailbox -> ActorResult[Str]
+
 
 ///
 /// An actor has:
@@ -205,7 +185,7 @@ pub type alias RunningActorSystem = {control: Channel[ActorEvent], actors: List[
 /// Starts a single actor. Returns its reference.
 ///
 pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor): ActorRef =
-    let mailbox = chan ActorMsg 10;
+    let mailbox = chan Message 10;
     spawn (
       match behavior(mailbox) with {
         case Done =>
@@ -240,12 +220,12 @@ namespace CounterActorSystem {
         let sys = ActorSystem.start(system());
         match getActor(sys, "counterActor") {
             case Some(master) =>
-                let replyChan = chan ActorMsg 10;
-                master <- Msg(replyChan, "INC");
-                master <- Msg(replyChan, "INC");
-                master <- Msg(replyChan, "GET");
+                let replyChan = chan Message 10;
+                master <- Msg("INC", replyChan);
+                master <- Msg("INC", replyChan);
+                master <- Msg("GET", replyChan);
                 match <- replyChan {
-                    case Msg(_, msg) => Console.printLine(msg)
+                    case Msg(msg, _) => Console.printLine(msg)
                     case _ => Console.printLine("unexpected message")
                 }
             case None => Console.printLine("did not find counterActor")
@@ -273,14 +253,14 @@ namespace CounterActorSystem {
         match <- mailbox {
             case Start(c)       => c <- Ready; counterActor(n, mailbox)
             case Stop           => Done
-            case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
-            case Msg(_, "INC")  =>
+            case Msg("GET", c)  => c <- Msg("<here we should send n>", mailbox); counterActor(n, mailbox) // TODO: Need a way to send the message.
+            case Msg("INC", _)  =>
                 if (n < 2147483647)
                     counterActor(n + 1, mailbox)
                 else
                     Fatal("Counter overflowed.")
-            case Msg(_, "DEC")  => counterActor(n - 1, mailbox)
-            case Msg(_, m)      => Crash(counterActor(n), "Unexpected message: " + m)
+            case Msg("DEC", _)  => counterActor(n - 1, mailbox)
+            case Msg(m, _)      => Crash(counterActor(n), "Unexpected message: " + m)
         }
 
     ///
@@ -290,8 +270,8 @@ namespace CounterActorSystem {
         match <- mailbox {
             case Start(c)           => c <- Ready(); workerActor(counterActor, mailbox)
             case Stop               => Done
-            case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
-            case Msg(_, m)          => Crash(workerActor(counterActor), "Unexpected message: " + m)
+            case Msg("wakeup", _)   => counterActor <- Msg("INC", mailbox); workerActor(counterActor, mailbox)
+            case Msg(m, _)          => Crash(workerActor(counterActor), "Unexpected message: " + m)
         }
 
 }
