@@ -2,32 +2,6 @@
 /// Actor System                                                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-///
-/// An actor is a function that returns an actor result.
-///
-/// An actor result is either `Done` or `Crash(s, e)`.
-///
-/// An actor must return the `Done` value when it successfully completes its work.
-/// An actor may return the `Crash(s, e)` value when it is unable to complete its work and wants to abort.
-/// The `s` value represents the last known good state and `e` represents an error value.
-///
-/// @param s the type of state.
-/// @param e the type of the error.
-///
-pub enum ActorResult[e] {
-    ///
-    /// Indicates that the actor successfully completed its work.
-    ///
-    case Done,
-
-    ///
-    /// Indicates that the actor was unable to complete it works and aborted.
-    ///
-    case Crash(e)
-}
-
-
-
 /// An actor receives messages of type ActorMsg.
 /// These can either be a message indicating to start (`Start`) or stop (`Stop`) the actor, or an actuall application-level message (`Msg`).
 /// Upon reception of a `Start` message, the actor has to reply on the given channel with a `Ready` message.
@@ -239,6 +213,7 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
           control <- ActorTerminated(actorName)
         case Crash(_) =>
           control <- ActorCrashed(actorName)
+        case Fatal(_) => ??? // TODO
       }
     );
     // TODO: Use a channel to wait for termination.
@@ -299,9 +274,13 @@ namespace CounterActorSystem {
             case Start(c)       => c <- Ready; counterActor(n, mailbox)
             case Stop           => Done
             case Msg(c, "GET")  => c <- Msg(mailbox, "<here we should send n>"); counterActor(n, mailbox) // TODO: Need a way to send the message.
-            case Msg(_, "INC")  => counterActor(n + 1, mailbox)
+            case Msg(_, "INC")  =>
+                if (n < 2147483647)
+                    counterActor(n + 1, mailbox)
+                else
+                    Fatal("Counter overflowed.")
             case Msg(_, "DEC")  => counterActor(n - 1, mailbox)
-            case Msg(_, m)      => Crash("Unexpected message: " + m)
+            case Msg(_, m)      => Crash(counterActor(n), "Unexpected message: " + m)
         }
 
     ///
@@ -312,7 +291,7 @@ namespace CounterActorSystem {
             case Start(c)           => c <- Ready(); workerActor(counterActor, mailbox)
             case Stop               => Done
             case Msg(_, "wakeup")   => counterActor <- Msg(mailbox, "INC"); workerActor(counterActor, mailbox)
-            case Msg(_, m)          => Crash("Unexpected message: " + m)
+            case Msg(_, m)          => Crash(workerActor(counterActor), "Unexpected message: " + m)
         }
 
 }
