@@ -17,8 +17,8 @@ namespace CounterActorSystem {
                     case _ => Console.printLine("unexpected message")
                 }
             case None => Console.printLine("did not find counterActor")
-        }
-      // shutdown(sys)
+        };
+        ActorSystem.shutdown(sys)
 
 
     ///
