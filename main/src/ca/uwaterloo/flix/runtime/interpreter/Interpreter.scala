@@ -356,10 +356,16 @@ object Interpreter {
       projected.getFacts().foldRight(init)((c, acc) => {
         val tuple = c.getHeadPredicate() match {
           // TODO: match may not be complete?
-          case p: AtomPredicate => p.getTerms().map({
-            // TODO: match may not be complete?
-            case l: LitTerm => l.getFunction().apply(new Object)
-          })
+          case p: AtomPredicate => p.getTerms().toList match {
+            case Nil => Value.Unit
+            case x :: Nil => x match {
+              case l: LitTerm => l.getFunction().apply(new Object)
+            }
+            case terms => terms.map({
+              // TODO: match may not be complete?
+              case l: LitTerm => l.getFunction().apply(new Object)
+            })
+          }
         }
         // TODO: maybe not the cleanest. The idea is the following:
         // evaluate f into a closure
@@ -373,7 +379,7 @@ object Interpreter {
         val Value.Closure(name2, bindings2) = cast2closure(eval(constant.exp, env1, henv0, Map.empty, root))
         val constant2 = root.defs(name2)
         // this results into a closure that again takes one argument
-        assert(constant2.formals.size == 1)
+        assert(constant2.formals.size == 1) // TODO: this seems broken
         // we feed it the acc as second argument and call it
         val env2 = env1 + (constant2.formals.head.sym.toString -> acc)
         eval(constant2.exp, env2, henv0, Map.empty, root)
