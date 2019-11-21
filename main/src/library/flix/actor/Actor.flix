@@ -11,11 +11,7 @@ type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn, WaitingOnDependency, DependsOnTrans} // TODO: sort by some sane order
-
-// TODO: List of auxilliary predicates. It would be nice if these could be better "hidden":
-rel WaitingOnDependency(actor: Str)
-rel DependsOnTrans(actor1: Str, actor2: Str)
+type alias ActorPolicy = #{Start, Stop, ActorDef, MailboxOf, ActorState, DependsOn, Blocked} // TODO: sort by some sane order
 
 ///
 /// An actor has:
