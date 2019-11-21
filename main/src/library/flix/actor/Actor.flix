@@ -31,12 +31,6 @@ pub rel ActorDef(actorName: Str, actor: Actor)
 pub rel MailboxOf(actorName: Str, mailbox: Mailbox) // TODO also just call this Mailbox or maybe use the words "Mailbox" and "Inbox" ?
 // TODO: how to populate this relation? Should be done by the actor system somehow...
 
-pub type alias RunningActorSystem = {control: Channel[ActorEvent], actors: List[(Str, ActorRef)], system: ActorSystem}
-
-
-    pub def getActor(sys: RunningActorSystem, actorName: Str): Option[ActorRef] =
-        Option.map((pair -> let (_, ref) = pair; ref),
-            List.find((pair -> let (name, _) = pair; name == actorName), sys.actors))
 
 
 ///
@@ -61,9 +55,9 @@ pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor
 
 
 
-pub def react(_system: RunningActorSystem): Unit =
-    // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
-    ()
+// pub def react(_system: RunningActorSystem): Unit =
+//     // TODO: function executed in response to changes in actor state. Should invoke the restart policy.
+//     ()
 
 ///
 /// The Grand TODO List

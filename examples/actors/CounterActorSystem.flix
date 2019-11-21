@@ -6,7 +6,7 @@ namespace CounterActorSystem {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        match getActor(sys, "counterActor") {
+        match ActorSystem.getActor(sys, "counterActor") {
             case Some(master) =>
                 let replyChan = chan Message 10;
                 master <- Msg("INC", replyChan);
