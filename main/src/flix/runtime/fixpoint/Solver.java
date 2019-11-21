@@ -48,7 +48,7 @@ public final class Solver {
         for (Constraint fact : cs.getFacts()) {
             Predicate head = fact.getHeadPredicate();
             if (head instanceof AtomPredicate) {
-                if (((AtomPredicate) head).getSym() == sym) {
+                if (((AtomPredicate) head).getSym().equals(sym)) {
                     result.add(fact);
                 }
             }

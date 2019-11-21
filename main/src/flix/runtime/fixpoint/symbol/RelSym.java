@@ -16,8 +16,7 @@
 
 package flix.runtime.fixpoint.symbol;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a relation symbol.
@@ -25,26 +24,15 @@ import java.util.Map;
 public final class RelSym implements PredSym {
 
     /**
-     * An internal cache of relation symbols.
-     */
-    private static final Map<String, RelSym> INTERNAL_CACHE = new HashMap<>();
-
-    /**
      * Returns the relation symbol for the given `name`.
      */
-    public synchronized static RelSym of(String name, int arity, /* nullable */ String[] attributes) {
+    public static RelSym of(String name, int arity, /* nullable */ String[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (attributes != null && attributes.length != arity)
             throw new IllegalArgumentException("'attributes' must have the same length as 'arity'.");
 
-        var lookup = INTERNAL_CACHE.get(name);
-        if (lookup != null) {
-            return lookup;
-        }
-        var sym = new RelSym(name, arity, attributes);
-        INTERNAL_CACHE.put(name, sym);
-        return sym;
+        return new RelSym(name, arity, attributes);
     }
 
     /**
@@ -66,7 +54,7 @@ public final class RelSym implements PredSym {
      * Constructs a fresh relation symbol with the given `name`, `arity`, and `attributes`.
      */
     private RelSym(String name, int arity, String[] attributes) {
-        this.name = name;
+        this.name = name.intern();
         this.arity = arity;
         this.attributes = attributes;
     }
@@ -100,6 +88,23 @@ public final class RelSym implements PredSym {
         return name;
     }
 
-    /* equality by identity */
 
+    /**
+     * Equality defined on the symbol name.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RelSym relSym = (RelSym) o;
+        return Objects.equals(name, relSym.name);
+    }
+
+    /**
+     * Equality defined on the symbol name.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
 }
