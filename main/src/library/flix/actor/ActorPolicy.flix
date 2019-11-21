@@ -23,23 +23,23 @@ pub rel Stop(name: Str)
 pub rel Resume(name: Str)
 
 ///
+/// Auxiliary relation: An actor is blocked if one or more of its (transitive) dependencies is not yet running.
+///
+rel Blocked(actor: Str)
+
+///
 /// Returns the default start policy.
 ///
 pub def defaultStartPolicy(): ActorPolicy = #{
-    // Compute the actors that are waiting for a dependency to start.
-    WaitingOnDependency(actor1) :- DependsOn(actor1, actor2), ActorState(actor2, Pending).
+    // Compute the transitive closure of the DependsOn relation.
+    DependsOn(x, z) :- DependsOn(x, y), DependsOn(y, z).
 
-    // Start all actors whose dependencies are already running.
-    Start(actor) :- ActorDef(actor, _), not WaitingOnDependency(actor).
+    // Compute the actors that are waiting for one or more of its dependencies to be running.
+    // An actor is *not* blocked if it depends on itself. This allows actors in cyclic dependencies to be started.
+    Blocked(x) :- DependsOn(x, y), ActorState(y, Pending), not DependsOn(x, x).
 
-    // Compute the transitive closure of the dependency relation.
-    DependsOnTrans(x, y) :- DependsOn(x, y).
-    DependsOnTrans(x, z) :- DependsOnTrans(x, y), DependsOn(y, z).
-
-    // Start actors that have a cyclic dependency.
-    Start(actor) :- ActorDef(actor, _), DependsOnTrans(actor, actor).
-
-    // TODO: We actually want to do something better. We want to start all actors on a cycle, but only if their deps. have started.
+    // Start actors that are not blocked.
+    Start(x) :- ActorDef(x, _), not Blocked(x).
 }
 
 ///
