@@ -18,8 +18,7 @@ package flix.runtime.fixpoint.symbol;
 
 import flix.runtime.fixpoint.LatticeOps;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a lattice symbol.
@@ -27,14 +26,9 @@ import java.util.Map;
 public final class LatSym implements PredSym {
 
     /**
-     * An internal cache of lattice symbols.
-     */
-    private static final Map<String, LatSym> INTERNAL_CACHE = new HashMap<>();
-
-    /**
      * Returns the lattice symbol for the given `name`.
      */
-    public synchronized static LatSym of(String name, int arity, /* nullable */ String[] attributes, LatticeOps ops) {
+    public static LatSym of(String name, int arity, /* nullable */ String[] attributes, LatticeOps ops) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (attributes != null && attributes.length != arity)
@@ -42,13 +36,7 @@ public final class LatSym implements PredSym {
         if (ops == null)
             throw new IllegalArgumentException("'ops' must be non-null.");
 
-        var lookup = INTERNAL_CACHE.get(name);
-        if (lookup != null) {
-            return lookup;
-        }
-        var sym = new LatSym(name, arity, attributes, ops);
-        INTERNAL_CACHE.put(name, sym);
-        return sym;
+        return new LatSym(name, arity, attributes, ops);
     }
 
     /**
@@ -75,7 +63,7 @@ public final class LatSym implements PredSym {
      * Constructs a fresh lattice symbol with the given `name`, `arity`, `attributes`, and `ops`.
      */
     private LatSym(String name, int arity, String[] attributes, LatticeOps ops) {
-        this.name = name;
+        this.name = name.intern();
         this.arity = arity;
         this.attributes = attributes;
         this.ops = ops;
@@ -117,6 +105,22 @@ public final class LatSym implements PredSym {
         return name;
     }
 
-    /* equality by identity */
+    /**
+     * Equality defined by on the symbol name.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LatSym latSym = (LatSym) o;
+        return Objects.equals(name, latSym.name);
+    }
 
+    /**
+     * Equality defined by on the symbol name.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
 }
