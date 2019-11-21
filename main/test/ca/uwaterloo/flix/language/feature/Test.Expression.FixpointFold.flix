@@ -333,3 +333,29 @@ def testFixpointFold43(): Int =
      acc + y)
      (solve p)
 
+// Unit relation
+rel U()
+
+@test
+def testFixpointFold44(): Unit =
+  fold U () ((x, _acc) -> x) (solve #{U().})
+
+// Unary relation
+rel UnaryB(x: Bool)
+
+@test
+def testFixpointFold45(): Bool =
+  fold UnaryB false ((x, acc) -> x || acc) (solve #{UnaryB(true). UnaryB(false).})
+
+rel UnaryS(x: Str)
+
+@test
+def testFixpointFold46(): Bool =
+  fold UnaryS false ((x, acc) -> acc || x == "bar") (solve #{UnaryS("foo"). UnaryS("bar"). UnaryS("baz").})
+
+
+// Fold over multiple relations
+@test
+def testFixpointFold47(): Bool =
+  let res = fold F 0 ((pair, acc) -> acc + fst(pair)) (solve #{F(1, 2). UnaryS("foo").});
+  res == 1
