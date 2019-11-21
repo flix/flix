@@ -1247,7 +1247,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestTypeVar), loc)
           tupleType = sym match {
             case rel: Symbol.RelSym =>
-              Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
+              val tpes = program.relations(rel).attr.map(a => a.tpe)
+              tpes match {
+                case Nil => mkUnitType() // If there's no field in the relation, use Unit
+                case tpe :: Nil => tpe // If there's a single field, use its type
+                case _ => Type.mkTuple(tpes) // If there are more fields, use a tuple
+              }
             case lat: Symbol.LatSym =>
               /* TODO: what should be done in this case? */
               ???
