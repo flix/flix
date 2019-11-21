@@ -35,7 +35,8 @@ pub def defaultStartPolicy(): ActorPolicy = #{
     DependsOn(x, z) :- DependsOn(x, y), DependsOn(y, z).
 
     // Compute the actors that are waiting for one or more of its dependencies to be running.
-    // An actor is *not* blocked if it depends on itself. This allows actors in cyclic dependencies to be started.
+    // Note1: An actor is *not* blocked if it depends on itself. This allows actors in cyclic dependencies to be started.
+    // Note2: An actor that has no dependencies is trivially *never* blocked.
     Blocked(x) :- DependsOn(x, y), ActorState(y, Pending), not DependsOn(x, x).
 
     // Start actors that are not blocked.
