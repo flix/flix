@@ -5,9 +5,19 @@
 /// @field `startPolicy`     that describes the policy for how actors are started.
 /// @field `restartPolicy`   that describes the policy for how actors are restarted if they crash.
 /// @field `shutdownPolicy`  that describes the policy for how actors are stopped.
+/// @field `control`         the runtime control channel of this actor system
+/// @field `actors`          the actors that are running
 ///
 type alias ActorSystem = {
-    actors: ActorPolicy, startPolicy: ActorPolicy, restartPolicy: ActorPolicy, shutdownPolicy: ActorPolicy
+    actors: ActorPolicy,
+    startPolicy: ActorPolicy,
+    restartPolicy: ActorPolicy,
+    shutdownPolicy: ActorPolicy,
+
+    /// The following fields are runtime-related.
+    control: Channel[ActorEvent],
+    // TODO: now the running actors are stored as (actorName, mailbox), but maybe we want the state as well? That will be useful when we need to construct the ActorState relation.
+    runningActors: List[(Str, ActorRef)]
 }
 
 namespace ActorSystem {
@@ -19,25 +29,34 @@ namespace ActorSystem {
         actors          = #{},
         startPolicy     = defaultStartPolicy(),
         shutdownPolicy  = defaultShutdownPolicy(),
-        restartPolicy   = defaultRestartPolicy()
+        restartPolicy   = defaultRestartPolicy(),
+        control         = chan ActorEvent 10,
+        runningActors   = Nil
     }
 
     ///
-    /// Starts the given actor system `s`. Returns a running actor system.
+    /// Starts the given actor system `s`. Returns the updated actor system
     ///
-    pub def start(s: ActorSystem): RunningActorSystem =
-        let control = chan ActorEvent 10;
-        { control = control,
-          actors = fold ActorDef Nil ((actor, acc) ->
+    pub def start(s: ActorSystem): ActorSystem = {
+        runningActors = fold ActorDef Nil ((actor, acc) ->
             let (actorName, behavior) = actor;
-            (actorName, startActor(control, actorName, behavior)) :: acc)
-            (solve (s.startPolicy <+> s.actors)),
-          system = s }
+            (actorName, startActor(s.control, actorName, behavior)) :: acc)
+            (solve (s.startPolicy <+> s.actors))
+        | s
+    }
+
+    ///
+    /// Returns the reference of an actor in an actor system, given its name.
+    ////
+    pub def getActor(sys: ActorSystem, actorName: Str): Option[ActorRef] =
+        Option.map((pair -> snd(pair)),
+            List.find((pair -> fst(pair) == actorName), sys.runningActors))
+
 
     ///
     /// Shuts down the given running actor system `s`.
     ///
-    pub def shutdown(_s: RunningActorSystem): Unit =
+    pub def shutdown(_s: ActorSystem): Unit =
       // TODO: fails to compile due to not being able to unify Str with (Str) (a 1-tuple)
       //let stopped = fold Stop Nil ((actorName, acc) ->
       //  match getActor(system, actorName) {
