@@ -22,9 +22,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{MonoType, _}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Verbosity}
-import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
@@ -1908,8 +1907,13 @@ object GenExpression {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
-    // Emit code for the attributes.
-    newAttributesArray(root.relations(sym).attr, mv)
+    // Emit code for the attributes (if present).
+    root.relations.get(sym) match {
+      case None =>
+        mv.visitInsn(ACONST_NULL)
+      case Some(rel) =>
+        newAttributesArray(rel.attr, mv)
+    }
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
@@ -1922,8 +1926,12 @@ object GenExpression {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
-    // Emit code for the attributes.
-    newAttributesArray(root.lattices(sym).attr, mv)
+    // Emit code for the attributes (if present).
+    root.lattices.get(sym) match {
+      case None =>
+        mv.visitInsn(ACONST_NULL)
+      case Some(lat) => newAttributesArray(lat.attr, mv)
+    }
 
     // Emit code for the lattice operations.
     newLatticeOps(sym, mv)
