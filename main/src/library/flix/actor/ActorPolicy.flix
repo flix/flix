@@ -36,6 +36,36 @@ pub rel Stop(name: Str)
 pub rel Resume(name: Str)
 
 ///
+/// If an actor policy specifies multiple actions for the same actor then the final action is computed by join:
+///
+/// Start, Start  => Start
+/// Start, Stop   => Stop
+/// Stop, Start   => Stop
+/// Resume, Stop  => Stop
+/// Stop, Resume  => Stop
+/// Start, Resume => Resume
+/// Resume, Start => Resume
+///
+
+///
+/// An action is combined with an actor state according to the following table:
+///
+/// Pending:
+///     - Start     => start the actor.
+///     - Stop      => no-op.
+///     - Resume    => no-op.
+///  Running:
+///     - Start     => no-op.
+///     - Stop      => stop the actor.
+///     - Resume    => no-op.
+///  Stopped:
+///     - Start     => start the actor.
+///     -
+///
+///
+///
+
+///
 /// A predicate that describes the current state of an actor.
 ///
 /// @param name     the name of the actor.
