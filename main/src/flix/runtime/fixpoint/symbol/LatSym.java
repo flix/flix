@@ -28,26 +28,19 @@ public final class LatSym implements PredSym {
     /**
      * Returns the lattice symbol for the given `name`.
      */
-    public static LatSym of(String name, int arity, /* nullable */ String[] attributes, LatticeOps ops) {
+    public static LatSym of(String name, /* nullable */ String[] attributes, LatticeOps ops) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
-        if (attributes != null && attributes.length != arity)
-            throw new IllegalArgumentException("'attributes' must have the same length as 'arity'.");
         if (ops == null)
             throw new IllegalArgumentException("'ops' must be non-null.");
 
-        return new LatSym(name, arity, attributes, ops);
+        return new LatSym(name, attributes, ops);
     }
 
     /**
      * The name of the lattice symbol.
      */
     private final String name;
-
-    /**
-     * The arity of the lattice symbol.
-     */
-    private final int arity;
 
     /**
      * The optional attributes of the lattice symbol.
@@ -60,11 +53,10 @@ public final class LatSym implements PredSym {
     private final LatticeOps ops;
 
     /**
-     * Constructs a fresh lattice symbol with the given `name`, `arity`, `attributes`, and `ops`.
+     * Constructs a fresh lattice symbol with the given `name`, `attributes`, and `ops`.
      */
-    private LatSym(String name, int arity, String[] attributes, LatticeOps ops) {
+    private LatSym(String name, String[] attributes, LatticeOps ops) {
         this.name = name.intern();
-        this.arity = arity;
         this.attributes = attributes;
         this.ops = ops;
     }
@@ -74,13 +66,6 @@ public final class LatSym implements PredSym {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Returns the arity of the lattice symbol.
-     */
-    public int getArity() {
-        return arity;
     }
 
     /**

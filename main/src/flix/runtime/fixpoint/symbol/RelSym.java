@@ -26,13 +26,11 @@ public final class RelSym implements PredSym {
     /**
      * Returns the relation symbol for the given `name`.
      */
-    public static RelSym of(String name, int arity, /* nullable */ String[] attributes) {
+    public static RelSym of(String name, /* nullable */ String[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
-        if (attributes != null && attributes.length != arity)
-            throw new IllegalArgumentException("'attributes' must have the same length as 'arity'.");
 
-        return new RelSym(name, arity, attributes);
+        return new RelSym(name, attributes);
     }
 
     /**
@@ -41,21 +39,15 @@ public final class RelSym implements PredSym {
     private final String name;
 
     /**
-     * The arity of the relation symbol.
-     */
-    private final int arity;
-
-    /**
      * The optional attributes of the relation symbol.
      */
     private final String[] attributes;
 
     /**
-     * Constructs a fresh relation symbol with the given `name`, `arity`, and `attributes`.
+     * Constructs a fresh relation symbol with the given `name` and `attributes`.
      */
-    private RelSym(String name, int arity, String[] attributes) {
+    private RelSym(String name, String[] attributes) {
         this.name = name.intern();
-        this.arity = arity;
         this.attributes = attributes;
     }
 
@@ -64,13 +56,6 @@ public final class RelSym implements PredSym {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Returns the arity of the relation symbol.
-     */
-    public int getArity() {
-        return arity;
     }
 
     /**

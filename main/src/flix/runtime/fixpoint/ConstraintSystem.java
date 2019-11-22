@@ -198,7 +198,7 @@ public final class ConstraintSystem {
         Map<RelSym, String[]> relHeaders = new HashMap<>();
         for (RelSym relSym : getRelationSymbols()) {
             String[] attributes = relSym.getAttributes();
-            String[] headers = new String[relSym.getArity()];
+            String[] headers = new String[getArity(relSym)];
             for (int i = 0; i < headers.length; i++) {
                 if (attributes != null) {
                     headers[i] = attributes[i];
@@ -219,7 +219,7 @@ public final class ConstraintSystem {
         Map<LatSym, String[]> latHeaders = new HashMap<>();
         for (LatSym latSym : getLatticeSymbols()) {
             String[] attributes = latSym.getAttributes();
-            String[] headers = new String[latSym.getArity()];
+            String[] headers = new String[getArity(latSym)];
             for (int i = 0; i < headers.length; i++) {
                 if (attributes != null) {
                     headers[i] = attributes[i];

@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m: ClassTag[ValueType]) {
+class DataStore[ValueType <: AnyRef](implicit m: ClassTag[ValueType]) {
 
   /**
     * A map from names to indexed relations.
@@ -40,13 +40,13 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
 
   def getRelations(): Iterable[IndexedRelation] = relations.values
 
-  def getRelation(r: PredSym): IndexedRelation = relations.getOrElseUpdate(r, initRelation(r.asInstanceOf[RelSym]))
+  def getRelation(r: PredSym, cs: ConstraintSystem): IndexedRelation = relations.getOrElseUpdate(r, initRelation(r.asInstanceOf[RelSym], cs.getArity(r)))
 
   def getLattices(): Iterable[IndexedLattice] = lattices.values
 
-  def getLattice(l: PredSym): IndexedLattice = lattices.getOrElseUpdate(l, initLattice(l.asInstanceOf[LatSym]))
+  def getLattice(l: PredSym, cs: ConstraintSystem): IndexedLattice = lattices.getOrElseUpdate(l, initLattice(l.asInstanceOf[LatSym], cs.getArity(l)))
 
-  private def initRelation(relSym: RelSym): IndexedRelation = {
+  private def initRelation(relSym: RelSym, arity: Int): IndexedRelation = {
     val name = relSym.getName()
     val attributes = relSym.getAttributes()
 
@@ -55,20 +55,20 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m
     val indexes = idx map {
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }
-    new IndexedRelation(name, relSym.getArity, indexes, indexes.head)
+    new IndexedRelation(name, arity, indexes, indexes.head)
   }
 
-  private def initLattice(latSym: LatSym): IndexedLattice = {
+  private def initLattice(latSym: LatSym, arity: Int): IndexedLattice = {
     val name = latSym.getName()
     val ops = latSym.getOps()
 
     // NB: Just an index on the first attribute and on all the keys.
-    val idx = Set(Seq(0), Range(0, latSym.getArity - 1))
+    val idx = Set(Seq(0), Range(0, arity - 1))
     val indexes = idx map {
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }
 
-    new IndexedLattice(name, latSym.getArity, indexes, ops)
+    new IndexedLattice(name, arity, indexes, ops)
   }
 
   /**
