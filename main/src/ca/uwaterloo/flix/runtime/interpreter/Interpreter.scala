@@ -23,10 +23,10 @@ import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
-import flix.runtime.fixpoint.{Constraint => _, _}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
+import flix.runtime.fixpoint.{Constraint => _, _}
 import flix.runtime.{fixpoint, _}
 
 object Interpreter {
@@ -899,20 +899,19 @@ object Interpreter {
     * Returns the predicate symbol of the given predicate with parameter `p0`.
     */
   def newPredSym(sym: Symbol.PredSym, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = {
-      sym match {
-        case sym: Symbol.RelSym => newRelSym(sym)
-        case sym: Symbol.LatSym => newLatSym(sym)
-      }
+    sym match {
+      case sym: Symbol.RelSym => newRelSym(sym)
+      case sym: Symbol.LatSym => newLatSym(sym)
+    }
   }
 
   /**
     * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
     */
-  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
-    case FinalAst.Relation(_, _, attr, _) =>
-      val name = sym.toString
-      val as = attr.map(_.name).toArray
-      RelSym.of(name, as.length, as)
+  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = {
+    val name = sym.toString
+    val attr = root.relations.get(sym).map(_.attr.map(_.name).toArray).orNull
+    RelSym.of(name, attr)
   }
 
   /**
@@ -923,7 +922,7 @@ object Interpreter {
       val name = sym.toString
       val as = attr.map(a => a.name)
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, as.length, as.toArray, ops)
+      LatSym.of(name, as.toArray, ops)
   }
 
   /**

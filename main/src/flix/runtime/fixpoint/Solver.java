@@ -17,7 +17,6 @@
 package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.symbol.PredSym;
-import flix.runtime.RuleError;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 
