@@ -90,23 +90,24 @@ namespace ActorSystem {
     ///
     /// Shuts down the given running actor system `s`.
     ///
-    pub def shutdown(system: ActorSystem): Unit =
-      let stopped = fold Stop Nil ((actorName, acc) ->
-        match getActor(system, actorName) {
-          case Some(actorRef) =>
-            // TODO: What if the actor just ignores this message? Or if it crashes when stopping? The actor behaviour should return Done. We can wait for this on some internal channel maybe?
-            actorRef <- Stop;
-            actorName :: acc
-          case None =>
-            Console.printLine("Actor not found: " + actorName);
-            acc
-        }) (solve (system.shutdownPolicy /* TODO: this should be the composed with current status of the ActorState relation */));
-      if (List.length(stopped) == 0) {
-        ()
-      } else {
-        // TODO: wait a bit before recursing?
-        // TODO: keep the current status of the ActorState relation somewhere
-        shutdown(system)
-      }
+    pub def shutdown(_system: ActorSystem): Unit =
+      // let stopped = fold Stop Nil ((actorName, acc) ->
+      //   match getActor(system, actorName) {
+      //     case Some(actorRef) =>
+      //       // TODO: What if the actor just ignores this message? Or if it crashes when stopping? The actor behaviour should return Done. We can wait for this on some internal channel maybe?
+      //       actorRef <- Stop;
+      //       actorName :: acc
+      //     case None =>
+      //       Console.printLine("Actor not found: " + actorName);
+      //       acc
+      //   }) (solve (system.shutdownPolicy /* TODO: this should be the composed with current status of the ActorState relation */));
+      // if (List.length(stopped) == 0) {
+      //   ()
+      // } else {
+      //   // TODO: wait a bit before recursing?
+      //   // TODO: keep the current status of the ActorState relation somewhere
+      //   shutdown(system)
+      // }
+      ()
 }
 
