@@ -52,6 +52,25 @@ namespace ActorSystem {
         Option.map((pair -> snd(pair)),
             List.find((pair -> fst(pair) == actorName), sys.runningActors))
 
+    ///
+    /// Starts a single actor. Returns its reference.
+    ///
+    pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor): ActorRef =
+        let mailbox = chan Message 10;
+        spawn (
+          match behavior(mailbox) with {
+            case Done =>
+              // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
+              control <- ActorStopped(actorName)
+            case Crash(_) =>
+              control <- ActorCrashed(actorName)
+            case FatalCrash(_) => ??? // TODO
+          }
+        );
+        // TODO: Use a channel to wait for termination.
+        // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
+        // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
+        mailbox
 
     ///
     /// Shuts down the given running actor system `s`.

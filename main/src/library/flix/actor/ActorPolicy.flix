@@ -1,4 +1,14 @@
 ///
+/// A type alias for the row type of an actor policy.
+///
+type alias ActorPolicy = #{ActorDef, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Blocked}
+
+///
+/// A relation that maps actors to mailboxes.
+///
+pub rel MailboxOf(name: Str, mailbox: Mailbox)
+
+///
 /// A relation that represents the dependencies between actors.
 ///
 /// If an actor `x` depends on an actor `y` then `x` is started before `y`.
