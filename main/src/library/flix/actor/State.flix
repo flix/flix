@@ -15,10 +15,3 @@ pub enum State {
     case FatallyCrashed
 }
 
-///
-/// A predicate that describes the current state of an actor.
-///
-/// @param name     the name of the actor.
-/// @param state    the state of the actor. An actor has exactly one state.
-///
-pub rel ActorState(name: Str, state: State)

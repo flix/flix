@@ -36,6 +36,14 @@ pub rel Stop(name: Str)
 pub rel Resume(name: Str)
 
 ///
+/// A predicate that describes the current state of an actor.
+///
+/// @param name     the name of the actor.
+/// @param state    the state of the actor. An actor has exactly one state.
+///
+pub rel ActorState(name: Str, state: State)
+
+///
 /// Auxiliary relation: An actor is blocked if one or more of its (transitive) dependencies is not yet running.
 ///
 rel Blocked(actor: Str)
@@ -95,7 +103,7 @@ pub def defaultRestartPolicy(): ActorPolicy = oneForOneRestartPolicy()
 /// Returns a restart policy that restarts an actor when it crashes.
 ///
 pub def oneForOneRestartPolicy(): ActorPolicy = #{
-    Start(actor) :- ActorState(actor, Crashed).
+    Resume(x) :- ActorState(x, Crashed).
 }
 
 ///
