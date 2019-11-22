@@ -6,6 +6,7 @@
 /// - Stopped: the actor is gracefully stopped.
 /// - Crashed: the actor has crashed.
 ///
+// TODO: Update naming and number of states.
 pub enum State {
     case Pending,
     case Running,

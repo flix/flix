@@ -53,7 +53,7 @@ pub def defaultStartPolicy(): ActorPolicy = #{
     Blocked(x) :- DependsOn(x, y), ActorState(y, Pending), not DependsOn(x, x).
 
     // Start actors that are not blocked.
-    Start(x) :- ActorDef(x, _), not Blocked(x).
+    Start(x) :- ActorDef(x, _), ActorState(x, Pending), not Blocked(x).
 }
 
 ///
@@ -67,8 +67,16 @@ pub def immediatelyStartAllPolicy(): ActorPolicy = #{
 /// Returns the default shutdown policy.
 ///
 pub def defaultShutdownPolicy(): ActorPolicy = #{
-    // TODO: incorporate DependsOn and deal with cyclic dependencies.
-    Stop(actor) :- ActorState(actor, Running).
+    // Compute the transitive closure of the DependsOn relation.
+    DependsOn(x, z) :- DependsOn(x, y), DependsOn(y, z).
+
+    // Compute the actors that are waiting for one or more if its dependencies to be stopped.
+    // Note1: An actor is *not* blocked if it depends on itself. This allows actors in cyclic dependencies to be stopped.
+    // Note2: An actor that no-one depends on is trivially *never* blocked.
+    Blocked(x) :- DependsOn(x, y), ActorState(y, Running), not DependsOn(x, x).
+
+    // Stop actors that are not blocked.
+    Stop(x) :- ActorDef(x, _), ActorState(x, Running).
 }
 
 ///
