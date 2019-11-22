@@ -19,8 +19,8 @@ package flix.runtime.fixpoint;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.symbol.LatSym;
+import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.symbol.RelSym;
-import flix.runtime.fixpoint.term.Term;
 import flix.runtime.util.AsciiTable;
 
 import java.util.*;
@@ -59,6 +59,21 @@ public final class ConstraintSystem {
     private final Constraint[] rules;
 
     /**
+     * The set of relation symbols.
+     */
+    private final Set<RelSym> relSyms = new HashSet<>();
+
+    /**
+     * The set of lattice symbols.
+     */
+    private final Set<LatSym> latSyms = new HashSet<>();
+
+    /**
+     * The arity of the symbols.
+     */
+    private final Map<PredSym, Integer> arity = new HashMap<>();
+
+    /**
      * Private constructor.
      */
     private ConstraintSystem(Constraint[] facts, Constraint[] rules) {
@@ -69,6 +84,25 @@ public final class ConstraintSystem {
 
         this.facts = facts;
         this.rules = rules;
+
+        for (AtomPredicate p : getAtomPredicates()) {
+            PredSym sym = p.getSym();
+            if (sym instanceof RelSym) {
+                relSyms.add((RelSym) sym);
+            }
+            if (sym instanceof LatSym) {
+                latSyms.add((LatSym) sym);
+            }
+
+            var previousArity = arity.get(sym);
+            int currentArity = p.getTerms().length;
+            if (previousArity == null) {
+                arity.put(sym, currentArity);
+            } else {
+                if (previousArity != currentArity)
+                    throw new RuntimeException("Mismatched arity of the '" + sym.getName() + "' predicate. Expected arity: " + previousArity + " but got: " + currentArity);
+            }
+        }
     }
 
     /**
@@ -107,26 +141,24 @@ public final class ConstraintSystem {
      * Returns all relation symbols in `this` constraint system.
      */
     public RelSym[] getRelationSymbols() {
-        var result = new HashSet<RelSym>();
-        for (AtomPredicate p : getAtomPredicates()) {
-            if (p.getSym() instanceof RelSym) {
-                result.add((RelSym) p.getSym());
-            }
-        }
-        return result.toArray(new RelSym[0]);
+        return relSyms.toArray(new RelSym[0]);
     }
 
     /**
      * Returns all lattice symbols in `this` constraint system.
      */
     public LatSym[] getLatticeSymbols() {
-        var result = new HashSet<LatSym>();
-        for (AtomPredicate p : getAtomPredicates()) {
-            if (p.getSym() instanceof LatSym) {
-                result.add((LatSym) p.getSym());
-            }
-        }
-        return result.toArray(new LatSym[0]);
+        return latSyms.toArray(new LatSym[0]);
+    }
+
+    /**
+     * Returns the arity of the given symbol `sym`.
+     */
+    public int getArity(PredSym sym) {
+        var a = arity.get(sym);
+        if (a == null)
+            throw new IllegalArgumentException("The predicate symbol '" + sym.getName() + "' does not occur in the constraint set.");
+        return a;
     }
 
     /**
@@ -166,7 +198,7 @@ public final class ConstraintSystem {
         Map<RelSym, String[]> relHeaders = new HashMap<>();
         for (RelSym relSym : getRelationSymbols()) {
             String[] attributes = relSym.getAttributes();
-            String[] headers = new String[relSym.getArity()];
+            String[] headers = new String[getArity(relSym)];
             for (int i = 0; i < headers.length; i++) {
                 if (attributes != null) {
                     headers[i] = attributes[i];
@@ -187,7 +219,7 @@ public final class ConstraintSystem {
         Map<LatSym, String[]> latHeaders = new HashMap<>();
         for (LatSym latSym : getLatticeSymbols()) {
             String[] attributes = latSym.getAttributes();
-            String[] headers = new String[latSym.getArity()];
+            String[] headers = new String[getArity(latSym)];
             for (int i = 0; i < headers.length; i++) {
                 if (attributes != null) {
                     headers[i] = attributes[i];

@@ -908,11 +908,10 @@ object Interpreter {
   /**
     * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
     */
-  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
-    case FinalAst.Relation(_, _, attr, _) =>
-      val name = sym.toString
-      val as = attr.map(_.name).toArray
-      RelSym.of(name, as.length, as)
+  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = {
+    val name = sym.toString
+    val attr = root.relations.get(sym).map(_.attr.map(_.name).toArray).orNull
+    RelSym.of(name, attr)
   }
 
   /**
@@ -923,7 +922,7 @@ object Interpreter {
       val name = sym.toString
       val as = attr.map(a => a.name)
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, as.length, as.toArray, ops)
+      LatSym.of(name, as.toArray, ops)
   }
 
   /**

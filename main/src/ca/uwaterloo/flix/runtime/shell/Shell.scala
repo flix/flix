@@ -358,26 +358,6 @@ class Shell(initialPaths: List[Path], options: Options) {
         vt << Dedent << NewLine
       }
 
-      // Print the matched relations.
-      val matchedRels = getRelationsByNamespace(ns, this.root)
-      if (matchedRels.nonEmpty) {
-        vt << Bold("Relations:") << Indent << NewLine << NewLine
-        for (rel <- matchedRels.sortBy(_.sym.name)) {
-          prettyPrintRel(rel, vt)
-        }
-        vt << Dedent << NewLine
-      }
-
-      // Print the matched lattices.
-      val matchedLats = getLatticesByNamespace(ns, this.root)
-      if (matchedLats.nonEmpty) {
-        vt << Bold("Lattices:") << Indent << NewLine << NewLine
-        for (lat <- matchedLats.sortBy(_.sym.name)) {
-          prettyPrintLat(lat, vt)
-        }
-        vt << Dedent << NewLine
-      }
-
       // Print the result to the terminal.
       terminal.writer().print(vt.fmt)
   }
@@ -645,12 +625,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Returns the namespaces in the given AST `root`.
     */
-  private def namespacesOf(root: Root): Set[String] = {
-    val ns1 = root.defs.keySet.map(_.namespace.mkString("/"))
-    val ns2 = root.relations.keySet.map(_.namespace.mkString("/"))
-    val ns3 = root.lattices.keySet.map(_.namespace.mkString("/"))
-    (ns1 ++ ns2 ++ ns3) - ""
-  }
+  private def namespacesOf(root: Root): Set[String] = root.defs.keySet.map(_.namespace.mkString("/"))
 
   /**
     * Returns the definitions in the given namespace.
@@ -660,30 +635,6 @@ class Shell(initialPaths: List[Path], options: Options) {
     root.defs.foldLeft(Nil: List[Def]) {
       case (xs, (s, defn)) if s.namespace == namespace && defn.mod.isPublic && !defn.mod.isSynthetic =>
         defn :: xs
-      case (xs, _) => xs
-    }
-  }
-
-  /**
-    * Returns the relations in the given namespace.
-    */
-  private def getRelationsByNamespace(ns: String, root: Root): List[Relation] = {
-    val namespace: List[String] = getNameSpace(ns)
-    root.relations.foldLeft(Nil: List[Relation]) {
-      case (xs, (s, t: Relation)) if s.namespace == namespace =>
-        t :: xs
-      case (xs, _) => xs
-    }
-  }
-
-  /**
-    * Returns the lattices in the given namespace.
-    */
-  private def getLatticesByNamespace(ns: String, root: Root): List[Lattice] = {
-    val namespace: List[String] = getNameSpace(ns)
-    root.lattices.foldLeft(Nil: List[Lattice]) {
-      case (xs, (s, t: Lattice)) if s.namespace == namespace =>
-        t :: xs
       case (xs, _) => xs
     }
   }
@@ -713,30 +664,6 @@ class Shell(initialPaths: List[Path], options: Options) {
       }
     }
     vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
-  }
-
-  /**
-    * Pretty prints the given relation `rel` to the given virtual terminal `vt`.
-    */
-  private def prettyPrintRel(rel: Relation, vt: VirtualTerminal): Unit = {
-    vt << Bold("rel ") << Blue(rel.sym.toString) << "("
-    vt << rel.attr.head.name << ": " << Cyan(rel.attr.head.tpe.show)
-    for (attr <- rel.attr.tail) {
-      vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
-    }
-    vt << ")" << NewLine
-  }
-
-  /**
-    * Pretty prints the given lattice `lat` to the given virtual terminal `vt`.
-    */
-  private def prettyPrintLat(lat: Lattice, vt: VirtualTerminal): Unit = {
-    vt << Bold("lat ") << Blue(lat.sym.toString) << "("
-    vt << lat.attr.head.name << ": " << Cyan(lat.attr.head.tpe.show)
-    for (attr <- lat.attr.tail) {
-      vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
-    }
-    vt << ")" << NewLine
   }
 
   /**

@@ -22,10 +22,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.util._
-import flix.runtime.fixpoint.{ConstantFunction, Constraint, ConstraintSystem, Stratification}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
+import flix.runtime.fixpoint.{ConstantFunction, Constraint, ConstraintSystem, Stratification}
 import flix.runtime.{ProxyObject, TimeoutError}
 
 import scala.collection.mutable
@@ -38,7 +38,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(constraintSystem: ConstraintSystem, stratification: Stratification, options: flix.runtime.fixpoint.Options) {
+class Solver(@volatile var constraintSystem: ConstraintSystem, stratification: Stratification, options: flix.runtime.fixpoint.Options) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -93,7 +93,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
     * no concurrent writes may occur for the *same* relation/lattice.
     */
-  val dataStore = new DataStore[AnyRef](constraintSystem)
+  val dataStore = new DataStore[AnyRef]
 
   /**
     * The dependencies of the program. Populated by [[initDependencies]].
@@ -270,9 +270,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
           // update the datastore, but don't compute any dependencies.
           sym match {
             case r: RelSym =>
-              dataStore.getRelation(r).inferredFact(fact)
+              dataStore.getRelation(r, constraintSystem).inferredFact(fact)
             case l: LatSym =>
-              dataStore.getLattice(l).inferredFact(fact)
+              dataStore.getLattice(l, constraintSystem).inferredFact(fact)
           }
         }
       }
@@ -425,8 +425,8 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
     // lookup the relation or lattice.
     val table = p.getSym match {
-      case r: RelSym => dataStore.getRelation(r)
-      case l: LatSym => dataStore.getLattice(l)
+      case r: RelSym => dataStore.getRelation(r, constraintSystem)
+      case l: LatSym => dataStore.getLattice(l, constraintSystem)
     }
 
     // evaluate all terms in the predicate.
@@ -533,7 +533,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
       interp += ((p.getSym, fact))
 
-    case p: UnionPredicate =>
+    case p: UnionPredicate => synchronized {
       // Evaluate the terms to actual arguments.
       val args = evalArgs(p.getArguments, env)
 
@@ -542,6 +542,11 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
       // Cast to a constraint system
       val cs = result.getValue.asInstanceOf[ConstraintSystem]
+
+      // Merge the two constraint sets.
+      // TODO: If this also return rules then we should rebuild our data structures...
+      // Below we throw an exception if that is the case.
+      constraintSystem = flix.runtime.fixpoint.Solver.compose(constraintSystem, cs)
 
       // Iterate through the facts.
       for (constraint <- cs.getConstraints) {
@@ -552,6 +557,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
           throw InternalRuntimeException(s"Unexpected rule in union predicate: '$constraint'.")
         }
       }
+    }
   }
 
   /**
@@ -620,13 +626,13 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     */
   private def inferredFact(sym: PredSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
     case r: RelSym =>
-      val changed = dataStore.getRelation(r).inferredFact(fact)
+      val changed = dataStore.getRelation(r, constraintSystem).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }
 
     case l: LatSym =>
-      val changed = dataStore.getLattice(l).inferredFact(fact)
+      val changed = dataStore.getLattice(l, constraintSystem).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }
@@ -673,7 +679,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         //  if so, the dependencies might be empty, but that should be okay.
         for ((rule, p) <- dependenciesOf.getOrElse(sym, Set.empty)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.getArity - 1
+          val numberOfKeys = constraintSystem.getArity(l) - 1
           val env = unify(getVarArray(p), fact, numberOfKeys, rule.getConstraintParameters.length)
           if (env != null) {
             localWorkList.push((rule, env))
