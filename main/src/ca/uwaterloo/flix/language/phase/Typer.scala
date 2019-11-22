@@ -1245,17 +1245,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (constraintsType, eff3) <- visitExp(constraints)
           // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
           constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestTypeVar), loc)
-          tupleType = sym match {
-            case rel: Symbol.RelSym =>
-              val tpes = program.relations(rel).attr.map(a => a.tpe)
-              tpes match {
-                case Nil => mkUnitType() // If there's no field in the relation, use Unit
-                case tpe :: Nil => tpe // If there's a single field, use its type
-                case _ => Type.mkTuple(tpes) // If there are more fields, use a tuple
-              }
-            case lat: Symbol.LatSym =>
-              /* TODO: what should be done in this case? */
-              ???
+          tupleType = constraintsType2 match {
+            case Type.SchemaExtend(_, Type.Apply(_, t), _) => t
+            case _ => ??? // Other case shouldn't happen (due to the previous unification step)
           }
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
@@ -1869,12 +1861,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     sym match {
       case sym: Symbol.RelSym =>
         val base = Type.Cst(TypeConstructor.Relation(sym)): Type
-        val args = Type.mkTuple(ts)
+        val args = ts match {
+          case Nil => mkUnitType()
+          case x :: Nil => x
+          case l => Type.mkTuple(l)
+        }
         Type.Apply(base, args)
 
       case sym: Symbol.LatSym =>
         val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-        val args = Type.mkTuple(ts)
+        val args = ts match {
+          case Nil => mkUnitType()
+          case x :: Nil => x
+          case l => Type.mkTuple(l)
+        }
         Type.Apply(base, args)
     }
   }
