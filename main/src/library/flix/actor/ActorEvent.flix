@@ -16,23 +16,20 @@ pub enum ActorEvent {
     ///
     /// @param the name of the actor.
     ///
-    case ActorStopped(Str),
+    case ActorDone(Str),
 
     ///
-    /// Indicates that the actor has crashed.
+    /// Indicates that the actor has crashed, but it can still be resumed.
     ///
     /// @param the name of the actor.
     ///
-    case ActorCrashed(Str),
+    case ActorResumableCrash(Str),
 
     ///
-    /// Indicates that the actor has crashed and cannot be restarted.
+    /// Indicates that the actor has crashed and cannot be resumed.
     ///
     /// @param the name of the actor.
     ///
-    case ActorFinal(Str)
+    case ActorNonResumableCrash(Str)
 
 }
-
-// TODO: Since this is private, maybe move it into a more appropriate namespace?
-// TODO: Naming should be made more consistent with ActorResult.

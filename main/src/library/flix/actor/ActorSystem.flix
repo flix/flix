@@ -76,10 +76,10 @@ namespace ActorSystem {
           match behavior(mailbox) with {
             case Done =>
               // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
-              control <- ActorStopped(actorName)
-            case Crash(_) =>
-              control <- ActorCrashed(actorName)
-            case FatalCrash(_) => ??? // TODO
+              control <- ActorDone(actorName)
+            case ResumableCrash(_) =>
+              control <- ActorResumableCrash(actorName)
+            case NonResumableCrash(_) => ??? // TODO
           }
         );
         // TODO: Use a channel to wait for termination.

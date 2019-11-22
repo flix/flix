@@ -45,9 +45,9 @@ namespace CounterActorSystem {
                 if (n < 2147483647)
                     counterActor(n + 1, mailbox)
                 else
-                    FatalCrash("Counter overflowed.")
+                    NonResumableCrash("Counter overflowed.")
             case Msg("DEC", _)  => counterActor(n - 1, mailbox)
-            case Msg(m, _)      => Crash(counterActor(n), "Unexpected message: " + m)
+            case Msg(m, _)      => ResumableCrash(counterActor(n), "Unexpected message: " + m)
         }
 
     ///
@@ -58,7 +58,7 @@ namespace CounterActorSystem {
             case Start(c)           => c <- Ready(); workerActor(counterActor, mailbox)
             case Stop               => Done
             case Msg("wakeup", _)   => counterActor <- Msg("INC", mailbox); workerActor(counterActor, mailbox)
-            case Msg(m, _)          => Crash(workerActor(counterActor), "Unexpected message: " + m)
+            case Msg(m, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + m)
         }
 
 }

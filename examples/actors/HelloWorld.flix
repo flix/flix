@@ -24,7 +24,7 @@ namespace HelloWorld {
                 Console.printLine("Hello World!");
                 Done
             case Stop           => Done
-            case Msg(m, _)      => FatalCrash("Unexpected message: " + m)
+            case Msg(m, _)      => NonResumableCrash("Unexpected message: " + m)
         }
 
 }
