@@ -20,7 +20,6 @@ namespace CounterActorSystem {
         };
         ActorSystem.shutdown(sys)
 
-
     ///
     /// Returns an actor system with one counter actor and several worker actors.
     ///
