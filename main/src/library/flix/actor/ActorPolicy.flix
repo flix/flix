@@ -3,6 +3,9 @@
 ///
 type alias ActorPolicy = #{ActorDef, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Blocked}
 
+/// TODO: DOC And better name.
+pub rel ActorDef(name: Str, actor: Actor)
+
 ///
 /// A relation that maps actors to mailboxes.
 ///

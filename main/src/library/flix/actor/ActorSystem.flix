@@ -20,6 +20,13 @@ type alias ActorSystem = {
     runningActors: List[(Str, ActorRef)]
 }
 
+///
+/// An actor is identified by its mailbox
+///
+type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
+
+// TODO: The identity of a running actor should probably be its name + mailbox.
+
 namespace ActorSystem {
 
     ///
