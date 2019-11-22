@@ -14,10 +14,13 @@ type alias ActorSystem = {
     restartPolicy: ActorPolicy,
     shutdownPolicy: ActorPolicy,
 
+    // TODO: Quentin: I think we should separate actor systems from running actor systems.
+    // TODO: Quentin: We could use extensible records, if you prefer. Then a RunningActor system is like an actor system with additional fields.
+
     /// The following fields are runtime-related.
     control: Channel[ActorEvent],
     // TODO: now the running actors are stored as (actorName, mailbox), but maybe we want the state as well? That will be useful when we need to construct the ActorState relation.
-    runningActors: List[(Str, ActorRef)]
+    runningActors: List[(Str, ActorRef)] // TODO: Quentin: How can you maintain this immutable field when the state of the system changes? Hmm... I think we need our own recursive function that maintains the state.
 }
 
 ///
@@ -42,6 +45,11 @@ namespace ActorSystem {
     }
 
     ///
+    /// Returns the default mailbox capacity.
+    ///
+    pub def defaultMailboxCapacity(): Int = 1000 * 1000
+
+    ///
     /// Starts the given actor system `s`. Returns the updated actor system
     ///
     pub def start(s: ActorSystem): ActorSystem = {
@@ -63,7 +71,7 @@ namespace ActorSystem {
     /// Starts a single actor. Returns its reference.
     ///
     pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor): ActorRef =
-        let mailbox = chan Message 10;
+        let mailbox = chan Message defaultMailboxCapacity();
         spawn (
           match behavior(mailbox) with {
             case Done =>
