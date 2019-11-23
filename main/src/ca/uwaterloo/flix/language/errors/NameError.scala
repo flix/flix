@@ -32,6 +32,43 @@ sealed trait NameError extends CompilationError {
 object NameError {
 
   /**
+    * An error raised to indicate that an ambiguous constructor was not found.
+    *
+    * @param className the class name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the class name.
+    */
+  case class AmbiguousNativeConstructor(className: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous constructor for class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous constructor.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that an ambiguous method name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the method name.
+    * @param arity     the expected arity.
+    * @param loc       the location of the class name.
+    */
+  case class AmbiguousNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous method '" << Red(fieldName) << "' in class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous method.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the given def `name` is defined multiple times.
     *
     * @param name the name.
@@ -142,39 +179,24 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that an ambiguous constructor was not found.
+    * An error raised to indicate that the given type alias `name` is defined multiple times.
     *
-    * @param className the class name.
-    * @param arity     the expected arity.
-    * @param loc       the location of the class name.
+    * @param name the name.
+    * @param loc1 the location of the first definition.
+    * @param loc2 the location of the second definition.
     */
-  case class AmbiguousNativeConstructor(className: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: Source = loc.source
+  case class DuplicateTypeAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    val source: Source = loc1.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous constructor for class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << ">> Duplicate type alias '" << Red(name) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "ambiguous constructor.") << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate that an ambiguous method name was not found.
-    *
-    * @param className the class name.
-    * @param fieldName the method name.
-    * @param arity     the expected arity.
-    * @param loc       the location of the class name.
-    */
-  case class AmbiguousNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous method '" << Red(fieldName) << "' in class '" << Cyan(className) << "' with expected arity " << arity << "." << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
       vt << NewLine
-      vt << Code(loc, "ambiguous method.") << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
     }
   }
 

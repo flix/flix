@@ -273,6 +273,26 @@ object ResolutionError {
   }
 
   /**
+    * Recursion Limit Error.
+    *
+    * @param ident the type alias symbol.
+    * @param limit the current recursion limit.
+    * @param loc   the location where the error occurred.
+    */
+  case class RecursionLimit(ident: Symbol.TypeAliasSym, limit: Int, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Recursion limit (" << limit << ") reached while unfolding the '" << Red(ident.name) << "' type alias." << NewLine
+      vt << NewLine
+      vt << Code(loc, "recursion limit reached.") << NewLine
+      vt << NewLine
+      vt << "Ensure that there is no cyclic definition of type aliases."
+    }
+  }
+
+  /**
     * Unresolved Class Error.
     *
     * @param qn  the unresolved definition name.

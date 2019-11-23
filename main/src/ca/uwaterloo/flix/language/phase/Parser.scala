@@ -151,7 +151,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Handler |
       Declarations.Law |
       Declarations.Enum |
-      Declarations.TypeDecl |
+      Declarations.OpaqueType |
+      Declarations.TypeAlias |
       Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
@@ -218,20 +219,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def TypeDecl: Rule1[ParsedAst.Declaration.Type] = {
-      def UnitCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ SP ~> ((sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) =>
-          ParsedAst.Case(sp1, ident, ParsedAst.Type.Unit(sp1, sp2), sp2))
-      }
+    def OpaqueType: Rule1[ParsedAst.Declaration.OpaqueType] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("opaque") ~ WS ~ atomic("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.OpaqueType
+    }
 
-      def NestedCase: Rule1[ParsedAst.Case] = rule {
-        SP ~ Names.Tag ~ Type ~ SP ~> ParsedAst.Case
-      }
-
-      rule {
-        // NB: NestedCase must be parsed before UnitCase.
-        Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
-      }
+    def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
+      Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ atomic("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
@@ -605,7 +598,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | LetMatchStar | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
-        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve |
+        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
@@ -899,9 +892,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
+      SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
+    def FixpointFold: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
+    }
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
       def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
         atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.HandlerBinding
@@ -917,16 +913,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    // TODO: We should only allow one variant of these.
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
-      SP ~ atomic("∃" | "\\exists") ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
+      SP ~ atomic("∃" | "exists") ~ optWS ~ Declarations.TypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Existential
     }
 
+    // TODO: We should only allow one variant of these.
     def Universal: Rule1[ParsedAst.Expression.Universal] = rule {
-      SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
+      SP ~ atomic("∀" | "forall") ~ optWS ~ Declarations.TypeParams ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
     }
 
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
@@ -1006,7 +1003,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Head {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.QualifiedPredicate ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
       def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
@@ -1017,7 +1014,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     object Body {
       def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
-        SP ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+        SP ~ Names.QualifiedPredicate ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
@@ -1026,7 +1023,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+          SP ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
         }
       }
 
@@ -1145,7 +1142,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Helpers                                                                 //
   /////////////////////////////////////////////////////////////////////////////
   def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
-    SP ~ Modifiers ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ParsedAst.FormalParam
+    // TODO: A quick hack to allow mut annotations.
+    SP ~ Modifiers ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ optional(atomic("mut") ~ WS) ~ Type) ~ SP ~> ParsedAst.FormalParam
   }
 
   def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {

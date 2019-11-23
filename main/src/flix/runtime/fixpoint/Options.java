@@ -21,11 +21,6 @@ import java.time.Duration;
 public final class Options {
 
     /**
-     * Whether to enable to fixpoint monitor.
-     */
-    private boolean monitored = false;
-
-    /**
      * The number of threads to use during fixpoint computation.
      */
     private int threads = 1;
@@ -39,20 +34,6 @@ public final class Options {
      * Whether to print verbose information during fixpoint computation.
      */
     private boolean verbose = false;
-
-    /**
-     * Returns `true` if the fixpoint computation should be monitored.
-     */
-    public boolean isMonitored() {
-        return monitored;
-    }
-
-    /**
-     * Sets whether the fixpoint computation should be monitored.
-     */
-    public void setMonitored(boolean monitored) {
-        this.monitored = monitored;
-    }
 
     /**
      * Returns the number of threads to use for the fixpoint computation.

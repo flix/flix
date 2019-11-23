@@ -31,17 +31,6 @@ import java.util.*;
 public final class ConstraintSystem {
 
     /**
-     * Constructs a new constraint system of the given constraint `c`.
-     */
-    // TODO: Deprecated
-    public static ConstraintSystem of(Constraint c) {
-        if (c == null)
-            throw new IllegalArgumentException("'c' must be non-null.");
-
-        return of(new Constraint[]{c});
-    }
-
-    /**
      * Constructs a new constraint system of the given constraints `cs`.
      */
     public static ConstraintSystem of(Constraint[] cs) {
@@ -87,6 +76,17 @@ public final class ConstraintSystem {
      */
     public Constraint[] getFacts() {
         return facts;
+    }
+
+    /**
+     * Return the fact indexed by `index` in `this` constraint system.
+     * Returns `null` if there is no fact at this index.
+     */
+    public Constraint getFact(int index) {
+        if (0 <= index && index < facts.length) {
+            return facts[index];
+        }
+        return null;
     }
 
     /**
@@ -165,10 +165,14 @@ public final class ConstraintSystem {
         ///
         Map<RelSym, String[]> relHeaders = new HashMap<>();
         for (RelSym relSym : getRelationSymbols()) {
-            Attribute[] attributes = relSym.getAttributes();
-            String[] headers = new String[attributes.length];
+            String[] attributes = relSym.getAttributes();
+            String[] headers = new String[relSym.getArity()];
             for (int i = 0; i < headers.length; i++) {
-                headers[i] = attributes[i].getName();
+                if (attributes != null) {
+                    headers[i] = attributes[i];
+                } else {
+                    headers[i] = "col" + i;
+                }
             }
             relHeaders.put(relSym, headers);
         }
@@ -182,13 +186,16 @@ public final class ConstraintSystem {
         ///
         Map<LatSym, String[]> latHeaders = new HashMap<>();
         for (LatSym latSym : getLatticeSymbols()) {
-            Attribute[] keys = latSym.getKeys();
-            Attribute value = latSym.getValue();
-            String[] headers = new String[keys.length + 1];
-            for (int i = 0; i < keys.length; i++) {
-                headers[i] = keys[i].getName();
+            String[] attributes = latSym.getAttributes();
+            String[] headers = new String[latSym.getArity()];
+            for (int i = 0; i < headers.length; i++) {
+                if (attributes != null) {
+                    headers[i] = attributes[i];
+                } else {
+                    headers[i] = "col" + i;
+                }
             }
-            headers[keys.length] = value.getName();
+
             latHeaders.put(latSym, headers);
         }
         Map<LatSym, ArrayList<String[]>> latData = new HashMap<>();

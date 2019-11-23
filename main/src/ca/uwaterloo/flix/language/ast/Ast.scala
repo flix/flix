@@ -106,6 +106,17 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@theorem` annotation.
+      *
+      * A function marked with `theorem` is used for code patterns.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Theorem(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@theorem"
+    }
+
+    /**
       * An AST node that represents an `@unchecked` annotation.
       *
       * The properties of a function marked `@unchecked` are not checked by the verifier.
@@ -152,6 +163,11 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
+
+    /**
+      * Returns `true` if `this` sequence contains the `@theorem` annotation.
+      */
+    def isTheorem: Boolean = annotations exists (_.isInstanceOf[Annotation.Theorem])
 
     /**
       * Returns `true` if `this` sequence contains the `@unchecked` annotation.

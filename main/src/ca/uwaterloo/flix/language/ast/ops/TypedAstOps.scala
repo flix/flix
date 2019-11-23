@@ -206,12 +206,14 @@ object TypedAstOps {
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
-        visitPredicateWithParam(pred, env0)
+      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
     }
 
     /**
@@ -225,7 +227,7 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given head predicate `h0`.
       */
     def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
-      case Predicate.Head.Atom(pred, terms, tpe, loc) => visitPredicateWithParam(pred, env0) ++ terms.flatMap(visitExp(_, env0))
+      case Predicate.Head.Atom(sym, terms, tpe, loc) => Map.empty
       case Predicate.Head.Union(exp, tpe, loc) => visitExp(exp, env0)
     }
 
@@ -233,15 +235,8 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given body predicate `b0`.
       */
     def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
-      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => visitPredicateWithParam(pred, env0)
+      case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) => Map.empty
       case Predicate.Body.Guard(exp, loc) => visitExp(exp, env0)
-    }
-
-    /**
-      * Finds the holes and hole contexts in the given predicate with param `p0`.
-      */
-    def visitPredicateWithParam(p0: PredicateWithParam, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = p0 match {
-      case PredicateWithParam(sym, exp) => visitExp(exp, env0)
     }
 
     /**
@@ -292,7 +287,7 @@ object TypedAstOps {
       val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
-       Map(sym -> tpe) ++ boundElms
+      Map(sym -> tpe) ++ boundElms
 
     case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
       val boundElms = elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {

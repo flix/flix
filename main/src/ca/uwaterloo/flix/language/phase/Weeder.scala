@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 
+import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.collection.mutable
 
@@ -88,7 +89,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
 
-    case d: ParsedAst.Declaration.Type => visitTypeDecl(d)
+    case d: ParsedAst.Declaration.OpaqueType => visitOpaqueType(d)
+
+    case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
     case d: ParsedAst.Declaration.Relation => visitRelation(d)
 
@@ -224,20 +227,37 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Performs weeding on the given type declaration `d0`.
+    * Performs weeding on the given opaque type declaration `d0`.
     */
-  private def visitTypeDecl(d0: ParsedAst.Declaration.Type)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
-    case ParsedAst.Declaration.Type(doc0, mods, sp1, ident, caze, sp2) =>
+  private def visitOpaqueType(d0: ParsedAst.Declaration.OpaqueType)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
+    case ParsedAst.Declaration.OpaqueType(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       /*
-       * Rewrites a type alias to a singleton enum declaration.
+       * Rewrites an opaque type to an enum declaration.
        */
       val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
 
       modVal map {
         case mod =>
-          val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, visitType(caze.tpe)))
-          List(WeededAst.Declaration.Enum(doc, mod, ident, WeededAst.TypeParams.Explicit(Nil), cases, mkSL(sp1, sp2)))
+          val tparams = visitTypeParams(tparams0)
+          val cases = Map(ident.name -> WeededAst.Case(ident, ident, visitType(tpe0)))
+          List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, cases, mkSL(sp1, sp2)))
+      }
+  }
+
+  /**
+    * Performs weeding on the given type alias declaration `d0`.
+    */
+  private def visitTypeAlias(d0: ParsedAst.Declaration.TypeAlias)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = d0 match {
+    case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
+      val doc = visitDoc(doc0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+
+      modVal map {
+        case mod =>
+          val tparams = visitTypeParams(tparams0)
+          val tpe = visitType(tpe0)
+          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
       }
   }
 
@@ -858,7 +878,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         bs <- visitHandlerBindings(handlers)
       } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
 
-    case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
+    case ParsedAst.Expression.Existential(sp1, tparams, fparams, exp, sp2) =>
       /*
        * Checks for `IllegalExistential`.
        */
@@ -873,11 +893,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites the multi-parameter existential to nested single-parameter existentials.
          */
         fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
+          case (param, eacc) => WeededAst.Expression.Existential(/* TODO: Pass type params. */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
         }
       }
 
-    case ParsedAst.Expression.Universal(sp1, fparams, exp, sp2) =>
+    case ParsedAst.Expression.Universal(sp1, tparams, fparams, exp, sp2) =>
       /*
        * Checks for `IllegalUniversal`.
        */
@@ -892,7 +912,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Rewrites the multi-parameter universal to nested single-parameter universals.
          */
         fs.foldRight(e) {
-          case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
+          case (param, eacc) => WeededAst.Expression.Universal(/* TODO: Pass type params. */ WeededAst.TypeParams.Elided, param, eacc, mkSL(sp1, sp2))
         }
       }
 
@@ -1033,18 +1053,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProject(sp1, name, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.FixpointProject(sp1, qname, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = exp1 match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, visitExp(exp2)) {
-        case (e1, e2) =>
-          val pred = WeededAst.PredicateWithParam(name, e1)
-          WeededAst.Expression.FixpointProject(pred, e2, mkSL(sp1, sp2))
+      mapN(visitExp(exp)) {
+        case e =>
+          WeededAst.Expression.FixpointProject(qname, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1052,6 +1066,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) =>
           val sp1 = leftMostSourcePosition(exp1)
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.FixpointFold(sp1, qname, init, f, constraints, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
+        case (e1, e2, e3) =>
+          WeededAst.Expression.FixpointFold(qname, e1, e2, e3, loc)
       }
   }
 
@@ -1304,17 +1326,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given head predicate.
     */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-    case ParsedAst.Predicate.Head.Atom(sp1, qname, expOpt, terms, sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = expOpt match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, traverse(terms)(visitExp)) {
-        case (e, ts) =>
-          WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
+      mapN(traverse(terms)(visitExp)) {
+        case ts =>
+          WeededAst.Predicate.Head.Atom(qname, ts, loc)
       }
 
     case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
@@ -1327,30 +1344,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Positive(sp1, qname, expOpt, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Positive(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = expOpt match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
+      mapN(traverse(terms)(visitPattern)) {
+        case ts =>
+          WeededAst.Predicate.Body.Atom(qname, Polarity.Positive, ts, loc)
       }
 
-      mapN(paramExp, traverse(terms)(visitPattern)) {
-        case (e, ts) =>
-          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Positive, ts, loc)
-      }
-
-    case ParsedAst.Predicate.Body.Negative(sp1, qname, expOpt, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Negative(sp1, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      val paramExp = expOpt match {
-        case None => WeededAst.Expression.Unit(loc).toSuccess
-        case Some(exp) => visitExp(exp)
-      }
-
-      mapN(paramExp, traverse(terms)(visitPattern)) {
-        case (e, ts) =>
-          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Negative, ts, loc)
+      mapN(traverse(terms)(visitPattern)) {
+        case ts =>
+          WeededAst.Predicate.Body.Atom(qname, Polarity.Negative, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
@@ -1403,6 +1410,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case "benchmark" => Ast.Annotation.Benchmark(loc).toSuccess
       case "law" => Ast.Annotation.Law(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
+      case "theorem" => Ast.Annotation.Theorem(loc).toSuccess
       case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
       case name => WeederError.UndefinedAnnotation(name, loc).toFailure
     }
@@ -1911,8 +1919,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.HandleWith(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.Universal(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
@@ -1930,13 +1938,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
-    case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.FixpointFold(sp1, _, _, _, _, _) => sp1
   }
 
   /**
     * Returns the left most source position in the sub-tree of the type `tpe`.
     */
+  @tailrec
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
     case ParsedAst.Type.Unit(sp1, _) => sp1
     case ParsedAst.Type.Var(sp1, _, _) => sp1

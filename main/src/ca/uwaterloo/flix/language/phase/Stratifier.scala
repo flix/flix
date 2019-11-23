@@ -407,24 +407,19 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
-      mapN(visitPredicateWithParam(pred), visitExp(exp)) {
-        case (p, e) => Expression.FixpointProject(p, e, tpe, eff, loc)
+    case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.FixpointProject(sym, e, tpe, eff, loc)
       }
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, eff, loc)
       }
-  }
-
-  /**
-    * Performs stratification of the given predicate with parameter `p0`.
-    */
-  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit dg: DependencyGraph, cache: Cache): Validation[PredicateWithParam, StratificationError] = p0 match {
-    case PredicateWithParam(sym, exp) => mapN(visitExp(exp)) {
-      case e => PredicateWithParam(sym, e)
-    }
+    case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+      }
   }
 
   /**
@@ -648,19 +643,14 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.FixpointProject(pred, exp, _, _, _) =>
-      dependencyGraphOfPredicateWithParam(pred) + dependencyGraphOfExp(exp)
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
-  }
-
-  /**
-    * Returns the dependency graph of the given predicate with param `p0`.
-    */
-  private def dependencyGraphOfPredicateWithParam(p0: PredicateWithParam): DependencyGraph = p0 match {
-    case PredicateWithParam(_, exp) => dependencyGraphOfExp(exp)
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2) + dependencyGraphOfExp(exp3)
   }
 
   /**
@@ -680,7 +670,7 @@ object Stratifier extends Phase[Root, Root] {
     * Optionally returns the predicate symbol of the given head atom `head0`.
     */
   private def getPredicateSym(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.Atom(pred, terms, tpe, loc) => Some(pred.sym)
+    case Predicate.Head.Atom(sym, terms, tpe, loc) => Some(sym)
     case Predicate.Head.Union(exp, tpe, loc) =>
       // NB: The situation is actually more complicated.
       // If the union expressions evaluates to predicate symbols A, B, C it could
@@ -692,9 +682,9 @@ object Stratifier extends Phase[Root, Root] {
     * Optionally returns a dependency edge of the right type for the given head symbol `head` and body predicate `body0`.
     */
   private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred.sym, loc))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred.sym, loc))
+    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym, loc))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym, loc))
     }
 
     case Predicate.Body.Guard(exp, loc) => None

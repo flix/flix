@@ -151,12 +151,12 @@ namespace Map {
             Map(List.map(match (key, v) -> if (key == k) (k, f(k, v)) else (key, v), xs))
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1). Otherwise, returns `m`.
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
     pub def update(f: v -> Option[v], k: k, m: Map[k, v]): Map[k, v] = updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1). Otherwise, returns `m`.
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
     pub def updateWithKey(f: (k, v) -> Option[v], k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;

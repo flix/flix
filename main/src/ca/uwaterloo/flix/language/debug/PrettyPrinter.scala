@@ -456,9 +456,9 @@ object PrettyPrinter {
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointProject(pred, exp, tpe, loc) =>
+        case Expression.FixpointProject(sym, exp, tpe, loc) =>
           vt.text("project ")
-          fmtPredicateWithParam(pred, vt)
+          vt.text(sym.toString)
           vt.text(" ")
           visitExp(exp)
 
@@ -466,6 +466,16 @@ object PrettyPrinter {
           visitExp(exp1)
           vt.text("|=")
           visitExp(exp2)
+
+        case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+          vt.text("fold ")
+          vt.text(sym.toString)
+          vt.text(" ")
+          visitExp(exp1)
+          vt.text(" ")
+          visitExp(exp2)
+          vt.text(" ")
+          visitExp(exp3)
 
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
@@ -479,14 +489,6 @@ object PrettyPrinter {
       fmtSym(p.sym, vt)
       vt.text(": ")
       vt.text(p.tpe.show)
-    }
-
-    def fmtPredicateWithParam(p: PredicateWithParam, vt: VirtualTerminal): Unit = p match {
-      case PredicateWithParam(sym, exp) =>
-        vt.text(sym.toString)
-        vt.text("<")
-        fmtExp(exp, vt)
-        vt.text(">")
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {

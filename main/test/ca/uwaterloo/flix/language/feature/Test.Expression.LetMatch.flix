@@ -1,5 +1,5 @@
-type Celsius = Celsius(Int)
-type Fahrenheit = Fahrenheit(Int)
+opaque type Celsius = Int
+opaque type Fahrenheit = Int
 
 @test
 def testLetMatch01(): Bool =

@@ -30,7 +30,6 @@ object Options {
     evaluation = Evaluation.Compiled,
     invariants = false,
     mode = CompilationMode.Development,
-    monitor = false,
     optimizations = Optimization.All,
     quickchecker = false,
     test = false,
@@ -61,7 +60,6 @@ object Options {
   * @param evaluation         selects the evaluation strategy.
   * @param invariants         enables checking of compiler invariants.
   * @param mode               the compilation mode.
-  * @param monitor            enables the debugger and profiler.
   * @param quickchecker       enables the quickchecker.
   * @param test               enables test mode.
   * @param target             the target JVM.
@@ -82,7 +80,6 @@ case class Options(core: Boolean,
                    invariants: Boolean,
                    optimizations: Set[Optimization],
                    mode: CompilationMode,
-                   monitor: Boolean,
                    quickchecker: Boolean,
                    target: JvmTarget,
                    targetDirectory: Path,

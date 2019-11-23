@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
@@ -49,8 +50,7 @@ object Scheme {
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
-      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
-      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
+      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
     }
 
     visit(tpe)

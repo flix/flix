@@ -177,4 +177,4 @@ namespace Path {
 ///
 /// Represents a path.
 ///
-type Path = Path(##java.io.File)
+opaque type Path = ##java.io.File

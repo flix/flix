@@ -17,16 +17,16 @@ def testArrayLoad05(): Int = let x = [1, 2]; x[1]
 def testArrayLoad06(): Bool = let x = [true]; x[0]
 
 @test
-def testArrayLoad07(): Bool = let x = [false]; x[0]
+def testArrayLoad07(): Bool = let x = [false]; !x[0]
 
 @test
-def testArrayLoad08(): Bool = let x = [true, false]; x[1]
+def testArrayLoad08(): Bool = let x = [true, false]; !x[1]
 
 @test
-def testArrayLoad9(): Bool = let x = [false, true, false]; x[2]
+def testArrayLoad9(): Bool = let x = [false, true, false]; !x[2]
 
 @test
-def testArrayLoad10(): Bool = let x = [false, false, false, false, true]; x[3]
+def testArrayLoad10(): Bool = let x = [false, false, false, false, true]; !x[3]
 
 @test
 def testArrayLoad11(): Char = let x = ['c']; x[0]
@@ -113,7 +113,7 @@ def testArrayLoad37(): Int = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2]
 def testArrayLoad38(): Bool = let x = [[true, false, true]]; x[0] [2]
 
 @test
-def testArrayLoad39(): Bool = let x = [[true, true], [true, false]]; x[1] [1]
+def testArrayLoad39(): Bool = let x = [[true, true], [true, false]]; !x[1] [1]
 
 @test
 def testArrayLoad40(): Bool = let x = [[true], [true, false, true, false]]; x[1] [2]
