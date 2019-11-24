@@ -35,6 +35,8 @@ pub enum SystemEvent {
     ///
     /// A command that the actor system should shutdown.
     ///
-    case Shutdown
+    /// @param the channel on which the `Unit` value is sent once the shutdown has completed.
+    ///
+    case Shutdown(Channel[Unit])
 
 }
