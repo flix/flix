@@ -100,7 +100,7 @@ class Flix {
     //"Vec.flix" -> LocalResource.get("/library/Vec.flix"),
 
     "flix/actor/Actor.flix" -> LocalResource.get("/library/flix/actor/Actor.flix"),
-    "flix/actor/ActorEvent.flix" -> LocalResource.get("/library/flix/actor/ActorEvent.flix"),
+    "flix/actor/ActorEvent.flix" -> LocalResource.get("/library/flix/actor/SystemEvent.flix"),
     "flix/actor/ActorPolicy.flix" -> LocalResource.get("/library/flix/actor/ActorPolicy.flix"),
     "flix/actor/ActorResult.flix" -> LocalResource.get("/library/flix/actor/ActorResult.flix"),
     "flix/actor/ActorSystem.flix" -> LocalResource.get("/library/flix/actor/ActorSystem.flix"),

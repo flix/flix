@@ -1,0 +1,40 @@
+///
+/// An internal data type of events used to manage the actor system.
+///
+/// Note: Must not be used directly by clients of the actor library.
+///
+pub enum SystemEvent {
+    ///
+    /// A message that represents that the actor has started and is ready to receive messages.
+    ///
+    /// @param the name of the actor.
+    ///
+    case ActorReady(Str),
+
+    ///
+    /// A message that represents that an actor has terminated normally.
+    ///
+    /// @param the name of the actor.
+    ///
+    case ActorDone(Str),
+
+    ///
+    /// A message that represents that the actor has crashed, but it can still be resumed.
+    ///
+    /// @param the name of the actor.
+    ///
+    case ActorResumableCrash(Str),
+
+    ///
+    /// A message that represents that the actor has crashed and cannot be resumed.
+    ///
+    /// @param the name of the actor.
+    ///
+    case ActorNonResumableCrash(Str),
+
+    ///
+    /// A command that the actor system should shutdown.
+    ///
+    case Shutdown
+
+}

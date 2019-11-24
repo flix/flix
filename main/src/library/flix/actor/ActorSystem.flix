@@ -15,9 +15,14 @@ type alias ActorSystem = {
     shutdownPolicy: ActorPolicy,
 
     // TODO: Remove these fields and use them as part of the state of the actor system itself.
-    control: Channel[ActorEvent],
+    control: Channel[SystemEvent],
     runningActors: List[(Str, ActorRef)]
 }
+
+///
+/// A running actor system is a type alias for a channel of actor events.
+///
+type alias RunningActorSystem = Channel[SystemEvent]
 
 ///
 /// An actor is identified by its mailbox
@@ -34,7 +39,7 @@ namespace ActorSystem {
         startPolicy     = defaultStartPolicy(),
         shutdownPolicy  = defaultShutdownPolicy(),
         restartPolicy   = defaultRestartPolicy(),
-        control         = chan ActorEvent 10,
+        control         = chan SystemEvent 10,
         runningActors   = Nil
     }
 
@@ -64,7 +69,7 @@ namespace ActorSystem {
     ///
     /// Starts a single actor. Returns its reference.
     ///
-    pub def startActor(control: Channel[ActorEvent], actorName: Str, behavior: Actor): ActorRef =
+    pub def startActor(control: Channel[SystemEvent], actorName: Str, behavior: Actor): ActorRef =
         let mailbox = chan Message defaultMailboxCapacity();
         spawn (
           match behavior(mailbox) with {
