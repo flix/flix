@@ -14,7 +14,7 @@ type alias ActorSystem = {
     restartPolicy: ActorPolicy,
     shutdownPolicy: ActorPolicy,
 
-    // TODO: Remove these fields and use them as part of the state of the actor system itself.
+    // TODO: Quentin: Remove these fields and use them as part of the state of the actor system itself.
     control: Channel[SystemEvent],
     runningActors: List[(Str, ActorRef)]
 }
@@ -27,7 +27,7 @@ type alias RunningActorSystem = Channel[SystemEvent]
 ///
 /// An actor is identified by its mailbox
 ///
-type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
+type alias ActorRef = Mailbox // TODO: Quentin: Maybe a name and a mailbox?
 
 namespace ActorSystem {
 
@@ -63,6 +63,7 @@ namespace ActorSystem {
           //   match getActor(system, actorName) {
           //     case Some(actorRef) =>
           //       // TODO: What if the actor just ignores this message? Or if it crashes when stopping? The actor behaviour should return Done. We can wait for this on some internal channel maybe?
+          // Magnus: Let us not worry about badly behaved actors or timeouts for now. We can add that later.
           //       actorRef <- Stop;
           //       actorName :: acc
           //     case None =>
@@ -108,7 +109,7 @@ namespace ActorSystem {
     /// Initiates a shutdown of the given actor system `s` and waits for its orderly shutdown.
     ///
     pub def shutdown(_system: ActorSystem): Unit =
-      // TODO: Should simply take a running actor system, send the shutdown message, and wait for a reply?
+      // TODO: Quentin: Should simply take a running actor system, send the shutdown message, and wait for a reply?
       ()
 
 }

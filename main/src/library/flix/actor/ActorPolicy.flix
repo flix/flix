@@ -3,7 +3,7 @@
 ///
 type alias ActorPolicy = #{ActorDef, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Blocked}
 
-/// TODO: DOC And better name.
+/// TODO: Magnus: Rename to Actor and rename actor to behavior?
 pub rel ActorDef(name: Str, actor: Actor)
 
 ///
@@ -151,6 +151,7 @@ pub def oneForOneRestartPolicy(): ActorPolicy = #{
 /// Returns a restart policy that restarts an actor along with its siblings when it crashes.
 ///
 pub def oneForAllRestartPolicy(): ActorPolicy = #{
-    // TODO: Need some notion of restart here? A stop followed by a start... (?)
+    // TODO: Magnus: Implement this. Should it be based on depends on or some other relation?
 }
 
+// TODO: Magnus: Implement more policies.
