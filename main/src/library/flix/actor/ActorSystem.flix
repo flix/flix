@@ -14,21 +14,15 @@ type alias ActorSystem = {
     restartPolicy: ActorPolicy,
     shutdownPolicy: ActorPolicy,
 
-    // TODO: Quentin: I think we should separate actor systems from running actor systems.
-    // TODO: Quentin: We could use extensible records, if you prefer. Then a RunningActor system is like an actor system with additional fields.
-
-    /// The following fields are runtime-related.
+    // TODO: Remove these fields and use them as part of the state of the actor system itself.
     control: Channel[ActorEvent],
-    // TODO: now the running actors are stored as (actorName, mailbox), but maybe we want the state as well? That will be useful when we need to construct the ActorState relation.
-    runningActors: List[(Str, ActorRef)] // TODO: Quentin: How can you maintain this immutable field when the state of the system changes? Hmm... I think we need our own recursive function that maintains the state.
+    runningActors: List[(Str, ActorRef)]
 }
 
 ///
 /// An actor is identified by its mailbox
 ///
 type alias ActorRef = Mailbox // TODO: Maybe a name and a mailbox?
-
-// TODO: The identity of a running actor should probably be its name + mailbox.
 
 namespace ActorSystem {
 
