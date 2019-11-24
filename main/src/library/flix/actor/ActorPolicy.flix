@@ -50,8 +50,12 @@ pub rel Resume(name: Str)
 ///
 /// An action is combined with an actor state according to the following table:
 ///
-/// Pending:
+/// <<no-state>:
 ///     - Start     => start the actor.
+///     - Stop      => no-op.
+///     - Resume    => start the actor.
+/// Pending:
+///     - Start     => no-op.
 ///     - Stop      => no-op.
 ///     - Resume    => no-op.
 ///  Running:
@@ -60,9 +64,16 @@ pub rel Resume(name: Str)
 ///     - Resume    => no-op.
 ///  Stopped:
 ///     - Start     => start the actor.
-///     -
-///
-///
+///     - Stop      => no-op.
+///     - Resume    => start the actor (with initial state).
+/// ResumablyCrashed:
+///     - Start     => start the actor with initial state.
+///     - Stop      => change state to stopped (clears the error).
+///     - Resume    => resume.
+/// NonResumablyCrashed:
+///     - Start     => start the actor with initial state.
+///     - Stop      => change state to stopped (clears the error).
+///     - Resume    => start the actor with initial state.
 ///
 
 ///
@@ -133,7 +144,7 @@ pub def defaultRestartPolicy(): ActorPolicy = oneForOneRestartPolicy()
 /// Returns a restart policy that restarts an actor when it crashes.
 ///
 pub def oneForOneRestartPolicy(): ActorPolicy = #{
-    Resume(x) :- ActorState(x, Crashed).
+    Resume(x) :- ActorState(x, ResumablyCrashed).
 }
 
 ///
