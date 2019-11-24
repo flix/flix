@@ -19,11 +19,11 @@ import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options, Result, Timer}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -114,7 +114,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String)(implicit ws: WebSocket): Result[String, String] = {
+  private def eval(input: String)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
       mkFlix(input).compile() match {
@@ -125,10 +125,11 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           compilationResult.getMain match {
             case None =>
               // The main function was not present. Just report successful compilation.
-              Ok("Compilation was successful. No main function to run.")
+              Ok("Compilation was successful. No main function to run.", compilationResult.getTotalTime(), 0L)
             case Some(_) =>
               // Evaluate the main function and get the result as a string.
-              Ok(compilationResult.evalToString("main"))
+              val timer = new Timer(compilationResult.evalToString("main"))
+              Ok(timer.getResult, compilationResult.getTotalTime(), timer.getElapsed)
           }
 
         case Failure(errors) =>
@@ -143,15 +144,19 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Returns the given `result` as a JSON object.
     */
-  private def getJSON(result: Result[String, String]): JObject =
+  private def getJSON(result: Result[(String, Long, Long), String]): JObject =
     result match {
-      case Ok(msg) => JObject(
+      case Ok((msg, compilationTime, evaluationTime)) => JObject(
         JField("status", JString("success")),
         JField("result", JString(msg)),
+        JField("version", JString(getVersionWithPort)),
+        JField("compilationTime", JLong(compilationTime)),
+        JField("evaluationTime", JLong(evaluationTime)),
       )
       case Err(msg) => JObject(
         JField("status", JString("failure")),
         JField("result", JString(msg)),
+        JField("version", JString(getVersionWithPort)),
       )
     }
 
@@ -174,5 +179,10 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
     Console.println(s"[$datePart] [$clientPart]: $msg")
   }
+
+  /**
+    * Returns the current Flix version.
+    */
+  private def getVersionWithPort: String = "flix-" + Version.CurrentVersion.toString + " on port " + port
 
 }
