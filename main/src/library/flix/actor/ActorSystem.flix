@@ -18,7 +18,7 @@ type alias ActorSystem = {
 ///
 /// A running actor system is a type alias for a channel of actor events.
 ///
-type alias RunningActorSystem = Channel[SystemEvent]
+type alias RunningActorSystem = Channel[SystemEvent] // TODO: Maybe make this an enum or opaque type.
 
 ///
 /// An actor is identified by its mailbox
@@ -150,6 +150,8 @@ namespace ActorSystem {
         sys <- GetActor(actorName, c);
         <- c
     }
+
+    // TODO: send(sys: RunningActorSystem, actorName: Str): Bool = true if sent to: (1. actor exists (?), 2. actor is running (?))
 
     ///
     /// Starts a single actor. Returns its reference.
