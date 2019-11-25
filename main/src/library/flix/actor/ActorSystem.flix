@@ -18,7 +18,7 @@ type alias ActorSystem = {
 ///
 /// A running actor system is a type alias for a channel of actor events.
 ///
-type alias RunningActorSystem = Channel[SystemEvent]
+type alias RunningActorSystem = Channel[SystemEvent] // TODO: Maybe make this an enum or opaque type.
 
 ///
 /// An actor is identified by its mailbox
@@ -77,7 +77,7 @@ namespace ActorSystem {
               actorRef <- Start(readyChan);
               <- readyChan; // TODO: we block here, but what if the actor never sends Ready? -> select with default? Have an internal actor state that is "started but hasn't replied Ready yet"?
               Map.insert(actorName, (Started(Running, actorRef), behavior), actors)
-            case Some(Started(Pending, actorRef), behavior) =>
+            case Some(Started(InTransition, actorRef), behavior) =>
               // TODO The actor is waiting for dependencies, but the policy tells us to start it. What should we do in that case? Incosistent policy?
               actors
             case Some(Started(Running, actorRef), behavior) =>
@@ -150,6 +150,8 @@ namespace ActorSystem {
         sys <- GetActor(actorName, c);
         <- c
     }
+
+    // TODO: send(sys: RunningActorSystem, actorName: Str): Bool = true if sent to: (1. actor exists (?), 2. actor is running (?))
 
     ///
     /// Starts a single actor. Returns its reference.

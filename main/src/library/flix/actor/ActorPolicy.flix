@@ -35,16 +35,21 @@ pub rel Stop(name: Str)
 ///
 pub rel Resume(name: Str)
 
+// TODO: Could we have the start policy only using the Start predicate. And the stop policy NOT using the start predicate.
+// TODO: But we do need the join for the "restartPolicy" (which maybe we should rename to "runningPolicy")
+// TODO: The whole actor system progresses through start -> running -> stop
+
 ///
 /// If an actor policy specifies multiple actions for the same actor then the final action is computed by join:
 ///
 /// Start, Start  => Start
-/// Start, Stop   => Stop
-/// Stop, Start   => Stop
-/// Resume, Stop  => Stop
-/// Stop, Resume  => Stop
+/// Start, Stop   => Start
+/// Stop, Start   => Start
+/// Resume, Stop  => Resume
+/// Stop, Resume  => Resume
 /// Start, Resume => Resume
 /// Resume, Start => Resume
+/// x, x          => x
 ///
 
 ///
@@ -53,8 +58,8 @@ pub rel Resume(name: Str)
 /// <<no-state>:
 ///     - Start     => start the actor.
 ///     - Stop      => no-op.
-///     - Resume    => start the actor.
-/// Pending:
+///     - Resume    => no-op.
+/// InTransition (actor is changing its state):
 ///     - Start     => no-op.
 ///     - Stop      => no-op.
 ///     - Resume    => no-op.
@@ -65,10 +70,10 @@ pub rel Resume(name: Str)
 ///  Stopped:
 ///     - Start     => start the actor.
 ///     - Stop      => no-op.
-///     - Resume    => start the actor (with initial state).
+///     - Resume    => start the actor (with the initial state).
 /// ResumablyCrashed:
-///     - Start     => start the actor with initial state.
-///     - Stop      => change state to stopped (clears the error).
+///     - Start     => restart the actor with the initial state. (required to allow a reset of the actor)
+///     - Stop      => change state to stopped (clears the error) (required to allow the error to be cleared).
 ///     - Resume    => resume.
 /// NonResumablyCrashed:
 ///     - Start     => start the actor with initial state.
@@ -99,10 +104,10 @@ pub def defaultStartPolicy(): ActorPolicy = #{
     // Compute the actors that are waiting for one or more of its dependencies to be running.
     // Note1: An actor is *not* blocked if it depends on itself. This allows actors in cyclic dependencies to be started.
     // Note2: An actor that has no dependencies is trivially *never* blocked.
-    Blocked(x) :- DependsOn(x, y), ActorState(y, Pending), not DependsOn(x, x).
+    Blocked(x) :- DependsOn(x, y), not ActorState(y, Running), not DependsOn(x, x).
 
     // Start actors that are not blocked.
-    Start(x) :- ActorDef(x, _), ActorState(x, Pending), not Blocked(x).
+    Start(x) :- ActorDef(x, _), not Blocked(x).
 }
 
 ///
