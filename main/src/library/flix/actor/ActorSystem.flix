@@ -92,11 +92,16 @@ namespace ActorSystem {
             case Some(Started(NonResumablyCrashed, actorRef), behavior) =>
               // TODO fully restarts the actor
               ???
-           })
-             (solve (s.startPolicy <+> s.actors <+> currentState));
-          actorSystem(s, ???, control)
+           }) (solve (s.startPolicy <+> s.actors <+> currentState));
+          actorSystem(s, actors2, control)
         case SystemShutdown(c) => ???
-        case GetActor(name, c) => ???
+        case GetActor(actorName, c) =>
+          c <- Option.flatMap((act) ->
+            match fst(act) {
+              case NotStarted => None
+              case Started(_, actorRef) => Some(actorRef)
+            }, Map.get(actorName, actors));
+          actorSystem(s, actors, control)
         case ActorReady(name) => ???
         case ActorDone(name) => ???
         case ActorResumableCrash(name) => ???
