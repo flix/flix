@@ -67,7 +67,7 @@ namespace ActorSystem {
           let currentState = statesOfActors(actors);
           let actors2 = fold Start actors ((actorName, m) -> match Map.get(actorName, actors) {
             case None =>
-              // TODO: inconsistent policy, starts a non-existing actor
+              // Inconsistent policy, starts a non-existing actor. This is a no-op.
               actors
             case Some(NotStarted, behavior) =>
               // Start the actor with a new mailbox
@@ -75,8 +75,14 @@ namespace ActorSystem {
               let actorRef = startActor(c, actorName, behavior);
               let readyChan = chan Ready 0;
               actorRef <- Start(readyChan);
-              <- readyChan; // TODO: we block here, but what if the actor never sends Ready? -> select with default? Have an internal actor state that is "started but hasn't replied Ready yet"?
-              Map.insert(actorName, (Started(Running, actorRef), behavior), actors)
+              spawn ( {
+                // Wait (on a different process) for the actor to fully initialize
+                <- readyChan;
+                // Then notify the actor system
+                control <- ActorReady(actorName)
+              }
+              );
+              Map.insert(actorName, (Started(InTransition, actorRef), behavior), actors)
             case Some(Started(InTransition, actorRef), behavior) =>
               // TODO The actor is waiting for dependencies, but the policy tells us to start it. What should we do in that case? Incosistent policy?
               actors
