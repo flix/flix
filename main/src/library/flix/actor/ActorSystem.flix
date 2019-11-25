@@ -95,12 +95,15 @@ namespace ActorSystem {
            }) (solve (s.startPolicy <+> s.actors <+> currentState));
           actorSystem(s, actors2, control)
         case SystemShutdown(c) => ???
-        case GetActor(actorName, c) =>
-          c <- Option.flatMap((act) ->
-            match fst(act) {
-              case NotStarted => None
-              case Started(_, actorRef) => Some(actorRef)
-            }, Map.get(actorName, actors));
+        case SendMessage(actorName, msg, c) =>
+          // TODO: results in "head of empty list" exception in PatternExhaustiveness phase
+          // match Map.get(actorName, actors) {
+          //   case Some((Started(_, actorRef), _)) =>
+          //     actorRef <- msg;
+          //     c <- true
+          //   case None => c <- false // Actor not found
+          //   case Some(_) => c <- false // Actor not running
+          // };
           actorSystem(s, actors, control)
         case ActorReady(name) => ???
         case ActorDone(name) => ???
@@ -145,9 +148,9 @@ namespace ActorSystem {
     ///
     /// Returns the reference of an actor in an actor system, given its name.
     ///
-    pub def getActor(sys: RunningActorSystem, actorName: Str): Option[ActorRef] = {
-        let c = chan Option[ActorRef] 0;
-        sys <- GetActor(actorName, c);
+    pub def send(sys: RunningActorSystem, actorName: Str, msg: Message): Bool = {
+        let c = chan Bool 0;
+        sys <- SendMessage(actorName, msg, c);
         <- c
     }
 

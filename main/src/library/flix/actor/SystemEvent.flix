@@ -46,10 +46,11 @@ pub enum SystemEvent {
     case SystemShutdown(Channel[Unit]),
 
     ///
-    /// A command to retrieve the reference to a running actor.
+    /// A command to send a message to a running actor.
     ///
-    /// @param the name of the actor
-    /// @param the channel on which the reference to the actor is sent. If the actor is not found, then None will be sent.
-    /// 
-    case GetActor(Str, Channel[Option[ActorRef]])
+    /// @param name: the name of the actor
+    /// @param msg: the message to send
+    /// @param c: the reply channel
+    ///
+    case SendMessage(Str, Message, Channel[Bool])
 }

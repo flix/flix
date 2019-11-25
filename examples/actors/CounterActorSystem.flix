@@ -6,18 +6,14 @@ namespace CounterActorSystem {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        match ActorSystem.getActor(sys, "counterActor") {
-            case Some(master) =>
-                let replyChan = chan Message 10;
-                master <- Msg("INC", replyChan);
-                master <- Msg("INC", replyChan);
-                master <- Msg("GET", replyChan);
-                match <- replyChan {
-                    case Msg(msg, _) => Console.printLine(msg)
-                    case _ => Console.printLine("unexpected message")
-                }
-            case None => Console.printLine("did not find counterActor")
-        };
+        let replyChan = chan Message 10;
+        sys <- SendMessage("counterActor", Msg("INC", replyChan));
+        sys <- SendMessage("counterActor", Msg("INC", replyChan));
+        sys <- SendMessage("counterActor", Msg("GET", replyChan));
+        match <- replyChan {
+            case Msg(msg, _) => Console.printLine(msg)
+            case _ => Console.printLine("unexpected message")
+        }
         ActorSystem.shutdown(sys)
 
     ///
