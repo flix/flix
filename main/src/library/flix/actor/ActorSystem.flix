@@ -146,6 +146,7 @@ namespace ActorSystem {
               // TODO
               ???
           };
+          // TODO: use running policy here
           actorSystem(s, actors2, control)
         case ActorDone(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
@@ -155,6 +156,7 @@ namespace ActorSystem {
               // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
               ???
           };
+          // TODO: use running policy here
           actorSystem(s, actors2, control)
         case ActorResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
@@ -166,6 +168,7 @@ namespace ActorSystem {
               // TODO: how to store resumable state?
               ???
           };
+          // TODO: use running policy here
           actorSystem(s, actors2, control)
         case ActorNonResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
@@ -175,6 +178,7 @@ namespace ActorSystem {
               // TODO: same as for resumable crash
               ???
           };
+          // TODO: use running policy here
           actorSystem(s, actors2, control)
       }
     }
