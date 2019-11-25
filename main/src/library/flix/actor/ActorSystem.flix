@@ -77,7 +77,7 @@ namespace ActorSystem {
               actorRef <- Start(readyChan);
               <- readyChan; // TODO: we block here, but what if the actor never sends Ready? -> select with default? Have an internal actor state that is "started but hasn't replied Ready yet"?
               Map.insert(actorName, (Started(Running, actorRef), behavior), actors)
-            case Some(Started(Pending, actorRef), behavior) =>
+            case Some(Started(InTransition, actorRef), behavior) =>
               // TODO The actor is waiting for dependencies, but the policy tells us to start it. What should we do in that case? Incosistent policy?
               actors
             case Some(Started(Running, actorRef), behavior) =>
