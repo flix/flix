@@ -42,9 +42,49 @@ namespace ActorSystem {
     ///
     pub def defaultMailboxCapacity(): Int = 1000 * 1000
 
-    def actorSystem(s: ActorSystem, actors: Map[Str, (State, Actor)], control: Channel[SystemEvent]): Unit = {
+  enum InternalActorState {
+    ///
+    /// An actor that has not been started previously, and has no mailbox
+    ///
+    case NotStarted,
+    ///
+    /// An actor that has been started and been assigned a mailbox. The actor could be stopped or crashed now.
+    ///
+    case Started(State, ActorRef)
+  }
+
+  def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Unit = {
       match <- control {
         case SystemStart =>
+          let _x = Started(???, ???); // TODO: unecessary line to avoid the compiler to complain about Started not being used
+          let _currentState = ???; // TODO: compute a #{State} from `actors`
+          // let actors2 = fold Start actors ((actorName, m) ->
+          //   match Map.get(actorName, actors) {
+          //     case Some(NotStarted, behavior) =>
+          //       // Start the actor with a new mailbox
+          //       let c = chan SystemEvent 10;
+          //       let actorRef = startActor(c, actorName, behavior);
+          //       let readyChan = chan Ready 0;
+          //       actorRef <- Start(readyChan);
+          //       <- readyChan; // TODO: we block here, but what if the actor never sends Ready? -> select with default? Have an internal actor state that is "started but hasn't replied Ready yet"?
+          //       Map.insert(actorName, (Started(Running, actorRef), behavior))
+          //     case Some(Started(Pending, actorRef), behavior) =>
+          //       // TODO The actor is waiting for dependencies, but the policy tells us to start it. What should we do in that case? Incosistent policy?
+          //       ???
+          //     case Some(Started(Running, actorRef), behavior) =>
+          //       // TODO Inconsistent policy that tells us to start an actor that is already running
+          //       ???
+          //     case Some(Started(Stopped, actorRef), behavior) =>
+          //       // TODO restart the actor using the same actorRef
+          //       ???
+          //     case Some(Started(ResumablyCrashed, actorRef), behavior) =>
+          //       // TODO resume the actor
+          //       ???
+          //     case Some(Started(NonResumablyCrashed, actorRef), behavior) =>
+          //       // TODO fully restarts the actor
+          //       ???
+          //   })
+          //   (solve (s.startPolicy <+> s.actors <+> currentState));
           actorSystem(s, ???, control)
         case SystemShutdown(c) => ???
         case ActorReady(name) => ???
@@ -61,7 +101,7 @@ namespace ActorSystem {
       let control = chan SystemEvent 10;
       let actors = fold ActorDef Map#{} ((actor, m) ->
             let (actorName, behavior) = actor;
-            Map.insert(actorName, (Stopped, behavior), m))
+            Map.insert(actorName, (NotStarted, behavior), m))
             (solve s.actors);
       spawn (actorSystem(s, actors, control));
       control <- SystemStart;
