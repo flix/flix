@@ -1245,10 +1245,28 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (constraintsType, eff3) <- visitExp(constraints)
           // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
           constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestTypeVar), loc)
+          tupleType = sym match {
+            case rel: Symbol.RelSym =>
+              val tpes = program.relations(rel).attr.map(a => a.tpe)
+              tpes match {
+                case Nil => mkUnitType() // If there's no field in the relation, use Unit
+                case tpe :: Nil => tpe // If there's a single field, use its type
+                case _ => Type.mkTuple(tpes) // If there are more fields, use a tuple
+              }
+            case lat: Symbol.LatSym =>
+              /* TODO: what should be done in this case? */
+              ???
+          }
+              /* TODO (Q): this is what should be done. Unfortunately, it could happen that constraintsType2 is Type.SchemaExtend(_, Type.Var(_), _)
           tupleType = constraintsType2 match {
             case Type.SchemaExtend(_, Type.Apply(_, t), _) => t
-            case _ => ??? // Other case shouldn't happen (due to the previous unification step)
-          }
+            case Type.SchemaExtend(_, t, _) =>
+              println(s"SchemaExtend with $t")
+              ???
+            case t =>
+              println(s"Type is $t")
+              ??? // Other case shouldn't happen (due to the previous unification step)
+          } */
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
