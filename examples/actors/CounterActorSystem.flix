@@ -7,13 +7,10 @@ namespace CounterActorSystem {
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
         let replyChan = chan Message 10;
-        sys <- SendMessage("counterActor", Msg("INC", replyChan));
-        sys <- SendMessage("counterActor", Msg("INC", replyChan));
-        sys <- SendMessage("counterActor", Msg("GET", replyChan));
         match <- replyChan {
             case Msg(msg, _) => Console.printLine(msg)
             case _ => Console.printLine("unexpected message")
-        }
+        };
         ActorSystem.shutdown(sys)
 
     ///
