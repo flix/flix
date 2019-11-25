@@ -562,7 +562,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Term.Head.QuantVar(sym, tpe, loc)
 
       case Term.Head.CapturedVar(sym, tpe, loc) =>
-        Term.Head.CapturedVar(sym, tpe, loc)
+        // Lookup to see if the variable should be replaced by a copy.
+        env0.get(sym) match {
+          case None => Term.Head.CapturedVar(sym, tpe, loc)
+          case Some(srcSym) => Term.Head.CapturedVar(srcSym, tpe, loc)
+        }
 
       case Term.Head.Lit(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
