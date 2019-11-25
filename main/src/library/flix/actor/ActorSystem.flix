@@ -61,6 +61,41 @@ namespace ActorSystem {
         }, #{}, actors)
 
 
+  ///
+  /// Starts an actor given its name, behavior, and mailbox. Returns the updated map of running actors
+  ///
+  def startActor(actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent], actorName: Str, behavior: Actor, mailbox: Channel[Message]): Map[Str, (InternalActorState, Actor)] = {
+    // Create the process of the new actor
+    spawn (
+        match behavior(mailbox) with {
+            case Done =>
+                // Notify on the control channel that the actor is done
+                control <- ActorDone(actorName)
+            case ResumableCrash(_) =>
+                // Notify that the actor has crashed
+                control <- ActorResumableCrash(actorName)
+            case NonResumableCrash(_) =>
+                // Notify that the actor has crashed
+                control <- ActorNonResumableCrash(actorName)
+        }
+    );
+    // The channel on which the actor will notify us that is has successfully initialized
+    let readyChan = chan Ready 0;
+    // Tell the actor to initialize
+    mailbox <- Start(readyChan);
+    spawn ({
+      // Wait (on a different process) for the actor to fully initialize
+      <- readyChan; // TODO: what if the actor crashes before being ready? Should we use a timeout?
+      // Then notify the actor system
+      control <- ActorReady(actorName)
+    });
+    // Add the actor to the map of running actors. It is now in transition.
+    Map.insert(actorName, (Started(InTransition, mailbox), behavior), actors)
+  }
+
+  ///
+  /// The main loop of the actor system, handling messages over the control channel
+  ///
   def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Unit = {
       match <- control {
         case SystemStart =>
@@ -70,34 +105,25 @@ namespace ActorSystem {
               // Inconsistent policy, starts a non-existing actor. This is a no-op.
               actors
             case Some(NotStarted, behavior) =>
+              // <no-state>, Start => start the actor
               // Start the actor with a new mailbox
-              let c = chan SystemEvent 10;
-              let actorRef = startActor(c, actorName, behavior);
-              let readyChan = chan Ready 0;
-              actorRef <- Start(readyChan);
-              spawn ( {
-                // Wait (on a different process) for the actor to fully initialize
-                <- readyChan;
-                // Then notify the actor system
-                control <- ActorReady(actorName)
-              }
-              );
-              Map.insert(actorName, (Started(InTransition, actorRef), behavior), actors)
-            case Some(Started(InTransition, actorRef), behavior) =>
-              // TODO The actor is waiting for dependencies, but the policy tells us to start it. What should we do in that case? Incosistent policy?
+              let mailbox = chan Message defaultMailboxCapacity();
+              startActor(actors, control, actorName, behavior, mailbox)
+            case Some(Started(InTransition, mailbox), behavior) =>
+              // InTransition, Start => no-op
               actors
-            case Some(Started(Running, actorRef), behavior) =>
-              // TODO Inconsistent policy that tells us to start an actor that is already running
+            case Some(Started(Running, mailbox), behavior) =>
+              // Running, Start => no-op
               actors
-            case Some(Started(Stopped, actorRef), behavior) =>
-              // TODO restart the actor using the same actorRef
-              ???
-            case Some(Started(ResumablyCrashed, actorRef), behavior) =>
-              // TODO resume the actor
-              ???
-            case Some(Started(NonResumablyCrashed, actorRef), behavior) =>
-              // TODO fully restarts the actor
-              ???
+            case Some(Started(Stopped, mailbox), behavior) =>
+              // Stopped, Start => start the actor (reusing the mailbox)
+              startActor(actors, control, actorName, behavior, mailbox)
+            case Some(Started(ResumablyCrashed, mailbox), behavior) =>
+              // ResumablyCrashed, Start => restart the actor (with initial state)
+              startActor(actors, control, actorName, behavior, mailbox)
+            case Some(Started(NonResumablyCrashed, mailbox), behavior) =>
+              // NonResumablyCrashed, Start => start the actor
+              startActor(actors, control, actorName, behavior, mailbox)
            }) (solve (s.startPolicy <+> s.actors <+> currentState));
           actorSystem(s, actors2, control)
         case SystemShutdown(c) => ???
@@ -159,28 +185,6 @@ namespace ActorSystem {
         sys <- SendMessage(actorName, msg, c);
         <- c
     }
-
-    // TODO: send(sys: RunningActorSystem, actorName: Str): Bool = true if sent to: (1. actor exists (?), 2. actor is running (?))
-
-    ///
-    /// Starts a single actor. Returns its reference.
-    ///
-    pub def startActor(control: Channel[SystemEvent], actorName: Str, behavior: Actor): ActorRef =
-        let mailbox = chan Message defaultMailboxCapacity();
-        spawn (
-          match behavior(mailbox) with {
-            case Done =>
-              // TODO: use the mailbox as the actor's identity, rather than a name? This would ensure uniqueness (whereas if we compose two actor systems, name clashes are bound to happen)
-              control <- ActorDone(actorName)
-            case ResumableCrash(_) =>
-              control <- ActorResumableCrash(actorName)
-            case NonResumableCrash(_) => ??? // TODO
-          }
-        );
-        // TODO: Use a channel to wait for termination.
-        // TODO: Somehow communicate this information somewhere, if something happens? Maybe we need one giant control channel?
-        // TODO: what happens when the actor crashes? This should be propagated to the master control channel.
-        mailbox
 
     ///
     /// Initiates a shutdown of the given actor system `s` and waits for its orderly shutdown.
