@@ -12,11 +12,7 @@ type alias ActorSystem = {
     actors: ActorPolicy,
     startPolicy: ActorPolicy,
     restartPolicy: ActorPolicy,
-    shutdownPolicy: ActorPolicy,
-
-    // TODO: Quentin: Remove these fields and use them as part of the state of the actor system itself.
-    control: Channel[SystemEvent],
-    runningActors: List[(Str, ActorRef)]
+    shutdownPolicy: ActorPolicy
 }
 
 ///
@@ -38,9 +34,7 @@ namespace ActorSystem {
         actors          = #{},
         startPolicy     = defaultStartPolicy(),
         shutdownPolicy  = defaultShutdownPolicy(),
-        restartPolicy   = defaultRestartPolicy(),
-        control         = chan SystemEvent 10,
-        runningActors   = Nil
+        restartPolicy   = defaultRestartPolicy()
     }
 
     ///
@@ -48,15 +42,32 @@ namespace ActorSystem {
     ///
     pub def defaultMailboxCapacity(): Int = 1000 * 1000
 
+    def actorSystem(s: ActorSystem, actors: List[(Actor, State)], control: Channel[SystemEvent]): Unit = {
+      match <- control {
+        case SystemStart =>
+            // let runningActors = fold ActorDef Nil ((actor, acc) ->
+            //   let (actorName, behavior) = actor;
+            //   (actorName, startActor(s.control, actorName, behavior)) :: acc)
+            //   (solve (s.startPolicy <+> s.actors)); // TODO: add State relation?
+            ???
+        case SystemShutdown(c) => ???
+
+        case ActorReady(name) => ???
+        case ActorDone(name) => ???
+        case ActorResumableCrash(name) => ???
+        case ActorNonResumableCrash(name) => ???
+      }
+    }
+
     ///
     /// Starts the given actor system `s`. Returns the updated actor system
     ///
-    pub def start(s: ActorSystem): ActorSystem = {
-        runningActors = fold ActorDef Nil ((actor, acc) ->
-            let (actorName, behavior) = actor;
-            (actorName, startActor(s.control, actorName, behavior)) :: acc)
-            (solve (s.startPolicy <+> s.actors))
-        | s
+    pub def start(s: ActorSystem): RunningActorSystem = {
+      let control = chan SystemEvent 10;
+      let actors = Nil; // TODO: contsruct the map with all actors set to Stopped
+      spawn (actorSystem(s, actors, control));
+      control <- SystemStart;
+      control
     }
 
     // let stopped = fold Stop Nil ((actorName, acc) ->
@@ -80,10 +91,10 @@ namespace ActorSystem {
 
     ///
     /// Returns the reference of an actor in an actor system, given its name.
-    ////
-    pub def getActor(sys: ActorSystem, actorName: Str): Option[ActorRef] =
-        Option.map((pair -> snd(pair)),
-            List.find((pair -> fst(pair) == actorName), sys.runningActors))
+    //// TODO: can be removed
+    //pub def getActor(sys: ActorSystem, actorName: Str): Option[ActorRef] =
+    //    Option.map((pair -> snd(pair)),
+    //        List.find((pair -> fst(pair) == actorName), sys.runningActors))
 
     ///
     /// Starts a single actor. Returns its reference.
@@ -108,9 +119,10 @@ namespace ActorSystem {
     ///
     /// Initiates a shutdown of the given actor system `s` and waits for its orderly shutdown.
     ///
-    pub def shutdown(_system: ActorSystem): Unit =
-      // TODO: Quentin: Should simply take a running actor system, send the shutdown message, and wait for a reply?
-      ()
-
+  pub def shutdown(system: RunningActorSystem): Unit = {
+      let c = chan Unit 0;
+      system <- SystemShutdown(c);
+      <- c
+  }
 }
 

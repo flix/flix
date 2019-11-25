@@ -33,10 +33,16 @@ pub enum SystemEvent {
     case ActorNonResumableCrash(Str),
 
     ///
+    /// A command that the actor system should start.
+    /// TODO: should there be a Channel[Unit] to notify that the start has completed as well?
+    ///
+    case SystemStart
+
+    ///
     /// A command that the actor system should shutdown.
     ///
     /// @param the channel on which the `Unit` value is sent once the shutdown has completed.
     ///
-    case Shutdown(Channel[Unit])
+    case SystemShutdown(Channel[Unit])
 
 }
