@@ -65,8 +65,8 @@ namespace ActorSystem {
       match <- control {
         case SystemStart =>
           let _x = Started(???, ???); // TODO: unecessary line to avoid the compiler to complain about Started not being used
-          let _currentState = statesOfActors(actors);
-          // let actors2 = fold Start actors ((actorName, m) ->
+          let currentState = statesOfActors(actors);
+          let actors2 = fold Start actors ((actorName, m) -> actors)
           //   match Map.get(actorName, actors) {
           //     case Some(NotStarted, behavior) =>
           //       // Start the actor with a new mailbox
@@ -92,9 +92,10 @@ namespace ActorSystem {
           //       // TODO fully restarts the actor
           //       ???
           //   })
-          //   (solve (s.startPolicy <+> s.actors <+> currentState));
+             (solve (s.startPolicy <+> s.actors <+> currentState));
           actorSystem(s, ???, control)
         case SystemShutdown(c) => ???
+        case GetActor(name, c) => ???
         case ActorReady(name) => ???
         case ActorDone(name) => ???
         case ActorResumableCrash(name) => ???
