@@ -42,22 +42,30 @@ namespace ActorSystem {
     ///
     pub def defaultMailboxCapacity(): Int = 1000 * 1000
 
-  enum InternalActorState {
-    ///
-    /// An actor that has not been started previously, and has no mailbox
-    ///
-    case NotStarted,
-    ///
-    /// An actor that has been started and been assigned a mailbox. The actor could be stopped or crashed now.
-    ///
-    case Started(State, ActorRef)
-  }
+    enum InternalActorState {
+      ///
+      /// An actor that has not been started previously, and has no mailbox
+      ///
+      case NotStarted,
+      ///
+      /// An actor that has been started and been assigned a mailbox. The actor could be stopped or crashed now.
+      ///
+      case Started(State, ActorRef)
+    }
+
+    def statesOfActors(actors: Map[Str, (InternalActorState, Actor)]): ActorPolicy =
+      Map.foldLeftWithKey((actorName, states, actor) ->
+        match fst(actor) {
+          case NotStarted => states <+> #{ActorState(actorName, Stopped).}
+          case Started(st, _) => states <+> #{ActorState(actorName, st).}
+        }, #{}, actors)
+
 
   def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Unit = {
       match <- control {
         case SystemStart =>
           let _x = Started(???, ???); // TODO: unecessary line to avoid the compiler to complain about Started not being used
-          let _currentState = ???; // TODO: compute a #{State} from `actors`
+          let _currentState = statesOfActors(actors);
           // let actors2 = fold Start actors ((actorName, m) ->
           //   match Map.get(actorName, actors) {
           //     case Some(NotStarted, behavior) =>
