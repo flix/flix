@@ -144,10 +144,12 @@ namespace ActorSystem {
 
     ///
     /// Returns the reference of an actor in an actor system, given its name.
-    //// TODO: can be removed
-    //pub def getActor(sys: ActorSystem, actorName: Str): Option[ActorRef] =
-    //    Option.map((pair -> snd(pair)),
-    //        List.find((pair -> fst(pair) == actorName), sys.runningActors))
+    ///
+    pub def getActor(sys: RunningActorSystem, actorName: Str): Option[ActorRef] = {
+        let c = chan Option[ActorRef] 0;
+        sys <- GetActor(actorName, c);
+        <- c
+    }
 
     ///
     /// Starts a single actor. Returns its reference.
