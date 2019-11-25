@@ -137,7 +137,16 @@ namespace ActorSystem {
           //   case Some(_) => c <- false // Actor not running
           // };
           actorSystem(s, actors, control)
-        case ActorReady(name) => ???
+        case ActorReady(actorName) =>
+          let actors2 = match Map.get(actorName, actors) {
+            case Some(Started(InTransition, mailbox), behavior) =>
+              // The actor has initialized and is now running
+              Map.insert(actorName, (Started(Running, mailbox), behavior), actors)
+            case _ =>
+              // TODO
+              ???
+          };
+          actorSystem(s, actors2, control)
         case ActorDone(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some(Started(Running, mailbox), behavior) =>
@@ -147,8 +156,26 @@ namespace ActorSystem {
               ???
           };
           actorSystem(s, actors2, control)
-        case ActorResumableCrash(name) => ???
-        case ActorNonResumableCrash(name) => ???
+        case ActorResumableCrash(actorName) =>
+          let actors2 = match Map.get(actorName, actors) {
+            case Some(Started(_, mailbox), behavior) =>
+              Map.insert(actorName, (Started(ResumablyCrashed, mailbox), behavior), actors)
+            case _ =>
+              // TODO: actor should only crash if it was running before
+              // TODO: what about InTransition? An actor could crash while initializing
+              // TODO: how to store resumable state?
+              ???
+          };
+          actorSystem(s, actors2, control)
+        case ActorNonResumableCrash(actorName) =>
+          let actors2 = match Map.get(actorName, actors) {
+            case Some(Started(Running, mailbox), behavior) =>
+              Map.insert(actorName, (Started(NonResumablyCrashed, mailbox), behavior), actors)
+            case _ =>
+              // TODO: same as for resumable crash
+              ???
+          };
+          actorSystem(s, actors2, control)
       }
     }
 
