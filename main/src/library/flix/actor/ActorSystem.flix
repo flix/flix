@@ -42,16 +42,11 @@ namespace ActorSystem {
     ///
     pub def defaultMailboxCapacity(): Int = 1000 * 1000
 
-    def actorSystem(s: ActorSystem, actors: List[(Actor, State)], control: Channel[SystemEvent]): Unit = {
+    def actorSystem(s: ActorSystem, actors: Map[Str, (State, Actor)], control: Channel[SystemEvent]): Unit = {
       match <- control {
         case SystemStart =>
-            // let runningActors = fold ActorDef Nil ((actor, acc) ->
-            //   let (actorName, behavior) = actor;
-            //   (actorName, startActor(s.control, actorName, behavior)) :: acc)
-            //   (solve (s.startPolicy <+> s.actors)); // TODO: add State relation?
-            ???
+          actorSystem(s, ???, control)
         case SystemShutdown(c) => ???
-
         case ActorReady(name) => ???
         case ActorDone(name) => ???
         case ActorResumableCrash(name) => ???
@@ -64,7 +59,10 @@ namespace ActorSystem {
     ///
     pub def start(s: ActorSystem): RunningActorSystem = {
       let control = chan SystemEvent 10;
-      let actors = Nil; // TODO: contsruct the map with all actors set to Stopped
+      let actors = fold ActorDef Map#{} ((actor, m) ->
+            let (actorName, behavior) = actor;
+            Map.insert(actorName, (Stopped, behavior), m))
+            (solve s.actors);
       spawn (actorSystem(s, actors, control));
       control <- SystemStart;
       control
