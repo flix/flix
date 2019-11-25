@@ -138,7 +138,15 @@ namespace ActorSystem {
           // };
           actorSystem(s, actors, control)
         case ActorReady(name) => ???
-        case ActorDone(name) => ???
+        case ActorDone(actorName) =>
+          let actors2 = match Map.get(actorName, actors) {
+            case Some(Started(Running, mailbox), behavior) =>
+              Map.insert(actorName, (Started(Stopped, mailbox), behavior), actors)
+            case _ =>
+              // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
+              ???
+          };
+          actorSystem(s, actors2, control)
         case ActorResumableCrash(name) => ???
         case ActorNonResumableCrash(name) => ???
       }
