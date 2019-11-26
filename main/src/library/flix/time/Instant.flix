@@ -1,0 +1,59 @@
+/*
+ * Copyright 2019 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+///
+/// A wrapper around a Java instant.
+///
+opaque type Instant = ##java.time.Instant
+
+namespace Instant {
+
+    ///
+    /// Returns the current time from the system clock.
+    ///
+    pub def now(): Instant = Instant(native method java.time.Instant.now())
+
+    ///
+    /// Returns `true` if `x` is before `y`.
+    ///
+    pub def before(x: Instant, y: Instant): Bool =
+        let Instant(t1) = x;
+        let Instant(t2) = y;
+        native method java.time.Instant.isBefore(t1, t2)
+
+    ///
+    /// Returns `true` if `x` is after `y`.
+    ///
+    pub def after(x: Instant, y: Instant): Bool =
+        let Instant(t1) = x;
+        let Instant(t2) = y;
+        native method java.time.Instant.isAfter(t1, t2)
+
+    ///
+    /// Returns the given instant `x` plus `d` number of nano seconds.
+    ///
+    pub def plus(x: Instant, d: Int64): Instant =
+        let Instant(t) = x;
+        Instant(native method java.time.Instant.plusNanos(t, d))
+
+    ///
+    /// Returns the given instant `x` minus `d` number of nano seconds.
+    ///
+    pub def minus(x: Instant, d: Int64): Instant =
+        let Instant(t) = x;
+        Instant(native method java.time.Instant.minusNanos(t, d))
+
+}
