@@ -94,40 +94,64 @@ namespace ActorSystem {
   }
 
   ///
+  /// Runs the start policy of an actor system. Returns the updated map of running actors
+  ///
+  def runStartPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Map[Str, (InternalActorState, Actor)] =
+    let currentState = statesOfActors(actors);
+    fold Start actors ((actorName, m) -> match Map.get(actorName, m) {
+      case Some((NotStarted, behavior)) =>
+        // <no-state>, Start => start the actor
+        // Start the actor with a new mailbox
+        let mailbox = chan Message defaultMailboxCapacity();
+        startActor(m, control, actorName, behavior, mailbox)
+      case Some((Started(Stopped, mailbox), behavior)) =>
+        // Stopped, Start => start the actor (reusing the mailbox)
+        startActor(m, control, actorName, behavior, mailbox)
+      case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+        // ResumablyCrashed, Start => restart the actor (with initial state)
+        startActor(m, control, actorName, behavior, mailbox)
+      case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+        // NonResumablyCrashed, Start => start the actor
+        startActor(m, control, actorName, behavior, mailbox)
+      case _ =>
+        // Other cases are no-ops
+        m
+    }) (solve (s.startPolicy <+> s.actors <+> currentState))
+
+  ///
+  /// Runs the shutdown policy of an actor system. Returns when the system has fully terminated.
+  ///
+  def runShutdownPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], _control: Channel[SystemEvent]): Map[Str, (InternalActorState, Actor)] =
+     // TODO: this does not wait for everything to be stopped, nor does it even make sure that all stop messages have been sent (e.g., in case of dependencies)
+    let currentState = statesOfActors(actors);
+    fold Stop actors ((actorName, m) -> match Map.get(actorName, m) {
+      case Some((Started(Running, mailbox), _)) =>
+         // Running, Stop => stop the actor
+         mailbox <- Stop; // actor will terminate and will notify the actor system
+         m
+      case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+        // ResumablyCrashed, Stop => change state to stopped
+        Map.insert(actorName, (Started(Stopped, mailbox), behavior), m)
+      case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+        // NonResumablyCrashed, Stop => change state to stopped
+        Map.insert(actorName, (Started(Stopped, mailbox), behavior), m)
+      case _ =>
+        // Other cases are no-ops
+        m
+    }) (solve (s.shutdownPolicy <+> s.actors <+> currentState))
+
+  ///
   /// The main loop of the actor system, handling messages over the control channel
   ///
   def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Unit = {
       match <- control {
         case SystemStart =>
-          let currentState = statesOfActors(actors);
           // TODO: this runs the start policy only once. But if some actors need others to be running first, this won't start them.
-          let actors2 = fold Start actors ((actorName, m) -> match Map.get(actorName, actors) {
-            case None =>
-              // Inconsistent policy, starts a non-existing actor. This is a no-op.
-              actors
-            case Some(NotStarted, behavior) =>
-              // <no-state>, Start => start the actor
-              // Start the actor with a new mailbox
-              let mailbox = chan Message defaultMailboxCapacity();
-              startActor(actors, control, actorName, behavior, mailbox)
-            case Some(Started(InTransition, mailbox), behavior) =>
-              // InTransition, Start => no-op
-              actors
-            case Some(Started(Running, mailbox), behavior) =>
-              // Running, Start => no-op
-              actors
-            case Some(Started(Stopped, mailbox), behavior) =>
-              // Stopped, Start => start the actor (reusing the mailbox)
-              startActor(actors, control, actorName, behavior, mailbox)
-            case Some(Started(ResumablyCrashed, mailbox), behavior) =>
-              // ResumablyCrashed, Start => restart the actor (with initial state)
-              startActor(actors, control, actorName, behavior, mailbox)
-            case Some(Started(NonResumablyCrashed, mailbox), behavior) =>
-              // NonResumablyCrashed, Start => start the actor
-              startActor(actors, control, actorName, behavior, mailbox)
-           }) (solve (s.startPolicy <+> s.actors <+> currentState));
+          let actors2 = runStartPolicy(s, actors, control);
           actorSystem(s, actors2, control)
-        case SystemShutdown(c) => ???
+        case SystemShutdown(c) =>
+          let actors2 = runShutdownPolicy(s, actors, control);
+          actorSystem(s, actors2, control)
         case SendMessage(actorName, msg, c) =>
           match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), _)) =>
