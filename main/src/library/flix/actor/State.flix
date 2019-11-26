@@ -8,7 +8,7 @@
 /// - NonResumablyCrashed:  the actor has crashed and cannot be resumed.
 ///
 pub enum State {
-    case InTransition,
+    case InTransition, // TODO: Rename to transient?
     case Running,
     case Stopped,
     case ResumablyCrashed,
