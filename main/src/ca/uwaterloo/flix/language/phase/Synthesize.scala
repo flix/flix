@@ -514,6 +514,14 @@ object Synthesize extends Phase[Root, Root] {
           }
 
           //
+          // Native Case.
+          //
+          if (isNative(tpe)) {
+            val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
+            return Expression.NativeMethod(method, List(exp1, exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
+          }
+
+          //
           // Enum Case.
           //
           if (isEnum(tpe)) {
@@ -1246,6 +1254,14 @@ object Synthesize extends Phase[Root, Root] {
       */
     def isEnum(tpe: Type): Boolean = tpe.typeConstructor match {
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => true
+      case _ => false
+    }
+
+    /**
+      * Returns `true` if `tpe` is a native type.
+      */
+    def isNative(tpe: Type): Boolean = tpe.typeConstructor match {
+      case Type.Cst(TypeConstructor.Native(_)) => true
       case _ => false
     }
 

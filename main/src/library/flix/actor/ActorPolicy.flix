@@ -1,7 +1,12 @@
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Blocked}
+type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Log, Blocked}
+
+// TODO: Could we have the start policy only using the Start predicate. And the stop policy NOT using the start predicate.
+// TODO: But we do need the join for the "restartPolicy" (which maybe we should rename to "runningPolicy")
+// TODO: The whole actor system progresses through start -> running -> stop
+
 
 ///
 /// A relation that represents actors in the system.
@@ -39,9 +44,10 @@ pub rel Stop(name: Str)
 ///
 pub rel Resume(name: Str)
 
-// TODO: Could we have the start policy only using the Start predicate. And the stop policy NOT using the start predicate.
-// TODO: But we do need the join for the "restartPolicy" (which maybe we should rename to "runningPolicy")
-// TODO: The whole actor system progresses through start -> running -> stop
+///
+/// A relation that tracks past actor event.
+///
+pub rel Log(name: Str, previous: State, next: State, timestamp: Instant)
 
 ///
 /// If an actor policy specifies multiple actions for the same actor then the final action is computed by join:
