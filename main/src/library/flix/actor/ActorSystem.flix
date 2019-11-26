@@ -100,6 +100,7 @@ namespace ActorSystem {
       match <- control {
         case SystemStart =>
           let currentState = statesOfActors(actors);
+          // TODO: this runs the start policy only once. But if some actors need others to be running first, this won't start them.
           let actors2 = fold Start actors ((actorName, m) -> match Map.get(actorName, actors) {
             case None =>
               // Inconsistent policy, starts a non-existing actor. This is a no-op.
