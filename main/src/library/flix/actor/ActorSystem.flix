@@ -143,12 +143,82 @@ namespace ActorSystem {
     }) (solve (s.shutdownPolicy <+> s.actors <+> currentState))
   }
 
-  def runRestartPolicy(s: ActorSystem, actors: ActorMap, _control: Channel[SystemEvent]): ActorMap = {
-    let _currentState = statesOfActors(actors);
-    // TODO: we may have to start, stop, resume, or restart actors here.
-    // We can accumulate the actors that have to be acted upon, and join if there are multiple actions to take (see table in ActorPolicy.flix).
-    // Then, just apply the action.
-    ???
+  /// If an actor policy specifies multiple actions for the same actor then the final action is computed by join (which is symmetric)
+  ///
+  /// Start, Stop   => Start
+  /// Stop, Resume  => Resume
+  /// Start, Resume => Resume
+  /// x, x          => x
+  ///
+
+
+  // TODO: this is only used by runRestartPolicy, is there a better way to do it?
+  /* enum ActorAction {
+    case ActionResume,
+    case ActionStart,
+    case ActionStop
+  } */
+  def runRestartPolicy(_s: ActorSystem, actors: ActorMap, _control: Channel[SystemEvent]): ActorMap = {
+    actors
+    /* 
+    let currentState = statesOfActors(actors);
+    // We just accumulate for each actor, whether it should 1. Stop, 2. Start, 3. Resume, overriding any previous value. This corresponds to the increasing order of the sop/start/resume lattice.
+    let m0: Map[Str, ActorAction] = Map#{};
+    let policy = solve (s.restartPolicy <+> currentState);
+    let m1 = fold Stop ((actorName, m) -> Map.insert(actorName, ActionStop, m)) m0 policy;
+    let m2 = fold Start ((actorName, m) -> Map.insert(actorName, ActionStart, m)) m1 policy;
+    let m3 = fold Resume ((actorName, m) -> Map.insert(actorName, ActionResume, m)) m2 policy;
+    // Then, we just apply the action for each actor, according to the table.
+    Map.foldLeftWithKey((actorName, m, action) ->
+      match action {
+      case ActionStart => match Map.get(actorName, m) {
+          case Some((NotStarted, behavior)) =>
+            // Start the actor with a new mailbox
+            let mailbox = chan Message defaultMailboxCapacity();
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(Stopped, mailbox), behavior)) =>
+            // Start the actor, reusing the mailbox
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+            // Start the actor with the initial state, but reusing the mailbox
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+            // Start the actor with the initial state, reusing the mailbox
+            startActor(m, control, actorName, behavior, mailbox)
+          case _ =>
+            // No-op
+            m
+      }
+      case ActionResume => match Map.get(actorName, m) {
+          case Some((Started(Stopped, mailbox), behavior)) =>
+            // Start the actor with the initial state, reusing the mailbox
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+            // TODO: resume the actor (here we start from the initial state)
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+            // Start the actor with initial state
+            startActor(m, control, actorName, behavior, mailbox)
+          case _ =>
+            // No-op
+            m
+      }
+      case ActionStop => match Map.get(actorName, m) {
+          case Some((Started(Running, mailbox), behavior)) =>
+            // Stop the actor
+            mailbox <- Stop; // actor will terminate and will notify the actor system
+            m
+          case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+            // Change the state of the crashed actor to stopped
+            Map.insert(actorName, (Started(Stopped, mailbox), behavior), m)
+          case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+            // Change the state of the crashed actor to stopped
+            Map.insert(actorName, (Started(Stopped, mailbox), behavior), m)
+          case _ =>
+            // No-op
+            m
+      }
+    }, actors, m3) */
   }
 
   enum Policy {
