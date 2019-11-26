@@ -53,7 +53,9 @@ namespace ActorSystem {
       case Started(State, ActorRef)
     }
 
-    def statesOfActors(actors: Map[Str, (InternalActorState, ActorBehavior)]): ActorPolicy =
+    type alias ActorMap = Map[Str, (InternalActorState, ActorBehavior)]
+
+    def statesOfActors(actors: ActorMap): ActorPolicy =
       Map.foldLeftWithKey((actorName, states, actor) ->
         match fst(actor) {
           case NotStarted => states <+> #{ActorState(actorName, Stopped).}
@@ -64,7 +66,7 @@ namespace ActorSystem {
   ///
   /// Starts an actor given its name, behavior, and mailbox. Returns the updated map of running actors
   ///
-  def startActor(actors: Map[Str, (InternalActorState, ActorBehavior)], control: Channel[SystemEvent], actorName: Str, behavior: ActorBehavior, mailbox: Channel[Message]): Map[Str, (InternalActorState, ActorBehavior)] = {
+  def startActor(actors: ActorMap, control: Channel[SystemEvent], actorName: Str, behavior: ActorBehavior, mailbox: Channel[Message]): ActorMap = {
     // Create the process of the new actor
     spawn (
         match behavior(mailbox) with {
@@ -96,7 +98,7 @@ namespace ActorSystem {
   ///
   /// Runs the start policy of an actor system. Returns the updated map of running actors
   ///
-  def runStartPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, ActorBehavior)], control: Channel[SystemEvent]): Map[Str, (InternalActorState, ActorBehavior)] =
+  def runStartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): ActorMap = {
     let currentState = statesOfActors(actors);
     fold Start actors ((actorName, m) -> match Map.get(actorName, m) {
       case Some((NotStarted, behavior)) =>
@@ -117,12 +119,12 @@ namespace ActorSystem {
         // Other cases are no-ops
         m
     }) (solve (s.startPolicy <+> s.actors <+> currentState))
+  }
 
   ///
-  /// Runs the shutdown policy of an actor system. Returns when the system has fully terminated.
+  /// Runs the shutdown policy of an actor system. Directly returns the updated actor map after one iteration of the policy.
   ///
-  def runShutdownPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, ActorBehavior)], _control: Channel[SystemEvent]): Map[Str, (InternalActorState, ActorBehavior)] =
-     // TODO: this does not wait for everything to be stopped, nor does it even make sure that all stop messages have been sent (e.g., in case of dependencies)
+  def runShutdownPolicy(s: ActorSystem, actors: ActorMap, _control: Channel[SystemEvent]): ActorMap = {
     let currentState = statesOfActors(actors);
     fold Stop actors ((actorName, m) -> match Map.get(actorName, m) {
       case Some((Started(Running, mailbox), _)) =>
@@ -139,19 +141,42 @@ namespace ActorSystem {
         // Other cases are no-ops
         m
     }) (solve (s.shutdownPolicy <+> s.actors <+> currentState))
+  }
+
+  def runRestartPolicy(s: ActorSystem, actors: ActorMap, _control: Channel[SystemEvent]): ActorMap = {
+    let _currentState = statesOfActors(actors);
+    // TODO: we may have to start, stop, resume, or restart actors here.
+    // We can accumulate the actors that have to be acted upon, and join if there are multiple actions to take (see table in ActorPolicy.flix).
+    // Then, just apply the action.
+    ???
+  }
+
+  enum Policy {
+    case PolicyNotStarted, // Not started yet
+    case PolicyStarting, // Currently starting
+    case PolicyRunning, // Fully running
+    case PolicyStopping // Currently stopping
+  }
+
+  def runPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): ActorMap =
+    let _x = PolicyRunning; // TODO: remove
+    match policy {
+      case PolicyNotStarted => actors
+      case PolicyStarting => runStartPolicy(s, actors, control)
+      case PolicyRunning => runRestartPolicy(s, actors, control)
+      case PolicyStopping => runShutdownPolicy(s, actors, control)
+    }
 
   ///
   /// The main loop of the actor system, handling messages over the control channel
   ///
-  def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, ActorBehavior)], control: Channel[SystemEvent]): Unit = {
+  def actorSystem(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): Unit = {
       match <- control {
         case SystemStart =>
-          // TODO: this runs the start policy only once. But if some actors need others to be running first, this won't start them.
-          let actors2 = runStartPolicy(s, actors, control);
-          actorSystem(s, actors2, control)
+          assert!(policy == PolicyNotStarted); // Otherwise, the actor system has been started more than once.
+          actorSystem(s, runPolicy(s, actors, control, PolicyStarting), control, PolicyStarting)
         case SystemShutdown(c) =>
-          let actors2 = runShutdownPolicy(s, actors, control);
-          actorSystem(s, actors2, control)
+          actorSystem(s, runPolicy(s, actors, control, PolicyStopping), control, PolicyStopping)
         case SendMessage(actorName, msg, c) =>
           match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), _)) =>
@@ -160,18 +185,18 @@ namespace ActorSystem {
             case Some(_) => c <- false // Actor not running
             case _ => c <- false // Actor not found
           };
-          actorSystem(s, actors, control)
+          actorSystem(s, actors, control, policy)
         case ActorReady(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(InTransition, mailbox), behavior)) =>
               // The actor has initialized and is now running
+              // TODO: if all actors are running, we can move to a "running" policy
               Map.insert(actorName, (Started(Running, mailbox), behavior), actors)
             case _ =>
               // TODO
               ???
           };
-          // TODO: use running policy here
-          actorSystem(s, actors2, control)
+          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
         case ActorDone(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), behavior)) =>
@@ -180,8 +205,7 @@ namespace ActorSystem {
               // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
               ???
           };
-          // TODO: use running policy here
-          actorSystem(s, actors2, control)
+          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
         case ActorResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(_, mailbox), behavior)) =>
@@ -193,7 +217,7 @@ namespace ActorSystem {
               ???
           };
           // TODO: use running policy here
-          actorSystem(s, actors2, control)
+          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
         case ActorNonResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), behavior)) =>
@@ -202,8 +226,7 @@ namespace ActorSystem {
               // TODO: same as for resumable crash
               ???
           };
-          // TODO: use running policy here
-          actorSystem(s, actors2, control)
+          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
       }
     }
 
@@ -216,29 +239,10 @@ namespace ActorSystem {
             let (actorName, behavior) = actor;
             Map.insert(actorName, (NotStarted, behavior), m))
             (solve s.actors);
-      spawn (actorSystem(s, actors, control));
+      spawn (actorSystem(s, actors, control, PolicyNotStarted));
       control <- SystemStart;
       RunningActorSystem(control)
     }
-
-    // let stopped = fold Stop Nil ((actorName, acc) ->
-          //   match getActor(system, actorName) {
-          //     case Some(actorRef) =>
-          //       // TODO: What if the actor just ignores this message? Or if it crashes when stopping? The actor behaviour should return Done. We can wait for this on some internal channel maybe?
-          // Magnus: Let us not worry about badly behaved actors or timeouts for now. We can add that later.
-          //       actorRef <- Stop;
-          //       actorName :: acc
-          //     case None =>
-          //       Console.printLine("Actor not found: " + actorName);
-          //       acc
-          //   }) (solve (system.shutdownPolicy /* TODO: this should be the composed with current status of the ActorState relation */));
-          // if (List.length(stopped) == 0) {
-          //   ()
-          // } else {
-          //   // TODO: wait a bit before recursing?
-          //   // TODO: keep the current status of the ActorState relation somewhere
-          //   shutdown(system)
-          // }
 
     ///
     /// Returns the reference of an actor in an actor system, given its name.
