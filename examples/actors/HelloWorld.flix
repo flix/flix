@@ -3,8 +3,10 @@ namespace HelloWorld {
     ///
     /// The main entry point for the single actor system.
     ///
-    @test
-    pub def main(): Unit = ActorSystem.start(system()); ()
+    // TODO: Enable @test
+    pub def main(): Unit =
+        let sys = ActorSystem.start(system());
+        ActorSystem.shutdown(sys)
 
     ///
     /// Returns an actor system with one hello world actor.
@@ -17,14 +19,17 @@ namespace HelloWorld {
     ///
     /// An actor that prints hello world and then terminates.
     ///
-    pub def helloWorld(mailbox: Mailbox): ActorResult[Str] =
-        match <- mailbox {
+    pub def helloWorld(m: Mailbox): ActorResult[Str] =
+        match <- m {
             case Start(c)       =>
                 c <- Ready;
                 Console.printLine("Hello World!");
                 Done
-            case Stop           => Done
-            case Msg(m, _)      => NonResumableCrash("Unexpected message: " + m)
+                // helloWorld(m)
+            case Stop           =>
+                Console.printLine("Goodbye World!");
+                Done
+            case Msg(s, _)      => NonResumableCrash("Unexpected message: " + s)
         }
 
 }

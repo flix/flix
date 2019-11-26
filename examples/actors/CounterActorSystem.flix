@@ -3,7 +3,7 @@ namespace CounterActorSystem {
     ///
     /// The main entry point for the counter actor system.
     ///
-    @test
+    // TODO: Enable @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
         let replyChan = chan Message 10;
