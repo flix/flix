@@ -128,18 +128,17 @@ namespace ActorSystem {
           actorSystem(s, actors2, control)
         case SystemShutdown(c) => ???
         case SendMessage(actorName, msg, c) =>
-          // TODO: results in "head of empty list" exception in PatternExhaustiveness phase
-          // match Map.get(actorName, actors) {
-          //   case Some((Started(_, actorRef), _)) =>
-          //     actorRef <- msg;
-          //     c <- true
-          //   case None => c <- false // Actor not found
-          //   case Some(_) => c <- false // Actor not running
-          // };
+          match Map.get(actorName, actors) {
+            case Some((Started(Running, mailbox), _)) =>
+              mailbox <- msg;
+              c <- true
+            case Some(_) => c <- false // Actor not running
+            case _ => c <- false // Actor not found
+          };
           actorSystem(s, actors, control)
         case ActorReady(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some(Started(InTransition, mailbox), behavior) =>
+            case Some((Started(InTransition, mailbox), behavior)) =>
               // The actor has initialized and is now running
               Map.insert(actorName, (Started(Running, mailbox), behavior), actors)
             case _ =>
@@ -150,7 +149,7 @@ namespace ActorSystem {
           actorSystem(s, actors2, control)
         case ActorDone(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some(Started(Running, mailbox), behavior) =>
+            case Some((Started(Running, mailbox), behavior)) =>
               Map.insert(actorName, (Started(Stopped, mailbox), behavior), actors)
             case _ =>
               // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
@@ -160,7 +159,7 @@ namespace ActorSystem {
           actorSystem(s, actors2, control)
         case ActorResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some(Started(_, mailbox), behavior) =>
+            case Some((Started(_, mailbox), behavior)) =>
               Map.insert(actorName, (Started(ResumablyCrashed, mailbox), behavior), actors)
             case _ =>
               // TODO: actor should only crash if it was running before
@@ -172,7 +171,7 @@ namespace ActorSystem {
           actorSystem(s, actors2, control)
         case ActorNonResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some(Started(Running, mailbox), behavior) =>
+            case Some((Started(Running, mailbox), behavior)) =>
               Map.insert(actorName, (Started(NonResumablyCrashed, mailbox), behavior), actors)
             case _ =>
               // TODO: same as for resumable crash
