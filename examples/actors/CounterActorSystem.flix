@@ -18,10 +18,10 @@ namespace CounterActorSystem {
     ///
     pub def system(): ActorSystem = {
             actors = #{
-                ActorDef("counterActor", counterActor(0i32)).
-                ActorDef("worker1", workerActor(m)) :- MailboxOf("counterActor", m).
-                ActorDef("worker2", workerActor(m)) :- MailboxOf("counterActor", m).
-                ActorDef("worker3", workerActor(m)) :- MailboxOf("counterActor", m).
+                Actor("counterActor", counterActor(0i32)).
+                Actor("worker1", workerActor(m)) :- MailboxOf("counterActor", m).
+                Actor("worker2", workerActor(m)) :- MailboxOf("counterActor", m).
+                Actor("worker3", workerActor(m)) :- MailboxOf("counterActor", m).
             } | ActorSystem.default() }
 
     ///

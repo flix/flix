@@ -13,7 +13,7 @@ namespace HelloWorld {
     ///
     pub def system(): ActorSystem = {
             actors = #{
-                ActorDef("helloWorld", helloWorld).
+                Actor("helloWorld", helloWorld).
             } | ActorSystem.default() }
 
     ///

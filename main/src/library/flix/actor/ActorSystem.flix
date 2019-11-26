@@ -53,7 +53,7 @@ namespace ActorSystem {
       case Started(State, ActorRef)
     }
 
-    def statesOfActors(actors: Map[Str, (InternalActorState, Actor)]): ActorPolicy =
+    def statesOfActors(actors: Map[Str, (InternalActorState, ActorBehavior)]): ActorPolicy =
       Map.foldLeftWithKey((actorName, states, actor) ->
         match fst(actor) {
           case NotStarted => states <+> #{ActorState(actorName, Stopped).}
@@ -64,7 +64,7 @@ namespace ActorSystem {
   ///
   /// Starts an actor given its name, behavior, and mailbox. Returns the updated map of running actors
   ///
-  def startActor(actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent], actorName: Str, behavior: Actor, mailbox: Channel[Message]): Map[Str, (InternalActorState, Actor)] = {
+  def startActor(actors: Map[Str, (InternalActorState, ActorBehavior)], control: Channel[SystemEvent], actorName: Str, behavior: ActorBehavior, mailbox: Channel[Message]): Map[Str, (InternalActorState, ActorBehavior)] = {
     // Create the process of the new actor
     spawn (
         match behavior(mailbox) with {
@@ -96,7 +96,7 @@ namespace ActorSystem {
   ///
   /// Runs the start policy of an actor system. Returns the updated map of running actors
   ///
-  def runStartPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Map[Str, (InternalActorState, Actor)] =
+  def runStartPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, ActorBehavior)], control: Channel[SystemEvent]): Map[Str, (InternalActorState, ActorBehavior)] =
     let currentState = statesOfActors(actors);
     fold Start actors ((actorName, m) -> match Map.get(actorName, m) {
       case Some((NotStarted, behavior)) =>
@@ -121,7 +121,7 @@ namespace ActorSystem {
   ///
   /// Runs the shutdown policy of an actor system. Returns when the system has fully terminated.
   ///
-  def runShutdownPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], _control: Channel[SystemEvent]): Map[Str, (InternalActorState, Actor)] =
+  def runShutdownPolicy(s: ActorSystem, actors: Map[Str, (InternalActorState, ActorBehavior)], _control: Channel[SystemEvent]): Map[Str, (InternalActorState, ActorBehavior)] =
      // TODO: this does not wait for everything to be stopped, nor does it even make sure that all stop messages have been sent (e.g., in case of dependencies)
     let currentState = statesOfActors(actors);
     fold Stop actors ((actorName, m) -> match Map.get(actorName, m) {
@@ -143,7 +143,7 @@ namespace ActorSystem {
   ///
   /// The main loop of the actor system, handling messages over the control channel
   ///
-  def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, Actor)], control: Channel[SystemEvent]): Unit = {
+  def actorSystem(s: ActorSystem, actors: Map[Str, (InternalActorState, ActorBehavior)], control: Channel[SystemEvent]): Unit = {
       match <- control {
         case SystemStart =>
           // TODO: this runs the start policy only once. But if some actors need others to be running first, this won't start them.
@@ -212,7 +212,7 @@ namespace ActorSystem {
     ///
     pub def start(s: ActorSystem): RunningActorSystem = {
       let control = chan SystemEvent 10;
-      let actors = fold ActorDef Map#{} ((actor, m) ->
+      let actors = fold Actor Map#{} ((actor, m) ->
             let (actorName, behavior) = actor;
             Map.insert(actorName, (NotStarted, behavior), m))
             (solve s.actors);

@@ -1,10 +1,14 @@
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{ActorDef, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Blocked}
+type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Blocked}
 
-/// TODO: Magnus: Rename to Actor and rename actor to behavior?
-pub rel ActorDef(name: Str, actor: Actor)
+///
+/// A relation that represents actors in the system.
+///
+/// If two or more actor behaviors are attached to the same name then messages are load balanced between them.
+///
+pub rel Actor(name: Str, behavior: ActorBehavior)
 
 ///
 /// A relation that maps actors to mailboxes.
@@ -107,14 +111,14 @@ pub def defaultStartPolicy(): ActorPolicy = #{
     Blocked(x) :- DependsOn(x, y), not ActorState(y, Running), not DependsOn(x, x).
 
     // Start actors that are not blocked.
-    Start(x) :- ActorDef(x, _), not Blocked(x).
+    Start(x) :- Actor(x, _), not Blocked(x).
 }
 
 ///
 /// Returns a policy that immediately starts all actors regardless of their dependencies.
 ///
 pub def immediatelyStartAllPolicy(): ActorPolicy = #{
-    Start(actor) :- ActorDef(actor, _).
+    Start(actor) :- Actor(actor, _).
 }
 
 ///
@@ -130,7 +134,7 @@ pub def defaultShutdownPolicy(): ActorPolicy = #{
     Blocked(x) :- DependsOn(x, y), ActorState(y, Running), not DependsOn(x, x).
 
     // Stop actors that are not blocked.
-    Stop(x) :- ActorDef(x, _), ActorState(x, Running).
+    Stop(x) :- Actor(x, _), ActorState(x, Running).
 }
 
 ///

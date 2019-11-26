@@ -26,7 +26,7 @@ pub enum ActorResult[e] {
     /// @param k the continuation that can be used to resume the actor.
     /// @param e the error value.
     ///
-    case ResumableCrash(Actor, e),
+    case ResumableCrash(ActorBehavior, e),
 
     ///
     /// Indicates that the actor crashed with error value `e` and cannot be resumed.

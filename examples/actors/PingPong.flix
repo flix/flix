@@ -13,8 +13,8 @@ namespace HelloWorld {
     ///
     pub def system(): ActorSystem = {
             actors = #{
-                ActorDef("pinger", pinger(p, 0)) :- MailboxOf("ponger", p).
-                ActorDef("ponger", ponger(p, 0)) :- MailboxOf("pinger", p).
+                Actor("pinger", pinger(p, 0)) :- MailboxOf("ponger", p).
+                Actor("ponger", ponger(p, 0)) :- MailboxOf("pinger", p).
             } | ActorSystem.default() }
 
     ///
