@@ -18,7 +18,7 @@ type alias ActorSystem = {
 ///
 /// A running actor system is a type alias for a channel of actor events.
 ///
-type alias RunningActorSystem = Channel[SystemEvent] // TODO: Maybe make this an enum or opaque type.
+opaque type RunningActorSystem = Channel[SystemEvent]
 
 ///
 /// An actor is identified by its mailbox
@@ -193,7 +193,7 @@ namespace ActorSystem {
             (solve s.actors);
       spawn (actorSystem(s, actors, control));
       control <- SystemStart;
-      control
+      RunningActorSystem(control)
     }
 
     // let stopped = fold Stop Nil ((actorName, acc) ->
@@ -218,7 +218,8 @@ namespace ActorSystem {
     ///
     /// Returns the reference of an actor in an actor system, given its name.
     ///
-    pub def send(sys: RunningActorSystem, actorName: Str, msg: Message): Bool = {
+    pub def send(s: RunningActorSystem, actorName: Str, msg: Message): Bool = {
+        let RunningActorSystem(sys) = s;
         let c = chan Bool 0;
         sys <- SendMessage(actorName, msg, c);
         <- c
@@ -227,10 +228,11 @@ namespace ActorSystem {
     ///
     /// Initiates a shutdown of the given actor system `s` and waits for its orderly shutdown.
     ///
-  pub def shutdown(system: RunningActorSystem): Unit = {
-      let c = chan Unit 0;
-      system <- SystemShutdown(c);
-      <- c
+  pub def shutdown(s: RunningActorSystem): Unit = {
+        let RunningActorSystem(sys) = s;
+        let c = chan Unit 0;
+        sys <- SystemShutdown(c);
+        <- c
   }
 }
 
