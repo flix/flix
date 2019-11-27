@@ -153,21 +153,19 @@ namespace ActorSystem {
 
 
   // TODO: this is only used by runRestartPolicy, is there a better way to do it?
-  /* enum ActorAction {
+  enum ActorAction {
     case ActionResume,
     case ActionStart,
     case ActionStop
-  } */
-  def runRestartPolicy(_s: ActorSystem, actors: ActorMap, _control: Channel[SystemEvent]): ActorMap = {
-    actors
-    /* 
+  }
+  def runRestartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): ActorMap = {
     let currentState = statesOfActors(actors);
     // We just accumulate for each actor, whether it should 1. Stop, 2. Start, 3. Resume, overriding any previous value. This corresponds to the increasing order of the sop/start/resume lattice.
     let m0: Map[Str, ActorAction] = Map#{};
     let policy = solve (s.restartPolicy <+> currentState);
-    let m1 = fold Stop ((actorName, m) -> Map.insert(actorName, ActionStop, m)) m0 policy;
-    let m2 = fold Start ((actorName, m) -> Map.insert(actorName, ActionStart, m)) m1 policy;
-    let m3 = fold Resume ((actorName, m) -> Map.insert(actorName, ActionResume, m)) m2 policy;
+    let m1 = fold Stop m0 ((actorName, m) -> Map.insert(actorName, ActionStop, m)) policy;
+    let m2 = fold Start m1 ((actorName, m) -> Map.insert(actorName, ActionStart, m)) policy;
+    let m3 = fold Resume m2 ((actorName, m) -> Map.insert(actorName, ActionResume, m)) policy;
     // Then, we just apply the action for each actor, according to the table.
     Map.foldLeftWithKey((actorName, m, action) ->
       match action {
@@ -204,7 +202,7 @@ namespace ActorSystem {
             m
       }
       case ActionStop => match Map.get(actorName, m) {
-          case Some((Started(Running, mailbox), behavior)) =>
+          case Some((Started(Running, mailbox), _)) =>
             // Stop the actor
             mailbox <- Stop; // actor will terminate and will notify the actor system
             m
@@ -218,7 +216,7 @@ namespace ActorSystem {
             // No-op
             m
       }
-    }, actors, m3) */
+    }, actors, m3)
   }
 
   enum Policy {
