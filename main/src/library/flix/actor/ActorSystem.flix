@@ -67,9 +67,9 @@ namespace ActorSystem {
 
   rel ActorsInTransition()
   ///
-  /// Checks whether there are no actors that have their state as InTransition
+  /// Checks whether there are actors that have their state as InTransition
   ///
-  def noActorsInTransition(state: ActorPolicy): Bool =
+  def actorsInTransition(state: ActorPolicy): Bool =
     (solve (state <+> #{ActorsInTransition() :- ActorState(_, InTransition).})) |= ActorsInTransition().
 
   ///
@@ -77,7 +77,7 @@ namespace ActorSystem {
   ///
   def startActor(actors: ActorMap, control: Channel[SystemEvent], actorName: Str, behavior: ActorBehavior, mailbox: Channel[Message]): ActorMap = {
     // Create the process of the new actor
-    spawn (
+    spawn ({
         match behavior(mailbox) with {
             case Done =>
                 // Notify on the control channel that the actor is done
@@ -89,7 +89,7 @@ namespace ActorSystem {
                 // Notify that the actor has crashed
                 control <- ActorNonResumableCrash(actorName)
         }
-    );
+    });
     // The channel on which the actor will notify us that is has successfully initialized
     let readyChan = chan Ready 0;
     // Tell the actor to initialize
@@ -112,7 +112,7 @@ namespace ActorSystem {
   def runStartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): (ActorMap, Policy) = {
     let currentState = statesOfActors(actors);
     // n is the number of actors that were started in this iteration of the policy
-    let (actors2, n) = fold Start (actors, 0) ((actorName, acc) ->
+    let (actors2, n) = fold Start (actors, 0) ((actorName, acc) -> {
       let (m, n) = acc;
       match Map.get(actorName, m) {
         case Some((NotStarted, behavior)) =>
@@ -132,8 +132,8 @@ namespace ActorSystem {
         case _ =>
           // Other cases are no-ops
           acc
-      }) (solve (s.startPolicy <+> s.actors <+> currentState));
-    if (n == 0 && noActorsInTransition(currentState)) {
+      }}) (solve (s.startPolicy <+> s.actors <+> currentState));
+    if (n == 0 && !actorsInTransition(currentState)) {
       // No actor has been started and we're not waiting for actors that are "in transition", so we change to a running policy.
       (actors2, PolicyRunning)
     } else {
@@ -269,7 +269,7 @@ namespace ActorSystem {
           let (actors2, policy2) = runPolicy(s, actors, control, PolicyStarting);
           actorSystem(s, actors2, control, policy2)
         case SystemShutdown(c) =>
-          let (actors2, policy2) = runPolicy(s, actors, control, policy);
+          let (actors2, policy2) = runPolicy(s, actors, control, PolicyStopping);
           actorSystem(s, actors2, control, policy2)
         case SendMessage(actorName, msg, c) =>
           match Map.get(actorName, actors) {
@@ -302,6 +302,7 @@ namespace ActorSystem {
               ???
           };
           let (actors3, policy2) = runPolicy(s, actors2, control, policy);
+          // TODO: don't loop if all actors have been stopped!
           actorSystem(s, actors3, control, policy2)
         case ActorResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
