@@ -55,6 +55,9 @@ namespace ActorSystem {
 
     type alias ActorMap = Map[Str, (InternalActorState, ActorBehavior)]
 
+    ///
+    /// Return the current state of the actors in the system, using the ActorState relation.
+    ///
     def statesOfActors(actors: ActorMap): ActorPolicy =
       Map.foldLeftWithKey((actorName, states, actor) ->
         match fst(actor) {
@@ -62,6 +65,12 @@ namespace ActorSystem {
           case Started(st, _) => states <+> #{ActorState(actorName, st).}
         }, #{}, actors)
 
+  rel ActorsInTransition()
+  ///
+  /// Checks whether there are no actors that have their state as InTransition
+  ///
+  def noActorsInTransition(state: ActorPolicy): Bool =
+    (solve (state <+> #{ActorsInTransition() :- ActorState(_, InTransition).})) |= ActorsInTransition().
 
   ///
   /// Starts an actor given its name, behavior, and mailbox. Returns the updated map of running actors
@@ -96,29 +105,41 @@ namespace ActorSystem {
   }
 
   ///
-  /// Runs the start policy of an actor system. Returns the updated map of running actors
+  /// Runs the start policy of an actor system.
+  /// Returns the updated map of running actors, as well as the next policy to use.
+  /// Either there are still actors to start, and we stay in a running policy, or everything that has been started successfully started and we change to a running policy.
   ///
-  def runStartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): ActorMap = {
+  def runStartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): (ActorMap, Policy) = {
     let currentState = statesOfActors(actors);
-    fold Start actors ((actorName, m) -> match Map.get(actorName, m) {
-      case Some((NotStarted, behavior)) =>
-        // <no-state>, Start => start the actor
-        // Start the actor with a new mailbox
-        let mailbox = chan Message defaultMailboxCapacity();
-        startActor(m, control, actorName, behavior, mailbox)
-      case Some((Started(Stopped, mailbox), behavior)) =>
-        // Stopped, Start => start the actor (reusing the mailbox)
-        startActor(m, control, actorName, behavior, mailbox)
-      case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
-        // ResumablyCrashed, Start => restart the actor (with initial state)
-        startActor(m, control, actorName, behavior, mailbox)
-      case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
-        // NonResumablyCrashed, Start => start the actor
-        startActor(m, control, actorName, behavior, mailbox)
-      case _ =>
-        // Other cases are no-ops
-        m
-    }) (solve (s.startPolicy <+> s.actors <+> currentState))
+    // n is the number of actors that were started in this iteration of the policy
+    let (actors2, n) = fold Start (actors, 0) ((actorName, acc) ->
+      let (m, n) = acc;
+      match Map.get(actorName, m) {
+        case Some((NotStarted, behavior)) =>
+          // <no-state>, Start => start the actor
+          // Start the actor with a new mailbox
+          let mailbox = chan Message defaultMailboxCapacity();
+          (startActor(m, control, actorName, behavior, mailbox), n+1)
+        case Some((Started(Stopped, mailbox), behavior)) =>
+          // Stopped, Start => start the actor (reusing the mailbox)
+          (startActor(m, control, actorName, behavior, mailbox), n+1)
+        case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+          // ResumablyCrashed, Start => restart the actor (with initial state)
+          (startActor(m, control, actorName, behavior, mailbox), n+1)
+        case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+          // NonResumablyCrashed, Start => start the actor
+          (startActor(m, control, actorName, behavior, mailbox), n+1)
+        case _ =>
+          // Other cases are no-ops
+          acc
+      }) (solve (s.startPolicy <+> s.actors <+> currentState));
+    if (n == 0 && noActorsInTransition(currentState)) {
+      // No actor has been started and we're not waiting for actors that are "in transition", so we change to a running policy.
+      (actors2, PolicyRunning)
+    } else {
+      // Otherwise, just keep "starting"
+      (actors2, PolicyStarting)
+    }
   }
 
   ///
@@ -226,13 +247,16 @@ namespace ActorSystem {
     case PolicyStopping // Currently stopping
   }
 
-  def runPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): ActorMap =
-    let _x = PolicyRunning; // TODO: remove
+  ///
+  /// Run the current policy (@param `policy`). Returns the updated actor map, as well as the next state of the policy.
+  /// The current policy can only change when we are in a PolicyStarting policy, and all actors have started.
+  ///
+  def runPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): (ActorMap, Policy) =
     match policy {
-      case PolicyNotStarted => actors
+      case PolicyNotStarted => (actors, policy)
       case PolicyStarting => runStartPolicy(s, actors, control)
-      case PolicyRunning => runRestartPolicy(s, actors, control)
-      case PolicyStopping => runShutdownPolicy(s, actors, control)
+      case PolicyRunning => (runRestartPolicy(s, actors, control), PolicyRunning)
+      case PolicyStopping => (runShutdownPolicy(s, actors, control), PolicyStopping)
     }
 
   ///
@@ -242,9 +266,11 @@ namespace ActorSystem {
       match <- control {
         case SystemStart =>
           assert!(policy == PolicyNotStarted); // Otherwise, the actor system has been started more than once.
-          actorSystem(s, runPolicy(s, actors, control, PolicyStarting), control, PolicyStarting)
+          let (actors2, policy2) = runPolicy(s, actors, control, PolicyStarting);
+          actorSystem(s, actors2, control, policy2)
         case SystemShutdown(c) =>
-          actorSystem(s, runPolicy(s, actors, control, PolicyStopping), control, PolicyStopping)
+          let (actors2, policy2) = runPolicy(s, actors, control, policy);
+          actorSystem(s, actors2, control, policy2)
         case SendMessage(actorName, msg, c) =>
           match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), _)) =>
@@ -253,6 +279,7 @@ namespace ActorSystem {
             case Some(_) => c <- false // Actor not running
             case _ => c <- false // Actor not found
           };
+          // We don't run the policy here because that's an external event and had no way of making the actor system progress.
           actorSystem(s, actors, control, policy)
         case ActorReady(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
@@ -264,7 +291,8 @@ namespace ActorSystem {
               // TODO
               ???
           };
-          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
+          let (actors3, policy2) = runPolicy(s, actors2, control, policy);
+          actorSystem(s, actors3, control, policy2)
         case ActorDone(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), behavior)) =>
@@ -273,7 +301,8 @@ namespace ActorSystem {
               // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
               ???
           };
-          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
+          let (actors3, policy2) = runPolicy(s, actors2, control, policy);
+          actorSystem(s, actors3, control, policy2)
         case ActorResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(_, mailbox), behavior)) =>
@@ -285,7 +314,8 @@ namespace ActorSystem {
               ???
           };
           // TODO: use running policy here
-          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
+          let (actors3, policy2) = runPolicy(s, actors2, control, policy);
+          actorSystem(s, actors3, control, policy2)
         case ActorNonResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(Running, mailbox), behavior)) =>
@@ -294,7 +324,8 @@ namespace ActorSystem {
               // TODO: same as for resumable crash
               ???
           };
-          actorSystem(s, runPolicy(s, actors2, control, policy), control, policy)
+          let (actors3, policy2) = runPolicy(s, actors2, control, policy);
+          actorSystem(s, actors3, control, policy2)
       }
     }
 
