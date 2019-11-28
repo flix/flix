@@ -53,14 +53,15 @@ namespace ActorSystem {
       case Started(State, ActorRef)
     }
 
-    type alias ActorMap = Map[Str, (InternalActorState, ActorBehavior)]
+    type alias ActorMap = Map[Str, (InternalActorState, ActorBehavior, Option[ActorBehavior])]
 
     ///
     /// Return the current state of the actors in the system, using the ActorState relation.
     ///
     def statesOfActors(actors: ActorMap): ActorPolicy =
       Map.foldLeftWithKey((actorName, states, actor) ->
-        match fst(actor) {
+        let (internalState, _, _) = actor;
+        match internalState {
           case NotStarted => states <+> #{ActorState(actorName, Stopped).}
           case Started(st, _) => states <+> #{ActorState(actorName, st).}
         }, #{}, actors)
@@ -79,9 +80,9 @@ namespace ActorSystem {
   def allActorsStopped(state: ActorPolicy): Bool =
     !((solve (state <+> #{
       ActorsNotStopped() :- ActorState(_, InTransition).
-        ActorsNotStopped() :- ActorState(_, Running).
-        ActorsNotStopped() :- ActorState(_, ResumablyCrashed).
-        ActorsNotStopped() :- ActorState(_, NonResumablyCrashed).
+      ActorsNotStopped() :- ActorState(_, Running).
+      ActorsNotStopped() :- ActorState(_, ResumablyCrashed).
+      ActorsNotStopped() :- ActorState(_, NonResumablyCrashed).
     })) |= ActorsNotStopped().)
 
   ///
@@ -94,9 +95,9 @@ namespace ActorSystem {
             case Done =>
                 // Notify on the control channel that the actor is done
                 control <- ActorDone(actorName)
-            case ResumableCrash(_) =>
+            case ResumableCrash(resumableBehavior, _) =>
                 // Notify that the actor has crashed
-                control <- ActorResumableCrash(actorName)
+                control <- ActorResumableCrash(actorName, resumableBehavior)
             case NonResumableCrash(_) =>
                 // Notify that the actor has crashed
                 control <- ActorNonResumableCrash(actorName)
@@ -113,7 +114,7 @@ namespace ActorSystem {
       control <- ActorReady(actorName)
     });
     // Add the actor to the map of running actors. It is now in transition.
-    Map.insert(actorName, (Started(InTransition, mailbox), behavior), actors)
+    Map.insert(actorName, (Started(InTransition, mailbox), behavior, None), actors)
   }
 
   ///
@@ -127,18 +128,18 @@ namespace ActorSystem {
     let (actors2, n) = fold Start (actors, 0) ((actorName, acc) -> {
       let (m, n) = acc;
       match Map.get(actorName, m) {
-        case Some((NotStarted, behavior)) =>
+        case Some((NotStarted, behavior, _)) =>
           // <no-state>, Start => start the actor
           // Start the actor with a new mailbox
           let mailbox = chan Message defaultMailboxCapacity();
           (startActor(m, control, actorName, behavior, mailbox), n+1)
-        case Some((Started(Stopped, mailbox), behavior)) =>
+        case Some((Started(Stopped, mailbox), behavior, _)) =>
           // Stopped, Start => start the actor (reusing the mailbox)
           (startActor(m, control, actorName, behavior, mailbox), n+1)
-        case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+        case Some((Started(ResumablyCrashed, mailbox), behavior, _)) =>
           // ResumablyCrashed, Start => restart the actor (with initial state)
           (startActor(m, control, actorName, behavior, mailbox), n+1)
-        case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+        case Some((Started(NonResumablyCrashed, mailbox), behavior, _)) =>
           // NonResumablyCrashed, Start => start the actor
           (startActor(m, control, actorName, behavior, mailbox), n+1)
         case _ =>
@@ -163,16 +164,16 @@ namespace ActorSystem {
     let (actors2, n) = fold Stop (actors, 0) ((actorName, acc) ->
       let (m, n) = acc; // m is the number of actors (really) stopped in this iteration
       match Map.get(actorName, m) {
-      case Some((Started(Running, mailbox), _)) =>
+      case Some((Started(Running, mailbox), _, _)) =>
          // Running, Stop => stop the actor
          mailbox <- Stop; // actor will terminate and will notify the actor system
          (m, n+1)
-      case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+      case Some((Started(ResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
         // ResumablyCrashed, Stop => change state to stopped
-        (Map.insert(actorName, (Started(Stopped, mailbox), behavior), m), n)
-      case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+        (Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m), n)
+      case Some((Started(NonResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
         // NonResumablyCrashed, Stop => change state to stopped
-        (Map.insert(actorName, (Started(Stopped, mailbox), behavior), m), n)
+        (Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m), n)
       case _ =>
         // Other cases are no-ops
         (m, n)
@@ -214,17 +215,17 @@ namespace ActorSystem {
     Map.foldLeftWithKey((actorName, m, action) ->
       match action {
       case ActionStart => match Map.get(actorName, m) {
-          case Some((NotStarted, behavior)) =>
+          case Some((NotStarted, behavior, _)) =>
             // Start the actor with a new mailbox
             let mailbox = chan Message defaultMailboxCapacity();
             startActor(m, control, actorName, behavior, mailbox)
-          case Some((Started(Stopped, mailbox), behavior)) =>
+          case Some((Started(Stopped, mailbox), behavior, _)) =>
             // Start the actor, reusing the mailbox
             startActor(m, control, actorName, behavior, mailbox)
-          case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+          case Some((Started(ResumablyCrashed, mailbox), behavior, _)) =>
             // Start the actor with the initial state, but reusing the mailbox
             startActor(m, control, actorName, behavior, mailbox)
-          case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+          case Some((Started(NonResumablyCrashed, mailbox), behavior, _)) =>
             // Start the actor with the initial state, reusing the mailbox
             startActor(m, control, actorName, behavior, mailbox)
           case _ =>
@@ -232,13 +233,12 @@ namespace ActorSystem {
             m
       }
       case ActionResume => match Map.get(actorName, m) {
-          case Some((Started(Stopped, mailbox), behavior)) =>
+          case Some((Started(Stopped, mailbox), behavior, _)) =>
             // Start the actor with the initial state, reusing the mailbox
             startActor(m, control, actorName, behavior, mailbox)
-          case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
-            // TODO: resume the actor (here we start from the initial state)
-            startActor(m, control, actorName, behavior, mailbox)
-          case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+          case Some((Started(ResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
+            startActor(m, control, actorName, Option.getWithDefault(resumableBehavior, behavior), mailbox)
+          case Some((Started(NonResumablyCrashed, mailbox), behavior, _)) =>
             // Start the actor with initial state
             startActor(m, control, actorName, behavior, mailbox)
           case _ =>
@@ -246,16 +246,16 @@ namespace ActorSystem {
             m
       }
       case ActionStop => match Map.get(actorName, m) {
-          case Some((Started(Running, mailbox), _)) =>
+          case Some((Started(Running, mailbox), _, _)) =>
             // Stop the actor
             mailbox <- Stop; // actor will terminate and will notify the actor system
             m
-          case Some((Started(ResumablyCrashed, mailbox), behavior)) =>
+          case Some((Started(ResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
             // Change the state of the crashed actor to stopped
-            Map.insert(actorName, (Started(Stopped, mailbox), behavior), m)
-          case Some((Started(NonResumablyCrashed, mailbox), behavior)) =>
+            Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m)
+          case Some((Started(NonResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
             // Change the state of the crashed actor to stopped
-            Map.insert(actorName, (Started(Stopped, mailbox), behavior), m)
+            Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m)
           case _ =>
             // No-op
             m
@@ -300,7 +300,7 @@ namespace ActorSystem {
           runPolicyAndRecurse(s, actors, control, PolicyStopping(c))
         case SendMessage(actorName, msg, c) =>
           match Map.get(actorName, actors) {
-            case Some((Started(Running, mailbox), _)) =>
+            case Some((Started(Running, mailbox), _, _)) =>
               mailbox <- msg;
               c <- true
             case Some(_) => c <- false // Actor not running
@@ -310,10 +310,10 @@ namespace ActorSystem {
           actorSystem(s, actors, control, policy)
         case ActorReady(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some((Started(InTransition, mailbox), behavior)) =>
+            case Some((Started(InTransition, mailbox), behavior, resumableBehavior)) =>
               // The actor has initialized and is now running
               // TODO: if all actors are running, we can move to a "running" policy
-              Map.insert(actorName, (Started(Running, mailbox), behavior), actors)
+              Map.insert(actorName, (Started(Running, mailbox), behavior, resumableBehavior), actors)
             case _ =>
               // TODO
               ???
@@ -321,17 +321,17 @@ namespace ActorSystem {
           runPolicyAndRecurse(s, actors2, control, policy)
         case ActorDone(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some((Started(Running, mailbox), behavior)) =>
-              Map.insert(actorName, (Started(Stopped, mailbox), behavior), actors)
+            case Some((Started(Running, mailbox), behavior, resumableBehavior)) =>
+              Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), actors)
             case _ =>
               // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
               ???
           };
           runPolicyAndRecurse(s, actors2, control, policy)
-        case ActorResumableCrash(actorName) =>
+        case ActorResumableCrash(actorName, resumableBehavior) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some((Started(_, mailbox), behavior)) =>
-              Map.insert(actorName, (Started(ResumablyCrashed, mailbox), behavior), actors)
+            case Some((Started(_, mailbox), behavior, _)) =>
+              Map.insert(actorName, (Started(ResumablyCrashed, mailbox), behavior, Some(resumableBehavior)), actors)
             case _ =>
               // TODO: actor should only crash if it was running before
               // TODO: what about InTransition? An actor could crash while initializing
@@ -341,8 +341,8 @@ namespace ActorSystem {
           runPolicyAndRecurse(s, actors2, control, policy)
         case ActorNonResumableCrash(actorName) =>
           let actors2 = match Map.get(actorName, actors) {
-            case Some((Started(Running, mailbox), behavior)) =>
-              Map.insert(actorName, (Started(NonResumablyCrashed, mailbox), behavior), actors)
+            case Some((Started(Running, mailbox), behavior, resumableBehavior)) =>
+              Map.insert(actorName, (Started(NonResumablyCrashed, mailbox), behavior, resumableBehavior), actors)
             case _ =>
               // TODO: same as for resumable crash
               ???
@@ -358,7 +358,7 @@ namespace ActorSystem {
       let control = chan SystemEvent 10;
       let actors = fold Actor Map#{} ((actor, m) ->
             let (actorName, behavior) = actor;
-            Map.insert(actorName, (NotStarted, behavior), m))
+            Map.insert(actorName, (NotStarted, behavior, None), m))
             (solve s.actors);
       spawn (actorSystem(s, actors, control, PolicyNotStarted));
       control <- SystemStart;

@@ -23,7 +23,7 @@ pub enum SystemEvent {
     ///
     /// @param the name of the actor.
     ///
-    case ActorResumableCrash(Str),
+    case ActorResumableCrash(Str, ActorBehavior),
 
     ///
     /// A message that represents that the actor has crashed and cannot be resumed.
