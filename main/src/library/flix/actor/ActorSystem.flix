@@ -124,7 +124,10 @@ namespace ActorSystem {
     });
     // Add the actor to the map of running actors. It is now in transition.
     { map = Map.insert(actorName, (Started(InTransition, mailbox), behavior, None), actors.map),
-      log = (actorName, Stopped, InTransition, Instant.now()) :: actors.log }
+      log = match Map.get(actorName, actors.map) {
+        case Some((Started(st, _), _, _)) => (actorName, st, InTransition, Instant.now())
+        case _ => (actorName, Stopped, InTransition, Instant.now())
+      } :: actors.log }
   }
 
   ///
@@ -202,10 +205,13 @@ namespace ActorSystem {
 
   /// If an actor policy specifies multiple actions for the same actor then the final action is computed by join (which is symmetric)
   ///
-  /// Start, Stop   => Start
-  /// Stop, Resume  => Resume
-  /// Start, Resume => Resume
-  /// x, x          => x
+  /// Start, Stop     => Start
+  /// Restart, Stop   => Restart
+  /// Restart, Start  => Restart
+  /// Stop, Resume    => Resume
+  /// Restart, Resume => Resume // TODO is this the right thing to do?
+  /// Start, Resume   => Resume
+  /// x, x            => x
   ///
 
 
@@ -213,6 +219,7 @@ namespace ActorSystem {
   enum ActorAction {
     case ActionResume,
     case ActionStart,
+    case ActionRestart,
     case ActionStop
   }
   def runRestartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): ActorMap = {
@@ -220,9 +227,11 @@ namespace ActorSystem {
     // We just accumulate for each actor, whether it should 1. Stop, 2. Start, 3. Resume, overriding any previous value. This corresponds to the increasing order of the sop/start/resume lattice.
     let m0: Map[Str, ActorAction] = Map#{};
     let policy = solve (s.restartPolicy <+> currentState);
+    // The order of the following folds are important: the later folds will take precedence over the previous ones in case multiple state changes for the same actor are requested by the policy.
     let m1 = fold Stop m0 ((actorName, m) -> Map.insert(actorName, ActionStop, m)) policy;
     let m2 = fold Start m1 ((actorName, m) -> Map.insert(actorName, ActionStart, m)) policy;
-    let m3 = fold Resume m2 ((actorName, m) -> Map.insert(actorName, ActionResume, m)) policy;
+    let m3 = fold Restart m2 ((actorName, m) -> Map.insert(actorName, ActionRestart, m)) policy;
+    let m4 = fold Resume m3 ((actorName, m) -> Map.insert(actorName, ActionResume, m)) policy;
     // Then, we just apply the action for each actor, according to the table.
     Map.foldLeftWithKey((actorName, m, action) ->
       match action {
@@ -242,6 +251,26 @@ namespace ActorSystem {
             startActor(m, control, actorName, behavior, mailbox)
           case _ =>
             // No-op
+            m
+      }
+      case ActionRestart => match Map.get(actorName, m.map) {
+          case Some((Started(Running, mailbox), _, _)) =>
+            // If the actor is running, stop it first
+            mailbox <- Stop;
+            // TODO: we have to wait for the actor to be stopped before restarting it
+            // Should we have a specific actor state "being restarted", and when we receive the stop/done message, we can start it again?
+            // TODO: same case for for InTransition?
+            m // TODO
+          case Some((Started(Stopped, mailbox), behavior, _)) =>
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(ResumablyCrashed, mailbox), behavior, _)) =>
+            // Start the actor from a fresh initial state, ignores the resumable behavior
+            startActor(m, control, actorName, behavior, mailbox)
+          case Some((Started(NonResumablyCrashed, mailbox), behavior, _)) =>
+            startActor(m, control, actorName, behavior, mailbox)
+          case _ =>
+            // No-op
+            // TODO: is that correct? This is only for the case of an actor that hasn't been started, hence "restarting" it does not really make sense
             m
       }
       case ActionResume => match Map.get(actorName, m.map) {
@@ -274,7 +303,7 @@ namespace ActorSystem {
             // No-op
             m
       }
-    }, actors, m3)
+    }, actors, m4)
   }
 
   enum Policy {

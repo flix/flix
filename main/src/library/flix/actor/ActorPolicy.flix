@@ -1,7 +1,7 @@
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Log, Now, Blocked}
+type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Restart, Log, Now, Blocked}
 
 // TODO: Could we have the start policy only using the Start predicate. And the stop policy NOT using the start predicate.
 // TODO: But we do need the join for the "restartPolicy" (which maybe we should rename to "runningPolicy")
@@ -38,6 +38,10 @@ pub rel Start(name: Str)
 /// A relation used to specify the actors that should be stopped by an actor policy.
 ///
 pub rel Stop(name: Str)
+
+///
+/// A relation used to specify the actors that should be restarted (with a fresh state) by an actor policy.
+pub rel Restart(name: Str)
 
 ///
 /// A relation used to specify the actors that should be resume (from their last known good state) by an actor policy.
