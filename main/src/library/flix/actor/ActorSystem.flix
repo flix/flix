@@ -312,11 +312,10 @@ namespace ActorSystem {
           let actors2 = match Map.get(actorName, actors) {
             case Some((Started(InTransition, mailbox), behavior, resumableBehavior)) =>
               // The actor has initialized and is now running
-              // TODO: if all actors are running, we can move to a "running" policy
               Map.insert(actorName, (Started(Running, mailbox), behavior, resumableBehavior), actors)
             case _ =>
-              // TODO
-              ???
+              // Ignore ready message if the actor is not in transition, there probably has been a race that we can safely ignore
+              ()
           };
           runPolicyAndRecurse(s, actors2, control, policy)
         case ActorDone(actorName) =>
@@ -335,7 +334,6 @@ namespace ActorSystem {
             case _ =>
               // TODO: actor should only crash if it was running before
               // TODO: what about InTransition? An actor could crash while initializing
-              // TODO: how to store resumable state?
               ???
           };
           runPolicyAndRecurse(s, actors2, control, policy)
