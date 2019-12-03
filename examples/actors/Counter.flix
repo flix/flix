@@ -17,12 +17,20 @@ namespace Counter {
     ///
     /// Returns an actor system with one counter actor and multiple worker actors.
     ///
-    pub def system(): ActorSystem = {
-            actors = Map#{
-                "counterActor" -> counterActor(0i32),
-                "worker1" -> workerActor(None),
-                "worker2" -> workerActor(None)
-            } | ActorSystem.default() }
+    /// The actor system uses default policies.
+    ///
+    pub def system(): ActorSystem =
+        let default = ActorSystem.default();
+        let actors = Map#{
+            "counterActor" -> counterActor(0i32),
+            "worker1" -> workerActor(None),
+            "worker2" -> workerActor(None)
+        };
+        let dependencies = #{
+            DependsOn("worker1", "counterActor").
+            DependsOn("worker2", "counterActor").
+        };
+        { actors = actors, startPolicy = default.startPolicy <+> dependencies | default }
 
     ///
     /// An actor that maintains an internal counter.
