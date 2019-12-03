@@ -162,6 +162,7 @@ pub def defaultRestartPolicy(): ActorPolicy = oneForOneRestartPolicy()
 ///
 pub def oneForOneRestartPolicy(): ActorPolicy = #{
     Resume(x) :- ActorState(x, ResumablyCrashed).
+    Start(x) :- ActorState(x, NonResumablyCrashed).
 }
 
 ///

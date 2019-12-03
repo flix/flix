@@ -31,6 +31,7 @@ class TestExamples extends Suites(
   new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // Actors
+  // new FlixTest("Countdown", "examples/actors/Countdown.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("Counter", "examples/actors/Counter.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("HelloWorld", "examples/actors/HelloWorld.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("PingPong", "examples/actors/PingPong.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
