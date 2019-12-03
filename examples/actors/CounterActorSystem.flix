@@ -60,6 +60,4 @@ namespace CounterActorSystem {
                 workerActor(counterActor, dir, mailbox)
             case Msg(m, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + m)
         }
-
-
 }
