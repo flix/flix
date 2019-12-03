@@ -78,7 +78,7 @@ namespace ActorSystem {
       let actorsRel = Set.foldLeft((rel, actor: Str) ->
         rel <+> #{Actor(actor).},
         #{}, Map.keysOf(s.actors));
-      statesRel <+> logRel <+> actorsRel
+      statesRel <+> logRel <+> actorsRel <+> #{ Now(Instant.now()). }
     }
 
   rel ActorsInState()

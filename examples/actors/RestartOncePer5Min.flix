@@ -9,7 +9,7 @@ namespace RestartOnce {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        <- Timer.milliseconds(50000i64); // TODO: Set this back to 100ms or whatever once the bug is fixed.
+        <- Timer.milliseconds(100i64); // TODO: Set this back to 100ms or whatever once the bug is fixed.
         ActorSystem.shutdown(sys)
 
     ///
