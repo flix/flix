@@ -2,7 +2,7 @@
 /// An actor system with a single actor that performs a countdown and then explodes.
 /// The actor system then restarts it for it to happen all over again.
 ///
-namespace Counter {
+namespace Countdown {
 
     ///
     /// The main entry point of the actor system.
@@ -10,7 +10,7 @@ namespace Counter {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        <- Timer.milliseconds(100i64);
+        <- Timer.milliseconds(50i64);
         ActorSystem.shutdown(sys)
 
     ///
