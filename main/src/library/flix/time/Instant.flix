@@ -32,7 +32,7 @@ namespace Instant {
     pub def before(x: Instant, y: Instant): Bool =
         let Instant(t1) = x;
         let Instant(t2) = y;
-        native method java.time.Instant.isBefore(t1, t2)
+        native method java.time.Instant.isBefore(t1 as ##java.time.Instant, t2 as ##java.time.Instant)
 
     ///
     /// Returns `true` if `x` is after `y`.
@@ -40,7 +40,7 @@ namespace Instant {
     pub def after(x: Instant, y: Instant): Bool =
         let Instant(t1) = x;
         let Instant(t2) = y;
-        native method java.time.Instant.isAfter(t1, t2)
+        native method java.time.Instant.isAfter(t1 as ##java.time.Instant, t2 as ##java.time.Instant)
 
     ///
     /// Returns the given instant `x` plus `d` number of nano seconds.

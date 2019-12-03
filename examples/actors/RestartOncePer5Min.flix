@@ -9,7 +9,7 @@ namespace RestartOnce {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        <- Timer.milliseconds(100000000000i64);
+        <- Timer.milliseconds(50i64);
         ActorSystem.shutdown(sys)
 
     ///
@@ -27,7 +27,7 @@ namespace RestartOnce {
             Blocked(x) :-
                 Log(x, Running, NonResumablyCrashed, timestamp),
                 Now(now),
-                if Instant.now() `Instant.after` Instant.now().
+                if Instant.now() `Instant.before` Instant.now(). // TODO
 
             Start(x) :- ActorState(x, NonResumablyCrashed), not Blocked(x).
         };
