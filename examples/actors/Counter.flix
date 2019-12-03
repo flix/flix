@@ -12,6 +12,7 @@ namespace Counter {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
+        <- Timer.milliseconds(100i64);
         ActorSystem.shutdown(sys)
 
     ///
