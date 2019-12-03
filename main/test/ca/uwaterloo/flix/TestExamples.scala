@@ -33,6 +33,7 @@ class TestExamples extends Suites(
   // Actors
   new FlixTest("Counter", "examples/actors/Counter.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("HelloWorld", "examples/actors/HelloWorld.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("PingPong", "examples/actors/PingPong.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix"),

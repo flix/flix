@@ -22,13 +22,13 @@ namespace Counter {
     pub def system(): ActorSystem = {
         let default = ActorSystem.default();
         let actors = Map#{
-            "counterActor" -> counterActor(0i32),
+            "counter" -> counterActor(0i32),
             "worker1" -> workerActor(None),
             "worker2" -> workerActor(None)
         };
         let dependencies = #{
-            DependsOn("worker1", "counterActor").
-            DependsOn("worker2", "counterActor").
+            DependsOn("worker1", "counter").
+            DependsOn("worker2", "counter").
         };
         { actors = actors, startPolicy = default.startPolicy <+> dependencies | default }
     }
@@ -68,7 +68,7 @@ namespace Counter {
     pub def workerActor(counterActor: Option[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c) =>
-              let counter = ActorDirectory.getActor(dir, "counterActor", Running);
+              let counter = ActorDirectory.getActor(dir, "counter", Running);
               // TODO: Quentin: If I uncomment these lines then the system gets stuck.
               //mailbox <- Msg("WAKEY-WAKEY", mailbox);
               //mailbox <- Msg("WAKEY-WAKEY", mailbox);

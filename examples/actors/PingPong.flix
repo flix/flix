@@ -3,48 +3,70 @@ namespace HelloWorld {
     ///
     /// The main entry point for the single actor system.
     ///
-    // TODO: Enable @test
+    @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
         ActorSystem.shutdown(sys)
 
     ///
-    /// Returns an actor system with one hello world actor.
+    /// Returns an actor system with a ping actor and a pong actor.
     ///
     pub def system(): ActorSystem = {
-            actors = #{ // TODO: adapt to use the map
-                Actor("pinger", pinger(p, 0)) :- MailboxOf("ponger", p).
-                Actor("ponger", ponger(p, 0)) :- MailboxOf("pinger", p).
-            } | ActorSystem.default() }
+        let default = ActorSystem.default();
+        let actors = Map#{
+            "ping" -> pingActor(2),
+            "pong" -> pongActor(2)
+        };
+        { actors = actors | default }
+    }
 
     ///
     /// An actor that sends ping messages.
     ///
-    pub def pinger(other: Mailbox, n: Int, m: Mailbox): ActorResult[Str] =
-        match <- m {
+    pub def pingActor(n: Int, dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+        match <- mailbox {
             case Start(c)       =>
                 c <- Ready;
-                pinger(other, n, m)
+                mailbox <- Msg("Pong", mailbox);
+                pingActor(n, dir, mailbox)
             case Stop           => Done
+            case Msg("Pong", _) if n == 0 =>
+                Console.printLine("pingActor is done.");
+                Done
             case Msg("Pong", _) =>
-                other <- Msg("Ping", m);
-                pinger(other, n + 1, m)
-            case Msg(s, _)      => NonResumableCrash("Unexpected message: " + s)
+                Console.printLine("Received Pong!");
+                match ActorDirectory.getActor(dir, "pong", Running) with {
+                    case None => pingActor(n, dir, mailbox)
+                    case Some(c) =>
+                        c <- Msg("Ping", mailbox);
+                        Console.printLine("Sent Ping!");
+                        pingActor(n - 1, dir, mailbox)
+                }
+            case Msg(msg, _)      => ResumableCrash(pingActor(n), "Unexpected message: " + msg)
         }
 
     ///
     /// An actor that sends pong messages.
     ///
-    pub def ponger(other: Mailbox, n: Int, m: Mailbox): ActorResult[Str] =
-        match <- m {
+    pub def pongActor(n: Int, dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+        match <- mailbox {
             case Start(c)       =>
                 c <- Ready;
-                ponger(other, n, m)
+                pongActor(n, dir, mailbox)
             case Stop           => Done
+            case Msg("Ping", _) if n == 0 =>
+                Console.printLine("pongActor is done.");
+                Done
             case Msg("Ping", _) =>
-                other <- Msg("Pong", m);
-                ponger(other, n + 1, m)
-            case Msg(s, _)      => NonResumableCrash("Unexpected message: " + s)
+                Console.printLine("Received Ping!");
+                match ActorDirectory.getActor(dir, "ping", Running) with {
+                    case None => pongActor(n, dir, mailbox)
+                    case Some(c) =>
+                        c <- Msg("Pong", mailbox);
+                        Console.printLine("Sent Pong!");
+                        pongActor(n - 1, dir, mailbox)
+                }
+            case Msg(msg, _)      => ResumableCrash(pingActor(n), "Unexpected message: " + msg)
         }
 
 }
