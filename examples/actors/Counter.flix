@@ -58,14 +58,22 @@ namespace Counter {
     ///
     pub def workerActor(counterActor: Option[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
-            case Start(c)           =>
+            case Start(c) =>
               let counter = ActorDirectory.getActor(dir, "counterActor", Running);
+              // TODO: Quentin: If I uncomment these lines then the system gets stuck.
+              //mailbox <- Msg("WAKEY-WAKEY", mailbox);
+              //mailbox <- Msg("WAKEY-WAKEY", mailbox);
+              //mailbox <- Msg("WAKEY-WAKEY", mailbox);
               c <- Ready();
               workerActor(counter, dir, mailbox)
-            case Stop               => Done
-            case Msg("wakeup", _)   =>
-                Option.map(c -> c <- Msg("INC", mailbox), counterActor);
-                workerActor(counterActor, dir, mailbox)
+            case Stop => Done
+            case Msg("WAKEY-WAKEY", _) =>
+                match counterActor {
+                    case None    => NonResumableCrash("Where did the counterActor go?")
+                    case Some(c) =>
+                        c <- Msg("INC", mailbox);
+                        workerActor(counterActor, dir, mailbox)
+                }
             case Msg(m, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + m)
         }
 }
