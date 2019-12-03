@@ -60,5 +60,4 @@ namespace CounterActorSystem {
             case Msg(m, _)          => ResumableCrash(workerActor, "Unexpected message: " + m)
         }
 
-
-// }
+}
