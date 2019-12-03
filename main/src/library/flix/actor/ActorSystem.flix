@@ -96,8 +96,7 @@ namespace ActorSystem {
     !((solve (state <+> #{
       ActorsNotStopped() :- ActorState(_, InTransition).
       ActorsNotStopped() :- ActorState(_, Running).
-      ActorsNotStopped() :- ActorState(_, ResumablyCrashed).
-      ActorsNotStopped() :- ActorState(_, NonResumablyCrashed).
+      // Crashed actors are considered stopped
     })) |= ActorsNotStopped().)
 
   ///
