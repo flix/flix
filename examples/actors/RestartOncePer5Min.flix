@@ -9,7 +9,7 @@ namespace RestartOnce {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        <- Timer.milliseconds(50i64);
+        <- Timer.milliseconds(50000i64); // TODO: Set this back to 100ms or whatever once the bug is fixed.
         ActorSystem.shutdown(sys)
 
     ///
@@ -23,11 +23,11 @@ namespace RestartOnce {
             "unstable" -> unstableActor(11i32)
         };
         let restartPolicy = #{
-            // Compute the actors that have non-resumably crashed more than once.
+            // Compute the actors that have non-resumably crashed in the last second.
             Blocked(x) :-
                 Log(x, Running, NonResumablyCrashed, timestamp),
-                Now(now),
-                if Instant.now() `Instant.before` Instant.now(). // TODO
+                Now(now).
+               // if timestamp `Instant.after` (Instant.minus(now, Duration.oneMinute())).
 
             Start(x) :- ActorState(x, NonResumablyCrashed), not Blocked(x).
         };
