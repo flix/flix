@@ -1,4 +1,7 @@
-namespace HelloWorld {
+///
+/// An actor system with two actors that sends pings and pongs.
+///
+namespace PingPong {
 
     ///
     /// The main entry point for the single actor system.

@@ -1,3 +1,6 @@
+///
+/// An actor system with a single actor that prints hello and goodbye.
+///
 namespace HelloWorld {
 
     ///
