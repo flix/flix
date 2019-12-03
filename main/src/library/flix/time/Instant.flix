@@ -24,7 +24,7 @@ namespace Instant {
     ///
     /// Returns the current time from the system clock.
     ///
-    pub def now(): Instant = Instant(native method java.time.Instant.now())
+    pub def now(): Instant = Instant(native method java.time.Instant.now() as ##java.time.Instant)
 
     ///
     /// Returns `true` if `x` is before `y`.
@@ -47,13 +47,13 @@ namespace Instant {
     ///
     pub def plus(x: Instant, d: Int64): Instant =
         let Instant(t) = x;
-        Instant(native method java.time.Instant.plusNanos(t, d))
+        Instant(native method java.time.Instant.plusNanos(t, d) as ##java.time.Instant)
 
     ///
     /// Returns the given instant `x` minus `d` number of nano seconds.
     ///
     pub def minus(x: Instant, d: Int64): Instant =
         let Instant(t) = x;
-        Instant(native method java.time.Instant.minusNanos(t, d))
+        Instant(native method java.time.Instant.minusNanos(t, d) as ##java.time.Instant)
 
 }
