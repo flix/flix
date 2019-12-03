@@ -12,20 +12,20 @@ namespace HelloWorld {
     /// Returns an actor system with one hello world actor.
     ///
     pub def system(): ActorSystem = {
-            actors = #{
-                Actor("helloWorld", helloWorld).
+            actors = Map#{
+                "helloWorld" -> helloWorld
             } | ActorSystem.default() }
 
     ///
     /// An actor that prints hello world and then terminates.
     ///
-    pub def helloWorld(m: Mailbox): ActorResult[Str] =
+    pub def helloWorld(dir: ActorDirectory, m: Mailbox): ActorResult[Str] =
         match <- m {
             case Start(c)       =>
                 c <- Ready;
                 Console.printLine("Hello World!");
                 Done
-                // helloWorld(m)
+                // helloWorld(dir, m)
             case Stop           =>
                 Console.printLine("Goodbye World!");
                 Done

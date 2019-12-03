@@ -17,11 +17,11 @@ namespace CounterActorSystem {
     /// Returns an actor system with one counter actor and several worker actors.
     ///
     pub def system(): ActorSystem = {
-            actors = #{
-                Actor("counterActor", counterActor(0i32)).
-                Actor("worker1", workerActor(m)) :- MailboxOf("counterActor", m).
-                Actor("worker2", workerActor(m)) :- MailboxOf("counterActor", m).
-                Actor("worker3", workerActor(m)) :- MailboxOf("counterActor", m).
+            actors = Map#{
+                "counterActor" -> counterActor(0i32),
+                "worker1" -> workerActor,
+                "worker2" -> workerActor,
+                "worker3" -> workerActor
             } | ActorSystem.default() }
 
     ///
@@ -29,29 +29,36 @@ namespace CounterActorSystem {
     ///
     /// The counter can be incremented, decrement, and its value retrieved.
     ///
-    pub def counterActor(n: Int, mailbox: Mailbox): ActorResult[Str] =
+    pub def counterActor(n: Int, dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
-            case Start(c)       => c <- Ready; counterActor(n, mailbox)
+            case Start(c)       => c <- Ready; counterActor(n, dir, mailbox)
             case Stop           => Done
-            case Msg("GET", c)  => c <- Msg("<here we should send n>", mailbox); counterActor(n, mailbox) // TODO: Need a way to send the message.
+            case Msg("GET", c)  =>
+                // TODO: Need a way to send the message.
+                c <- Msg("<here we should send n>", mailbox);
+                counterActor(n, dir, mailbox)
             case Msg("INC", _)  =>
                 if (n < 2147483647)
-                    counterActor(n + 1, mailbox)
+                    counterActor(n + 1, dir, mailbox)
                 else
                     NonResumableCrash("Counter overflowed.")
-            case Msg("DEC", _)  => counterActor(n - 1, mailbox)
+            case Msg("DEC", _)  => counterActor(n - 1, dir, mailbox)
             case Msg(m, _)      => ResumableCrash(counterActor(n), "Unexpected message: " + m)
         }
 
     ///
     /// An actor that occasionally requests the counter actor to increment its number.
     ///
-    pub def workerActor(counterActor: Mailbox, mailbox: Mailbox): ActorResult[Str] =
+    pub def workerActor(dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
-            case Start(c)           => c <- Ready(); workerActor(counterActor, mailbox)
+            case Start(c)           => c <- Ready(); workerActor(dir, mailbox)
             case Stop               => Done
-            case Msg("wakeup", _)   => counterActor <- Msg("INC", mailbox); workerActor(counterActor, mailbox)
-            case Msg(m, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + m)
+            case Msg("wakeup", _)   =>
+                // TODO: enable the following line, but first get the actor
+                // counterActor <- Msg("INC", mailbox);
+                workerActor(dir, mailbox)
+            case Msg(m, _)          => ResumableCrash(workerActor, "Unexpected message: " + m)
         }
 
-}
+
+// }

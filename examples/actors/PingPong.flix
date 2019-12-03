@@ -12,7 +12,7 @@ namespace HelloWorld {
     /// Returns an actor system with one hello world actor.
     ///
     pub def system(): ActorSystem = {
-            actors = #{
+            actors = #{ // TODO: adapt to use the map
                 Actor("pinger", pinger(p, 0)) :- MailboxOf("ponger", p).
                 Actor("ponger", ponger(p, 0)) :- MailboxOf("pinger", p).
             } | ActorSystem.default() }

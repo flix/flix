@@ -1,7 +1,7 @@
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop, Resume, Restart, Log, Now, Blocked}
+type alias ActorPolicy = #{Actor, ActorState, DependsOn, Start, Stop, Resume, Restart, Log, Now, Blocked}
 
 // TODO: Could we have the start policy only using the Start predicate. And the stop policy NOT using the start predicate.
 // TODO: But we do need the join for the "restartPolicy" (which maybe we should rename to "runningPolicy")
@@ -11,14 +11,7 @@ type alias ActorPolicy = #{Actor, ActorState, MailboxOf, DependsOn, Start, Stop,
 ///
 /// A relation that represents actors in the system.
 ///
-/// If two or more actor behaviors are attached to the same name then messages are load balanced between them.
-///
-pub rel Actor(name: Str, behavior: ActorBehavior)
-
-///
-/// A relation that maps actors to mailboxes.
-///
-pub rel MailboxOf(name: Str, mailbox: Mailbox)
+pub rel Actor(name: Str)
 
 ///
 /// A relation that represents the dependencies between actors.
@@ -126,14 +119,14 @@ pub def defaultStartPolicy(): ActorPolicy = #{
     Blocked(x) :- DependsOn(x, y), not ActorState(y, Running), not DependsOn(x, x).
 
     // Start actors that are not blocked.
-    Start(x) :- Actor(x, _), not Blocked(x).
+    Start(x) :- Actor(x), not Blocked(x).
 }
 
 ///
 /// Returns a policy that immediately starts all actors regardless of their dependencies.
 ///
 pub def immediatelyStartAllPolicy(): ActorPolicy = #{
-    Start(actor) :- Actor(actor, _).
+    Start(actor) :- Actor(actor).
 }
 
 ///
@@ -149,7 +142,7 @@ pub def defaultShutdownPolicy(): ActorPolicy = #{
     Blocked(x) :- DependsOn(x, y), ActorState(y, Running), not DependsOn(x, x).
 
     // Stop actors that are not blocked.
-    Stop(x) :- Actor(x, _), ActorState(x, Running).
+    Stop(x) :- Actor(x), ActorState(x, Running).
 }
 
 ///

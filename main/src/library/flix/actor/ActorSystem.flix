@@ -9,7 +9,7 @@
 /// @field `actors`          the actors that are running
 ///
 type alias ActorSystem = {
-    actors: ActorPolicy,
+    actors: Map[Str, ActorBehavior],
     startPolicy: ActorPolicy,
     restartPolicy: ActorPolicy,
     shutdownPolicy: ActorPolicy
@@ -31,7 +31,7 @@ namespace ActorSystem {
     /// Returns an actor system with a default configuration.
     ///
     pub def default(): ActorSystem = {
-        actors          = #{},
+        actors          = Map#{},
         startPolicy     = defaultStartPolicy(),
         shutdownPolicy  = defaultShutdownPolicy(),
         restartPolicy   = defaultRestartPolicy()
@@ -59,20 +59,26 @@ namespace ActorSystem {
   }
 
     ///
-    /// Return the current state of the actors in the system, using the ActorState relation.
+    /// Return the current state of the actors in the system, using the ActorState, Log, and Actor relations.
     ///
-    def statesOfActors(actors: ActorMap): ActorPolicy = {
-      let states2 = Map.foldLeftWithKey((actorName, states, actor) ->
+    def statesOfActors(s: ActorSystem, actors: ActorMap): ActorPolicy = {
+      // Builds the ActorState relation
+      let statesRel = Map.foldLeftWithKey((actorName, states, actor) ->
         let (internalState, _, _) = actor;
         match internalState {
           case NotStarted => states <+> #{ActorState(actorName, Stopped).}
           case Started(st, _) => states <+> #{ActorState(actorName, st).}
         }, #{}, actors.map);
-      let log2 = List.foldLeft((log, data) ->
+      // Builds the Log relation
+      let logRel = List.foldLeft((log, data) ->
         let (actorName, stateBefore, stateAfter, instant) = data;
         log <+> #{ Log(actorName, stateBefore, stateAfter, instant). },
         #{}, actors.log);
-      states2 <+> log2
+      // Builds the Actor relation
+      let actorsRel = Set.foldLeft((rel, actor: Str) ->
+        rel <+> #{Actor(actor).},
+        #{}, Map.keysOf(s.actors));
+      statesRel <+> logRel <+> actorsRel
     }
 
   rel ActorsInState()
@@ -100,7 +106,7 @@ namespace ActorSystem {
   def startActor(actors: ActorMap, control: Channel[SystemEvent], actorName: Str, behavior: ActorBehavior, mailbox: Channel[Message]): ActorMap = {
     // Create the process of the new actor
     spawn ({
-        match behavior(mailbox) with {
+        match behavior(()/* TODO: actor directory */, mailbox) with {
             case Done =>
                 // Notify on the control channel that the actor is done
                 control <- ActorDone(actorName)
@@ -136,7 +142,7 @@ namespace ActorSystem {
   /// Either there are still actors to start, and we stay in a running policy, or everything that has been started successfully started and we change to a running policy.
   ///
   def runStartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): (ActorMap, Policy) = {
-    let currentState = statesOfActors(actors);
+    let currentState = statesOfActors(s, actors);
     // n is the number of actors that were started in this iteration of the policy
     let (actors2, n) = fold Start (actors, 0) ((actorName, acc) -> {
       let (m, n) = acc;
@@ -158,7 +164,7 @@ namespace ActorSystem {
         case _ =>
           // Other cases are no-ops
           acc
-      }}) (solve (s.startPolicy <+> s.actors <+> currentState));
+      }}) (solve (s.startPolicy <+> currentState));
     if (n == 0 && !actorsInTransition(currentState)) {
       // No actor has been started and we're not waiting for actors that are "in transition", so we change to a running policy.
       (actors2, PolicyRunning)
@@ -173,7 +179,7 @@ namespace ActorSystem {
   /// Returns the updated actor map after one iteration of the policy, or None if the system should stop.
   ///
   def runShutdownPolicy(s: ActorSystem, actors: ActorMap, _control: Channel[SystemEvent], notifyChan: Channel[Unit]): Option[ActorMap] = {
-    let currentState = statesOfActors(actors);
+    let currentState = statesOfActors(s, actors);
     let (actors2, n) = fold Stop (actors, 0) ((actorName, acc) ->
       let (m, n) = acc; // m is the number of actors (really) stopped in this iteration
       match Map.get(actorName, m.map) {
@@ -192,7 +198,7 @@ namespace ActorSystem {
       case _ =>
         // Other cases are no-ops
         (m, n)
-      }) (solve (s.shutdownPolicy <+> s.actors <+> currentState));
+      }) (solve (s.shutdownPolicy <+> currentState));
     if (n == 0 && allActorsStopped(currentState)) {
       // System fully stopped
       notifyChan <- (); // Notify the requester of the shutdown
@@ -223,7 +229,7 @@ namespace ActorSystem {
     case ActionStop
   }
   def runRestartPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent]): ActorMap = {
-    let currentState = statesOfActors(actors);
+    let currentState = statesOfActors(s, actors);
     // We just accumulate for each actor, whether it should 1. Stop, 2. Start, 3. Resume, overriding any previous value. This corresponds to the increasing order of the sop/start/resume lattice.
     let m0: Map[Str, ActorAction] = Map#{};
     let policy = solve (s.restartPolicy <+> currentState);
@@ -401,11 +407,9 @@ namespace ActorSystem {
     ///
     pub def start(s: ActorSystem): RunningActorSystem = {
       let control = chan SystemEvent 10;
-      // TODO: use map instead of datalog program here
-      let actors = fold Actor Map#{} ((actor, m) ->
-            let (actorName, behavior) = actor;
-            Map.insert(actorName, (NotStarted, behavior, None), m))
-            (solve s.actors);
+      let actors = Map.foldLeftWithKey((actorName, m, behavior) ->
+        Map.insert(actorName, (NotStarted, behavior, None), m),
+        Map#{}, s.actors);
       spawn (actorSystem(s, { map = actors, log = Nil }, control, PolicyNotStarted));
       control <- SystemStart;
       RunningActorSystem(control)
