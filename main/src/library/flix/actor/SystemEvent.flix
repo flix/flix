@@ -52,5 +52,13 @@ pub enum SystemEvent {
     /// @param msg: the message to send
     /// @param c: the reply channel
     ///
-    case SendMessage(Str, Message, Channel[Bool])
+    case SendMessage(Str, Message, Channel[Bool]),
+
+    ///
+    /// A command to get the mailbox of an actor
+    ///
+    /// @param name: the name of the actor
+    /// @param state: the state of the actor
+    /// @param c: the reply channel
+    case GetActor(Str, State, Channel[Option[Mailbox]])
 }

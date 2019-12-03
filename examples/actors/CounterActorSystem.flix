@@ -1,5 +1,4 @@
 namespace CounterActorSystem {
-
     ///
     /// The main entry point for the counter actor system.
     ///
@@ -19,9 +18,9 @@ namespace CounterActorSystem {
     pub def system(): ActorSystem = {
             actors = Map#{
                 "counterActor" -> counterActor(0i32),
-                "worker1" -> workerActor,
-                "worker2" -> workerActor,
-                "worker3" -> workerActor
+                "worker1" -> workerActor(None),
+                "worker2" -> workerActor(None),
+                "worker3" -> workerActor(None)
             } | ActorSystem.default() }
 
     ///
@@ -49,16 +48,18 @@ namespace CounterActorSystem {
     ///
     /// An actor that occasionally requests the counter actor to increment its number.
     ///
-    pub def workerActor(dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+    pub def workerActor(counterActor: Option[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
-            case Start(c)           => c <- Ready(); workerActor(dir, mailbox)
+            case Start(c)           =>
+              let counter = ActorDirectory.getActor(dir, "counterActor", Running);
+              c <- Ready();
+              workerActor(counter, dir, mailbox)
             case Stop               => Done
             case Msg("wakeup", _)   =>
-                // TODO: enable the following line, but first get the actor
-                // counterActor <- Msg("INC", mailbox);
-                workerActor(dir, mailbox)
-            case Msg(m, _)          => ResumableCrash(workerActor, "Unexpected message: " + m)
+                Option.map(c -> c <- Msg("INC", mailbox), counterActor);
+                workerActor(counterActor, dir, mailbox)
+            case Msg(m, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + m)
         }
 
 
-// }
+}

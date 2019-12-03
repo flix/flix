@@ -1,7 +1,20 @@
 ///
 /// An actor directory, used to retrieve mailboxes of actors in the system
 ///
-type alias ActorDirectory = Unit // TODO: define and move to a different file
+type alias ActorDirectory = RunningActorSystem
+
+// TODO: do we need to decouple that from ActorSystem? They could just be merged.
+namespace ActorDirectory {
+  ///
+  /// Returns an actor mailbox (blocking function)
+  ///
+  pub def getActor(s: ActorDirectory, name: Str, state: State): Option[Mailbox] = {
+    let RunningActorSystem(sys) = s;
+    let c = chan Option[Mailbox] 0;
+    sys <- GetActor(name, state, c);
+    <- c
+  }
+}
 
 ///
 /// An actor behavior is a function from a mailbox to an actor result.

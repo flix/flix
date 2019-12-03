@@ -106,7 +106,7 @@ namespace ActorSystem {
   def startActor(actors: ActorMap, control: Channel[SystemEvent], actorName: Str, behavior: ActorBehavior, mailbox: Channel[Message]): ActorMap = {
     // Create the process of the new actor
     spawn ({
-        match behavior(()/* TODO: actor directory */, mailbox) with {
+        match behavior(RunningActorSystem(control), mailbox) with {
             case Done =>
                 // Notify on the control channel that the actor is done
                 control <- ActorDone(actorName)
@@ -357,6 +357,18 @@ namespace ActorSystem {
           };
           // We don't run the policy here because that's an external event and had no way of making the actor system progress.
           actorSystem(s, actors, control, policy)
+        case GetActor(actorName, state, c) =>
+          let mb = Option.flatMap(act -> match act {
+            case (Started(st, mailbox), _, _) =>
+              if (st == state) {
+                Some(mailbox)
+              } else {
+                None
+              }
+            case _ => None
+          }, Map.get(actorName, actors.map));
+          c <- mb;
+          actorSystem(s, actors, control, policy)
         case ActorReady(actorName) =>
           let actors2 = match Map.get(actorName, actors.map) {
             case Some((Started(InTransition, mailbox), behavior, resumableBehavior)) =>
@@ -416,7 +428,7 @@ namespace ActorSystem {
     }
 
     ///
-    /// Returns the reference of an actor in an actor system, given its name.
+    /// Sends a message to an actor, given its name
     ///
     pub def send(s: RunningActorSystem, actorName: Str, msg: Message): Bool = {
         let RunningActorSystem(sys) = s;
