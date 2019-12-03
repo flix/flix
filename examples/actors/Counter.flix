@@ -19,7 +19,7 @@ namespace Counter {
     ///
     /// The actor system uses default policies.
     ///
-    pub def system(): ActorSystem =
+    pub def system(): ActorSystem = {
         let default = ActorSystem.default();
         let actors = Map#{
             "counterActor" -> counterActor(0i32),
@@ -31,6 +31,7 @@ namespace Counter {
             DependsOn("worker2", "counterActor").
         };
         { actors = actors, startPolicy = default.startPolicy <+> dependencies | default }
+    }
 
     ///
     /// An actor that maintains an internal counter.
@@ -58,7 +59,7 @@ namespace Counter {
                     ResumableCrash(counterActor(n), "Counter about to become negative.")
                 else
                     counterActor(n - 1, dir, mailbox)
-            case Msg(m, _)      => ResumableCrash(counterActor(n), "Unexpected message: " + m)
+            case Msg(msg, _)      => ResumableCrash(counterActor(n), "Unexpected message: " + msg)
         }
 
     ///
@@ -82,6 +83,6 @@ namespace Counter {
                         c <- Msg("INC", mailbox);
                         workerActor(counterActor, dir, mailbox)
                 }
-            case Msg(m, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + m)
+            case Msg(msg, _)          => ResumableCrash(workerActor(counterActor), "Unexpected message: " + msg)
         }
 }
