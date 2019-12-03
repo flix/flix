@@ -104,7 +104,7 @@ pub rel ActorState(name: Str, state: State)
 ///
 /// Auxiliary relation: An actor is blocked if one or more of its (transitive) dependencies is not yet running.
 ///
-rel Blocked(actor: Str)
+rel Blocked(name: Str) // TODO: Rename to wait?
 
 ///
 /// Returns the default start policy.
