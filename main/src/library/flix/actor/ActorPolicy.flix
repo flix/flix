@@ -44,7 +44,7 @@ pub rel Resume(name: Str)
 ///
 /// A relation that tracks past actor transitions.
 ///
-pub rel Log(name: Str, last: State, next: State, timestamp: Instant)
+pub rel Log(name: Str, last: State, next: State, timestamp: Instant) // TODO: Maybe it would be useful if we extend this with a "nanoseconds since event"  for easy filtering.
 
 ///
 /// A relation that holds the current time.
