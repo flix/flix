@@ -1,26 +1,27 @@
-namespace CounterActorSystem {
+///
+/// A simple actor system that consists of:
+///
+/// - 1x counterActor that maintains an internal counter.
+/// - 2x workerActors that increment the counter.
+///
+namespace Counter {
+
     ///
-    /// The main entry point for the counter actor system.
+    /// The main entry point of the actor system.
     ///
-    // TODO: Enable @test
+    @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        let replyChan = chan Message 10;
-        match <- replyChan {
-            case Msg(msg, _) => Console.printLine(msg)
-            case _ => Console.printLine("unexpected message")
-        };
         ActorSystem.shutdown(sys)
 
     ///
-    /// Returns an actor system with one counter actor and several worker actors.
+    /// Returns an actor system with one counter actor and multiple worker actors.
     ///
     pub def system(): ActorSystem = {
             actors = Map#{
                 "counterActor" -> counterActor(0i32),
                 "worker1" -> workerActor(None),
-                "worker2" -> workerActor(None),
-                "worker3" -> workerActor(None)
+                "worker2" -> workerActor(None)
             } | ActorSystem.default() }
 
     ///
@@ -28,25 +29,32 @@ namespace CounterActorSystem {
     ///
     /// The counter can be incremented, decrement, and its value retrieved.
     ///
+    /// The actor non-resumably crashes if the counter overflows.
+    /// The actor resumably crashes if the counter becomes negative.
+    ///
+    ///
     pub def counterActor(n: Int, dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c)       => c <- Ready; counterActor(n, dir, mailbox)
             case Stop           => Done
             case Msg("GET", c)  =>
-                // TODO: Need a way to send the message.
-                c <- Msg("<here we should send n>", mailbox);
+                c <- Msg("<here we should send n>", mailbox); // TODO: Here we should reply with the internal number.
                 counterActor(n, dir, mailbox)
             case Msg("INC", _)  =>
                 if (n < 2147483647)
                     counterActor(n + 1, dir, mailbox)
                 else
                     NonResumableCrash("Counter overflowed.")
-            case Msg("DEC", _)  => counterActor(n - 1, dir, mailbox)
+            case Msg("DEC", _)  =>
+                if (n == 0)
+                    ResumableCrash(counterActor(n), "Counter about to become negative.")
+                else
+                    counterActor(n - 1, dir, mailbox)
             case Msg(m, _)      => ResumableCrash(counterActor(n), "Unexpected message: " + m)
         }
 
     ///
-    /// An actor that occasionally requests the counter actor to increment its number.
+    /// An actor that requests the counter actor to increment its number.
     ///
     pub def workerActor(counterActor: Option[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
