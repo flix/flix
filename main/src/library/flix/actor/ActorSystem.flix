@@ -5,8 +5,6 @@
 /// @field `startPolicy`     that describes the policy for how actors are started.
 /// @field `restartPolicy`   that describes the policy for how actors are restarted if they crash.
 /// @field `shutdownPolicy`  that describes the policy for how actors are stopped.
-/// @field `control`         the runtime control channel of this actor system
-/// @field `actors`          the actors that are running
 ///
 type alias ActorSystem = {
     actors: Map[Str, ActorBehavior],
@@ -55,7 +53,8 @@ namespace ActorSystem {
 
   type alias ActorMap = {
     map: Map[Str, (InternalActorState, ActorBehavior, Option[ActorBehavior])],
-    log: List[(Str, State, State, Instant)]
+    log: List[(Str, State, State, Instant)],
+    restarting: List[Str]
   }
 
     ///
@@ -123,7 +122,8 @@ namespace ActorSystem {
     mailbox <- Start(readyChan);
     spawn ({
       // Wait (on a different process) for the actor to fully initialize
-      <- readyChan; // TODO: what if the actor crashes before being ready? Should we use a timeout?
+      // TODO: what if the actor crashes before being ready? Should we use a timeout? For now we assume it can't crash.
+      <- readyChan;
       // Then notify the actor system
       control <- ActorReady(actorName)
     });
@@ -132,7 +132,8 @@ namespace ActorSystem {
       log = match Map.get(actorName, actors.map) {
         case Some((Started(st, _), _, _)) => (actorName, st, InTransition, Instant.now())
         case _ => (actorName, Stopped, InTransition, Instant.now())
-      } :: actors.log }
+      } :: actors.log
+    | actors }
   }
 
   ///
@@ -189,11 +190,13 @@ namespace ActorSystem {
       case Some((Started(ResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
         // ResumablyCrashed, Stop => change state to stopped
         ({ map = Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m.map),
-           log = (actorName, ResumablyCrashed, Stopped, Instant.now()) :: m.log }, n)
+           log = (actorName, ResumablyCrashed, Stopped, Instant.now()) :: m.log
+         | m}, n)
       case Some((Started(NonResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
         // NonResumablyCrashed, Stop => change state to stopped
         ({ map = Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m.map),
-           log = (actorName, NonResumablyCrashed, Stopped, Instant.now()) :: m.log }, n)
+           log = (actorName, NonResumablyCrashed, Stopped, Instant.now()) :: m.log
+         | m}, n)
       case _ =>
         // Other cases are no-ops
         (m, n)
@@ -214,13 +217,11 @@ namespace ActorSystem {
   /// Restart, Stop   => Restart
   /// Restart, Start  => Restart
   /// Stop, Resume    => Resume
-  /// Restart, Resume => Resume // TODO is this the right thing to do?
+  /// Restart, Resume => Resume
   /// Start, Resume   => Resume
   /// x, x            => x
   ///
 
-
-  // TODO: this is only used by runRestartPolicy, is there a better way to do it?
   enum ActorAction {
     case ActionResume,
     case ActionStart,
@@ -262,10 +263,8 @@ namespace ActorSystem {
           case Some((Started(Running, mailbox), _, _)) =>
             // If the actor is running, stop it first
             mailbox <- Stop;
-            // TODO: we have to wait for the actor to be stopped before restarting it
-            // Should we have a specific actor state "being restarted", and when we receive the stop/done message, we can start it again?
-            // TODO: same case for for InTransition?
-            m // TODO
+            // Remember that the actor has to be restarted after it successfully stopped
+            { restarting = actorName :: m.restarting | m }
           case Some((Started(Stopped, mailbox), behavior, _)) =>
             startActor(m, control, actorName, behavior, mailbox)
           case Some((Started(ResumablyCrashed, mailbox), behavior, _)) =>
@@ -299,11 +298,13 @@ namespace ActorSystem {
           case Some((Started(ResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
             // Change the state of the crashed actor to stopped
             { map = Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m.map),
-              log = (actorName, ResumablyCrashed, Stopped, Instant.now()) :: m.log }
+              log = (actorName, ResumablyCrashed, Stopped, Instant.now()) :: m.log
+            | m }
           case Some((Started(NonResumablyCrashed, mailbox), behavior, resumableBehavior)) =>
             // Change the state of the crashed actor to stopped
             { map = Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), m.map),
-              log = (actorName, NonResumablyCrashed, Stopped, Instant.now()) :: m.log }
+              log = (actorName, NonResumablyCrashed, Stopped, Instant.now()) :: m.log
+            | m }
           case _ =>
             // No-op
             m
@@ -319,16 +320,43 @@ namespace ActorSystem {
   }
 
   ///
+  /// Restart all actors that are "restarting" (have been send a Stop signal) and have successfully stopped or crashed.
+  ///
+  def startRestartingActors(actors: ActorMap, control: Channel[SystemEvent]): ActorMap = {
+    let (actors2, restarting) = List.foldLeft((acc, actorName) ->
+      let (m, notRestarted) = acc;
+      match Map.get(actorName, m.map) {
+        case Some((Started(Stopped, mailbox), behavior, _)) =>
+          // The actor successfully stopped, start it again
+          (startActor(m, control, actorName, behavior, mailbox), notRestarted)
+        case Some((Started(ResumablyCrashed, mailbox), behavior, _)) =>
+          // The actor crashed (probably when stopping), start it again
+          (startActor(m, control, actorName, behavior, mailbox), notRestarted)
+        case Some((Started(NonResumablyCrashed, mailbox), behavior, _)) =>
+          // The actor crashed (probably when stopping), start it again
+          (startActor(m, control, actorName, behavior, mailbox), notRestarted)
+        case _ =>
+          // The actor is stil running, don't start it now.
+          (m, actorName :: notRestarted)
+      }, (actors, Nil), actors.restarting);
+    // Only keep actors that have not been restarted as "restarting" actors
+    { restarting = restarting | actors2 }
+  }
+
+  ///
   /// Run the current policy (@param `policy`). Returns the updated actor map, as well as the next state of the policy.
   /// The current policy can only change when we are in a PolicyStarting policy, and all actors have started.
   ///
-  def runPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): Option[(ActorMap, Policy)] =
-    match policy {
+  def runPolicy(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): Option[(ActorMap, Policy)] = {
+    let r = match policy {
       case PolicyNotStarted => Some((actors, policy))
       case PolicyStarting => Some(runStartPolicy(s, actors, control))
       case PolicyRunning => Some((runRestartPolicy(s, actors, control), PolicyRunning))
       case PolicyStopping(c) => Option.map((a) -> (a, PolicyStopping(c)), runShutdownPolicy(s, actors, control, c))
-    }
+    };
+    // Restart the actors that have to be restarted
+    Option.map(res -> (startRestartingActors(fst(res), control), snd(res)), r)
+  }
 
   def runPolicyAndRecurse(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): Unit =
     match runPolicy(s, actors, control, policy) {
@@ -373,7 +401,8 @@ namespace ActorSystem {
             case Some((Started(InTransition, mailbox), behavior, resumableBehavior)) =>
               // The actor has initialized and is now running
               { map = Map.insert(actorName, (Started(Running, mailbox), behavior, resumableBehavior), actors.map),
-                log = (actorName, InTransition, Running, Instant.now()) :: actors.log }
+                log = (actorName, InTransition, Running, Instant.now()) :: actors.log
+              | actors }
             case _ =>
               // Ignore ready message if the actor is not in transition, there probably has been a race that we can safely ignore
               actors
@@ -383,7 +412,8 @@ namespace ActorSystem {
           let actors2 = match Map.get(actorName, actors.map) {
             case Some((Started(Running, mailbox), behavior, resumableBehavior)) =>
               { map = Map.insert(actorName, (Started(Stopped, mailbox), behavior, resumableBehavior), actors.map),
-                log = (actorName, Running, Stopped, Instant.now()) :: actors.log }
+                log = (actorName, Running, Stopped, Instant.now()) :: actors.log
+              | actors }
             case _ =>
               // TODO: When do these other case happen? If the actor is done, it should not be in any other state than started.
               ???
@@ -393,7 +423,8 @@ namespace ActorSystem {
           let actors2 = match Map.get(actorName, actors.map) {
             case Some((Started(st, mailbox), behavior, _)) =>
               { map = Map.insert(actorName, (Started(ResumablyCrashed, mailbox), behavior, Some(resumableBehavior)), actors.map),
-                log = (actorName, st, ResumablyCrashed, Instant.now()) :: actors.log }
+                log = (actorName, st, ResumablyCrashed, Instant.now()) :: actors.log
+              | actors }
             case _ =>
               // TODO: actor should only crash if it was running before
               // TODO: what about InTransition? An actor could crash while initializing
@@ -404,7 +435,8 @@ namespace ActorSystem {
           let actors2 = match Map.get(actorName, actors.map) {
             case Some((Started(st, mailbox), behavior, resumableBehavior)) =>
               { map = Map.insert(actorName, (Started(NonResumablyCrashed, mailbox), behavior, resumableBehavior), actors.map),
-                log = (actorName, st, NonResumablyCrashed, Instant.now()) :: actors.log }
+                log = (actorName, st, NonResumablyCrashed, Instant.now()) :: actors.log
+              | actors }
             case _ =>
               // TODO: same as for resumable crash
               ???
@@ -424,7 +456,7 @@ namespace ActorSystem {
       let actors = Map.foldLeftWithKey((actorName, m, behavior) ->
         Map.insert(actorName, (NotStarted, behavior, None), m),
         Map#{}, s.actors);
-      spawn (actorSystem(s, { map = actors, log = Nil }, control, PolicyNotStarted));
+      spawn (actorSystem(s, { map = actors, log = Nil, restarting = Nil }, control, PolicyNotStarted));
       control <- SystemStart;
       RunningActorSystem(control)
     }
