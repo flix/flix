@@ -35,7 +35,9 @@ class TestExamples extends Suites(
   new FlixTest("Counter", "examples/actors/Counter.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("HelloWorld", "examples/actors/HelloWorld.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("PingPong", "examples/actors/PingPong.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("RestartAndStop", "examples/actors/RestartOnce.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("RestartOnce", "examples/actors/RestartOnce.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("RestartOncePer5Min", "examples/actors/RestartOncePer5Min.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix"),
