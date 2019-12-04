@@ -139,10 +139,10 @@ pub def defaultShutdownPolicy(): ActorPolicy = #{
     // Compute the actors that are waiting for one or more if its dependencies to be stopped.
     // Note1: An actor is *not* blocked if it depends on itself. This allows actors in cyclic dependencies to be stopped.
     // Note2: An actor that no-one depends on is trivially *never* blocked.
-    Blocked(x) :- DependsOn(x, y), ActorState(y, Running), not DependsOn(x, x).
+    Blocked(x) :- DependsOn(y, x), ActorState(y, Running), not DependsOn(x, x).
 
     // Stop actors that are not blocked.
-    Stop(x) :- Actor(x), ActorState(x, Running).
+    Stop(x) :- Actor(x), ActorState(x, Running), not Blocked(x).
 }
 
 ///

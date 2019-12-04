@@ -38,6 +38,7 @@ class TestExamples extends Suites(
   new FlixTest("RestartAndStop", "examples/actors/RestartOnce.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("RestartOnce", "examples/actors/RestartOnce.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("RestartOncePer5Min", "examples/actors/RestartOncePer5Min.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
+  new FlixTest("StartupAndShutdown", "examples/actors/StartupAndShutdown.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix"),
