@@ -1,9 +1,9 @@
 ///
 /// An actor system with a master-worker model.
 ///
-/// If a worker crashes once it is restarted. If it crashes again, the parent and all children are restarted.
+/// If a worker actor crashes *once* it is restarted. If it crashes again, everything is stopped.
 ///
-namespace RestartOnce {
+namespace RestartAndStop {
 
     ///
     /// The main entry point of the actor system.
@@ -11,7 +11,7 @@ namespace RestartOnce {
     @test
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
-        <- Timer.milliseconds(1000i64);
+        <- Timer.milliseconds(500i64);
         ActorSystem.shutdown(sys)
 
     ///
@@ -22,13 +22,13 @@ namespace RestartOnce {
     pub def system(): ActorSystem = {
         let default = ActorSystem.default();
         let actors = Map#{
-            "master" -> masterActor,
+            "master" -> masterActor(Nil),
             "worker1" -> workerActor,
             "worker2" -> workerActor,
             "worker3" -> workerActor
         };
         let restartPolicy = #{
-            // Compute the actors that have non-resumably crashed in the last second.
+            // Compute the actors that have non-resumably crashed more than once.
             Blocked(x) :-
                 Log(x, Running, NonResumablyCrashed, timestamp1),
                 Log(x, Running, NonResumablyCrashed, timestamp2),
@@ -36,6 +36,11 @@ namespace RestartOnce {
 
             Start(x) :- ActorState(x, NonResumablyCrashed), not Blocked(x).
 
+            // TODO: Magnus It is becoming painful to have to reuse "Blocked".
+            // TODO: Would be better to have a name "Workers".
+            Stop(x) :- Actor(x), Blocked("worker1").
+            Stop(x) :- Actor(x), Blocked("worker2").
+            Stop(x) :- Actor(x), Blocked("worker3").
 
         };
         { actors = actors, restartPolicy = restartPolicy | default }
@@ -44,48 +49,54 @@ namespace RestartOnce {
     ///
     /// A master actor that communicates with its workers.
     ///
-    pub def masterActor(dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+    pub def masterActor(workers: List[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c) =>
-                Console.printLine("Master Ready...");
+                Console.printLine("[Master] Ready");
                 mailbox <- Msg("GO", mailbox);
-                mailbox <- Msg("GO", mailbox);
-                mailbox <- Msg("GO", mailbox);
-                mailbox <- Msg("GO", mailbox);
-                mailbox <- Msg("GO", mailbox);
-                c <- Ready;
-                masterActor(dir, mailbox)
-            case Stop => Done
-            case Msg("GO", _) =>
-                let _ = {
+                let workers = Option.getWithDefault({
                     let flatMap = Option.flatMap;
                     let* worker1 = ActorDirectory.getActor(dir, "worker1", Running);
                     let* worker2 = ActorDirectory.getActor(dir, "worker2", Running);
                     let* worker3 = ActorDirectory.getActor(dir, "worker3", Running);
-                    worker1 <- Msg("WORK", mailbox);
-                    worker2 <- Msg("KABOOM", mailbox);
-                    worker3 <- Msg("WORK", mailbox);
-                    None
-                };
-                masterActor(dir, mailbox)
-            case Msg(msg, _)    => ResumableCrash(masterActor, "Unexpected message: " + msg)
+                    Some(worker1 :: worker2 :: worker3 :: Nil)
+                    }, Nil);
+                c <- Ready;
+                masterActor(workers, dir, mailbox)
+            case Stop =>
+                Console.printLine("[Master] Stopped.");
+                Done
+            case Msg("GO", _) =>
+                workers |> List.mapWithIndex((worker, index) -> {
+                    if (index == 0) {
+                        worker <- Msg("KABOOM", mailbox)
+                    } else {
+                        worker <- Msg("WORK", mailbox)
+                    }
+                });
+                <- Timer.milliseconds(50i64);
+                mailbox <- Msg("GO", mailbox);
+                masterActor(workers, dir, mailbox)
+            case Msg(msg, _)    => ResumableCrash(masterActor(workers), "Unexpected message: " + msg)
         }
 
     ///
-    /// An worker actor that occasionally explodes.
+    /// An worker actor that can work or explode.
     ///
     pub def workerActor(dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c) =>
-                Console.printLine("Worker Ready...");
+                Console.printLine("[Worker] Ready.");
                 c <- Ready;
                 workerActor(dir, mailbox)
-            case Stop => Done
+            case Stop =>
+                Console.printLine("[Worker] Stopped.");
+                Done
             case Msg("WORK", _) =>
-                Console.printLine("Working!");
+                Console.printLine("[Worker] Working.");
                 workerActor(dir, mailbox)
             case Msg("KABOOM", _) =>
-                Console.printLine("Kaboom!");
+                Console.printLine("[Worker] Kaboom!");
                 NonResumableCrash("WHAM!")
             case Msg(msg, _)    => ResumableCrash(workerActor, "Unexpected message: " + msg)
         }
