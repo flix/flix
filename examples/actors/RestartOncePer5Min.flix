@@ -20,7 +20,7 @@ namespace RestartOnce {
     pub def system(): ActorSystem = {
         let default = ActorSystem.default();
         let actors = Map#{
-            "unstable" -> unstableActor(11i32)
+            "unstable" -> unstableActor
         };
         let restartPolicy = #{
             // Compute the actors that have non-resumably crashed in the last second.
@@ -35,20 +35,20 @@ namespace RestartOnce {
     }
 
     ///
-    /// An actor that performs a countdown and then explodes.
+    /// An actor that explodes.
     ///
-    pub def unstableActor(n: Int, dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+    pub def unstableActor(dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c) =>
                 Console.printLine("Ready...");
                 c <- Ready;
                 mailbox <- Msg("KABOOM", mailbox);
-                unstableActor(n, dir, mailbox)
+                unstableActor(dir, mailbox)
             case Stop => Done
             case Msg("KABOOM", _) =>
                 Console.printLine("Kaboom!");
                 NonResumableCrash("WHAM!")
-            case Msg(msg, _)    => ResumableCrash(unstableActor(n), "Unexpected message: " + msg)
+            case Msg(msg, _)    => ResumableCrash(unstableActor, "Unexpected message: " + msg)
         }
 
 }
