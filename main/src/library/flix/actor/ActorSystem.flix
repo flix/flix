@@ -339,8 +339,8 @@ namespace ActorSystem {
   ///
   /// The main loop of the actor system, handling messages over the control channel
   ///
-  def actorSystem(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): Unit = {
-      match <- control {
+  def actorSystem(s: ActorSystem, actors: ActorMap, control: Channel[SystemEvent], policy: Policy): Unit = select {
+      case event <- control => match event {
         case SystemStart =>
           assert!(policy == PolicyNotStarted); // Otherwise, the actor system has been started more than once.
           runPolicyAndRecurse(s, actors, control, PolicyStarting)
@@ -411,6 +411,9 @@ namespace ActorSystem {
           };
           runPolicyAndRecurse(s, actors2, control, policy)
       }
+      case _ <- Timer.seconds(1i64) =>
+        // Run the policy every second if nothing else happened
+        runPolicyAndRecurse(s, actors, control, policy)
     }
 
     ///

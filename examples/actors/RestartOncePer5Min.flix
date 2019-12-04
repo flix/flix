@@ -26,8 +26,8 @@ namespace RestartOnce {
             // Compute the actors that have non-resumably crashed in the last second.
             Blocked(x) :-
                 Log(x, Running, NonResumablyCrashed, timestamp),
-                Now(now).
-               // if timestamp `Instant.after` (Instant.minus(now, Duration.oneMinute())).
+                Now(now),
+                if timestamp `Instant.after` (Instant.minus(now, Duration.oneSecond())).
 
             Start(x) :- ActorState(x, NonResumablyCrashed), not Blocked(x).
         };
