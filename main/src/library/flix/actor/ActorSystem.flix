@@ -472,8 +472,8 @@ namespace ActorSystem {
       Some ({
         actors = Map.unionWith((v1, _) -> v1 /* should never be called */, s1.actors, s2.actors),
         startPolicy = s1.startPolicy <+> s2.startPolicy,
-        restartPolicy = s1.startPolicy <+> s2.startPolicy,
-        shutdownPolicy = s1.startPolicy <+> s2.startPolicy
+        restartPolicy = s1.restartPolicy <+> s2.restartPolicy,
+        shutdownPolicy = s1.shutdownPolicy <+> s2.shutdownPolicy
       })
     } else {
       // There are some names shared so we can't join the systems

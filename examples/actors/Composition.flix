@@ -15,7 +15,6 @@ namespace ActorSystemComposition {
           case Some(s) =>
             let sys = ActorSystem.start(s);
             <- Timer.milliseconds(2000i64);
-            // TODO: this composition does not shutdown correctly. The state after shutdown has been called is: "counter" -> Running, "worker1" -> Running, "worker2" -> Running, "countdown" -> NonResumablyCrashed, yet no Stop fact is given by the shutdown policy
             ActorSystem.shutdown(sys)
           case None => ()
         }
