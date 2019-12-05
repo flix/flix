@@ -462,6 +462,25 @@ namespace ActorSystem {
     }
 
     ///
+    /// Composes two actor systems into a single one, if they can be joined.
+    /// Names of actors in both systems have to be distinct.
+    /// Policies are joined, which might not be what you want. In that case, it is a good idea to redefine the policies that have to be, after composing the systems.
+    ///
+  pub def compose(s1: ActorSystem, s2: ActorSystem): Option[ActorSystem] =
+    if (Map.isEmpty(Map.intersection(s1.actors, s2.actors))) {
+      // No shared names, we can join
+      Some ({
+        actors = Map.unionWith((v1, _) -> v1 /* should never be called */, s1.actors, s2.actors),
+        startPolicy = s1.startPolicy <+> s2.startPolicy,
+        restartPolicy = s1.startPolicy <+> s2.startPolicy,
+        shutdownPolicy = s1.startPolicy <+> s2.startPolicy
+      })
+    } else {
+      // There are some names shared so we can't join the systems
+      None
+    }
+
+    ///
     /// Sends a message to an actor, given its name
     ///
     pub def send(s: RunningActorSystem, actorName: Str, msg: Message): Bool = {
