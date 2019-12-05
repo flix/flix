@@ -70,7 +70,7 @@ namespace PingPong {
                         Console.printLine("Sent Pong!");
                         pongActor(n - 1, dir, mailbox)
                 }
-            case Msg(msg, _)      => ResumableCrash(pingActor(n), "Unexpected message: " + msg)
+            case Msg(msg, _)      => ResumableCrash(pongActor(n), "Unexpected message: " + msg)
         }
 
 }
