@@ -27,7 +27,7 @@ namespace PingPong {
         let default = ActorSystem.default();
         let actors = Map#{
             "ping" -> pingActor(5),
-            "pongMaster" -> loadBalancer("pong1" :: "pong2" :: "pong3" :: Nil, Nil),
+            "pongMaster" -> loadBalancer("pong1" :: "pong2" :: "pong3" :: Nil),
             "pong1" -> pongActor,
             "pong2" -> pongActor,
             "pong3" -> pongActor
@@ -90,27 +90,33 @@ namespace PingPong {
             case Msg(msg, _)      => ResumableCrash(pongActor, "Unexpected message: " + msg)
         }
 
-    pub def loadBalancer(actorNames: List[Str], actors: List[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+    pub def loadBalancer(actorNames: List[Str], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c) =>
-                let actors2 = List.foldLeft((acc, name) ->
+                let actors = List.foldLeft((acc, name) ->
                   match ActorDirectory.getActor(dir, name, Running) {
                       case Some(mb) => mb :: acc
                       case None => acc
                   }, Nil, actorNames);
                 c <- Ready;
-                if (List.isEmpty(actors2)) {
+                if (List.isEmpty(actors)) {
                     NonResumableCrash("Where are my workers?")
                 } else {
-                    loadBalancer(actorNames, actors2, dir, mailbox)
+                    loadBalancerInitialized(actors, dir, mailbox)
                 }
+            case Stop => Done
+            case Msg(_, _) => NonResumableCrash("I haven't been initialized properly!")
+        }
+    pub def loadBalancerInitialized(actors: List[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
+        match <- mailbox {
+            case Start(_) => NonResumableCrash("Wrong initialization")
             case Stop => Done
             case Msg(m, c) =>
                 match actors {
                     case Nil => NonResumableCrash("Where are my workers?")
                     case worker :: _ =>
                         worker <- Msg(m, c);
-                        loadBalancer(List.rotateLeft(1, actorNames), List.rotateLeft(1, actors), dir, mailbox)
+                        loadBalancerInitialized(List.rotateLeft(1, actors), dir, mailbox)
                 }
         }
 }
