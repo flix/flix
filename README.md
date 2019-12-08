@@ -4,12 +4,9 @@
     title="The Flix Programming Language">
 </p>
 
-**Flix** is a statically typed functional- and logic programming language inspired by Scala, OCaml, F#, Haskell, and Datalog.
-The syntax of Flix resembles Scala and Datalog. 
-The type system supports local type inference and is based on Hindley-Milner. 
-Flix runs on the Java Virtual Machine and compiles directly to JVM bytecode.
+**Flix** is a statically typed functional, imperative, and logic programming language.
 
-See the [official Flix website](https://flix.dev/) for more information about Flix. 
+We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix. 
 
 [![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)
