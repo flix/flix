@@ -39,7 +39,8 @@ public final class Options {
      * Returns the number of threads to use for the fixpoint computation.
      */
     public int getThreads() {
-        return threads;
+        // TODO: Multi-threading is disabled for now, pending a rewrite of the solver.
+        return 1;
     }
 
     /**
