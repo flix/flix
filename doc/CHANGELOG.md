@@ -2,6 +2,10 @@
 
 HEAD:
 
+Version 0.9.1:
+
+- Fixed several bugs. 
+
 Version 0.9.0:
 
 - Added support for opaque types.
