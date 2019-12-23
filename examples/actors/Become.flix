@@ -10,12 +10,12 @@ namespace RestartParent {
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
         <- Timer.milliseconds(50i64);
-        ActorSystem.send(sys, "greetingActor", Msg("HELO", Channel.new()));
-        ActorSystem.send(sys, "greetingActor", Msg("HELO", Channel.new()));
-        ActorSystem.send(sys, "greetingActor", Msg("HELO", Channel.new()));
-        ActorSystem.send(sys, "greetingActor", Msg("HELO", Channel.new()));
-        ActorSystem.send(sys, "greetingActor", Msg("HELO", Channel.new()));
-        ActorSystem.send(sys, "greetingActor", Msg("HELO", Channel.new()));
+        ActorDirectory.send(sys, "greetingActor", Msg("HELO", Channel.new()));
+        ActorDirectory.send(sys, "greetingActor", Msg("HELO", Channel.new()));
+        ActorDirectory.send(sys, "greetingActor", Msg("HELO", Channel.new()));
+        ActorDirectory.send(sys, "greetingActor", Msg("HELO", Channel.new()));
+        ActorDirectory.send(sys, "greetingActor", Msg("HELO", Channel.new()));
+        ActorDirectory.send(sys, "greetingActor", Msg("HELO", Channel.new()));
         <- Timer.milliseconds(50i64);
         ActorSystem.shutdown(sys)
 
