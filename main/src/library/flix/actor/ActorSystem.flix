@@ -441,16 +441,6 @@ namespace ActorSystem {
     }
 
     ///
-    /// Sends a message to an actor, given its name
-    ///
-    pub def send(s: RunningActorSystem, actorName: Str, msg: Message): Bool = {
-        let RunningActorSystem(sys) = s;
-        let c = chan Bool 0;
-        sys <- SendMessage(actorName, msg, c);
-        <- c
-    }
-
-    ///
     /// Initiates a shutdown of the given actor system `s` and waits for its orderly shutdown.
     ///
   pub def shutdown(s: RunningActorSystem): Unit = {
