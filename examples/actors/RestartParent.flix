@@ -10,7 +10,7 @@ namespace RestartParent {
     pub def main(): Unit =
         let sys = ActorSystem.start(system());
         <- Timer.milliseconds(50i64);
-        ActorSystem.send(sys, "worker2", Msg("OHNO", Channel.new()));
+        ActorDirectory.send(sys, "worker2", Msg("OHNO", Channel.new()));
         <- Timer.milliseconds(50i64);
         ActorSystem.shutdown(sys)
 
