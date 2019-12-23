@@ -52,9 +52,14 @@ namespace ActorSystem {
     }
 
   type alias ActorMap = {
+    // The actors running
     map: Map[Str, (InternalActorState, ActorBehavior, Option[ActorBehavior])],
+    // The log of all events that happened
     log: List[(Str, State, State, Instant)],
-    restarting: List[Str]
+    // The actors that are currently restarting
+    restarting: List[Str],
+    // Actors that have been dynamically created, with their parent and category
+    dynamicActors: List[(Str, Str, Str)]
   }
 
     ///
@@ -74,10 +79,17 @@ namespace ActorSystem {
         log <+> #{ Log(actorName, stateBefore, stateAfter, instant). },
         #{}, actors.log);
       // Builds the Actor relation
-      let actorsRel = Set.foldLeft((rel, actor: Str) ->
-        rel <+> #{Actor(actor).},
+      let actorsRel = Set.foldLeft((rel, actor: Str) -> {
+        rel <+> #{Actor(actor).} },
         #{}, Map.keysOf(s.actors));
-      statesRel <+> logRel <+> actorsRel <+> #{ Now(Instant.now()). }
+      // Builds the Created and Category relations, and fills the Actor relation with dynamic actors
+      let createdRel = List.foldLeft((rel, dyn) ->
+        let (name, parent, category) = dyn;
+        rel <+> #{ Actor(name). Created(parent, name). Category(name, category). },
+        #{}, actors.dynamicActors);
+      // Add the rule for the Sibling relation
+      let sibling = #{Sibling(x, y) :- Actor(parent), Created(parent, x), Created(parent, y).};
+      statesRel <+> logRel <+> actorsRel <+> createdRel <+> sibling <+> #{ Clock(Instant.now()). }
     }
 
   rel ActorsNotStopped()
@@ -344,18 +356,21 @@ namespace ActorSystem {
           };
           // We don't run the policy here because that's an external event and had no way of making the actor system progress.
           actorSystem(s, actors, control, policy)
-        case GetActor(actorName, state, c) =>
+        case GetActor(actorName, c) =>
           let mb = Option.flatMap(act -> match act {
             case (Started(st, mailbox), _, _) =>
-              if (st == state) {
-                Some(mailbox)
-              } else {
-                None
-              }
+              Some(mailbox)
             case _ => None
           }, Map.get(actorName, actors.map));
           c <- mb;
           actorSystem(s, actors, control, policy)
+        case CreateActor(parent, beh, category, replyChan) =>
+          let mailbox = chan Message defaultMailboxCapacity();
+          let actorName = category + (native method java.time.Instant.toString(native method java.time.Instant.now()));
+          let actors2 = startActor(actors, control, actorName, beh, mailbox);
+          let actors3 = { dynamicActors = (actorName, parent, category) :: actors2.dynamicActors | actors2 };
+          replyChan <- mailbox;
+          runPolicyAndRecurse(s, actors3, control, policy)
         case ActorReady(actorName) =>
           let actors2 = match Map.get(actorName, actors.map) {
             case Some((Started(InTransition, mailbox), behavior, resumableBehavior)) =>
@@ -416,7 +431,7 @@ namespace ActorSystem {
       let actors = Map.foldLeftWithKey((actorName, m, behavior) ->
         Map.insert(actorName, (NotStarted, behavior, None), m),
         Map#{}, s.actors);
-      spawn (actorSystem(s, { map = actors, log = Nil, restarting = Nil }, control, PolicyNotStarted));
+      spawn (actorSystem(s, { map = actors, log = Nil, restarting = Nil, dynamicActors = Nil }, control, PolicyNotStarted));
       control <- SystemStart;
       RunningActorSystem(control)
     }

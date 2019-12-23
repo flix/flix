@@ -58,7 +58,15 @@ pub enum SystemEvent {
     /// A command to get the mailbox of an actor
     ///
     /// @param name: the name of the actor
-    /// @param state: the state of the actor
     /// @param c: the reply channel
-    case GetActor(Str, State, Channel[Option[Mailbox]])
+    case GetActor(Str, Channel[Option[Mailbox]]),
+
+    ///
+    /// A command to dynamically create a new actor
+    /// @param parent: the name of the actor that is creating another actor
+    /// @param beh: the behavior of the created actor
+    /// @param category: the category of the created actor
+    /// @param c: the reply channel
+    ///
+    case CreateActor(Str, ActorBehavior, Str, Channel[Mailbox])
 }

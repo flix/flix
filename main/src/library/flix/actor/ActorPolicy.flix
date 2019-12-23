@@ -1,7 +1,7 @@
 ///
 /// A type alias for the row type of an actor policy.
 ///
-type alias ActorPolicy = #{Actor, ActorState, DependsOn, Start, Stop, Resume, Restart, Log, Now, Blocked}
+type alias ActorPolicy = #{Actor, ActorState, DependsOn, Start, Stop, Resume, Restart, Log, Clock, Blocked, Sibling, Created, Category}
 
 // TODO: Could we have the start policy only using the Start predicate. And the stop policy NOT using the start predicate.
 // TODO: But we do need the join for the "restartPolicy" (which maybe we should rename to "runningPolicy")
@@ -12,6 +12,21 @@ type alias ActorPolicy = #{Actor, ActorState, DependsOn, Start, Stop, Resume, Re
 /// A relation that represents actors in the system.
 ///
 pub rel Actor(name: Str)
+
+///
+/// A relation that relates two actors with the same parent
+///
+pub rel Sibling(name1: Str, name2: Str)
+
+///
+/// A relation that represents the parent-child relationship between dynamic actors
+///
+pub rel Created(parent: Str, child: Str)
+
+///
+/// A relation to categorize actors.
+///
+pub rel Category(name: Str, category: Str)
 
 ///
 /// A relation that represents the dependencies between actors.
@@ -49,7 +64,7 @@ pub rel Log(name: Str, last: State, next: State, timestamp: Instant) // TODO: Ma
 ///
 /// A relation that holds the current time.
 ///
-pub rel Now(timestamp: Instant)
+pub rel Clock(timestamp: Instant)
 
 ///
 /// If an actor policy specifies multiple actions for the same actor then the final action is computed by join:
@@ -168,8 +183,9 @@ pub def oneForOneRestartPolicy(): ActorPolicy = #{
 ///
 /// Returns a restart policy that restarts an actor along with its siblings when it crashes.
 ///
-pub def oneForAllRestartPolicy(): ActorPolicy = #{
-    // TODO: Magnus: Implement this. Should it be based on depends on or some other relation?
+pub def oneForAllRestartPolicy(): ActorPolicy = oneForOneRestartPolicy() <+> #{
+    Start(x) :- Sibling(x, y), ActorState(y, ResumablyCrashed).
+    Start(x) :- Sibling(x, y), ActorState(y, NonResumablyCrashed).
 }
 
 // TODO: Magnus: Implement more policies.
