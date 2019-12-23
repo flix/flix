@@ -110,7 +110,7 @@ namespace ActorSystemComposition {
     pub def workerActor(counterActor: Option[Mailbox], dir: ActorDirectory, mailbox: Mailbox): ActorResult[Str] =
         match <- mailbox {
             case Start(c) =>
-              let counter = ActorDirectory.getActor(dir, "counter", Running);
+              let counter = ActorDirectory.getActor(dir, "counter");
               mailbox <- Msg("WAKEY-WAKEY", mailbox);
               mailbox <- Msg("WAKEY-WAKEY", mailbox);
               mailbox <- Msg("WAKEY-WAKEY", mailbox);

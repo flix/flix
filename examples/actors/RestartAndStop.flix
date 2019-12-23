@@ -56,9 +56,9 @@ namespace RestartAndStop {
                 mailbox <- Msg("GO", mailbox);
                 let workers = Option.getWithDefault({
                     let flatMap = Option.flatMap;
-                    let* worker1 = ActorDirectory.getActor(dir, "worker1", Running);
-                    let* worker2 = ActorDirectory.getActor(dir, "worker2", Running);
-                    let* worker3 = ActorDirectory.getActor(dir, "worker3", Running);
+                    let* worker1 = ActorDirectory.getActor(dir, "worker1");
+                    let* worker2 = ActorDirectory.getActor(dir, "worker2");
+                    let* worker3 = ActorDirectory.getActor(dir, "worker3");
                     Some(worker1 :: worker2 :: worker3 :: Nil)
                     }, Nil);
                 c <- Ready;

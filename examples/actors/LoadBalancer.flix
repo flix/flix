@@ -59,7 +59,7 @@ namespace PingPong {
                 Done
             case Msg("Pong", c) =>
                 Console.printLine("Received Pong!");
-                match ActorDirectory.getActor(dir, "pongMaster", Running) with {
+                match ActorDirectory.getActor(dir, "pongMaster") with {
                     case None => pingActor(n, dir, mailbox)
                     case Some(mb) =>
                         mb <- Msg("Ping", c);
@@ -80,7 +80,7 @@ namespace PingPong {
             case Stop           => Done
             case Msg("Ping", c) =>
                 Console.printLine("Received Ping!");
-                match ActorDirectory.getActor(dir, "ping", Running) with {
+                match ActorDirectory.getActor(dir, "ping") with {
                     case None => pongActor(dir, mailbox)
                     case Some(mb) =>
                         mb <- Msg("Pong", c);
@@ -94,7 +94,7 @@ namespace PingPong {
         match <- mailbox {
             case Start(c) =>
                 let actors = List.foldLeft((acc, name) ->
-                  match ActorDirectory.getActor(dir, name, Running) {
+                  match ActorDirectory.getActor(dir, name) {
                       case Some(mb) => mb :: acc
                       case None => acc
                   }, Nil, actorNames);
