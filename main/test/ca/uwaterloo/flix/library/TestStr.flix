@@ -55,4 +55,4 @@ def trim06(): Bool = "" == String.trim("  ")
 /////////////////////////////////////////////////////////////////////////////
 @test
 def lineSeparator01(): Bool =
-    assertNot! ("" == String.lineSeparator())
+    assertNot!("" == String.lineSeparator())
