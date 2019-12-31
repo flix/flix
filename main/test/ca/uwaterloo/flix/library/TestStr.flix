@@ -55,4 +55,10 @@ def trim06(): Bool = "" == String.trim("  ")
 /////////////////////////////////////////////////////////////////////////////
 @test
 def lineSeparator01(): Bool =
-    assertNot!("" == String.lineSeparator())
+    let newline = String.lineSeparator();
+    assert!(Char.isWhiteSpace(String.charAt(0, newline)))
+
+@test
+def lineSeparator02(): Bool =
+    let newline = String.lineSeparator();
+    assert!(String.length(newline) == 1 || String.length(newline) == 2)

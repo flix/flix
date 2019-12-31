@@ -299,6 +299,14 @@ def appendLine02(): Bool =
     let s1 = "A" + String.lineSeparator() + "B";
     StringBuilder.toString(sb) `assertEq!` s1
 
+@test
+def appendLine03(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendLine(sb, "A");
+    StringBuilder.appendLine(sb, "B");
+    let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
+    StringBuilder.toString(sb) `assertEq!` s1
+
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
@@ -335,5 +343,4 @@ def length05(): Bool =
     StringBuilder.appendStr(sb, "World");
     StringBuilder.appendChar(sb, '!');
     StringBuilder.length(sb) `assertEq!` 12
-
 
