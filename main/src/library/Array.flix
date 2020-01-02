@@ -88,6 +88,25 @@ namespace Array {
         }
 
     ///
+    /// Apply the effectful function `f` to all the elements in the array `a`.
+    ///
+    pub def iter(f: a -> Unit, a: Array[a]): Unit =
+        let len = length(a);
+        if (len < 1) () else iterHelper(f, a, len, 0)
+
+    ///
+    /// Helper for `iter`.
+    ///
+    def iterHelper(f: a -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
+        if (i >= len)
+            ()
+        else {
+            f(a[i]);
+            iterHelper(f, a, len, i + 1)
+        }
+
+
+    ///
     /// Returns an array of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns `Nil` if `b >= e`.
@@ -99,7 +118,6 @@ namespace Array {
             let f = x -> x + b;
             init(f, e-b)
         }
-
 
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
@@ -137,7 +155,9 @@ namespace Array {
     /// Returns the array of characters `a` as a string.
     ///
     pub def toString(a: Array[Char]) : Str =
-        foldLeft((acc, c) -> String.concat(acc, Char.toString(c)), "", a)
+        let sb = StringBuilder.new();
+        iter(c -> StringBuilder.appendChar(sb,c), a);
+        StringBuilder.toString(sb)
 
     ///
     /// Returns the result of applying `f` to every element in `a`.

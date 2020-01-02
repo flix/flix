@@ -96,6 +96,41 @@ def init05(): Bool =
     Array.length(a) == 50
 
 /////////////////////////////////////////////////////////////////////////////
+// iter                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def iter01(): Bool =
+    let a = []: Array[Int32];
+    let sb = StringBuilder.new();
+    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iter(fn, a);
+    StringBuilder.toString(sb) == ""
+
+@test
+def iter02(): Bool =
+    let a = [0];
+    let sb = StringBuilder.new();
+    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iter(fn, a);
+    StringBuilder.toString(sb) == "F"
+
+@test
+def iter03(): Bool =
+    let a = [1];
+    let sb = StringBuilder.new();
+    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iter(fn, a);
+    StringBuilder.toString(sb) == "T"
+
+@test
+def iter04(): Bool =
+    let a = [0,1];
+    let sb = StringBuilder.new();
+    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iter(fn, a);
+    StringBuilder.toString(sb) == "FT"
+
+/////////////////////////////////////////////////////////////////////////////
 // range                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
