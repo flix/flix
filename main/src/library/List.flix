@@ -797,7 +797,17 @@ namespace List {
     ///
     pub def toMap(xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
-
+    ///
+    /// Returns the list `xs` as an array.
+    ///
+    pub def toArray(xs: List[a]) : Array[a] = match head(xs) {
+        case None => []
+        case Some(x) =>
+            let a = Array.new(x, length(xs));
+            let f = (i,b) -> { a[i] = b; i + 1 };
+            foldLeft(f, 0, xs);
+            a
+        }
 
 
 
