@@ -1711,4 +1711,27 @@ def toMap03(): Bool = assert!(List.toMap((1, true) :: (2, false) :: Nil) == Map#
 @test
 def toMap04(): Bool = assert!(List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 -> true})
 
+/////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toArray01(): Bool =
+    let a: Array[Int32] = [];
+    Array.toList(a) == Nil
+
+@test
+def toArray02(): Bool =
+    let a = [1];
+    Array.toList(a) == 1 :: Nil
+
+@test
+def toArray03(): Bool =
+    let a = [1,2];
+    Array.toList(a) == 1 :: 2 :: Nil
+
+@test
+def toArray04(): Bool =
+    let a =[1,2,3];
+    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+
 }
