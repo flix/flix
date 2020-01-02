@@ -20,12 +20,12 @@ import java.lang.StringBuilder;
 import java.math.BigInteger;
 
 /**
- * Wrap Java's StringBuilder, provide a small, monomorphic API.
+ * A wrapper class for StringBuilder that provides concrete, non-overloaded methods.
  *
- * Note - Java's StringBuilder is imperative, appending elements
- * mutates the original StringBuilder.
+ * Note - StringBuilder is imperative, appending elements mutates the
+ * original StringBuilder.
  */
-public class MonoStringBuilder {
+public class StringBuilderWrapper {
     private StringBuilder sb = new StringBuilder();
 
     // Convert to a String

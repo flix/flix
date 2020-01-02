@@ -29,7 +29,7 @@ def append01(): Bool =
     let sb1 = StringBuilder.new();
     let sb2 = StringBuilder.new();
     StringBuilder.append(sb1, sb2);
-    StringBuilder.toString(sb1) `assertEq!` ""
+    StringBuilder.toString(sb1) == ""
 
 @test 
 def append02(): Bool = 
@@ -37,7 +37,7 @@ def append02(): Bool =
     let sb2 = StringBuilder.new();
     StringBuilder.appendString(sb1, "Hello");
     StringBuilder.append(sb1, sb2);
-    StringBuilder.toString(sb1) `assertEq!` "Hello"
+    StringBuilder.toString(sb1) == "Hello"
 
 @test 
 def append03(): Bool = 
@@ -45,7 +45,7 @@ def append03(): Bool =
     let sb2 = StringBuilder.new();
     StringBuilder.appendString(sb2, "World!");
     StringBuilder.append(sb1, sb2);
-    StringBuilder.toString(sb1) `assertEq!` "World!"
+    StringBuilder.toString(sb1) == "World!"
 
 @test 
 def append04(): Bool = 
@@ -54,32 +54,7 @@ def append04(): Bool =
     StringBuilder.appendString(sb1, "Hello");
     StringBuilder.appendString(sb2, " World!");
     StringBuilder.append(sb1, sb2);
-    StringBuilder.toString(sb1) `assertEq!` "Hello World!"
-
-/////////////////////////////////////////////////////////////////////////////
-// appendStr                                                            //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def appendStr01(): Bool = 
-    let sb = StringBuilder.new();
-    StringBuilder.appendStr(sb, "hello");
-    StringBuilder.toString(sb) `assertEq!` "hello"
-
-@test
-def appendStr02(): Bool = 
-    let sb = StringBuilder.new();
-    StringBuilder.appendStr(sb, "hello");
-    StringBuilder.appendStr(sb, "!");
-    StringBuilder.toString(sb) `assertEq!` "hello!"
-
-@test
-def appendStr03(): Bool = 
-    let sb = StringBuilder.new();
-    StringBuilder.appendStr(sb, "hello");
-    StringBuilder.appendStr(sb, " ");
-    StringBuilder.appendStr(sb, "world!");
-    StringBuilder.toString(sb) `assertEq!` "hello world!"
-
+    StringBuilder.toString(sb1) == "Hello World!"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendString                                                            //
@@ -88,14 +63,14 @@ def appendStr03(): Bool =
 def appendString01(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendString(sb, "hello");
-    StringBuilder.toString(sb) `assertEq!` "hello"
+    StringBuilder.toString(sb) == "hello"
 
 @test
 def appendString02(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendString(sb, "hello");
     StringBuilder.appendString(sb, "!");
-    StringBuilder.toString(sb) `assertEq!` "hello!"
+    StringBuilder.toString(sb) == "hello!"
 
 @test
 def appendString03(): Bool = 
@@ -103,7 +78,7 @@ def appendString03(): Bool =
     StringBuilder.appendString(sb, "hello");
     StringBuilder.appendString(sb, " ");
     StringBuilder.appendString(sb, "world!");
-    StringBuilder.toString(sb) `assertEq!` "hello world!"
+    StringBuilder.toString(sb) == "hello world!"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendChar                                                              //
@@ -112,14 +87,14 @@ def appendString03(): Bool =
 def appendChar01(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendChar(sb, 'A');
-    StringBuilder.toString(sb) `assertEq!` "A"
+    StringBuilder.toString(sb) == "A"
 
 @test
 def appendChar02(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendChar(sb, 'A');
     StringBuilder.appendChar(sb, 'B');
-    StringBuilder.toString(sb) `assertEq!` "AB"
+    StringBuilder.toString(sb) == "AB"
 
 @test
 def appendChar03(): Bool = 
@@ -127,7 +102,7 @@ def appendChar03(): Bool =
     StringBuilder.appendChar(sb, 'A');
     StringBuilder.appendChar(sb, 'B');
     StringBuilder.appendChar(sb, 'C');
-    StringBuilder.toString(sb) `assertEq!` "ABC"
+    StringBuilder.toString(sb) == "ABC"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendInt8                                                              //
@@ -136,31 +111,31 @@ def appendChar03(): Bool =
 def appendInt801(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt8(sb, 0i8);
-    StringBuilder.toString(sb) `assertEq!` "0"
+    StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt802(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt8(sb, 1i8);
-    StringBuilder.toString(sb) `assertEq!` "1"
+    StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt803(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt8(sb, -1i8);
-    StringBuilder.toString(sb) `assertEq!` "-1"
+    StringBuilder.toString(sb) == "-1"
 
 @test
 def appendInt804(): Bool =
     let sb = StringBuilder.new();
     StringBuilder.appendInt8(sb, 127i8);
-    StringBuilder.toString(sb) `assertEq!` "127"
+    StringBuilder.toString(sb) == "127"
 
 @test
 def appendInt805(): Bool =
     let sb = StringBuilder.new();
     StringBuilder.appendInt8(sb, -127i8);
-    StringBuilder.toString(sb) `assertEq!` "-127"
+    StringBuilder.toString(sb) == "-127"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendInt16                                                             //
@@ -169,19 +144,19 @@ def appendInt805(): Bool =
 def appendInt1601(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt16(sb, 0i16);
-    StringBuilder.toString(sb) `assertEq!` "0"
+    StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt1602(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt16(sb, 1i16);
-    StringBuilder.toString(sb) `assertEq!` "1"
+    StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt1603(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt16(sb, -1i16);
-    StringBuilder.toString(sb) `assertEq!` "-1"
+    StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendInt32                                                             //
@@ -190,19 +165,19 @@ def appendInt1603(): Bool =
 def appendInt3201(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt32(sb, 0);
-    StringBuilder.toString(sb) `assertEq!` "0"
+    StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt3202(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt32(sb, 1);
-    StringBuilder.toString(sb) `assertEq!` "1"
+    StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt3203(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt32(sb, -1);
-    StringBuilder.toString(sb) `assertEq!` "-1"
+    StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendInt64                                                             //
@@ -211,19 +186,19 @@ def appendInt3203(): Bool =
 def appendInt6401(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt64(sb, 0i64);
-    StringBuilder.toString(sb) `assertEq!` "0"
+    StringBuilder.toString(sb) == "0"
 
 @test
 def appendInt6402(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt64(sb, 1i64);
-    StringBuilder.toString(sb) `assertEq!` "1"
+    StringBuilder.toString(sb) == "1"
 
 @test
 def appendInt6403(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendInt64(sb, -1i64);
-    StringBuilder.toString(sb) `assertEq!` "-1"
+    StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendBigInt                                                            //
@@ -232,19 +207,19 @@ def appendInt6403(): Bool =
 def appendBigInt01(): Bool =
     let sb = StringBuilder.new();
     StringBuilder.appendBigInt(sb, 0ii);
-    StringBuilder.toString(sb) `assertEq!` "0"
+    StringBuilder.toString(sb) == "0"
 
 @test
 def appendBigInt02(): Bool =
     let sb = StringBuilder.new();
     StringBuilder.appendBigInt(sb, 1ii);
-    StringBuilder.toString(sb) `assertEq!` "1"
+    StringBuilder.toString(sb) == "1"
 
 @test
 def appendBigInt03(): Bool =
     let sb = StringBuilder.new();
     StringBuilder.appendBigInt(sb, -1ii);
-    StringBuilder.toString(sb) `assertEq!` "-1"
+    StringBuilder.toString(sb) == "-1"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendFloat32                                                           //
@@ -253,7 +228,25 @@ def appendBigInt03(): Bool =
 def appendFloat3201(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendFloat32(sb, 0.0f32);
-    StringBuilder.toString(sb) `assertEq!` "0.0"
+    StringBuilder.toString(sb) == "0.0"
+
+@test
+def appendFloat3202(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendFloat32(sb, Float32.nan());
+    StringBuilder.toString(sb) == "NaN"
+
+@test
+def appendFloat3203(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendFloat32(sb, Float32.positiveInfinity());
+    StringBuilder.toString(sb) == "Infinity"
+
+@test
+def appendFloat3204(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendFloat32(sb, Float32.negativeInfinity());
+    StringBuilder.toString(sb) == "-Infinity"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendFloat64                                                           //
@@ -262,7 +255,25 @@ def appendFloat3201(): Bool =
 def appendFloat6401(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendFloat64(sb, 0.0f64);
-    StringBuilder.toString(sb) `assertEq!` "0.0"
+    StringBuilder.toString(sb) == "0.0"
+
+@test
+def appendFloat6402(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendFloat64(sb, Float64.nan());
+    StringBuilder.toString(sb) == "NaN"
+
+@test
+def appendFloat6403(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendFloat64(sb, Float64.positiveInfinity());
+    StringBuilder.toString(sb) == "Infinity"
+
+@test
+def appendFloat6404(): Bool =
+    let sb = StringBuilder.new();
+    StringBuilder.appendFloat64(sb, Float64.negativeInfinity());
+    StringBuilder.toString(sb) == "-Infinity"
 
 /////////////////////////////////////////////////////////////////////////////
 // appendLineSeparator                                                     //
@@ -271,7 +282,7 @@ def appendFloat6401(): Bool =
 def appendLineSeparator01(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendLineSeparator(sb);
-    StringBuilder.toString(sb) `assertEq!` String.lineSeparator()
+    StringBuilder.toString(sb) == String.lineSeparator()
 
 @test
 def appendLineSeparator02(): Bool =
@@ -280,7 +291,7 @@ def appendLineSeparator02(): Bool =
     StringBuilder.appendLineSeparator(sb);
     StringBuilder.appendChar(sb, 'B');
     let s1 = "A" + String.lineSeparator() + "B";
-    StringBuilder.toString(sb) `assertEq!` s1
+    StringBuilder.toString(sb) == s1
 
 /////////////////////////////////////////////////////////////////////////////
 // appendLine                                                              //
@@ -289,7 +300,7 @@ def appendLineSeparator02(): Bool =
 def appendLine01(): Bool =
     let sb = StringBuilder.new();
     StringBuilder.appendLine(sb, "");
-    StringBuilder.toString(sb) `assertEq!` String.lineSeparator()
+    StringBuilder.toString(sb) == String.lineSeparator()
 
 @test
 def appendLine02(): Bool =
@@ -297,7 +308,7 @@ def appendLine02(): Bool =
     StringBuilder.appendLine(sb, "A");
     StringBuilder.appendChar(sb, 'B');
     let s1 = "A" + String.lineSeparator() + "B";
-    StringBuilder.toString(sb) `assertEq!` s1
+    StringBuilder.toString(sb) == s1
 
 @test
 def appendLine03(): Bool =
@@ -305,7 +316,7 @@ def appendLine03(): Bool =
     StringBuilder.appendLine(sb, "A");
     StringBuilder.appendLine(sb, "B");
     let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
-    StringBuilder.toString(sb) `assertEq!` s1
+    StringBuilder.toString(sb) == s1
 
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
@@ -313,34 +324,33 @@ def appendLine03(): Bool =
 @test
 def length01(): Bool = 
     let sb = StringBuilder.new();
-    StringBuilder.length(sb) `assertEq!` 0
+    StringBuilder.length(sb) == 0
 
 @test
 def length02(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendChar(sb, 'A');
-    StringBuilder.length(sb) `assertEq!` 1
+    StringBuilder.length(sb) == 1
 
 @test
 def length03(): Bool = 
     let sb = StringBuilder.new();
     StringBuilder.appendChar(sb, 'A');
     StringBuilder.appendChar(sb, 'B');
-    StringBuilder.length(sb) `assertEq!` 2
+    StringBuilder.length(sb) == 2
 
 @test
 def length04(): Bool = 
     let sb = StringBuilder.new();
-    StringBuilder.appendStr(sb, "A");
-    StringBuilder.appendStr(sb, "B");
-    StringBuilder.length(sb) `assertEq!` 2
+    StringBuilder.appendString(sb, "A");
+    StringBuilder.appendString(sb, "B");
+    StringBuilder.length(sb) == 2
 
 @test
 def length05(): Bool = 
     let sb = StringBuilder.new();
-    StringBuilder.appendStr(sb, "Hello");
+    StringBuilder.appendString(sb, "Hello");
     StringBuilder.appendChar(sb, ' ');
-    StringBuilder.appendStr(sb, "World");
+    StringBuilder.appendString(sb, "World");
     StringBuilder.appendChar(sb, '!');
-    StringBuilder.length(sb) `assertEq!` 12
-
+    StringBuilder.length(sb) == 12
