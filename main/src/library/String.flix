@@ -71,4 +71,10 @@ namespace String {
     ///
     pub def trim(s: Str): Str = native method java.lang.String.trim(s) as Str
 
+    ///
+    /// Get the system line separator.
+    ///
+    pub def lineSeparator() : Str =
+        native method java.lang.System.lineSeparator() as Str
+
 }
