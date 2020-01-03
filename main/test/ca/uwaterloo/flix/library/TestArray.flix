@@ -67,7 +67,6 @@ def testToList02(): Bool = Array.toList([1]) == 1 :: Nil
 @test
 def testToList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
 
-
 /////////////////////////////////////////////////////////////////////////////
 // sameElements                                                            //
 /////////////////////////////////////////////////////////////////////////////
@@ -101,6 +100,17 @@ def sameElements05(): Bool =
     let b = [0]: Array[Int32];
     Array.sameElements(a,b) == false
 
+@test
+def sameElements06(): Bool =
+    let a = [1,2]: Array[Int32];
+    let b = [1,2]: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements07(): Bool =
+    let a = [1,2]: Array[Int32];
+    let b = [2,1]: Array[Int32];
+    Array.sameElements(a,b) == false
 
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //
@@ -108,22 +118,22 @@ def sameElements05(): Bool =
 @test
 def init01(): Bool =
     let a = Array.init(x -> x, 0);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def init02(): Bool =
     let a = Array.init(x -> x, -1);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def init03(): Bool =
     let a = Array.init(x -> x, 1);
-    Array.toList(a) == 0 :: Nil
+    Array.sameElements(a, [0])
 
 @test
 def init04(): Bool =
     let a = Array.init(x -> x, 2);
-    Array.toList(a) == 0 :: 1 :: Nil
+    Array.sameElements(a, [0,1])
 
 @test
 def init05(): Bool =
@@ -171,32 +181,32 @@ def iter04(): Bool =
 @test
 def range01(): Bool =
     let a = Array.range(1, 0);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def range02(): Bool =
     let a = Array.range(1, 1);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def range03(): Bool =
     let a = Array.range(1, 2);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def range04(): Bool =
     let a = Array.range(1, 3);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def range05(): Bool =
     let a = Array.range(1, 4);
-    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 @test
 def range06(): Bool =
     let a = Array.range(-1, 3);
-    Array.toList(a) == (-1) :: 0 :: 1 :: 2 :: Nil
+    Array.sameElements(a, [-1,0,1,2])
 
 /////////////////////////////////////////////////////////////////////////////
 // append                                                                  //
@@ -204,42 +214,42 @@ def range06(): Bool =
 @test
 def append01(): Bool =
     let a = Array.append([]: Array[Int32], []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def append02(): Bool =
     let a = Array.append([]: Array[Int32], [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def append03(): Bool =
     let a = Array.append([]: Array[Int32], [1,2]);
-    Array.toList(a)  == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def append04(): Bool =
     let a = Array.append([1], []: Array[Int32]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def append05(): Bool =
     let a = Array.append([1,2], []: Array[Int32]);
-    Array.toList(a)  == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def append06(): Bool =
     let a = Array.append([1], [2]);
-    Array.toList(a)  == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def append07(): Bool =
     let a = Array.append([1,2], [3]);
-    Array.toList(a)  == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 @test
 def append08(): Bool =
     let a = Array.append([1], [2,3]);
-    Array.toList(a)  == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
@@ -247,53 +257,53 @@ def append08(): Bool =
 @test
 def flatten01(): Bool =
     let a = Array.flatten([]: Array[Array[Int32]]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatten02(): Bool =
     let a = Array.flatten([[]]: Array[Array[Int32]]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatten03(): Bool =
     let a = Array.flatten([[1]]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def flatten04(): Bool =
     let a= Array.flatten([[1,2]]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def flatten05(): Bool =
     let a = Array.flatten([[],[]]: Array[Array[Int32]]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatten06(): Bool =
     let a = Array.flatten([[1],[]]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def flatten07(): Bool =
     let a = Array.flatten([[],[1]]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def flatten08(): Bool =
     let a = Array.flatten([[1],[2]]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def flatten09(): Bool =
     let a = Array.flatten([[1,2],[3,4,5]]);
-    Array.toList(a) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    Array.sameElements(a, [1,2,3,4,5])
 
 
 @test
 def flatten10(): Bool =
     let a = Array.flatten([[1],[2,3],[4]]);
-    Array.toList(a) == 1 :: 2 :: 3 :: 4 :: Nil
+    Array.sameElements(a, [1,2,3,4])
 
 /////////////////////////////////////////////////////////////////////////////
 // toString                                                                //
@@ -319,70 +329,70 @@ def toString03(): Bool =
 @test
 def map01(): Bool =
     let a = Array.map(i -> i > 2, []);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Bool])
 
 @test
 def map02(): Bool =
     let a = Array.map(i -> i > 2, [1]);
-    Array.toList(a) == false :: Nil
+    Array.sameElements(a, [false])
 
 @test
 def map03(): Bool =
     let a = Array.map(i -> i > 2, [3]);
-    Array.toList(a) == true :: Nil
+    Array.sameElements(a, [true])
 
 @test
 def map04(): Bool =
     let a = Array.map(i -> i > 2, [1,2]);
-    Array.toList(a) == false :: false :: Nil
+    Array.sameElements(a, [false,false])
 
 @test
 def map05(): Bool =
     let a = Array.map(i -> i > 2, [1,8]);
-    Array.toList(a) == false :: true :: Nil
+    Array.sameElements(a, [false, true])
 
 @test
 def map06(): Bool =
     let a = Array.map(i -> i > 2, [8,1]);
-    Array.toList(a) == true :: false :: Nil
+    Array.sameElements(a, [true,false])
 
 @test
 def map07(): Bool =
     let a = Array.map(i -> i > 2, [7,8]);
-    Array.toList(a) == true :: true :: Nil
+    Array.sameElements(a, [true,true])
 
 /////////////////////////////////////////////////////////////////////////////
 // map2                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
 def map201(): Bool =
-    let c = Array.map2((a, b) -> if (b) a+1 else a, [], []);
-    Array.toList(c) == Nil
+    let arr = Array.map2((a, b) -> if (b) a+1 else a, [], []);
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def map202(): Bool = // List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, Nil) == Nil
-    let c = Array.map2((a, b) -> if (b) a+1 else a, [1], []);
-    Array.toList(c) == Nil
+    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], []);
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def map203(): Bool = // List.map2((a, b) -> if (b) a+1 else a, Nil, true :: Nil) == Nil
-    let c = Array.map2((a, b) -> if (b) a+1 else a, [], [true]);
-    Array.toList(c) == Nil
+    let arr = Array.map2((a, b) -> if (b) a+1 else a, [], [true]);
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def map204(): Bool = // List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, true :: Nil) == 2 :: Nil
-    let c = Array.map2((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.toList(c) == 2 :: Nil
+    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [true]);
+    Array.sameElements(arr, [2])
 
 @test
 def map205(): Bool = // List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, false :: Nil) == 1 :: Nil
-    let c = Array.map2((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.toList(c) == 1 :: Nil
+    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [false]);
+    Array.sameElements(arr, [1])
 
 @test
 def map206(): Bool =
-    let c = Array.map2((a, b) -> if (b) a+1 else a, [1,2,3,4,5,6,7,8], [false,true,true,false,false,true,true,true]);
-    Array.toList(c) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+    let arr = Array.map2((a, b) -> if (b) a+1 else a, [1,2,3,4,5,6,7,8], [false,true,true,false,false,true,true,true]);
+    Array.sameElements(arr, [1,3,4,4,5,7,8,9])
 
 /////////////////////////////////////////////////////////////////////////////
 // mapWithIndex                                                            //
@@ -390,37 +400,37 @@ def map206(): Bool =
 @test
 def mapWithIndex01(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, []);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Bool])
 
 @test
 def mapWithIndex02(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1]);
-    Array.toList(a) == false :: Nil
+    Array.sameElements(a, [false])
 
 @test
 def mapWithIndex03(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [3]);
-    Array.toList(a) == true :: Nil
+    Array.sameElements(a, [true])
 
 @test
 def mapWithIndex04(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,2]);
-    Array.toList(a) == false :: true :: Nil
+    Array.sameElements(a, [false,true])
 
 @test
 def mapWithIndex05(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [1,8]);
-    Array.toList(a) == false :: false :: Nil
+    Array.sameElements(a, [false,false])
 
 @test
 def mapWithIndex06(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [8,1]);
-    Array.toList(a) == true :: true :: Nil
+    Array.sameElements(a, [true,true])
 
 @test
 def mapWithIndex07(): Bool =
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [7,8]);
-    Array.toList(a) == true :: false :: Nil
+    Array.sameElements(a, [true,false])
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //
@@ -428,33 +438,33 @@ def mapWithIndex07(): Bool =
 @test
 def flatMap01(): Bool =
     let a = Array.flatMap(i -> Array.repeat(i, i), []);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatMap02(): Bool =
     let a = Array.flatMap(i -> Array.repeat(i, i), [0]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def flatMap03(): Bool =
     let a = Array.flatMap(i -> Array.repeat(i, i), [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def flatMap04(): Bool =
     let a = Array.flatMap(i -> Array.repeat(i, i), [2]);
-    Array.toList(a) == 2 :: 2 :: Nil
+    Array.sameElements(a, [2,2])
 
 @test
 def flatMap05(): Bool =
     let a = Array.flatMap(i -> Array.repeat(i, i), [1,2]);
-    Array.toList(a) == 1 :: 2 :: 2 :: Nil
+    Array.sameElements(a, [1,2,2])
 
 
 @test
 def flatMap06(): Bool =
     let a = Array.flatMap(i -> Array.repeat(i, i), [2,3]);
-    Array.toList(a) == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
+    Array.sameElements(a, [2,2,3,3,3])
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap2                                                                //
@@ -462,34 +472,33 @@ def flatMap06(): Bool =
 @test
 def flatMap201(): Bool =
     let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [], []);
-    Array.toList(arr) == Nil
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def flatMap202(): Bool =
     let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [1], []);
-    Array.toList(arr) == Nil
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def flatMap203(): Bool =
     let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [], [true]);
-    Array.toList(arr) == Nil
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def flatMap204(): Bool =
     let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [2], [true]);
-    Array.toList(arr) == 2 :: 2 :: Nil
+    Array.sameElements(arr, [2,2])
 
 @test
 def flatMap205(): Bool =
     let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [2], [false]);
-    Array.toList(arr) == 3 :: 3 :: 3 :: Nil
+    Array.sameElements(arr, [3,3,3])
 
 @test
 def flatMap206(): Bool =
     let arr = Array.flatMap2((a, b) -> if (b) Array.repeat(a, a) else Array.repeat(a+1, a+1), [1,2,3,4,5],
                    [false,true,true,false,false]);
-    Array.toList(arr) ==
-                   2 :: 2 :: 2 :: 2 :: 3 :: 3 :: 3 :: 5 :: 5 :: 5 :: 5 :: 5 :: 6 :: 6 :: 6 :: 6 :: 6 :: 6 :: Nil
+    Array.sameElements(arr, [2, 2, 2, 2, 3, 3, 3, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6])
 
 /////////////////////////////////////////////////////////////////////////////
 // count                                                                   //
@@ -521,60 +530,60 @@ def count07(): Bool = Array.count(i -> i > 3, [6,7]) == 2
 @test
 def repeat01(): Bool =
     let a = Array.repeat(1, -1);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def repeat02(): Bool =
     let a = Array.repeat(1, 0);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def repeat03(): Bool =
     let a = Array.repeat(1, 1);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def repeat04(): Bool =
     let a = Array.repeat(1, 2);
-    Array.toList(a) == 1 :: 1 :: Nil
+    Array.sameElements(a, [1,1])
 
 @test
 def repeat05(): Bool =
     let a = Array.repeat(1, 3);
-    Array.toList(a) == 1 :: 1 :: 1 :: Nil
+    Array.sameElements(a, [1,1,1])
 
 /////////////////////////////////////////////////////////////////////////////
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
 def reverse01(): Bool =
-    let a = Array.reverse([]);
-    Array.toList(a) == Nil
+    let a = Array.reverse([]: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def reverse02(): Bool =
     let a = Array.reverse([1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def reverse03(): Bool =
     let a = Array.reverse([1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def reverse04(): Bool =
     let a = Array.reverse([1,1]);
-    Array.toList(a) == 1 :: 1 :: Nil
+    Array.sameElements(a, [1,1])
 
 @test
 def reverse05(): Bool =
     let a = Array.reverse([1,2,3]);
-    Array.toList(a) == 3 :: 2 :: 1 :: Nil
+    Array.sameElements(a, [3,2,1])
 
 @test
 def reverse06(): Bool =
     let a = Array.reverse([1,2,3,4]);
-    Array.toList(a) == 4 :: 3 :: 2 :: 1 :: Nil
+    Array.sameElements(a, [4,3,2,1])
 
 /////////////////////////////////////////////////////////////////////////////
 // scan                                                                    //
@@ -582,37 +591,37 @@ def reverse06(): Bool =
 @test
 def scan01(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, []);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def scan02(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false]);
-    Array.toList(a) == 1 :: 3 :: Nil
+    Array.sameElements(a, [1,3])
 
 @test
 def scan03(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def scan04(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.toList(a) == 1 :: 3 :: 5 :: Nil
+    Array.sameElements(a, [1,3,5])
 
 @test
 def scan05(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.toList(a) == 1 :: 3 :: 4 :: Nil
+    Array.sameElements(a, [1,3,4])
 
 @test
 def scan06(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.toList(a) == 1 :: 2 :: 4 :: Nil
+    Array.sameElements(a, [1,2,4])
 
 @test
 def scan07(): Bool =
     let a = Array.scan((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 /////////////////////////////////////////////////////////////////////////////
 // scanLeft                                                                //
@@ -620,37 +629,37 @@ def scan07(): Bool =
 @test
 def scanLeft01(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, []);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def scanLeft02(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false]);
-    Array.toList(a) == 1 :: 3 :: Nil
+    Array.sameElements(a, [1,3])
 
 @test
 def scanLeft03(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def scanLeft04(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.toList(a) == 1 :: 3 :: 5 :: Nil
+    Array.sameElements(a, [1,3,5])
 
 @test
 def scanLeft05(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.toList(a) == 1 :: 3 :: 4 :: Nil
+    Array.sameElements(a, [1,3,4])
 
 @test
 def scanLeft06(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.toList(a) == 1 :: 2 :: 4 :: Nil
+    Array.sameElements(a, [1,2,4])
 
 @test
 def scanLeft07(): Bool =
     let a = Array.scanLeft((i, b) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -659,37 +668,37 @@ def scanLeft07(): Bool =
 @test
 def scanRight01(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, []);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def scanRight02(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false]);
-    Array.toList(a) == 3 :: 1 :: Nil
+    Array.sameElements(a, [3,1])
 
 @test
 def scanRight03(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def scanRight04(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,false]);
-    Array.toList(a) == 5 :: 3 :: 1 :: Nil
+    Array.sameElements(a, [5,3,1])
 
 @test
 def scanRight05(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [false,true]);
-    Array.toList(a) == 4 :: 2 :: 1 :: Nil
+    Array.sameElements(a, [4,2,1])
 
 @test
 def scanRight06(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,false]);
-    Array.toList(a) == 4 :: 3 :: 1 :: Nil
+    Array.sameElements(a, [4,3,1])
 
 @test
 def scanRight07(): Bool =
     let a = Array.scanRight((b, i) -> if (b) i+1 else i+2, 1, [true,true]);
-    Array.toList(a) == 3 :: 2 :: 1 :: Nil
+    Array.sameElements(a, [3,2,1])
 
 /////////////////////////////////////////////////////////////////////////////
 // fold                                                                    //
@@ -898,62 +907,62 @@ def reduceRight05(): Bool = Array.reduceRight((a, b) -> a-b, [1,2,3,4]) == Some(
 @test
 def drop01(): Bool =
     let a = Array.drop(-1, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def drop02(): Bool =
     let a = Array.drop(0, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def drop03(): Bool =
     let a = Array.drop(1, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def drop04(): Bool =
     let a = Array.drop(-1, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def drop05(): Bool =
     let a = Array.drop(0, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def drop06(): Bool =
     let a = Array.drop(1, [1]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def drop07(): Bool =
     let a = Array.drop(2, [1]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def drop08(): Bool =
     let a = Array.drop(0, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def drop09(): Bool =
     let a = Array.drop(1, [1,2]);
-    Array.toList(a) == 2 :: Nil
+    Array.sameElements(a, [2])
 
 @test
 def drop10(): Bool =
     let a = Array.drop(2, [1,2]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def drop11(): Bool =
     let a = Array.drop(2, [1,2,3,4,5,6]);
-    Array.toList(a) == 3 :: 4 :: 5 :: 6 :: Nil
+    Array.sameElements(a, [3,4,5,6])
 
 @test
 def drop12(): Bool =
     let a = Array.drop(4, [1,2,3,4,5,6]);
-    Array.toList(a) == 5 :: 6 :: Nil
+    Array.sameElements(a, [5,6])
 
 /////////////////////////////////////////////////////////////////////////////
 // dropWhile                                                               //
@@ -961,42 +970,42 @@ def drop12(): Bool =
 @test
 def dropWhile01(): Bool =
     let a = Array.dropWhile(i -> i > 3, []);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def dropWhile02(): Bool =
     let a = Array.dropWhile(i -> i > 3, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def dropWhile03(): Bool =
     let a = Array.dropWhile(i -> i > 3, [4]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def dropWhile04(): Bool =
     let a = Array.dropWhile(i -> i > 3, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def dropWhile05(): Bool =
     let a = Array.dropWhile(i -> i > 3, [1,5]);
-    Array.toList(a) == 1 :: 5 :: Nil
+    Array.sameElements(a, [1,5])
 
 @test
 def dropWhile06(): Bool =
     let a = Array.dropWhile(i -> i > 3, [5,1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def dropWhile07(): Bool =
     let a = Array.dropWhile(i -> i > 3, [5,8]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def dropWhile08(): Bool =
     let a = Array.dropWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.toList(a) == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+    Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
 
 /////////////////////////////////////////////////////////////////////////////
 // take                                                                    //
@@ -1004,62 +1013,62 @@ def dropWhile08(): Bool =
 @test
 def take01(): Bool =
     let a = Array.take(-1, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def take02(): Bool =
     let a = Array.take(0, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def take03(): Bool =
     let a = Array.take(1, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def take04(): Bool =
     let a = Array.take(-1, [1]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def take05(): Bool =
     let a = Array.take(0, [1]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def take06(): Bool =
     let a = Array.take(1, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def take07(): Bool =
     let a = Array.take(2, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def take08(): Bool =
     let a = Array.take(0, [1,2]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def take09(): Bool =
     let a = Array.take(1, [1,2]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def take10(): Bool =
     let a = Array.take(2, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def take11(): Bool =
     let a = Array.take(2, [1,2,3,4,5,6]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def take12(): Bool =
     let a = Array.take(4, [1,2,3,4,5,6]);
-    Array.toList(a) == 1 :: 2 :: 3 :: 4 :: Nil
+    Array.sameElements(a, [1,2,3,4])
 
 /////////////////////////////////////////////////////////////////////////////
 // takeWhile                                                               //
@@ -1067,129 +1076,129 @@ def take12(): Bool =
 @test
 def takeWhile01(): Bool =
     let a = Array.takeWhile(i -> i > 3, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def takeWhile02(): Bool =
     let a = Array.takeWhile(i -> i > 3, [1]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def takeWhile03(): Bool =
     let a = Array.takeWhile(i -> i > 3, [4]);
-    Array.toList(a) == 4 :: Nil
+    Array.sameElements(a, [4])
 
 @test
 def takeWhile04(): Bool =
     let a = Array.takeWhile(i -> i > 3, [1,2]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def takeWhile05(): Bool =
     let a = Array.takeWhile(i -> i > 3, [1,5]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def takeWhile06(): Bool =
     let a = Array.takeWhile(i -> i > 3, [5,1]);
-    Array.toList(a) == 5 :: Nil
+    Array.sameElements(a, [5])
 
 @test
 def takeWhile07(): Bool =
     let a = Array.takeWhile(i -> i > 3, [5,8]);
-    Array.toList(a) == 5 :: 8 :: Nil
+    Array.sameElements(a, [5,8])
 
 @test
 def takeWhile08(): Bool =
     let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
-    Array.toList(a) == 4 :: 6 :: Nil
+    Array.sameElements(a, [4, 6])
 
 /////////////////////////////////////////////////////////////////////////////
 // exists                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def exists01(): Bool = assertNot!(Array.exists(i -> i > 3, [] : Array[Int32]))
+def exists01(): Bool = Array.exists(i -> i > 3, [] : Array[Int32]) == false
 
 @test
-def exists02(): Bool = assertNot!(Array.exists(i -> i > 3, [1]))
+def exists02(): Bool = Array.exists(i -> i > 3, [1]) == false
 
 @test
-def exists03(): Bool = assert!(Array.exists(i -> i > 3, [5]))
+def exists03(): Bool = Array.exists(i -> i > 3, [5]) == true
 
 @test
-def exists04(): Bool = assertNot!(Array.exists(i -> i > 3, [1,2]))
+def exists04(): Bool = Array.exists(i -> i > 3, [1,2]) == false
 
 @test
-def exists05(): Bool = assert!(Array.exists(i -> i > 3, [1,6]))
+def exists05(): Bool = Array.exists(i -> i > 3, [1,6]) == true
 
 @test
-def exists06(): Bool = assert!(Array.exists(i -> i > 3, [6,1]))
+def exists06(): Bool = Array.exists(i -> i > 3, [6,1]) == true
 
 @test
-def exists07(): Bool = assert!(Array.exists(i -> i > 3, [16,6]))
+def exists07(): Bool = Array.exists(i -> i > 3, [16,6]) == true
 
 @test
-def exists08(): Bool = assertNot!(Array.exists(i -> i > 3, [1,-9,3]))
+def exists08(): Bool = Array.exists(i -> i > 3, [1,-9,3]) == false
 
 @test
-def exists09(): Bool = assert!(Array.exists(i -> i > 3, [1,9,3]))
+def exists09(): Bool = Array.exists(i -> i > 3, [1,9,3]) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // forall                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def forall01(): Bool = assert!(Array.forall(i -> i > 3, []: Array[Int32]))
+def forall01(): Bool = Array.forall(i -> i > 3, []: Array[Int32]) == true
 
 @test
-def forall02(): Bool = assertNot!(Array.forall(i -> i > 3, [1]))
+def forall02(): Bool = Array.forall(i -> i > 3, [1]) == false
 
 @test
-def forall03(): Bool = assert!(Array.forall(i -> i > 3, [5]))
+def forall03(): Bool = Array.forall(i -> i > 3, [5]) == true
 
 @test
-def forall04(): Bool = assertNot!(Array.forall(i -> i > 3, [1,2]))
+def forall04(): Bool = Array.forall(i -> i > 3, [1,2]) == false
 
 @test
-def forall05(): Bool = assertNot!(Array.forall(i -> i > 3, [1,6]))
+def forall05(): Bool = Array.forall(i -> i > 3, [1,6]) == false
 
 @test
-def forall06(): Bool = assertNot!(Array.forall(i -> i > 3, [6,1]))
+def forall06(): Bool = Array.forall(i -> i > 3, [6,1]) == false
 
 @test
-def forall07(): Bool = assert!(Array.forall(i -> i > 3, [16,6]))
+def forall07(): Bool = Array.forall(i -> i > 3, [16,6]) == true
 
 @test
-def forall08(): Bool = assertNot!(Array.forall(i -> i > 3, [1,-9,3]))
+def forall08(): Bool = Array.forall(i -> i > 3, [1,-9,3]) == false
 
 @test
-def forall09(): Bool = assertNot!(Array.forall(i -> i > 3, [1,9,3]))
+def forall09(): Bool = Array.forall(i -> i > 3, [1,9,3]) == false
 
 @test
-def forall10(): Bool = assert!(Array.forall(i -> i > 3, [11,9,31]))
+def forall10(): Bool = Array.forall(i -> i > 3, [11,9,31]) == true
 
 /////////////////////////////////////////////////////////////////////////////
 // memberOf                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def memberOf01(): Bool = assertNot!(Array.memberOf(0, []: Array[Int32]))
+def memberOf01(): Bool = Array.memberOf(0, []: Array[Int32]) == false
 
 @test
-def memberOf02(): Bool = assertNot!(Array.memberOf(0, [1]))
+def memberOf02(): Bool = Array.memberOf(0, [1]) == false
 
 @test
-def memberOf03(): Bool = assert!(Array.memberOf(0, [0]))
+def memberOf03(): Bool = Array.memberOf(0, [0]) == true
 
 @test
-def memberOf04(): Bool = assertNot!(Array.memberOf(0, [1,2]))
+def memberOf04(): Bool = Array.memberOf(0, [1,2]) == false
 
 @test
-def memberOf05(): Bool = assert!(Array.memberOf(1, [1,2]))
+def memberOf05(): Bool = Array.memberOf(1, [1,2]) == true
 
 @test
-def memberOf06(): Bool = assert!(Array.memberOf(2, [1,2]))
+def memberOf06(): Bool = Array.memberOf(2, [1,2]) == true
 
 @test
-def memberOf07(): Bool = assertNot!(Array.memberOf(3, [1,2]))
+def memberOf07(): Bool = Array.memberOf(3, [1,2]) == false
 
 /////////////////////////////////////////////////////////////////////////////
 // indexOf                                                                 //
@@ -1410,42 +1419,42 @@ def findIndexOfRight07(): Bool = Array.findIndexOfRight(i -> i > 2, [6,7]) == So
 @test
 def filter01(): Bool =
     let a = Array.filter(i -> i > 3, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def filter02(): Bool =
     let a = Array.filter(i -> i > 3, [2]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def filter03(): Bool =
     let a = Array.filter(i -> i > 3, [4]);
-    Array.toList(a) == 4 :: Nil
+    Array.sameElements(a, [4])
 
 @test
 def filter04(): Bool =
     let a = Array.filter(i -> i > 3, [1,3]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def filter05(): Bool =
     let a = Array.filter(i -> i > 3, [1,8]);
-    Array.toList(a) == 8 :: Nil
+    Array.sameElements(a, [8])
 
 @test
 def filter06(): Bool =
     let a = Array.filter(i -> i > 3, [8,1]);
-    Array.toList(a) == 8 :: Nil
+    Array.sameElements(a, [8])
 
 @test
 def filter07(): Bool =
     let a = Array.filter(i -> i > 3, [8,9]);
-    Array.toList(a) == 8 :: 9 :: Nil
+    Array.sameElements(a, [8,9])
 
 @test
 def filter08(): Bool =
     let a = Array.filter(i -> i > 3, [1,4,11,2,-22,17]);
-    Array.toList(a) == 4 :: 11 :: 17 :: Nil
+    Array.sameElements(a, [4,11,17])
 
 /////////////////////////////////////////////////////////////////////////////
 // filterMap                                                               //
@@ -1453,42 +1462,42 @@ def filter08(): Bool =
 @test
 def filterMap01(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def filterMap02(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [1]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def filterMap03(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [2]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def filterMap04(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [1,3]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def filterMap05(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [1,4]);
-    Array.toList(a) == 2 :: Nil
+    Array.sameElements(a, [2])
 
 @test
 def filterMap06(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [6,-1]);
-    Array.toList(a) == 3 :: Nil
+    Array.sameElements(a, [3])
 
 @test
 def filterMap07(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [8,6]);
-    Array.toList(a) == 4 :: 3 :: Nil
+    Array.sameElements(a, [4,3])
 
 @test
 def filterMap08(): Bool =
     let a = Array.filterMap(i -> if (i % 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]);
-    Array.toList(a) == 0 :: 1 :: 2 :: 5 :: Nil
+    Array.sameElements(a, [0,1,2,5])
 
 /////////////////////////////////////////////////////////////////////////////
 // findMap                                                                 //
@@ -1523,57 +1532,57 @@ def findMap08(): Bool = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 
 @test
 def rotateLeft01(): Bool =
     let a = Array.rotateLeft(0, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def rotateLeft02(): Bool =
     let a = Array.rotateLeft(1, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def rotateLeft03(): Bool =
     let a = Array.rotateLeft(0, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def rotateLeft04(): Bool =
     let a = Array.rotateLeft(0, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def rotateLeft05(): Bool =
     let a = Array.rotateLeft(1, [1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def rotateLeft06(): Bool =
     let a = Array.rotateLeft(2, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def rotateLeft07(): Bool =
     let a = Array.rotateLeft(3, [1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def rotateLeft08(): Bool =
     let a = Array.rotateLeft(-1, [1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def rotateLeft09(): Bool =
     let a = Array.rotateLeft(0, [1,2,3]);
-    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 @test
 def rotateLeft10(): Bool =
     let a = Array.rotateLeft(1, [1,2,3]);
-    Array.toList(a) == 2 :: 3 :: 1 :: Nil
+    Array.sameElements(a, [2,3,1])
 
 @test
 def rotateLeft11(): Bool =
     let a = Array.rotateLeft(2, [1,2,3]);
-    Array.toList(a) == 3 :: 1 :: 2 :: Nil
+    Array.sameElements(a, [3,1,2])
 
 /////////////////////////////////////////////////////////////////////////////
 // rotateRight                                                             //
@@ -1581,57 +1590,57 @@ def rotateLeft11(): Bool =
 @test
 def rotateRight01(): Bool =
     let a = Array.rotateRight(0, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def rotateRight02(): Bool =
     let a = Array.rotateRight(1, []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def rotateRight03(): Bool =
     let a = Array.rotateRight(0, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def rotateRight04(): Bool =
     let a = Array.rotateRight(0, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def rotateRight05(): Bool =
     let a = Array.rotateRight(1, [1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def rotateRight06(): Bool =
     let a = Array.rotateRight(2, [1,2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def rotateRight07(): Bool =
     let a = Array.rotateRight(3, [1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def rotateRight08(): Bool =
     let a = Array.rotateRight(-1, [1,2]);
-    Array.toList(a) == 2 :: 1 :: Nil
+    Array.sameElements(a, [2,1])
 
 @test
 def rotateRight09(): Bool =
     let a = Array.rotateRight(0, [1,2,3]);
-    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+    Array.sameElements(a, [1,2,3])
 
 @test
 def rotateRight10(): Bool =
     let a = Array.rotateRight(1, [1,2,3]);
-    Array.toList(a) == 3 :: 1 :: 2 :: Nil
+    Array.sameElements(a, [3,1,2])
 
 @test
 def rotateRight11(): Bool =
     let a = Array.rotateRight(2, [1,2,3]);
-    Array.toList(a) == 2 :: 3 :: 1 :: Nil
+    Array.sameElements(a, [2,3,1])
 
 /////////////////////////////////////////////////////////////////////////////
 // replace                                                                 //
@@ -1639,42 +1648,42 @@ def rotateRight11(): Bool =
 @test
 def replace01(): Bool =
     let a = Array.replace(3, 4, []);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[Int32])
 
 @test
 def replace02(): Bool =
     let a = Array.replace(3, 4, [1]);
-    Array.toList(a) == 1 :: Nil
+    Array.sameElements(a, [1])
 
 @test
 def replace03(): Bool =
     let a = Array.replace(3, 4, [3]);
-    Array.toList(a) == 4 :: Nil
+    Array.sameElements(a, [4])
 
 @test
 def replace04(): Bool =
     let a = Array.replace(3, 4, [4]);
-    Array.toList(a) == 4 :: Nil
+    Array.sameElements(a, [4])
 
 @test
 def replace05(): Bool =
     let a = Array.replace(3, 4, [1, 2]);
-    Array.toList(a) == 1 :: 2 :: Nil
+    Array.sameElements(a, [1,2])
 
 @test
 def replace06(): Bool =
-    let a = Array.replace(3, 4, [1, 3]);
-    Array.toList(a) == 1 :: 4 :: Nil
+    let a = Array.replace(3, 4, [1,3]);
+    Array.sameElements(a, [1,4])
 
 @test
 def replace07(): Bool =
-    let a = Array.replace(3, 4, [3, 4]);
-    Array.toList(a) == 4 :: 4 :: Nil
+    let a = Array.replace(3, 4, [3,4]);
+    Array.sameElements(a, [4,4])
 
 @test
 def replace08(): Bool =
-    let a = Array.replace(3, 4, [3, 3]);
-    Array.toList(a) == 4 :: 4 :: Nil
+    let a = Array.replace(3, 4, [3,3]);
+    Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
 // zip                                                                     //
@@ -1682,37 +1691,37 @@ def replace08(): Bool =
 @test
 def zip01(): Bool =
     let a = Array.zip([]: Array[Int32], []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[(Int32,Int32)])
 
 @test
 def zip02(): Bool =
     let a = Array.zip([1], []: Array[Int32]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[(Int32,Int32)])
 
 @test
 def zip03(): Bool =
     let a = Array.zip([]: Array[Int32], [2]);
-    Array.toList(a) == Nil
+    Array.sameElements(a, []: Array[(Int32,Int32)])
 
 @test
 def zip04(): Bool =
     let a = Array.zip([1], [2]);
-    Array.toList(a) == (1, 2) :: Nil
+    Array.sameElements(a, [(1, 2)])
 
 @test
 def zip05(): Bool =
     let a = Array.zip([1,3], [2,4]);
-    Array.toList(a) == (1, 2) :: (3, 4) :: Nil
+    Array.sameElements(a, [(1, 2), (3, 4)])
 
 @test
 def zip06(): Bool =
     let a = Array.zip([1,3,5], [2,4,6]);
-    Array.toList(a) == (1, 2) :: (3, 4) :: (5, 6) :: Nil
+    Array.sameElements(a, [(1, 2), (3, 4), (5, 6)])
 
 @test
 def zip07(): Bool =
     let a = Array.zip([1,3,5,7], [2,4,6,8]);
-    Array.toList(a) == (1, 2) :: (3, 4) :: (5, 6) :: (7, 8) :: Nil
+    Array.sameElements(a, [(1, 2), (3, 4), (5, 6), (7, 8)])
 
 /////////////////////////////////////////////////////////////////////////////
 // zipWith                                                                 //
@@ -1720,33 +1729,33 @@ def zip07(): Bool =
 @test
 def zipWith01(): Bool =
     let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], []: Array[Bool]);
-    Array.toList(arr) == Nil
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def zipWith02(): Bool =
     let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], []: Array[Bool]);
-    Array.toList(arr) == Nil
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def zipWith03(): Bool =
     let arr = Array.zipWith((a, b) -> if (b) a+1 else a, []: Array[Int32], [true]);
-    Array.toList(arr) == Nil
+    Array.sameElements(arr, []: Array[Int32])
 
 @test
 def zipWith04(): Bool =
     let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [true]);
-    Array.toList(arr) == 2 :: Nil
+    Array.sameElements(arr, [2])
 
 @test
 def zipWith05(): Bool =
     let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1], [false]);
-    Array.toList(arr) == 1 :: Nil
+    Array.sameElements(arr, [1])
 
 @test
 def zipWith06(): Bool =
     let arr = Array.zipWith((a, b) -> if (b) a+1 else a, [1, 2, 3, 4, 5, 6, 7, 8],
                       [false, true, true, false, false, true, true, true]);
-    Array.toList(arr) == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+    Array.sameElements(arr, [1, 3, 4, 4, 5, 7, 8, 9])
 
 /////////////////////////////////////////////////////////////////////////////
 // transpose                                                               //
