@@ -67,6 +67,41 @@ def testToList02(): Bool = Array.toList([1]) == 1 :: Nil
 @test
 def testToList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
 
+
+/////////////////////////////////////////////////////////////////////////////
+// sameElements                                                            //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def sameElements01(): Bool =
+    let a = []: Array[Int32];
+    let b = []: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements02(): Bool =
+    let a = [1]: Array[Int32];
+    let b = []: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements03(): Bool =
+    let a = []: Array[Int32];
+    let b = [1]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements04(): Bool =
+    let a = [1]: Array[Int32];
+    let b = [1]: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements05(): Bool =
+    let a = [1]: Array[Int32];
+    let b = [0]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //
 /////////////////////////////////////////////////////////////////////////////

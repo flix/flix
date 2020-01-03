@@ -64,6 +64,27 @@ namespace Array {
             a[i] :: toListHelper(a, i + 1)
 
     ///
+    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    ///
+    pub def sameElements(a: Array[a], b: Array[b]): Bool =
+        let alen = Array.length(a);
+        let blen = Array.length(b);
+        if (alen == blen)
+            sameElementsHelper(a, b, alen, 0)
+        else
+            false
+
+    ///
+    /// Helper for `sameElements`.
+    ///
+    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool =
+        if (i >= len)
+            true
+        else {
+            if (a[i] != b[i]) false else sameElementsHelper(a, b, len, i+1)
+        }
+
+    ///
     /// Build an array of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> a, len: Int32): Array[a] =
@@ -104,7 +125,6 @@ namespace Array {
             f(a[i]);
             iterHelper(f, a, len, i + 1)
         }
-
 
     ///
     /// Returns an array of all integers between `b` (inclusive) and `e` (exclusive).
