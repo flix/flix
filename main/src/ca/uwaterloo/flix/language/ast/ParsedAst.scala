@@ -1201,13 +1201,13 @@ object ParsedAst {
         * Atom Predicate.
         *
         * @param sp1      the position of the first character in the predicate.
-        * @param name     the qualified name of the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
+        * @param name     the qualified name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, polarity: Polarity, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Polarity, name: Name.QName, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.

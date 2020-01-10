@@ -997,7 +997,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Head {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedPredicate ~ optWS ~ ArgumentList ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]") ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.QualifiedPredicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
       def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
@@ -1007,10 +1007,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     object Body {
+
       def Positive: Rule1[ParsedAst.Predicate.Body.Atom] = rule {
-        SP ~ Names.QualifiedPredicate ~ optWS ~ PatternList ~ optional(optWS ~ "[" ~ optWS ~ Pattern ~ optWS ~ "]") ~ SP ~>
-          ((sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], termOpt: Option[ParsedAst.Pattern], sp2: SourcePosition) =>
-            ParsedAst.Predicate.Body.Atom(sp1, name, Polarity.Positive, terms, termOpt, sp2))
+        SP ~ push(Polarity.Positive) ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
@@ -1019,9 +1018,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ PatternList ~ optional(optWS ~ "[" ~ optWS ~ Pattern ~ optWS ~ "]") ~ SP ~>
-            ((sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], termOpt: Option[ParsedAst.Pattern], sp2: SourcePosition) =>
-              ParsedAst.Predicate.Body.Atom(sp1, name, Polarity.Negative, terms, termOpt, sp2))
+          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate  ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 
@@ -1032,6 +1029,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
         SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
       }
+    }
+
+    def TermList: Rule2[Seq[ParsedAst.Expression], Option[ParsedAst.Expression]] = rule {
+      "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Expression) ~ optWS ~ ")"
+    }
+
+    def PatternList: Rule2[Seq[ParsedAst.Pattern], Option[ParsedAst.Pattern]] = rule {
+      "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Pattern) ~ optWS ~ ")"
     }
 
   }
@@ -1150,10 +1155,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def ArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
     "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-  }
-
-  def PatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
-    "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
   def AttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
