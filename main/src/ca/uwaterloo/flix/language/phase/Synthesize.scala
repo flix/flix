@@ -364,9 +364,9 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
         val ts = terms map visitExp
-        Predicate.Head.Atom(sym, ts, tpe, loc)
+        Predicate.Head.Atom(sym, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -377,8 +377,8 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, polarity, pats, tpe, loc) =>
-        Predicate.Body.Atom(sym, polarity, pats, tpe, loc)
+      case Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc) =>
+        Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

@@ -605,7 +605,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
-    case Head.Atom(sym, terms, _, _) =>
+    case Head.Atom(sym, _, terms, _, _) =>
       Used.of(sym) ++ visitExps(terms, env0)
 
     case Head.Union(exp, _, _) =>
@@ -616,7 +616,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
-    case Body.Atom(sym, _, terms, _, _) =>
+    case Body.Atom(sym, _, _, terms, _, _) =>
       Used.of(sym)
 
     case Body.Guard(exp, _) =>

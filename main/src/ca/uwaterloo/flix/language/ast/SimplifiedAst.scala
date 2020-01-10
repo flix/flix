@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, IntroducedBy, Source}
 import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
 
 object SimplifiedAst {
@@ -276,7 +276,7 @@ object SimplifiedAst {
 
     object Head {
 
-      case class Atom(sym: Symbol.PredSym, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Atom(sym: Symbol.PredSym, den: Denotation, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
       case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
@@ -286,7 +286,7 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Atom(sym: Symbol.PredSym, den: Denotation, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Guard(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 

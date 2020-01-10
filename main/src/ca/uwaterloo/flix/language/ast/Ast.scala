@@ -250,6 +250,25 @@ object Ast {
   }
 
   /**
+    * A common super-type for the denotation of an atom.
+    */
+  sealed trait Denotation
+
+  object Denotation {
+
+    /**
+      * The atom has a relational denotation.
+      */
+    case object Relational extends Denotation
+
+    /**
+      * The atom has a latticenal denotation.
+      */
+    case object Latticenal extends Denotation
+
+  }
+
+  /**
     * A common super-type for the polarity of an atom.
     */
   sealed trait Polarity

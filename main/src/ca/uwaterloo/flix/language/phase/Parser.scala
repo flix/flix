@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity, Source}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -376,7 +376,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Char: Rule1[ParsedAst.Literal.Char] = {
       def Normal: Rule1[String] = {
         def Quote: Rule0 = rule("'")
+
         def Backslash: Rule0 = rule("\\")
+
         rule {
           capture(!Quote ~ !Backslash ~ CharPredicate.All)
         }
@@ -897,6 +899,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def FixpointFold: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
     }
+
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
       def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
         atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.HandlerBinding
@@ -965,7 +968,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayHeadSpread: Rule1[ParsedAst.Pattern.ArrayHeadSpread] = rule {
-      SP ~ "[" ~ optWS  ~ Names.Variable ~ ".." ~ optWS ~ "," ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.ArrayHeadSpread
+      SP ~ "[" ~ optWS ~ Names.Variable ~ ".." ~ optWS ~ "," ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Pattern.ArrayHeadSpread
     }
 
     def FNil: Rule1[ParsedAst.Pattern.FNil] = rule {
@@ -994,7 +997,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Head {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedPredicate ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.QualifiedPredicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
       def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
@@ -1004,17 +1007,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     object Body {
-      def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
-        SP ~ Names.QualifiedPredicate ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+
+      def Positive: Rule1[ParsedAst.Predicate.Body.Atom] = rule {
+        SP ~ push(Polarity.Positive) ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
       }
 
-      def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
+      def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
         def Not: Rule0 = rule {
           "!" | (atomic("not") ~ WS)
         }
 
         rule {
-          SP ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate  ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 
@@ -1025,6 +1029,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
         SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
       }
+    }
+
+    def TermList: Rule2[Seq[ParsedAst.Expression], Option[ParsedAst.Expression]] = rule {
+      "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Expression) ~ optWS ~ ")"
+    }
+
+    def PatternList: Rule2[Seq[ParsedAst.Pattern], Option[ParsedAst.Pattern]] = rule {
+      "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ ";" ~ optWS ~ Pattern) ~ optWS ~ ")"
     }
 
   }
@@ -1143,10 +1155,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def ArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
     "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-  }
-
-  def PatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
-    "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
   def AttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
@@ -1406,6 +1414,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       */
     def MultiLineComment: Rule0 = {
       def SlashStar: Rule0 = rule("/*")
+
       def StarSlash: Rule0 = rule("*/")
 
       rule {

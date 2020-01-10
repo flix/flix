@@ -682,7 +682,7 @@ object JvmOps {
     def visitConstraint(c0: Constraint): Set[ClosureInfo] = {
       // TODO: Look for more closures.
       val headClosures = c0.head match {
-        case Predicate.Head.Atom(_, terms, _, _) => terms.foldLeft(Set.empty[ClosureInfo]) {
+        case Predicate.Head.Atom(_, _, terms, _, _) => terms.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, t) => sacc ++ visitHeadTerm(t)
         }
         case Predicate.Head.Union(exp, terms, _, _) => visitExp(exp)
@@ -699,7 +699,7 @@ object JvmOps {
       * Returns the set of closures in the given body atom `b0`.
       */
     def visitBodyAtom(b0: Predicate.Body): Set[ClosureInfo] = b0 match {
-      case Body.Atom(_, _, _, _, _) => Set.empty
+      case Body.Atom(_, _, _, _, _, _) => Set.empty
 
       case Body.Guard(exp, _, _) => visitExp(exp)
     }
@@ -1020,7 +1020,7 @@ object JvmOps {
     }
 
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
         Set(tpe) ++ terms.flatMap(visitHeadTerm)
 
       case Predicate.Head.Union(exp, terms, tpe, loc) =>
@@ -1029,7 +1029,7 @@ object JvmOps {
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
-      case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
         terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Guard(exp, terms, loc) =>

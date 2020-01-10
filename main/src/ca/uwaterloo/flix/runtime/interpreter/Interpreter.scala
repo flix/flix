@@ -782,7 +782,7 @@ object Interpreter {
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.Atom(sym, terms0, _, _) =>
+    case FinalAst.Predicate.Head.Atom(sym, _, terms0, _, _) =>
       val predSym = newPredSym(sym, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
       AtomPredicate.of(predSym, true, terms)
@@ -804,7 +804,7 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
 
-    case FinalAst.Predicate.Body.Atom(sym, polarity0, terms0, _, _) =>
+    case FinalAst.Predicate.Body.Atom(sym, _, polarity0, terms0, _, _) =>
       val predSym = newPredSym(sym, env0, henv0, lenv0)
       val polarity = polarity0 match {
         case Ast.Polarity.Positive => true

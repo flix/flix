@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Stratification
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -1751,7 +1751,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = head match {
-    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, den, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
       //  ------------------------------------------------------------
@@ -1793,9 +1793,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, den0, terms, tvar, loc) =>
+      val den = sym match {
+        case s: Symbol.RelSym =>
+          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Relational
+        case s: Symbol.LatSym =>
+          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Latticenal
+      }
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      TypedAst.Predicate.Head.Atom(sym, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym, den, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1811,7 +1819,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  ------------------------------------------------------------
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
-    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(sym, den, polarity, terms, tvar, loc) =>
 
       // Lookup the declared type of the relation/lattice (if it exists).
       val declaredType = sym match {
@@ -1848,9 +1856,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(sym, den0, polarity, terms, tvar, loc) =>
+      val den = sym match {
+        case s: Symbol.RelSym =>
+          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Relational
+        case s: Symbol.LatSym =>
+          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Latticenal
+      }
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      TypedAst.Predicate.Body.Atom(sym, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym, den, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
