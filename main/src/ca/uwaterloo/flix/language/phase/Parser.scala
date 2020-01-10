@@ -353,7 +353,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
+    Literals.Bool | Literals.Char | Literals.Str | Literals.StrInterp | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -452,6 +452,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ "\"" ~ capture(zeroOrMore(!Quote ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
+      }
+    }
+
+    def StrInterp: Rule1[ParsedAst.Literal.StrInterp] = {
+      // TODOL Rename to part
+      def Quote: Rule0 = rule("\"")
+
+      def Fragment: Rule1[ParsedAst.Interpolation] = rule {
+        ExpFragment | StrFragment
+      }
+
+      def ExpFragment: Rule1[ParsedAst.Interpolation] = rule {
+        atomic("${") ~ optWS ~ Expression ~ optWS ~ atomic("}") ~> ParsedAst.Interpolation.ExpPart
+      }
+
+      def StrFragment: Rule1[ParsedAst.Interpolation] = rule {
+        capture(oneOrMore(!(Quote | atomic("${")) ~ CharPredicate.All)) ~> ParsedAst.Interpolation.StrPart
+      }
+
+      rule {
+        SP ~ "s" ~ Quote ~ zeroOrMore(Fragment) ~ Quote ~ SP ~> ParsedAst.Literal.StrInterp
       }
     }
 
@@ -1018,7 +1039,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate  ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 

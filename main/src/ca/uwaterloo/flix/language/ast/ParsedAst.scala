@@ -413,6 +413,19 @@ object ParsedAst {
       */
     case class Str(sp1: SourcePosition, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
+    case class StrInterp(sp1: SourcePosition, parts: Seq[Interpolation], sp2: SourcePosition) extends ParsedAst.Literal
+
+
+  }
+
+  sealed trait Interpolation
+
+  object Interpolation {
+
+    case class StrPart(s: String) extends Interpolation
+
+    case class ExpPart(e: ParsedAst.Expression) extends Interpolation
+
   }
 
 

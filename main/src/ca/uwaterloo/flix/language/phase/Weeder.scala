@@ -1080,7 +1080,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Translates the given literal to an expression.
     */
-  private def lit2exp(lit0: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = lit0 match {
+  private def lit2exp(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = lit0 match {
     case ParsedAst.Literal.Unit(sp1, sp2) =>
       WeededAst.Expression.Unit(mkSL(sp1, sp2)).toSuccess
 
@@ -1130,6 +1130,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Literal.Str(sp1, lit, sp2) =>
       WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.Literal.StrInterp(sp1, parts, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val init = WeededAst.Expression.Str("", loc)
+      Validation.fold(parts, init: WeededAst.Expression) {
+        case (acc, ParsedAst.Interpolation.ExpPart(e)) =>
+          mapN(visitExp(e)) {
+            case e2 =>
+              val op = BinaryOperator.Plus
+              WeededAst.Expression.Binary(op, acc, e2, loc)
+          }
+
+        case (acc, ParsedAst.Interpolation.StrPart(s)) =>
+          val op = BinaryOperator.Plus
+          val e1 = acc
+          val e2 = WeededAst.Expression.Str(s, loc)
+          WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
+      }
   }
 
   // TODO: Comment
