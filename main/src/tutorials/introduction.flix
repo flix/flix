@@ -100,7 +100,7 @@ def alpha(i: Int): Constant = Cst(i)
 // the rule holds (whatever is to the right of ':-') then the head (what
 // is on the left of ':-') is inferred.
 //
-LocalVar(r)[alpha(c)] :- LitStm(r, c).
+LocalVar(r; alpha(c)) :- LitStm(r, c).
 
 //
 // The second rule is more interesting. This says that if we have an
@@ -109,16 +109,16 @@ LocalVar(r)[alpha(c)] :- LitStm(r, c).
 //
 // Here sum is a reference to a transfer function implemented below.
 //
-LocalVar(r)[sum(v1, v2)] :- AddStm(r, x, y),
-                            LocalVar(x)[v1],
-                            LocalVar(y)[v2].
+LocalVar(r; sum(v1, v2)) :- AddStm(r, x, y),
+                            LocalVar(x; v1),
+                            LocalVar(y; v2).
 
 //
 // The third rule is similar, but for division:
 //
-LocalVar(r)[div(v1, v2)] :- DivStm(r, x, y),
-                            LocalVar(x)[v1],
-                            LocalVar(y)[v2].
+LocalVar(r; div(v1, v2)) :- DivStm(r, x, y),
+                            LocalVar(x; v1),
+                            LocalVar(y; v2).
 
 //
 // We must define the sum transfer function:
@@ -162,7 +162,7 @@ rel ArithmeticError(r: Str)
 //
 ArithmeticError(r) :- isMaybeZero(y),
                       DivStm(r, n, d),
-                      LocalVar(d)[y].
+                      LocalVar(d; y).
 
 //
 // Defining the filter function is straightforward:

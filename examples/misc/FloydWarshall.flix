@@ -54,13 +54,13 @@ def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
 let Dist<> = (Bot, Top, equ, leq, lub, glb)
 
 // Copy input relation into the ShortestDist lattice
-ShortestDist(a, b)[Dst(d)] :- Edge(a, b, d).
+ShortestDist(a, b; Dst(d)) :- Edge(a, b, d).
 
 // If a->b->c, try using that to get a->c
-ShortestDist(a, c)[sum(d1, d2)] :- ShortestDist(a, b)[d1], ShortestDist(b, c)[d2].
+ShortestDist(a, c; sum(d1, d2)) :- ShortestDist(a, b; d1), ShortestDist(b, c; d2).
 
 // If you can get from a->a with negative distance, then it is part of a negative cycle
-ShortestDist(a, a)[Top] :- ShortestDist(a, a)[d], negativeDist(d).
+ShortestDist(a, a; Top) :- ShortestDist(a, a; d), negativeDist(d).
 
 ///
 /// Transfer function.

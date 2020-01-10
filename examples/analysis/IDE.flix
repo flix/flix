@@ -123,43 +123,43 @@ namespace IDE {
         InProc(p,m) :- InProc(p,n), CFG(n,m).
 
         // intraproc
-        JumpFn(d1,m,d3)[compose(long,short)] :-
+        JumpFn(d1,m,d3;compose(long,short)) :-
             CFG(n,m),
-            JumpFn(d1,n,d2)[long],
-            EshIntra(n,d2,d3)[short].
+            JumpFn(d1,n,d2;long),
+            EshIntra(n,d2,d3;short).
 
         // use summary
-        JumpFn(d1,m,d3)[compose(caller,summary)] :-
+        JumpFn(d1,m,d3;compose(caller,summary)) :-
             CFG(n,m),
-            JumpFn(d1,n,d2)[caller],
-            SummaryFn(n,d2,d3)[summary].
+            JumpFn(d1,n,d2;caller),
+            SummaryFn(n,d2,d3;summary).
 
-        JumpFn(d3,start,d3)[id()] :-
-            JumpFn(d1,call,d2)[nonbottom1],
+        JumpFn(d3,start,d3;id()) :-
+            JumpFn(d1,call,d2;nonbottom1),
             CallGraph(call,target),
-            EshCallStart(call,d2,target,d3)[nonbottom2],
+            EshCallStart(call,d2,target,d3;nonbottom2),
             StartNode(target,start),
             nonbottom(nonbottom1),
             nonbottom(nonbottom2).
 
         // compute summary
-        SummaryFn(call,d4,d5)[compose(compose(cs,se),er)] :-
+        SummaryFn(call,d4,d5;compose(compose(cs,se),er)) :-
             CallGraph(call,target),
             StartNode(target,start),
             EndNode(target,end),
-            EshCallStart(call,d4,target,d1)[cs],
-            JumpFn(d1,end,d2)[se],
-            EshEndReturn(target,d2,call,d5)[er].
+            EshCallStart(call,d4,target,d1;cs),
+            JumpFn(d1,end,d2;se),
+            EshEndReturn(target,d2,call,d5;er).
 
         // tabulate result
-        Results(n,d)[apply(fn,vp)] :-
-            ResultProc(proc,dp)[vp],
-            InProc(proc,n),
-            JumpFn(dp,n,d)[fn].
+        Results(n, d; apply(fn, vp)) :-
+            ResultProc(proc, dp; vp),
+            InProc(proc, n),
+            JumpFn(dp, n, d; fn).
 
-        ResultProc(proc,dp)[apply(cs,v)] :-
-            Results(call,d)[v],
-            EshCallStart(call,d,proc,dp)[cs].
+        ResultProc(proc,dp;apply(cs,v)) :-
+            Results(call,d;v),
+            EshCallStart(call,d,proc,dp;cs).
 
         CFG("smain","n1").
         CFG("n1","n2").
@@ -183,40 +183,40 @@ namespace IDE {
         CallGraph("n1","p").
         CallGraph("n6","p").
 
-        EshIntra(n,"zero","zero")[id()] :- CFG(n,_).
+        EshIntra(n,"zero","zero";id()) :- CFG(n,_).
 
-        EshIntra("smain","zero","x")[Transformer.BotTrans].
-        EshIntra("n2","x","x")[id()].
-        EshIntra("n3","x","x")[id()].
+        EshIntra("smain","zero","x";Transformer.BotTrans).
+        EshIntra("n2","x","x";id()).
+        EshIntra("n3","x","x";id()).
 
-        EshIntra("sp","a","a")[id()].
-        EshIntra("sp","x","x")[id()].
-        EshIntra("n4","a","a")[id()].
-        EshIntra("n4","x","x")[id()].
-        EshIntra("n5","a","a")[Transformer.NonBotTrans(1,-2,Value.Bot)].
-        EshIntra("n5","x","x")[id()].
-        EshIntra("n6","a","a")[id()].
-        EshIntra("n7","a","a")[id()].
-        EshIntra("n7","x","x")[id()].
-        EshIntra("n8","a","a")[Transformer.NonBotTrans(1,2,Value.Bot)].
-        EshIntra("n8","x","x")[id()].
-        EshIntra("n9","a","a")[id()].
-        EshIntra("n9","a","x")[Transformer.NonBotTrans(-2,5,Value.Bot)].
+        EshIntra("sp","a","a";id()).
+        EshIntra("sp","x","x";id()).
+        EshIntra("n4","a","a";id()).
+        EshIntra("n4","x","x";id()).
+        EshIntra("n5","a","a";Transformer.NonBotTrans(1,-2,Value.Bot)).
+        EshIntra("n5","x","x";id()).
+        EshIntra("n6","a","a";id()).
+        EshIntra("n7","a","a";id()).
+        EshIntra("n7","x","x";id()).
+        EshIntra("n8","a","a";Transformer.NonBotTrans(1,2,Value.Bot)).
+        EshIntra("n8","x","x";id()).
+        EshIntra("n9","a","a";id()).
+        EshIntra("n9","a","x";Transformer.NonBotTrans(-2,5,Value.Bot)).
 
-        EshCallStart(call,"zero",target,"zero")[id()] :- CallGraph(call,target).
-        EshEndReturn(target,"zero",call,"zero")[id()] :- CallGraph(call,target).
+        EshCallStart(call,"zero",target,"zero";id()) :- CallGraph(call,target).
+        EshEndReturn(target,"zero",call,"zero";id()) :- CallGraph(call,target).
 
-        EshCallStart("n1","zero","p","a")[Transformer.NonBotTrans(0,7,Value.Bot)].
-        EshCallStart("n1","x","p","x")[id()].
-        EshEndReturn("p","x","n1","x")[id()].
+        EshCallStart("n1","zero","p","a";Transformer.NonBotTrans(0,7,Value.Bot)).
+        EshCallStart("n1","x","p","x";id()).
+        EshEndReturn("p","x","n1","x";id()).
 
-        EshCallStart("n6","a","p","a")[id()].
-        EshCallStart("n6","x","p","x")[id()].
-        EshEndReturn("p","x","n6","x")[id()].
+        EshCallStart("n6","a","p","a";id()).
+        EshCallStart("n6","x","p","x";id()).
+        EshEndReturn("p","x","n6","x";id()).
 
         // Entrypoint
-        JumpFn("zero","smain","zero")[id()].
-        ResultProc("main","zero")[Value.Top].
+        JumpFn("zero","smain","zero";id()).
+        ResultProc("main","zero";Value.Top).
     }
 
 }
