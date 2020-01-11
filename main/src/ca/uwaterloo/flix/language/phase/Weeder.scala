@@ -854,6 +854,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.FString(sp1, parts, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val init = WeededAst.Expression.Str("", loc)
+      Validation.fold(parts, init: WeededAst.Expression) {
+        case (acc, ParsedAst.Interpolation.ExpPart(e)) =>
+          mapN(visitExp(e)) {
+            case e2 =>
+              val op = BinaryOperator.Plus
+              WeededAst.Expression.Binary(op, acc, e2, loc)
+          }
+
+        case (acc, ParsedAst.Interpolation.StrPart(s)) =>
+          val op = BinaryOperator.Plus
+          val e1 = acc
+          val e2 = WeededAst.Expression.Str(s, loc)
+          WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
+      }
+
     case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
       for {
         e <- visitExp(exp)
@@ -1130,24 +1148,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Literal.Str(sp1, lit, sp2) =>
       WeededAst.Expression.Str(lit, mkSL(sp1, sp2)).toSuccess
-
-    case ParsedAst.Literal.StrInterp(sp1, parts, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val init = WeededAst.Expression.Str("", loc)
-      Validation.fold(parts, init: WeededAst.Expression) {
-        case (acc, ParsedAst.Interpolation.ExpPart(e)) =>
-          mapN(visitExp(e)) {
-            case e2 =>
-              val op = BinaryOperator.Plus
-              WeededAst.Expression.Binary(op, acc, e2, loc)
-          }
-
-        case (acc, ParsedAst.Interpolation.StrPart(s)) =>
-          val op = BinaryOperator.Plus
-          val e1 = acc
-          val e2 = WeededAst.Expression.Str(s, loc)
-          WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
-      }
   }
 
   // TODO: Comment
@@ -1919,6 +1919,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
+    case ParsedAst.Expression.FString(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)

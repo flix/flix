@@ -353,7 +353,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Str | Literals.StrInterp | Literals.Float | Literals.Int
+    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -452,27 +452,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ "\"" ~ capture(zeroOrMore(!Quote ~ CharPredicate.All)) ~ "\"" ~ SP ~> ParsedAst.Literal.Str
-      }
-    }
-
-    def StrInterp: Rule1[ParsedAst.Literal.StrInterp] = {
-      // TODOL Rename to part
-      def Quote: Rule0 = rule("\"")
-
-      def Fragment: Rule1[ParsedAst.Interpolation] = rule {
-        ExpFragment | StrFragment
-      }
-
-      def ExpFragment: Rule1[ParsedAst.Interpolation] = rule {
-        atomic("${") ~ optWS ~ Expression ~ optWS ~ atomic("}") ~> ParsedAst.Interpolation.ExpPart
-      }
-
-      def StrFragment: Rule1[ParsedAst.Interpolation] = rule {
-        capture(oneOrMore(!(Quote | atomic("${")) ~ CharPredicate.All)) ~> ParsedAst.Interpolation.StrPart
-      }
-
-      rule {
-        SP ~ "s" ~ Quote ~ zeroOrMore(Fragment) ~ Quote ~ SP ~> ParsedAst.Literal.StrInterp
       }
     }
 
@@ -621,12 +600,32 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
-        FixpointProject | Constraint | Literal | HandleWith | Existential | Universal |
+        FixpointProject | Constraint | StrInterp | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
       SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Expression.Lit
+    }
+
+    def StrInterp: Rule1[ParsedAst.Expression.FString] = {
+      def Quote: Rule0 = rule("\"")
+
+      def Fragment: Rule1[ParsedAst.Interpolation] = rule {
+        ExpFragment | StrFragment
+      }
+
+      def ExpFragment: Rule1[ParsedAst.Interpolation] = rule {
+        atomic("${") ~ optWS ~ Expression ~ optWS ~ atomic("}") ~> ParsedAst.Interpolation.ExpPart
+      }
+
+      def StrFragment: Rule1[ParsedAst.Interpolation] = rule {
+        capture(oneOrMore(!(Quote | atomic("${")) ~ CharPredicate.All)) ~> ParsedAst.Interpolation.StrPart
+      }
+
+      rule {
+        SP ~ "s" ~ Quote ~ zeroOrMore(Fragment) ~ Quote ~ SP ~> ParsedAst.Expression.FString
+      }
     }
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
