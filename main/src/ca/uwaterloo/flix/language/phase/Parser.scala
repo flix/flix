@@ -600,7 +600,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
-        FixpointProject | Constraint | StrInterp | Literal | HandleWith | Existential | Universal |
+        FixpointProject | Constraint | Interpolation | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
 
@@ -608,27 +608,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Expression.Lit
     }
 
-    def StrInterp: Rule1[ParsedAst.Expression.FString] = {
+    def Interpolation: Rule1[ParsedAst.Expression.Interpolation] = {
       def DblQuote: Rule0 = rule("\"")
 
-      def InterpFst: Rule0 = rule("${")
+      def DollarLBrace: Rule0 = rule("${")
 
-      def InterLst: Rule0 = rule("}")
+      def RBrace: Rule0 = rule("}")
 
-      def StringInterpolationPart: Rule1[ParsedAst.StringInterpolation] = rule {
+      def ExpPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~> ParsedAst.InterpolationPart.ExpPart
+      }
+
+      def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        capture(oneOrMore(!(DblQuote | DollarLBrace) ~ CharPredicate.All)) ~> ParsedAst.InterpolationPart.StrPart
+      }
+
+      def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
         ExpPart | StrPart
       }
 
-      def ExpPart: Rule1[ParsedAst.StringInterpolation] = rule {
-        InterpFst~ optWS ~ Expression ~ optWS ~ InterLst ~> ParsedAst.StringInterpolation.ExpPart
-      }
-
-      def StrPart: Rule1[ParsedAst.StringInterpolation] = rule {
-        capture(oneOrMore(!(DblQuote | InterpFst) ~ CharPredicate.All)) ~> ParsedAst.StringInterpolation.StrPart
-      }
-
       rule {
-        SP ~ DblQuote ~ zeroOrMore(StringInterpolationPart) ~ DblQuote ~ SP ~> ParsedAst.Expression.FString
+        SP ~ DblQuote ~ zeroOrMore(InterpolationPart) ~ DblQuote ~ SP ~> ParsedAst.Expression.Interpolation
       }
     }
 
