@@ -418,19 +418,19 @@ object ParsedAst {
   /**
     * String Interpolation.
     */
-  sealed trait Interpolation
+  sealed trait StringInterpolation
 
-  object Interpolation {
+  object StringInterpolation {
 
     /**
       * Expression part of a string interpolation.
       */
-    case class ExpPart(e: ParsedAst.Expression) extends Interpolation
+    case class ExpPart(e: ParsedAst.Expression) extends StringInterpolation
 
     /**
       * String part of a string interpolation.
       */
-    case class StrPart(s: String) extends Interpolation
+    case class StrPart(s: String) extends StringInterpolation
 
   }
 
@@ -847,7 +847,7 @@ object ParsedAst {
       * @param parts the parts of the interpolation.
       * @param sp2   the position of the last character in the expression.
       */
-    case class FString(sp1: SourcePosition, parts: Seq[Interpolation], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FString(sp1: SourcePosition, parts: Seq[StringInterpolation], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Reference expression.

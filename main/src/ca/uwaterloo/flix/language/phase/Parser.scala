@@ -609,22 +609,26 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def StrInterp: Rule1[ParsedAst.Expression.FString] = {
-      def Quote: Rule0 = rule("\"")
+      def DblQuote: Rule0 = rule("\"")
 
-      def Fragment: Rule1[ParsedAst.Interpolation] = rule {
-        ExpFragment | StrFragment
+      def InterpFst: Rule0 = rule("${")
+
+      def InterLst: Rule0 = rule("}")
+
+      def StringInterpolationPart: Rule1[ParsedAst.StringInterpolation] = rule {
+        ExpPart | StrPart
       }
 
-      def ExpFragment: Rule1[ParsedAst.Interpolation] = rule {
-        atomic("${") ~ optWS ~ Expression ~ optWS ~ atomic("}") ~> ParsedAst.Interpolation.ExpPart
+      def ExpPart: Rule1[ParsedAst.StringInterpolation] = rule {
+        InterpFst~ optWS ~ Expression ~ optWS ~ InterLst ~> ParsedAst.StringInterpolation.ExpPart
       }
 
-      def StrFragment: Rule1[ParsedAst.Interpolation] = rule {
-        capture(oneOrMore(!(Quote | atomic("${")) ~ CharPredicate.All)) ~> ParsedAst.Interpolation.StrPart
+      def StrPart: Rule1[ParsedAst.StringInterpolation] = rule {
+        capture(oneOrMore(!(DblQuote | InterpFst) ~ CharPredicate.All)) ~> ParsedAst.StringInterpolation.StrPart
       }
 
       rule {
-        SP ~ "s" ~ Quote ~ zeroOrMore(Fragment) ~ Quote ~ SP ~> ParsedAst.Expression.FString
+        SP ~ DblQuote ~ zeroOrMore(StringInterpolationPart) ~ DblQuote ~ SP ~> ParsedAst.Expression.FString
       }
     }
 

@@ -856,20 +856,38 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.FString(sp1, parts, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val init = WeededAst.Expression.Str("", loc)
-      Validation.fold(parts, init: WeededAst.Expression) {
-        case (acc, ParsedAst.Interpolation.ExpPart(e)) =>
-          mapN(visitExp(e)) {
-            case e2 =>
+
+      parts match {
+        case Seq() =>
+          // Case 1: Return the empty string if there are no parts.
+          WeededAst.Expression.Str("", loc).toSuccess
+
+        case Seq(ParsedAst.StringInterpolation.ExpPart(e)) =>
+          // Case 2: Return the expression if there is single expression part.
+          visitExp(e)
+
+        case Seq(ParsedAst.StringInterpolation.StrPart(s)) =>
+          // Case 3: Return the string if there is only a single string part.
+          WeededAst.Expression.Str(s, loc).toSuccess
+
+        case ps =>
+          // Case 4: Construct a sequence of string append expressions.
+          val init = WeededAst.Expression.Str("", loc)
+          Validation.fold(ps, init: WeededAst.Expression) {
+            case (acc, ParsedAst.StringInterpolation.ExpPart(e)) =>
+              mapN(visitExp(e)) {
+                case e2 =>
+                  val op = BinaryOperator.Plus
+                  WeededAst.Expression.Binary(op, acc, e2, loc)
+              }
+
+            case (acc, ParsedAst.StringInterpolation.StrPart(s)) =>
               val op = BinaryOperator.Plus
-              WeededAst.Expression.Binary(op, acc, e2, loc)
+              val e1 = acc
+              val e2 = WeededAst.Expression.Str(s, loc)
+              WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
           }
 
-        case (acc, ParsedAst.Interpolation.StrPart(s)) =>
-          val op = BinaryOperator.Plus
-          val e1 = acc
-          val e2 = WeededAst.Expression.Str(s, loc)
-          WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
       }
 
     case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
