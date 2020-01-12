@@ -600,12 +600,36 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
-        FixpointProject | Constraint | Literal | HandleWith | Existential | Universal |
+        FixpointProject | Constraint | Interpolation | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
       SP ~ Parser.this.Literal ~ SP ~> ParsedAst.Expression.Lit
+    }
+
+    def Interpolation: Rule1[ParsedAst.Expression.Interpolation] = {
+      def DblQuote: Rule0 = rule("\"")
+
+      def DollarLBrace: Rule0 = rule("${")
+
+      def RBrace: Rule0 = rule("}")
+
+      def ExpPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        DollarLBrace ~ optWS ~ Expression ~ optWS ~ RBrace ~> ParsedAst.InterpolationPart.ExpPart
+      }
+
+      def StrPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        capture(oneOrMore(!(DblQuote | DollarLBrace) ~ CharPredicate.All)) ~> ParsedAst.InterpolationPart.StrPart
+      }
+
+      def InterpolationPart: Rule1[ParsedAst.InterpolationPart] = rule {
+        ExpPart | StrPart
+      }
+
+      rule {
+        SP ~ DblQuote ~ zeroOrMore(InterpolationPart) ~ DblQuote ~ SP ~> ParsedAst.Expression.Interpolation
+      }
     }
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
@@ -1018,7 +1042,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate  ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 

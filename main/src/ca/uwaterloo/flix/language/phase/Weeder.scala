@@ -854,6 +854,42 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      parts match {
+        case Seq() =>
+          // Case 1: Return the empty string if there are no interpolation parts.
+          WeededAst.Expression.Str("", loc).toSuccess
+
+        case Seq(ParsedAst.InterpolationPart.ExpPart(e)) =>
+          // Case 2: Return the expression if there is only a single expression.
+          visitExp(e)
+
+        case Seq(ParsedAst.InterpolationPart.StrPart(s)) =>
+          // Case 3: Return the string if there is only a single string.
+          WeededAst.Expression.Str(s, loc).toSuccess
+
+        case ps =>
+          // Case 4: Construct a sequence of string append expressions.
+          val init = WeededAst.Expression.Str("", loc)
+          Validation.fold(ps, init: WeededAst.Expression) {
+            case (acc, ParsedAst.InterpolationPart.ExpPart(e)) =>
+              mapN(visitExp(e)) {
+                case e2 =>
+                  val op = BinaryOperator.Plus
+                  WeededAst.Expression.Binary(op, acc, e2, loc)
+              }
+
+            case (acc, ParsedAst.InterpolationPart.StrPart(s)) =>
+              val op = BinaryOperator.Plus
+              val e1 = acc
+              val e2 = WeededAst.Expression.Str(s, loc)
+              WeededAst.Expression.Binary(op, e1, e2, loc).toSuccess
+          }
+
+      }
+
     case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
       for {
         e <- visitExp(exp)
@@ -1080,7 +1116,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Translates the given literal to an expression.
     */
-  private def lit2exp(lit0: ParsedAst.Literal): Validation[WeededAst.Expression, WeederError] = lit0 match {
+  private def lit2exp(lit0: ParsedAst.Literal)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = lit0 match {
     case ParsedAst.Literal.Unit(sp1, sp2) =>
       WeededAst.Expression.Unit(mkSL(sp1, sp2)).toSuccess
 
@@ -1901,6 +1937,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
+    case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)

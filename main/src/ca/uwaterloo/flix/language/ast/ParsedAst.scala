@@ -415,7 +415,6 @@ object ParsedAst {
 
   }
 
-
   /**
     * Expressions.
     */
@@ -821,6 +820,15 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * String Interpolation Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param parts the parts of the interpolation.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Interpolation(sp1: SourcePosition, parts: Seq[InterpolationPart], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Reference expression.
@@ -1530,6 +1538,25 @@ object ParsedAst {
     * @param sp2   the position of the last character in the annotation.
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends AnnotationOrProperty
+
+  /**
+    * String Interpolation Part.
+    */
+  sealed trait InterpolationPart
+
+  object InterpolationPart {
+
+    /**
+      * Expression part of a string interpolation.
+      */
+    case class ExpPart(e: ParsedAst.Expression) extends InterpolationPart
+
+    /**
+      * String part of a string interpolation.
+      */
+    case class StrPart(s: String) extends InterpolationPart
+
+  }
 
   /**
     * Property.
