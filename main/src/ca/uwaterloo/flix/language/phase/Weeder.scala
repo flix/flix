@@ -859,15 +859,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       parts match {
         case Seq() =>
-          // Case 1: Return the empty string if there are no parts.
+          // Case 1: Return the empty string if there are no interpolation parts.
           WeededAst.Expression.Str("", loc).toSuccess
 
         case Seq(ParsedAst.InterpolationPart.ExpPart(e)) =>
-          // Case 2: Return the expression if there is single expression part.
+          // Case 2: Return the expression if there is only a single expression.
           visitExp(e)
 
         case Seq(ParsedAst.InterpolationPart.StrPart(s)) =>
-          // Case 3: Return the string if there is only a single string part.
+          // Case 3: Return the string if there is only a single string.
           WeededAst.Expression.Str(s, loc).toSuccess
 
         case ps =>
