@@ -234,4 +234,21 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def flipBit(x: Int32, position: Int32): Int32 = x ^^^ (1 <<< position)
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Int32): Str =
+        native method flix.runtime.library.InterimReadShow.intToString(x) as Str
+
+    ///
+    /// Parse the string `s` as an Int32.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: Str): Result[Int32, Str] = try {
+         let i = native method java.lang.Integer.parseInt(s) as Int32;
+         Ok(i)
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
+     }
 }

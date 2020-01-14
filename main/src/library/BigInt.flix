@@ -78,4 +78,20 @@ namespace BigInt {
     ///
     pub def flipBit(x: BigInt, position: Int32): BigInt = x ^^^ (1ii <<< position)
 
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: BigInt): Str =
+        native method flix.runtime.library.InterimReadShow.bigIntegerToString(x) as Str
+
+    ///
+    /// Parse the string `s` as an BigInt.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: Str): Result[BigInt, Str] = try {
+         let i = native method flix.runtime.library.InterimReadShow.bigIntegerFromString(s) as BigInt;
+         Ok(i)
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
+     }
 }

@@ -238,4 +238,21 @@ namespace Int8 {
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
     pub def flipBit(x: Int8, position: Int32): Int8 = x ^^^ (1i8 <<< position)
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Int8): Str =
+        native method flix.runtime.library.InterimReadShow.byteToString(x) as Str
+
+    ///
+    /// Parse the string `s` as an Int8.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: Str): Result[Int8, Str] = try {
+         let i = native method java.lang.Byte.parseByte(s) as Int8;
+         Ok(i)
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
+     }
 }
