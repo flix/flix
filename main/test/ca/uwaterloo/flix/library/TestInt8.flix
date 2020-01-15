@@ -660,19 +660,19 @@ def flipBit12(): Bool = Int8.flipBit(-1i8, 32) `assertEq!` -2i8
 // toString                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toString01(): Bool = Int8.toString(0i8)  == "0"
+def toString01(): Bool = Int8.toString(0i8) == "0"
 
 @test
-def toString02(): Bool = Int8.toString(1i8)  == "1"
+def toString02(): Bool = Int8.toString(1i8) == "1"
 
 @test
-def toString03(): Bool = Int8.toString(-1i8)  == "-1"
+def toString03(): Bool = Int8.toString(-1i8) == "-1"
 
 @test
-def toString04(): Bool = Int8.toString(127i8)  == "127"
+def toString04(): Bool = Int8.toString(127i8) == "127"
 
 @test
-def toString05(): Bool = Int8.toString(-127i8)  == "-127"
+def toString05(): Bool = Int8.toString(-128i8) == "-128"
 
 /////////////////////////////////////////////////////////////////////////////
 // fromString                                                              //
@@ -687,16 +687,16 @@ def fromString02(): Bool = Int8.fromString(" 1") |> Result.isErr
 def fromString03(): Bool = Int8.fromString("1 ") |> Result.isErr
 
 @test
-def fromString04(): Bool = Int8.fromString("0")  == Ok(0i8)
+def fromString04(): Bool = Int8.fromString("0") == Ok(0i8)
 
 @test
-def fromString05(): Bool = Int8.fromString("1")  == Ok(1i8)
+def fromString05(): Bool = Int8.fromString("1") == Ok(1i8)
 
 @test
-def fromString06(): Bool = Int8.fromString("-1")  == Ok(-1i8)
+def fromString06(): Bool = Int8.fromString("-1") == Ok(-1i8)
 
 @test
-def fromString07(): Bool = Int8.fromString("127")  == Ok(127i8)
+def fromString07(): Bool = Int8.fromString("127") == Ok(127i8)
 
 @test
-def fromString08(): Bool = Int8.fromString("-127")  == Ok(-127i8)
+def fromString08(): Bool = Int8.fromString("-128") == Ok(-128i8)

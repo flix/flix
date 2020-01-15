@@ -246,7 +246,7 @@ namespace Int64 {
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[Int64, Str] = try {
-         let i = native method java.lang.Integer.parseInt(s) as Int64;
+         let i = native method java.lang.Long.parseLong(s) as Int64;
          Ok(i)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int64.fromString")

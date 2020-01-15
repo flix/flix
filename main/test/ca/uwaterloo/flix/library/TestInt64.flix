@@ -631,3 +631,48 @@ def flipBit11(): Bool = Int64.flipBit(-1i64, 31) `assertEq!` (-1i64-(1i64 <<< 31
 
 @test
 def flipBit12(): Bool = Int64.flipBit(-1i64, 64) `assertEq!` -2i64
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool = Int64.toString(0i64) == "0"
+
+@test
+def toString02(): Bool = Int64.toString(1i64) == "1"
+
+@test
+def toString03(): Bool = Int64.toString(-1i64) == "-1"
+
+@test
+def toString04(): Bool = Int64.toString(9223372036854775807i64) == "9223372036854775807"
+
+@test
+def toString05(): Bool = Int64.toString(-9223372036854775808i64) == "-9223372036854775808"
+
+/////////////////////////////////////////////////////////////////////////////
+// fromString                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fromString01(): Bool = Int64.fromString("Bad") |> Result.isErr
+
+@test
+def fromString02(): Bool = Int64.fromString(" 1") |> Result.isErr
+
+@test
+def fromString03(): Bool = Int64.fromString("1 ") |> Result.isErr
+
+@test
+def fromString04(): Bool = Int64.fromString("0") == Ok(0i64)
+
+@test
+def fromString05(): Bool = Int64.fromString("1") == Ok(1i64)
+
+@test
+def fromString06(): Bool = Int64.fromString("-1") == Ok(-1i64)
+
+@test
+def fromString07(): Bool = Int64.fromString("9223372036854775807") == Ok(9223372036854775807i64)
+
+@test
+def fromString08(): Bool = Int64.fromString("-9223372036854775808") == Ok(-9223372036854775808i64)

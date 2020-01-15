@@ -250,7 +250,7 @@ namespace Int16 {
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[Int16, Str] = try {
-         let i = native method java.lang.Byte.parseByte(s) as Int16;
+         let i = native method java.lang.Short.parseShort(s) as Int16;
          Ok(i)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
