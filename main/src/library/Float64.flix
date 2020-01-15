@@ -93,7 +93,7 @@ namespace Float64 {
         native method flix.runtime.library.InterimReadShow.doubleToString(x) as Str
 
     ///
-    /// Parse the string `s` as a Float64.
+    /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[Float64, Str] = try {

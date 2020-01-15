@@ -93,7 +93,7 @@ namespace Float32 {
         native method flix.runtime.library.InterimReadShow.floatToString(x) as Str
 
     ///
-    /// Parse the string `s` as a Float32.
+    /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[Float32, Str] = try {

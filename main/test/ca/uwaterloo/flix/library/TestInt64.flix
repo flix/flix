@@ -657,10 +657,10 @@ def toString05(): Bool = Int64.toString(-9223372036854775808i64) == "-9223372036
 def fromString01(): Bool = Int64.fromString("Bad") |> Result.isErr
 
 @test
-def fromString02(): Bool = Int64.fromString(" 1") |> Result.isErr
+def fromString02(): Bool = Int64.fromString(" 1") == Ok(1i64)
 
 @test
-def fromString03(): Bool = Int64.fromString("1 ") |> Result.isErr
+def fromString03(): Bool = Int64.fromString("1 ") == Ok(1i64)
 
 @test
 def fromString04(): Bool = Int64.fromString("0") == Ok(0i64)

@@ -85,7 +85,7 @@ namespace BigInt {
         native method flix.runtime.library.InterimReadShow.bigIntegerToString(x) as Str
 
     ///
-    /// Parse the string `s` as an BigInt.
+    /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[BigInt, Str] = try {

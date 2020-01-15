@@ -242,11 +242,11 @@ namespace Int32 {
         native method flix.runtime.library.InterimReadShow.intToString(x) as Str
 
     ///
-    /// Parse the string `s` as an Int32.
+    /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[Int32, Str] = try {
-         let i = native method java.lang.Integer.parseInt(s) as Int32;
+         let i = native method flix.runtime.library.InterimReadShow.intFromString(s) as Int32;
          Ok(i)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int32.fromString")

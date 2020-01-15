@@ -246,11 +246,11 @@ namespace Int8 {
         native method flix.runtime.library.InterimReadShow.byteToString(x) as Str
 
     ///
-    /// Parse the string `s` as an Int8.
+    /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def fromString(s: Str): Result[Int8, Str] = try {
-         let i = native method java.lang.Byte.parseByte(s) as Int8;
+         let i = native method flix.runtime.library.InterimReadShow.byteFromString(s) as Int8;
          Ok(i)
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int8.fromString")

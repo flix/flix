@@ -618,10 +618,10 @@ def toString05(): Bool = Int32.toString(-2147483648) == "-2147483648"
 def fromString01(): Bool = Int32.fromString("Bad") |> Result.isErr
 
 @test
-def fromString02(): Bool = Int32.fromString(" 1") |> Result.isErr
+def fromString02(): Bool = Int32.fromString(" 1") == Ok(1)
 
 @test
-def fromString03(): Bool = Int32.fromString("1 ") |> Result.isErr
+def fromString03(): Bool = Int32.fromString("1 ") == Ok(1)
 
 @test
 def fromString04(): Bool = Int32.fromString("0") == Ok(0)

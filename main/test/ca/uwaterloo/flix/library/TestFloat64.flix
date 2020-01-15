@@ -166,3 +166,69 @@ def max02(): Bool = Float64.max(4.0f64, -16.0f64) `assertEq!` 4.0f64
 
 @test
 def max03(): Bool = Float64.max(-34.0f64, -16.0f64) `assertEq!` -16.0f64
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool = Float64.toString(0.0f64) == "0.0"
+
+@test
+def toString02(): Bool = Float64.toString(1.0f64) == "1.0"
+
+@test
+def toString03(): Bool = Float64.toString(-1.0f64) == "-1.0"
+
+@test
+def toString04(): Bool = Float64.toString(3.14f64) == "3.14"
+
+@test
+def toString05(): Bool = Float64.toString(-3.14f64) == "-3.14"
+
+@test
+def toString06(): Bool = Float64.toString(Float64.nan()) == "NaN"
+
+@test
+def toString07(): Bool = Float64.toString(Float64.positiveInfinity()) == "Infinity"
+
+@test
+def toString08(): Bool = Float64.toString(Float64.negativeInfinity()) == "-Infinity"
+
+/////////////////////////////////////////////////////////////////////////////
+// fromString                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fromString01(): Bool = Float64.fromString("Bad") |> Result.isErr
+
+@test
+def fromString02(): Bool = Float64.fromString(" 1.0") == Ok(1.0f64)
+
+@test
+def fromString03(): Bool = Float64.fromString("1.0 ") == Ok(1.0f64)
+
+@test
+def fromString04(): Bool = Float64.fromString("0.0") == Ok(0.0f64)
+
+@test
+def fromString05(): Bool = Float64.fromString("1.0") == Ok(1.0f64)
+
+@test
+def fromString06(): Bool = Float64.fromString("-1.0") == Ok(-1.0f64)
+
+@test
+def fromString07(): Bool = Float64.fromString("3.14") == Ok(3.14f64)
+
+@test
+def fromString08(): Bool = Float64.fromString("-3.14") == Ok(-3.14f64)
+
+@test
+def fromString09(): Bool = match Float64.fromString("NaN") {
+    case Ok(x)  => Float64.isNan(x)
+    case _ => false
+}
+
+@test
+def fromString10(): Bool = Float64.fromString("Infinity") == Ok(Float64.positiveInfinity())
+
+@test
+def fromString11(): Bool = Float64.fromString("-Infinity") == Ok(Float64.negativeInfinity())

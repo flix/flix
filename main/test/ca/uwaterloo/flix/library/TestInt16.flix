@@ -684,10 +684,10 @@ def toString05(): Bool = Int16.toString(-32768i16) == "-32768"
 def fromString01(): Bool = Int16.fromString("Bad") |> Result.isErr
 
 @test
-def fromString02(): Bool = Int16.fromString(" 1") |> Result.isErr
+def fromString02(): Bool = Int16.fromString(" 1") == Ok(1i16)
 
 @test
-def fromString03(): Bool = Int16.fromString("1 ") |> Result.isErr
+def fromString03(): Bool = Int16.fromString("1 ") == Ok(1i16)
 
 @test
 def fromString04(): Bool = Int16.fromString("0") == Ok(0i16)

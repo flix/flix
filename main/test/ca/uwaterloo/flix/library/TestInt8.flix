@@ -681,10 +681,10 @@ def toString05(): Bool = Int8.toString(-128i8) == "-128"
 def fromString01(): Bool = Int8.fromString("Bad") |> Result.isErr
 
 @test
-def fromString02(): Bool = Int8.fromString(" 1") |> Result.isErr
+def fromString02(): Bool = Int8.fromString(" 1") == Ok(1i8)
 
 @test
-def fromString03(): Bool = Int8.fromString("1 ") |> Result.isErr
+def fromString03(): Bool = Int8.fromString("1 ") == Ok(1i8)
 
 @test
 def fromString04(): Bool = Int8.fromString("0") == Ok(0i8)

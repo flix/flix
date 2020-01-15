@@ -21,10 +21,13 @@ import java.math.BigInteger;
 /**
  * A wrapper class for reading and showing primitive types that provides concrete, non-overloaded methods.
  *
- * Flix can resolve overloading for Java's `parseInt` family of functions, so these do not
- * need wrappers, but we need to supply a non-overloaded "reader" for BigInteger.
+ * Java's standard library has a odd quirk where the float parsing functions `Float.parseFloat` and
+ * `Double.parseDouble` trims whitespace in the input but the corresponding integer parsing functions
+ * don't trim and instead throw an exception if they encounter whitespace.
  *
- * Note - This is considered an interim solution for reading and showing primitive types.
+ * So Flix can provide a consistent API (always trim) we trim whitespace for the integer parsers here.
+ *
+ * Note - This module is considered an interim solution for reading and showing primitive types.
  */
 public class InterimReadShow {
 
@@ -32,20 +35,40 @@ public class InterimReadShow {
         return Byte.toString(i);
     }
 
+    public static byte byteFromString(String s) throws Exception {
+        return Byte.parseByte(s.strip());
+    }
+
     public static String shortToString(short i) {
         return Short.toString(i);
+    }
+
+    public static short shortFromString(String s) throws Exception {
+        return Short.parseShort(s.strip());
     }
 
     public static String intToString(int i) {
         return Integer.toString(i);
     }
 
+    public static int intFromString(String s) throws Exception {
+        return Integer.parseInt(s.strip());
+    }
+
     public static String longToString(long i) {
         return Long.toString(i);
     }
 
+    public static long longFromString(String s) throws Exception {
+        return Long.parseLong(s.strip());
+    }
+
     public static String bigIntegerToString(BigInteger i) {
         return i.toString();
+    }
+
+    public static BigInteger bigIntegerFromString(String s) throws Exception {
+        return new BigInteger(s.strip());
     }
 
     public static String floatToString(float d) {
@@ -56,8 +79,5 @@ public class InterimReadShow {
         return Double.toString(d);
     }
 
-    public static BigInteger bigIntegerFromString(String s) throws Exception {
-        return new BigInteger(s.trim());
-    }
 
 }
