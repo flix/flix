@@ -361,3 +361,48 @@ def flipBit12(): Bool = BigInt.flipBit(-1ii, 31) `assertEq!` -2147483649ii
 
 @test
 def flipBit13(): Bool = BigInt.flipBit(-1ii, 32) `assertEq!` -4294967297ii
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool = BigInt.toString(0ii) == "0"
+
+@test
+def toString02(): Bool = BigInt.toString(1ii) == "1"
+
+@test
+def toString03(): Bool = BigInt.toString(-1ii) == "-1"
+
+@test
+def toString04(): Bool = BigInt.toString(3498457932459234592873452983453245ii) == "3498457932459234592873452983453245"
+
+@test
+def toString05(): Bool = BigInt.toString(-3498457932459234592873452983453245ii) == "-3498457932459234592873452983453245"
+
+/////////////////////////////////////////////////////////////////////////////
+// fromString                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fromString01(): Bool = BigInt.fromString("Bad") |> Result.isErr
+
+@test
+def fromString02(): Bool = BigInt.fromString(" 1") == Ok(1ii)
+
+@test
+def fromString03(): Bool = BigInt.fromString("1 ") == Ok(1ii)
+
+@test
+def fromString04(): Bool = BigInt.fromString("0") == Ok(0ii)
+
+@test
+def fromString05(): Bool = BigInt.fromString("1") == Ok(1ii)
+
+@test
+def fromString06(): Bool = BigInt.fromString("-1") == Ok(-1ii)
+
+@test
+def fromString07(): Bool = BigInt.fromString("3498457932459234592873452983453245") == Ok(3498457932459234592873452983453245ii)
+
+@test
+def fromString08(): Bool = BigInt.fromString("-3498457932459234592873452983453245") == Ok(-3498457932459234592873452983453245ii)

@@ -658,3 +658,48 @@ def flipBit11(): Bool = Int16.flipBit(-1i16, 13) `assertEq!` (-1i16-(1i16 <<< 13
 
 @test
 def flipBit12(): Bool = Int16.flipBit(-1i16, 32) `assertEq!` -2i16
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool = Int16.toString(0i16) == "0"
+
+@test
+def toString02(): Bool = Int16.toString(1i16) == "1"
+
+@test
+def toString03(): Bool = Int16.toString(-1i16) == "-1"
+
+@test
+def toString04(): Bool = Int16.toString(32767i16) == "32767"
+
+@test
+def toString05(): Bool = Int16.toString(-32768i16) == "-32768"
+
+/////////////////////////////////////////////////////////////////////////////
+// fromString                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fromString01(): Bool = Int16.fromString("Bad") |> Result.isErr
+
+@test
+def fromString02(): Bool = Int16.fromString(" 1") == Ok(1i16)
+
+@test
+def fromString03(): Bool = Int16.fromString("1 ") == Ok(1i16)
+
+@test
+def fromString04(): Bool = Int16.fromString("0") == Ok(0i16)
+
+@test
+def fromString05(): Bool = Int16.fromString("1") == Ok(1i16)
+
+@test
+def fromString06(): Bool = Int16.fromString("-1") == Ok(-1i16)
+
+@test
+def fromString07(): Bool = Int16.fromString("32767") == Ok(32767i16)
+
+@test
+def fromString08(): Bool = Int16.fromString("-32768") == Ok(-32768i16)

@@ -234,4 +234,21 @@ namespace Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
     pub def flipBit(x: Int64, position: Int32): Int64 = x ^^^ (1i64 <<< position)
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Int64): Str =
+        native method flix.runtime.library.InterimReadShow.longToString(x) as Str
+
+    ///
+    /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: Str): Result[Int64, Str] = try {
+         let i = native method flix.runtime.library.InterimReadShow.longFromString(s) as Int64;
+         Ok(i)
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
+     }
 }

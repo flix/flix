@@ -85,4 +85,21 @@ namespace Float32 {
     /// Returns the larger of `x` and `y`.
     ///
     pub def max(x: Float32, y: Float32): Float32 = if (x >= y) x else y
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Float32): Str =
+        native method flix.runtime.library.InterimReadShow.floatToString(x) as Str
+
+    ///
+    /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: Str): Result[Float32, Str] = try {
+         let i = native method java.lang.Float.parseFloat(s) as Float32;
+         Ok(i)
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
+     }
 }
