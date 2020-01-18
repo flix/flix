@@ -1838,7 +1838,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   private def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
     Class.forName(className).toSuccess
   } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure
+    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
   }
 
 
@@ -1860,6 +1860,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case ex: ClassNotFoundException =>
       ex.printStackTrace()
       ??? // TODO
+
+    case ex: NoSuchMethodException =>
+      ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
   }
 
   // TODO: DOC

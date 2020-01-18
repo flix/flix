@@ -436,7 +436,7 @@ object ResolutionError {
     * @param name the class name.
     * @param loc  the location of the class name.
     */
-  case class UndefinedNativeClass(name: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -444,6 +444,24 @@ object ResolutionError {
       vt << ">> Undefined class '" << Red(name) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "undefined class.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that the method name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the method name.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedJvmMethod(className: String, fieldName: String, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined method '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined method.") << NewLine
     }
   }
 

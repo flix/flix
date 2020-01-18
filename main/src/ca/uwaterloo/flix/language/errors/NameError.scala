@@ -261,6 +261,7 @@ object NameError {
     * @param arity     the expected arity.
     * @param loc       the location of the method name.
     */
+  // TODO: Remove
   case class UndefinedNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
