@@ -630,7 +630,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def JvmMethod: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
+        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ optWS ~ ":" ~ optWS ~ Type ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
       }
 
       def JvmImport: Rule1[ParsedAst.JvmImport] = rule {

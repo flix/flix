@@ -578,7 +578,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
 
       impl match {
-        case ParsedAst.JvmImport.JvmMethod(fqn, fparams, ident) =>
+        case ParsedAst.JvmImport.JvmMethod(fqn, fparams, returnType, ident) =>
 
           //
           // Introduce a let-binding with a curried lambda.
