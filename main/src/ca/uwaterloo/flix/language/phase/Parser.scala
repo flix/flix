@@ -639,7 +639,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => x +: xs)
       }
 
-      def ConstructorMethod: Rule1[ParsedAst.JvmImport] = rule {
+      def Constructor: Rule1[ParsedAst.JvmImport] = rule { // TODO: No return type.
         ConstructorName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Constructor
       }
 
@@ -656,7 +656,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Import: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("import") ~ WS ~ (ConstructorMethod | Method | StaticMethod)
+        atomic("import") ~ WS ~ (Constructor | Method | StaticMethod)
       }
 
       rule {

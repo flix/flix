@@ -578,6 +578,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
 
       impl match {
+
+        case ParsedAst.JvmImport.Constructor(fqn, fparams, returnType, ident) =>
+          // TODO
+          ???
+
         case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
 
           if (fqn.size == 1) {
