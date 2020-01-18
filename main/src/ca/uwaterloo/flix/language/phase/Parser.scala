@@ -623,22 +623,32 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetImport: Rule1[ParsedAst.Expression] = {
 
-      // TODO: Naming.
-
-      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
-        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      def JvmIdentifier: Rule1[String] = rule {
+        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
       }
+
+      def JvmMethodName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdentifier).separatedBy(".")
+      }
+
+
+      // TODO: Naming and organization.
 
       def JvmMethod: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ optWS ~ ":" ~ optWS ~ Type ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
+        JvmMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
       }
 
-      def JvmImport: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("import") ~ WS ~ atomic("jvm") ~ WS ~ JvmMethod
+
+      def TypeSignature: Rule2[Seq[ParsedAst.Type], ParsedAst.Type] = rule {
+        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type
+      }
+
+      def Import: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("import") ~ WS ~ (JvmMethod)
       }
 
       rule {
-        SP ~ JvmImport ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetImport
+        SP ~ Import ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetImport
       }
     }
 
