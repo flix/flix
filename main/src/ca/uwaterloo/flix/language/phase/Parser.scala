@@ -102,40 +102,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = {
-    def Imports: Rule1[Seq[ParsedAst.Import]] = rule {
-      zeroOrMore(Import).separatedBy(optWS)
-    }
-
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
       zeroOrMore(Declaration)
     }
 
     rule {
-      SP ~ Imports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+      SP ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Imports                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  def Import: Rule1[ParsedAst.Import] = rule {
-    Imports.Wildcard | Imports.Definition | Imports.Namespace
-  }
-
-  object Imports {
-
-    def Wildcard: Rule1[ParsedAst.Import.Wild] = rule {
-      SP ~ atomic("import") ~ WS ~ Names.Namespace ~ "/" ~ "_" ~ SP ~> ParsedAst.Import.Wild
-    }
-
-    def Definition: Rule1[ParsedAst.Import.Definition] = rule {
-      SP ~ atomic("import") ~ WS ~ Names.Namespace ~ "/" ~ Names.Definition ~ SP ~> ParsedAst.Import.Definition
-    }
-
-    def Namespace: Rule1[ParsedAst.Import.Namespace] = rule {
-      SP ~ atomic("import") ~ WS ~ Names.Namespace ~ SP ~> ParsedAst.Import.Namespace
-    }
-
   }
 
   /////////////////////////////////////////////////////////////////////////////
