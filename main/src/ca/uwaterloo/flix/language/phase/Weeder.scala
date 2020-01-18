@@ -1014,11 +1014,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LocalImport(sp1, impl, exp2, sp2) =>
+    case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       impl match {
-        case ParsedAst.LocalImport.JvmMethod(fqn, targs, ident) =>
+        case ParsedAst.JvmImport.JvmMethod(fqn, targs, ident) =>
 
           //
           // Introduce a let-binding with a curried lambda.
@@ -1994,7 +1994,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.LocalImport(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)

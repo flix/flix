@@ -569,7 +569,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | LocalImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -621,6 +621,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
+    def LetImport: Rule1[ParsedAst.Expression] = {
+
+      // TODOL Naming.
+
+      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
+        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      def JvmMethod: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
+      }
+
+      // TODO: Name
+      def Imp: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("import") ~ WS ~ atomic("jvm") ~ WS ~ JvmMethod
+      }
+
+      rule {
+        SP ~ Imp ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetImport
+      }
+    }
+
     def Match: Rule1[ParsedAst.Expression.Match] = {
       def Rule: Rule1[ParsedAst.MatchRule] = rule {
         atomic("case") ~ WS ~ Pattern ~ optWS ~ optional(atomic("if") ~ WS ~ Expression ~ optWS) ~ atomic("=>") ~ optWS ~ Statement ~> ParsedAst.MatchRule
@@ -670,32 +692,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         atomic("native") ~ WS ~ (NativeField | NativeMethod | NativeConstructor)
-      }
-    }
-
-    def LocalImport: Rule1[ParsedAst.Expression] = {
-
-      // TODO: Rename to LetImport?
-
-      // TODO: Names
-
-      // TODO: Inline JavaName
-
-      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
-        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
-      }
-
-      def JvmMethod: Rule1[ParsedAst.LocalImport] = rule {
-        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.LocalImport.JvmMethod
-      }
-
-      // TODO: Name
-      def Imp: Rule1[ParsedAst.LocalImport] = rule {
-        atomic("import") ~ WS ~ atomic("jvm") ~ WS ~ JvmMethod
-      }
-
-      rule {
-        SP ~ Imp ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LocalImport
       }
     }
 

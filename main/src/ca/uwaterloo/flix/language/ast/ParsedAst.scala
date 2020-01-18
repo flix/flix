@@ -37,9 +37,9 @@ object ParsedAst {
   /**
     * Root. A collection of imports and declarations.
     *
-    * @param sp1     the position of the first character in the source.
-    * @param decls   the declarations in the abstract syntax tree.
-    * @param sp2     the position of the last character in the source.
+    * @param sp1   the position of the first character in the source.
+    * @param decls the declarations in the abstract syntax tree.
+    * @param sp2   the position of the last character in the source.
     */
   case class Root(sp1: SourcePosition, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
 
@@ -543,6 +543,16 @@ object ParsedAst {
     case class LetRec(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Let Import Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param imp the import.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class LetImport(sp1: SourcePosition, imp: ParsedAst.JvmImport, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Match Expression (pattern match expression).
       *
       * @param sp1   the position of the first character in the expression.
@@ -903,16 +913,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Local Import Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      *             TODO> IMPL name and exp.
-      * @param sp2  the position of the last character in the expression.
-      */
-    // TODO: Name
-    case class LocalImport(sp1: SourcePosition, imp: ParsedAst.LocalImport, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * NewChannel Expression.
@@ -1525,18 +1525,20 @@ object ParsedAst {
   }
 
   /**
-    * Local Import.
+    * Jvm Import.
     */
-  sealed trait LocalImport
+  sealed trait JvmImport
 
-  object LocalImport {
-
-    // TODO: DOC
+  object JvmImport {
 
     /**
       * JVM Method Import.
+      *
+      * @param fqn     the fully-qualifified name of the method name.
+      * @param fparams the types of the formal parameters.
+      * @param ident   the name given to the imported method.
       */
-    case class JvmMethod(name: Seq[String], targs: Seq[ParsedAst.Type], ident: Name.Ident) extends LocalImport
+    case class JvmMethod(fqn: Seq[String], fparams: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmImport
 
   }
 
