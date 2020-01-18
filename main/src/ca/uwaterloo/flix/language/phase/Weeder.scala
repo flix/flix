@@ -1014,6 +1014,43 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.LocalImport(sp1, impl, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      impl match {
+        case ParsedAst.LocalImport.JvmMethod(fqn, targs) =>
+
+          //
+          // Introduce a let-binding with a curried lambda.
+          //
+
+          if (fqn.size == 1) {
+            return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+          }
+
+          val className = fqn.dropRight(1).mkString(".")
+          val methodName = fqn.last
+
+          val ts = targs.map(visitType).toList
+
+          val fs = ts.zipWithIndex.map {
+            case (tpe, index) =>
+              val ident = Name.Ident(sp1, "a" + index, sp2)
+              WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
+          }
+          val as = ts.zipWithIndex.map {
+            case (tpe, index) =>
+              val ident = Name.Ident(sp1, "a" + index, sp2)
+              WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
+          }
+
+          val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
+          val lambda = mkCurried(fs, lambdaBody, loc)
+
+          ???
+      }
+
+
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
     case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
@@ -1950,6 +1987,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.LocalImport(sp1, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)

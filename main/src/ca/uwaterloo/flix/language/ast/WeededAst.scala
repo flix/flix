@@ -181,6 +181,8 @@ object WeededAst {
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class NativeMethod2(className: String, methodName: String, targs: List[WeededAst.Type], args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
     case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
 
     case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
