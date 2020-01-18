@@ -623,34 +623,32 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetImport: Rule1[ParsedAst.Expression] = {
 
-      def JvmIdentifier: Rule1[String] = rule {
+      def JvmIdent: Rule1[String] = rule {
         capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
       }
 
-      def JvmMethodName: Rule1[Seq[String]] = rule {
-        oneOrMore(JvmIdentifier).separatedBy(".")
+      def ConstructorName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ atomic("__new__")
       }
 
-      def JvmStaticMethodName: Rule1[Seq[String]] = rule {
-        oneOrMore(JvmIdentifier).separatedBy(".") ~ ":" ~ JvmIdentifier ~> ((xs: Seq[String], x: String) => x +: xs)
+      def MethodName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".")
       }
 
-      def JvmConstructorMethodName: Rule1[Seq[String]] = rule {
-        oneOrMore(JvmIdentifier).separatedBy(".") ~ ":" ~ atomic("__new__")
+      def StaticMethodName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => x +: xs)
       }
 
-      // TODO: Naming and organization.
-
-      def JvmMethod: Rule1[ParsedAst.JvmImport] = rule {
-        JvmMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
+      def ConstructorMethod: Rule1[ParsedAst.JvmImport] = rule {
+        ConstructorName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Constructor
       }
 
-      def JvmStaticMethod: Rule1[ParsedAst.JvmImport] = rule {
-        JvmStaticMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmStaticMethod
+      def Method: Rule1[ParsedAst.JvmImport] = rule {
+        MethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Method
       }
 
-      def JvmConstructorMethod: Rule1[ParsedAst.JvmImport] = rule {
-        JvmConstructorMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmConstructorMethod
+      def StaticMethod: Rule1[ParsedAst.JvmImport] = rule {
+        StaticMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.StaticMethod
       }
 
       def TypeSignature: Rule2[Seq[ParsedAst.Type], ParsedAst.Type] = rule {
@@ -658,7 +656,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Import: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("import") ~ WS ~ (JvmMethod | JvmStaticMethod | JvmConstructorMethod)
+        atomic("import") ~ WS ~ (ConstructorMethod | Method | StaticMethod)
       }
 
       rule {

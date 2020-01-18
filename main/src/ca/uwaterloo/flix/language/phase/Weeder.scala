@@ -578,7 +578,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val loc = mkSL(sp1, sp2)
 
       impl match {
-        case ParsedAst.JvmImport.JvmMethod(fqn, fparams, returnType, ident) =>
+        case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
 
           if (fqn.size == 1) {
             return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
@@ -613,7 +613,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.JvmStaticMethod(fqn, fparams, returnType, ident) =>
+        case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
 
 
 
