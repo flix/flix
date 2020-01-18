@@ -609,10 +609,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
-    def LetRec: Rule1[ParsedAst.Expression.LetRec] = rule {
-      SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetRec
-    }
-
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
       SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatch
     }
@@ -621,9 +617,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatchStar
     }
 
+    def LetRec: Rule1[ParsedAst.Expression.LetRec] = rule {
+      SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetRec
+    }
+
     def LetImport: Rule1[ParsedAst.Expression] = {
 
-      // TODOL Naming.
+      // TODO: Naming.
 
       def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
@@ -633,13 +633,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
       }
 
-      // TODO: Name
-      def Imp: Rule1[ParsedAst.JvmImport] = rule {
+      def JvmImport: Rule1[ParsedAst.JvmImport] = rule {
         atomic("import") ~ WS ~ atomic("jvm") ~ WS ~ JvmMethod
       }
 
       rule {
-        SP ~ Imp ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetImport
+        SP ~ JvmImport ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetImport
       }
     }
 

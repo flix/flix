@@ -574,6 +574,50 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      impl match {
+        case ParsedAst.JvmImport.JvmMethod(fqn, fparams, ident) =>
+
+          //
+          // Introduce a let-binding with a curried lambda.
+          //
+
+          if (fqn.size == 1) {
+            return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+          }
+
+          val className = fqn.dropRight(1).mkString(".")
+          val methodName = fqn.last
+
+          val receiverType = WeededAst.Type.Native(fqn.dropRight(1).toList, loc)
+
+          val ts = fparams.map(visitType).toList
+
+          val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
+          val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg", sp2)), loc)
+
+          val fs = receiverFormalParam :: ts.zipWithIndex.map {
+            case (tpe, index) =>
+              val ident = Name.Ident(sp1, "a" + index, sp2)
+              WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
+          }
+          val as = receiverArg :: ts.zipWithIndex.map {
+            case (tpe, index) =>
+              val ident = Name.Ident(sp1, "a" + index, sp2)
+              WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
+          }
+
+          val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
+
+          mapN(visitExp(exp2)) {
+            case e2 =>
+              val e1 = mkCurried(fs, lambdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
+          }
+      }
+
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.MatchRule(pat, None, body) =>
@@ -1012,50 +1056,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val methodName = fqn.last
       traverse(args)(visitExp) map {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
-      val loc = mkSL(sp1, sp2)
-
-      impl match {
-        case ParsedAst.JvmImport.JvmMethod(fqn, targs, ident) =>
-
-          //
-          // Introduce a let-binding with a curried lambda.
-          //
-
-          if (fqn.size == 1) {
-            return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-          }
-
-          val className = fqn.dropRight(1).mkString(".")
-          val methodName = fqn.last
-
-          val receiverType = WeededAst.Type.Native(fqn.dropRight(1).toList, loc)
-
-          val ts = targs.map(visitType).toList
-
-          val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
-          val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg", sp2)), loc)
-
-          val fs = receiverFormalParam :: ts.zipWithIndex.map {
-            case (tpe, index) =>
-              val ident = Name.Ident(sp1, "a" + index, sp2)
-              WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
-          }
-          val as = receiverArg :: ts.zipWithIndex.map {
-            case (tpe, index) =>
-              val ident = Name.Ident(sp1, "a" + index, sp2)
-              WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
-          }
-
-          val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
-
-          mapN(visitExp(exp2)) {
-            case e2 =>
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expression.Let(ident, e1, e2, loc)
-          }
       }
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
@@ -1956,6 +1956,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatchStar(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
@@ -1994,7 +1995,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
