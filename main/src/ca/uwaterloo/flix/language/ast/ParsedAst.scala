@@ -905,6 +905,16 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Local Import Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      *             TODO
+      * @param sp2  the position of the last character in the expression.
+      */
+    // TODO: Name
+    case class LocalImport(sp1: SourcePosition, imp: ParsedAst.LocalImport, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * NewChannel Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1511,6 +1521,20 @@ object ParsedAst {
       * String part of a string interpolation.
       */
     case class StrPart(s: String) extends InterpolationPart
+
+  }
+
+  /**
+    * Local Import.
+    */
+  sealed trait LocalImport
+
+  object LocalImport {
+
+    /**
+      * JVM Method Import.
+      */
+    case class JvmMethod(name: Seq[String], targs: Seq[ParsedAst.Type]) extends LocalImport
 
   }
 
