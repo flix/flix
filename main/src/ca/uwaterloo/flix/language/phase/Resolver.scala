@@ -1845,27 +1845,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Returns the result of looking up the given `methodName` on the given `className`.
     */
-  private def lookupNativeMethod(className: String, methodName: String, targs: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
-    // compute the arity.
-    val arity = targs.length
+  private def lookupNativeMethod(className: String, methodName: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
+    // Lookup the class object of the receiver object.
+    val receiverClass = Class.forName(className)
 
-    // retrieve class object.
-    val clazz = Class.forName(className)
+    // Lookup the class objects of the argument types.
+    val parameterClasses = parameterTypes.map(getJVMType)
 
-    // retrieve the class objects for the parameters.
-    val parameterTypes = targs.map(getJVMType)
-
-    clazz.getDeclaredMethod(methodName, parameterTypes: _*).toSuccess
+    // Lookup the method using the name and parameter types.
+    receiverClass.getDeclaredMethod(methodName, parameterClasses: _*).toSuccess
   } catch {
-    case ex: ClassNotFoundException =>
-      ex.printStackTrace()
-      ??? // TODO
-
-    case ex: NoSuchMethodException =>
-      ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
+    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+    case ex: NoSuchMethodException => ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
   }
 
-  // TODO: DOC
+  /**
+    * Returns the JVM type corresponding to the given Flix type `tpe`.
+    */
   private def getJVMType(tpe: Type): Class[_] = tpe match {
     case Type.Cst(TypeConstructor.Char) => classOf[Char]
     case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
