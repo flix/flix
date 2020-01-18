@@ -1014,11 +1014,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.LocalImport(sp1, impl, sp2) =>
+    case ParsedAst.Expression.LocalImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       impl match {
-        case ParsedAst.LocalImport.JvmMethod(fqn, targs) =>
+        case ParsedAst.LocalImport.JvmMethod(fqn, targs, ident) =>
 
           //
           // Introduce a let-binding with a curried lambda.
@@ -1045,11 +1045,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
-          val lambda = mkCurried(fs, lambdaBody, loc)
 
-          ???
+          mapN(visitExp(exp2)) {
+            case e2 =>
+              val e1 = mkCurried(fs, lambdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
+          }
       }
-
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
@@ -1987,7 +1989,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.LocalImport(sp1, _, _) => sp1
+    case ParsedAst.Expression.LocalImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)

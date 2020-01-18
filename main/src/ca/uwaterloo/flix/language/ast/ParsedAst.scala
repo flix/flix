@@ -908,11 +908,11 @@ object ParsedAst {
       * Local Import Expression.
       *
       * @param sp1  the position of the first character in the expression.
-      *             TODO
+      *             TODO> IMPL name and exp.
       * @param sp2  the position of the last character in the expression.
       */
     // TODO: Name
-    case class LocalImport(sp1: SourcePosition, imp: ParsedAst.LocalImport, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LocalImport(sp1: SourcePosition, imp: ParsedAst.LocalImport, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * NewChannel Expression.
@@ -1531,10 +1531,12 @@ object ParsedAst {
 
   object LocalImport {
 
+    // TODO: DOC
+
     /**
       * JVM Method Import.
       */
-    case class JvmMethod(name: Seq[String], targs: Seq[ParsedAst.Type]) extends LocalImport
+    case class JvmMethod(name: Seq[String], targs: Seq[ParsedAst.Type], ident: Name.Ident) extends LocalImport
 
   }
 

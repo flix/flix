@@ -569,7 +569,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | LocalImport | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | LocalImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -675,6 +675,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LocalImport: Rule1[ParsedAst.Expression] = {
 
+      // TODO: Rename to LetImport?
+
       // TODO: Names
 
       // TODO: Inline JavaName
@@ -684,7 +686,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def JvmMethod: Rule1[ParsedAst.LocalImport] = rule {
-        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~> ParsedAst.LocalImport.JvmMethod
+        atomic("method") ~ WS ~ Names.JavaName ~ optWS ~ TypeList ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.LocalImport.JvmMethod
       }
 
       // TODO: Name
@@ -693,7 +695,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ Imp ~ SP ~> ParsedAst.Expression.LocalImport
+        SP ~ Imp ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LocalImport
       }
     }
 
