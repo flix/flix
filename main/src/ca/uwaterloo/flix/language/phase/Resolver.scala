@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.{Method, Modifier}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
@@ -717,9 +719,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.NativeMethod2(className, methodName, targs, args, tvar, evar, loc) =>
           val targsVal = traverse(targs)(lookupType(_, ns0, prog0))
           val argsVal = traverse(args)(visit(_, tenv0))
-          mapN(targsVal, argsVal) {
+          flatMapN(targsVal, argsVal) {
             case (ts, as) =>
-              ???
+              mapN(lookupNativeMethod(className, methodName, ts, loc)) {
+                case method =>
+                  ResolvedAst.Expression.NativeMethod(method, as, tvar, evar, loc)
+              }
           }
 
         case NamedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
@@ -1830,6 +1835,37 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     Class.forName(className).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure
+  }
+
+
+  /**
+    * Returns the result of looking up the given `methodName` on the given `className`.
+    */
+  private def lookupNativeMethod(className: String, methodName: String, targs: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
+    // compute the arity.
+    val arity = targs.length
+
+    // retrieve class object.
+    val clazz = Class.forName(className)
+
+    // retrieve the class objects for the parameters.
+    val parameterTypes = targs.map(getJVMType)
+
+    clazz.getDeclaredMethod(methodName, parameterTypes: _*).toSuccess
+  } catch {
+    case ex: ClassNotFoundException =>
+      ex.printStackTrace()
+      ??? // TODO
+  }
+
+  // TODO: DOC
+  private def getJVMType(tpe: Type): Class[_] = tpe match {
+    case Type.Cst(TypeConstructor.Char) => classOf[Char]
+    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
+    // TODO: Rest
+    case _ =>
+      println(tpe)
+      ??? // TODO
   }
 
   /**
