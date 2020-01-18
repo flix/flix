@@ -1436,8 +1436,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
-      lookupJvmClass(fqn.mkString("."), loc) map {
-        case clazz => Type.Cst(TypeConstructor.Native(clazz))
+      val n = fqn.mkString(".")
+      n match {
+        case "java.lang.String" => Type.Cst(TypeConstructor.Str).toSuccess
+        case _ => lookupJvmClass(n, loc) map {
+          case clazz => Type.Cst(TypeConstructor.Native(clazz))
+        }
       }
 
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
@@ -1863,6 +1867,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case Type.Cst(TypeConstructor.Char) => classOf[Char]
     case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
     // TODO: Rest
+
+    case Type.Cst(TypeConstructor.Native(clazz)) => clazz
+
     case _ =>
       println(tpe)
       ??? // TODO

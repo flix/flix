@@ -1031,14 +1031,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val className = fqn.dropRight(1).mkString(".")
           val methodName = fqn.last
 
+          val receiverType = WeededAst.Type.Native(fqn.dropRight(1).toList, loc)
+
           val ts = targs.map(visitType).toList
 
-          val fs = ts.zipWithIndex.map {
+          val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
+          val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg", sp2)), loc)
+
+          val fs = receiverFormalParam :: ts.zipWithIndex.map {
             case (tpe, index) =>
               val ident = Name.Ident(sp1, "a" + index, sp2)
               WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
           }
-          val as = ts.zipWithIndex.map {
+          val as = receiverArg :: ts.zipWithIndex.map {
             case (tpe, index) =>
               val ident = Name.Ident(sp1, "a" + index, sp2)
               WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
