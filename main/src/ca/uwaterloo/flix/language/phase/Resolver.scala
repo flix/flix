@@ -1863,8 +1863,22 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Returns the JVM type corresponding to the given Flix type `tpe`.
     */
   private def getJVMType(tpe: Type): Class[_] = tpe match {
+
+    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object") // TODO: Correct?
+    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean]
     case Type.Cst(TypeConstructor.Char) => classOf[Char]
+    case Type.Cst(TypeConstructor.Float32) => classOf[Float]
+    case Type.Cst(TypeConstructor.Float64) => classOf[Double]
+    case Type.Cst(TypeConstructor.Int8) => classOf[Byte]
+    case Type.Cst(TypeConstructor.Int16) => classOf[Short]
+    case Type.Cst(TypeConstructor.Int32) => classOf[Int]
+    case Type.Cst(TypeConstructor.Int64) => classOf[Long]
+    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger")
     case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
+
+    // TODO: Array, Channel, Enum, Native, Ref, Tuple, Vector, Relation, Lattice.
+
+
     // TODO: Rest
 
     case Type.Cst(TypeConstructor.Native(clazz)) => clazz
