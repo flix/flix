@@ -631,6 +631,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(JvmIdentifier).separatedBy(".")
       }
 
+      def JvmStaticMethodName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdentifier).separatedBy(".") ~ ":" ~ JvmIdentifier ~> ((xs: Seq[String], x: String) => x +: xs)
+      }
 
       // TODO: Naming and organization.
 
@@ -638,13 +641,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         JvmMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmMethod
       }
 
+      def JvmStaticMethod: Rule1[ParsedAst.JvmImport] = rule {
+        JvmStaticMethodName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.JvmStaticMethod
+      }
 
       def TypeSignature: Rule2[Seq[ParsedAst.Type], ParsedAst.Type] = rule {
         "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ ":" ~ optWS ~ Type
       }
 
       def Import: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("import") ~ WS ~ (JvmMethod)
+        atomic("import") ~ WS ~ (JvmMethod | JvmStaticMethod)
       }
 
       rule {

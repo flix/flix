@@ -580,10 +580,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       impl match {
         case ParsedAst.JvmImport.JvmMethod(fqn, fparams, returnType, ident) =>
 
-          //
-          // Introduce a let-binding with a curried lambda.
-          //
-
           if (fqn.size == 1) {
             return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
           }
@@ -616,6 +612,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
+
+        case ParsedAst.JvmImport.JvmStaticMethod(fqn, fparams, returnType, ident) =>
+
+
+
+          ???
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>

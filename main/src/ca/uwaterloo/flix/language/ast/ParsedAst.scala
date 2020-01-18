@@ -1541,6 +1541,16 @@ object ParsedAst {
       */
     case class JvmMethod(fqn: Seq[String], fparams: Seq[ParsedAst.Type], returnType: ParsedAst.Type, ident: Name.Ident) extends JvmImport
 
+    /**
+      * JVM Static Method Import.
+      *
+      * @param fqn        the fully-qualified name of the method name.
+      * @param fparams    the types of the formal parameters.
+      * @param returnType the return type.
+      * @param ident      the name given to the imported method.
+      */
+    case class JvmStaticMethod(fqn: Seq[String], fparams: Seq[ParsedAst.Type], returnType: ParsedAst.Type, ident: Name.Ident) extends JvmImport
+
   }
 
   /**
