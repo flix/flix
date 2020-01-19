@@ -231,6 +231,24 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(_, args, _, _) =>
         visitExps(args)
 
+      case Expression.InvokeMethod(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.InvokeStaticMethod(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.GetField(_, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.PutField(_, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.GetStaticField(_, _, _) =>
+        Set.empty
+
+      case Expression.PutStaticField(_, exp, _, _) =>
+        visitExp(exp)
+
       case Expression.NewChannel(exp, _, _) =>
         visitExp(exp)
 
