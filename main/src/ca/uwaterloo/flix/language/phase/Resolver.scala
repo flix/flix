@@ -738,10 +738,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           }
 
         case NamedAst.Expression.GetField(className, fieldName, exp, tvar, evar, loc) =>
-          ??? // TODO
+          mapN(lookupJvmField(className, fieldName, loc), visit(exp, tenv0)) {
+            case (field, e) => ResolvedAst.Expression.GetField(field, e, tvar, evar, loc)
+          }
 
         case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, tvar, evar, loc) =>
-          ??? // TODO
+          mapN(lookupJvmField(className, fieldName, loc), visit(exp1, tenv0), visit(exp2, tenv0)) {
+            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, tvar, evar, loc)
+          }
 
         case NamedAst.Expression.GetStaticField(className, fieldName, tvar, evar, loc) =>
           mapN(lookupJvmField(className, fieldName, loc)) {
@@ -749,7 +753,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           }
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, evar, loc) =>
-          ??? // TODO
+          mapN(lookupJvmField(className, fieldName, loc), visit(exp, tenv0)) {
+            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, tvar, evar, loc)
+          }
 
         case NamedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
           for {
@@ -1868,6 +1874,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Returns the field reflection object for the given `className` and `fieldName`.
     */
+  // TODO: Distinguish static fields?
   private def lookupJvmField(className: String, fieldName: String, loc: SourceLocation): Validation[Field, ResolutionError] = try {
     val clazz = Class.forName(className)
     clazz.getField(fieldName).toSuccess

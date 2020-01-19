@@ -1050,6 +1050,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, returnType, loc)
         } yield (resultTyp, evar)
 
+      case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
+        ??? // TODO
+
+
+
       case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
         //  exp: Int

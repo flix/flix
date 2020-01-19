@@ -190,13 +190,13 @@ object ResolvedAst {
 
     case class InvokeStaticMethod(className: String, methodName: String, args: List[ResolvedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class GetField(className: String, fieldName: String, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class GetField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class PutField(className: String, fieldName: String, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class PutField(field: Field, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetStaticField(field: Field, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class PutStaticField(className: String, fieldName: String, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class PutStaticField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
