@@ -335,6 +335,34 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.NativeMethod(method, as, tpe, eff, loc)
       }
 
+    case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.InvokeMethod(method, as, tpe, eff, loc)
+      }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+      }
+
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.GetField(field, e, tpe, eff, loc)
+      }
+
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.PutField(field, e1, e2, tpe, eff, loc)
+      }
+
+    case Expression.GetStaticField(field, tpe, eff, loc) =>
+      exp0.toSuccess
+
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.PutStaticField(field, e, tpe, eff, loc)
+      }
+
     case Expression.NewChannel(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.NewChannel(e, tpe, eff, loc)

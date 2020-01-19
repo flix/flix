@@ -507,6 +507,24 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.NativeMethod(_, args, _, _, _) =>
       Used.empty ++ visitExps(args, env0)
 
+    case Expression.InvokeMethod(_, args, _, _, _) =>
+      visitExps(args, env0)
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      visitExps(args, env0)
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      visitExp(exp, env0)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      Used.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      visitExp(exp, env0)
+
     case Expression.NewChannel(exp, _, _, _) =>
       Used.empty ++ visitExp(exp, env0)
 
