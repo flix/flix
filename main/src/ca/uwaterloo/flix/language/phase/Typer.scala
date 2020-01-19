@@ -1063,7 +1063,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, evar)
 
       case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
-        ??? // TODO
+        for {
+          (valueTyp, valueEff) <- visitExp(exp)
+          fieldTyp <- unifyTypM(getFlixType(field.getType), valueTyp, loc)
+          resultTyp <- unifyTypM(tvar, mkUnitType(), loc)
+          resultEff <- unifyEffM(evar, valueEff, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
@@ -1545,6 +1550,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
+
+      case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
+        ??? // TODO
+
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
+        ??? // TODO
+
+      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
+        // TODO: Use different constructor.
+        TypedAst.Expression.NativeField(field, subst0(tvar), subst0(evar), loc)
+
+      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
+        ??? // TODO
 
       case ResolvedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
         val e = visitExp(exp, subst0)
