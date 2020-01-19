@@ -400,7 +400,35 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.NativeMethod(method, es, t, loc)
 
+      case SimplifiedAst.Expression.InvokeMethod(method, args, tpe, loc) =>
+        val as = args.map(visit)
+        val t = visitType(tpe)
+        FinalAst.Expression.InvokeMethod(method, as, t, loc)
 
+      case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visit)
+        val t = visitType(tpe)
+        FinalAst.Expression.InvokeStaticMethod(method, as, t, loc)
+
+      case SimplifiedAst.Expression.GetField(field, exp, tpe, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.GetField(field, e, t, loc)
+
+      case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.PutField(field, e1, e2, t, loc)
+
+      case SimplifiedAst.Expression.GetStaticField(field, tpe, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.GetStaticField(field, t, loc)
+
+      case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.PutStaticField(field, e, t, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)
