@@ -180,7 +180,7 @@ def copy05(): Bool =
 def iter01(): Bool =
     let a = []: Array[Int32];
     let sb = StringBuilder.new();
-    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
     Array.iter(fn, a);
     StringBuilder.toString(sb) == ""
 
@@ -188,7 +188,7 @@ def iter01(): Bool =
 def iter02(): Bool =
     let a = [0];
     let sb = StringBuilder.new();
-    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
     Array.iter(fn, a);
     StringBuilder.toString(sb) == "F"
 
@@ -196,7 +196,7 @@ def iter02(): Bool =
 def iter03(): Bool =
     let a = [1];
     let sb = StringBuilder.new();
-    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
     Array.iter(fn, a);
     StringBuilder.toString(sb) == "T"
 
@@ -204,9 +204,52 @@ def iter03(): Bool =
 def iter04(): Bool =
     let a = [0,1];
     let sb = StringBuilder.new();
-    let fn = i -> if (i > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
     Array.iter(fn, a);
     StringBuilder.toString(sb) == "FT"
+
+/////////////////////////////////////////////////////////////////////////////
+// iterWithIndex                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def iterWithIndex01(): Bool =
+    let a = []: Array[Float32];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iterWithIndex(fn, a);
+    StringBuilder.toString(sb) == ""
+
+@test
+def iterWithIndex02(): Bool =
+    let a = [0.0];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iterWithIndex(fn, a);
+    StringBuilder.toString(sb) == "F"
+
+@test
+def iterWithIndex03(): Bool =
+    let a = [0.0, 0.1];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iterWithIndex(fn, a);
+    StringBuilder.toString(sb) == "FT"
+
+@test
+def iterWithIndex04(): Bool =
+    let a = [0.0, 0.1, 0.2];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iterWithIndex(fn, a);
+    StringBuilder.toString(sb) == "FTT"
+
+@test
+def iterWithIndex05(): Bool =
+    let a = [0.0, 0.1, 0.2, 0.3];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.iterWithIndex(fn, a);
+    StringBuilder.toString(sb) == "FTTT"
 
 /////////////////////////////////////////////////////////////////////////////
 // range                                                                   //
@@ -375,6 +418,33 @@ def map06(): Bool =
 def map07(): Bool =
     let a = Array.map(i -> i > 2, [7,8]);
     Array.sameElements(a, [true,true])
+
+/////////////////////////////////////////////////////////////////////////////
+// mapInPlace                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def mapInPlace01(): Bool =
+    let a: Array[Int32] = [];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def mapInPlace02(): Bool =
+    let a = [0];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, [1])
+
+@test
+def mapInPlace03(): Bool =
+    let a = [0,1];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, [1,2])
+
+@test
+def mapInPlace04(): Bool =
+    let a = [0,1,2];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, [1,2,3])
 
 /////////////////////////////////////////////////////////////////////////////
 // map2                                                                    //
@@ -1906,3 +1976,30 @@ def transpose22(): Bool =
     let a = Array.transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9, 10]]);
     let b = Array.toList(a) |> List.map(Array.toList);
     b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// mkStringBy                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def mkStringBy01(): Bool =
+    let a: Array[Int32] = [];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == ""
+
+@test
+def mkStringBy02(): Bool =
+    let a = [1];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == "1"
+
+@test
+def mkStringBy03(): Bool =
+    let a = [1,2];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == "1,2"
+
+@test
+def mkStringBy04(): Bool =
+    let a = [1,2,3];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == "1,2,3"

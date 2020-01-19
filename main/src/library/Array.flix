@@ -134,6 +134,24 @@ namespace Array {
         }
 
     ///
+    /// Apply the effectful function `f` to all the elements in the array `a`.
+    ///
+    pub def iterWithIndex(f: (a, Int32) -> Unit, a: Array[a]): Unit =
+        let len = length(a);
+        if (len < 1) () else iterWithIndexHelper(f, a, len, 0)
+
+    ///
+    /// Helper for `iterWithIndex`.
+    ///
+    def iterWithIndexHelper(f: (a, Int32) -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
+        if (i >= len)
+            ()
+        else {
+            f(a[i], i);
+            iterWithIndexHelper(f, a, len, i + 1)
+        }
+
+    ///
     /// Returns an array of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns `Nil` if `b >= e`.
@@ -191,6 +209,24 @@ namespace Array {
         init(i -> f(a[i]), len)
 
     ///
+    /// Apply `f` to every element in array `a`. Array `a` is mutated.
+    ///
+    pub def mapInPlace(f: a -> a, a: Array[a]): Unit =
+        let len = length(a);
+        mapInPlaceHelper(f, len, a, 0)
+
+    ///
+    /// Helper of `mapInPlace`
+    ///
+    pub def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], ix: Int32): Unit =
+        if (ix >= len)
+            ()
+        else {
+            a[ix] = f(a[ix]);
+            mapInPlaceHelper(f, len, a, ix+1)
+        }
+
+    ///
     /// Returns an array where the element at index `i` is `f(a[i], b[i])`.
     ///
     /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
@@ -221,7 +257,6 @@ namespace Array {
     pub def flatMap2(f: (a, b) -> Array[c], a: Array[a], b: Array[b]): Array[c] =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len) |> flatten
-
 
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
@@ -319,7 +354,6 @@ namespace Array {
         else
             let s1 = f(s, a[i]);
             foldLeftHelper(f, s1, a, i + 1)
-
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from right to left.
@@ -430,10 +464,9 @@ namespace Array {
             reduceRightHelper(f, a, f(a[i], x), i-1)
 
     ///
-    /// Returns `a` without the first `n` elements.
+    /// Returns a copy of array `a`, dropping the first `n` elements.
     ///
-    /// Returns `[]]` if `n > length(xs)`.
-    /// Returns `a` if `n < 0`.
+    /// Returns `[]` if `n > length(xs)`.
     ///
     pub def drop(n: Int, a: Array[a]) : Array[a] =
         if (n > length(a))
@@ -448,7 +481,7 @@ namespace Array {
         }
 
     ///
-    /// Returns `a` without the longest prefix that satisfies the predicate `f`.
+    /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
     ///
     pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] =
         match findIndexOf(x -> !(f(x)), a) {
@@ -456,12 +489,10 @@ namespace Array {
             case Some(i) => drop(i, a)
         }
 
-
     ///
-    /// Returns the first `n` elements of `a`.
+    /// Returns a fresh array taking first `n` elements of `a`.
     ///
     /// Returns `a` if `n > length(xs)`.
-    /// Returns `[]]` if `n < 0`.
     ///
     pub def take(n: Int, a: Array[a]) : Array[a] =
         if (n > length(a))
@@ -765,4 +796,21 @@ namespace Array {
     ///
     def uniformHelper(a: Array[Array[a]], l: Int32): Bool =
         exists(x -> length(x) != l, a)
+
+    ///
+    /// Render the array `a` as a String. Elements are rendered with the
+    /// function `f` and seperated with the string `sep`.
+    ///
+    pub def mkStringBy(f: a -> Str, sep: Str, a: Array[a]): Str =
+        let sb = StringBuilder.new();
+        let step = (x,i) ->
+            if (i == 0)
+                StringBuilder.appendString(sb, f(x))
+            else {
+                StringBuilder.appendString(sb, sep);
+                StringBuilder.appendString(sb, f(x))
+            };
+        iterWithIndex(step, a);
+        StringBuilder.toString(sb)
+
 }
