@@ -577,6 +577,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
+      // TODO: What local variable names are safe to use?
+
       //
       // Visit the inner expression exp2.
       //
@@ -613,22 +615,44 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
-          ??? // TODO
+          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            case ((className, methodName), e2) =>
+              ???
+          }
 
         case ParsedAst.JvmImport.GetField(fqn, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.PutField(fqn, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, None, loc)
-              val lamdaBody = WeededAst.Expression.PutStaticField(className, fieldName, loc) // TODO: This needs an expression no?
+              ???
+          }
+
+        case ParsedAst.JvmImport.PutField(fqn, ident) =>
+          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            case ((className, fieldName), e2) =>
+              ???
+          }
+
+        case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
+          //
+          // Introduce a let-bound lambda (_: Unit -> GetField).
+          //
+          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            case ((className, fieldName), e2) =>
+              val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
+              val lamdaBody = WeededAst.Expression.GetStaticField(className, fieldName, loc)
+              val e1 = WeededAst.Expression.Lambda(fparam, lamdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
+          }
+
+        case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
+          //
+          // Introduce a let-bound lambda (x -> PutField(x)).
+          //
+          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            case ((className, fieldName), e2) =>
+              val fparam = WeededAst.FormalParam(Name.Ident(sp1, "t0", sp2), Ast.Modifiers.Empty, None, loc)
+              val valueExp = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "t0", sp2)), loc)
+              val lamdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
               val e1 = WeededAst.Expression.Lambda(fparam, lamdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }

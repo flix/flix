@@ -654,11 +654,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def GetField: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("get") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.GetStaticField
+        atomic("get") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.GetField
       }
 
       def PutField: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("put") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.PutStaticField
+        atomic("put") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmImport] = rule {
