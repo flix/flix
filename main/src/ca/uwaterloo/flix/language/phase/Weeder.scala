@@ -583,11 +583,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // Visit the inner expression exp2.
       //
       impl match {
-        case ParsedAst.JvmImport.Constructor(fqn, fparams, ident) =>
+        case ParsedAst.JvmOp.Constructor(fqn, fparams, ident) =>
           // TODO
           ???
 
-        case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
+        case ParsedAst.JvmOp.Method(fqn, fparams, ident) =>
           // TODO: Cleanup.
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
@@ -615,7 +615,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.StaticMethod(fqn, sig, ident) =>
+        case ParsedAst.JvmOp.StaticMethod(fqn, sig, ident) =>
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args).
           //
@@ -645,7 +645,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.GetField(fqn, ident) =>
+        case ParsedAst.JvmOp.GetField(fqn, ident) =>
           //
           // Introduce a let-bound lambda: o -> GetField(o).
           //
@@ -659,7 +659,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.PutField(fqn, ident) =>
+        case ParsedAst.JvmOp.PutField(fqn, ident) =>
           //
           // Introduce a let-bound lambda: (o, v) -> PutField(o, v)
           //
@@ -676,7 +676,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
+        case ParsedAst.JvmOp.GetStaticField(fqn, ident) =>
           //
           // Introduce a let-bound lambda: _: Unit -> GetStaticField.
           //
@@ -689,7 +689,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
+        case ParsedAst.JvmOp.PutStaticField(fqn, ident) =>
           //
           // Introduce a let-bound lambda: x -> PutStaticField(x).
           //

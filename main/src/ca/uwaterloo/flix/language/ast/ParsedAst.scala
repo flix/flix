@@ -546,11 +546,11 @@ object ParsedAst {
       * Let Import Expression.
       *
       * @param sp1 the position of the first character in the expression.
-      * @param imp the import.
+      * @param op  the imported JVM operation.
       * @param exp the body expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class LetImport(sp1: SourcePosition, imp: ParsedAst.JvmImport, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Expression (pattern match expression).
@@ -1525,53 +1525,70 @@ object ParsedAst {
   }
 
   /**
-    * Jvm Import.
+    * Jvm Operation.
     */
-  sealed trait JvmImport
+  sealed trait JvmOp
 
-  object JvmImport {
-
-    // TODO: DOCS
+  object JvmOp {
 
     /**
-      * JVM Constructor Import.
+      * Constructor Invocation Operation.
       *
-      * @param fqn     the fully-qualified name of the method name.
-      * @param fparams the types of the formal parameters.
-      * @param ident   the name given to the imported method.
+      * @param fqn   the fully-qualified name of the constructor.
+      * @param sig   the types of the formal parameters.
+      * @param ident the name given to the imported method.
       */
-    case class Constructor(fqn: Seq[String], fparams: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmImport
+    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
 
     /**
-      * JVM Method Import.
-      *
-      * @param fqn        the fully-qualified name of the method name.
-      * @param fparams    the types of the formal parameters.
-      * @param returnType the return type.
-      * @param ident      the name given to the imported method.
-      */
-    case class Method(fqn: Seq[String], fparams: Seq[ParsedAst.Type], returnType: ParsedAst.Type, ident: Name.Ident) extends JvmImport
-
-    /**
-      * JVM Static Method Import.
+      * Method Invocation Operation.
       *
       * @param fqn   the fully-qualified name of the method.
+      * @param sig   the types of the formal parameters.
+      * @param ident the name given to the imported method.
+      */
+    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+
+    /**
+      * Static Method Invocation Operation.
+      *
+      * @param fqn   the fully-qualified name of the static method.
       * @param sig   the declared types of the formal parameters.
       * @param ident the name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmImport
+    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
 
-    // TODO: DOC
-    case class GetField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+    /**
+      * Get (Instance) Field Operation.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the local name assigned to the operation.
+      */
+    case class GetField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
 
-    case class PutField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+    /**
+      * Put (Instance) Field Operation.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the local name assigned to the operation.
+      */
+    case class PutField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
 
-    // TODO: DOC
-    case class GetStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+    /**
+      * Get Static Field Operation.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the local name assigned to the operation.
+      */
+    case class GetStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
 
-    // TODO:
-    case class PutStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
-
+    /**
+      * Put Static Field Operation.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the local name assigned to the operation.
+      */
+    case class PutStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
 
   }
 
