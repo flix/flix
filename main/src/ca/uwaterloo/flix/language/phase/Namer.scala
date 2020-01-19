@@ -1314,6 +1314,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.GetField(className, fieldName, exp, loc) => freeVars(exp)
+    case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.GetStaticField(className, fieldName, loc) => Nil
+    case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) => freeVars(exp)
     case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

@@ -1050,6 +1050,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, returnType, loc)
         } yield (resultTyp, evar)
 
+      case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
+        ??? // TODO
+
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
         ??? // TODO
 
@@ -1550,6 +1553,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
+
+      case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
+        ??? // TODO
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
         ??? // TODO
