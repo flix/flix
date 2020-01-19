@@ -614,10 +614,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
+        case ParsedAst.JvmImport.StaticMethod(fqn, fparams, ident) =>
+          //
+          // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args).
+          //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
-              ???
+
+              val fs = ???
+
+              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, ???, ???, loc)
+              val e1 = mkCurried(fs, lambdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
         case ParsedAst.JvmImport.GetField(fqn, ident) =>

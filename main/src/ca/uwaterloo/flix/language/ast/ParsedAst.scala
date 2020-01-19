@@ -1531,6 +1531,8 @@ object ParsedAst {
 
   object JvmImport {
 
+    // TODO: DOCS
+
     /**
       * JVM Constructor Import.
       *
@@ -1553,12 +1555,11 @@ object ParsedAst {
     /**
       * JVM Static Method Import.
       *
-      * @param fqn        the fully-qualified name of the method name.
-      * @param fparams    the types of the formal parameters.
-      * @param returnType the return type.
-      * @param ident      the name given to the imported method.
+      * @param fqn       the fully-qualified name of the method.
+      * @param signature the declared types of the formal parameters.
+      * @param ident     the name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], fparams: Seq[ParsedAst.Type], returnType: ParsedAst.Type, ident: Name.Ident) extends JvmImport
+    case class StaticMethod(fqn: Seq[String], signature: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmImport
 
     // TODO: DOC
     case class GetField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
