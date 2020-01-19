@@ -619,10 +619,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
+          ??? // TODO
 
+        case ParsedAst.JvmImport.GetField(fqn, ident) =>
+          ??? // TODO
 
+        case ParsedAst.JvmImport.PutField(fqn, ident) =>
+          ??? // TODO
 
-          ???
+        case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
+          ??? // TODO
+
+        case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
+          ??? // TODO
+
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>

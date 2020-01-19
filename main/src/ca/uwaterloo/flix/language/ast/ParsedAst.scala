@@ -1560,6 +1560,18 @@ object ParsedAst {
       */
     case class StaticMethod(fqn: Seq[String], fparams: Seq[ParsedAst.Type], returnType: ParsedAst.Type, ident: Name.Ident) extends JvmImport
 
+    // TODO: DOC
+    case class GetField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+
+    case class PutField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+
+    // TODO: DOC
+    case class GetStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+
+    // TODO:
+    case class PutStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmImport
+
+
   }
 
   /**
