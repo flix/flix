@@ -921,12 +921,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.InvokeMethod(className, methodName, targs, args, loc) =>
-      // TODO: Arg order. Revise
-      val targsVal = traverse(targs)(visitType(_, tenv0))
+    case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
-      mapN(targsVal, argsVal) {
-        case (ts, as) => NamedAst.Expression.InvokeMethod(className, methodName, ts, as, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      val sigVal = traverse(sig)(visitType(_, tenv0))
+      mapN(argsVal, sigVal) {
+        case (as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
@@ -936,7 +935,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    // TODO: Rest of tree.
+    case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.GetField(className, fieldName, e, loc)
+      }
+
+    case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.PutField(className, fieldName, e1, e2, loc)
+      }
+
+    case WeededAst.Expression.GetStaticField(className, fieldName, loc) =>
+      NamedAst.Expression.GetStaticField(className, fieldName, loc).toSuccess
+
+    case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
+      }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {

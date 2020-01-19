@@ -610,7 +610,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
               }
 
-              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, ts, as, loc)
+              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
