@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Method, Modifier}
+import java.lang.reflect.{Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
@@ -737,7 +737,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           ??? // TODO
 
         case NamedAst.Expression.GetStaticField(className, fieldName, tvar, evar, loc) =>
-          ??? // TODO
+          mapN(lookupJvmField(className, fieldName, loc)) {
+            case field => ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc)
+          }
 
         case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, evar, loc) =>
           ??? // TODO
@@ -1856,10 +1858,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
   }
 
+  /**
+    * Returns the field reflection object for the given `className` and `fieldName`.
+    */
+  private def lookupJvmField(className: String, fieldName: String, loc: SourceLocation): Validation[Field, ResolutionError] = try {
+    val clazz = Class.forName(className)
+    clazz.getField(fieldName).toSuccess
+  } catch {
+    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+    case ex: NoSuchFieldException => ResolutionError.UndefinedJvmField(className, fieldName, loc).toFailure
+  }
 
   /**
     * Returns the result of looking up the given `methodName` on the given `className`.
     */
+  // TODO: Deprcated or rename?
   private def lookupNativeMethod(className: String, methodName: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
     // Lookup the class object of the receiver object.
     val receiverClass = Class.forName(className)

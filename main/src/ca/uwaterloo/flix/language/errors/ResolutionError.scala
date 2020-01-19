@@ -465,4 +465,22 @@ object ResolutionError {
     }
   }
 
+  /**
+    * An error raised to indicate that the field name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the field name.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedJvmField(className: String, fieldName: String, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined field.") << NewLine
+    }
+  }
+
 }
