@@ -16,24 +16,37 @@ object TypedAstOps {
       */
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
       case Expression.Wild(tpe, eff, loc) => Map.empty
+
       case Expression.Var(sym, tpe, eff, loc) => Map.empty
+
       case Expression.Def(sym, tpe, eff, loc) => Map.empty
+
       case Expression.Eff(sym, tpe, eff, loc) => Map.empty
 
-      case Expression.Hole(sym, tpe, eff, loc) =>
-        Map(sym -> HoleContext(sym, tpe, env0))
+      case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
       case Expression.Unit(loc) => Map.empty
+
       case Expression.True(loc) => Map.empty
+
       case Expression.False(loc) => Map.empty
+
       case Expression.Char(lit, loc) => Map.empty
+
       case Expression.Float32(lit, loc) => Map.empty
+
       case Expression.Float64(lit, loc) => Map.empty
+
       case Expression.Int8(lit, loc) => Map.empty
+
       case Expression.Int16(lit, loc) => Map.empty
+
       case Expression.Int32(lit, loc) => Map.empty
+
       case Expression.Int64(lit, loc) => Map.empty
+
       case Expression.BigInt(lit, loc) => Map.empty
+
       case Expression.Str(lit, loc) => Map.empty
 
       case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
@@ -174,6 +187,28 @@ object TypedAstOps {
         args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
+
+      case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+        args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (macc, arg) => macc ++ visitExp(arg, env0)
+        }
+
+      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+        args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (macc, arg) => macc ++ visitExp(arg, env0)
+        }
+
+      case Expression.GetField(field, exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.GetStaticField(field, tpe, eff, loc) =>
+        Map.empty
+
+      case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
 
       case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
 

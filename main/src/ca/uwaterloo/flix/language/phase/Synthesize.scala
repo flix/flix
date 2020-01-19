@@ -285,6 +285,30 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
 
+      case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeMethod(method, as, tpe, eff, loc)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+
+      case Expression.GetField(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.GetField(field, e, tpe, eff, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutField(field, e1, e2, tpe, eff, loc)
+
+      case Expression.GetStaticField(field, tpe, eff, loc) =>
+        exp0
+
+      case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.PutStaticField(field, e, tpe, eff, loc)
+
       case Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.NewChannel(e, tpe, eff, loc)
