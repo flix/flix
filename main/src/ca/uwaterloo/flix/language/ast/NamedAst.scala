@@ -313,7 +313,7 @@ object NamedAst {
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
-    case class Native(fqn: List[String], loc: SourceLocation) extends NamedAst.Type
+    case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
     case class Relation(sym: Symbol.RelSym, loc: SourceLocation) extends NamedAst.Type
 

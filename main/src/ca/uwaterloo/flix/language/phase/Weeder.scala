@@ -596,7 +596,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val className = fqn.dropRight(1).mkString(".")
               val methodName = fqn.last
 
-              val receiverType = WeededAst.Type.Native(fqn.dropRight(1).toList, loc)
+              val receiverType = WeededAst.Type.Native(className, loc)
 
               val ts = fparams.map(visitType).toList
 
@@ -1638,7 +1638,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))
+    case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) =>
       // Construct a curried arrow type.

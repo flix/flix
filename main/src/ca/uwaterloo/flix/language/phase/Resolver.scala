@@ -1436,10 +1436,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
-      val n = fqn.mkString(".")
-      n match {
+      fqn match {
         case "java.lang.String" => Type.Cst(TypeConstructor.Str).toSuccess
-        case _ => lookupJvmClass(n, loc) map {
+        case _ => lookupJvmClass(fqn, loc) map {
           case clazz => Type.Cst(TypeConstructor.Native(clazz))
         }
       }

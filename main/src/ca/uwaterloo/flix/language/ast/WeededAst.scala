@@ -305,7 +305,7 @@ object WeededAst {
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 
-    case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type
+    case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
     case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 

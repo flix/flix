@@ -1564,7 +1564,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     tpe match {
-      case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn.mkString("."))
+      case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn)
       case WeededAst.Type.Ambiguous(qname, loc) =>
         // TODO: Ugly incorrect hack. Must take place in the resolver.
         if (qname.ident.name == "Str") Some(classOf[String]) else None
