@@ -141,6 +141,39 @@ def init05(): Bool =
     Array.length(a) == 50
 
 /////////////////////////////////////////////////////////////////////////////
+// copy                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def copy01(): Bool =
+    let a: Array[Int32] = [];
+    let b: Array[Int32] = Array.copy(a);
+    Array.sameElements(a, b)
+
+@test
+def copy02(): Bool =
+    let a: Array[Int32] = [0];
+    let b: Array[Int32] = Array.copy(a);
+    Array.sameElements(a, b)
+
+@test
+def copy03(): Bool =
+    let a: Array[Int32] = [0,1];
+    let b: Array[Int32] = Array.copy(a);
+    Array.sameElements(a, b)
+
+@test
+def copy04(): Bool =
+    let a: Array[Int32] = [0,1,2];
+    let b: Array[Int32] = Array.copy(a);
+    Array.sameElements(a, b)
+
+@test
+def copy05(): Bool =
+    let a: Array[Char] = ['a', 'b', 'c'];
+    let b: Array[Char] = Array.copy(a);
+    Array.sameElements(a, b)
+
+/////////////////////////////////////////////////////////////////////////////
 // iter                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -304,24 +337,6 @@ def flatten09(): Bool =
 def flatten10(): Bool =
     let a = Array.flatten([[1],[2,3],[4]]);
     Array.sameElements(a, [1,2,3,4])
-
-/////////////////////////////////////////////////////////////////////////////
-// toString                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toString01(): Bool =
-    let a: Array[Char] = [];
-    Array.toString(a) == ""
-
-@test
-def toString02(): Bool =
-    let a = ['A', 'B', 'C'];
-    Array.toString(a) == "ABC"
-
-@test
-def toString03(): Bool =
-    let a = ['1', '2', '3'];
-    Array.toString(a) == "123"
 
 /////////////////////////////////////////////////////////////////////////////
 // map                                                                     //

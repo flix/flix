@@ -109,6 +109,13 @@ namespace Array {
         }
 
     ///
+    /// Return a shallow copy of array `a`.
+    ///
+    pub def copy(a: Array[a]): Array[a] =
+        let len = length(a);
+        init(x-> a[x], len)
+
+    ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     pub def iter(f: a -> Unit, a: Array[a]): Unit =
@@ -156,6 +163,7 @@ namespace Array {
                 let _ = appendHelper(b, c, 0, j);
                 c
             }
+
     ///
     /// Helper function for `append`.
     ///
@@ -166,18 +174,12 @@ namespace Array {
             let _ = c[j] = a[i];
             appendHelper(a, c, i+1, j+1)
         }
+
     ///
     /// Returns the concatenation of the elements in `a`.
     ///
     pub def flatten(a: Array[Array[a]]) : Array[a] =
         foldLeft((acc,b) -> append(acc,b), [], a)
-    ///
-    /// Returns the array of characters `a` as a string.
-    ///
-    pub def toString(a: Array[Char]) : Str =
-        let sb = StringBuilder.new();
-        iter(c -> StringBuilder.appendChar(sb,c), a);
-        StringBuilder.toString(sb)
 
     ///
     /// Returns the result of applying `f` to every element in `a`.
@@ -188,7 +190,6 @@ namespace Array {
         let len = length(a);
         init(i -> f(a[i]), len)
 
-
     ///
     /// Returns an array where the element at index `i` is `f(a[i], b[i])`.
     ///
@@ -197,8 +198,6 @@ namespace Array {
     pub def map2(f: (a, b) -> c, a: Array[a], b: Array[b]): Array[c] =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i], b[i]), len)
-
-
 
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
