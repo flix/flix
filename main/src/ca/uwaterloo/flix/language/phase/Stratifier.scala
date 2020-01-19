@@ -632,6 +632,28 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
+    case Expression.InvokeMethod(_, args, _, _, _) =>
+      args.foldLeft(DependencyGraph.empty) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(DependencyGraph.empty) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      DependencyGraph.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
     case Expression.NewChannel(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
