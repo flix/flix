@@ -182,7 +182,7 @@ object WeededAst {
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     // TODO: Rename
-    case class NativeMethod2(className: String, methodName: String, targs: List[WeededAst.Type], args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class InvokeMethod(className: String, methodName: String, targs: List[WeededAst.Type], args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class GetField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

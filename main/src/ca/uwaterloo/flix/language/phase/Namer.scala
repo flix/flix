@@ -921,7 +921,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.NativeMethod2(className, methodName, targs, args, loc) =>
+    case WeededAst.Expression.InvokeMethod(className, methodName, targs, args, loc) =>
       // TODO: Arg order.
       val targsVal = traverse(targs)(visitType(_, tenv0))
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))

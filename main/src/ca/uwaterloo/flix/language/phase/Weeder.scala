@@ -609,7 +609,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
               }
 
-              val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
+              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, ts, as, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
@@ -621,9 +621,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.JvmImport.GetField(fqn, ident) =>
+          //
+          // Introduce a let-bound lambda (o -> GetField(o).
+          //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              ???
+              val receiverObj = Name.Ident(sp1, "o", sp2)
+              val receiverExp = WeededAst.Expression.VarOrDef(Name.mkQName(receiverObj), loc)
+              val fparam = WeededAst.FormalParam(receiverObj, Ast.Modifiers.Empty, None, loc)
+              val lamdaBody = WeededAst.Expression.GetField(className, fieldName, receiverExp, loc)
+              val e1 = WeededAst.Expression.Lambda(fparam, lamdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
         case ParsedAst.JvmImport.PutField(fqn, ident) =>
@@ -634,7 +642,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
           //
-          // Introduce a let-bound lambda (_: Unit -> GetField).
+          // Introduce a let-bound lambda (_: Unit -> GetStaticField).
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
@@ -646,7 +654,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
           //
-          // Introduce a let-bound lambda (x -> PutField(x)).
+          // Introduce a let-bound lambda (x -> PutStaticField(x)).
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
