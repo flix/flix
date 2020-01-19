@@ -632,7 +632,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def JvmStaticName: Rule1[Seq[String]] = rule {
-        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => x +: xs)
+        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => xs :+ x)
       }
 
       def Constructor: Rule1[ParsedAst.JvmImport] = {

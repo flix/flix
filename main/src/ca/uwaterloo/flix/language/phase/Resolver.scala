@@ -721,14 +721,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
-              mapN(lookupNativeMethod(className, methodName, ts, loc)) {
-                case method =>
-                  ResolvedAst.Expression.NativeMethod(method, as, tvar, evar, loc)
+              mapN(lookupJvmMethod(className, methodName, ts, loc)) {
+                case method => ResolvedAst.Expression.NativeMethod(method, as, tvar, evar, loc) // TODO: Use other AST node.
               }
           }
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, tvar, evar, loc) =>
-          ??? // TODO
+          // TODO: Is it safe to use the same lookup method?
+          val argsVal = traverse(args)(visit(_, tenv0))
+          val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
+          flatMapN(sigVal, argsVal) {
+            case (ts, as) =>
+              mapN(lookupJvmMethod(className, methodName, ts, loc)) {
+                case method => ResolvedAst.Expression.NativeMethod(method, as, tvar, evar, loc) // TODO: Use other AST node.
+              }
+          }
 
         case NamedAst.Expression.GetField(className, fieldName, exp, tvar, evar, loc) =>
           ??? // TODO
@@ -1872,8 +1879,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Returns the result of looking up the given `methodName` on the given `className`.
     */
-  // TODO: Deprcated or rename?
-  private def lookupNativeMethod(className: String, methodName: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
+  // TODO: Distinguish between static and on static here?
+  private def lookupJvmMethod(className: String, methodName: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
     // Lookup the class object of the receiver object.
     val receiverClass = Class.forName(className)
 
