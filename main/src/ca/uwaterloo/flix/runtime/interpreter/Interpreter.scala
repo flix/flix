@@ -256,6 +256,24 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
+    case Expression.InvokeMethod(method, args, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      ??? //TODO
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      ??? // TODO
+
     case Expression.NewChannel(exp, tpe, loc) =>
       val size = cast2int32(eval(exp, env0, henv0, lenv0, root))
       new Channel(size)
