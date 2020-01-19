@@ -45,58 +45,48 @@ object SimplifiedAstOps {
       * Checks invariants of the given expression `exp0` with the local variables in `env0` defined and the labels in `ienv0` defined.
       */
     def checkExp(exp0: Expression, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = exp0 match {
-      //
-      // Literal Expressions.
-      //
       case Expression.Unit => // nop
+
       case Expression.True => // nop
+
       case Expression.False => // nop
+
       case Expression.Char(lit) => // nop
+
       case Expression.Float32(lit) => // nop
+
       case Expression.Float64(lit) => // nop
+
       case Expression.Int8(lit) => // nop
+
       case Expression.Int16(lit) => // nop
+
       case Expression.Int32(lit) => // nop
+
       case Expression.Int64(lit) => // nop
+
       case Expression.BigInt(lit) => // nop
+
       case Expression.Str(lit) => // nop
 
-      //
-      // Variable Expressions.
-      //
       case Expression.Var(sym, tpe, loc) =>
         assert(env0 contains sym, s"Undefined local variable symbol: '$sym'.")
         checkType(tpe)
 
-      //
-      // Def Expressions.
-      //
       case Expression.Def(sym, tpe, loc) =>
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
         checkType(tpe)
 
-      //
-      // Eff Expressions.
-      //
       case Expression.Eff(sym, tpe, loc) =>
         assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
         checkType(tpe)
 
-      //
-      // Lambda Expressions.
-      //
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         checkExp(exp, env0 ++ fparams.map(_.sym), ienv0)
 
-      //
-      // Closure Expressions.
-      //
       case Expression.Closure(sym, freeVars, tpe, loc) =>
         checkType(tpe)
 
-      //
-      // Apply Expressions.
-      //
       case Expression.Apply(exp, args, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (arg <- args) {
@@ -104,16 +94,10 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // LambdaClosure.
-      //
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         checkExp(exp0, env0, ienv0)
         checkType(tpe)
 
-      //
-      // ApplyClo Expressions.
-      //
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (arg <- args) {
@@ -121,9 +105,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // ApplyDef Expressions.
-      //
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
         for (arg <- args) {
@@ -131,9 +112,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // ApplyEff Expressions.
-      //
       case Expression.ApplyEff(sym, args, tpe, loc) =>
         assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
@@ -141,9 +119,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // ApplyCloTail Expressions.
-      //
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (arg <- args) {
@@ -151,9 +126,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // ApplyDefTail Expressions.
-      //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
         for (arg <- args) {
@@ -161,9 +133,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // ApplyEffTail Expressions.
-      //
       case Expression.ApplyEffTail(sym, args, tpe, loc) =>
         assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
@@ -171,9 +140,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // ApplySelfTail Expressions.
-      //
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
         for (param <- formals) {
@@ -184,33 +150,21 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // Unary Expressions.
-      //
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Binary Expressions.
-      //
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      //
-      // If-then-else Expressions.
-      //
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkExp(exp3, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Block Expressions.
-      //
       case Expression.Branch(exp, branches, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for ((label, branch) <- branches) {
@@ -218,99 +172,60 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // Jump Expressions.
-      //
       case Expression.JumpTo(sym, tpe, loc) =>
         assert(ienv0 contains sym, s"Undefined label symbol: '$sym'.")
         checkType(tpe)
 
-      //
-      // Let Expressions.
-      //
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0 + sym, ienv0)
         checkType(tpe)
 
-      //
-      // LetRec Expressions.
-      //
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0 + sym, ienv0)
         checkExp(exp2, env0 + sym, ienv0)
         checkType(tpe)
 
-      //
-      // Is Expressions.
-      //
       case Expression.Is(sym, tag, exp, loc) =>
         assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
         checkExp(exp, env0, ienv0)
 
-      //
-      // Tag Expressions.
-      //
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
         assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Check if this is a single-case enum subject to elimination.
-      //
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
         assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Index Expressions.
-      //
       case Expression.Index(base, offset, tpe, loc) =>
         checkExp(base, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Tuple Expressions.
-      //
       case Expression.Tuple(elms, tpe, loc) =>
         for (elm <- elms) {
           checkExp(elm, env0, ienv0)
         }
         checkType(tpe)
 
-      //
-      // RecordEmpty Expressions.
-      //
       case Expression.RecordEmpty(tpe, loc) =>
         checkType(tpe)
 
-      //
-      // RecordSelect Expressions.
-      //
       case Expression.RecordSelect(base, label, tpe, loc) =>
         checkExp(base, env0, ienv0)
         checkType(tpe)
 
-      //
-      // RecordExtend Expressions.
-      //
       case Expression.RecordExtend(label, value, rest, tpe, loc) =>
         checkExp(value, env0, ienv0)
         checkExp(rest, env0, ienv0)
         checkType(tpe)
 
-      //
-      // RecordRestrict Expressions.
-      //
       case Expression.RecordRestrict(label, rest, tpe, loc) =>
         checkExp(rest, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Array Expressions.
-      //
       case Expression.ArrayLit(elms, tpe, loc) =>
         for (elm <- elms) {
           checkExp(elm, env0, ienv0)
@@ -343,31 +258,19 @@ object SimplifiedAstOps {
         checkExp(endIndex, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Reference Expressions.
-      //
       case Expression.Ref(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Dereference Expressions.
-      //
       case Expression.Deref(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Assign Expressions.
-      //
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      //
-      // HandleWith Expressions.
-      //
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (HandlerBinding(sym, handler) <- bindings) {
@@ -375,23 +278,14 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // Existential Expressions.
-      //
       case Expression.Existential(fparam, exp, loc) =>
         checkFormalParam(fparam)
         checkExp(exp, env0 + fparam.sym, ienv0)
 
-      //
-      // Universal Expressions.
-      //
       case Expression.Universal(fparam, exp, loc) =>
         checkFormalParam(fparam)
         checkExp(exp, env0 + fparam.sym, ienv0)
 
-      //
-      // Try Catch
-      //
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (CatchRule(sym, clazz, body) <- rules) {
@@ -399,55 +293,62 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      //
-      // Native Constructor.
-      //
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
-      //
-      // Native Field.
-      //
       case Expression.NativeField(field, tpe, loc) =>
         checkType(tpe)
 
-      //
-      // Native Method.
-      //
       case Expression.NativeMethod(method, args, tpe, loc) =>
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
-      //
-      // New Channel.
-      //
+      case Expression.InvokeMethod(method, args, tpe, loc) =>
+        for (arg <- args) {
+          checkExp(arg, env0, ienv0)
+        }
+        checkType(tpe)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        for (arg <- args) {
+          checkExp(arg, env0, ienv0)
+        }
+        checkType(tpe)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        checkType(tpe)
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
       case Expression.NewChannel(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Get Channel.
-      //
       case Expression.GetChannel(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Put Channel.
-      //
       case Expression.PutChannel(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      //
-      // Select Channel.
-      //
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         for (rule <- rules) {
           checkExp(rule.chan, env0, ienv0)
@@ -456,23 +357,14 @@ object SimplifiedAstOps {
         default.foreach(exp => checkExp(exp, env0, ienv0))
         checkType(tpe)
 
-      //
-      // ProcessSpawn.
-      //
       case Expression.ProcessSpawn(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // ProcessSleep.
-      //
       case Expression.ProcessSleep(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      //
-      // ProcessPanic.
-      //
       case Expression.ProcessPanic(msg, tpe, loc) =>
         checkType(tpe)
 
@@ -502,12 +394,15 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkExp(exp3, env0, ienv0)
         checkType(tpe)
-      //
-      // Error Expressions.
-      //
-      case Expression.HoleError(sym, tpe, loc) => checkType(tpe)
-      case Expression.MatchError(tpe, loc) => checkType(tpe)
-      case Expression.SwitchError(tpe, loc) => checkType(tpe)
+
+      case Expression.HoleError(sym, tpe, loc) =>
+        checkType(tpe)
+
+      case Expression.MatchError(tpe, loc) =>
+        checkType(tpe)
+
+      case Expression.SwitchError(tpe, loc) =>
+        checkType(tpe)
     }
 
     /**
