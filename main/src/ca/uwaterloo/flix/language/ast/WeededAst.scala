@@ -184,9 +184,9 @@ object WeededAst {
     // TODO: Rename
     case class NativeMethod2(className: String, methodName: String, targs: List[WeededAst.Type], args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class GetField(className: String, fieldName: String, loc: SourceLocation) extends WeededAst.Expression
+    case class GetField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class PutField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class PutField(className: String, fieldName: String, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class GetStaticField(className: String, fieldName: String, loc: SourceLocation) extends WeededAst.Expression
 
