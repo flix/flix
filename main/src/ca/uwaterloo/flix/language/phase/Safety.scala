@@ -177,6 +177,28 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
+    case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+      args.foldLeft(Nil: List[CompilationError]) {
+        case (acc, e) => acc ::: visitExp(e)
+      }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      args.foldLeft(Nil: List[CompilationError]) {
+        case (acc, e) => acc ::: visitExp(e)
+      }
+
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      visitExp(exp)
+
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.GetStaticField(field, tpe, eff, loc) =>
+      Nil
+
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      visitExp(exp)
+
     case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
