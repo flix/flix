@@ -24,7 +24,9 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is a letter character.
     ///
-    pub def isLetter(c: Char): Bool = native method flix.runtime.library.Char.isLetter(c) as Bool
+    pub def isLetter(c: Char): Bool =
+        import java.lang.Character:isLetter(Char) as isLetter;
+        isLetter(c)
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9.
