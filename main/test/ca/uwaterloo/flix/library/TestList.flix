@@ -1716,22 +1716,23 @@ def toMap04(): Bool = assert!(List.toMap((1, true) :: (1, false) :: Nil) == Map#
 /////////////////////////////////////////////////////////////////////////////
 @test
 def toArray01(): Bool =
-    let a: Array[Int32] = [];
-    Array.toList(a) == Nil
+    let xs: List[Int32] = Nil;
+    let a: Array[Int32] = List.toArray(xs);
+    Array.sameElements(a, []:Array[Int32])
 
 @test
 def toArray02(): Bool =
-    let a = [1];
-    Array.toList(a) == 1 :: Nil
+    let a = List.toArray(1 :: Nil);
+    Array.sameElements(a, [1])
 
 @test
 def toArray03(): Bool =
-    let a = [1,2];
-    Array.toList(a) == 1 :: 2 :: Nil
+    let a = List.toArray(1 :: 2 :: Nil);
+    Array.sameElements(a, [1,2])
 
 @test
 def toArray04(): Bool =
-    let a =[1,2,3];
-    Array.toList(a) == 1 :: 2 :: 3 :: Nil
+    let a = List.toArray(1 :: 2 :: 3 :: Nil);
+    Array.sameElements(a, [1,2,3])
 
 }
