@@ -100,19 +100,33 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
+
       case Expression.True => e
+
       case Expression.False => e
+
       case Expression.Char(lit) => e
+
       case Expression.Float32(lit) => e
+
       case Expression.Float64(lit) => e
+
       case Expression.Int8(lit) => e
+
       case Expression.Int16(lit) => e
+
       case Expression.Int32(lit) => e
+
       case Expression.Int64(lit) => e
+
       case Expression.BigInt(lit) => e
+
       case Expression.Str(lit) => e
+
       case Expression.Var(sym, tpe, loc) => e
+
       case Expression.Def(sym, tpe, loc) => e
+
       case Expression.Eff(sym, tpe, loc) => e
 
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
@@ -300,6 +314,30 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
+
+      case Expression.InvokeMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeMethod(method, as, tpe, loc)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        exp0
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.PutStaticField(field, e, tpe, loc)
 
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
