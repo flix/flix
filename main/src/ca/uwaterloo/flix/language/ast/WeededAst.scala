@@ -184,7 +184,7 @@ object WeededAst {
     // TODO: Rename and refactor.
     case class InvokeMethod(className: String, methodName: String, targs: List[WeededAst.Type], args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class InvokeStaticMethod(className: String, methodName: String, args: List[WeededAst.Expression], signature: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
+    case class InvokeStaticMethod(className: String, methodName: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
     case class GetField(className: String, fieldName: String, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

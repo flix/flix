@@ -929,6 +929,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (ts, as) => NamedAst.Expression.NativeMethod2(className, methodName, ts, as, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
+      ??? // TODO
+
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
         case (e, t) => NamedAst.Expression.NewChannel(e, t, Eff.freshEffVar(), loc)

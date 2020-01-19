@@ -588,6 +588,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           ???
 
         case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
+          // TODO: Cleanup.
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
 
@@ -614,16 +615,32 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmImport.StaticMethod(fqn, fparams, ident) =>
+        case ParsedAst.JvmImport.StaticMethod(fqn, sig, ident) =>
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args).
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
 
-              val fs = ???
+              // Compute the types of declared parameters.
+              val ts = sig.map(visitType).toList
 
-              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, ???, ???, loc)
+              // Introduce a formal parameter (of appropriate type) for each declared argument.
+              val fs = ts.zipWithIndex.map {
+                case (tpe, index) =>
+                  val id = Name.Ident(sp1, "a" + index, sp2)
+                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+              }
+
+              // Compute the argument to the method call.
+              val as = ts.zipWithIndex.map {
+                case (tpe, index) =>
+                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
+              }
+
+              // Assemble the lambda expression.
+              val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, as, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
