@@ -164,16 +164,27 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
+
         case Expression.True(loc) => Expression.True(loc)
+
         case Expression.False(loc) => Expression.False(loc)
+
         case Expression.Char(lit, loc) => Expression.Char(lit, loc)
+
         case Expression.Float32(lit, loc) => Expression.Float32(lit, loc)
+
         case Expression.Float64(lit, loc) => Expression.Float64(lit, loc)
+
         case Expression.Int8(lit, loc) => Expression.Int8(lit, loc)
+
         case Expression.Int16(lit, loc) => Expression.Int16(lit, loc)
+
         case Expression.Int32(lit, loc) => Expression.Int32(lit, loc)
+
         case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
+
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
+
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
         case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
@@ -420,6 +431,30 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NativeMethod(method, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
+
+        case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeMethod(method, as, tpe, eff, loc)
+
+        case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+
+        case Expression.GetField(field, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.GetField(field, e, tpe, eff, loc)
+
+        case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.PutField(field, e1, e2, tpe, eff, loc)
+
+        case Expression.GetStaticField(field, tpe, eff, loc) =>
+          exp0
+
+        case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.PutStaticField(field, e, tpe, eff, loc)
 
         case Expression.NewChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

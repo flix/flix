@@ -82,20 +82,35 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+
       case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
+
       case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
+
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
+
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
+
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
+
       case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
+
       case TypedAst.Expression.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
+
       case TypedAst.Expression.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit)
+
       case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit)
+
       case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
+
       case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
+
       case TypedAst.Expression.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)
+
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
+
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
+
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
 
       case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
@@ -510,6 +525,30 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+
+      case TypedAst.Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+        val as = args.map(visitExp)
+        ??? // TODO
+
+      case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+        val as = args.map(visitExp)
+        ??? // TODO
+
+      case TypedAst.Expression.GetField(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        ??? // TODO
+
+      case TypedAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        ??? // TODO
+
+      case TypedAst.Expression.GetStaticField(field, tpe, eff, loc) =>
+        ??? // TODO
+
+      case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        ??? // TODO
 
       case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)

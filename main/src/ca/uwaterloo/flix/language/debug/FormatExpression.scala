@@ -10,6 +10,7 @@ object FormatExpression {
   /**
     * TypedAst.
     */
+  // TODO: Should recursively call itself.
   def format(e0: TypedAst.Expression): String = e0 match {
     case TypedAst.Expression.Unit(_) => "()"
     case TypedAst.Expression.True(_) => "true"
@@ -68,6 +69,12 @@ object FormatExpression {
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => s"TryCatch($exp, ${rules.mkString(", ")})"
     case TypedAst.Expression.NativeField(field, tpe, eff, loc) => s"NativeField($field)"
     case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) => s"NativeMethod($method, ${args.mkString(", ")})"
+    case TypedAst.Expression.InvokeMethod(method, args, tpe, eff, loc) => s"InvokeMethod($method, ${args.mkString(", ")})"
+    case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => s"InvokeStaticMethod($method, ${args.mkString(", ")})"
+    case TypedAst.Expression.GetField(field, exp, tpe, eff, loc) => s"GetField($field, $exp)"
+    case TypedAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) => s"PutField($field, $exp1, $exp2)"
+    case TypedAst.Expression.GetStaticField(field, tpe, eff, loc) => s"GetStaticField($field)"
+    case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) => s"PutStaticField($field, $exp)"
     case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) => s"NewChannel($exp)"
     case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) => s"GetChannel($exp)"
     case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) => s"PutChannel($exp1, $exp2)"
