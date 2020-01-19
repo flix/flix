@@ -580,21 +580,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       //
       // Visit the inner expression exp2.
       //
-      mapN(visitExp(exp2)) {
-        case e2 =>
+      impl match {
+        case ParsedAst.JvmImport.Constructor(fqn, fparams, ident) =>
+          // TODO
+          ???
 
-          impl match {
-            case ParsedAst.JvmImport.Constructor(fqn, fparams, ident) =>
-              // TODO
-              ???
-
-            case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
-              if (fqn.size == 1) {
-                return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-              }
-
-              val className = fqn.dropRight(1).mkString(".")
-              val methodName = fqn.last
+        case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
+          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            case ((className, methodName), e2) =>
 
               val receiverType = WeededAst.Type.Native(className, loc)
 
@@ -617,24 +610,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
-
-            case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
-              ??? // TODO
-
-            case ParsedAst.JvmImport.GetField(fqn, ident) =>
-              ??? // TODO
-
-            case ParsedAst.JvmImport.PutField(fqn, ident) =>
-              ??? // TODO
-
-            case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
-              ??? // TODO
-
-            case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
-              ??? // TODO
-
           }
 
+        case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
+          ??? // TODO
+
+        case ParsedAst.JvmImport.GetField(fqn, ident) =>
+          ??? // TODO
+
+        case ParsedAst.JvmImport.PutField(fqn, ident) =>
+          ??? // TODO
+
+        case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
+          ??? // TODO
+
+        case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
+          mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            case ((className, fieldName), e2) =>
+              val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, None, loc)
+              val lamdaBody = WeededAst.Expression.PutStaticField(className, fieldName, loc) // TODO: This needs an expression no?
+              val e1 = WeededAst.Expression.Lambda(fparam, lamdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
+          }
       }
 
     case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
@@ -2102,6 +2099,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val qname = Name.QName(qname0.sp1, nname, ident, qname0.sp2)
       (Some(qname), tagName)
     }
+  }
+
+  /**
+    * Returns the class and member name constructed from the given fully-qualified name `fqn`.
+    */
+  private def parseClassAndMember(fqn: Seq[String], loc: SourceLocation): Validation[(String, String), WeederError] = {
+    if (fqn.length == 1) {
+      return WeederError.IllegalNativeFieldOrMethodName(loc).toFailure
+    }
+
+    val className = fqn.dropRight(1).mkString(".")
+    val memberName = fqn.last
+
+    (className, memberName).toSuccess
   }
 
   /**
