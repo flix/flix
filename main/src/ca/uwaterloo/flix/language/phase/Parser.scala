@@ -627,6 +627,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
       }
 
+      def JvmName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".")
+      }
+
+      def JvmStaticName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => x +: xs)
+      }
+
       def Constructor: Rule1[ParsedAst.JvmImport] = {
         def Name: Rule1[Seq[String]] = rule {
           oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ atomic("__new__")
@@ -637,34 +645,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
       }
 
-      def Method: Rule1[ParsedAst.JvmImport] = {
-        def Name: Rule1[Seq[String]] = rule {
-          oneOrMore(JvmIdent).separatedBy(".")
-        }
-
-        rule {
-          Name ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Method
-        }
+      def Method: Rule1[ParsedAst.JvmImport] = rule {
+        JvmName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Method
       }
 
-      def StaticMethod: Rule1[ParsedAst.JvmImport] = {
-        def Name: Rule1[Seq[String]] = rule {
-          oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => x +: xs)
-        }
-
-        rule {
-          Name ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.StaticMethod
-        }
+      def StaticMethod: Rule1[ParsedAst.JvmImport] = rule {
+        JvmStaticName ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.StaticMethod
       }
 
-      def GetStaticField: Rule1[ParsedAst.JvmImport] = {
-        def Name: Rule1[Seq[String]] = rule {
-          oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => x +: xs)
-        }
+      def GetField: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("get") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.GetStaticField
+      }
 
-        rule {
-          atomic("get") ~ WS ~ Name ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.GetStaticField
-        }
+      def PutField: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("put") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.PutStaticField
+      }
+
+      def GetStaticField: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("get") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.GetStaticField
+      }
+
+      def PutStaticField: Rule1[ParsedAst.JvmImport] = rule {
+        atomic("put") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.PutStaticField
       }
 
       def TypeSignature: Rule2[Seq[ParsedAst.Type], ParsedAst.Type] = rule {
@@ -672,7 +674,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Import: Rule1[ParsedAst.JvmImport] = rule {
-        atomic("import") ~ WS ~ (Constructor | Method | StaticMethod | GetStaticField)
+        atomic("import") ~ WS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
       }
 
       rule {
