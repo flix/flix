@@ -716,7 +716,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, evar, loc)
 
-        case NamedAst.Expression.NativeMethod2(className, methodName, targs, args, tvar, evar, loc) =>
+        case NamedAst.Expression.InvokeMethod(className, methodName, targs, args, tvar, evar, loc) =>
           val targsVal = traverse(targs)(lookupType(_, ns0, prog0))
           val argsVal = traverse(args)(visit(_, tenv0))
           flatMapN(targsVal, argsVal) {

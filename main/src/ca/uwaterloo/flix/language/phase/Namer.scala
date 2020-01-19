@@ -922,15 +922,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.InvokeMethod(className, methodName, targs, args, loc) =>
-      // TODO: Arg order.
+      // TODO: Arg order. Revise
       val targsVal = traverse(targs)(visitType(_, tenv0))
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
       mapN(targsVal, argsVal) {
-        case (ts, as) => NamedAst.Expression.NativeMethod2(className, methodName, ts, as, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+        case (ts, as) => NamedAst.Expression.InvokeMethod(className, methodName, ts, as, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
-      ??? // TODO
+      val argsVal = traverse(args)(visitExp(_, env0, tenv0))
+      val sigVal = traverse(sig)(visitType(_, tenv0))
+      mapN(argsVal, sigVal) {
+        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
+
+    // TODO: Rest of tree.
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
