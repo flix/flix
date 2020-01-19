@@ -1538,7 +1538,7 @@ object ParsedAst {
       * @param fparams the types of the formal parameters.
       * @param ident   the name given to the imported method.
       */
-    case class Constructor(fqn: Seq[String], fparams: Seq[ParsedAst.Type], returnType: ParsedAst.Type, ident: Name.Ident) extends JvmImport
+    case class Constructor(fqn: Seq[String], fparams: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmImport
 
     /**
       * JVM Method Import.

@@ -640,8 +640,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
           oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ atomic("__new__")
         }
 
-        rule { // TODO: No return type.
-          Name ~ optWS ~ TypeSignature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Constructor
+        rule {
+          Name ~ optWS ~ TypeParams ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.Constructor
         }
       }
 
@@ -667,6 +667,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def PutStaticField: Rule1[ParsedAst.JvmImport] = rule {
         atomic("put") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmImport.PutStaticField
+      }
+
+      def TypeParams: Rule1[Seq[ParsedAst.Type]] = rule {
+        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
       def TypeSignature: Rule2[Seq[ParsedAst.Type], ParsedAst.Type] = rule {

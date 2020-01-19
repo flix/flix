@@ -577,61 +577,63 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      impl match {
+      //
+      // Visit the inner expression exp2.
+      //
+      mapN(visitExp(exp2)) {
+        case e2 =>
 
-        case ParsedAst.JvmImport.Constructor(fqn, fparams, returnType, ident) =>
-          // TODO
-          ???
+          impl match {
+            case ParsedAst.JvmImport.Constructor(fqn, fparams, ident) =>
+              // TODO
+              ???
 
-        case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
+            case ParsedAst.JvmImport.Method(fqn, fparams, returnType, ident) =>
+              if (fqn.size == 1) {
+                return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+              }
 
-          if (fqn.size == 1) {
-            return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-          }
+              val className = fqn.dropRight(1).mkString(".")
+              val methodName = fqn.last
 
-          val className = fqn.dropRight(1).mkString(".")
-          val methodName = fqn.last
+              val receiverType = WeededAst.Type.Native(fqn.dropRight(1).toList, loc)
 
-          val receiverType = WeededAst.Type.Native(fqn.dropRight(1).toList, loc)
+              val ts = fparams.map(visitType).toList
 
-          val ts = fparams.map(visitType).toList
+              val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
+              val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg", sp2)), loc)
 
-          val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
-          val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg", sp2)), loc)
+              val fs = receiverFormalParam :: ts.zipWithIndex.map {
+                case (tpe, index) =>
+                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
+              }
+              val as = receiverArg :: ts.zipWithIndex.map {
+                case (tpe, index) =>
+                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
+              }
 
-          val fs = receiverFormalParam :: ts.zipWithIndex.map {
-            case (tpe, index) =>
-              val ident = Name.Ident(sp1, "a" + index, sp2)
-              WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
-          }
-          val as = receiverArg :: ts.zipWithIndex.map {
-            case (tpe, index) =>
-              val ident = Name.Ident(sp1, "a" + index, sp2)
-              WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
-          }
-
-          val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
-
-          mapN(visitExp(exp2)) {
-            case e2 =>
+              val lambdaBody = WeededAst.Expression.NativeMethod2(className, methodName, ts, as, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
+
+            case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
+              ??? // TODO
+
+            case ParsedAst.JvmImport.GetField(fqn, ident) =>
+              ??? // TODO
+
+            case ParsedAst.JvmImport.PutField(fqn, ident) =>
+              ??? // TODO
+
+            case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
+              ??? // TODO
+
+            case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
+              ??? // TODO
+
           }
-
-        case ParsedAst.JvmImport.StaticMethod(fqn, fparams, returnType, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.GetField(fqn, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.PutField(fqn, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.GetStaticField(fqn, ident) =>
-          ??? // TODO
-
-        case ParsedAst.JvmImport.PutStaticField(fqn, ident) =>
-          ??? // TODO
 
       }
 
