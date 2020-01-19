@@ -528,27 +528,27 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.InvokeMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
-        ??? // TODO
+        SimplifiedAst.Expression.InvokeMethod(method, as, tpe, loc)
 
       case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
-        ??? // TODO
+        SimplifiedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
 
       case TypedAst.Expression.GetField(field, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        ??? // TODO
+        SimplifiedAst.Expression.GetField(field, e, tpe, loc)
 
       case TypedAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        ??? // TODO
+        SimplifiedAst.Expression.PutField(field, e1, e2, tpe, loc)
 
       case TypedAst.Expression.GetStaticField(field, tpe, eff, loc) =>
-        ??? // TODO
+        SimplifiedAst.Expression.GetStaticField(field, tpe, loc)
 
       case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        ??? // TODO
+        SimplifiedAst.Expression.PutStaticField(field, e, tpe, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
