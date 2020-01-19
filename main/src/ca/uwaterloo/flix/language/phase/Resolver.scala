@@ -727,6 +727,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
               }
           }
 
+        case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, tvar, evar, loc) =>
+          ??? // TODO
+
+        case NamedAst.Expression.GetField(className, fieldName, exp, tvar, evar, loc) =>
+          ??? // TODO
+
+        case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, tvar, evar, loc) =>
+          ??? // TODO
+
+        case NamedAst.Expression.GetStaticField(className, fieldName, tvar, evar, loc) =>
+          ??? // TODO
+
+        case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, evar, loc) =>
+          ??? // TODO
+
         case NamedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
           for {
             t <- lookupType(tpe, ns0, prog0)

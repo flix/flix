@@ -937,20 +937,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.GetField(className, fieldName, e, loc)
+        case e => NamedAst.Expression.GetField(className, fieldName, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.PutField(className, fieldName, e1, e2, loc)
+        case (e1, e2) => NamedAst.Expression.PutField(className, fieldName, e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expression.GetStaticField(className, fieldName, loc).toSuccess
+      NamedAst.Expression.GetStaticField(className, fieldName, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
 
     case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.PutStaticField(className, fieldName, e, loc)
+        case e => NamedAst.Expression.PutStaticField(className, fieldName, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>

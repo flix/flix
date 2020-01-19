@@ -36,16 +36,7 @@ object ResolvedAst {
                      latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
                      properties: List[ResolvedAst.Property],
                      reachable: Set[Symbol.DefnSym],
-                     sources: Map[Source, SourceLocation]) {
-    /**
-      * Returns all predicate symbols in the program.
-      */
-    val allPredicateSymbols: Set[Symbol.PredSym] = {
-      relations.keySet ++ lattices.keySet
-    }
-
-  }
-
+                     sources: Map[Source, SourceLocation])
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation)
 
@@ -196,6 +187,16 @@ object ResolvedAst {
     case class NativeField(field: Field, tpe: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NativeMethod(method: Method, args: List[ResolvedAst.Expression], tpe: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class InvokeStaticMethod(className: String, methodName: String, args: List[ResolvedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class GetField(className: String, fieldName: String, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class PutField(className: String, fieldName: String, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class GetStaticField(className: String, fieldName: String, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class PutStaticField(className: String, fieldName: String, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
