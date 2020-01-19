@@ -843,6 +843,24 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
+    case Expression.InvokeMethod(method, args, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      ??? // TODO
+
     case Expression.NewChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
