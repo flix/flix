@@ -1053,7 +1053,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
         ??? // TODO
 
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
+        ??? // TODO
 
+      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
+        val returnType = getFlixType(field.getType)
+        for {
+          resultTyp <- unifyTypM(tvar, returnType, loc)
+        } yield (resultTyp, evar)
+
+      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
+        ??? // TODO
 
       case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
@@ -1986,9 +1996,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns the Flix Type of a Java Class
     */
   private def getFlixType(c: Class[_]): Type = {
-    // handle primitive types first
     if (c == java.lang.Boolean.TYPE) {
-      mkBoolType()
+      Type.Cst(TypeConstructor.Bool)
     }
     else if (c == java.lang.Byte.TYPE) {
       Type.Cst(TypeConstructor.Int8)
