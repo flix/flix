@@ -537,6 +537,18 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
+    case Expression.InvokeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.GetField(field, exp, tpe, loc) => freeVars(exp)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.GetStaticField(field, tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.PutStaticField(field, exp, tpe, loc) => freeVars(exp)
+
     case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
 
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
