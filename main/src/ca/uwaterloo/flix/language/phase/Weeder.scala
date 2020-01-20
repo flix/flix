@@ -587,10 +587,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // TODO
           ???
 
-        case ParsedAst.JvmOp.Method(fqn, fparams, ident) =>
+        case ParsedAst.JvmOp.Method(fqn, fparams, optIdent) =>
+
           // TODO: Cleanup.
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
+
+              val ident = optIdent match {
+                case None => Name.Ident(sp1, methodName, sp2)
+                case Some(id) => id
+              }
 
               val receiverType = WeededAst.Type.Native(className, loc)
 

@@ -646,7 +646,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {
-        JvmName ~ optWS ~ Signature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Method
+        JvmName ~ optWS ~ Signature ~ optional(WS ~ atomic("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
       }
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {

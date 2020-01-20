@@ -19,42 +19,42 @@ namespace String {
     /// Returns the character at position `i` in the string `s`.
     ///
     pub def charAt(i: Int, s: String): Char =
-        import java.lang.String.charAt(Int32) as charAt;
+        import java.lang.String.charAt(Int32);
         charAt(s, i)
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
-        import java.lang.String.concat(String) as concat;
+        import java.lang.String.concat(String);
         concat(s1, s2)
 
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.
     ///
     pub def endsWith(s1: String, s2: String): Bool =
-        import java.lang.String.endsWith(String) as endsWith;
+        import java.lang.String.endsWith(String);
         endsWith(s1, s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     pub def isEmpty(s: String): Bool =
-        import java.lang.String.isEmpty() as isEmpty;
+        import java.lang.String.isEmpty();
         isEmpty(s)
 
     ///
     /// Returns the length of the string `s`.
     ///
     pub def length(s: String): Int =
-        import java.lang.String.length() as length;
+        import java.lang.String.length();
         length(s)
 
     ///
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
     pub def startsWith(s1: String, s2: String): Bool =
-        import java.lang.String.startsWith(String) as startsWith;
+        import java.lang.String.startsWith(String);
         startsWith(s1, s2)
 
     ///
@@ -66,14 +66,14 @@ namespace String {
     // Returns the lower case version of the string `s`.
     //
     pub def toLowerCase(s: String): String =
-        import java.lang.String.toLowerCase() as toLowerCase;
+        import java.lang.String.toLowerCase();
         toLowerCase(s)
 
     //
     // Returns the upper case version of the string `s`.
     //
     pub def toUpperCase(s: String): String =
-        import java.lang.String.toUpperCase() as toUpperCase;
+        import java.lang.String.toUpperCase();
         toUpperCase(s)
 
     ///
@@ -86,7 +86,9 @@ namespace String {
     ///
     /// Returns a new empty string if there is no characters in `s`.
     ///
-    pub def trim(s: String): String = native method java.lang.String.trim(s) as Str
+    pub def trim(s: String): String =
+     import java.lang.String.trim();
+     trim(s)
 
     ///
     /// Get the system line separator.

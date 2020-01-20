@@ -1531,6 +1531,8 @@ object ParsedAst {
 
   object JvmOp {
 
+    // TODO: Introduce optional names/idents here.
+
     /**
       * Constructor Invocation Operation.
       *
@@ -1547,7 +1549,7 @@ object ParsedAst {
       * @param sig   the types of the formal parameters.
       * @param ident the name given to the imported method.
       */
-    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation Operation.
