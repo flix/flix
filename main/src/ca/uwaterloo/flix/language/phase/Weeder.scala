@@ -587,16 +587,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // TODO
           ???
 
-        case ParsedAst.JvmOp.Method(fqn, fparams, optIdent) =>
+        case ParsedAst.JvmOp.Method(fqn, fparams, identOpt) =>
 
           // TODO: Cleanup.
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
-
-              val ident = optIdent match {
-                case None => Name.Ident(sp1, methodName, sp2)
-                case Some(id) => id
-              }
+              // Compute the name of the let-bound variable.
+              val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
 
               val receiverType = WeededAst.Type.Native(className, loc)
 
@@ -621,12 +618,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.StaticMethod(fqn, sig, ident) =>
+        case ParsedAst.JvmOp.StaticMethod(fqn, sig, identOpt) =>
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args).
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
+              // Compute the name of the let-bound variable.
+              val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
 
               // Compute the types of declared parameters.
               val ts = sig.map(visitType).toList

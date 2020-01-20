@@ -1547,7 +1547,7 @@ object ParsedAst {
       *
       * @param fqn   the fully-qualified name of the method.
       * @param sig   the types of the formal parameters.
-      * @param ident the name given to the imported method.
+      * @param ident the optional name given to the imported method.
       */
     case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
@@ -1556,9 +1556,9 @@ object ParsedAst {
       *
       * @param fqn   the fully-qualified name of the static method.
       * @param sig   the declared types of the formal parameters.
-      * @param ident the name given to the imported method.
+      * @param ident the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get (Instance) Field Operation.
