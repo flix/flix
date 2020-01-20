@@ -278,9 +278,6 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeConstructor(constructor, as, tpe, eff, loc)
 
-      case Expression.NativeField(field, tpe, eff, loc) =>
-        Expression.NativeField(field, tpe, eff, loc)
-
       case Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)

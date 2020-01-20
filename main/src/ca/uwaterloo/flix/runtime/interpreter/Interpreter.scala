@@ -238,10 +238,6 @@ object Interpreter {
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    case Expression.NativeField(field, tpe, loc) =>
-      val clazz = field.getDeclaringClass
-      fromJava(field.get(clazz))
-
     case Expression.NativeMethod(method, args, tpe, loc) => try {
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       if (Modifier.isStatic(method.getModifiers)) {

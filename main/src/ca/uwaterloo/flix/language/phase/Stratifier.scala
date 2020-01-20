@@ -327,9 +327,6 @@ object Stratifier extends Phase[Root, Root] {
         case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
       }
 
-    case Expression.NativeField(field, tpe, eff, loc) =>
-      Expression.NativeField(field, tpe, eff, loc).toSuccess
-
     case Expression.NativeMethod(method, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
         case as => Expression.NativeMethod(method, as, tpe, eff, loc)
@@ -623,9 +620,6 @@ object Stratifier extends Phase[Root, Root] {
       rules.foldLeft(dependencyGraphOfExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + dependencyGraphOfExp(e)
       }
-
-    case Expression.NativeField(_, _, _, _) =>
-      DependencyGraph.empty
 
     case Expression.NativeMethod(_, args, _, _, _) =>
       args.foldLeft(DependencyGraph.empty) {

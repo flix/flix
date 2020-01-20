@@ -170,8 +170,6 @@ object Safety extends Phase[Root, Root] {
         case (acc, CatchRule(_, _, e)) => acc ::: visitExp(e)
       }
 
-    case Expression.NativeField(field, tpe, eff, loc) => Nil
-
     case Expression.NativeMethod(method, args, tpe, eff, loc) =>
       args.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)

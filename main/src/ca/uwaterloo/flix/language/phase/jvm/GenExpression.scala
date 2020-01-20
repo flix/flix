@@ -808,16 +808,6 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.NativeField(field, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // Fetch a field from an object
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      val name = field.getName
-      // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
-      val getInsn = if (Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
-      visitor.visitFieldInsn(getInsn, declaration, name, JvmOps.getJvmType(tpe).toDescriptor)
-
     case Expression.NativeMethod(method, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -850,13 +840,18 @@ object GenExpression {
       ??? // TODO
 
     case Expression.GetField(field, exp, tpe, loc) =>
-      ??? // TODO
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
     case Expression.PutField(field, exp1, exp2, tpe, loc) =>
       ??? // TODO
 
     case Expression.GetStaticField(field, tpe, loc) =>
-      ??? // TODO
+      addSourceLine(visitor, loc)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       ??? // TODO

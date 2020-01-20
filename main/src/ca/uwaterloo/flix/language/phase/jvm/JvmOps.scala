@@ -652,8 +652,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NativeField(field, tpe, loc) => Set.empty
-
       case Expression.NativeMethod(method, args, tpe, loc) =>
         args.foldLeft(Set.empty[ClosureInfo]) {
           case (sacc, e) => sacc ++ visitExp(e)
@@ -1038,8 +1036,6 @@ object JvmOps {
       case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.NativeField(field, tpe, loc) => Set(tpe)
 
       case Expression.NativeMethod(method, args, tpe, loc) =>
         args.foldLeft(Set(tpe)) {

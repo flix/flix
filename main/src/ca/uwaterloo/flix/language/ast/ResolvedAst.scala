@@ -184,8 +184,6 @@ object ResolvedAst {
 
     case class NativeConstructor(method: Constructor[_], args: List[ResolvedAst.Expression], tpe: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NativeField(field: Field, tpe: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class NativeMethod(method: Method, args: List[ResolvedAst.Expression], tpe: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class InvokeStaticMethod(className: String, methodName: String, args: List[ResolvedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression

@@ -399,8 +399,6 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NativeField(field, tpe, loc) => vt << field.toString
-
         case Expression.NativeMethod(method, args, tpe, loc) =>
           vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
           vt.text("(")

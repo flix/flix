@@ -208,8 +208,6 @@ object FinalAst {
 
     case class NativeConstructor(constructor: Constructor[_], args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class NativeField(field: Field, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class NativeMethod(method: Method, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class InvokeMethod(method: Method, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

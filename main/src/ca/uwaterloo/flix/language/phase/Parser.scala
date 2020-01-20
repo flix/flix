@@ -721,16 +721,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         atomic("new") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeConstructor
       }
 
-      def NativeField: Rule1[ParsedAst.Expression.NativeField] = rule {
-        atomic("field") ~ WS ~ SP ~ Names.JavaName ~ SP ~> ParsedAst.Expression.NativeField
-      }
-
       def NativeMethod: Rule1[ParsedAst.Expression.NativeMethod] = rule {
         atomic("method") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
       }
 
       rule {
-        atomic("native") ~ WS ~ (NativeField | NativeMethod | NativeConstructor)
+        atomic("native") ~ WS ~ (NativeMethod | NativeConstructor)
       }
     }
 

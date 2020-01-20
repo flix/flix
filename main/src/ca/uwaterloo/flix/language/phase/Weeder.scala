@@ -1134,19 +1134,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeConstructor(className, es, mkSL(sp1, sp2)).toSuccess
       }
 
-    case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
-      /*
-             * Check for `IllegalNativeFieldOrMethod`.
-             */
-      if (fqn.size == 1) {
-        return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-      }
-
-      // Extract class and field name.
-      val className = fqn.dropRight(1).mkString(".")
-      val fieldName = fqn.last
-      WeededAst.Expression.NativeField(className, fieldName, mkSL(sp1, sp2)).toSuccess
-
     case ParsedAst.Expression.NativeMethod(sp1, fqn, args, sp2) =>
       /*
             * Check for `IllegalNativeFieldOrMethod`.
@@ -2096,7 +2083,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1

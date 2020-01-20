@@ -181,24 +181,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalLattice](result)
   }
 
-  test("IllegalNativeFieldOrMethodName.01") {
-    val input = "def f(): Int = native field java"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
-  }
-
-  test("IllegalNativeFieldOrMethodName.02") {
-    val input = "def f(): Int = native field com"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
-  }
-
-  test("IllegalNativeFieldOrMethodName.03") {
-    val input = "def f(): Int = native method java()"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalNativeFieldOrMethodName](result)
-  }
-
   test("IllegalNativeFieldOrMethodName.04") {
     val input = "def f(): Int = native method com()"
     val result = new Flix().addStr(input).compile()

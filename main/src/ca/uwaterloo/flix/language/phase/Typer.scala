@@ -1038,10 +1038,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, Type.Cst(TypeConstructor.Native(clazz)), loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.NativeField(field, tvar, evar, loc) =>
-        // TODO: Check types.
-        liftM((tvar, evar))
-
       case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, evar, loc) =>
         // TODO: Check argument types.
         val returnType = getGenericFlixType(method.getGenericReturnType)
@@ -1547,9 +1543,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), subst0(evar), loc)
 
-      case ResolvedAst.Expression.NativeField(field, tpe, evar, loc) =>
-        TypedAst.Expression.NativeField(field, subst0(tpe), subst0(evar), loc)
-
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
@@ -1564,8 +1557,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ??? // TODO
 
       case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
-        // TODO: Use different constructor.
-        TypedAst.Expression.NativeField(field, subst0(tvar), subst0(evar), loc)
+        ??? // TODO
 
       case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
         ??? // TODO

@@ -708,9 +708,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeConstructor(constructor, es, tpe, evar, loc)
 
-        case NamedAst.Expression.NativeField(field, tpe, evar, loc) =>
-          ResolvedAst.Expression.NativeField(field, tpe, evar, loc).toSuccess
-
         case NamedAst.Expression.NativeMethod(method, args, tpe, evar, loc) =>
           for {
             es <- traverse(args)(e => visit(e, tenv0))

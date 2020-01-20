@@ -224,8 +224,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.NativeField(field, tpe, loc) => i0
-
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
       case Expression.InvokeMethod(method, args, tpe, loc) => visitExps(args, i0)

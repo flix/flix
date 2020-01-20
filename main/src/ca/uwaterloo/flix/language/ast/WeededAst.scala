@@ -177,8 +177,6 @@ object WeededAst {
 
     case class NativeConstructor(className: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NativeField(className: String, fieldName: String, loc: SourceLocation) extends WeededAst.Expression
-
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class InvokeMethod(className: String, methodName: String, args: List[WeededAst.Expression], sig: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression

@@ -223,12 +223,6 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateTypeAlias](result)
   }
 
-  test("UndefinedNativeClass.01") {
-    val input = "def f(): Int = native field java.lang.Foo"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedNativeClass](result)
-  }
-
   test("UndefinedNativeClass.02") {
     val input = "def f(): Int = native method java.lang.Bar.Baz()"
     val result = new Flix().addStr(input).compile()
@@ -245,18 +239,6 @@ class TestNamer extends FunSuite with TestUtils {
     val input = "def f(): Int = native new java.lang.String(1, 2, 3, 4, 5, 6, 7, 8, 9)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.UndefinedNativeConstructor](result)
-  }
-
-  test("UndefinedNativeField.01") {
-    val input = "def f(): Int = native field java.lang.Math.PIE"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedNativeField](result)
-  }
-
-  test("UndefinedNativeField.02") {
-    val input = "def f(): Int = native field java.lang.Math.EEE"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedNativeField](result)
   }
 
   test("UndefinedNativeMethod.01") {

@@ -299,9 +299,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Expression.NativeField(field, tpe, loc) =>
-        checkType(tpe)
-
       case Expression.NativeMethod(method, args, tpe, loc) =>
         for (arg <- args) {
           checkExp(arg, env0, ienv0)

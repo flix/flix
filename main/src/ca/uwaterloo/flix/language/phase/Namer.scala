@@ -907,12 +907,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.NativeField(className, fieldName, loc) =>
-      lookupNativeField(className, fieldName, loc) match {
-        case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
-        case Err(e) => e.toFailure
-      }
-
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
       lookupNativeMethod(className, methodName, args, loc) match {
         case Ok(method) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
@@ -1312,7 +1306,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       rules.foldLeft(freeVars(exp)) {
         case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
       }
-    case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)

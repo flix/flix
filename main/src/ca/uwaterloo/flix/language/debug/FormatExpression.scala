@@ -67,7 +67,6 @@ object FormatExpression {
     case TypedAst.Expression.Cast(exp, tpe, eff, loc) => s"Cast($exp, $tpe)"
     case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) => s"NativeConstructor($constructor, ${args.mkString(", ")})"
     case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) => s"TryCatch($exp, ${rules.mkString(", ")})"
-    case TypedAst.Expression.NativeField(field, tpe, eff, loc) => s"NativeField($field)"
     case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) => s"NativeMethod($method, ${args.mkString(", ")})"
     case TypedAst.Expression.InvokeMethod(method, args, tpe, eff, loc) => s"InvokeMethod($method, ${args.mkString(", ")})"
     case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) => s"InvokeStaticMethod($method, ${args.mkString(", ")})"

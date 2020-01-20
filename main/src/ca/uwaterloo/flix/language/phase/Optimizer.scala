@@ -272,9 +272,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val as = args map (visitExp(_, env0))
         Expression.NativeConstructor(constructor, as, tpe, loc)
 
-      case Expression.NativeField(field, tpe, loc) =>
-        Expression.NativeField(field, tpe, loc)
-
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val as = args.map(visitExp(_, env0))
         Expression.NativeMethod(method, as, tpe, loc)

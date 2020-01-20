@@ -225,9 +225,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeConstructor(_, args, _, _) =>
         visitExps(args)
 
-      case Expression.NativeField(_, _, _) =>
-        Set.empty
-
       case Expression.NativeMethod(_, args, _, _) =>
         visitExps(args)
 

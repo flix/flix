@@ -304,7 +304,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NativeConstructor(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
-        case Expression.NativeField(_, _, _, _) => tast.toSuccess
         case Expression.NativeMethod(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
