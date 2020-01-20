@@ -591,6 +591,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           // TODO: Cleanup.
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
+            // TODO: No arguments.
+
             case ((className, methodName), e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
@@ -624,8 +626,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, methodName), e2) =>
+
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
+
+              //
+              // Case 1: No arguments.
+              //
+              if (sig.isEmpty) {
+                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
+                val lambdaBody = WeededAst.Expression.InvokeStaticMethod(className, methodName, Nil, Nil, loc)
+                val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
+                return WeededAst.Expression.Let(ident, e1, e2, loc).toSuccess
+              }
 
               // Compute the types of declared parameters.
               val ts = sig.map(visitType).toList
@@ -700,7 +713,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val valueId = Name.Ident(sp1, "t0", sp2)
+              val valueId = Name.Ident(sp1, "v", sp2)
               val valueExp = WeededAst.Expression.VarOrDef(Name.mkQName(valueId), loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)

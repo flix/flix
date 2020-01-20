@@ -60,7 +60,9 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
     ///
-    pub def split(s: String, r: String): Array[Str] = native method java.lang.String.split(s, r) as Array[Str]
+    pub def split(s: String, r: String): Array[String] =
+        import java.lang.String.split(String);
+        split(s, r)
 
     //
     // Returns the lower case version of the string `s`.
@@ -93,7 +95,8 @@ namespace String {
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator() : String =
-        native method java.lang.System.lineSeparator() as Str
+    pub def lineSeparator(): String =
+        import java.lang.System:lineSeparator();
+        lineSeparator()
 
 }
