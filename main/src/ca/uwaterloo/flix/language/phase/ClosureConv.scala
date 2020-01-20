@@ -82,16 +82,27 @@ object ClosureConv extends Phase[Root, Root] {
     */
   private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
     case Expression.Unit => exp0
+
     case Expression.True => exp0
+
     case Expression.False => exp0
+
     case Expression.Char(lit) => exp0
+
     case Expression.Float32(lit) => exp0
+
     case Expression.Float64(lit) => exp0
+
     case Expression.Int8(lit) => exp0
+
     case Expression.Int16(lit) => exp0
+
     case Expression.Int32(lit) => exp0
+
     case Expression.Int64(lit) => exp0
+
     case Expression.BigInt(lit) => exp0
+
     case Expression.Str(lit) => exp0
 
     case Expression.Var(sym, tpe, loc) => exp0
@@ -286,6 +297,30 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeMethod(method, args, tpe, loc) =>
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
+
+    case Expression.InvokeMethod(method, args, tpe, loc) =>
+      val as = args.map(visitExp)
+      Expression.InvokeMethod(method, as, tpe, loc)
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      val as = args.map(visitExp)
+      Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.GetField(field, e, tpe, loc)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.PutField(field, e1, e2, tpe, loc)
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      exp0
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.PutStaticField(field, e, tpe, loc)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
