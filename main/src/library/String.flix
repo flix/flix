@@ -89,8 +89,8 @@ namespace String {
     /// Returns a new empty string if there is no characters in `s`.
     ///
     pub def trim(s: String): String =
-     import java.lang.String.trim();
-     trim(s)
+        import java.lang.String.trim();
+        trim(s)
 
     ///
     /// Get the system line separator.
