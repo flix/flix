@@ -44,36 +44,41 @@ namespace Random {
     /// Returns the next pseudorandom 64-bit floating point number from the given random number generator `r`.
     ///
     pub def nextFloat64(r: Random): Float64 =
+        import java.util.Random.nextDouble();
         let Random(o) = r;
-        native method java.util.Random.nextDouble(o) as Float64
+        o.nextDouble()
 
     ///
     /// Returns the next pseudorandom 32-bit integer value from the given random number generator `r`.
     ///
     pub def nextInt32(r: Random): Int32 =
+        import java.util.Random.nextInt();
         let Random(o) = r;
-        native method java.util.Random.nextInt(o) as Int32
+        o.nextInt()
 
     ///
     /// Returns the next pseudorandom 64-bit integer value from the given random number generator `r`.
     ///
     pub def nextInt64(r: Random): Int64 =
+        import java.util.Random.nextLong();
         let Random(o) = r;
-        native method java.util.Random.nextLong(o) as Int64
+        o.nextLong()
 
     ///
     /// Returns the next pseudorandom Gaussian distributed 64-bit floating point number.
     ///
     pub def nextGaussian(r: Random): Float64 =
+        import java.util.Random.nextGaussian();
         let Random(o) = r;
-        native method java.util.Random.nextGaussian(o) as Float64
+        o.nextGaussian()
 
     ///
     /// Returns the next pseudorandom 32-bit integer value between `0` and `m` (exclusive) using the given random number generator `r`.
     ///
     pub def nextNatWithMax(r: Random, m: Int32): Int32 =
+        import java.util.Random.nextInt(Int32);
         let Random(o) = r;
-        native method java.util.Random.nextInt(o, m) as Int32
+        o.nextInt(m)
 
     ///
     /// Represents a random number generator.
