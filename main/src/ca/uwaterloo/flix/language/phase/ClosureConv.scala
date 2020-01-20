@@ -649,16 +649,27 @@ object ClosureConv extends Phase[Root, Root] {
 
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
+
       case Expression.True => e
+
       case Expression.False => e
+
       case Expression.Char(lit) => e
+
       case Expression.Float32(lit) => e
+
       case Expression.Float64(lit) => e
+
       case Expression.Int8(lit) => e
+
       case Expression.Int16(lit) => e
+
       case Expression.Int32(lit) => e
+
       case Expression.Int64(lit) => e
+
       case Expression.BigInt(lit) => e
+
       case Expression.Str(lit) => e
 
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
@@ -855,6 +866,30 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
+      case Expression.InvokeMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeMethod(method, as, tpe, loc)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        e
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.PutStaticField(field, e, tpe, loc)
+
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.NewChannel(e, tpe, loc)
@@ -920,12 +955,17 @@ object ClosureConv extends Phase[Root, Root] {
         Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
 
       case Expression.HoleError(sym, tpe, loc) => e
+
       case Expression.MatchError(tpe, loc) => e
+
       case Expression.SwitchError(tpe, loc) => e
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+
       case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 
