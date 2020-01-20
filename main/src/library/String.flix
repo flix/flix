@@ -20,63 +20,63 @@ namespace String {
     ///
     pub def charAt(i: Int, s: String): Char =
         import java.lang.String.charAt(Int32);
-        charAt(s, i)
+        s.charAt(i)
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
         import java.lang.String.concat(String);
-        concat(s1, s2)
+        s1.concat(s2)
 
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.
     ///
     pub def endsWith(s1: String, s2: String): Bool =
         import java.lang.String.endsWith(String);
-        endsWith(s1, s2)
+        s1.endsWith(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     pub def isEmpty(s: String): Bool =
         import java.lang.String.isEmpty();
-        isEmpty(s)
+        s.isEmpty()
 
     ///
     /// Returns the length of the string `s`.
     ///
     pub def length(s: String): Int =
         import java.lang.String.length();
-        length(s)
+        s.length()
 
     ///
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
     pub def startsWith(s1: String, s2: String): Bool =
         import java.lang.String.startsWith(String);
-        startsWith(s1, s2)
+        s1.startsWith(s2)
 
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
     ///
     pub def split(s: String, r: String): Array[String] =
         import java.lang.String.split(String);
-        split(s, r)
+        s.split(r)
 
     //
     // Returns the lower case version of the string `s`.
     //
     pub def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
-        toLowerCase(s)
+        s.toLowerCase()
 
     //
     // Returns the upper case version of the string `s`.
     //
     pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
-        toUpperCase(s)
+        s.toUpperCase()
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -90,7 +90,7 @@ namespace String {
     ///
     pub def trim(s: String): String =
         import java.lang.String.trim();
-        trim(s)
+        s.trim()
 
     ///
     /// Get the system line separator.

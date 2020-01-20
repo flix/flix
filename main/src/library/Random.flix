@@ -28,15 +28,17 @@ namespace Random {
     /// Returns the next pseudorandom boolean from the given random number generator `r`.
     ///
     pub def nextBool(r: Random): Bool =
+        import java.util.Random.nextBoolean();
         let Random(o) = r;
-        native method java.util.Random.nextBoolean(o) as Bool
+        o.nextBoolean()
 
     ///
     /// Returns the next pseudorandom 32-bit floating point number from the given random number generator `r`.
     ///
     pub def nextFloat32(r: Random): Float32 =
+        import java.util.Random.nextFloat();
         let Random(o) = r;
-        native method java.util.Random.nextFloat(o) as Float32
+        o.nextFloat()
 
     ///
     /// Returns the next pseudorandom 64-bit floating point number from the given random number generator `r`.
