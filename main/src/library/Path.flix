@@ -26,8 +26,9 @@ namespace Path {
     /// Returns `true` if the given path `p` exists.
     ///
     pub def exists(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.exists();
         let Path(javaFile) = p;
-        native method java.io.File.exists(javaFile) as Bool
+        javaFile.exists()
     })
 
     ///
@@ -70,8 +71,9 @@ namespace Path {
     /// Returns `true` if the given path `p` is a directory.
     ///
     pub def isDirectory(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.isDirectory();
         let Path(javaFile) = p;
-        native method java.io.File.isDirectory(javaFile) as Bool
+        javaFile.isDirectory()
     })
 
     ///
