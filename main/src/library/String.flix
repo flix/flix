@@ -46,12 +46,16 @@ namespace String {
     ///
     /// Returns the length of the string `s`.
     ///
-    pub def length(s: String): Int = native method java.lang.String.length(s) as Int
+    pub def length(s: String): Int =
+        import java.lang.String.length() as length;
+        length(s)
 
     ///
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
-    pub def startsWith(s1: String, s2: String): Bool = native method java.lang.String.startsWith(s1, s2) as Bool
+    pub def startsWith(s1: String, s2: String): Bool =
+        import java.lang.String.startsWith(String) as startsWith;
+        startsWith(s1, s2)
 
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
@@ -61,12 +65,16 @@ namespace String {
     //
     // Returns the lower case version of the string `s`.
     //
-    pub def toLowerCase(s: String): String = native method java.lang.String.toLowerCase(s) as Str
+    pub def toLowerCase(s: String): String =
+        import java.lang.String.toLowerCase() as toLowerCase;
+        toLowerCase(s)
 
     //
     // Returns the upper case version of the string `s`.
     //
-    pub def toUpperCase(s: String): String = native method java.lang.String.toUpperCase(s) as Str
+    pub def toUpperCase(s: String): String =
+        import java.lang.String.toUpperCase() as toUpperCase;
+        toUpperCase(s)
 
     ///
     /// Returns the given string `s` as a list of characters.
