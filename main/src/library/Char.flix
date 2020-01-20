@@ -25,13 +25,15 @@ namespace Char {
     /// Returns `true` if the given char `c` is a letter character.
     ///
     pub def isLetter(c: Char): Bool =
-        import java.lang.Character:isLetter(Char) as isLetter;
-        isLetter(c)
+        import java.lang.Character:isLetter(Char);
+        c.isLetter()
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9.
     ///
-    pub def isDigit(c: Char): Bool = native method flix.runtime.library.Char.isDigit(c) as Bool
+    pub def isDigit(c: Char): Bool =
+        import java.lang.Character:isDigit(Char);
+        c.isDigit()
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
@@ -46,12 +48,16 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is lowercase.
     ///
-    pub def isLowerCase(c: Char): Bool = native method flix.runtime.library.Char.isLowerCase(c) as Bool
+    pub def isLowerCase(c: Char): Bool =
+        import java.lang.Character:isLowerCase(Char);
+        c.isLowerCase()
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
-    pub def isUpperCase(c: Char): Bool = native method flix.runtime.library.Char.isUpperCase(c) as Bool
+    pub def isUpperCase(c: Char): Bool =
+        import java.lang.Character:isUpperCase(Char);
+        c.isUpperCase()
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
@@ -75,6 +81,8 @@ namespace Char {
     ///
     /// Returns the character `c` as a string.
     ///
-    pub def toString(c: Char): Str = native method flix.runtime.library.Char.toString(c) as Str
+    pub def toString(c: Char): String =
+        import java.lang.Character:toString(Char);
+        c.toString()
 
 }

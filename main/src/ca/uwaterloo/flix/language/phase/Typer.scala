@@ -2044,6 +2044,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     else if (c == java.lang.Double.TYPE) {
       Type.Cst(TypeConstructor.Float64)
     }
+    else if (c == classOf[java.math.BigInteger]) {
+      Type.Cst(TypeConstructor.BigInt)
+    }
     else if (c == classOf[java.lang.String]) {
       Type.Cst(TypeConstructor.Str)
     }
