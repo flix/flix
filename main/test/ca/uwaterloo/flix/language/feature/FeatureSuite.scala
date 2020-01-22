@@ -153,6 +153,7 @@ class FeatureSuite extends Suites(
   // Interop.
   //
   new FlixTest("Test.Expression.Jvm.GetStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetStaticField.flix"),
+  new FlixTest("Test.Expression.Jvm.PutStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutStaticField.flix"),
 
   //
   // Predicates
