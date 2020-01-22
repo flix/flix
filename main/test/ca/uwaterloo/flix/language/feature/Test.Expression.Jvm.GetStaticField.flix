@@ -18,3 +18,24 @@ def testGetStaticFloat64Field01(): Bool =
     import get flix.test.TestClass:FLOAT64_FIELD as getField;
     getField() == 123.456f64
 
+@test
+def testGetStaticInt8Field01(): Bool =
+    import get flix.test.TestClass:INT8_FIELD as getField;
+    getField() == 127i8
+
+@test
+def testGetStaticInt16Field01(): Bool =
+    import get flix.test.TestClass:INT16_FIELD as getField;
+    getField() == 127i16
+
+
+@test
+def testGetStaticInt32Field01(): Bool =
+    import get flix.test.TestClass:INT32_FIELD as getField;
+    getField() == 127i32
+
+@test
+def testGetStaticInt64Field01(): Bool =
+    import get flix.test.TestClass:INT64_FIELD as getField;
+    getField() == 127i64
+
