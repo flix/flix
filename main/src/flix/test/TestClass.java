@@ -15,10 +15,7 @@ public class TestClass {
     public static short      INT16_FIELD = 127;
     public static int        INT32_FIELD = 127;
     public static long       INT64_FIELD = 127;
-    public static BigInteger BIGINT_FIELD = BigInteger.valueOf(123L);
     public static String     STRING_FIELD = "Hello World";
-
-
 
     public boolean booleanField;
     public String stringField;

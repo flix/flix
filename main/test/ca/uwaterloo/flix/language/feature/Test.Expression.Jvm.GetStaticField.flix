@@ -39,3 +39,7 @@ def testGetStaticInt64Field01(): Bool =
     import get flix.test.TestClass:INT64_FIELD as getField;
     getField() == 127i64
 
+@test
+def testGetStaticStringField01(): Bool =
+    import get flix.test.TestClass:STRING_FIELD as getField;
+    getField() == "Hello World"
