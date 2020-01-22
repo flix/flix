@@ -5,7 +5,7 @@ public class TestClass {
     // TODO: All types
 
 
-    public static boolean   BOOLEAN_FIELD;
+    public static boolean   BOOL_FIELD;
     public static char      CHAR_FIELD;
     public static float     FLOAT32_FIELD;
     public static double    FLOAT64_FIELD;
