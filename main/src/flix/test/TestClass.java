@@ -9,16 +9,10 @@ public class TestClass {
     public static char      CHAR_FIELD = 'A';
     public static float     FLOAT32_FIELD = 123.456f;
     public static double    FLOAT64_FIELD = 123.456;
+    public static byte      INT8_FIELD = 127;
     public static String    STRING_FIELD = "Hello World";
 
 
-//    /**
-//     * A type constructor that represent the type of 64-bit floating point numbers.
-//     */
-//  case object Float64 extends TypeConstructor {
-//        def kind: Kind = Kind.Star
-//    }
-//
 //    /**
 //     * A type constructor that represent the type of 8-bit integers.
 //     */
