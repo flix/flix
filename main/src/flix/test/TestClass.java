@@ -5,11 +5,11 @@ public class TestClass {
     // TODO: All types
 
 
-    public static boolean   BOOL_FIELD;
-    public static char      CHAR_FIELD;
-    public static float     FLOAT32_FIELD;
-    public static double    FLOAT64_FIELD;
-    public static String    STRING_FIELD;
+    public static boolean   BOOL_FIELD = true;
+    public static char      CHAR_FIELD = 'A';
+    public static float     FLOAT32_FIELD = 123.456f;
+    public static double    FLOAT64_FIELD = 123.456;
+    public static String    STRING_FIELD = "Hello World";
 
 
 //    /**

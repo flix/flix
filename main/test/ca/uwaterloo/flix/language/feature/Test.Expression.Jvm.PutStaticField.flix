@@ -6,7 +6,7 @@ def testPutStaticBoolField01(): Bool =
     getField() == true
 
 @test
-def testPutStaticBoolField01(): Bool =
+def testPutStaticBoolField02(): Bool =
     import get flix.test.TestClass:BOOL_FIELD as getField;
     import put flix.test.TestClass:BOOL_FIELD as putField;
     putField(false);
