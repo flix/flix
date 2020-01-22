@@ -624,7 +624,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def LetImport: Rule1[ParsedAst.Expression] = {
 
       def JvmIdent: Rule1[String] = rule {
-        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
+        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum + '_'))
       }
 
       def JvmName: Rule1[Seq[String]] = rule {

@@ -1050,7 +1050,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ??? // TODO
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
-        ??? // TODO
+        for {
+          (baseTyp, baseEff) <- visitExp(exp)
+          resultTyp <- unifyTypM(tvar, baseTyp, loc)
+          resultEff <- unifyEffM(evar, baseEff, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
         ??? // TODO
@@ -1551,13 +1555,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ??? // TODO
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
-        ??? // TODO
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.GetField(field, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
         ??? // TODO
 
       case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
-        ??? // TODO
+        TypedAst.Expression.GetStaticField(field, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
         ??? // TODO
