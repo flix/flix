@@ -314,7 +314,7 @@ object ClosureConv extends Phase[Root, Root] {
       Expression.PutField(field, e1, e2, tpe, loc)
 
     case Expression.GetStaticField(field, tpe, loc) =>
-      exp0
+      Expression.GetStaticField(field, tpe, loc)
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
       val e = visitExp(exp)

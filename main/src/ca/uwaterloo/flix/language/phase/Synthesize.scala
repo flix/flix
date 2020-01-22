@@ -300,7 +300,7 @@ object Synthesize extends Phase[Root, Root] {
         Expression.PutField(field, e1, e2, tpe, eff, loc)
 
       case Expression.GetStaticField(field, tpe, eff, loc) =>
-        exp0
+        Expression.GetStaticField(field, tpe, eff, loc)
 
       case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
         val e = visitExp(exp)

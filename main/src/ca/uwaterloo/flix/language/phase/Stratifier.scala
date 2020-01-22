@@ -353,7 +353,7 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.GetStaticField(field, tpe, eff, loc) =>
-      exp0.toSuccess
+      Expression.GetStaticField(field, tpe, eff, loc).toSuccess
 
     case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
