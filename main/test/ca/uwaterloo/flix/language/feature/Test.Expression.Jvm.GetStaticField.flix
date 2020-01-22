@@ -14,6 +14,15 @@ namespace Test/Expression/Jvm {
         import get java.lang.Integer:MAX_VALUE as getMinValue;
         getMinValue() == Int32.maxValue()
 
+    @test
+    def testGetStaticField03(): ##java.nio.file.StandardOpenOption =
+        import get java.nio.file.StandardOpenOption:APPEND as getAppendValue;
+        getAppendValue()
+
+    @test
+    def testGetStaticField04(): ##java.nio.file.StandardOpenOption =
+        import get java.nio.file.StandardOpenOption:READ as getReadValue;
+        getReadValue()
 
     ///
     /// Tests for each Type.

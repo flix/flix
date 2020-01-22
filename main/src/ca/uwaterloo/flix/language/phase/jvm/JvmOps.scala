@@ -69,7 +69,10 @@ object JvmOps {
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
-    case MonoType.Native(clazz) => JvmType.Object
+    case MonoType.Native(clazz) =>
+      // TODO: Ugly hack.
+      val fqn = clazz.getCanonicalName.replace('.', '/')
+      JvmType.Reference(JvmName.mk(fqn))
     case MonoType.SchemaEmpty() => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
     case MonoType.SchemaExtend(_, _, _) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
 
