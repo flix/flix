@@ -854,7 +854,13 @@ object GenExpression {
       visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
 
     case Expression.PutStaticField(field, exp, tpe, loc) =>
-      ??? // TODO
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+      // Push Unit on the stack.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)

@@ -1565,7 +1565,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         TypedAst.Expression.GetStaticField(field, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
-        ??? // TODO
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.PutStaticField(field, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
         val e = visitExp(exp, subst0)
