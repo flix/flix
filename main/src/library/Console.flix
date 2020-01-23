@@ -67,7 +67,16 @@ namespace Console {
         ///
         /// Flushes the standard output stream.
         ///
-        pub def flush(): Unit @ IO = native method flix.runtime.library.Console.flushStdOut() as Unit @ IO
+        pub def flush(): Unit @ IO =
+            import java.io.PrintStream.flush();
+            getOutputStream().flush()
+
+        ///
+        /// Returns the standard output stream.
+        ///
+        def getOutputStream(): ##java.io.PrintStream =
+            import get java.lang.System:out as getOut;
+            getOut()
 
     }
 
@@ -105,7 +114,7 @@ namespace Console {
             getErrorStream().flush()
 
         ///
-        /// Returns the default error print stream.
+        /// Returns the standard error stream.
         ///
         def getErrorStream(): ##java.io.PrintStream =
             import get java.lang.System:err as getErr;
