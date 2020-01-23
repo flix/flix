@@ -81,16 +81,20 @@ namespace BigInt {
     ///
     /// Return a string representation of `x`.
     ///
-    pub def toString(x: BigInt): Str =
-        native method flix.runtime.library.InterimReadShow.bigIntegerToString(x) as Str
+    pub def toString(x: BigInt): String =
+        //import java.math.BigInteger.toString();
+        //x.toString()
+        ??? // TODO
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def fromString(s: Str): Result[BigInt, Str] = try {
-         let i = native method flix.runtime.library.InterimReadShow.bigIntegerFromString(s) as BigInt;
-         Ok(i)
+    pub def fromString(s: String): Result[BigInt, String] = try {
+        import java.lang.String.strip();
+        //import java.math.BigInteger:__new__(String) as parseBigInt; // TODO
+        //Ok(s.strip().parseBigInt())
+        ???
      } catch {
          case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
      }

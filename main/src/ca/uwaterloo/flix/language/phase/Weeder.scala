@@ -583,9 +583,47 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       // Visit the inner expression exp2.
       //
       impl match {
-        case ParsedAst.JvmOp.Constructor(fqn, fparams, ident) =>
-          // TODO
-          ???
+        case ParsedAst.JvmOp.Constructor(fqn, sig, ident) =>
+          //
+          // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args).
+          //
+          mapN(visitExp(exp2)) {
+            case e2 =>
+              // Compute the class name.
+              val className = fqn.mkString(".")
+
+              //
+              // Case 1: No arguments.
+              //
+              if (sig.isEmpty) {
+                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
+                val lambdaBody = WeededAst.Expression.NativeConstructor(className, Nil, loc) // TODO
+                val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
+                return WeededAst.Expression.Let(ident, e1, e2, loc).toSuccess
+              }
+
+              // Compute the types of declared parameters.
+              val ts = sig.map(visitType).toList
+
+              // Introduce a formal parameter (of appropriate type) for each declared argument.
+              val fs = ts.zipWithIndex.map {
+                case (tpe, index) =>
+                  val id = Name.Ident(sp1, "a" + index, sp2)
+                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+              }
+
+              // Compute the argument to the method call.
+              val as = ts.zipWithIndex.map {
+                case (tpe, index) =>
+                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
+              }
+
+              // Assemble the lambda expression.
+              val lambdaBody = WeededAst.Expression.NativeConstructor(className, as, loc) // TODO???
+              val e1 = mkCurried(fs, lambdaBody, loc)
+              WeededAst.Expression.Let(ident, e1, e2, loc)
+          }
 
         case ParsedAst.JvmOp.Method(fqn, fparams, identOpt) =>
 
