@@ -153,6 +153,11 @@ class FeatureSuite extends Suites(
   //
   // Interop.
   //
+  new FlixTest("Test.Expression.Jvm.InvokeConstructor", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeConstructor.flix"),
+  new FlixTest("Test.Expression.Jvm.InvokeMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeMethod.flix"),
+  new FlixTest("Test.Expression.Jvm.InvokeStaticMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeStaticMethod.flix"),
+  new FlixTest("Test.Expression.Jvm.GetField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetField.flix"),
+  new FlixTest("Test.Expression.Jvm.PutField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutField.flix"),
   new FlixTest("Test.Expression.Jvm.GetStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetStaticField.flix"),
   new FlixTest("Test.Expression.Jvm.PutStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutStaticField.flix"),
 
