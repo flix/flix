@@ -915,6 +915,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
+    case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
+      val argsVal = traverse(args)(visitExp(_, env0, tenv0))
+      val sigVal = traverse(sig)(visitType(_, tenv0))
+      mapN(argsVal, sigVal) {
+        case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
+
     case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
       val sigVal = traverse(sig)(visitType(_, tenv0))
@@ -1307,6 +1314,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
       }
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) => freeVars(exp)

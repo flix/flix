@@ -713,6 +713,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, evar, loc)
 
+        case NamedAst.Expression.InvokeConstructor(className, args, sig, tvar, evar, loc) =>
+          ???
+
         case NamedAst.Expression.InvokeMethod(className, methodName, args, sig, tvar, evar, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
