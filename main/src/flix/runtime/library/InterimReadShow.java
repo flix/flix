@@ -47,14 +47,6 @@ public class InterimReadShow {
         return Short.parseShort(s.strip());
     }
 
-    public static String intToString(int i) {
-        return Integer.toString(i);
-    }
-
-    public static int intFromString(String s) throws Exception {
-        return Integer.parseInt(s.strip());
-    }
-
     public static String longToString(long i) {
         return Long.toString(i);
     }
