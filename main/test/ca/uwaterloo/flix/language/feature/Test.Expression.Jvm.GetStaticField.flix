@@ -24,6 +24,21 @@ namespace Test/Expression/Jvm/GetStaticField {
         import get java.nio.file.StandardOpenOption:READ as getReadValue;
         getReadValue()
 
+    @test
+    def testGetStaticField05(): ##java.io.InputStream =
+        import get java.lang.System:in as getIn;
+        getIn()
+
+    @test
+    def testGetStaticField06(): ##java.io.PrintStream =
+        import get java.lang.System:out as getOut;
+        getOut()
+
+    @test
+    def testGetStaticField07(): ##java.io.PrintStream =
+        import get java.lang.System:err as getErr;
+        getErr()
+
     ///
     /// Tests for each Type.
     ///
