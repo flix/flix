@@ -421,9 +421,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.TryCatch(e, rs, subst0(tpe), eff, loc)
 
-        case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
+        case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
-          Expression.NativeConstructor(constructor, es, subst0(tpe), eff, loc)
+          Expression.InvokeConstructor(constructor, es, subst0(tpe), eff, loc)
 
         case Expression.NativeMethod(method, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))

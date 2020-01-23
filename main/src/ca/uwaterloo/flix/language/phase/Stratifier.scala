@@ -314,11 +314,6 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Cast(e, tpe, eff, loc)
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-      mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeConstructor(constructor, as, tpe, eff, loc)
-      }
-
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
@@ -330,6 +325,11 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.NativeMethod(method, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
         case as => Expression.NativeMethod(method, as, tpe, eff, loc)
+      }
+
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
       }
 
     case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
@@ -611,17 +611,17 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Cast(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(dependencyGraphOfExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + dependencyGraphOfExp(e)
       }
 
     case Expression.NativeMethod(_, args, _, _, _) =>
+      args.foldLeft(DependencyGraph.empty) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }

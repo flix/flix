@@ -486,9 +486,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      visitExps(args, env0)
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0)
       val usedRules = rules.foldLeft(Used.empty) {
@@ -503,6 +500,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.NativeMethod(_, args, _, _, _) =>
       Used.empty ++ visitExps(args, env0)
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      visitExps(args, env0)
 
     case Expression.InvokeMethod(_, args, _, _, _) =>
       visitExps(args, env0)

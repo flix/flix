@@ -160,17 +160,17 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-      args.foldLeft(Nil: List[CompilationError]) {
-        case (acc, e) => acc ::: visitExp(e)
-      }
-
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc ::: visitExp(e)
       }
 
     case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+      args.foldLeft(Nil: List[CompilationError]) {
+        case (acc, e) => acc ::: visitExp(e)
+      }
+
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       args.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)
       }

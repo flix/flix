@@ -176,7 +176,7 @@ object TypedAstOps {
           case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.Cst(TypeConstructor.Native(null))))
         }
 
-      case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
+      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }

@@ -1555,7 +1555,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
-        TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), subst0(evar), loc)
+        TypedAst.Expression.InvokeConstructor(constructor, es, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
@@ -1563,7 +1563,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, evar, loc) =>
         val as = args.map(visitExp(_, subst0))
-        TypedAst.Expression.NativeConstructor(constructor, as, subst0(tpe), subst0(evar), loc) // TODO: Use different node.
+        TypedAst.Expression.InvokeConstructor(constructor, as, subst0(tpe), subst0(evar), loc) // TODO: Use different node.
 
       case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
         ??? // TODO

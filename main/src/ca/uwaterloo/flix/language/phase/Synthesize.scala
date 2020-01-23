@@ -274,13 +274,13 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.TryCatch(e, rs, tpe, eff, loc)
 
-      case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-        val as = args map visitExp
-        Expression.NativeConstructor(constructor, as, tpe, eff, loc)
-
       case Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
+
+      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+        val as = args map visitExp
+        Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
 
       case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
