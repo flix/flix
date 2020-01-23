@@ -719,7 +719,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmConstructor(className, ts, loc)) {
-                case constructor => ResolvedAst.Expression.NativeConstructor(constructor, as, tvar, evar, loc) // TODO: Use other AST node.
+                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, tvar, evar, loc)
               }
           }
 

@@ -1045,6 +1045,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, returnType, loc)
         } yield (resultTyp, evar)
 
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, evar, loc) =>
+        val classType = getFlixType(constructor.getDeclaringClass)
+        for {
+          argTypesAndEffects <- seqM(args.map(visitExp))
+          resultTyp <- unifyTypM(tvar, classType, loc)
+          resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
+        } yield (resultTyp, resultEff)
+
       case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
         ??? // TODO
 
@@ -1552,6 +1560,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
+
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, evar, loc) =>
+        val as = args.map(visitExp(_, subst0))
+        TypedAst.Expression.NativeConstructor(constructor, as, subst0(tpe), subst0(evar), loc) // TODO: Use different node.
 
       case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
         ??? // TODO
