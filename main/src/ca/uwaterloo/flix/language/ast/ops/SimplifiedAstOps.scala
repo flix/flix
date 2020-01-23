@@ -293,7 +293,7 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }

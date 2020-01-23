@@ -305,9 +305,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         Expression.TryCatch(e, rs, tpe, loc)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val es = args map visitExp
-        Expression.NativeConstructor(constructor, es, tpe, loc)
+        Expression.InvokeConstructor(constructor, es, tpe, loc)
 
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visitExp

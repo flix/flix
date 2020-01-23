@@ -222,7 +222,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
 
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 

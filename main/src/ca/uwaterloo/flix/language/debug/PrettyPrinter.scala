@@ -390,7 +390,7 @@ object PrettyPrinter {
           }
           vt << Dedent << NewLine << "}" << NewLine
 
-        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
           vt.text(constructor.toString)
           vt.text("(")
           for (e <- args) {

@@ -386,7 +386,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.TryCatch(e, rs, t, loc)
 
-      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val es = args map visit
         val t = visitType(tpe)
         FinalAst.Expression.NativeConstructor(constructor, es, t, loc)

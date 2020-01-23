@@ -288,9 +288,9 @@ object ClosureConv extends Phase[Root, Root] {
       }
       Expression.TryCatch(e, rs, tpe, loc)
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val as = args map visitExp
-      Expression.NativeConstructor(constructor, as, tpe, loc)
+      Expression.InvokeConstructor(constructor, as, tpe, loc)
 
     case Expression.NativeMethod(method, args, tpe, loc) =>
       val as = args map visitExp
@@ -531,7 +531,9 @@ object ClosureConv extends Phase[Root, Root] {
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
     case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
-    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
     case Expression.InvokeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
@@ -865,9 +867,9 @@ object ClosureConv extends Phase[Root, Root] {
         }
         Expression.TryCatch(e, rs, tpe, loc)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val es = args map visitExp
-        Expression.NativeConstructor(constructor, es, tpe, loc)
+        Expression.InvokeConstructor(constructor, es, tpe, loc)
 
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visitExp

@@ -222,7 +222,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.TryCatch(exp, rules, _, _) =>
         visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.NativeConstructor(_, args, _, _) =>
+      case Expression.InvokeConstructor(_, args, _, _) =>
         visitExps(args)
 
       case Expression.NativeMethod(_, args, _, _) =>
