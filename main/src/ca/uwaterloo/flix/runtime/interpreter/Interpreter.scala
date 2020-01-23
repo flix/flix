@@ -233,7 +233,7 @@ object Interpreter {
           throw ex
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])

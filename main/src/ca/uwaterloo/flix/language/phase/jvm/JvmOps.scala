@@ -651,7 +651,7 @@ object JvmOps {
           case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
         }
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1036,7 +1036,7 @@ object JvmOps {
           case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
         }
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 

@@ -839,14 +839,20 @@ object SymbolicEvaluator {
 
       case Expression.TryCatch(exp, rules, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.InvokeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.InvokeStaticMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.GetField(field, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.PutField(field, exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.GetStaticField(field, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.PutStaticField(field, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.NewChannel(tpe, exp, loc) => throw InternalCompilerException("Not yet supported.")
