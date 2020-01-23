@@ -17,7 +17,15 @@ public class TestClass {
     public static long       INT64_FIELD = 127;
     public static String     STRING_FIELD = "Hello World";
 
-    public boolean booleanField;
+    //
+    // Instance Fields.
+    //
+
+    public boolean      boolField;
+    public char         charField;
+    public float        float32Field;
+    public double       float64Field;
+    public byte         int8Field;
     public String stringField;
 
 }
