@@ -1039,8 +1039,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, evar)
 
       case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, evar, loc) =>
-        // TODO: Check argument types.
-        val returnType = getGenericFlixType(method.getGenericReturnType)
+        val returnType = getFlixType(method.getReturnType)
         for {
           inferredArgumentTypes <- seqM(actuals.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)

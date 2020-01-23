@@ -1464,7 +1464,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
+      // TODO: Extend
       fqn match {
+        case "java.math.BigInteger" => Type.Cst(TypeConstructor.BigInt).toSuccess
         case "java.lang.String" => Type.Cst(TypeConstructor.Str).toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => Type.Cst(TypeConstructor.Native(clazz))
