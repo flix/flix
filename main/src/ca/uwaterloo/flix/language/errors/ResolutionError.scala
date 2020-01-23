@@ -448,7 +448,24 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the method name was not found.
+    * An error raised to indicate that a matching constructor was not found.
+    *
+    * @param className the class name.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedJvmConstructor(className: String, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined constructor in class '" << Cyan(className) << "." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined constructor.") << NewLine
+    }
+  }
+
+  /**
+    * An error raised to indicate that a matching method was not found.
     *
     * @param className the class name.
     * @param fieldName the method name.

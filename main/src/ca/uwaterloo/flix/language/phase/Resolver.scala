@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.lang.reflect.{Field, Method, Modifier}
+import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
@@ -714,7 +714,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, evar, loc)
 
         case NamedAst.Expression.InvokeConstructor(className, args, sig, tvar, evar, loc) =>
-          ???
+          val argsVal = traverse(args)(visit(_, tenv0))
+          val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
+          flatMapN(sigVal, argsVal) {
+            case (ts, as) =>
+              mapN(lookupJvmConstructor(className, ts, loc)) {
+                case constructor => ResolvedAst.Expression.NativeConstructor(constructor, as, tvar, evar, loc) // TODO: Use other AST node.
+              }
+          }
 
         case NamedAst.Expression.InvokeMethod(className, methodName, args, sig, tvar, evar, loc) =>
           val argsVal = traverse(args)(visit(_, tenv0))
@@ -1871,6 +1878,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     Class.forName(className).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+  }
+
+  // TODO: DOC
+  private def lookupJvmConstructor(className: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = try {
+    // Lookup the class.
+    val clazz = Class.forName(className)
+
+    // Lookup the class objects of the argument types.
+    val parameterClasses = parameterTypes.map(getJVMType)
+
+    // Lookup the constructor.
+    clazz.getConstructor(parameterClasses: _*).toSuccess
+  } catch {
+    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+    case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, loc).toFailure
   }
 
   /**

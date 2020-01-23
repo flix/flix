@@ -597,7 +597,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               //
               if (sig.isEmpty) {
                 val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val lambdaBody = WeededAst.Expression.NativeConstructor(className, Nil, loc) // TODO
+                val lambdaBody = WeededAst.Expression.InvokeConstructor(className, Nil, Nil, loc)
                 val e1 = WeededAst.Expression.Lambda(fparam, lambdaBody, loc)
                 return WeededAst.Expression.Let(ident, e1, e2, loc).toSuccess
               }
@@ -620,7 +620,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
 
               // Assemble the lambda expression.
-              val lambdaBody = WeededAst.Expression.NativeConstructor(className, as, loc) // TODO???
+              val lambdaBody = WeededAst.Expression.InvokeConstructor(className, as, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
