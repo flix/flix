@@ -1049,9 +1049,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         ??? // TODO
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
+        val fieldType = getFlixType(field.getType)
+        val classType = getFlixType(field.getDeclaringClass)
         for {
           (baseTyp, baseEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, baseTyp, loc)
+          objectTyp <- unifyTypM(baseTyp, classType, loc)
+          resultTyp <- unifyTypM(tvar, fieldType, loc)
           resultEff <- unifyEffM(evar, baseEff, loc)
         } yield (resultTyp, resultEff)
 
