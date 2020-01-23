@@ -28,18 +28,6 @@ namespace Test/Expression/Jvm/PutStaticField {
         putField('z');
         getField() == 'z'
 
-    @test
-    def testPutStaticCharField03(): Bool =
-        import get flix.test.TestClass:CHAR_FIELD as getField;
-        import put flix.test.TestClass:CHAR_FIELD as putField;
-        putField('A');
-        getField() == 'A'
 
-    @test
-    def testPutStaticCharField04(): Bool =
-        import get flix.test.TestClass:CHAR_FIELD as getField;
-        import put flix.test.TestClass:CHAR_FIELD as putField;
-        putField('Z');
-        getField() == 'Z'
 
 }
