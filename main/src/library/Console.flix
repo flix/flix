@@ -38,9 +38,9 @@ namespace Console {
         ///
         /// Returns the next line read from the standard input stream.
         ///
-        pub def readLine(): Option[Str] @ IO =
+        pub def readLine(): Option[String] @ IO =
             let s = native method flix.runtime.library.Console.readLine() as Str @ IO;
-            (if (isNull(s)) None else Some(s)) as Option[Str] @ IO
+            (if (isNull(s)) None else Some(s)) as Option[String] @ IO
 
     }
 
@@ -52,17 +52,23 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard output stream.
         ///
-        pub def print(s: String): Unit @ IO = native method flix.runtime.library.Console.printStdOut(s) as Unit @ IO
+        pub def print(s: String): Unit @ IO =
+            import java.io.PrintStream.print(String);
+            getOutputStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
-        pub def printLine(s: String): Unit @ IO = native method flix.runtime.library.Console.printLineStdOut(s) as Unit @ IO
+        pub def printLine(s: String): Unit @ IO =
+            import java.io.PrintStream.println(String);
+            getOutputStream().println(s)
 
         ///
         /// Prints a newline to the standard output stream.
         ///
-        pub def newLine(): Unit @ IO = native method flix.runtime.library.Console.newLineStdOut() as Unit @ IO
+        pub def newLine(): Unit @ IO =
+            import java.io.PrintStream.println();
+            getOutputStream().println()
 
         ///
         /// Flushes the standard output stream.
