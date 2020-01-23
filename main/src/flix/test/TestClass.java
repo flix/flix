@@ -2,6 +2,8 @@ package flix.test;
 
 public class TestClass {
 
+    // TODO: Arrays
+
     //
     // Static Fields.
     //
