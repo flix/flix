@@ -62,21 +62,27 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
-    pub def isWhiteSpace(c: Char): Bool = native method flix.runtime.library.Char.isWhiteSpace(c) as Bool
+    pub def isWhiteSpace(c: Char): Bool =
+        import java.lang.Character:isWhitespace(Char);
+        c.isWhitespace()
 
     ///
     /// Converts a letter to its lowercase version.
     ///
     /// Returns the original character if it does not have a lowercase version.
     ///
-    pub def toLowerCase(c: Char): Char = native method flix.runtime.library.Char.toLowerCase(c) as Char
+    pub def toLowerCase(c: Char): Char =
+        import java.lang.Character:toLowerCase(Char);
+        c.toLowerCase()
 
     ///
     /// Converts a letter to its uppercase version.
     ///
     /// Returns the original character if it does not have a uppercase version.
     ///
-    pub def toUpperCase(c: Char): Char = native method flix.runtime.library.Char.toUpperCase(c) as Char
+    pub def toUpperCase(c: Char): Char =
+        import java.lang.Character:toUpperCase(Char);
+        c.toUpperCase()
 
     ///
     /// Returns the character `c` as a string.
