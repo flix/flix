@@ -36,21 +36,21 @@ namespace StringBuilder {
         let StringBuilder(msb) = sb;
         msb.toString()
 
-//    ///
-//    /// Append the StringBuilder `sb1` to the end of StringBuilder `sb`.
-//    ///
-//    pub def append(sb: StringBuilder, sb1: StringBuilder): Unit =
-//        let StringBuilder(msb) = sb;
-//        let s1: Str = toString(sb1);
-//        native method flix.runtime.library.StringBuilderWrapper.appendString(msb, s1) as Unit
+    ///
+    /// Append the StringBuilder `sb1` to the end of StringBuilder `sb`.
+    ///
+    pub def append(sb: StringBuilder, sb1: StringBuilder): Unit =
+        ??? // TODO
 
-//    ///
-//    /// Append the String `s` to the StringBuilder `sb`.
-//    ///
-//    pub def appendString(sb: StringBuilder, s: Str): Unit =
-//        let StringBuilder(msb) = sb;
-//        native method flix.runtime.library.StringBuilderWrapper.appendString(msb, s) as Unit
-//
+    ///
+    /// Append the String `s` to the StringBuilder `sb`.
+    ///
+    pub def appendString(sb: StringBuilder, s: String): Unit =
+        import java.lang.StringBuilder.append(String);
+        let StringBuilder(msb) = sb;
+        msb.append(s);
+        ()
+
     ///
     /// Append the Char `c` to the StringBuilder `sb`.
     ///
@@ -64,13 +64,15 @@ namespace StringBuilder {
     /// Append the Int8 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt8(sb: StringBuilder, i: Int8): Unit =
-        ??? // TODO
+        sb.appendString(Int8.toString(i));
+        ()
 
     ///
     /// Append the Int16 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt16(sb: StringBuilder, i: Int16): Unit =
-        ??? // TODO
+        sb.appendString(Int16.toString(i));
+        ()
 
     ///
     /// Append the Int32 `i` to the StringBuilder `sb`.
@@ -81,47 +83,52 @@ namespace StringBuilder {
         msb.append(i);
         ()
 
-//    ///
-//    /// Append the Int64 `i` to the StringBuilder `sb`.
-//    ///
-//    pub def appendInt64(sb: StringBuilder, i: Int64): Unit =
-//        let StringBuilder(msb) = sb;
-//        native method flix.runtime.library.StringBuilderWrapper.appendLong(msb, i) as Unit
-//
-//    ///
-//    /// Append the BigInt `i` to the StringBuilder `sb`.
-//    ///
-//    pub def appendBigInt(sb: StringBuilder, i: BigInt): Unit =
-//        let StringBuilder(msb) = sb;
-//        native method flix.runtime.library.StringBuilderWrapper.appendBigInteger(msb, i) as Unit
-//
-//    ///
-//    /// Append the Float32 `d` to the StringBuilder `sb`.
-//    ///
-//    pub def appendFloat32(sb: StringBuilder, d: Float32): Unit =
-//        let StringBuilder(msb) = sb;
-//        native method flix.runtime.library.StringBuilderWrapper.appendFloat(msb, d) as Unit
-//
-//    ///
-//    /// Append the Float64 `d` to the StringBuilder `sb`.
-//    ///
-//    pub def appendFloat64(sb: StringBuilder, d: Float64): Unit =
-//        let StringBuilder(msb) = sb;
-//        native method flix.runtime.library.StringBuilderWrapper.appendDouble(msb, d) as Unit
-//
-//    ///
-//    /// Append the system line separator to the StringBuilder `sb`.
-//    ///
-//    pub def appendLineSeparator(sb: StringBuilder): Unit =
-//        let StringBuilder(msb) = sb;
-//        native method flix.runtime.library.StringBuilderWrapper.appendLineSeparator(msb) as Unit
-//
-//    ///
-//    /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
-//    ///
-//    pub def appendLine(sb: StringBuilder, s: Str) : Unit =
-//        appendString(sb, s);
-//        appendLineSeparator(sb)
+    ///
+    /// Append the Int64 `i` to the StringBuilder `sb`.
+    ///
+    pub def appendInt64(sb: StringBuilder, i: Int64): Unit =
+        import java.lang.StringBuilder.append(Int64);
+        let StringBuilder(msb) = sb;
+        msb.append(i);
+        ()
+
+    ///
+    /// Append the BigInt `i` to the StringBuilder `sb`.
+    ///
+    pub def appendBigInt(sb: StringBuilder, i: BigInt): Unit =
+        sb.appendString(BigInt.toString(i));
+        ()
+
+    ///
+    /// Append the Float32 `d` to the StringBuilder `sb`.
+    ///
+    pub def appendFloat32(sb: StringBuilder, d: Float32): Unit =
+        import java.lang.StringBuilder.append(Float32);
+        let StringBuilder(msb) = sb;
+        msb.append(d);
+        ()
+
+    ///
+    /// Append the Float64 `d` to the StringBuilder `sb`.
+    ///
+    pub def appendFloat64(sb: StringBuilder, d: Float64): Unit =
+        import java.lang.StringBuilder.append(Float64);
+        let StringBuilder(msb) = sb;
+        msb.append(d);
+        ()
+
+    ///
+    /// Append the system line separator to the StringBuilder `sb`.
+    ///
+    pub def appendLineSeparator(sb: StringBuilder): Unit =
+        sb.appendString(String.lineSeparator())
+
+    ///
+    /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
+    ///
+    pub def appendLine(sb: StringBuilder, s: Str) : Unit =
+        sb.appendString(s);
+        sb.appendLineSeparator()
 
     ///
     /// Return the length of the StringBuilder `sb`.
