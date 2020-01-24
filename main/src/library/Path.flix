@@ -61,8 +61,9 @@ namespace Path {
     /// Returns `None` if the path `p` does not denote a directory.
     ///
     pub def getChildren(p: Path): Result[Option[List[Path]], IOError] = tryWithCatch(_ -> {
+        import java.io.File.listFiles();
         let Path(javaFile) = p;
-        let children = native method java.io.File.listFiles(javaFile);
+        let children = javaFile.listFiles();
         if (isNull(children))
             None
         else
@@ -82,16 +83,18 @@ namespace Path {
     /// Returns `true` if the given path `p` is executable.
     ///
     pub def isExecutable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.canExecute();
         let Path(javaFile) = p;
-        native method java.io.File.canExecute(javaFile) as Bool
+        javaFile.canExecute()
     })
 
     ///
     /// Returns `true` if the given path `p` is readable.
     ///
     pub def isReadable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.canRead();
         let Path(javaFile) = p;
-        native method java.io.File.canRead(javaFile) as Bool
+        javaFile.canRead()
     })
 
     ///
@@ -107,9 +110,11 @@ namespace Path {
     /// Returns `true` if the given path `p` is a symbolic link.
     ///
     pub def isSymbolicLink(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.toPath();
+        import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
         let Path(javaFile) = p;
-        let javaPath = native method java.io.File.toPath(javaFile);
-        native method java.nio.file.Files.isSymbolicLink(javaPath) as Bool
+        let javaPath = javaFile.toPath();
+        javaPath.isSymbolicLink()
     })
 
     ///
@@ -125,9 +130,11 @@ namespace Path {
     /// Returns a list of all the lines in the given path `p`.
     ///
     pub def readLines(p: Path): Result[List[Str], IOError] = tryWithCatch(_ -> {
+        import java.io.File.toPath();
+        import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
         let Path(javaFile) = p;
-        let javaPath = native method java.io.File.toPath(javaFile);
-        let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
+        let javaPath = javaFile.toPath();
+        let reader = javaPath.newBufferedReader();
         readAll(reader)
     })
 
@@ -135,7 +142,8 @@ namespace Path {
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[Str] =
-        let line = native method java.io.BufferedReader.readLine(r);
+        import java.io.BufferedReader.readLine();
+        let line = r.readLine();
         if (isNull(line))
             Nil
         else
@@ -146,10 +154,11 @@ namespace Path {
     ///
     pub def writeLines(p: Path, l: List[Str]): Result[Unit, IOError] = tryWithCatch(_ -> {
         import java.io.PrintWriter:__new__(##java.io.File) as newPrintWriter;
+        import java.io.PrintWriter.close();
         let Path(javaFile) = p;
         let w = newPrintWriter(javaFile);
         writeAll(l, w);
-        native method java.io.PrintWriter.close(w) as Unit;
+        w.close();
         ()
     })
 
