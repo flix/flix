@@ -35,23 +35,25 @@ namespace Path {
     /// Returns the name of the directory or file denoted by the given path `p`.
     ///
     pub def getName(p: Path): Result[Str, IOError] = tryWithCatch(_ -> {
-         let Path(javaFile) = p;
-         native method java.io.File.getName(javaFile) as Str
+        import java.io.File.getName();
+        let Path(javaFile) = p;
+        javaFile.getName()
      })
 
-     ///
-     /// Optionally returns the path to the parent of the given path `p`.
-     ///
-     /// Returns `None` if `p` has no parent.
-     ///
-     pub def getParent(p: Path): Result[Option[Path], IOError] = tryWithCatch(_ -> {
-          let Path(javaFile) = p;
-          let parent = native method java.io.File.getParentFile(javaFile) as ##java.io.File;
-          if (isNull(parent))
+    ///
+    /// Optionally returns the path to the parent of the given path `p`.
+    ///
+    /// Returns `None` if `p` has no parent.
+    ///
+    pub def getParent(p: Path): Result[Option[Path], IOError] = tryWithCatch(_ -> {
+        import java.io.File.getParentFile();
+        let Path(javaFile) = p;
+        let parent = javaFile.getParentFile();
+        if (isNull(parent))
             None
-          else
+        else
             Some(Path(parent))
-      })
+    })
 
     ///
     /// Returns a list of children for the given path `p`.
@@ -96,8 +98,9 @@ namespace Path {
     /// Returns `true` if the given path `p` is a file.
     ///
     pub def isFile(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.isFile();
         let Path(javaFile) = p;
-        native method java.io.File.isFile(javaFile) as Bool
+        javaFile.isFile()
     })
 
     ///
@@ -113,8 +116,9 @@ namespace Path {
     /// Returns `true` if the given path `p` is writable.
     ///
     pub def isWritable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.canWrite();
         let Path(javaFile) = p;
-        native method java.io.File.canWrite(javaFile) as Bool
+        javaFile.canWrite()
     })
 
     ///
@@ -152,12 +156,14 @@ namespace Path {
     ///
     /// Writes all lines in `l` to the writer `w`.
     ///
-    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit = match l {
-        case Nil => ()
-        case x :: xs =>
-            native method java.io.PrintWriter.println(w, x : Str) as Unit;
-            writeAll(xs, w)
-    }
+    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit =
+        import java.io.PrintWriter.println(String);
+        match l {
+            case Nil => ()
+            case x :: xs =>
+                println(w, x);
+                writeAll(xs, w)
+        }
 
     ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.
