@@ -19,7 +19,9 @@ namespace Char {
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
-    pub def isAscii(c: Char): Bool = native method flix.runtime.library.Char.isAscii(c) as Bool
+    pub def isAscii(c: Char): Bool =
+        import flix.runtime.library.Char:isAscii(Char);
+        c.isAscii()
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
@@ -38,12 +40,16 @@ namespace Char {
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
-    pub def isOctDigit(c: Char): Bool = native method flix.runtime.library.Char.isOctDigit(c) as Bool
+    pub def isOctDigit(c: Char): Bool =
+        import flix.runtime.library.Char:isOctDigit(Char);
+        c.isOctDigit()
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
-    pub def isHexDigit(c: Char): Bool = native method flix.runtime.library.Char.isHexDigit(c) as Bool
+    pub def isHexDigit(c: Char): Bool =
+        import flix.runtime.library.Char:isHexDigit(Char);
+        c.isHexDigit()
 
     ///
     /// Returns `true` if the given char `c` is lowercase.
