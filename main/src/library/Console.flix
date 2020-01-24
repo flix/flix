@@ -39,7 +39,8 @@ namespace Console {
         /// Returns the next line read from the standard input stream.
         ///
         pub def readLine(): Option[String] @ IO =
-            let s = native method flix.runtime.library.Console.readLine() as Str @ IO;
+            import flix.runtime.library.Console:readLine();
+            let s = readLine();
             (if (isNull(s)) None else Some(s)) as Option[String] @ IO
 
     }
