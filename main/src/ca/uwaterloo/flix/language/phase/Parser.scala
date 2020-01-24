@@ -569,7 +569,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -713,16 +713,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("try") ~ WS ~ Expression ~ optWS ~ atomic("catch") ~ optWS ~ CatchBody ~ SP ~> ParsedAst.Expression.TryCatch
-      }
-    }
-
-    def Native: Rule1[ParsedAst.Expression] = {
-      def NativeMethod: Rule1[ParsedAst.Expression.NativeMethod] = rule {
-        atomic("method") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
-      }
-
-      rule {
-        atomic("native") ~ WS ~ NativeMethod
       }
     }
 
