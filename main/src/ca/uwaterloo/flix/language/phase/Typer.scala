@@ -1045,8 +1045,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
-        ??? // TODO
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) =>
+        val returnType = getFlixType(method.getReturnType)
+        for {
+          argTypesAndEffects <- seqM(args.map(visitExp))
+          resultTyp <- unifyTypM(tvar, returnType, loc)
+          resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
         val fieldType = getFlixType(field.getType)
@@ -1553,8 +1558,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val as = args.map(visitExp(_, subst0))
         TypedAst.Expression.InvokeConstructor(constructor, as, subst0(tpe), subst0(evar), loc)
 
-      case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
-        ??? // TODO
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tpe, evar, loc) =>
+        val as = args.map(visitExp(_, subst0))
+        TypedAst.Expression.InvokeStaticMethod(method, as, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)

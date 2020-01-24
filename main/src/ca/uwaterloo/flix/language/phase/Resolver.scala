@@ -735,7 +735,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, loc)) {
-                case method => ResolvedAst.Expression.NativeMethod(method, as, tvar, evar, loc) // TODO: Use other AST node.
+                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, evar, loc)
               }
           }
 

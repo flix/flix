@@ -837,7 +837,18 @@ object GenExpression {
       ??? // TODO
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
-      ??? // TODO
+      addSourceLine(visitor, loc)
+      for ((arg, index) <- args.zipWithIndex) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+      }
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+      visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
+      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+          AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
+      }
 
     case Expression.GetField(field, exp, tpe, loc) =>
       addSourceLine(visitor, loc)
