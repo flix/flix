@@ -1030,14 +1030,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tvar, evar, loc) =>
-        // TODO: Check types.
-        val clazz = constructor.getDeclaringClass
-        for {
-          inferredArgumentTypes <- seqM(actuals.map(visitExp))
-          resultTyp <- unifyTypM(tvar, Type.Cst(TypeConstructor.Native(clazz)), loc)
-        } yield (resultTyp, evar)
-
       case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, evar, loc) =>
         val returnType = getFlixType(method.getReturnType)
         for {
@@ -1553,17 +1545,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
         TypedAst.Expression.TryCatch(e, rs, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, evar, loc) =>
-        val es = actuals.map(e => visitExp(e, subst0))
-        TypedAst.Expression.InvokeConstructor(constructor, es, subst0(tpe), subst0(evar), loc)
-
       case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
         val es = actuals.map(e => visitExp(e, subst0))
         TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, evar, loc) =>
         val as = args.map(visitExp(_, subst0))
-        TypedAst.Expression.InvokeConstructor(constructor, as, subst0(tpe), subst0(evar), loc) // TODO: Use different node.
+        TypedAst.Expression.InvokeConstructor(constructor, as, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.InvokeStaticMethod(className, methodName, args, tpe, evar, loc) =>
         ??? // TODO

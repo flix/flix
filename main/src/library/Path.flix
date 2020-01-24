@@ -18,9 +18,9 @@ namespace Path {
     ///
     /// Returns a path from the given string `s`.
     ///
-    pub def new(s: Str): Path =
-        let f = native new java.io.File(s : Str);
-        Path(f)
+    pub def new(s: String): Path =
+        import java.io.File:__new__(String) as newFile;
+        Path(newFile(s))
 
     ///
     /// Returns `true` if the given path `p` exists.
@@ -141,8 +141,9 @@ namespace Path {
     /// Writes all lines in the list `l` to the path `p`.
     ///
     pub def writeLines(p: Path, l: List[Str]): Result[Unit, IOError] = tryWithCatch(_ -> {
+        import java.io.PrintWriter:__new__(##java.io.File) as newPrintWriter;
         let Path(javaFile) = p;
-        let w = native new java.io.PrintWriter(javaFile : ##java.io.File);
+        let w = newPrintWriter(javaFile);
         writeAll(l, w);
         native method java.io.PrintWriter.close(w) as Unit;
         ()

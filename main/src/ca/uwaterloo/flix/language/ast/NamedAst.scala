@@ -181,8 +181,6 @@ object NamedAst {
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NativeConstructor(constructor: Constructor[_], args: List[NamedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class NativeMethod(method: Method, args: List[NamedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression

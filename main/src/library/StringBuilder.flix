@@ -25,8 +25,8 @@ namespace StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def new(): StringBuilder =
-        let msb = native new flix.runtime.library.StringBuilderWrapper();
-        StringBuilder(msb)
+        import flix.runtime.library.StringBuilderWrapper:__new__() as newStringBuilderWrapper;
+        StringBuilder(newStringBuilderWrapper())
 
     ///
     /// Convert the StringBuilder `sb` to a string.

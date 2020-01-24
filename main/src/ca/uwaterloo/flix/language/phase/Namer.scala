@@ -899,14 +899,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.NativeConstructor(className, args, loc) =>
-      lookupNativeConstructor(className, args, loc) match {
-        case Ok(constructor) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
-          case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
-        }
-        case Err(e) => e.toFailure
-      }
-
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
       lookupNativeMethod(className, methodName, args, loc) match {
         case Ok(method) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
@@ -1334,7 +1326,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ProcessSpawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
-    case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
@@ -1539,41 +1530,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case 0 => Err(NameError.UndefinedNativeMethod(className, methodName, arity, loc))
       case 1 => Ok(methods.head)
       case _ => Err(NameError.AmbiguousNativeMethod(className, methodName, arity, loc))
-    }
-  } catch {
-    case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))
-  }
-
-  /**
-    * Returns the result of looking up the constructor on the given `className` with the given `arity`.
-    */
-  private def lookupNativeConstructor(className: String, args: List[WeededAst.Expression], loc: SourceLocation): Result[Constructor[_], NameError] = try {
-    // Compute the argument types.
-    val argumentTypes = args map {
-      case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
-        // The argument is ascribed. Try to determine its type.
-        lookupNativeType(tpe)
-      case _ =>
-        // The argument is not ascribed. We do not know its type.
-        None
-    }
-
-    // compute the arity.
-    val arity = argumentTypes.length
-
-    // retrieve class object.
-    val clazz = Class.forName(className)
-
-    // retrieve the constructors of the appropriate arity.
-    val constructors = clazz.getDeclaredConstructors.toList.filter {
-      case constructor => constructor.getParameterCount == arity && parameterTypeMatch(argumentTypes, constructor.getParameterTypes.toList)
-    }
-
-    // match on the number of methods.
-    constructors.size match {
-      case 0 => Err(NameError.UndefinedNativeConstructor(className, arity, loc))
-      case 1 => Ok(constructors.head)
-      case _ => Err(NameError.AmbiguousNativeConstructor(className, arity, loc))
     }
   } catch {
     case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))

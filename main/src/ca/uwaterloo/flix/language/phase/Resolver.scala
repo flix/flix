@@ -703,11 +703,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, evar, loc)
 
-        case NamedAst.Expression.NativeConstructor(constructor, args, tpe, evar, loc) =>
-          for {
-            es <- traverse(args)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.NativeConstructor(constructor, es, tpe, evar, loc)
-
         case NamedAst.Expression.NativeMethod(method, args, tpe, evar, loc) =>
           for {
             es <- traverse(args)(e => visit(e, tenv0))

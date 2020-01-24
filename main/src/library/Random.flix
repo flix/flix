@@ -3,12 +3,16 @@ namespace Random {
     ///
     /// Returns a fresh random number generator.
     ///
-    pub def new(): Random = Random(native new java.util.Random())
+    pub def new(): Random =
+        import java.util.Random:__new__() as newRandom;
+        Random(newRandom())
 
     ///
     /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
-    pub def newWithSeed(s: Int64): Random = Random(native new java.util.Random(s))
+    pub def newWithSeed(s: Int64): Random =
+        import java.util.Random:__new__(Int64) as newRandom;
+        Random(newRandom(s))
 
     ///
     /// Returns a pseudorandom element from the given array `a` using the random number generator `r`.

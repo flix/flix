@@ -229,18 +229,6 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.UndefinedNativeClass](result)
   }
 
-  test("UndefinedNativeConstructor.01") {
-    val input = "def f(): Int = native new java.lang.String(1, 2, 3, 4, 5)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedNativeConstructor](result)
-  }
-
-  test("UndefinedNativeConstructor.02") {
-    val input = "def f(): Int = native new java.lang.String(1, 2, 3, 4, 5, 6, 7, 8, 9)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedNativeConstructor](result)
-  }
-
   test("UndefinedNativeMethod.01") {
     val input = "def f(): Int = native method java.lang.Math.aaa()"
     val result = new Flix().addStr(input).compile()
@@ -251,18 +239,6 @@ class TestNamer extends FunSuite with TestUtils {
     val input = "def f(): Int = native method java.lang.Math.bbb(1, 2, 3)"
     val result = new Flix().addStr(input).compile()
     expectError[NameError.UndefinedNativeMethod](result)
-  }
-
-  test("AmbiguousNativeConstructor.01") {
-    val input = "def f(): Int = native new java.lang.String(42)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.AmbiguousNativeConstructor](result)
-  }
-
-  test("AmbiguousNativeConstructor.02") {
-    val input = "def f(): Int = native new java.lang.String(42, 84)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.AmbiguousNativeConstructor](result)
   }
 
   test("AmbiguousNativeMethod.01") {
