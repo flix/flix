@@ -40,7 +40,8 @@ namespace StringBuilder {
     /// Append the StringBuilder `sb1` to the end of StringBuilder `sb`.
     ///
     pub def append(sb: StringBuilder, sb1: StringBuilder): Unit =
-        ??? // TODO
+        // TODO: Not efficient.
+        sb.append(toString(sb1))
 
     ///
     /// Append the String `s` to the StringBuilder `sb`.
