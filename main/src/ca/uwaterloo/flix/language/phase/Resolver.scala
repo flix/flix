@@ -1870,7 +1870,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
   }
 
-  // TODO: DOC
+  /**
+    * Returns the constructor reflection object for the given `className`.
+    */
   private def lookupJvmConstructor(className: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = try {
     // Lookup the class.
     val clazz = Class.forName(className)
@@ -1878,7 +1880,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     // Lookup the class objects of the argument types.
     val parameterClasses = parameterTypes.map(getJVMType)
 
-    // Lookup the constructor.
+    // Lookup the constructor with the appropriate signature.
     clazz.getConstructor(parameterClasses: _*).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
@@ -1889,8 +1891,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Returns the field reflection object for the given `className` and `fieldName`.
     */
   private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation): Validation[Field, ResolutionError] = try {
+    // Lookup the class.
     val clazz = Class.forName(className)
+
+    // Lookup the field.
     val field = clazz.getField(fieldName)
+
+    // Check if the field should be and is static.
     if (static != Modifier.isStatic(field.getModifiers))
       throw new NoSuchFieldException()
     else
@@ -1911,7 +1918,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     // Lookup the class objects of the argument types.
     val parameterClasses = parameterTypes.map(getJVMType)
 
-    // Lookup the method using the name and parameter types.
+    // Lookup the method with the appropriate signature.
     receiverClass.getDeclaredMethod(methodName, parameterClasses: _*).toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
@@ -1922,7 +1929,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Returns the JVM type corresponding to the given Flix type `tpe`.
     */
   private def getJVMType(tpe: Type): Class[_] = tpe match {
-
     case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object") // TODO: Correct?
     case Type.Cst(TypeConstructor.Bool) => classOf[Boolean]
     case Type.Cst(TypeConstructor.Char) => classOf[Char]
