@@ -2230,7 +2230,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
     val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), Eff.Pure, loc)
-    val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", List(castedExp), List(WeededAst.Type.Native("java.lang.Object", loc)), loc)
+    val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", List(castedExp), Nil, loc)
 
     // The type and effect of the generated main.
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
