@@ -165,11 +165,6 @@ object Safety extends Phase[Root, Root] {
         case (acc, CatchRule(_, _, e)) => acc ::: visitExp(e)
       }
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) =>
-      args.foldLeft(Nil: List[CompilationError]) {
-        case (acc, e) => acc ::: visitExp(e)
-      }
-
     case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       args.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)

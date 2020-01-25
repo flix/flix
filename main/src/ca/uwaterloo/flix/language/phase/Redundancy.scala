@@ -498,9 +498,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       usedExp ++ usedRules
 
-    case Expression.NativeMethod(_, args, _, _, _) =>
-      Used.empty ++ visitExps(args, env0)
-
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0)
 

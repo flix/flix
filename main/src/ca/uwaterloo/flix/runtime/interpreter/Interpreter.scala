@@ -238,20 +238,6 @@ object Interpreter {
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    case Expression.NativeMethod(method, args, tpe, loc) => try {
-      val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
-      if (Modifier.isStatic(method.getModifiers)) {
-        val arguments = values.toArray
-        fromJava(method.invoke(null, arguments: _*))
-      } else {
-        val thisObj = values.head
-        val arguments = values.tail.toArray
-        fromJava(method.invoke(thisObj, arguments: _*))
-      }
-    } catch {
-      case ex: InvocationTargetException => throw ex.getTargetException
-    }
-
     case Expression.InvokeMethod(method, args, tpe, loc) =>
       ??? // TODO
 

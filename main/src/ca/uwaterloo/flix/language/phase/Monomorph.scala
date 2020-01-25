@@ -425,10 +425,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = args.map(e => visitExp(e, env0))
           Expression.InvokeConstructor(constructor, es, subst0(tpe), eff, loc)
 
-        case Expression.NativeMethod(method, args, tpe, eff, loc) =>
-          val es = args.map(e => visitExp(e, env0))
-          Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
-
         case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
           val as = args.map(visitExp(_, env0))
           Expression.InvokeMethod(method, as, tpe, eff, loc)

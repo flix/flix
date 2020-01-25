@@ -225,9 +225,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.InvokeConstructor(_, args, _, _) =>
         visitExps(args)
 
-      case Expression.NativeMethod(_, args, _, _) =>
-        visitExps(args)
-
       case Expression.InvokeMethod(_, args, _, _) =>
         visitExps(args)
 

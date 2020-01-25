@@ -808,7 +808,8 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.NativeMethod(method, args, tpe, loc) =>
+    case Expression.InvokeMethod(method, args, tpe, loc) =>
+      // TODO: Remove dead code from static call.
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
@@ -832,9 +833,6 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
-
-    case Expression.InvokeMethod(method, args, tpe, loc) =>
-      ??? // TODO
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
       addSourceLine(visitor, loc)

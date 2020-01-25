@@ -391,11 +391,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.InvokeConstructor(constructor, es, t, loc)
 
-      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expression.NativeMethod(method, es, t, loc)
-
       case SimplifiedAst.Expression.InvokeMethod(method, args, tpe, loc) =>
         val as = args.map(visit)
         val t = visitType(tpe)

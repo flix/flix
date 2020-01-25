@@ -399,15 +399,6 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NativeMethod(method, args, tpe, loc) =>
-          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
-          vt.text("(")
-          for (e <- args) {
-            visitExp(e)
-            vt.text(", ")
-          }
-          vt.text(")")
-
         case Expression.InvokeMethod(method, args, tpe, loc) =>
           vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
           vt.text("(")

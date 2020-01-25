@@ -299,12 +299,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Expression.NativeMethod(method, args, tpe, loc) =>
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
       case Expression.InvokeMethod(method, args, tpe, loc) =>
         for (arg <- args) {
           checkExp(arg, env0, ienv0)

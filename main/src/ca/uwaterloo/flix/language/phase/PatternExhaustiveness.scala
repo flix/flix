@@ -306,10 +306,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           checkPats(_, root)
         }).map(const(tast))
 
-        case Expression.NativeMethod(_, args, _, _, _) => sequence(args map {
-          checkPats(_, root)
-        }).map(const(tast))
-
         case Expression.InvokeMethod(_, args, _, _, _) =>
           for {
             _ <- sequence(args.map(checkPats(_, root)))

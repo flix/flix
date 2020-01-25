@@ -1030,13 +1030,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, evar, loc) =>
-        val returnType = getFlixType(method.getReturnType)
-        for {
-          inferredArgumentTypes <- seqM(actuals.map(visitExp))
-          resultTyp <- unifyTypM(tvar, returnType, loc)
-        } yield (resultTyp, evar)
-
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, evar, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
         for {
@@ -1557,10 +1550,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             TypedAst.CatchRule(sym, clazz, b)
         }
         TypedAst.Expression.TryCatch(e, rs, subst0(tvar), subst0(evar), loc)
-
-      case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
-        val es = actuals.map(e => visitExp(e, subst0))
-        TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, evar, loc) =>
         val as = args.map(visitExp(_, subst0))

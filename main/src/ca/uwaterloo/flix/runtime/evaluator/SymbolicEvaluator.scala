@@ -841,8 +841,6 @@ object SymbolicEvaluator {
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
       case Expression.InvokeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")

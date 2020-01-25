@@ -1166,21 +1166,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.NativeMethod(sp1, fqn, args, sp2) =>
-      /*
-            * Check for `IllegalNativeFieldOrMethod`.
-            */
-      if (fqn.size == 1) {
-        return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-      }
-
-      // Extract class and member name.
-      val className = fqn.dropRight(1).mkString(".")
-      val methodName = fqn.last
-      traverse(args)(visitExp) map {
-        case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
-      }
-
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
     case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
@@ -2115,7 +2100,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
@@ -2245,7 +2229,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
-    val toStringExp = WeededAst.Expression.NativeMethod("java.lang.Object", "toString", List(outerExp), loc)
+    val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), Eff.Pure, loc)
+    val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", List(castedExp), List(WeededAst.Type.Native("java.lang.Object", loc)), loc)
 
     // The type and effect of the generated main.
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
