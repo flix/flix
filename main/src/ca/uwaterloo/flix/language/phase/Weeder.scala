@@ -2196,7 +2196,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def parseClassAndMember(fqn: Seq[String], loc: SourceLocation): Validation[(String, String), WeederError] = {
     if (fqn.length == 1) {
       // TODO: Add tests.
-      return WeederError.IllegalNativeFieldOrMethodName(loc).toFailure
+      return WeederError.IllegalJvmFieldOrMethodName(loc).toFailure
     }
 
     val className = fqn.dropRight(1).mkString(".")
