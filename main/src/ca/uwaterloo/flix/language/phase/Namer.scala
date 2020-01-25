@@ -1445,110 +1445,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the class reflection object for the given `className`.
     */
+  // TODO: Deprecated should be moved to resolver.
   private def lookupClass(className: String, loc: SourceLocation): Validation[Class[_], NameError] = try {
     Class.forName(className).toSuccess
   } catch {
     case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
-  }
-
-  /**
-    * Returns the result of looking up the given `fieldName` on the given `className`.
-    */
-  private def lookupNativeField(className: String, fieldName: String, loc: SourceLocation): Result[Field, NameError] = try {
-    // retrieve class object.
-    val clazz = Class.forName(className)
-
-    // retrieve the matching static fields.
-    val fields = clazz.getDeclaredFields.toList.filter {
-      case field => field.getName == fieldName && Modifier.isStatic(field.getModifiers)
-    }
-
-    // match on the number of fields.
-    fields.size match {
-      case 0 => Err(NameError.UndefinedNativeField(className, fieldName, loc))
-      case 1 => Ok(fields.head)
-      case _ => throw InternalCompilerException("Ambiguous native field?")
-    }
-  } catch {
-    case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))
-  }
-
-  /**
-    * Returns the result of looking up the given `methodName` on the given `className` with the given `arity`.
-    */
-  private def lookupNativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation): Result[Method, NameError] = try {
-    // TODO: Possibly all this needs to take place in the resolver.
-
-    // Compute the argument types.
-    val argumentTypes = args map {
-      case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
-        // The argument is ascribed. Try to determine its type.
-        lookupNativeType(tpe)
-      case _ =>
-        // The argument is not ascribed. We do not know its type.
-        None
-    }
-
-    // compute the arity.
-    val arity = argumentTypes.length
-
-    // retrieve class object.
-    val clazz = Class.forName(className)
-
-    // retrieve the matching methods.
-    val matchedMethods = clazz.getDeclaredMethods.toList.filter {
-      case method => method.getName == methodName
-    }
-
-    // retrieve the static methods.
-    val staticMethods = matchedMethods.filter {
-      case method => Modifier.isStatic(method.getModifiers) &&
-        method.getParameterCount == arity &&
-        parameterTypeMatch(argumentTypes, method.getParameterTypes.toList)
-    }
-
-    // retrieve the object methods.
-    val objectMethods = matchedMethods.filter {
-      case method => !Modifier.isStatic(method.getModifiers) && method.getParameterCount == (arity - 1) &&
-        parameterTypeMatch(argumentTypes.tail, method.getParameterTypes.toList)
-    }
-
-    // static and object methods.
-    val methods = staticMethods ::: objectMethods
-
-    // match on the number of methods.
-    methods.size match {
-      case 0 => Err(NameError.UndefinedNativeMethod(className, methodName, arity, loc))
-      case 1 => Ok(methods.head)
-      case _ => Err(NameError.AmbiguousNativeMethod(className, methodName, arity, loc))
-    }
-  } catch {
-    case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))
-  }
-
-  /**
-    * Optionally returns the native type of the given type `tpe`.
-    *
-    * May return `None` if not information about `tpe` is known.
-    */
-  private def lookupNativeType(tpe: WeededAst.Type): Option[Class[_]] = {
-    /**
-      * Optionally returns the class reflection object for the given `className`.
-      */
-    def lookupClass(className: String): Option[Class[_]] = try {
-      Some(Class.forName(className))
-    } catch {
-      case ex: ClassNotFoundException => None // TODO: Need to return a proper validation instead?
-    }
-
-    tpe match {
-      case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn)
-      case WeededAst.Type.Ambiguous(qname, loc) =>
-        // TODO: Ugly incorrect hack. Must take place in the resolver.
-        if (qname.ident.name == "Str") Some(classOf[String]) else None
-      // TODO: Would be useful to handle primitive types too.
-      case _ => None
-    }
   }
 
   /**
