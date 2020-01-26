@@ -357,6 +357,70 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleLattice](result)
   }
 
+  test("RecursionLimit.01") {
+    val input =
+      s"""
+         |type alias Foo = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.02") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.03") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Baz
+         |type alias Baz = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.04") {
+    val input =
+      s"""
+         |type alias Foo = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.05") {
+    val input =
+      s"""
+         |type alias Foo = Option[Bar]
+         |type alias Bar = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int = x"
     val result = new Flix().addStr(input).compile()
@@ -477,6 +541,50 @@ class TestResolver extends FunSuite with TestUtils {
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedJvmConstructor.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.io.File:__new__() as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.io.File:__new__(Int32) as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String:__new__(Bool) as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String:__new__(Bool, Char, String) as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
   test("UndefinedTag.01") {
@@ -601,68 +709,5 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UnhandledEffect](result)
   }
 
-  test("RecursionLimit.01") {
-    val input =
-      s"""
-         |type alias Foo = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.02") {
-    val input =
-      s"""
-         |type alias Foo = Bar
-         |type alias Bar = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.03") {
-    val input =
-      s"""
-         |type alias Foo = Bar
-         |type alias Bar = Baz
-         |type alias Baz = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.04") {
-    val input =
-      s"""
-         |type alias Foo = Option[Foo]
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.05") {
-    val input =
-      s"""
-         |type alias Foo = Option[Bar]
-         |type alias Bar = Option[Foo]
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
 
 }
