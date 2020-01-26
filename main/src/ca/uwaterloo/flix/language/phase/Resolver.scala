@@ -718,18 +718,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
-              mapN(lookupJvmMethod(className, methodName, ts, loc)) {
+              mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
                 case method => ResolvedAst.Expression.InvokeMethod(method, as, tvar, evar, loc)
               }
           }
 
         case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, tvar, evar, loc) =>
-          // TODO: Is it safe to use the same lookup method?
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
           flatMapN(sigVal, argsVal) {
             case (ts, as) =>
-              mapN(lookupJvmMethod(className, methodName, ts, loc)) {
+              mapN(lookupJvmMethod(className, methodName, ts, static = true, loc)) {
                 case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, evar, loc)
               }
           }
@@ -1908,10 +1907,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Returns the result of looking up the given `methodName` on the given `className`.
+    * Returns the method reflection object for the given `className` and `methodName`.
     */
-  // TODO: Distinguish between static and on static here?
-  private def lookupJvmMethod(className: String, methodName: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Method, ResolutionError] = try {
+  private def lookupJvmMethod(className: String, methodName: String, parameterTypes: List[Type], static: Boolean, loc: SourceLocation): Validation[Method, ResolutionError] = try {
     // Lookup the class object of the receiver object.
     val receiverClass = Class.forName(className)
 
@@ -1919,7 +1917,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val parameterClasses = parameterTypes.map(getJVMType)
 
     // Lookup the method with the appropriate signature.
-    receiverClass.getDeclaredMethod(methodName, parameterClasses: _*).toSuccess
+    val method = receiverClass.getDeclaredMethod(methodName, parameterClasses: _*)
+
+    // Check if the method should be and is static.
+    if (static != Modifier.isStatic(method.getModifiers))
+      throw new NoSuchFieldException()
+    else
+      method.toSuccess
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
     case ex: NoSuchMethodException => ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
