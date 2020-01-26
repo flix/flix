@@ -1872,18 +1872,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Returns the constructor reflection object for the given `className`.
     */
-  private def lookupJvmConstructor(className: String, parameterTypes: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = try {
-    // Lookup the class.
-    val clazz = Class.forName(className)
-
-    // Lookup the class objects of the argument types.
-    val parameterClasses = parameterTypes.map(getJVMType)
-
-    // Lookup the constructor with the appropriate signature.
-    clazz.getConstructor(parameterClasses: _*).toSuccess
-  } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
-    case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, loc).toFailure
+  private def lookupJvmConstructor(className: String, signature: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = {
+    // Lookup the class and signature.
+    flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
+      case (clazz, sig) => try {
+        // Lookup the constructor with the appropriate signature.
+        clazz.getConstructor(sig: _*).toSuccess
+      } catch {
+        case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+        case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc).toFailure
+      }
+    }
   }
 
   /**
@@ -1927,6 +1926,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   } catch {
     case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
     case ex: NoSuchMethodException => ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
+  }
+
+  // TODO: DOC
+  private def lookupSignature(signature: List[Type], loc: SourceLocation): Validation[List[Class[_]], ResolutionError] = {
+    traverse(signature)(getJVMType2(_, loc))
+  }
+
+  // TODO
+  private def getJVMType2(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
+    getJVMType(tpe).toSuccess
+  } catch {
+    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass("TODO", loc).toFailure // TODO
   }
 
   /**

@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import java.lang.reflect.Constructor
+
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
@@ -450,17 +452,26 @@ object ResolutionError {
   /**
     * An error raised to indicate that a matching constructor was not found.
     *
-    * @param className the class name.
-    * @param loc       the location of the method name.
+    * @param className    the class name.
+    * @param signature    the signature of the constructor.
+    * @param constructors the constructors in the class.
+    * @param loc          the location of the method name.
     */
-  case class UndefinedJvmConstructor(className: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined constructor in class '" << Cyan(className) << "." << NewLine
+      vt << ">> Undefined constructor in class '" << Cyan(className) << "' with the given signature." << NewLine
       vt << NewLine
       vt << Code(loc, "undefined constructor.") << NewLine
+      vt << "No constructor matches the signature:" << NewLine
+      vt << "  " << className << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
+      vt << "Available constructors:" << NewLine
+      for (constructor <- constructors) {
+        vt << "  " << stripAccessModifier(constructor.toString) << NewLine
+      }
+      vt
     }
   }
 
@@ -499,5 +510,13 @@ object ResolutionError {
       vt << Code(loc, "undefined field.") << NewLine
     }
   }
+
+  /**
+    * Removes all access modifiers from the given string `s`.
+    */
+  private def stripAccessModifier(s: String): String =
+    s.replace("public", "").
+      replace("protected", "").
+      replace("private", "")
 
 }
