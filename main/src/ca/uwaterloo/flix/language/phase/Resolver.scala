@@ -21,7 +21,6 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.phase.Unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -1870,7 +1869,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Returns the constructor reflection object for the given `className`.
+    * Returns the constructor reflection object for the given `className` and `signature`.
     */
   private def lookupJvmConstructor(className: String, signature: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = {
     // Lookup the class and signature.
@@ -1906,67 +1905,59 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Returns the method reflection object for the given `className` and `methodName`.
+    * Returns the method reflection object for the given `className`, `methodName`, and `signature`.
     */
-  private def lookupJvmMethod(className: String, methodName: String, parameterTypes: List[Type], static: Boolean, loc: SourceLocation): Validation[Method, ResolutionError] = try {
-    // Lookup the class object of the receiver object.
-    val receiverClass = Class.forName(className)
-
-    // Lookup the class objects of the argument types.
-    val parameterClasses = parameterTypes.map(getJVMType)
-
-    // Lookup the method with the appropriate signature.
-    val method = receiverClass.getDeclaredMethod(methodName, parameterClasses: _*)
-
-    // Check if the method should be and is static.
-    if (static != Modifier.isStatic(method.getModifiers))
-      throw new NoSuchFieldException()
-    else
-      method.toSuccess
-  } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
-    case ex: NoSuchMethodException => ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
+  private def lookupJvmMethod(className: String, methodName: String, signature: List[Type], static: Boolean, loc: SourceLocation): Validation[Method, ResolutionError] = {
+    // Lookup the class and signature.
+    flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
+      case (clazz, sig) => try {
+        // Lookup the method with the appropriate signature.
+        clazz.getDeclaredMethod(methodName, sig: _*).toSuccess
+      } catch {
+        case ex: NoSuchMethodException => ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
+      }
+    }
   }
 
-  // TODO: DOC
+  /**
+    * Performs name resolution on the given `signature`.
+    */
   private def lookupSignature(signature: List[Type], loc: SourceLocation): Validation[List[Class[_]], ResolutionError] = {
-    traverse(signature)(getJVMType2(_, loc))
-  }
-
-  // TODO
-  private def getJVMType2(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
-    getJVMType(tpe).toSuccess
-  } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass("TODO", loc).toFailure // TODO
+    traverse(signature)(getJVMType(_, loc))
   }
 
   /**
     * Returns the JVM type corresponding to the given Flix type `tpe`.
     */
-  private def getJVMType(tpe: Type): Class[_] = tpe match {
-    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object") // TODO: Correct?
-    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean]
-    case Type.Cst(TypeConstructor.Char) => classOf[Char]
-    case Type.Cst(TypeConstructor.Float32) => classOf[Float]
-    case Type.Cst(TypeConstructor.Float64) => classOf[Double]
-    case Type.Cst(TypeConstructor.Int8) => classOf[Byte]
-    case Type.Cst(TypeConstructor.Int16) => classOf[Short]
-    case Type.Cst(TypeConstructor.Int32) => classOf[Int]
-    case Type.Cst(TypeConstructor.Int64) => classOf[Long]
-    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger")
-    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
+  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] =
+    try {
+      tpe match {
+        case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess // TODO: Correct?
+        case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
+        case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
+        case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
+        case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
+        case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
+        case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
+        case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
+        case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
+        case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
+        case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
 
-    // TODO: Array, Channel, Enum, Native, Ref, Tuple, Vector, Relation, Lattice.
+        // TODO: Array, Channel, Enum, Native, Ref, Tuple, Vector, Relation, Lattice.
 
 
-    // TODO: Rest
+        // TODO: Rest
 
-    case Type.Cst(TypeConstructor.Native(clazz)) => clazz
+        case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
 
-    case _ =>
-      println(tpe)
-      ??? // TODO
-  }
+        case _ =>
+          println(tpe)
+          ??? // TODO
+      }
+    } catch {
+      case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass("TODO", loc).toFailure // TODO
+    }
 
   /**
     * Returns a synthetic namespace obtained from the given sequence of namespace `parts`.

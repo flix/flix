@@ -587,6 +587,50 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
+  test("UndefinedJvmMethod.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.getFoo();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.charAt();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.charInt(Int32, Int32);
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.isEmpty(Bool);
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
   test("UndefinedTag.01") {
     val input =
       s"""
