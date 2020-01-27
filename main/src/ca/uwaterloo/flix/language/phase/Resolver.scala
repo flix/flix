@@ -1933,7 +1933,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Performs name resolution on the given `signature`.
     */
   private def lookupSignature(signature: List[Type], loc: SourceLocation): Validation[List[Class[_]], ResolutionError] = {
-    traverse(signature)(getJVMType(_, loc))
+    signature.map(getJVMType(_, loc)).toSuccess
   }
 
   /**
@@ -1942,55 +1942,54 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * A non-primitive Flix type is mapped to java.lang.Object.
     * An array type is mapped to the corresponding array type.
     */
-  // TODO: Can this even fail?
-  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
-    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess
+  private def getJVMType(tpe: Type, loc: SourceLocation): Class[_] = tpe.typeConstructor match {
+    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object")
 
-    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
+    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean]
 
-    case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
+    case Type.Cst(TypeConstructor.Char) => classOf[Char]
 
-    case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
+    case Type.Cst(TypeConstructor.Float32) => classOf[Float]
 
-    case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
+    case Type.Cst(TypeConstructor.Float64) => classOf[Double]
 
-    case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
+    case Type.Cst(TypeConstructor.Int8) => classOf[Byte]
 
-    case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
+    case Type.Cst(TypeConstructor.Int16) => classOf[Short]
 
-    case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
+    case Type.Cst(TypeConstructor.Int32) => classOf[Int]
 
-    case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
+    case Type.Cst(TypeConstructor.Int64) => classOf[Long]
 
-    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
+    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger")
 
-    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
+    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
 
-    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object")
 
-    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object")
 
-    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object")
 
-    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
+    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object")
 
     case Type.Cst(TypeConstructor.Array) => ??? // TODO
 
     case Type.Cst(TypeConstructor.Vector) => ??? // TODO
 
-    case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
+    case Type.Cst(TypeConstructor.Native(clazz)) => clazz
 
     case Type.Cst(TypeConstructor.Relation(_)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     case Type.Cst(TypeConstructor.Lattice(sym)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
-    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+    case Type.RecordEmpty => Class.forName("java.lang.Object")
 
-    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object")
 
-    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
+    case Type.SchemaEmpty => Class.forName("java.lang.Object")
 
-    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object")
 
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
