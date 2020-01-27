@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import java.lang.reflect.{Constructor, Method}
+import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
@@ -482,6 +482,7 @@ object ResolutionError {
     * @param methodName the method name.
     * @param static     whether the method is static.
     * @param signature  the signature of the method.
+    * @param methods    the methods of the class.
     * @param loc        the location of the method name.
     */
   case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
@@ -496,7 +497,7 @@ object ResolutionError {
       }
       vt << NewLine
       vt << Code(loc, "undefined method.") << NewLine
-      vt << "No method matches the signature: " << NewLine
+      vt << "No method matches the signature:" << NewLine
       vt << "  " << methodName << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
       vt << "Available methods:" << NewLine
       for (method <- methods) {
@@ -512,9 +513,10 @@ object ResolutionError {
     * @param className the class name.
     * @param fieldName the field name.
     * @param static    whether the field is static.
+    * @param fields    the fields of the class.
     * @param loc       the location of the method name.
     */
-  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -526,6 +528,11 @@ object ResolutionError {
       }
       vt << NewLine
       vt << Code(loc, "undefined field.") << NewLine
+      vt << "Available fields:" << NewLine
+      for (field <- fields) {
+        vt << "  " << stripAccessModifier(field.toString) << NewLine
+      }
+      vt
     }
   }
 

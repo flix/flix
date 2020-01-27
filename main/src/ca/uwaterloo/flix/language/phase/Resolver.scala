@@ -1922,7 +1922,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         else
           throw new NoSuchFieldException()
       } catch {
-        case ex: NoSuchFieldException => ResolutionError.UndefinedJvmField(className, fieldName, static, loc).toFailure
+        case ex: NoSuchFieldException =>
+          val candidateFields = clazz.getFields.toList
+          ResolutionError.UndefinedJvmField(className, fieldName, static, candidateFields, loc).toFailure
       }
     }
   }
