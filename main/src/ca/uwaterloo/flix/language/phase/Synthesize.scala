@@ -982,35 +982,35 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Cst(TypeConstructor.Bool) =>
           val method = classOf[java.lang.Boolean].getMethod("toString", classOf[Boolean])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Char) =>
           val method = classOf[java.lang.Character].getMethod("toString", classOf[Char])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Float32) =>
           val method = classOf[java.lang.Float].getMethod("toString", classOf[Float])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Float64) =>
           val method = classOf[java.lang.Double].getMethod("toString", classOf[Double])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int8) =>
           val method = classOf[java.lang.Byte].getMethod("toString", classOf[Byte])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int16) =>
           val method = classOf[java.lang.Short].getMethod("toString", classOf[Short])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int32) =>
           val method = classOf[java.lang.Integer].getMethod("toString", classOf[Int])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Int64) =>
           val method = classOf[java.lang.Long].getMethod("toString", classOf[Long])
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeStaticMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("toString")

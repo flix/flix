@@ -809,7 +809,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
     case Expression.InvokeMethod(method, args, tpe, loc) =>
-      // TODO: Remove dead code from static call.
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
@@ -825,9 +824,7 @@ object GenExpression {
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
-      // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
-      val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
-      visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
