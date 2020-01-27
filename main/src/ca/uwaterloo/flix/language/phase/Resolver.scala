@@ -1938,36 +1938,72 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
   /**
     * Returns the JVM type corresponding to the given Flix type `tpe`.
+    *
+    * A non-primitive Flix type is mapped to java.lang.Object.
+    * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] =
-    try {
-      tpe match {
-        case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess // TODO: Correct?
-        case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
-        case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
-        case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
-        case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
-        case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
-        case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
-        case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
-        case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
-        case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
-        case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
+  // TODO: Can this even fail?
+  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess
 
-        // TODO: Array, Channel, Enum, Native, Ref, Tuple, Vector, Relation, Lattice.
+    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
 
+    case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
 
-        // TODO: Rest
+    case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
 
-        case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
+    case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
 
-        case _ =>
-          println(tpe)
-          ??? // TODO
-      }
-    } catch {
-      case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass("TODO", loc).toFailure // TODO
-    }
+    case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
+
+    case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
+
+    case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
+
+    case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
+
+    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
+
+    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
+
+    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Array) => ??? // TODO
+
+    case Type.Cst(TypeConstructor.Vector) => ??? // TODO
+
+    case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
+
+    case Type.Cst(TypeConstructor.Relation(_)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.Cst(TypeConstructor.Lattice(sym)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+
+    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
+
+    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.Arrow(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.Apply(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.Zero => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    case Type.Succ(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  }
 
   /**
     * Returns a synthetic namespace obtained from the given sequence of namespace `parts`.
