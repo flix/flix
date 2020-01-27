@@ -1922,7 +1922,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         else
           throw new NoSuchFieldException()
       } catch {
-        case ex: NoSuchFieldException => ResolutionError.UndefinedJvmField(className, fieldName, loc).toFailure
+        case ex: NoSuchFieldException => ResolutionError.UndefinedJvmField(className, fieldName, static, loc).toFailure
       }
     }
   }

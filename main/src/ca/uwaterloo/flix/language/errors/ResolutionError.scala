@@ -511,14 +511,19 @@ object ResolutionError {
     *
     * @param className the class name.
     * @param fieldName the field name.
+    * @param static    whether the field is static.
     * @param loc       the location of the method name.
     */
-  case class UndefinedJvmField(className: String, fieldName: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      if (!static) {
+        vt << ">> Undefined " << Magenta("object") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      } else {
+        vt << ">> Undefined " << Magenta("static") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      }
       vt << NewLine
       vt << Code(loc, "undefined field.") << NewLine
     }
