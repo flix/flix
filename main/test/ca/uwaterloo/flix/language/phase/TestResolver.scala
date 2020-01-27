@@ -631,6 +631,28 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
+  test("UndefinedJvmMethod.05") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String:isEmpty();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.06") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.valueOf(Bool);
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
   test("UndefinedTag.01") {
     val input =
       s"""

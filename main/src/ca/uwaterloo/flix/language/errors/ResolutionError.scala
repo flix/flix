@@ -480,15 +480,20 @@ object ResolutionError {
     *
     * @param className  the class name.
     * @param methodName the method name.
+    * @param static     whether the method is static.
     * @param signature  the signature of the method.
     * @param loc        the location of the method name.
     */
-  case class UndefinedJvmMethod(className: String, methodName: String, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      if (!static) {
+        vt << ">> Undefined " << Magenta("object") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      } else {
+        vt << ">> Undefined " << Magenta("static") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      }
       vt << NewLine
       vt << Code(loc, "undefined method.") << NewLine
       vt << "No method matches the signature: " << NewLine

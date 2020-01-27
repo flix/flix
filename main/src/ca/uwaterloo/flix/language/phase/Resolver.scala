@@ -1902,7 +1902,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       } catch {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
-          ResolutionError.UndefinedJvmMethod(className, methodName, sig, candidateMethods, loc).toFailure
+          ResolutionError.UndefinedJvmMethod(className, methodName, static, sig, candidateMethods, loc).toFailure
       }
     }
   }
