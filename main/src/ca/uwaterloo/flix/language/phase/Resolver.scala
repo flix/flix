@@ -1885,27 +1885,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Returns the field reflection object for the given `className` and `fieldName`.
-    */
-  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation): Validation[Field, ResolutionError] = try {
-    // TODO: Use lookupJvmClass
-    // Lookup the class.
-    val clazz = Class.forName(className)
-
-    // Lookup the field.
-    val field = clazz.getField(fieldName)
-
-    // Check if the field should be and is static.
-    if (static != Modifier.isStatic(field.getModifiers))
-      throw new NoSuchFieldException()
-    else
-      field.toSuccess
-  } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
-    case ex: NoSuchFieldException => ResolutionError.UndefinedJvmField(className, fieldName, loc).toFailure
-  }
-
-  /**
     * Returns the method reflection object for the given `className`, `methodName`, and `signature`.
     */
   private def lookupJvmMethod(className: String, methodName: String, signature: List[Type], static: Boolean, loc: SourceLocation): Validation[Method, ResolutionError] = {
@@ -1913,11 +1892,37 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
       case (clazz, sig) => try {
         // Lookup the method with the appropriate signature.
-        clazz.getDeclaredMethod(methodName, sig: _*).toSuccess
+        val method = clazz.getDeclaredMethod(methodName, sig: _*)
+
+        // Check if the method should be and is static.
+        if (static == Modifier.isStatic(method.getModifiers))
+          method.toSuccess
+        else
+          throw new NoSuchMethodException()
       } catch {
         case ex: NoSuchMethodException =>
           val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
           ResolutionError.UndefinedJvmMethod(className, methodName, sig, candidateMethods, loc).toFailure
+      }
+    }
+  }
+
+  /**
+    * Returns the field reflection object for the given `className` and `fieldName`.
+    */
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation): Validation[Field, ResolutionError] = {
+    flatMapN(lookupJvmClass(className, loc)) {
+      case clazz => try {
+        // Lookup the field.
+        val field = clazz.getField(fieldName)
+
+        // Check if the field should be and is static.
+        if (static == Modifier.isStatic(field.getModifiers))
+          field.toSuccess
+        else
+          throw new NoSuchFieldException()
+      } catch {
+        case ex: NoSuchFieldException => ResolutionError.UndefinedJvmField(className, fieldName, loc).toFailure
       }
     }
   }
