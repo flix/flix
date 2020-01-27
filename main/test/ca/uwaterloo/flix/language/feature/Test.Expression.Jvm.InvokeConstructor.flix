@@ -20,5 +20,19 @@ namespace Test/Expression/Jvm/InvokeConstructor {
         import java.lang.Double:__new__(Float64) as newDouble;
         newDouble(123.456f64)
 
+    @test
+    def testInvokeConstructor05(): ##java.lang.Float =
+        import java.lang.Float:__new__(Int8) as newFloat;
+        newFloat(123.456f32)
+
+    @test
+    def testInvokeConstructor06(): ##java.lang.Integer =
+        import java.lang.Integer:__new__(Int32) as newInteger;
+        newInteger(123i32)
+
+    @test
+    def testInvokeConstructor07(): ##java.lang.Long =
+        import java.lang.Long:__new__(Int64) as newLong;
+        newLong(123i64)
 
 }
