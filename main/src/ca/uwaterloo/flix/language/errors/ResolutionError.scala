@@ -16,15 +16,15 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Constructor, Method}
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Type._
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
-import ca.uwaterloo.flix.language.ast.Type._
-import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 /**
   * A common super-type for resolution errors.
@@ -478,18 +478,26 @@ object ResolutionError {
   /**
     * An error raised to indicate that a matching method was not found.
     *
-    * @param className the class name.
-    * @param fieldName the method name.
-    * @param loc       the location of the method name.
+    * @param className  the class name.
+    * @param methodName the method name.
+    * @param signature  the signature of the method.
+    * @param loc        the location of the method name.
     */
-  case class UndefinedJvmMethod(className: String, fieldName: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmMethod(className: String, methodName: String, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined method '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      vt << ">> Undefined method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
       vt << NewLine
       vt << Code(loc, "undefined method.") << NewLine
+      vt << "No method matches the signature: " << NewLine
+      vt << "  " << methodName << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
+      vt << "Available methods:" << NewLine
+      for (method <- methods) {
+        vt << "  " << stripAccessModifier(method.toString) << NewLine
+      }
+      vt
     }
   }
 

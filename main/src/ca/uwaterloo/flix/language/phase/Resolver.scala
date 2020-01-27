@@ -1888,6 +1888,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Returns the field reflection object for the given `className` and `fieldName`.
     */
   private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation): Validation[Field, ResolutionError] = try {
+    // TODO: Use lookupJvmClass
     // Lookup the class.
     val clazz = Class.forName(className)
 
@@ -1914,7 +1915,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         // Lookup the method with the appropriate signature.
         clazz.getDeclaredMethod(methodName, sig: _*).toSuccess
       } catch {
-        case ex: NoSuchMethodException => ResolutionError.UndefinedJvmMethod(className, methodName, loc).toFailure
+        case ex: NoSuchMethodException =>
+          val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
+          ResolutionError.UndefinedJvmMethod(className, methodName, sig, candidateMethods, loc).toFailure
       }
     }
   }

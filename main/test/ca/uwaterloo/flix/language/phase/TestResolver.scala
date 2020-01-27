@@ -613,7 +613,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import java.lang.String.charInt(Int32, Int32);
+         |    import java.lang.String.charAt(Int32, Int32);
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
