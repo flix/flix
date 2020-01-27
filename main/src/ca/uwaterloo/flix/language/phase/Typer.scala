@@ -1557,7 +1557,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Expression.InvokeMethod(method, args, tpe, evar, loc) =>
         val as = args.map(visitExp(_, subst0))
-        TypedAst.Expression.InvokeMethod(method, as, subst0(tpe), subst0(evar), loc)
+        TypedAst.Expression.InvokeMethod(method, as.head, as.tail, subst0(tpe), subst0(evar), loc)
 
       case ResolvedAst.Expression.InvokeStaticMethod(method, args, tpe, evar, loc) =>
         val as = args.map(visitExp(_, subst0))

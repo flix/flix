@@ -170,8 +170,8 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
-    case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
-      args.foldLeft(Nil: List[CompilationError]) {
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      args.foldLeft(visitExp(exp)) {
         case (acc, e) => acc ::: visitExp(e)
       }
 

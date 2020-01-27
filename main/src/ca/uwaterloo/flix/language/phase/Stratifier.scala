@@ -327,9 +327,9 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
       }
 
-    case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
-      mapN(traverse(args)(visitExp)) {
-        case as => Expression.InvokeMethod(method, as, tpe, eff, loc)
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      mapN(visitExp(exp), traverse(args)(visitExp)) {
+        case (e, as) => Expression.InvokeMethod(method, e, as, tpe, eff, loc)
       }
 
     case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
@@ -616,8 +616,8 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
-    case Expression.InvokeMethod(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.empty) {
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(dependencyGraphOfExp(exp)) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 

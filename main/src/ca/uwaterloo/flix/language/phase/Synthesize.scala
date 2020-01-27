@@ -278,9 +278,10 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
 
-      case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
+      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+        val e = visitExp(exp)
         val as = args.map(visitExp)
-        Expression.InvokeMethod(method, as, tpe, eff, loc)
+        Expression.InvokeMethod(method, e, as, tpe, eff, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
@@ -519,7 +520,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isArrow(tpe)) {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, List(exp1, exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
           }
 
           //
@@ -527,7 +528,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isChannel(tpe)) {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, List(exp1, exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
           }
 
           //
@@ -747,17 +748,17 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("hashCode")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Str) =>
           val method = classOf[java.lang.String].getMethod("hashCode")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Apply(Type.Cst(TypeConstructor.Array), _) => Expression.Int32(123, sl)
 
         case Type.Cst(TypeConstructor.Native(clazz)) =>
           val method = classOf[java.lang.Object].getMethod("hashCode")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Apply(Type.Cst(TypeConstructor.Ref), _) => Expression.Int32(123, sl)
 
@@ -774,7 +775,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isArrow(tpe)) {
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
           }
 
           //
@@ -782,7 +783,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isChannel(tpe)) {
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Int32), ast.Eff.Pure, sl)
           }
 
           //
@@ -1014,23 +1015,23 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Cst(TypeConstructor.BigInt) =>
           val method = classOf[java.math.BigInteger].getMethod("toString")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Array) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Channel) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Native(clazz)) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Cst(TypeConstructor.Vector) =>
           val method = classOf[java.lang.Object].getMethod("toString")
-          Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+          Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
 
         case Type.Zero => Expression.Str("<<Zero>>", sl)
 
@@ -1118,7 +1119,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isRelation(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           //
@@ -1126,7 +1127,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isLattice(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           //
@@ -1194,7 +1195,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isSchema(tpe)) {
             val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.InvokeMethod(method, List(exp0), Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Str), ast.Eff.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

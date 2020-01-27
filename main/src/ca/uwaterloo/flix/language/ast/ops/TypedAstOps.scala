@@ -181,8 +181,8 @@ object TypedAstOps {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
-      case Expression.InvokeMethod(method, args, tpe, eff, loc) =>
-        args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+        args.foldLeft(visitExp(exp, env0)) {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 

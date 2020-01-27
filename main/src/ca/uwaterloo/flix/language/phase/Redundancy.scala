@@ -501,8 +501,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0)
 
-    case Expression.InvokeMethod(_, args, _, _, _) =>
-      visitExps(args, env0)
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp, env0) ++ visitExps(args, env0)
 
     case Expression.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args, env0)
