@@ -309,9 +309,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         Expression.InvokeConstructor(constructor, es, tpe, loc)
 
-      case Expression.InvokeMethod(method, args, tpe, loc) =>
-        val as = args.map(visitExp)
-        Expression.InvokeMethod(method, as, tpe, loc)
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        val es = args.map(visitExp)
+        Expression.InvokeMethod(method, e, es, tpe, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visitExp)

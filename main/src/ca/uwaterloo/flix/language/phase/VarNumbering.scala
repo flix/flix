@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * Assigns stack offsets to each variable symbol in the program.
   *
@@ -224,7 +226,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.InvokeMethod(method, args, tpe, loc) => visitExps(args, i0)
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(args, i1)
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) => visitExps(args, i0)
 
@@ -315,6 +319,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns the next available stack offset.
       */
+    @tailrec
     def visitExps(es: List[Expression], i: Int): Int = es match {
       case Nil => i
       case x :: xs =>

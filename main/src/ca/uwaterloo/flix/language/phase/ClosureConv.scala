@@ -112,7 +112,7 @@ object ClosureConv extends Phase[Root, Root] {
       // We must create a closure, without free variables, of the definition symbol.
       Expression.Closure(sym, List.empty, tpe, loc)
 
-    case Expression.Eff(sym, tpe, loc) => ??? // TODO: ClosureConv Effect.
+    case Expression.Eff(sym, tpe, loc) => ???
 
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
@@ -292,9 +292,10 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-    case Expression.InvokeMethod(method, args, tpe, loc) =>
-      val as = args.map(visitExp)
-      Expression.InvokeMethod(method, as, tpe, loc)
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      val e = visitExp(exp)
+      val es = args.map(visitExp)
+      Expression.InvokeMethod(method, e, es, tpe, loc)
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
       val as = args.map(visitExp)
@@ -530,7 +531,7 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.InvokeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
-    case Expression.InvokeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) => freeVars(exp) ++ args.flatMap(freeVars)
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
@@ -865,9 +866,10 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.InvokeConstructor(constructor, es, tpe, loc)
 
-      case Expression.InvokeMethod(method, args, tpe, loc) =>
-        val as = args.map(visitExp)
-        Expression.InvokeMethod(method, as, tpe, loc)
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        val es = args.map(visitExp)
+        Expression.InvokeMethod(method, e, es, tpe, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visitExp)

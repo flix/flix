@@ -391,10 +391,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.InvokeConstructor(constructor, es, t, loc)
 
-      case SimplifiedAst.Expression.InvokeMethod(method, args, tpe, loc) =>
-        val as = args.map(visit)
+      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visit(exp)
+        val es = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.InvokeMethod(method, as.head, as.tail, t, loc)
+        FinalAst.Expression.InvokeMethod(method, e, es, t, loc)
 
       case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visit)

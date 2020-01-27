@@ -521,7 +521,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.InvokeMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
-        SimplifiedAst.Expression.InvokeMethod(method, as, tpe, loc)
+        SimplifiedAst.Expression.InvokeMethod(method, as.head, as.tail, tpe, loc)
 
       case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
         val as = args.map(visitExp)
@@ -1368,9 +1368,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         SimplifiedAst.Expression.InvokeConstructor(constructor, es, tpe, loc)
 
-      case SimplifiedAst.Expression.InvokeMethod(method, args, tpe, loc) =>
-        val as = args.map(visitExp)
-        SimplifiedAst.Expression.InvokeMethod(method, as, tpe, loc)
+      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        val es = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeMethod(method, e, es, tpe, loc)
 
       case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visitExp)

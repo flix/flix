@@ -272,9 +272,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val as = args map (visitExp(_, env0))
         Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      case Expression.InvokeMethod(method, args, tpe, loc) =>
-        val as = args.map(visitExp(_, env0))
-        Expression.InvokeMethod(method, as, tpe, loc)
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        val es = args.map(visitExp(_, env0))
+        Expression.InvokeMethod(method, e, es, tpe, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visitExp(_, env0))
