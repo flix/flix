@@ -655,8 +655,8 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.InvokeMethod(method, args, tpe, loc) =>
-        args.foldLeft(Set.empty[ClosureInfo]) {
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        args.foldLeft(visitExp(exp)) {
           case (sacc, e) => sacc ++ visitExp(e)
         }
 
@@ -1035,8 +1035,8 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.InvokeMethod(method, args, tpe, loc) =>
-        args.foldLeft(Set(tpe)) {
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        args.foldLeft(visitExp(exp) + tpe) {
           case (sacc, e) => sacc ++ visitExp(e)
         }
 

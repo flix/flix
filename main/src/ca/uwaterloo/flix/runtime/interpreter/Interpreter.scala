@@ -238,7 +238,7 @@ object Interpreter {
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    case Expression.InvokeMethod(method, args, tpe, loc) =>
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       ??? // TODO
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>

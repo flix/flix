@@ -808,18 +808,18 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.InvokeMethod(method, args, tpe, loc) =>
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
+
+      // Evaluate the receiver object.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+      visitor.visitTypeInsn(CHECKCAST, thisType)
+
       // Evaluate arguments left-to-right and push them onto the stack.
       for ((arg, index) <- args.zipWithIndex) {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-
-        // Cast the this parameter.
-        if (index == 0 && !Modifier.isStatic(method.getModifiers)) {
-          val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-          visitor.visitTypeInsn(CHECKCAST, thisType)
-        }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
