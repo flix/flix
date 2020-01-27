@@ -653,6 +653,51 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
+  test("UndefinedJvmField.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get java.lang.Character.foo as getFoo;
+         |    ()
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import put java.lang.Character.foo as setFoo;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get java.lang.Character:foo as getFoo;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import put java.lang.Character:foo as setFoo;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
   test("UndefinedTag.01") {
     val input =
       s"""
