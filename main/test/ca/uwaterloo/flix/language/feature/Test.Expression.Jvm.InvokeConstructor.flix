@@ -35,4 +35,15 @@ namespace Test/Expression/Jvm/InvokeConstructor {
         import java.lang.Long:__new__(Int64) as newLong;
         newLong(123i64)
 
+    @test
+    def testInvokeConstructor08(): ##java.lang.Short =
+        import java.lang.Short:__new__(Int16) as newShort;
+        newShort(123i16)
+
+    @test
+    def testInvokeConstructor09(): ##java.lang.String =
+        import java.lang.String:__new__(String) as newString;
+        newString("Hello World")
+
+
 }
