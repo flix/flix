@@ -45,5 +45,4 @@ namespace Test/Expression/Jvm/InvokeConstructor {
         import java.lang.String:__new__(String) as newString;
         newString("Hello World")
 
-
 }
