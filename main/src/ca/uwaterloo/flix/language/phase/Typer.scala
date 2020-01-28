@@ -1039,9 +1039,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) =>
+        val classType = getFlixType(method.getDeclaringClass)
         val returnType = getFlixType(method.getReturnType)
         for {
           (baseTyp, baseEff) <- visitExp(exp)
+          objectTyp <- unifyTypM(baseTyp, classType, loc)
           argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)
           resultEff <- unifyEffM(evar :: baseEff :: argTypesAndEffects.map(_._2), loc)
