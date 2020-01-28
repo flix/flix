@@ -151,7 +151,6 @@ object ResolutionError {
       vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal type.") << NewLine
-
     }
   }
 
@@ -473,7 +472,7 @@ object ResolutionError {
     * @param className    the class name.
     * @param signature    the signature of the constructor.
     * @param constructors the constructors in the class.
-    * @param loc          the location of the method name.
+    * @param loc          the location of the constructor name.
     */
   case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
