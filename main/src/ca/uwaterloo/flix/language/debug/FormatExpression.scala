@@ -10,7 +10,6 @@ object FormatExpression {
   /**
     * TypedAst.
     */
-  // TODO: Should recursively call itself.
   def format(e0: TypedAst.Expression): String = e0 match {
     case TypedAst.Expression.Unit(_) => "()"
     case TypedAst.Expression.True(_) => "true"
