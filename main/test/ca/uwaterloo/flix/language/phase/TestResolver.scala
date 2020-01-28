@@ -587,6 +587,83 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
+  test("UndefinedJvmClass.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import foo.bar.Baz:__new__() as newObject;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import foo.bar.Baz.f();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import foo.bar.Baz:f();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get foo.bar.Baz.f as getF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.05") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import put foo.bar.Baz.f as putF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.06") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get foo.bar.Baz:f as getF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.07") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import put foo.bar.Baz:f as putF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
   test("UndefinedJvmMethod.01") {
     val input =
       s"""
