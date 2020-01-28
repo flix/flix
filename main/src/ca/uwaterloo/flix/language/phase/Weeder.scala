@@ -577,8 +577,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      // TODO: What local variable names are safe to use?
-
       //
       // Visit the inner expression exp2.
       //
@@ -639,17 +637,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
               val ts = fparams.map(visitType).toList
 
-              val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
-              val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg", sp2)), loc)
+              val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg$", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
+              val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg$", sp2)), loc)
 
               val fs = receiverFormalParam :: ts.zipWithIndex.map {
                 case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
                   WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
               }
               val as = receiverArg :: ts.zipWithIndex.map {
                 case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
                   WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
               }
 
@@ -684,14 +682,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Introduce a formal parameter (of appropriate type) for each declared argument.
               val fs = ts.zipWithIndex.map {
                 case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index, sp2)
+                  val id = Name.Ident(sp1, "a" + index + "$", sp2)
                   WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
               }
 
               // Compute the argument to the method call.
               val as = ts.zipWithIndex.map {
                 case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index, sp2)
+                  val ident = Name.Ident(sp1, "a" + index + "$", sp2)
                   WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
               }
 
@@ -707,7 +705,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val objectId = Name.Ident(sp1, "o", sp2)
+              val objectId = Name.Ident(sp1, "o$", sp2)
               val objectExp = WeededAst.Expression.VarOrDef(Name.mkQName(objectId), loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.GetField(className, fieldName, objectExp, loc)
@@ -721,8 +719,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val objectId = Name.Ident(sp1, "o", sp2)
-              val valueId = Name.Ident(sp1, "v", sp2)
+              val objectId = Name.Ident(sp1, "o$", sp2)
+              val valueId = Name.Ident(sp1, "v$", sp2)
               val objectExp = WeededAst.Expression.VarOrDef(Name.mkQName(objectId), loc)
               val valueExp = WeededAst.Expression.VarOrDef(Name.mkQName(valueId), loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
@@ -751,7 +749,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
             case ((className, fieldName), e2) =>
-              val valueId = Name.Ident(sp1, "v", sp2)
+              val valueId = Name.Ident(sp1, "v$", sp2)
               val valueExp = WeededAst.Expression.VarOrDef(Name.mkQName(valueId), loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
               val lambdaBody = WeededAst.Expression.PutStaticField(className, fieldName, valueExp, loc)
