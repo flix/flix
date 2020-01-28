@@ -187,6 +187,17 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalUniversal](result)
   }
 
+  test("IllegalJvmFieldOrMethodName.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import foo() as bar;
+         |    ()
+         |""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalJvmFieldOrMethodName](result)
+  }
+
   test("NonLinearPattern.01") {
     val input =
       """def f(): Bool = match (21, 42) with {

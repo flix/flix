@@ -2194,11 +2194,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns the class and member name constructed from the given fully-qualified name `fqn`.
     */
   private def parseClassAndMember(fqn: Seq[String], loc: SourceLocation): Validation[(String, String), WeederError] = {
+    // Ensure that the fqn has at least two components.
     if (fqn.length == 1) {
-      // TODO: Add tests.
       return WeederError.IllegalJvmFieldOrMethodName(loc).toFailure
     }
 
+    // Compute the class and member name.
     val className = fqn.dropRight(1).mkString(".")
     val memberName = fqn.last
 
