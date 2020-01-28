@@ -1973,9 +1973,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object")
 
-    case Type.Cst(TypeConstructor.Array) => ??? // TODO
+    case Type.Cst(TypeConstructor.Array) =>
+      tpe.typeArguments match {
+        case elmClass :: Nil =>
+          // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+          val elmClass = getJVMType(tpe.typeArguments.head, loc)
+          java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+        case _ => throw InternalCompilerException(s"Ill-kinded type: '$tpe'.")
+      }
 
-    case Type.Cst(TypeConstructor.Vector) => ??? // TODO
+    case Type.Cst(TypeConstructor.Vector) =>
+      tpe.typeArguments match {
+        case elmClass :: Nil =>
+          // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+          val elmClass = getJVMType(tpe.typeArguments.head, loc)
+          java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+        case _ => throw InternalCompilerException(s"Ill-kinded type: '$tpe'.")
+      }
 
     case Type.Cst(TypeConstructor.Native(clazz)) => clazz
 
