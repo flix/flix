@@ -387,15 +387,15 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         FinalAst.Expression.TryCatch(e, rs, t, loc)
 
       case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visit
+        val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.InvokeConstructor(constructor, es, t, loc)
+        FinalAst.Expression.InvokeConstructor(constructor, as, t, loc)
 
       case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
         val e = visit(exp)
-        val es = args.map(visit)
+        val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.InvokeMethod(method, e, es, t, loc)
+        FinalAst.Expression.InvokeMethod(method, e, as, t, loc)
 
       case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visit)
