@@ -712,13 +712,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
               }
           }
 
-        case NamedAst.Expression.InvokeMethod(className, methodName, args, sig, tvar, evar, loc) =>
+        case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, tvar, evar, loc) =>
+          val expVal = visit(exp, tenv0)
           val argsVal = traverse(args)(visit(_, tenv0))
           val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
-          flatMapN(sigVal, argsVal) {
-            case (ts, as) =>
+          flatMapN(sigVal, expVal, argsVal) {
+            case (ts, e, as) =>
               mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
-                case method => ResolvedAst.Expression.InvokeMethod(method, as, tvar, evar, loc)
+                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, tvar, evar, loc)
               }
           }
 

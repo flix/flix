@@ -906,11 +906,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) =>
+    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
+      val expVal = visitExp(exp, env0, tenv0)
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
       val sigVal = traverse(sig)(visitType(_, tenv0))
-      mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      mapN(expVal, argsVal, sigVal) {
+        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
@@ -1298,7 +1299,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
       }
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.InvokeMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) => freeVars(exp) ++ args.flatMap(freeVars)
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

@@ -183,7 +183,7 @@ object NamedAst {
 
     case class InvokeConstructor(className: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class InvokeMethod(className: String, methodName: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class InvokeMethod(className: String, methodName: String, exp: NamedAst.Expression, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class InvokeStaticMethod(className: String, methodName: String, args: List[NamedAst.Expression], sig: List[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends NamedAst.Expression
 

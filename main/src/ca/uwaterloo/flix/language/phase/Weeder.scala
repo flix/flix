@@ -653,7 +653,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
               }
 
-              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as, ts, loc)
+              val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
@@ -2230,7 +2230,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
     val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), Eff.Pure, loc)
-    val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", List(castedExp), Nil, loc)
+    val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
 
     // The type and effect of the generated main.
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
