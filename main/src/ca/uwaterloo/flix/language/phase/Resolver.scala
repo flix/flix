@@ -1463,7 +1463,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
-      // TODO: Extend
       fqn match {
         case "java.math.BigInteger" => Type.Cst(TypeConstructor.BigInt).toSuccess
         case "java.lang.String" => Type.Cst(TypeConstructor.Str).toSuccess
@@ -1941,6 +1940,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Returns the JVM type corresponding to the given Flix type `tpe`.
     *
     * A non-primitive Flix type is mapped to java.lang.Object.
+    *
     * An array type is mapped to the corresponding array type.
     */
   private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
