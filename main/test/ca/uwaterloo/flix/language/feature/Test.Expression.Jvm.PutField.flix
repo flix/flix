@@ -54,6 +54,31 @@ namespace Test/Expression/Jvm/PutField {
         o.setField(42i16);
         getField(o) == 42i16
 
+    @test
+    def testPutField07(): Bool =
+        import flix.test.TestClass:__new__() as newObject;
+        import get flix.test.TestClass.int32Field as getField;
+        import put flix.test.TestClass.int32Field as setField;
+        let o = newObject();
+        o.setField(42i32);
+        getField(o) == 42i32
 
+    @test
+    def testPutField08(): Bool =
+        import flix.test.TestClass:__new__() as newObject;
+        import get flix.test.TestClass.int64Field as getField;
+        import put flix.test.TestClass.int64Field as setField;
+        let o = newObject();
+        o.setField(42i64);
+        getField(o) == 42i64
+
+    @test
+    def testPutField09(): Bool =
+        import flix.test.TestClass:__new__() as newObject;
+        import get flix.test.TestClass.stringField as getField;
+        import put flix.test.TestClass.stringField as setField;
+        let o = newObject();
+        o.setField("Goodbye World");
+        getField(o) == "Goodbye World"
 
 }
