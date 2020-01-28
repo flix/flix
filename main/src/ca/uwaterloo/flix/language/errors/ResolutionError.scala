@@ -138,6 +138,24 @@ object ResolutionError {
   }
 
   /**
+    * Illegal Type Error.
+    *
+    * @param tpe the illegal type.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal type.") << NewLine
+
+    }
+  }
+
+  /**
     * Inaccessible Class Error.
     *
     * @param sym the definition symbol.

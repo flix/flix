@@ -1933,7 +1933,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Performs name resolution on the given `signature`.
     */
   private def lookupSignature(signature: List[Type], loc: SourceLocation): Validation[List[Class[_]], ResolutionError] = {
-    signature.map(getJVMType(_, loc)).toSuccess
+    traverse(signature)(getJVMType(_, loc))
   }
 
   /**
@@ -1942,80 +1942,70 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * A non-primitive Flix type is mapped to java.lang.Object.
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: Type, loc: SourceLocation): Class[_] = tpe.typeConstructor match {
-    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object")
+  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean]
+    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
 
-    case Type.Cst(TypeConstructor.Char) => classOf[Char]
+    case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
 
-    case Type.Cst(TypeConstructor.Float32) => classOf[Float]
+    case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
 
-    case Type.Cst(TypeConstructor.Float64) => classOf[Double]
+    case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
 
-    case Type.Cst(TypeConstructor.Int8) => classOf[Byte]
+    case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
 
-    case Type.Cst(TypeConstructor.Int16) => classOf[Short]
+    case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
 
-    case Type.Cst(TypeConstructor.Int32) => classOf[Int]
+    case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
 
-    case Type.Cst(TypeConstructor.Int64) => classOf[Long]
+    case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
 
-    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger")
+    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
 
-    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String")
+    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
 
-    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object")
+    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object")
+    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object")
+    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object")
+    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
 
     case Type.Cst(TypeConstructor.Array) =>
       tpe.typeArguments match {
-        case elmClass :: Nil =>
-          // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-          val elmClass = getJVMType(tpe.typeArguments.head, loc)
-          java.lang.reflect.Array.newInstance(elmClass, 0).getClass
-        case _ => throw InternalCompilerException(s"Ill-kinded type: '$tpe'.")
+        case elmTyp :: Nil =>
+          mapN(getJVMType(elmTyp, loc)) {
+            case elmClass =>
+              // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+              java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+          }
+        case _ => ResolutionError.IllegalType(tpe, loc).toFailure
       }
 
     case Type.Cst(TypeConstructor.Vector) =>
       tpe.typeArguments match {
-        case elmClass :: Nil =>
-          // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
-          val elmClass = getJVMType(tpe.typeArguments.head, loc)
-          java.lang.reflect.Array.newInstance(elmClass, 0).getClass
-        case _ => throw InternalCompilerException(s"Ill-kinded type: '$tpe'.")
+        case elmTyp :: Nil =>
+          mapN(getJVMType(elmTyp, loc)) {
+            case elmClass =>
+              // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+              java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+          }
+        case _ => ResolutionError.IllegalType(tpe, loc).toFailure
       }
 
-    case Type.Cst(TypeConstructor.Native(clazz)) => clazz
+    case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
 
-    case Type.Cst(TypeConstructor.Relation(_)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
 
-    case Type.Cst(TypeConstructor.Lattice(sym)) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.RecordEmpty => Class.forName("java.lang.Object")
+    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
 
-    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object")
+    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
 
-    case Type.SchemaEmpty => Class.forName("java.lang.Object")
-
-    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object")
-
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    case Type.Arrow(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    case Type.Apply(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    case Type.Zero => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    case Type.Succ(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+    case _ => ResolutionError.IllegalType(tpe, loc).toFailure
   }
 
   /**
