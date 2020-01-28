@@ -635,7 +635,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import put foo.bar.Baz.f as putF;
+         |    import set foo.bar.Baz.f as setF;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -657,7 +657,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import put foo.bar.Baz:f as putF;
+         |    import set foo.bar.Baz:f as setF;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -746,7 +746,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import put java.lang.Character.foo as setFoo;
+         |    import set java.lang.Character.foo as setFoo;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -768,7 +768,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import put java.lang.Character:foo as setFoo;
+         |    import set java.lang.Character:foo as setFoo;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()

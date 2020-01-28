@@ -658,7 +658,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        atomic("put") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+        atomic("set") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
@@ -666,7 +666,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        atomic("put") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+        atomic("set") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
       def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
