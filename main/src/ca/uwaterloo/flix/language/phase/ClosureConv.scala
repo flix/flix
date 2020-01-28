@@ -294,8 +294,8 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       val e = visitExp(exp)
-      val es = args.map(visitExp)
-      Expression.InvokeMethod(method, e, es, tpe, loc)
+      val as = args.map(visitExp)
+      Expression.InvokeMethod(method, e, as, tpe, loc)
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
       val as = args.map(visitExp)
@@ -863,13 +863,13 @@ object ClosureConv extends Phase[Root, Root] {
         Expression.TryCatch(e, rs, tpe, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visitExp
-        Expression.InvokeConstructor(constructor, es, tpe, loc)
+        val as = args.map(visitExp)
+        Expression.InvokeConstructor(constructor, as, tpe, loc)
 
       case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
         val e = visitExp(exp)
-        val es = args.map(visitExp)
-        Expression.InvokeMethod(method, e, es, tpe, loc)
+        val as = args.map(visitExp)
+        Expression.InvokeMethod(method, e, as, tpe, loc)
 
       case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
         val as = args.map(visitExp)
