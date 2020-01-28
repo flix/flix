@@ -19,7 +19,10 @@ Compiler(src1, dst1, dst2) :-
     Compiler(lang1, dst2, lang2),
     Interpreter(lang2).
 
-// Transitive Compilation
+// Transitive Compilation:
+// If we have a compiler from src -> intermediate and
+// we have a compiler from intermediate -> dst then
+// we can obtain a compiler from src -> dst.
 Compiler(src, dst, lang) :-
     Compiler(src, intermediate, lang),
     Compiler(intermediate, dst, lang),
