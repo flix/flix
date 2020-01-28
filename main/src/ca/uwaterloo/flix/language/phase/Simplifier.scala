@@ -516,8 +516,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, loc)
 
       case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
-        val es = args.map(e => visitExp(e))
-        SimplifiedAst.Expression.InvokeConstructor(constructor, es, tpe, loc)
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
 
       case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
         val e = visitExp(exp)
