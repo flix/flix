@@ -73,7 +73,6 @@ namespace Test/Expression/Jvm/GetStaticField {
         import get flix.test.TestClass:INT16_FIELD as getField;
         getField() == 127i16
 
-
     @test
     def testGetStaticInt32Field01(): Bool =
         import get flix.test.TestClass:INT32_FIELD as getField;
