@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.reflect.Modifier
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -537,12 +535,13 @@ object GenExpression {
       // We push the 'length' of the array on top of stack
       compileInt(visitor, elms.length, isLong = false)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+      val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
       // Instantiating a new array of type jvmType
-      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else { // Happens if the inner type is a primitive type
-        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+      jvmType match {
+        case ref: JvmType.Reference => // Happens if the inner type is an object type
+          visitor.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
+        case _ => // Happens if the inner type is a primitive type
+          visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // For each element we generate code to store it into the array
       for (i <- 0 until elms.length) {
