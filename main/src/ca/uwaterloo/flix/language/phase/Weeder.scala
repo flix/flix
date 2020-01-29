@@ -623,34 +623,40 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Let(ident, e1, e2, loc)
           }
 
-        case ParsedAst.JvmOp.Method(fqn, fparams, identOpt) =>
-
-          // TODO: Cleanup.
+        case ParsedAst.JvmOp.Method(fqn, sig, identOpt) =>
+          //
+          // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args).
+          //
           mapN(parseClassAndMember(fqn, loc), visitExp(exp2)) {
-            // TODO: No arguments.
-
             case ((className, methodName), e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(sp1, methodName, sp2))
 
               val receiverType = WeededAst.Type.Native(className, loc)
 
-              val ts = fparams.map(visitType).toList
+              // Compute the types of declared parameters.
+              val ts = sig.map(visitType).toList
 
-              val receiverFormalParam = WeededAst.FormalParam(Name.Ident(sp1, "thisArg$", sp2), Ast.Modifiers.Empty, Some(receiverType), loc)
-              val receiverArg = WeededAst.Expression.VarOrDef(Name.mkQName(Name.Ident(sp1, "thisArg$", sp2)), loc)
+              // Introduce a formal parameter for the object argument.
+              val objId = Name.Ident(sp1, "obj$", sp2)
+              val objParam = WeededAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), loc)
+              val objExp = WeededAst.Expression.VarOrDef(Name.mkQName(objId), loc)
 
-              val fs = receiverFormalParam :: ts.zipWithIndex.map {
+              // Introduce a formal parameter (of appropriate type) for each declared argument.
+              val fs = objParam :: ts.zipWithIndex.map {
                 case (tpe, index) =>
                   val ident = Name.Ident(sp1, "a" + index + "$", sp2)
                   WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
               }
-              val as = receiverArg :: ts.zipWithIndex.map {
+
+              // Compute the argument to the method call.
+              val as = objExp :: ts.zipWithIndex.map {
                 case (tpe, index) =>
                   val ident = Name.Ident(sp1, "a" + index + "$", sp2)
                   WeededAst.Expression.VarOrDef(Name.mkQName(ident), loc)
               }
 
+              // Assemble the lambda expression.
               val lambdaBody = WeededAst.Expression.InvokeMethod(className, methodName, as.head, as.tail, ts, loc)
               val e1 = mkCurried(fs, lambdaBody, loc)
               WeededAst.Expression.Let(ident, e1, e2, loc)
