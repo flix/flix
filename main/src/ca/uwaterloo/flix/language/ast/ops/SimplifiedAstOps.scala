@@ -286,6 +286,10 @@ object SimplifiedAstOps {
         checkFormalParam(fparam)
         checkExp(exp, env0 + fparam.sym, ienv0)
 
+      case Expression.Cast(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (CatchRule(sym, clazz, body) <- rules) {

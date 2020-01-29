@@ -296,6 +296,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Universal(params, exp, loc) =>
         Expression.Universal(params, visitExp(exp), loc)
 
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Cast(e, tpe, loc)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
         val rs = rules map {

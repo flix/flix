@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
-import java.lang.reflect.{InvocationTargetException, Modifier}
 import java.util.function
 
 import ca.uwaterloo.flix.api._
@@ -387,6 +386,8 @@ object Interpreter {
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+
+    case Expression.Cast(exp, tpe, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
   /**

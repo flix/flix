@@ -837,6 +837,8 @@ object SymbolicEvaluator {
           case value => eval(pc0, exp, env0 + (fparam.sym -> value), lenv0, qua0 + (fparam.sym -> value))
         }
 
+      case Expression.Cast(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.TryCatch(exp, rules, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.InvokeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")

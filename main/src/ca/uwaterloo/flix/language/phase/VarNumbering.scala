@@ -215,6 +215,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
 
+      case Expression.Cast(exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1

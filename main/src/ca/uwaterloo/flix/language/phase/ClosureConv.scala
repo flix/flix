@@ -279,6 +279,10 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Universal(params, e, loc) =>
       Expression.Universal(params, visitExp(e), loc)
 
+    case Expression.Cast(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Cast(e, tpe, loc)
+
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
@@ -526,6 +530,8 @@ object ClosureConv extends Phase[Root, Root] {
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
     case Expression.Universal(fparam, exp, loc) =>
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
+
+    case Expression.Cast(exp, tpe, loc) => freeVars(exp)
 
     case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
 
@@ -852,6 +858,10 @@ object ClosureConv extends Phase[Root, Root] {
         val fs = replace(fparam, subst)
         val e = visitExp(exp)
         Expression.Universal(fs, e, loc)
+
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Cast(e, tpe, loc)
 
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)

@@ -646,6 +646,8 @@ object JvmOps {
 
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
 
+      case Expression.Cast(exp, tpe, loc) => visitExp(exp)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         rules.foldLeft(visitExp(exp)) {
           case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
@@ -1025,6 +1027,8 @@ object JvmOps {
       case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe
 
       case Expression.Universal(fparam, exp, loc) => visitExp(exp) + fparam.tpe
+
+      case Expression.Cast(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         rules.foldLeft(visitExp(exp)) {

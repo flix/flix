@@ -377,6 +377,11 @@ object PrettyPrinter {
           vt.text("). ")
           visitExp(exp)
 
+        case Expression.Cast(exp, tpe, loc) =>
+          visitExp(exp)
+          vt.text(" as ")
+          vt.text(tpe.toString)
+
         case Expression.TryCatch(exp, rules, tpe, loc) =>
           vt << "try {" << Indent << NewLine
           visitExp(exp)

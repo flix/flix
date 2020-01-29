@@ -504,7 +504,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
-      case TypedAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
+      case TypedAst.Expression.Cast(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Cast(e, tpe, loc)
 
       case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -1351,10 +1353,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
 
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        SimplifiedAst.Expression.Existential(params, visitExp(exp), loc)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Existential(params, e, loc)
 
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        SimplifiedAst.Expression.Universal(params, visitExp(exp), loc)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Universal(params, e, loc)
+
+      case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Cast(e, tpe, loc)
 
       case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)

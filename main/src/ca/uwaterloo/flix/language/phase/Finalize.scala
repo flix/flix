@@ -376,6 +376,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.Universal(p, e, loc)
 
+      case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Cast(e, t, loc)
+
       case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visit(exp)
         val rs = rules map {

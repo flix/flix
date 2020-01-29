@@ -259,6 +259,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp, env0)
         Expression.Universal(fparam, e, loc)
 
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Cast(e, tpe, loc)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp, env0)
         val rs = rules map {

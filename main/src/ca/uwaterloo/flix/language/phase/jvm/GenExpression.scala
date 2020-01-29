@@ -737,6 +737,11 @@ object GenExpression {
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
+    case Expression.Cast(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)

@@ -219,6 +219,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Universal(_, exp, _) =>
         visitExp(exp)
 
+      case Expression.Cast(exp, _, _) =>
+        visitExp(exp)
+
       case Expression.TryCatch(exp, rules, _, _) =>
         visitExp(exp) ++ visitExps(rules.map(_.exp))
 

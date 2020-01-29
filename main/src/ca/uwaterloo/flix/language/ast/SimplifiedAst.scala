@@ -222,6 +222,8 @@ object SimplifiedAst {
       def tpe: Type = Type.Cst(TypeConstructor.Bool)
     }
 
+    case class Cast(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
