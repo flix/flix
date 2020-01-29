@@ -547,7 +547,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import java.io.File:__new__() as _;
+         |    import new java.io.File() as _;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -558,7 +558,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import java.io.File:__new__(Int32) as _;
+         |    import new java.io.File(Int32) as _;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -569,7 +569,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import java.lang.String:__new__(Bool) as _;
+         |    import new java.lang.String(Bool) as _;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -580,7 +580,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import java.lang.String:__new__(Bool, Char, String) as _;
+         |    import new java.lang.String(Bool, Char, String) as _;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -591,7 +591,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Unit =
-         |    import foo.bar.Baz:__new__() as newObject;
+         |    import new foo.bar.Baz() as newObject;
          |    ()
        """.stripMargin
     val result = new Flix().addStr(input).compile()

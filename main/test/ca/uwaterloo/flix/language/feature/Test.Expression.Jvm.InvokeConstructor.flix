@@ -2,47 +2,47 @@ namespace Test/Expression/Jvm/InvokeConstructor {
 
     @test
     def testInvokeConstructor01(): ##java.lang.Boolean =
-        import java.lang.Boolean:__new__(Bool) as newBoolean;
+        import new java.lang.Boolean(Bool) as newBoolean;
         newBoolean(true)
 
     @test
     def testInvokeConstructor02(): ##java.lang.Character =
-        import java.lang.Character:__new__(Char) as newCharacter;
+        import new java.lang.Character(Char) as newCharacter;
         newCharacter('a')
 
     @test
     def testInvokeConstructor03(): ##java.lang.Float =
-        import java.lang.Float:__new__(Float32) as newFloat;
+        import new java.lang.Float(Float32) as newFloat;
         newFloat(123.456f32)
 
     @test
     def testInvokeConstructor04(): ##java.lang.Double =
-        import java.lang.Double:__new__(Float64) as newDouble;
+        import new java.lang.Double(Float64) as newDouble;
         newDouble(123.456f64)
 
     @test
     def testInvokeConstructor05(): ##java.lang.Byte =
-        import java.lang.Byte:__new__(Int8) as newByte;
+        import new java.lang.Byte(Int8) as newByte;
         newByte(123i8)
 
     @test
     def testInvokeConstructor06(): ##java.lang.Short =
-        import java.lang.Short:__new__(Int16) as newShort;
+        import new java.lang.Short(Int16) as newShort;
         newShort(123i16)
 
     @test
     def testInvokeConstructor07(): ##java.lang.Integer =
-        import java.lang.Integer:__new__(Int32) as newInteger;
+        import new java.lang.Integer(Int32) as newInteger;
         newInteger(123i32)
 
     @test
     def testInvokeConstructor08(): ##java.lang.Long =
-        import java.lang.Long:__new__(Int64) as newLong;
+        import new java.lang.Long(Int64) as newLong;
         newLong(123i64)
 
     @test
     def testInvokeConstructor09(): ##java.lang.String =
-        import java.lang.String:__new__(String) as newString;
+        import new java.lang.String(String) as newString;
         newString("Hello World")
 
 }

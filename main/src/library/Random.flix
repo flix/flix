@@ -4,14 +4,14 @@ namespace Random {
     /// Returns a fresh random number generator.
     ///
     pub def new(): Random =
-        import java.util.Random:__new__() as newRandom;
+        import new java.util.Random() as newRandom;
         Random(newRandom())
 
     ///
     /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
     pub def newWithSeed(s: Int64): Random =
-        import java.util.Random:__new__(Int64) as newRandom;
+        import new java.util.Random(Int64) as newRandom;
         Random(newRandom(s))
 
     ///

@@ -19,7 +19,7 @@ namespace Path {
     /// Returns a path from the given string `s`.
     ///
     pub def new(s: String): Path =
-        import java.io.File:__new__(String) as newFile;
+        import new java.io.File(String) as newFile;
         Path(newFile(s))
 
     ///
@@ -153,7 +153,7 @@ namespace Path {
     /// Writes all lines in the list `l` to the path `p`.
     ///
     pub def writeLines(p: Path, l: List[Str]): Result[Unit, IOError] = tryWithCatch(_ -> {
-        import java.io.PrintWriter:__new__(##java.io.File) as newPrintWriter;
+        import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
         import java.io.PrintWriter.close();
         let Path(javaFile) = p;
         let w = newPrintWriter(javaFile);

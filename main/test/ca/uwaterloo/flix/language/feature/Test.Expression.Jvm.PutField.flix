@@ -2,7 +2,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutBoolField01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.boolField as getField;
         import set flix.test.TestClass.boolField as setField;
         let o = newObject();
@@ -11,7 +11,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutCharField01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.charField as getField;
         import set flix.test.TestClass.charField as setField;
         let o = newObject();
@@ -20,7 +20,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutFloat32Field01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.float32Field as getField;
         import set flix.test.TestClass.float32Field as setField;
         let o = newObject();
@@ -29,7 +29,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutFloat64Field01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.float64Field as getField;
         import set flix.test.TestClass.float64Field as setField;
         let o = newObject();
@@ -38,7 +38,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutInt8Field01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.int8Field as getField;
         import set flix.test.TestClass.int8Field as setField;
         let o = newObject();
@@ -47,7 +47,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutInt16Field01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.int16Field as getField;
         import set flix.test.TestClass.int16Field as setField;
         let o = newObject();
@@ -56,7 +56,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutInt32Field01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.int32Field as getField;
         import set flix.test.TestClass.int32Field as setField;
         let o = newObject();
@@ -65,7 +65,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutInt64Field01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.int64Field as getField;
         import set flix.test.TestClass.int64Field as setField;
         let o = newObject();
@@ -74,7 +74,7 @@ namespace Test/Expression/Jvm/PutField {
 
     @test
     def testPutStringField01(): Bool =
-        import flix.test.TestClass:__new__() as newObject;
+        import new flix.test.TestClass() as newObject;
         import get flix.test.TestClass.stringField as getField;
         import set flix.test.TestClass.stringField as setField;
         let o = newObject();

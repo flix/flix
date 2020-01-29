@@ -635,14 +635,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => xs :+ x)
       }
 
-      def Constructor: Rule1[ParsedAst.JvmOp] = {
-        def Name: Rule1[Seq[String]] = rule {
-          oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ atomic("__new__")
-        }
-
-        rule {
-          Name ~ optWS ~ Signature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
-        }
+      def Constructor: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("new") ~ WS ~ JvmName ~ optWS ~ Signature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {

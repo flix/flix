@@ -2,6 +2,8 @@
 
 HEAD:
 
+- Reworked and improved Java interoperability.
+
 Version 0.9.1:
 
 - Fixed several bugs. 
