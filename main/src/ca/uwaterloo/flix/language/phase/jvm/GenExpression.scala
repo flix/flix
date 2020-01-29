@@ -821,9 +821,16 @@ object GenExpression {
       val thisType = asm.Type.getInternalName(method.getDeclaringClass)
       visitor.visitTypeInsn(CHECKCAST, thisType)
 
+      // Retrieve the signature.
+      val signature = method.getParameterTypes
+
       // Evaluate arguments left-to-right and push them onto the stack.
-      for ((arg, index) <- args.zipWithIndex) {
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
@@ -837,8 +844,13 @@ object GenExpression {
 
     case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
       addSourceLine(visitor, loc)
-      for ((arg, index) <- args.zipWithIndex) {
+      val signature = method.getParameterTypes
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
