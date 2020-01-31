@@ -71,6 +71,19 @@ namespace NonEmptyList {
         case Nel(h, l) => h == a || List.memberOf(a, l)
     }
 
+    // TODO: indxOf
+
+    ///
+    /// Alias for `findLeft`.
+    ///
+    pub def find(f: a -> Bool, xs: Nel[a]): Option[a] = findLeft(f, xs)
+
+    ///
+    /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
+    ///
+    pub def findLeft(f: a -> Bool, xs: Nel[a]): Option[a] = match xs {
+        case Nel(h, l) => if (f(h)) Some(h) else List.findLeft(f, l)
+    }
 
 
 
