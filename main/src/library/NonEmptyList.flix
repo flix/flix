@@ -180,5 +180,25 @@ namespace NonEmptyList {
         case Nel(h, l) => List.foldLeft(f, h, l)
     }
 
+    ///
+    /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.
+    ///
+    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    ///
+    pub def reduceRight(f: (a, a) -> a, xs: Nel[a]): a = match xs {
+        case Nel(h, l) => List.foldRight(f, h, l)
+    }
+
+    ///
+    /// Returns the number of elements in `xs` that satisfy the predicate `f`.
+    ///
+    pub def count(f: a -> Bool, xs: Nel[a]): Int32 = match xs {
+        case Nel(h, l) => (if (f(h)) 1 else 0) + List.count(f, l)
+    }
+
+    // TODO: Flatten
+
+
+
 }
 
