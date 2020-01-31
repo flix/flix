@@ -18,7 +18,18 @@
 /// The NonEmptyList type.
 ///
 
+enum Nel[a] {
+    case Nel(a, List[a])
+}
+
 namespace NonEmptyList {
+
+    ///
+    /// Returns the first element of the non-empty list `xs`.
+    ///
+    pub def head(xs: Nel[a]): a = match xs {
+        case Nel(h, _) => h
+    }
 
 
 
