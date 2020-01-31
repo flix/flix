@@ -26,3 +26,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Frederik Arp Frandsen](https://github.com/fredeaf)
 - [Quentin Stiévenart](https://github.com/acieroid)
 - [Stephen Tetley](https://github.com/stephentetley)
+- [Benjamin Dahse](https://github.com/bdahse)
