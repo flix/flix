@@ -71,7 +71,7 @@ namespace NonEmptyList {
         case Nel(h, l) => h == a || List.memberOf(a, l)
     }
 
-    // TODO: indxOf
+    // TODO: indexOf
 
     ///
     /// Alias for `findLeft`.
@@ -85,11 +85,65 @@ namespace NonEmptyList {
         case Nel(h, l) => if (f(h)) Some(h) else List.findLeft(f, l)
     }
 
+    ///
+    /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
+    ///
+    pub def findRight(f: a -> Bool, xs: Nel[a]): Option[a] = match xs {
+        case Nel(h, l) => match List.findRight(f, l) {
+            case None    => if (f(h)) Some(h) else None
+            case Some(x) => Some(x)
+        }
+    }
 
+    // TODO: scan, scanLeft, scanRight
 
+    ///
+    /// Returns the result of applying `f` to every element in `xs`.
+    ///
+    /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
+    ///
     pub def map(f: a -> b, xs: Nel[a]): Nel[b] = match xs {
         case Nel(h, l) => Nel(f(h), List.map(f, l))
     }
+
+    // TODO: mapWithIndex
+
+    // TODO: flatMap
+
+    // TODO: reverse
+
+    // TODO: rotateLeft
+
+    // TODO: rotateRight
+
+    // TODO: Update
+
+    ///
+    /// Returns `xs` with every occurrence of `x` replaced by `y`.
+    ///
+    pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
+
+    // TODO: patch
+
+    // TODO: permutations
+
+    // TODO: removeIndex
+
+    // TODO: subsequences
+
+    // TODO: intersperse
+
+    // TODO: intercalate
+
+    // TODO: transpose
+
+    // TODO: isPrefixOf
+
+    // TODO: isInfixOf
+
+    // TODO: isSuffixOf
+
+
 
 }
 
