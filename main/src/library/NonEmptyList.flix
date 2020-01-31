@@ -31,8 +31,25 @@ namespace NonEmptyList {
         case Nel(h, _) => h
     }
 
-    // TODO: last
-    // TODO: init and tail.
+    ///
+    /// Returns the last element of the non-empty list `xs`.
+    ///
+    pub def last(xs: Nel[a]): a = match xs {
+        case Nel(h, l) => Option.getWithDefault(List.last(l), h)
+    }
+
+    ///
+    /// Returns all elements in the non-empty list `xs` without the last element.
+    ///
+    // TODO: init.
+
+    ///
+    /// Returns all elements in the non-empty list `xs` without the first elements.
+    ///
+    pub def tail(xs: Nel[a]): List[a] = match xs {
+        case Nel(_, l) => l
+    }
+
 
 
 
