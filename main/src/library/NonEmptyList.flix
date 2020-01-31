@@ -143,7 +143,42 @@ namespace NonEmptyList {
 
     // TODO: isSuffixOf
 
+    ///
+    /// Alias for `foldLeft`.
+    ///
+    pub def fold(f: (b, a) -> b, s: b, xs: Nel[a]): b = foldLeft(f, s, xs)
 
+    ///
+    /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
+    ///
+    /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
+    ///
+    pub def foldLeft(f: (b, a) -> b, s: b, xs: Nel[a]): b = match xs {
+        case Nel(h, l) => List.foldLeft(f, f(h, s), l)
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
+    ///
+    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
+    ///
+    pub def foldRight(f: (a, b) -> b, s: b, xs: Nel[a]): b = match xs {
+        case Nel(h, l) => f(h, List.foldLeft(f, s, l))
+    }
+
+    ///
+    /// Alias for `reduceLeft`.
+    ///
+    pub def reduce(f: (a, a) -> a, xs: Nel[a]): a = reduceLeft(f, xs)
+
+    ///
+    /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.
+    ///
+    /// That is, the result is of the form: `f(...f(f(x1, x2), x3)..., xn)`
+    ///
+    pub def reduceLeft(f: (a, a) -> a, xs: Nel[a]): a = match xs {
+        case Nel(h, l) => List.foldLeft(f, h, l)
+    }
 
 }
 
