@@ -31,7 +31,8 @@ namespace NonEmptyList {
         case Nel(h, _) => h
     }
 
-
+    // TODO: last
+    // TODO: init and tail.
 
 
 
