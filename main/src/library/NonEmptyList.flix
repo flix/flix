@@ -33,5 +33,14 @@ namespace NonEmptyList {
 
 
 
+
+
+
+
+
+    pub def map(f: a -> b, xs: Nel[a]): Nel[b] = match xs {
+        case Nel(h, l) => Nel(f(h), List.map(f, l))
+    }
+
 }
 
