@@ -234,4 +234,23 @@ namespace Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def flipBit(x: Int32, position: Int32): Int32 = x ^^^ (1 <<< position)
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Int32): String =
+        import java.lang.Integer:toString(Int32);
+        x.toString()
+
+    ///
+    /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: String): Result[Int32, String] = try {
+        import java.lang.String.strip();
+        import java.lang.Integer:parseInt(String);
+        Ok(s.strip().parseInt())
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
+     }
 }

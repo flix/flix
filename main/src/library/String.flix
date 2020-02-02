@@ -18,57 +18,85 @@ namespace String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int, s: Str): Char = native method java.lang.String.charAt(s, i) as Char
+    pub def charAt(i: Int, s: String): Char =
+        import java.lang.String.charAt(Int32);
+        s.charAt(i)
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
-    pub def concat(s1: Str, s2: Str): Str = s1 + s2
+    pub def concat(s1: String, s2: String): String =
+        import java.lang.String.concat(String);
+        s1.concat(s2)
 
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.
     ///
-    pub def endsWith(s1: Str, s2: Str): Bool = native method java.lang.String.endsWith(s1, s2) as Bool
+    pub def endsWith(s1: String, s2: String): Bool =
+        import java.lang.String.endsWith(String);
+        s1.endsWith(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
-    pub def isEmpty(s: Str): Bool = native method java.lang.String.isEmpty(s) as Bool
+    pub def isEmpty(s: String): Bool =
+        import java.lang.String.isEmpty();
+        s.isEmpty()
 
     ///
     /// Returns the length of the string `s`.
     ///
-    pub def length(s: Str): Int = native method java.lang.String.length(s) as Int
+    pub def length(s: String): Int =
+        import java.lang.String.length();
+        s.length()
 
     ///
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
-    pub def startsWith(s1: Str, s2: Str): Bool = native method java.lang.String.startsWith(s1, s2) as Bool
+    pub def startsWith(s1: String, s2: String): Bool =
+        import java.lang.String.startsWith(String);
+        s1.startsWith(s2)
 
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
     ///
-    pub def split(s: Str, r: Str): Array[Str] = native method java.lang.String.split(s, r) as Array[Str]
+    pub def split(s: String, r: String): Array[String] =
+        import java.lang.String.split(String);
+        s.split(r)
 
     //
     // Returns the lower case version of the string `s`.
     //
-    pub def toLowerCase(s: Str): Str = native method java.lang.String.toLowerCase(s) as Str
+    pub def toLowerCase(s: String): String =
+        import java.lang.String.toLowerCase();
+        s.toLowerCase()
 
     //
     // Returns the upper case version of the string `s`.
     //
-    pub def toUpperCase(s: Str): Str = native method java.lang.String.toUpperCase(s) as Str
+    pub def toUpperCase(s: String): String =
+        import java.lang.String.toUpperCase();
+        s.toUpperCase()
 
     ///
     /// Returns the given string `s` as a list of characters.
     ///
-    pub def toList(s: Str): List[Char] = List.map(i -> charAt(i, s), List.range(0, length(s)))
+    pub def toList(s: String): List[Char] = List.map(i -> charAt(i, s), List.range(0, length(s)))
 
     ///
     /// Returns a copy of the string `s` without trailing and leading whitespaces.
+    ///
     /// Returns a new empty string if there is no characters in `s`.
     ///
-    pub def trim(s: Str): Str = native method java.lang.String.trim(s) as Str
+    pub def trim(s: String): String =
+        import java.lang.String.trim();
+        s.trim()
+
+    ///
+    /// Get the system line separator.
+    ///
+    pub def lineSeparator(): String =
+        import java.lang.System:lineSeparator();
+        lineSeparator()
 
 }

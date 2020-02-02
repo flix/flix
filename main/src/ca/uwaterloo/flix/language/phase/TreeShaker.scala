@@ -219,17 +219,32 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Universal(_, exp, _) =>
         visitExp(exp)
 
+      case Expression.Cast(exp, _, _) =>
+        visitExp(exp)
+
       case Expression.TryCatch(exp, rules, _, _) =>
         visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.NativeConstructor(_, args, _, _) =>
+      case Expression.InvokeConstructor(_, args, _, _) =>
         visitExps(args)
 
-      case Expression.NativeField(_, _, _) =>
+      case Expression.InvokeMethod(_, exp, args, _, _) =>
+        visitExp(exp) ++ visitExps(args)
+
+      case Expression.InvokeStaticMethod(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.GetField(_, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.PutField(_, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.GetStaticField(_, _, _) =>
         Set.empty
 
-      case Expression.NativeMethod(_, args, _, _) =>
-        visitExps(args)
+      case Expression.PutStaticField(_, exp, _, _) =>
+        visitExp(exp)
 
       case Expression.NewChannel(exp, _, _) =>
         visitExp(exp)
@@ -299,7 +314,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitConstraint(c0: SimplifiedAst.Constraint): Set[Symbol.DefnSym] = {
       val headSymbols = c0.head match {
-        case SimplifiedAst.Predicate.Head.Atom(_, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Head.Atom(_, _, terms, tpe, loc) =>
           terms.map(visitHeadTerm).fold(Set.empty)(_ ++ _)
 
         case SimplifiedAst.Predicate.Head.Union(exp, _, _) =>
@@ -307,7 +322,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       }
 
       val bodySymbols = c0.body.map {
-        case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+        case SimplifiedAst.Predicate.Body.Atom(_, _, polarity, terms, tpe, loc) =>
           terms.map(visitBodyTerm).fold(Set.empty)(_ ++ _)
 
         case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>

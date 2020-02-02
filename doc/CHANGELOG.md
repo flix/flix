@@ -1,8 +1,19 @@
 # Changelog
 
 HEAD:
-- Added support for opaque types (newtype declarations).
+
+- Reworked and improved Java interoperability.
+
+Version 0.9.1:
+
+- Fixed several bugs. 
+
+Version 0.9.0:
+
+- Added support for opaque types.
 - Added support for type aliases.
+- Added support for pattern matching on arrays.
+- Added experimental support for monadic let (let*).
 - Fixed a few bugs.
 
 Version 0.8.1:

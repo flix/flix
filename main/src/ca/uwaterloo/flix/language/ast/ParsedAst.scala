@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.Ast.Polarity
+
 import scala.collection.immutable.Seq
 
 /**
@@ -35,55 +37,11 @@ object ParsedAst {
   /**
     * Root. A collection of imports and declarations.
     *
-    * @param sp1     the position of the first character in the source.
-    * @param imports the imports declared in the abstract syntax tree.
-    * @param decls   the declarations in the abstract syntax tree.
-    * @param sp2     the position of the last character in the source.
+    * @param sp1   the position of the first character in the source.
+    * @param decls the declarations in the abstract syntax tree.
+    * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, imports: Seq[ParsedAst.Import], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
-
-  /**
-    * Imports.
-    */
-  sealed trait Import extends ParsedAst
-
-  object Import {
-
-    /**
-      * Import Wildcard.
-      *
-      * E.g. `import foo.bar.baz/_`.
-      *
-      * @param sp1 the position of the first character in the import.
-      * @param ns  the name of the namespace.
-      * @param sp2 the position of the last character in the import.
-      */
-    case class Wild(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
-
-    /**
-      * Import Definition.
-      *
-      * E.g. `import foo.bar.baz/qux)`.
-      *
-      * @param sp1  the position of the first character in the import.
-      * @param ns   the name of the namespace.
-      * @param name the name of the definition.
-      * @param sp2  the position of the last character in the import.
-      */
-    case class Definition(sp1: SourcePosition, ns: Name.NName, name: Name.Ident, sp2: SourcePosition) extends ParsedAst.Import
-
-    /**
-      * Import Namespace.
-      *
-      * E.g. `import foo.bar.baz`.
-      *
-      * @param sp1 the position of the first character in the import.
-      * @param ns  the name of the namespace.
-      * @param sp2 the position of the last character in the import.
-      */
-    case class Namespace(sp1: SourcePosition, ns: Name.NName, sp2: SourcePosition) extends ParsedAst.Import
-
-  }
+  case class Root(sp1: SourcePosition, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Declarations.
@@ -413,7 +371,6 @@ object ParsedAst {
 
   }
 
-
   /**
     * Expressions.
     */
@@ -584,6 +541,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class LetRec(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Let Import Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param op  the imported JVM operation.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class LetImport(sp1: SourcePosition, op: ParsedAst.JvmOp, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Match Expression (pattern match expression).
@@ -821,6 +788,15 @@ object ParsedAst {
     case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * String Interpolation Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param parts the parts of the interpolation.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Interpolation(sp1: SourcePosition, parts: Seq[InterpolationPart], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Reference expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -908,35 +884,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class TryCatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.CatchRule], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Native Constructor Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param fqn  the fully-qualified name of the native class.
-      * @param args the arguments to the constructor.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class NativeConstructor(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Native Field Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param fqn the fully-qualified name of the native field.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class NativeField(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Native Method Expression.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param fqn  the fully-qualified name of the native method.
-      * @param args the arguments to the method.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * NewChannel Expression.
@@ -1175,9 +1122,10 @@ object ParsedAst {
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the predicate.
         * @param terms the terms of the predicate.
+        * @param term  the optional lattice term (if applicable).
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Union Predicate.
@@ -1195,24 +1143,16 @@ object ParsedAst {
     object Body {
 
       /**
-        * Positive Predicate.
+        * Atom Predicate.
         *
-        * @param sp1   the position of the first character in the predicate.
-        * @param name  the qualified name of the predicate.
-        * @param terms the terms of the predicate.
-        * @param sp2   the position of the last character in the predicate.
+        * @param sp1      the position of the first character in the predicate.
+        * @param polarity the polarity of the predicate (positive/negative).
+        * @param name     the qualified name of the predicate.
+        * @param terms    the terms of the predicate.
+        * @param term     the optional lattice term (if applicable).
+        * @param sp2      the position of the last character in the predicate.
         */
-      case class Positive(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
-        * Negative Predicate.
-        *
-        * @param sp1   the position of the first character in the predicate.
-        * @param name  the qualified name of the predicate.
-        * @param terms the terms of the predicate.
-        * @param sp2   the position of the last character in the predicate.
-        */
-      case class Negative(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Polarity, name: Name.QName, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.
@@ -1535,6 +1475,93 @@ object ParsedAst {
     * @param sp2   the position of the last character in the annotation.
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends AnnotationOrProperty
+
+  /**
+    * String Interpolation Part.
+    */
+  sealed trait InterpolationPart
+
+  object InterpolationPart {
+
+    /**
+      * Expression part of a string interpolation.
+      */
+    case class ExpPart(e: ParsedAst.Expression) extends InterpolationPart
+
+    /**
+      * String part of a string interpolation.
+      */
+    case class StrPart(s: String) extends InterpolationPart
+
+  }
+
+  /**
+    * Jvm Operation.
+    */
+  sealed trait JvmOp
+
+  object JvmOp {
+
+    /**
+      * Constructor Invocation.
+      *
+      * @param fqn   the fully-qualified name of the constructor.
+      * @param sig   the types of the formal parameters.
+      * @param ident the name given to the imported constructor.
+      */
+    case class Constructor(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+
+    /**
+      * Method Invocation.
+      *
+      * @param fqn   the fully-qualified name of the method.
+      * @param sig   the types of the formal parameters.
+      * @param ident the optional name given to the imported method.
+      */
+    case class Method(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
+
+    /**
+      * Static Method Invocation.
+      *
+      * @param fqn   the fully-qualified name of the static method.
+      * @param sig   the declared types of the formal parameters.
+      * @param ident the optional name given to the imported method.
+      */
+    case class StaticMethod(fqn: Seq[String], sig: Seq[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
+
+    /**
+      * Get Object Field.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the name given to the imported field.
+      */
+    case class GetField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+
+    /**
+      * Put ObjectField.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the name given to the imported field.
+      */
+    case class PutField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+
+    /**
+      * Get Static Field.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the name given to the imported field.
+      */
+    case class GetStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+
+    /**
+      * Put Static Field.
+      *
+      * @param fqn   the fully-qualified name of the field.
+      * @param ident the name given to the imported field.
+      */
+    case class PutStaticField(fqn: Seq[String], ident: Name.Ident) extends JvmOp
+
+  }
 
   /**
     * Property.

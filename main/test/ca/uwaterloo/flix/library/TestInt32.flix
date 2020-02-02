@@ -592,3 +592,48 @@ def flipBit11(): Bool = Int32.flipBit(-1, 31) `assertEq!` 2147483647
 
 @test
 def flipBit12(): Bool = Int32.flipBit(-1, 32) `assertEq!` -2
+
+/////////////////////////////////////////////////////////////////////////////
+// toString                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toString01(): Bool = Int32.toString(0) == "0"
+
+@test
+def toString02(): Bool = Int32.toString(1) == "1"
+
+@test
+def toString03(): Bool = Int32.toString(-1) == "-1"
+
+@test
+def toString04(): Bool = Int32.toString(2147483647) == "2147483647"
+
+@test
+def toString05(): Bool = Int32.toString(-2147483648) == "-2147483648"
+
+/////////////////////////////////////////////////////////////////////////////
+// fromString                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def fromString01(): Bool = Int32.fromString("Bad") |> Result.isErr
+
+@test
+def fromString02(): Bool = Int32.fromString(" 1") == Ok(1)
+
+@test
+def fromString03(): Bool = Int32.fromString("1 ") == Ok(1)
+
+@test
+def fromString04(): Bool = Int32.fromString("0") == Ok(0)
+
+@test
+def fromString05(): Bool = Int32.fromString("1") == Ok(1)
+
+@test
+def fromString06(): Bool = Int32.fromString("-1") == Ok(-1)
+
+@test
+def fromString07(): Bool = Int32.fromString("2147483647") == Ok(2147483647)
+
+@test
+def fromString08(): Bool = Int32.fromString("-2147483648") == Ok(-2147483648)

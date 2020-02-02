@@ -50,4 +50,15 @@ def trim05(): Bool = "abc" == String.trim("  abc")
 def trim06(): Bool = "" == String.trim("  ")
 
 
+/////////////////////////////////////////////////////////////////////////////
+// lineSeparator                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def lineSeparator01(): Bool =
+    let newline = String.lineSeparator();
+    assert!(Char.isWhiteSpace(String.charAt(0, newline)))
 
+@test
+def lineSeparator02(): Bool =
+    let newline = String.lineSeparator();
+    assert!(String.length(newline) == 1 || String.length(newline) == 2)

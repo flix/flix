@@ -23,12 +23,12 @@ namespace Console {
     ///
     /// Alias for `Console.StdOut.print`.
     ///
-    pub def print(s: Str): Unit @ IO = Console/StdOut.print(s)
+    pub def print(s: String): Unit @ IO = Console/StdOut.print(s)
 
     ///
     /// Alias for `Console.StdOut.printLine`.
     ///
-    pub def printLine(s: Str): Unit @ IO = Console/StdOut.printLine(s)
+    pub def printLine(s: String): Unit @ IO = Console/StdOut.printLine(s)
 
     ///
     /// Operations on the Standard Input Stream.
@@ -38,9 +38,10 @@ namespace Console {
         ///
         /// Returns the next line read from the standard input stream.
         ///
-        pub def readLine(): Option[Str] @ IO =
-            let s = native method flix.runtime.library.Console.readLine() as Str @ IO;
-            (if (isNull(s)) None else Some(s)) as Option[Str] @ IO
+        pub def readLine(): Option[String] @ IO =
+            import flix.runtime.library.Console:readLine();
+            let s = readLine();
+            (if (isNull(s)) None else Some(s)) as Option[String] @ IO
 
     }
 
@@ -52,22 +53,37 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard output stream.
         ///
-        pub def print(s: Str): Unit @ IO = native method flix.runtime.library.Console.printStdOut(s) as Unit @ IO
+        pub def print(s: String): Unit @ IO =
+            import java.io.PrintStream.print(String);
+            getOutputStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
-        pub def printLine(s: Str): Unit @ IO = native method flix.runtime.library.Console.printLineStdOut(s) as Unit @ IO
+        pub def printLine(s: String): Unit @ IO =
+            import java.io.PrintStream.println(String);
+            getOutputStream().println(s)
 
         ///
         /// Prints a newline to the standard output stream.
         ///
-        pub def newLine(): Unit @ IO = native method flix.runtime.library.Console.newLineStdOut() as Unit @ IO
+        pub def newLine(): Unit @ IO =
+            import java.io.PrintStream.println();
+            getOutputStream().println()
 
         ///
         /// Flushes the standard output stream.
         ///
-        pub def flush(): Unit @ IO = native method flix.runtime.library.Console.flushStdOut() as Unit @ IO
+        pub def flush(): Unit @ IO =
+            import java.io.PrintStream.flush();
+            getOutputStream().flush()
+
+        ///
+        /// Returns the standard output stream.
+        ///
+        def getOutputStream(): ##java.io.PrintStream =
+            import get java.lang.System:out as getOut;
+            getOut()
 
     }
 
@@ -79,22 +95,37 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard error stream.
         ///
-        pub def print(s: Str): Unit @ IO = native method flix.runtime.library.Console.printStdErr(s) as Unit @ IO
+        pub def print(s: String): Unit @ IO =
+            import java.io.PrintStream.print(String);
+            getErrorStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
-        pub def printLine(s: Str): Unit @ IO  = native method flix.runtime.library.Console.printLineStdErr(s) as Unit @ IO
+        pub def printLine(s: String): Unit @ IO =
+            import java.io.PrintStream.println(String);
+            getErrorStream().println(s)
 
         ///
         /// Prints a newline to the standard error stream.
         ///
-        pub def newLine(): Unit @ IO  = native method flix.runtime.library.Console.newLineStdErr() as Unit @ IO
+        pub def newLine(): Unit @ IO =
+            import java.io.PrintStream.println();
+            getErrorStream().println()
 
         ///
         /// Flushes the standard error stream.
         ///
-        pub def flush(): Unit @ IO  = native method flix.runtime.library.Console.flushStdErr() as Unit @ IO
+        pub def flush(): Unit @ IO =
+            import java.io.PrintStream.flush();
+            getErrorStream().flush()
+
+        ///
+        /// Returns the standard error stream.
+        ///
+        def getErrorStream(): ##java.io.PrintStream =
+            import get java.lang.System:err as getErr;
+            getErr()
 
     }
 

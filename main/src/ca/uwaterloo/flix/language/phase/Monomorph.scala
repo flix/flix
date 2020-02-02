@@ -164,16 +164,27 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
+
         case Expression.True(loc) => Expression.True(loc)
+
         case Expression.False(loc) => Expression.False(loc)
+
         case Expression.Char(lit, loc) => Expression.Char(lit, loc)
+
         case Expression.Float32(lit, loc) => Expression.Float32(lit, loc)
+
         case Expression.Float64(lit, loc) => Expression.Float64(lit, loc)
+
         case Expression.Int8(lit, loc) => Expression.Int8(lit, loc)
+
         case Expression.Int16(lit, loc) => Expression.Int16(lit, loc)
+
         case Expression.Int32(lit, loc) => Expression.Int32(lit, loc)
+
         case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
+
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
+
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
         case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
@@ -410,16 +421,34 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.TryCatch(e, rs, subst0(tpe), eff, loc)
 
-        case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-          val es = args.map(e => visitExp(e, env0))
-          Expression.NativeConstructor(constructor, es, subst0(tpe), eff, loc)
+        case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeConstructor(constructor, as, subst0(tpe), eff, loc)
 
-        case Expression.NativeField(field, tpe, eff, loc) =>
-          Expression.NativeField(field, subst0(tpe), eff, loc)
+        case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeMethod(method, e, as, tpe, eff, loc)
 
-        case Expression.NativeMethod(method, args, tpe, eff, loc) =>
-          val es = args.map(e => visitExp(e, env0))
-          Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
+        case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+
+        case Expression.GetField(field, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.GetField(field, e, tpe, eff, loc)
+
+        case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.PutField(field, e1, e2, tpe, eff, loc)
+
+        case Expression.GetStaticField(field, tpe, eff, loc) =>
+          Expression.GetStaticField(field, tpe, eff, loc)
+
+        case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.PutStaticField(field, e, tpe, eff, loc)
 
         case Expression.NewChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -549,9 +578,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
         */
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
-        case Predicate.Head.Atom(sym, terms, tpe, loc) =>
+        case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.Atom(sym, ts, subst0(tpe), loc)
+          Predicate.Head.Atom(sym, den, ts, subst0(tpe), loc)
 
         case Predicate.Head.Union(exp, tpe, loc) =>
           val e = visitExp(exp, env0)
@@ -583,9 +612,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+          case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.Atom(sym, polarity, ts, subst0(tpe), loc)
+            Predicate.Body.Atom(sym, den, polarity, ts, subst0(tpe), loc)
 
           case Predicate.Body.Guard(exp, loc) =>
             val e = visitExp(exp, env0)

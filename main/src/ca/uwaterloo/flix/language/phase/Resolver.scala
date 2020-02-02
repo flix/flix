@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.{Constructor, Field, Method, Modifier}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.language.phase.Unification.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -711,18 +712,56 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, evar, loc)
 
-        case NamedAst.Expression.NativeConstructor(constructor, args, tpe, evar, loc) =>
-          for {
-            es <- traverse(args)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.NativeConstructor(constructor, es, tpe, evar, loc)
+        case NamedAst.Expression.InvokeConstructor(className, args, sig, tvar, evar, loc) =>
+          val argsVal = traverse(args)(visit(_, tenv0))
+          val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
+          flatMapN(sigVal, argsVal) {
+            case (ts, as) =>
+              mapN(lookupJvmConstructor(className, ts, loc)) {
+                case constructor => ResolvedAst.Expression.InvokeConstructor(constructor, as, tvar, evar, loc)
+              }
+          }
 
-        case NamedAst.Expression.NativeField(field, tpe, evar, loc) =>
-          ResolvedAst.Expression.NativeField(field, tpe, evar, loc).toSuccess
+        case NamedAst.Expression.InvokeMethod(className, methodName, exp, args, sig, tvar, evar, loc) =>
+          val expVal = visit(exp, tenv0)
+          val argsVal = traverse(args)(visit(_, tenv0))
+          val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
+          flatMapN(sigVal, expVal, argsVal) {
+            case (ts, e, as) =>
+              mapN(lookupJvmMethod(className, methodName, ts, static = false, loc)) {
+                case method => ResolvedAst.Expression.InvokeMethod(method, e, as, tvar, evar, loc)
+              }
+          }
 
-        case NamedAst.Expression.NativeMethod(method, args, tpe, evar, loc) =>
-          for {
-            es <- traverse(args)(e => visit(e, tenv0))
-          } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, evar, loc)
+        case NamedAst.Expression.InvokeStaticMethod(className, methodName, args, sig, tvar, evar, loc) =>
+          val argsVal = traverse(args)(visit(_, tenv0))
+          val sigVal = traverse(sig)(lookupType(_, ns0, prog0))
+          flatMapN(sigVal, argsVal) {
+            case (ts, as) =>
+              mapN(lookupJvmMethod(className, methodName, ts, static = true, loc)) {
+                case method => ResolvedAst.Expression.InvokeStaticMethod(method, as, tvar, evar, loc)
+              }
+          }
+
+        case NamedAst.Expression.GetField(className, fieldName, exp, tvar, evar, loc) =>
+          mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp, tenv0)) {
+            case (field, e) => ResolvedAst.Expression.GetField(field, e, tvar, evar, loc)
+          }
+
+        case NamedAst.Expression.PutField(className, fieldName, exp1, exp2, tvar, evar, loc) =>
+          mapN(lookupJvmField(className, fieldName, static = false, loc), visit(exp1, tenv0), visit(exp2, tenv0)) {
+            case (field, e1, e2) => ResolvedAst.Expression.PutField(field, e1, e2, tvar, evar, loc)
+          }
+
+        case NamedAst.Expression.GetStaticField(className, fieldName, tvar, evar, loc) =>
+          mapN(lookupJvmField(className, fieldName, static = true, loc)) {
+            case field => ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc)
+          }
+
+        case NamedAst.Expression.PutStaticField(className, fieldName, exp, tvar, evar, loc) =>
+          mapN(lookupJvmField(className, fieldName, static = true, loc), visit(exp, tenv0)) {
+            case (field, e) => ResolvedAst.Expression.PutStaticField(field, e, tvar, evar, loc)
+          }
 
         case NamedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
           for {
@@ -893,11 +932,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(qname, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, den, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
-          } yield ResolvedAst.Predicate.Head.Atom(sym, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(sym, den, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -911,11 +950,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(qname, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(qname, den, polarity, terms, tvar, loc) =>
           for {
             sym <- lookupPredicateSymbol(qname, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
-          } yield ResolvedAst.Predicate.Body.Atom(sym, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(sym, den, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
@@ -1348,6 +1387,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Int64" => Type.Cst(TypeConstructor.Int64).toSuccess
       case "BigInt" => Type.Cst(TypeConstructor.BigInt).toSuccess
       case "Str" => Type.Cst(TypeConstructor.Str).toSuccess
+      case "String" => Type.Cst(TypeConstructor.Str).toSuccess
       case "Array" => Type.Cst(TypeConstructor.Array).toSuccess
       case "Channel" => Type.Cst(TypeConstructor.Channel).toSuccess
       case "Ref" => Type.Cst(TypeConstructor.Ref).toSuccess
@@ -1433,8 +1473,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
-      lookupJvmClass(fqn.mkString("."), loc) map {
-        case clazz => Type.Cst(TypeConstructor.Native(clazz))
+      fqn match {
+        case "java.math.BigInteger" => Type.Cst(TypeConstructor.BigInt).toSuccess
+        case "java.lang.String" => Type.Cst(TypeConstructor.Str).toSuccess
+        case _ => lookupJvmClass(fqn, loc) map {
+          case clazz => Type.Cst(TypeConstructor.Native(clazz))
+        }
       }
 
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
@@ -1841,7 +1885,148 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   private def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
     Class.forName(className).toSuccess
   } catch {
-    case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure
+    case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+  }
+
+  /**
+    * Returns the constructor reflection object for the given `className` and `signature`.
+    */
+  private def lookupJvmConstructor(className: String, signature: List[Type], loc: SourceLocation): Validation[Constructor[_], ResolutionError] = {
+    // Lookup the class and signature.
+    flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
+      case (clazz, sig) => try {
+        // Lookup the constructor with the appropriate signature.
+        clazz.getConstructor(sig: _*).toSuccess
+      } catch {
+        case ex: ClassNotFoundException => ResolutionError.UndefinedJvmClass(className, loc).toFailure
+        case ex: NoSuchMethodException => ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc).toFailure
+      }
+    }
+  }
+
+  /**
+    * Returns the method reflection object for the given `className`, `methodName`, and `signature`.
+    */
+  private def lookupJvmMethod(className: String, methodName: String, signature: List[Type], static: Boolean, loc: SourceLocation): Validation[Method, ResolutionError] = {
+    // Lookup the class and signature.
+    flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
+      case (clazz, sig) => try {
+        // Lookup the method with the appropriate signature.
+        val method = clazz.getDeclaredMethod(methodName, sig: _*)
+
+        // Check if the method should be and is static.
+        if (static == Modifier.isStatic(method.getModifiers))
+          method.toSuccess
+        else
+          throw new NoSuchMethodException()
+      } catch {
+        case ex: NoSuchMethodException =>
+          val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
+          ResolutionError.UndefinedJvmMethod(className, methodName, static, sig, candidateMethods, loc).toFailure
+      }
+    }
+  }
+
+  /**
+    * Returns the field reflection object for the given `className` and `fieldName`.
+    */
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation): Validation[Field, ResolutionError] = {
+    flatMapN(lookupJvmClass(className, loc)) {
+      case clazz => try {
+        // Lookup the field.
+        val field = clazz.getField(fieldName)
+
+        // Check if the field should be and is static.
+        if (static == Modifier.isStatic(field.getModifiers))
+          field.toSuccess
+        else
+          throw new NoSuchFieldException()
+      } catch {
+        case ex: NoSuchFieldException =>
+          val candidateFields = clazz.getFields.toList
+          ResolutionError.UndefinedJvmField(className, fieldName, static, candidateFields, loc).toFailure
+      }
+    }
+  }
+
+  /**
+    * Performs name resolution on the given `signature`.
+    */
+  private def lookupSignature(signature: List[Type], loc: SourceLocation): Validation[List[Class[_]], ResolutionError] = {
+    traverse(signature)(getJVMType(_, loc))
+  }
+
+  /**
+    * Returns the JVM type corresponding to the given Flix type `tpe`.
+    *
+    * A non-primitive Flix type is mapped to java.lang.Object.
+    *
+    * An array type is mapped to the corresponding array type.
+    */
+  private def getJVMType(tpe: Type, loc: SourceLocation): Validation[Class[_], ResolutionError] = tpe.typeConstructor match {
+    case Type.Cst(TypeConstructor.Unit) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Bool) => classOf[Boolean].toSuccess
+
+    case Type.Cst(TypeConstructor.Char) => classOf[Char].toSuccess
+
+    case Type.Cst(TypeConstructor.Float32) => classOf[Float].toSuccess
+
+    case Type.Cst(TypeConstructor.Float64) => classOf[Double].toSuccess
+
+    case Type.Cst(TypeConstructor.Int8) => classOf[Byte].toSuccess
+
+    case Type.Cst(TypeConstructor.Int16) => classOf[Short].toSuccess
+
+    case Type.Cst(TypeConstructor.Int32) => classOf[Int].toSuccess
+
+    case Type.Cst(TypeConstructor.Int64) => classOf[Long].toSuccess
+
+    case Type.Cst(TypeConstructor.BigInt) => Class.forName("java.math.BigInteger").toSuccess
+
+    case Type.Cst(TypeConstructor.Str) => Class.forName("java.lang.String").toSuccess
+
+    case Type.Cst(TypeConstructor.Channel) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Enum(_, _)) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Ref) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Tuple(_)) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.Cst(TypeConstructor.Array) =>
+      tpe.typeArguments match {
+        case elmTyp :: Nil =>
+          mapN(getJVMType(elmTyp, loc)) {
+            case elmClass =>
+              // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+              java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+          }
+        case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+      }
+
+    case Type.Cst(TypeConstructor.Vector) =>
+      tpe.typeArguments match {
+        case elmTyp :: Nil =>
+          mapN(getJVMType(elmTyp, loc)) {
+            case elmClass =>
+              // See: https://stackoverflow.com/questions/1679421/how-to-get-the-array-class-for-a-given-class-in-java
+              java.lang.reflect.Array.newInstance(elmClass, 0).getClass
+          }
+        case _ => ResolutionError.IllegalType(tpe, loc).toFailure
+      }
+
+    case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
+
+    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
+
+    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+
+    case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
+
+    case Type.SchemaExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
+
+    case _ => ResolutionError.IllegalType(tpe, loc).toFailure
   }
 
   /**

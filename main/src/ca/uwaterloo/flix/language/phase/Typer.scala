@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Stratification
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -1030,25 +1030,68 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tvar, evar, loc) =>
-        // TODO: Check types.
-        val clazz = constructor.getDeclaringClass
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, evar, loc) =>
+        val classType = getFlixType(constructor.getDeclaringClass)
         for {
-          inferredArgumentTypes <- seqM(actuals.map(visitExp))
-          resultTyp <- unifyTypM(tvar, Type.Cst(TypeConstructor.Native(clazz)), loc)
-        } yield (resultTyp, evar)
+          argTypesAndEffects <- seqM(args.map(visitExp))
+          resultTyp <- unifyTypM(tvar, classType, loc)
+          resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
+        } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.NativeField(field, tvar, evar, loc) =>
-        // TODO: Check types.
-        liftM((tvar, evar))
-
-      case ResolvedAst.Expression.NativeMethod(method, actuals, tvar, evar, loc) =>
-        // TODO: Check argument types.
-        val returnType = getGenericFlixType(method.getGenericReturnType)
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) =>
+        val classType = getFlixType(method.getDeclaringClass)
+        val returnType = getFlixType(method.getReturnType)
         for {
-          inferredArgumentTypes <- seqM(actuals.map(visitExp))
+          (baseTyp, baseEff) <- visitExp(exp)
+          objectTyp <- unifyTypM(baseTyp, classType, loc)
+          argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)
+          resultEff <- unifyEffM(evar :: baseEff :: argTypesAndEffects.map(_._2), loc)
+        } yield (resultTyp, resultEff)
+
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) =>
+        val returnType = getFlixType(method.getReturnType)
+        for {
+          argTypesAndEffects <- seqM(args.map(visitExp))
+          resultTyp <- unifyTypM(tvar, returnType, loc)
+          resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
+        } yield (resultTyp, resultEff)
+
+      case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
+        val fieldType = getFlixType(field.getType)
+        val classType = getFlixType(field.getDeclaringClass)
+        for {
+          (baseTyp, baseEff) <- visitExp(exp)
+          objectTyp <- unifyTypM(baseTyp, classType, loc)
+          resultTyp <- unifyTypM(tvar, fieldType, loc)
+          resultEff <- unifyEffM(evar, baseEff, loc)
+        } yield (resultTyp, resultEff)
+
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
+        val fieldType = getFlixType(field.getType)
+        val classType = getFlixType(field.getDeclaringClass)
+        for {
+          (baseTyp, baseEff) <- visitExp(exp1)
+          (valueType, valueEff) <- visitExp(exp2)
+          objectTyp <- unifyTypM(baseTyp, classType, loc)
+          valueTyp <- unifyTypM(valueType, fieldType, loc)
+          resultTyp <- unifyTypM(tvar, mkUnitType(), loc)
+          resultEff <- unifyEffM(evar, baseEff, valueEff, loc)
+        } yield (resultTyp, resultEff)
+
+      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
+        val fieldType = getFlixType(field.getType)
+        for {
+          resultTyp <- unifyTypM(tvar, fieldType, loc)
         } yield (resultTyp, evar)
+
+      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
+        for {
+          (valueTyp, valueEff) <- visitExp(exp)
+          fieldTyp <- unifyTypM(getFlixType(field.getType), valueTyp, loc)
+          resultTyp <- unifyTypM(tvar, mkUnitType(), loc)
+          resultEff <- unifyEffM(evar, valueEff, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
@@ -1514,16 +1557,34 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
         TypedAst.Expression.TryCatch(e, rs, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, evar, loc) =>
-        val es = actuals.map(e => visitExp(e, subst0))
-        TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), subst0(evar), loc)
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tpe, evar, loc) =>
+        val as = args.map(visitExp(_, subst0))
+        TypedAst.Expression.InvokeConstructor(constructor, as, subst0(tpe), subst0(evar), loc)
 
-      case ResolvedAst.Expression.NativeField(field, tpe, evar, loc) =>
-        TypedAst.Expression.NativeField(field, subst0(tpe), subst0(evar), loc)
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tpe, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        val as = args.map(visitExp(_, subst0))
+        TypedAst.Expression.InvokeMethod(method, e, as, subst0(tpe), subst0(evar), loc)
 
-      case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, evar, loc) =>
-        val es = actuals.map(e => visitExp(e, subst0))
-        TypedAst.Expression.NativeMethod(method, es, subst0(tpe), subst0(evar), loc)
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tpe, evar, loc) =>
+        val as = args.map(visitExp(_, subst0))
+        TypedAst.Expression.InvokeStaticMethod(method, as, subst0(tpe), subst0(evar), loc)
+
+      case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.GetField(field, e, subst0(tvar), subst0(evar), loc)
+
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        TypedAst.Expression.PutField(field, e1, e2, subst0(tvar), subst0(evar), loc)
+
+      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
+        TypedAst.Expression.GetStaticField(field, subst0(tvar), subst0(evar), loc)
+
+      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
+        val e = visitExp(exp, subst0)
+        TypedAst.Expression.PutStaticField(field, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.NewChannel(exp, tpe, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1745,7 +1806,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Infers the type of the given head predicate.
     */
   private def inferHeadPredicate(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[Type] = head match {
-    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, den, terms, tvar, loc) =>
       //
       //  t_1 : tpe_1, ..., t_n: tpe_n
       //  ------------------------------------------------------------
@@ -1787,9 +1848,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given head predicate `head0`.
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
-    case ResolvedAst.Predicate.Head.Atom(sym, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Head.Atom(sym, den0, terms, tvar, loc) =>
+      val den = sym match {
+        case s: Symbol.RelSym =>
+          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Relational
+        case s: Symbol.LatSym =>
+          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Latticenal
+      }
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      TypedAst.Predicate.Head.Atom(sym, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym, den, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1805,7 +1874,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  ------------------------------------------------------------
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
-    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(sym, den, polarity, terms, tvar, loc) =>
 
       // Lookup the declared type of the relation/lattice (if it exists).
       val declaredType = sym match {
@@ -1842,9 +1911,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Applies the given substitution `subst0` to the given body predicate `body0`.
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-    case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, tvar, loc) =>
+    case ResolvedAst.Predicate.Body.Atom(sym, den0, polarity, terms, tvar, loc) =>
+      val den = sym match {
+        case s: Symbol.RelSym =>
+          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Relational
+        case s: Symbol.LatSym =>
+          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
+          Denotation.Latticenal
+      }
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      TypedAst.Predicate.Body.Atom(sym, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym, den, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1967,9 +2044,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns the Flix Type of a Java Class
     */
   private def getFlixType(c: Class[_]): Type = {
-    // handle primitive types first
     if (c == java.lang.Boolean.TYPE) {
-      mkBoolType()
+      Type.Cst(TypeConstructor.Bool)
     }
     else if (c == java.lang.Byte.TYPE) {
       Type.Cst(TypeConstructor.Int8)
@@ -1991,6 +2067,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
     else if (c == java.lang.Double.TYPE) {
       Type.Cst(TypeConstructor.Float64)
+    }
+    else if (c == classOf[java.math.BigInteger]) {
+      Type.Cst(TypeConstructor.BigInt)
     }
     else if (c == classOf[java.lang.String]) {
       Type.Cst(TypeConstructor.Str)

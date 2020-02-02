@@ -65,14 +65,14 @@ Pt(p,a) :- Copy(p,q), Pt(q,a).
 // Store
 // ---------
 def f(x: Str): SULattice = SULattice.Single(x)
-SU(l,a,f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
+SU(l,a;f(b)) :- Store(l,p,q), Pt(p,a), Pt(q,b).
 //
 PtH(a,b) :- Store(l,p,q), Pt(p,a), Pt(q,b).
 PtH(a,b) :- FIStore(p,q,_), Pt(p,a), Pt(q,b).
 //
 // Load
 // ---------
-Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(t, b), PtH(a,b), SU(l,a,t).
+Pt(p,b) :- Load(l,p,q), Pt(q,a), filter(t, b), PtH(a,b), SU(l,a;t).
 Pt(p,b) :- FILoad(p,q,_), Pt(q,a), PtH(a,b).
 //
 // CFlow
@@ -87,8 +87,8 @@ def killNot(a: Str, e: SULattice): Bool = match e with {
   case SULattice.Single(s) => a != s
   case SULattice.Top => true
 }
-SU(l2,a,t) :- CFG(l1, l2), SU(l1,a,t), Multi(a).
-SU(l2,a,t) :- CFG(l1, l2), SU(l1,a,t), killNot(a, k), Kill(l2,k).
+SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), Multi(a).
+SU(l2,a;t) :- CFG(l1, l2), SU(l1,a;t), killNot(a, k), Kill(l2;k).
 //SU(l2,a,t) :- CFG(l1, l2), SU(l1,a,t), Phi(l2).
 //
 // PtSu
@@ -98,9 +98,9 @@ def filter(e: SULattice, p: Str): Bool = match e with {
   case SULattice.Single(s) => p == s
   case SULattice.Top => true
 }
-SU(l,a,f(b)) :- Clear(l), PtH(a,b).
+SU(l,a;f(b)) :- Clear(l), PtH(a,b).
 
 // Kill
 // ---------
-Kill(l,f(b)) :- Store(l,p,q), Pt(p,b).
-Kill(l, Top) :- Phi(l).
+Kill(l;f(b)) :- Store(l,p,q), Pt(p,b).
+Kill(l;Top) :- Phi(l).

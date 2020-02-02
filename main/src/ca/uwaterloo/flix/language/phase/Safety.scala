@@ -3,9 +3,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -160,22 +160,37 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-      args.foldLeft(Nil: List[CompilationError]) {
-        case (acc, e) => acc ::: visitExp(e)
-      }
-
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc ::: visitExp(e)
       }
 
-    case Expression.NativeField(field, tpe, eff, loc) => Nil
-
-    case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       args.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)
       }
+
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      args.foldLeft(visitExp(exp)) {
+        case (acc, e) => acc ::: visitExp(e)
+      }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      args.foldLeft(Nil: List[CompilationError]) {
+        case (acc, e) => acc ::: visitExp(e)
+      }
+
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      visitExp(exp)
+
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.GetStaticField(field, tpe, eff, loc) =>
+      Nil
+
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      visitExp(exp)
 
     case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp)
 
@@ -239,7 +254,7 @@ object Safety extends Phase[Root, Root] {
     * with the given positively defined variable symbols `posVars`.
     */
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
-    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
       checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
 
     case Predicate.Body.Guard(exp, loc) => visitExp(exp)
@@ -271,7 +286,7 @@ object Safety extends Phase[Root, Root] {
     * Returns all positively defined variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(sym, polarity, terms, tpe, loc) => polarity match {
+    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet

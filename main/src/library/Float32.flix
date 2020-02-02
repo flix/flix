@@ -85,4 +85,23 @@ namespace Float32 {
     /// Returns the larger of `x` and `y`.
     ///
     pub def max(x: Float32, y: Float32): Float32 = if (x >= y) x else y
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Float32): String =
+        import java.lang.Float:toString(Float32);
+        x.toString()
+
+    ///
+    /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: String): Result[Float32, String] = try {
+        import java.lang.String.strip();
+        import java.lang.Float:parseFloat(String);
+        Ok(s.strip().parseFloat())
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
+     }
 }

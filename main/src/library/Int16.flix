@@ -238,4 +238,23 @@ namespace Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     pub def flipBit(x: Int16, position: Int32): Int16 = x ^^^ (1i16 <<< position)
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Int16): String =
+        import java.lang.Short:toString(Int16);
+        x.toString()
+
+    ///
+    /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: String): Result[Int16, String] = try {
+        import java.lang.String.strip();
+        import java.lang.Short:parseShort(String);
+        Ok(s.strip().parseShort())
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
+     }
 }

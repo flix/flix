@@ -85,4 +85,23 @@ namespace Float64 {
     /// Returns the larger of `x` and `y`.
     ///
     pub def max(x: Float64, y: Float64): Float64 = if (x >= y) x else y
+
+    ///
+    /// Return a string representation of `x`.
+    ///
+    pub def toString(x: Float64): String =
+        import java.lang.Double:toString(Float64);
+        x.toString()
+
+    ///
+    /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
+    /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
+    ///
+    pub def fromString(s: String): Result[Float64, String] = try {
+        import java.lang.String.strip();
+        import java.lang.Double:parseDouble(String);
+        Ok(s.strip().parseDouble())
+     } catch {
+         case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
+     }
 }

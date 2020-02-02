@@ -17,7 +17,6 @@
 package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.symbol.PredSym;
-import flix.runtime.RuleError;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 
@@ -48,7 +47,7 @@ public final class Solver {
         for (Constraint fact : cs.getFacts()) {
             Predicate head = fact.getHeadPredicate();
             if (head instanceof AtomPredicate) {
-                if (((AtomPredicate) head).getSym() == sym) {
+                if (((AtomPredicate) head).getSym().equals(sym)) {
                     result.add(fact);
                 }
             }

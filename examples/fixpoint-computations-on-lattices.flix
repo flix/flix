@@ -53,11 +53,11 @@ lat B(x: Str, s: Sign)
 lat R(x: Str, s: Sign)
 
 /// We can write facts with lattice semantics:
-A("a", Pos).
-B("a", Top).
-A("b", Neg).
+A("a"; Pos).
+B("a"; Top).
+A("b"; Neg).
 
 /// And rules with lattice semantics:
-R("c", s) :- A("a", s).
-R("c", s) :- A("b", s).
-R("d", s) :- A(x, s), B(x, s).
+R("c"; s) :- A("a"; s).
+R("c"; s) :- A("b"; s).
+R("d"; s) :- A(x; s), B(x; s).

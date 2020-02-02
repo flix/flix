@@ -486,9 +486,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      visitExps(args, env0)
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0)
       val usedRules = rules.foldLeft(Used.empty) {
@@ -501,11 +498,26 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       usedExp ++ usedRules
 
-    case Expression.NativeField(_, _, _, _) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      visitExps(args, env0)
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp, env0) ++ visitExps(args, env0)
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      visitExps(args, env0)
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      visitExp(exp, env0)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+    case Expression.GetStaticField(_, _, _, _) =>
       Used.empty
 
-    case Expression.NativeMethod(_, args, _, _, _) =>
-      Used.empty ++ visitExps(args, env0)
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      visitExp(exp, env0)
 
     case Expression.NewChannel(exp, _, _, _) =>
       Used.empty ++ visitExp(exp, env0)
@@ -605,7 +617,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
-    case Head.Atom(sym, terms, _, _) =>
+    case Head.Atom(sym, _, terms, _, _) =>
       Used.of(sym) ++ visitExps(terms, env0)
 
     case Head.Union(exp, _, _) =>
@@ -616,7 +628,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
-    case Body.Atom(sym, _, terms, _, _) =>
+    case Body.Atom(sym, _, _, terms, _, _) =>
       Used.of(sym)
 
     case Body.Guard(exp, _) =>

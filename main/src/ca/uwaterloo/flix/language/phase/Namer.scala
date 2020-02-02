@@ -899,26 +899,44 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.NativeConstructor(className, args, loc) =>
-      lookupNativeConstructor(className, args, loc) match {
-        case Ok(constructor) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
-          case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
-        }
-        case Err(e) => e.toFailure
+    case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
+      val argsVal = traverse(args)(visitExp(_, env0, tenv0))
+      val sigVal = traverse(sig)(visitType(_, tenv0))
+      mapN(argsVal, sigVal) {
+        case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.NativeField(className, fieldName, loc) =>
-      lookupNativeField(className, fieldName, loc) match {
-        case Ok(field) => NamedAst.Expression.NativeField(field, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
-        case Err(e) => e.toFailure
+    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
+      val expVal = visitExp(exp, env0, tenv0)
+      val argsVal = traverse(args)(visitExp(_, env0, tenv0))
+      val sigVal = traverse(sig)(visitType(_, tenv0))
+      mapN(expVal, argsVal, sigVal) {
+        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
-    case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
-      lookupNativeMethod(className, methodName, args, loc) match {
-        case Ok(method) => traverse(args)(e => visitExp(e, env0, tenv0)) map {
-          case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), Eff.freshEffVar(), loc)
-        }
-        case Err(e) => e.toFailure
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
+      val argsVal = traverse(args)(visitExp(_, env0, tenv0))
+      val sigVal = traverse(sig)(visitType(_, tenv0))
+      mapN(argsVal, sigVal) {
+        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
+
+    case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.GetField(className, fieldName, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
+
+    case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.PutField(className, fieldName, e1, e2, Type.freshTypeVar(), Eff.freshEffVar(), loc)
+      }
+
+    case WeededAst.Expression.GetStaticField(className, fieldName, loc) =>
+      NamedAst.Expression.GetStaticField(className, fieldName, Type.freshTypeVar(), Eff.freshEffVar(), loc).toSuccess
+
+    case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.PutStaticField(className, fieldName, e, Type.freshTypeVar(), Eff.freshEffVar(), loc)
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
@@ -1101,10 +1119,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -1116,9 +1134,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      NamedAst.Predicate.Body.Atom(qname, polarity, ts, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -1130,7 +1148,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1138,7 +1156,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => Nil
   }
 
@@ -1280,8 +1298,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       rules.foldLeft(freeVars(exp)) {
         case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
       }
-    case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
-    case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) => freeVars(exp) ++ args.flatMap(freeVars)
+    case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.GetField(className, fieldName, exp, loc) => freeVars(exp)
+    case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.GetStaticField(className, fieldName, loc) => Nil
+    case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) => freeVars(exp)
     case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
@@ -1295,7 +1318,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.ProcessSpawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
-    case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
@@ -1369,7 +1391,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given head predicate `h0`.
     */
   private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
-    case WeededAst.Predicate.Head.Atom(qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Head.Union(exp, loc) => freeVars(exp)
   }
 
@@ -1377,7 +1399,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given body predicate `b0`.
     */
   private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Guard(exp, loc) => freeVars(exp)
   }
 
@@ -1424,145 +1446,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the class reflection object for the given `className`.
     */
+  // TODO: Deprecated should be moved to resolver.
   private def lookupClass(className: String, loc: SourceLocation): Validation[Class[_], NameError] = try {
     Class.forName(className).toSuccess
   } catch {
     case ex: ClassNotFoundException => NameError.UndefinedNativeClass(className, loc).toFailure
-  }
-
-  /**
-    * Returns the result of looking up the given `fieldName` on the given `className`.
-    */
-  private def lookupNativeField(className: String, fieldName: String, loc: SourceLocation): Result[Field, NameError] = try {
-    // retrieve class object.
-    val clazz = Class.forName(className)
-
-    // retrieve the matching static fields.
-    val fields = clazz.getDeclaredFields.toList.filter {
-      case field => field.getName == fieldName && Modifier.isStatic(field.getModifiers)
-    }
-
-    // match on the number of fields.
-    fields.size match {
-      case 0 => Err(NameError.UndefinedNativeField(className, fieldName, loc))
-      case 1 => Ok(fields.head)
-      case _ => throw InternalCompilerException("Ambiguous native field?")
-    }
-  } catch {
-    case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))
-  }
-
-  /**
-    * Returns the result of looking up the given `methodName` on the given `className` with the given `arity`.
-    */
-  private def lookupNativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation): Result[Method, NameError] = try {
-    // TODO: Possibly all this needs to take place in the resolver.
-
-    // Compute the argument types.
-    val argumentTypes = args map {
-      case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
-        // The argument is ascribed. Try to determine its type.
-        lookupNativeType(tpe)
-      case _ =>
-        // The argument is not ascribed. We do not know its type.
-        None
-    }
-
-    // compute the arity.
-    val arity = argumentTypes.length
-
-    // retrieve class object.
-    val clazz = Class.forName(className)
-
-    // retrieve the matching methods.
-    val matchedMethods = clazz.getDeclaredMethods.toList.filter {
-      case method => method.getName == methodName
-    }
-
-    // retrieve the static methods.
-    val staticMethods = matchedMethods.filter {
-      case method => Modifier.isStatic(method.getModifiers) &&
-        method.getParameterCount == arity &&
-        parameterTypeMatch(argumentTypes, method.getParameterTypes.toList)
-    }
-
-    // retrieve the object methods.
-    val objectMethods = matchedMethods.filter {
-      case method => !Modifier.isStatic(method.getModifiers) && method.getParameterCount == (arity - 1) &&
-        parameterTypeMatch(argumentTypes.tail, method.getParameterTypes.toList)
-    }
-
-    // static and object methods.
-    val methods = staticMethods ::: objectMethods
-
-    // match on the number of methods.
-    methods.size match {
-      case 0 => Err(NameError.UndefinedNativeMethod(className, methodName, arity, loc))
-      case 1 => Ok(methods.head)
-      case _ => Err(NameError.AmbiguousNativeMethod(className, methodName, arity, loc))
-    }
-  } catch {
-    case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))
-  }
-
-  /**
-    * Returns the result of looking up the constructor on the given `className` with the given `arity`.
-    */
-  private def lookupNativeConstructor(className: String, args: List[WeededAst.Expression], loc: SourceLocation): Result[Constructor[_], NameError] = try {
-    // Compute the argument types.
-    val argumentTypes = args map {
-      case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
-        // The argument is ascribed. Try to determine its type.
-        lookupNativeType(tpe)
-      case _ =>
-        // The argument is not ascribed. We do not know its type.
-        None
-    }
-
-    // compute the arity.
-    val arity = argumentTypes.length
-
-    // retrieve class object.
-    val clazz = Class.forName(className)
-
-    // retrieve the constructors of the appropriate arity.
-    val constructors = clazz.getDeclaredConstructors.toList.filter {
-      case constructor => constructor.getParameterCount == arity && parameterTypeMatch(argumentTypes, constructor.getParameterTypes.toList)
-    }
-
-    // match on the number of methods.
-    constructors.size match {
-      case 0 => Err(NameError.UndefinedNativeConstructor(className, arity, loc))
-      case 1 => Ok(constructors.head)
-      case _ => Err(NameError.AmbiguousNativeConstructor(className, arity, loc))
-    }
-  } catch {
-    case ex: ClassNotFoundException => Err(NameError.UndefinedNativeClass(className, loc))
-  }
-
-  /**
-    * Optionally returns the native type of the given type `tpe`.
-    *
-    * May return `None` if not information about `tpe` is known.
-    */
-  private def lookupNativeType(tpe: WeededAst.Type): Option[Class[_]] = {
-    /**
-      * Optionally returns the class reflection object for the given `className`.
-      */
-    def lookupClass(className: String): Option[Class[_]] = try {
-      Some(Class.forName(className))
-    } catch {
-      case ex: ClassNotFoundException => None // TODO: Need to return a proper validation instead?
-    }
-
-    tpe match {
-      case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn.mkString("."))
-      case WeededAst.Type.Ambiguous(qname, loc) =>
-        // TODO: Ugly incorrect hack. Must take place in the resolver.
-        if (qname.ident.name == "Str") Some(classOf[String]) else None
-      // TODO: Would be useful to handle primitive types too.
-      case _ => None
-    }
   }
 
   /**

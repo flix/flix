@@ -16,17 +16,16 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
-import java.lang.reflect.{InvocationTargetException, Modifier}
 import java.util.function
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
-import flix.runtime.fixpoint.{Constraint => _, _}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
+import flix.runtime.fixpoint.{Constraint => _, _}
 import flix.runtime.{fixpoint, _}
 
 object Interpreter {
@@ -233,28 +232,28 @@ object Interpreter {
           throw ex
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    case Expression.NativeField(field, tpe, loc) =>
-      val clazz = field.getDeclaringClass
-      fromJava(field.get(clazz))
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      ??? // TODO
 
-    case Expression.NativeMethod(method, args, tpe, loc) => try {
-      val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
-      if (Modifier.isStatic(method.getModifiers)) {
-        val arguments = values.toArray
-        fromJava(method.invoke(null, arguments: _*))
-      } else {
-        val thisObj = values.head
-        val arguments = values.tail.toArray
-        fromJava(method.invoke(thisObj, arguments: _*))
-      }
-    } catch {
-      case ex: InvocationTargetException => throw ex.getTargetException
-    }
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      ??? //TODO
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      ??? // TODO
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val size = cast2int32(eval(exp, env0, henv0, lenv0, root))
@@ -393,6 +392,8 @@ object Interpreter {
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+
+    case Expression.Cast(exp, tpe, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
   /**
@@ -788,7 +789,7 @@ object Interpreter {
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.Atom(sym, terms0, _, _) =>
+    case FinalAst.Predicate.Head.Atom(sym, _, terms0, _, _) =>
       val predSym = newPredSym(sym, env0, henv0, lenv0)
       val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
       AtomPredicate.of(predSym, true, terms)
@@ -810,7 +811,7 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
 
-    case FinalAst.Predicate.Body.Atom(sym, polarity0, terms0, _, _) =>
+    case FinalAst.Predicate.Body.Atom(sym, _, polarity0, terms0, _, _) =>
       val predSym = newPredSym(sym, env0, henv0, lenv0)
       val polarity = polarity0 match {
         case Ast.Polarity.Positive => true
@@ -905,20 +906,19 @@ object Interpreter {
     * Returns the predicate symbol of the given predicate with parameter `p0`.
     */
   def newPredSym(sym: Symbol.PredSym, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = {
-      sym match {
-        case sym: Symbol.RelSym => newRelSym(sym)
-        case sym: Symbol.LatSym => newLatSym(sym)
-      }
+    sym match {
+      case sym: Symbol.RelSym => newRelSym(sym)
+      case sym: Symbol.LatSym => newLatSym(sym)
+    }
   }
 
   /**
     * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
     */
-  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
-    case FinalAst.Relation(_, _, attr, _) =>
-      val name = sym.toString
-      val as = attr.map(_.name).toArray
-      RelSym.of(name, as.length, as)
+  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = {
+    val name = sym.toString
+    val attr = root.relations.get(sym).map(_.attr.map(_.name).toArray).orNull
+    RelSym.of(name, attr)
   }
 
   /**
@@ -929,7 +929,7 @@ object Interpreter {
       val name = sym.toString
       val as = attr.map(a => a.name)
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, as.length, as.toArray, ops)
+      LatSym.of(name, as.toArray, ops)
   }
 
   /**
