@@ -24,36 +24,42 @@ namespace Instant {
     ///
     /// Returns the current time from the system clock.
     ///
-    pub def now(): Instant = Instant(native method java.time.Instant.now() as ##java.time.Instant)
+    pub def now(): Instant =
+        import java.time.Instant:now();
+        Instant(now())
 
     ///
     /// Returns `true` if `x` is before `y`.
     ///
     pub def before(x: Instant, y: Instant): Bool =
+        import java.time.Instant.isBefore(##java.time.Instant);
         let Instant(t1) = x;
         let Instant(t2) = y;
-        native method java.time.Instant.isBefore(t1 as ##java.time.Instant, t2 as ##java.time.Instant)
+        t1.isBefore(t2)
 
     ///
     /// Returns `true` if `x` is after `y`.
     ///
     pub def after(x: Instant, y: Instant): Bool =
+        import java.time.Instant.isAfter(##java.time.Instant);
         let Instant(t1) = x;
         let Instant(t2) = y;
-        native method java.time.Instant.isAfter(t1 as ##java.time.Instant, t2 as ##java.time.Instant)
+        t1.isAfter(t2)
 
     ///
     /// Returns the given instant `x` plus `d` number of nano seconds.
     ///
     pub def plus(x: Instant, d: Int64): Instant =
+        import java.time.Instant.plusNanos(Int64);
         let Instant(t) = x;
-        Instant(native method java.time.Instant.plusNanos(t, d) as ##java.time.Instant)
+        Instant(t.plusNanos(d))
 
     ///
     /// Returns the given instant `x` minus `d` number of nano seconds.
     ///
     pub def minus(x: Instant, d: Int64): Instant =
+        import java.time.Instant.minusNanos(Int64);
         let Instant(t) = x;
-        Instant(native method java.time.Instant.minusNanos(t, d) as ##java.time.Instant)
+        Instant(t.minusNanos(d))
 
 }

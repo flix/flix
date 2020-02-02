@@ -554,7 +554,7 @@ object PrettyPrinter {
     }
 
     def fmtHeadAtom(p0: Predicate.Head, vt: VirtualTerminal): Unit = p0 match {
-      case Predicate.Head.Atom(sym, terms, _, _) =>
+      case Predicate.Head.Atom(sym, _, terms, _, _) =>
         vt.text(sym.toString)
         vt.text("(")
         for (term <- terms) {

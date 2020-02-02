@@ -536,7 +536,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isNative(tpe)) {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.NativeMethod(method, List(exp1, exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
+            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Cst(TypeConstructor.Bool), ast.Eff.Pure, sl)
           }
 
           //
