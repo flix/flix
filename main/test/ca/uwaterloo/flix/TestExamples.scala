@@ -33,18 +33,6 @@ class TestExamples extends Suites(
   new FlixTest("the-ast-typing-problem-with-polymorphic-records", "examples/the-ast-typing-problem-with-polymorphic-records.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("compiler-puzzle", "examples/compiler-puzzle.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
 
-  // Actors
-  new FlixTest("Become", "examples/actors/Become.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("Countdown", "examples/actors/Countdown.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("Counter", "examples/actors/Counter.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("HelloWorld", "examples/actors/HelloWorld.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("PingPong", "examples/actors/PingPong.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("RestartAndStop", "examples/actors/RestartOnce.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("RestartOnce", "examples/actors/RestartOnce.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("RestartOncePer5Min", "examples/actors/RestartOncePer5Min.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("RestartParent", "examples/actors/RestartParent.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-  new FlixTest("StartupAndShutdown", "examples/actors/StartupAndShutdown.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
-
   // Others
   new FlixTest("TestBelnap", "examples/domains/Belnap.flix"),
   new FlixTest("TestConstant", "examples/domains/Constant.flix", "examples/domains/Belnap.flix"),
