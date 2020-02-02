@@ -808,4 +808,69 @@ class TestRedundancy extends FunSuite with TestUtils {
     compile(input, DefaultOptions).get
   }
 
+  test("UnconditionalRecursion.01") {
+    val input =
+      s"""
+         |def f(): Int =
+         |    f()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnconditionalRecursion](result)
+  }
+
+  test("UnconditionalRecursion.02") {
+    val input =
+      s"""
+         |def foo(x: Int, y: Int): _ =
+         |    foo(x + y)
+         |""".stripMargin
+    compile(input, DefaultOptions).get
+  }
+
+  test("UnconditionalRecursion.03") {
+    val input =
+      s"""
+         |def foo(x: Int): Int -> Int =
+         |    y -> foo(123, x)
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnconditionalRecursion](result)
+  }
+
+  test("UnconditionalRecursion.04") {
+    val input =
+      s"""
+         |def foo(x: Int): Int = match x with {
+         |    case 0 => foo(999)
+         |    case _ => foo(123)
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnconditionalRecursion](result)
+  }
+
+  test("UnconditionalRecursion.05") {
+    val input =
+      s"""
+         |def foo(x: Int): Int =
+         |    if (x == 1)
+         |        foo(9)
+         |    else
+         |        foo(7)
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnconditionalRecursion](result)
+  }
+
+  test("UnconditionalRecursion.06") {
+    val input =
+      s"""
+         |def foo(x: Bool): Bool = switch {
+         |    case x => foo(x)
+         |    case !x => foo(!x)
+         |}
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UnconditionalRecursion](result)
+  }
 }

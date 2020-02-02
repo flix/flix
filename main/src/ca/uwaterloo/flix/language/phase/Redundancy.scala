@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
+import scala.annotation.tailrec
 import scala.collection.parallel.CollectionConverters._
 
 /**
@@ -54,26 +55,26 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Computes all used symbols in all defs (in parallel).
     val usedDefs = root.defs.par.aggregate(Used.empty)({
-      case (acc, (sym, decl)) => acc ++ visitDef(decl)(root, flix)
-    }, _ ++ _)
+      case (acc, (sym, decl)) => acc and visitDef(decl)(root, flix)
+    }, _ and _)
 
     // Computes all used symbols in all lattices.
     val usedLats = root.latticeComponents.values.foldLeft(Used.empty) {
       case (acc, LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)) =>
-        acc ++ visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
+        acc and visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
     }
 
     // Computes all used symbols.
-    val usedAll = usedLats ++ usedDefs
+    val usedAll = usedLats and usedDefs
 
     // Check for unused symbols.
     val usedRes =
-      checkUnusedDefs(usedAll)(root) ++
-        checkUnusedEnumsAndTags(usedAll)(root) ++
-        checkUnusedRelations(usedAll)(root) ++
-        checkUnusedLattices(usedAll)(root) ++
-        checkUnusedTypeParamsEnums()(root) ++
-        checkUnusedTypeParamsRelations()(root) ++
+      checkUnusedDefs(usedAll)(root) and
+        checkUnusedEnumsAndTags(usedAll)(root) and
+        checkUnusedRelations(usedAll)(root) and
+        checkUnusedLattices(usedAll)(root) and
+        checkUnusedTypeParamsEnums()(root) and
+        checkUnusedTypeParamsRelations()(root) and
         checkUnusedTypeParamsLattices()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
@@ -84,7 +85,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks for unused symbols in the given definition and returns all used symbols.
     */
   private def visitDef(defn: Def)(implicit root: Root, flix: Flix): Used = {
-
     /**
       * Checks for unused formal parameters.
       */
@@ -106,17 +106,40 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute the used symbols inside the definition.
-    val recursionContext = RecursionContext.of(defn)
-    val usedExp = visitExp(defn.exp, Env.of(recursionContext) ++ defn.fparams.map(_.sym))
+    val recursionContext = RecursionContext(defn.sym, arity(defn))
+    val usedExp = visitExp(defn.exp, Env.of(Some(recursionContext)) ++ defn.fparams.map(_.sym))
 
     // Check for unused parameters and remove all variable symbols.
-    val usedAll = (usedExp ++ checkUnusedFormalParameters(usedExp) ++ checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
+    val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
 
-    // TODO: use this
     val usedAllWithUnconditionalRecursions = if (usedAll.unconditionallyRecurses) usedAll + UnconditionalRecursion(defn.sym) else usedAll
 
     // Check if the used symbols contains holes. If so, strip out all error messages.
-    if (usedAll.holeSyms.isEmpty) usedAll else usedAll.copy(errors = Set.empty)
+    if (usedAllWithUnconditionalRecursions.holeSyms.isEmpty)
+      usedAllWithUnconditionalRecursions
+    else
+      usedAllWithUnconditionalRecursions.copy(errors = Set.empty)
+  }
+
+  /**
+    * Finds the arity of the Def, including lambdas nested directly beneath it.
+    */
+  private def arity(defn: Def): Int = {
+    val topArity = defn.fparams.size
+    val lambdaArity = defn.exp match {
+      case lambda: Expression.Lambda => arity(lambda)
+      case _ => 0
+    }
+    topArity + lambdaArity
+  }
+
+  /**
+    * Finds the arity of the Lambda: the number of lambdas nested below, including this one.
+    */
+  @tailrec
+  private def arity(lambda: Expression.Lambda, acc: Int = 0): Int = lambda.exp match {
+    case lambda1: Expression.Lambda => arity(lambda1, acc + 1)
+    case _ => 1
   }
 
   /**
@@ -253,28 +276,20 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         Used.empty + HiddenVarSym(sym, loc)
 
-    case Expression.Def(sym, _, _, _) => {
-      if (env0.recursionContext.exists(r => r.defn == sym && r.applies >= r.params)) {
+    case Expression.Def(sym, _, _, _) =>
+      if (env0.recursionContext.exists(r => r.isRecursiveCall(sym))) {
         Used.of(sym, unconditionallyRecurses = true)
       } else {
         Used.of(sym, unconditionallyRecurses = false)
       }
-    }
 
-    case Expression.Eff(sym, _, _, _) => Used.empty
+    case Expression.Eff(_, _, _, _) => Used.empty
 
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
-      val envExtended = env0 + fparam.sym
-
-      // Expand the recursion context parameters if immediately under a definition
-      val env1 = if (envExtended.recursionContext.exists(_.immediate)) {
-        envExtended.addParam
-      } else {
-        envExtended
-      }
+      val env1 = env0 + fparam.sym
 
       // Visit the expression with the extended environment.
       val innerUsed = visitExp(exp, env1)
@@ -284,23 +299,23 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       // Check if the lambda parameter symbol is dead.
       if (deadVarSym(fparam.sym, innerUsed))
-        innerUsed ++ shadowedVar - fparam.sym + UnusedFormalParam(fparam.sym)
+        innerUsed and shadowedVar - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        innerUsed ++ shadowedVar - fparam.sym
+        innerUsed and shadowedVar - fparam.sym
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
-      val env1 = env0.addApply.stopBuilding
-      val env2 = env0.resetApplies.stopBuilding
+      val env1 = env0.addApply
+      val env2 = env0.resetApplies
       val us1 = visitExp(exp1, env1)
       val us2 = visitExp(exp2, env2)
       us1 and us2
 
     case Expression.Unary(_, exp, _, _, _) =>
-      visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
       us1 and us2
 
     case Expression.Let(sym, exp1, exp2, _, _, _) =>
@@ -308,50 +323,50 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val env1 = env0 + sym
 
       // Visit the two expressions under the extended environment.
-      val innerUsed1 = visitExp(exp1, env1.resetApplies.stopBuilding)
-      val innerUsed2 = visitExp(exp2, env1.resetApplies.stopBuilding)
+      val innerUsed1 = visitExp(exp1, env1.resetApplies)
+      val innerUsed2 = visitExp(exp2, env1.resetApplies)
 
       // Check for shadowing.
       val shadowedVar = shadowing(sym, env0)
 
       // Check if the let-bound variable symbol is dead in exp2.
       if (deadVarSym(sym, innerUsed2))
-        (innerUsed1 and innerUsed2 ++ shadowedVar) - sym + UnusedVarSym(sym)
+        (innerUsed1 and innerUsed2 and shadowedVar) - sym + UnusedVarSym(sym)
       else
-        (innerUsed1 and innerUsed2 ++ shadowedVar) - sym
+        (innerUsed1 and innerUsed2 and shadowedVar) - sym
 
     case Expression.LetRec(sym, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
       // Visit the two expressions under the extended environment.
-      val innerUsed1 = visitExp(exp1, env1.resetApplies.stopBuilding)
-      val innerUsed2 = visitExp(exp2, env1.resetApplies.stopBuilding)
+      val innerUsed1 = visitExp(exp1, env1.resetApplies)
+      val innerUsed2 = visitExp(exp2, env1.resetApplies)
 
       // Check for shadowing.
       val shadowedVar = shadowing(sym, env0)
 
       // Check if the let-bound variable symbol is dead in exp1 and exp2.
-      if (deadVarSym(sym, innerUsed1 ++ innerUsed2))
-        (innerUsed1 and innerUsed2 ++ shadowedVar) - sym + UnusedVarSym(sym)
+      if (deadVarSym(sym, innerUsed1 and innerUsed2))
+        (innerUsed1 and innerUsed2 and shadowedVar) - sym + UnusedVarSym(sym)
       else
-        (innerUsed1 and innerUsed2 ++ shadowedVar) - sym
+        (innerUsed1 and innerUsed2 and shadowedVar) - sym
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
-      val us3 = visitExp(exp3, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
+      val us3 = visitExp(exp3, env0.resetApplies)
       us1 and (us2 or us3)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       // TODO: Ensure that `exp1` is non-pure.
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
       us1 and us2
 
     case Expression.Match(exp, rules, _, _, _) =>
       // Visit the match expression.
-      val usedMatch = visitExp(exp, env0.resetApplies.stopBuilding)
+      val usedMatch = visitExp(exp, env0.resetApplies)
 
       // Visit each match rule.
       val usedRules = rules map {
@@ -363,185 +378,182 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           val extendedEnv = env0 ++ fvs
 
           // Visit the guard and body.
-          val usedGuard = visitExp(guard, extendedEnv.resetApplies.stopBuilding)
-          val usedBody = visitExp(body, extendedEnv.resetApplies.stopBuilding)
-          val usedGuardAndBody = usedGuard ++ usedBody
+          val usedGuard = visitExp(guard, extendedEnv.resetApplies)
+          val usedBody = visitExp(body, extendedEnv.resetApplies)
+          val usedGuardAndBody = usedGuard and usedBody
 
           // Check for unused variable symbols.
           val unusedVarSyms = fvs.filter(sym => deadVarSym(sym, usedGuardAndBody)).map(UnusedVarSym)
 
           // Check for shadowed variable symbols.
-          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ ++ _)
+          val shadowedVarSyms = fvs.map(sym => shadowing(sym, env0)).foldLeft(Used.empty)(_ and _)
 
           // Combine everything together.
-          usedGuardAndBody -- fvs ++ unusedVarSyms ++ shadowedVarSyms
+          usedGuardAndBody -- fvs ++ unusedVarSyms and shadowedVarSyms
       }
 
-      usedRules.foldLeft(usedMatch) {
-        case (acc, u) => acc or u
-      }
+      usedMatch and usedRules.reduceLeft(_ or _)
 
     case Expression.Switch(rules, _, _, _) =>
-      rules.foldLeft(Used.empty) {
-        case (acc, (cond, body)) => acc or visitExp(cond, env0.resetApplies.stopBuilding) or visitExp(body, env0.resetApplies.stopBuilding)
-      }
+      rules.map {
+        case (cond, body) => visitExp(cond, env0.resetApplies) and visitExp(body, env0.resetApplies)
+      }.reduceLeft(_ or _)
 
     case Expression.Tag(sym, tag, exp, _, _, _) =>
-      val us = visitExp(exp, env0.resetApplies.stopBuilding)
-      Used.of(sym, tag) ++ us
+      val us = visitExp(exp, env0.resetApplies)
+      Used.of(sym, tag) and us
 
     case Expression.Tuple(elms, _, _, _) =>
-      visitExps(elms, env0.resetApplies.stopBuilding)
+      visitExps(elms, env0.resetApplies)
 
     case Expression.RecordEmpty(_, _, _) =>
       Used.empty
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
-      visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.RecordExtend(_, value, rest, _, _, _) =>
-      val us1 = visitExp(value, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(rest, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(value, env0.resetApplies)
+      val us2 = visitExp(rest, env0.resetApplies)
       us1 and us2
 
     case Expression.RecordRestrict(_, rest, _, _, _) =>
-      visitExp(rest, env0.resetApplies.stopBuilding)
+      visitExp(rest, env0.resetApplies)
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
-      visitExps(elms, env0.resetApplies.stopBuilding)
+      visitExps(elms, env0.resetApplies)
 
     case Expression.ArrayNew(elm, len, _, _, _) =>
-      val us1 = visitExp(elm, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(len, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(elm, env0.resetApplies)
+      val us2 = visitExp(len, env0.resetApplies)
       us1 and us2
 
     case Expression.ArrayLoad(base, index, _, _, _) =>
-      val us1 = visitExp(base, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(index, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(base, env0.resetApplies)
+      val us2 = visitExp(index, env0.resetApplies)
       us1 and us2
 
     case Expression.ArrayLength(base, _, _, _) =>
-      visitExp(base, env0.resetApplies.stopBuilding)
+      visitExp(base, env0.resetApplies)
 
     case Expression.ArrayStore(base, index, elm, _, _, _) =>
-      val us1 = visitExp(base, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(index, env0.resetApplies.stopBuilding)
-      val us3 = visitExp(elm, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(base, env0.resetApplies)
+      val us2 = visitExp(index, env0.resetApplies)
+      val us3 = visitExp(elm, env0.resetApplies)
       us1 and us2 and us3
 
     case Expression.ArraySlice(base, begin, end, _, _, _) =>
-      val us1 = visitExp(base, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(begin, env0.resetApplies.stopBuilding)
-      val us3 = visitExp(end, env0.resetApplies.stopBuilding)
+      val us1 = visitExp(base, env0.resetApplies)
+      val us2 = visitExp(begin, env0.resetApplies)
+      val us3 = visitExp(end, env0.resetApplies)
       us1 and us2 and us3
 
-    // TODO: understand more about below operations
     case Expression.VectorLit(elms, _, _, _) =>
-      Used.empty ++ visitExps(elms, env0.resetApplies.stopBuilding)
+      visitExps(elms, env0.resetApplies)
 
     case Expression.VectorNew(elm, _, _, _, _) =>
-      Used.empty ++ visitExp(elm, env0.resetApplies.stopBuilding)
+      visitExp(elm, env0.resetApplies)
 
     case Expression.VectorLoad(base, _, _, _, _) =>
-      Used.empty ++ visitExp(base, env0.resetApplies.stopBuilding)
+      visitExp(base, env0.resetApplies)
 
     case Expression.VectorStore(base, _, elm, _, _, _) =>
-      val us1 = visitExp(base, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(elm, env0.resetApplies.stopBuilding)
-      Used.empty ++ us1 ++ us2
+      val us1 = visitExp(base, env0.resetApplies)
+      val us2 = visitExp(elm, env0.resetApplies)
+      us1 and us2
 
     case Expression.VectorLength(base, _, _, _) =>
-      Used.empty ++ visitExp(base, env0.resetApplies.stopBuilding)
+      visitExp(base, env0.resetApplies)
 
     case Expression.VectorSlice(base, _, _, _, _, _) =>
-      Used.empty ++ visitExp(base, env0.resetApplies.stopBuilding)
+      visitExp(base, env0.resetApplies)
 
     case Expression.Ref(exp, _, _, _) =>
-      Used.empty ++ visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.Deref(exp, _, _, _) =>
-      Used.empty ++ visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
-      Used.empty ++ us1 ++ us2
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
+      us1 and us2
 
     case Expression.HandleWith(exp, bindings, _, _, _) =>
-      val usedExp = visitExp(exp, env0.resetApplies.stopBuilding)
+      val usedExp = visitExp(exp, env0.resetApplies)
       val usedBindings = bindings.foldLeft(Used.empty) {
-        case (acc, HandlerBinding(_, body)) => acc ++ visitExp(body, env0.resetApplies.stopBuilding)
+        case (acc, HandlerBinding(_, body)) => acc and visitExp(body, env0.resetApplies)
       }
-      usedExp ++ usedBindings
+      usedExp and usedBindings
 
     case Expression.Existential(fparam, exp, _, _) =>
       // Check for variable shadowing.
       val us1 = shadowing(fparam.sym, env0)
 
       // Visit the expression under an extended environment.
-      val us2 = visitExp(exp, (env0 + fparam.sym).resetApplies.stopBuilding)
+      val us2 = visitExp(exp, (env0 + fparam.sym).resetApplies)
 
       // Check if the quantified variable is dead.
       if (deadVarSym(fparam.sym, us2))
-        us1 ++ us2 - fparam.sym + UnusedFormalParam(fparam.sym)
+        us1 and us2 - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us1 ++ us2 - fparam.sym
+        us1 and us2 - fparam.sym
 
     case Expression.Universal(fparam, exp, _, _) =>
       // Check for variable shadowing.
-      val us1 = shadowing(fparam.sym, env0.resetApplies.stopBuilding)
+      val us1 = shadowing(fparam.sym, env0.resetApplies)
 
       // Visit the expression under an extended environment.
-      val us2 = visitExp(exp, (env0 + fparam.sym).resetApplies.stopBuilding)
+      val us2 = visitExp(exp, (env0 + fparam.sym).resetApplies)
 
       // Check if the quantified variable is dead.
       if (deadVarSym(fparam.sym, us2))
-        us1 ++ us2 - fparam.sym + UnusedFormalParam(fparam.sym)
+        us1 and us2 - fparam.sym + UnusedFormalParam(fparam.sym)
       else
-        us1 ++ us2 - fparam.sym
+        us1 and us2 - fparam.sym
 
     case Expression.Ascribe(exp, _, _, _) =>
-      visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.Cast(exp, _, _, _) =>
-      visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.NativeConstructor(_, args, _, _, _) =>
-      visitExps(args, env0.resetApplies.stopBuilding)
+      visitExps(args, env0.resetApplies)
 
     case Expression.TryCatch(exp, rules, _, _, _) =>
-      val usedExp = visitExp(exp, env0.resetApplies.stopBuilding)
+      val usedExp = visitExp(exp, env0.resetApplies)
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, CatchRule(sym, _, body)) =>
-          val usedBody = visitExp(body, env0.resetApplies.stopBuilding)
+          val usedBody = visitExp(body, env0.resetApplies)
           if (deadVarSym(sym, usedBody))
-            acc ++ usedBody + UnusedVarSym(sym)
+            acc or usedBody + UnusedVarSym(sym)
           else
-            acc ++ usedBody
+            acc or usedBody
       }
-      usedExp ++ usedRules
+      usedExp and usedRules
 
     case Expression.NativeField(_, _, _, _) =>
       Used.empty
 
     case Expression.NativeMethod(_, args, _, _, _) =>
-      Used.empty ++ visitExps(args, env0.resetApplies.stopBuilding)
+      visitExps(args, env0.resetApplies)
 
     case Expression.NewChannel(exp, _, _, _) =>
-      Used.empty ++ visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.GetChannel(exp, _, _, _) =>
-      Used.empty ++ visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.PutChannel(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
-      Used.empty ++ us1 ++ us2
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
+      us1 and us2
 
     case Expression.SelectChannel(rules, defaultOpt, _, _, _) =>
       val defaultUsed = defaultOpt match {
         case None => Used.empty
-        case Some(default) => visitExp(default, env0.resetApplies.stopBuilding)
+        case Some(default) => visitExp(default, env0.resetApplies)
       }
 
       val rulesUsed = rules map {
@@ -553,53 +565,53 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
           val shadowedVar = shadowing(sym, env0)
 
           // Visit the channel and body expressions.
-          val chanUsed = visitExp(chan, env1.resetApplies.stopBuilding)
-          val bodyUsed = visitExp(body, env1.resetApplies.stopBuilding)
+          val chanUsed = visitExp(chan, env1.resetApplies)
+          val bodyUsed = visitExp(body, env1.resetApplies)
 
           // Check if the variable symbol is dead in the body.
           if (deadVarSym(sym, bodyUsed))
-            (chanUsed ++ bodyUsed ++ shadowedVar) - sym + UnusedVarSym(sym)
+            (chanUsed and bodyUsed and shadowedVar) - sym + UnusedVarSym(sym)
           else
-            (chanUsed ++ bodyUsed ++ shadowedVar) - sym
+            (chanUsed and bodyUsed and shadowedVar) - sym
       }
 
-      rulesUsed.foldLeft(Used.empty ++ defaultUsed) {
-        case (acc, used) => acc ++ used
+      rulesUsed.foldLeft(defaultUsed) {
+        case (acc, used) => acc or used
       }
 
-    case Expression.ProcessSpawn(exp, _, _, _) => Used.empty ++ visitExp(exp, env0.resetApplies.stopBuilding)
+    case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, env0.resetApplies)
 
-    case Expression.ProcessSleep(exp, _, _, _) => Used.empty ++ visitExp(exp, env0.resetApplies.stopBuilding)
+    case Expression.ProcessSleep(exp, _, _, _) => visitExp(exp, env0.resetApplies)
 
     case Expression.ProcessPanic(msg, _, _, _) => Used.empty
 
     case Expression.FixpointConstraintSet(cs, _, _, _) =>
       cs.foldLeft(Used.empty) {
-        case (used, con) => used ++ visitConstraint(con, env0.resetApplies.stopBuilding)
+        case (used, con) => used and visitConstraint(con, env0.resetApplies)
       }
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
-      us1 ++ us2
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
+      us1 and us2
 
     case Expression.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp, env0.resetApplies.stopBuilding)
+      visitExp(exp, env0.resetApplies)
 
     case Expression.FixpointProject(sym, exp, _, _, _) =>
-      val us = visitExp(exp, env0.resetApplies.stopBuilding)
-      Used.of(sym) ++ us
+      val us = visitExp(exp, env0.resetApplies)
+      Used.of(sym) and us
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
-      val used1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val used2 = visitExp(exp2, env0.resetApplies.stopBuilding)
-      used1 ++ used2
+      val used1 = visitExp(exp1, env0.resetApplies)
+      val used2 = visitExp(exp2, env0.resetApplies)
+      used1 and used2
 
     case Expression.FixpointFold(sym, exp1, exp2, exp3, _, _, _) =>
-      val us1 = visitExp(exp1, env0.resetApplies.stopBuilding)
-      val us2 = visitExp(exp2, env0.resetApplies.stopBuilding)
-      val us3 = visitExp(exp3, env0.resetApplies.stopBuilding)
-      Used.of(sym) ++ us1 ++ us2 ++ us3
+      val us1 = visitExp(exp1, env0.resetApplies)
+      val us2 = visitExp(exp2, env0.resetApplies)
+      val us3 = visitExp(exp3, env0.resetApplies)
+      Used.of(sym) and us1 and us2 and us3
   }
 
   /**
@@ -607,7 +619,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitExps(es: List[Expression], env0: Env): Used =
     es.foldLeft(Used.empty) {
-      case (acc, exp) => acc ++ visitExp(exp, env0)
+      case (acc, exp) => acc and visitExp(exp, env0)
     }
 
   /**
@@ -616,7 +628,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitConstraint(c0: Constraint, env0: Env): Used = {
     val zero = visitHeadPred(c0.head, env0)
     val used = c0.body.foldLeft(zero) {
-      case (acc, b) => acc ++ visitBodyPred(b, env0)
+      case (acc, b) => acc and visitBodyPred(b, env0)
     }
     used -- c0.cparams.map(_.sym)
   }
@@ -626,7 +638,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
     case Head.Atom(sym, _, terms, _, _) =>
-      Used.of(sym) ++ visitExps(terms, env0)
+      Used.of(sym) and visitExps(terms, env0)
 
     case Head.Union(exp, _, _) =>
       visitExp(exp, env0)
@@ -756,7 +768,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, sym) => acc + sym
     }
 
-    def of(recursionContext: RecursionContext): Env = Env.empty.copy(recursionContext = Some(recursionContext))
+    def of(recursionContext: Option[RecursionContext]): Env = Env.empty.copy(recursionContext = recursionContext)
   }
 
   /**
@@ -773,18 +785,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Updates `this` environment with a set of new variable symbols `varSyms`.
       */
-    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.empty) {
+    def ++(vs: Iterable[Symbol.VarSym]): Env = vs.foldLeft(Env.of(recursionContext)) {
       case (acc, sym) => acc + sym
     }
 
-    // TODO docs, rename
-    def addParam: Env = copy(recursionContext = recursionContext.map(r => r.addParam))
-
+    // TODO docs
     def addApply: Env = copy(recursionContext = recursionContext.map(r => r.addApply))
 
     def resetApplies: Env = copy(recursionContext = recursionContext.map(r => r.resetApplies))
-
-    def stopBuilding: Env = copy(recursionContext = recursionContext.map(r => r.stopBuilding))
   }
 
   private object Used {
@@ -833,33 +841,10 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
                           errors: Set[RedundancyError]) {
+
     /**
-      * Merges `this` and `that`, using `this`'s `unconditionallyRecurses` value.
+      * Merges `this` and `that` where one of the two branches is executed
       */
-    def ++(that: Used): Used =
-      if (this eq that) {
-        this
-      } else if (this eq Used.empty) {
-        that
-      } else if (that eq Used.empty) {
-        this
-      } else {
-        Used(
-          this.enumSyms ++ that.enumSyms,
-          this.defSyms ++ that.defSyms,
-          this.predSyms ++ that.predSyms,
-          this.holeSyms ++ that.holeSyms,
-          this.varSyms ++ that.varSyms,
-          this.unconditionallyRecurses,
-          this.errors ++ that.errors
-        )
-      }
-
-
-    // TODO: rename
-    /**
-     * Merges `this` and `that` where one of the two branches is executed
-     */
     def or(that: Used): Used =
       if (this eq that) {
         this
@@ -880,8 +865,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
     /**
-     * Merges `this` and `that` where both branches are executed
-     */
+      * Merges `this` and `that` where both branches are executed
+      */
     def and(that: Used): Used =
       if (this eq that) {
         this
@@ -1002,20 +987,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-   * @param defn def whose context we are in
-   * @param params number of parameters required to execute recursion
-   * @param immediate true iff immediately after the def, or within a nested lambda immediately after the def
-   */
-  private case class RecursionContext(defn: Symbol.DefnSym, params: Int, immediate: Boolean, applies: Int) {
-    def addParam: RecursionContext = copy(params = params + 1)
+    * @param defn  def whose context we are in
+    * @param arity number of parameters required to execute recursion
+    */
+  private case class RecursionContext(defn: Symbol.DefnSym, arity: Int, applies: Int = 0) {
     def resetApplies: RecursionContext = copy(applies = 0)
-    def addApply: RecursionContext = copy(applies = applies + 1)
-    def stopBuilding: RecursionContext = copy(immediate = false)
-  }
 
-  private object RecursionContext {
-    def of(defn: Def): RecursionContext = {
-      RecursionContext(defn.sym, defn.fparams.size, immediate = true, applies = 0)
+    def addApply: RecursionContext = copy(applies = applies + 1)
+
+    def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
+      defn == call && applies == arity
     }
   }
+
 }
