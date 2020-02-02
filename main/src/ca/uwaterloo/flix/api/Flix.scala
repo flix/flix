@@ -103,17 +103,6 @@ class Flix {
     //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
     //"Vec.flix" -> LocalResource.get("/library/Vec.flix"),
 
-    "flix/actor/ActorBehavior.flix" -> LocalResource.get("/library/flix/actor/ActorBehavior.flix"),
-    "flix/actor/ActorDirectory.flix" -> LocalResource.get("/library/flix/actor/ActorDirectory.flix"),
-    "flix/actor/SystemEvent.flix" -> LocalResource.get("/library/flix/actor/SystemEvent.flix"),
-    "flix/actor/ActorPolicy.flix" -> LocalResource.get("/library/flix/actor/ActorPolicy.flix"),
-    "flix/actor/ActorResult.flix" -> LocalResource.get("/library/flix/actor/ActorResult.flix"),
-    "flix/actor/ActorSystem.flix" -> LocalResource.get("/library/flix/actor/ActorSystem.flix"),
-    "flix/actor/Mailbox.flix" -> LocalResource.get("/library/flix/actor/Mailbox.flix"),
-    "flix/actor/Message.flix" -> LocalResource.get("/library/flix/actor/Message.flix"),
-    "flix/actor/Ready.flix" -> LocalResource.get("/library/flix/actor/Ready.flix"),
-    "flix/actor/State.flix" -> LocalResource.get("/library/flix/actor/State.flix"),
-
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
     //"flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
