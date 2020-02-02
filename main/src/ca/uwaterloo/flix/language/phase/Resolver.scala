@@ -328,12 +328,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       } yield {
         val ts = attributes.map(_.tpe)
         val base = Type.Cst(TypeConstructor.Relation(sym)): Type
-        val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
-        val args = ts.foldLeft(init) {
-          case (acc, t) => Type.Apply(acc, t)
+        val args: Type = ts match {
+          case Nil => Type.Cst(TypeConstructor.Unit)
+          case x :: Nil => x
+          case l =>
+            val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
+            ts.foldLeft(init) {
+              case (acc, t) => Type.Apply(acc, t)
+            }
         }
-        val tpe = Type.Apply(base, args)
 
+        val tpe = Type.Apply(base, args)
         val quantifiers = tparams.map(_.tpe)
         val scheme = Scheme(quantifiers, tpe)
 
@@ -352,9 +357,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       } yield {
         val ts = attributes.map(_.tpe)
         val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-        val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
-        val args = ts.foldLeft(init) {
-          case (acc, t) => Type.Apply(acc, t)
+        val args: Type = ts match {
+          case Nil => Type.Cst(TypeConstructor.Unit)
+          case x :: Nil => x
+          case l =>
+            val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
+            ts.foldLeft(init) {
+              case (acc, t) => Type.Apply(acc, t)
+            }
         }
         val tpe = Type.Apply(base, args)
 
@@ -1770,17 +1780,27 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   private def mkRelationOrLattice(predSym: Symbol.PredSym, tparams: List[NamedAst.TypeParam], ts: List[Type]): Type = predSym match {
     case sym: Symbol.RelSym =>
       val base = Type.Cst(TypeConstructor.Relation(sym)): Type
-      val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
-      val args = ts.foldLeft(init) {
-        case (acc, t) => Type.Apply(acc, t)
+      val args: Type = ts match {
+        case Nil => Type.Cst(TypeConstructor.Unit)
+        case x :: Nil => x
+        case l =>
+          val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
+          ts.foldLeft(init) {
+            case (acc, t) => Type.Apply(acc, t)
+          }
       }
       mkTypeLambda(tparams, Type.Apply(base, args))
 
     case sym: Symbol.LatSym =>
       val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-      val init = Type.Cst(TypeConstructor.Tuple(ts.length)): Type
-      val args = ts.foldLeft(init) {
-        case (acc, t) => Type.Apply(acc, t)
+      val args: Type = ts match {
+        case Nil => Type.Cst(TypeConstructor.Unit)
+        case x :: Nil => x
+        case l =>
+          val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
+          ts.foldLeft(init) {
+            case (acc, t) => Type.Apply(acc, t)
+          }
       }
       mkTypeLambda(tparams, Type.Apply(base, args))
   }

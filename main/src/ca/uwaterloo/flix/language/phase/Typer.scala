@@ -1280,21 +1280,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // ---------------------------------------------------
         // fold P init f constraints : b
         //
-        val freshPredicateTypeVar = Type.freshTypeVar()
+        val freshPredicateNameTypeVar = Type.freshTypeVar()
+        val tupleType = Type.freshTypeVar()
         val freshRestTypeVar = Type.freshTypeVar()
         for {
           (initType, eff1) <- visitExp(init)
           (fType, eff2) <- visitExp(f)
           (constraintsType, eff3) <- visitExp(constraints)
-          // constraints should have the form {pred.sym : freshPredicateTypeVar | freshRestTypeVar}
-          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestTypeVar), loc)
-          tupleType = sym match {
-            case rel: Symbol.RelSym =>
-              Type.mkTuple(program.relations(rel).attr.map(a => a.tpe))
-            case lat: Symbol.LatSym =>
-              /* TODO: what should be done in this case? */
-              ???
-          }
+          // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
+          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
@@ -1941,12 +1935,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     sym match {
       case sym: Symbol.RelSym =>
         val base = Type.Cst(TypeConstructor.Relation(sym)): Type
-        val args = Type.mkTuple(ts)
+        val args = ts match {
+          case Nil => mkUnitType()
+          case x :: Nil => x
+          case l => Type.mkTuple(l)
+        }
         Type.Apply(base, args)
 
       case sym: Symbol.LatSym =>
         val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-        val args = Type.mkTuple(ts)
+        val args = ts match {
+          case Nil => mkUnitType()
+          case x :: Nil => x
+          case l => Type.mkTuple(l)
+        }
         Type.Apply(base, args)
     }
   }

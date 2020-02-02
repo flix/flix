@@ -36,13 +36,13 @@ object PrettyPrinter {
         }
         vt << ") = "
         vt << Indent << NewLine
-        fmtExp(defn, vt)
+        fmtDef(defn, vt)
         vt << Dedent << NewLine << NewLine
       }
       vt
     }
 
-    def fmtExp(defn: SimplifiedAst.Def, vt: VirtualTerminal): Unit = {
+    def fmtDef(defn: SimplifiedAst.Def, vt: VirtualTerminal): Unit = {
       fmtExp(defn.exp, vt)
     }
 
@@ -493,8 +493,14 @@ object PrettyPrinter {
         case Expression.ProcessPanic(msg, tpe, loc) =>
           vt.text("!!! " + msg)
 
-        case Expression.FixpointConstraintSet(c, tpe, loc) =>
-          vt.text("<constraintset>")
+        case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+          vt.text("#{")
+          for (c <- cs) {
+            vt.text(" ")
+            fmtConstraint(c, vt)
+            vt.text(" ")
+          }
+          vt.text("}")
 
         case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
           visitExp(exp1)
@@ -532,6 +538,54 @@ object PrettyPrinter {
       }
 
       visitExp(exp0)
+    }
+
+    def fmtConstraint(c0: Constraint, vt: VirtualTerminal): Unit = {
+      if (c0.body.isEmpty) {
+        fmtHeadAtom(c0.head, vt)
+      } else {
+        fmtHeadAtom(c0.head, vt)
+        vt.text(" :- ")
+        for (b <- c0.body) {
+          fmtBodyAtom(b, vt)
+        }
+      }
+      vt.text(".")
+    }
+
+    def fmtHeadAtom(p0: Predicate.Head, vt: VirtualTerminal): Unit = p0 match {
+      case Predicate.Head.Atom(sym, _, terms, _, _) =>
+        vt.text(sym.toString)
+        vt.text("(")
+        for (term <- terms) {
+          fmtHeadTerm(term, vt)
+          vt.text(", ")
+        }
+        vt.text(")")
+
+      case Predicate.Head.Union(exp, _, _) =>
+        vt.text("union")
+        vt.text(" ")
+        fmtExp(exp, vt)
+
+    }
+
+    def fmtBodyAtom(p0: Predicate.Body, vt: VirtualTerminal): Unit = {
+      vt.text("<body>")
+    }
+
+    def fmtHeadTerm(t0: Term.Head, vt: VirtualTerminal): Unit = t0 match {
+      case Term.Head.QuantVar(sym, _, _) =>
+        fmtSym(sym, vt)
+
+      case Term.Head.CapturedVar(sym, _, _) =>
+        fmtSym(sym, vt)
+
+      case Term.Head.Lit(lit, _, _) =>
+        fmtExp(lit, vt)
+
+      case Term.Head.App(exp, args, _, _) =>
+        vt.text("app")
     }
 
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {

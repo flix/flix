@@ -607,6 +607,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           case Pattern.Int64(lit, loc) => Pattern.Int64(lit, loc)
           case Pattern.BigInt(lit, loc) => Pattern.BigInt(lit, loc)
           case Pattern.Str(lit, loc) => Pattern.Str(lit, loc)
+          case Pattern.Tag(sym, tag, p, tpe, loc) => Pattern.Tag(sym, tag, visitPatTemporaryToBeRemoved(p), subst0(tpe), loc)
           case _ => throw InternalCompilerException(s"Pattern not allowed here $pat.")
         }
 
