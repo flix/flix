@@ -486,9 +486,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp, env0)
 
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      visitExps(args, env0)
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0)
       val usedRules = rules.foldLeft(Used.empty) {
@@ -501,11 +498,26 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       usedExp ++ usedRules
 
-    case Expression.NativeField(_, _, _, _) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      visitExps(args, env0)
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp, env0) ++ visitExps(args, env0)
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      visitExps(args, env0)
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      visitExp(exp, env0)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+    case Expression.GetStaticField(_, _, _, _) =>
       Used.empty
 
-    case Expression.NativeMethod(_, args, _, _, _) =>
-      Used.empty ++ visitExps(args, env0)
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      visitExp(exp, env0)
 
     case Expression.NewChannel(exp, _, _, _) =>
       Used.empty ++ visitExp(exp, env0)

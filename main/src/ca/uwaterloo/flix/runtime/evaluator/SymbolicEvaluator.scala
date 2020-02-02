@@ -837,25 +837,23 @@ object SymbolicEvaluator {
           case value => eval(pc0, exp, env0 + (fparam.sym -> value), lenv0, qua0 + (fparam.sym -> value))
         }
 
-      /**
-        * Try Catch.
-        */
+      case Expression.Cast(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.TryCatch(exp, rules, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Native Constructor.
-        */
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Native Field.
-        */
-      case Expression.NativeField(field, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Native Method.
-        */
-      case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.GetField(field, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.GetStaticField(field, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.PutStaticField(field, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.NewChannel(tpe, exp, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.GetChannel(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")

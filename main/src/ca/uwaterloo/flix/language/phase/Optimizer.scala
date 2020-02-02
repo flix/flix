@@ -44,25 +44,30 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the given expression `exp0` and substitution map `env0`.
       */
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = exp0 match {
-      // 
-      // Literal Expressions.
-      //
       case Expression.Unit => exp0
+
       case Expression.True => exp0
+
       case Expression.False => exp0
+
       case Expression.Char(lit) => exp0
+
       case Expression.Float32(lit) => exp0
+
       case Expression.Float64(lit) => exp0
+
       case Expression.Int8(lit) => exp0
+
       case Expression.Int16(lit) => exp0
+
       case Expression.Int32(lit) => exp0
+
       case Expression.Int64(lit) => exp0
+
       case Expression.BigInt(lit) => exp0
+
       case Expression.Str(lit) => exp0
 
-      //
-      // Variable Expressions.
-      //
       case Expression.Var(sym, tpe, loc) =>
         // Lookup to see if the variable should be replaced by a copy.
         env0.get(sym) match {
@@ -70,94 +75,55 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case Some(srcSym) => Expression.Var(srcSym, tpe, loc)
         }
 
-      //
-      // Def Expressions.
-      //
       case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
-      //
-      // Eff Expressions.
-      //
       case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
 
-      //
-      // Closure Expressions.
-      //
       case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
           case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), varType)
         }
         Expression.Closure(sym, fvs, tpe, loc)
 
-      //
-      // ApplyClo Expressions.
-      //
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
         Expression.ApplyClo(e, as, tpe, loc)
 
-      //
-      // ApplyDef Expressions.
-      //
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyDef(sym, as, tpe, loc)
 
-      //
-      // ApplyEff Expressions.
-      //
       case Expression.ApplyEff(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyEff(sym, as, tpe, loc)
 
-      //
-      // ApplyCloTail Expressions.
-      //
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
         Expression.ApplyCloTail(e, as, tpe, loc)
 
-      //
-      // ApplyDefTail Expressions.
-      //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyDefTail(sym, as, tpe, loc)
 
-      //
-      // ApplyEffTail Expressions.
-      //
       case Expression.ApplyEffTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyEffTail(sym, as, tpe, loc)
 
-      //
-      // ApplySelfTail Expressions.
-      //
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         val as = actuals map (visitExp(_, env0))
         Expression.ApplySelfTail(sym, formals, as, tpe, loc)
 
-      //
-      // Unary Expressions.
-      //
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Unary(sop, op, e, tpe, loc)
 
-      //
-      // Binary Expressions.
-      //
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Binary(sop, op, e1, e2, tpe, loc)
 
-      //
-      // If-then-else Expressions.
-      //
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Eliminate dead branches, if possible.
         val cond = visitExp(exp1, env0)
@@ -169,9 +135,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _ => Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
         }
 
-      //
-      // Block Expressions.
-      //
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visitExp(exp, env0)
         val bs = branches map {
@@ -179,15 +142,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         Expression.Branch(e, bs, tpe, loc)
 
-      //
-      // Jump Expressions.
-      //
       case Expression.JumpTo(sym, tpe, loc) =>
         Expression.JumpTo(sym, tpe, loc)
 
-      //
-      // Let Expressions.
-      //
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         // Visit the value expression.
         val e1 = visitExp(exp1, env0)
@@ -203,150 +160,90 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             Expression.Let(sym, e1, e2, tpe, loc)
         }
 
-      //
-      // LetRec Expressions.
-      //
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.LetRec(sym, e1, e2, tpe, loc)
 
-      //
-      // Is Expressions.
-      //
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visitExp(exp, env0)
         Expression.Is(sym, tag, e, loc)
 
-      //
-      // Tag Expressions.
-      //
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Tag(sym, tag, e, tpe, loc)
 
-      //
-      // Check if this is a single-case enum subject to elimination.
-      //
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Untag(sym, tag, e, tpe, loc)
 
-      //
-      // Index Expressions.
-      //
       case Expression.Index(base, offset, tpe, loc) =>
         val b = visitExp(base, env0)
         Expression.Index(b, offset, tpe, loc)
 
-      //
-      // Tuple Expressions.
-      //
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))
         Expression.Tuple(es, tpe, loc)
 
-      //
-      // RecordEmpty Expressions.
-      //
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
 
-      //
-      // RecordSelect Expressions.
-      //
       case Expression.RecordSelect(exp, label, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.RecordSelect(e, label, tpe, loc)
 
-      //
-      // RecordExtend Expressions.
-      //
       case Expression.RecordExtend(label, value, rest, tpe, loc) =>
         val v = visitExp(value, env0)
         val r = visitExp(rest, env0)
         Expression.RecordExtend(label, v, r, tpe, loc)
 
-      //
-      // RecordRestrict Expressions.
-      //
       case Expression.RecordRestrict(label, rest, tpe, loc) =>
         val r = visitExp(rest, env0)
         Expression.RecordRestrict(label, r, tpe, loc)
 
-      //
-      // ArrayLit Expressions.
-      //
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))
         Expression.ArrayLit(es, tpe, loc)
 
-      //
-      // ArrayNew Expressions.
-      //
       case Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = visitExp(elm, env0)
         val ln = visitExp(len, env0)
         Expression.ArrayNew(e, ln, tpe, loc)
 
-      //
-      // ArrayLoad Expressions.
-      //
       case Expression.ArrayLoad(base, index, tpe, loc) =>
         val b = visitExp(base, env0)
         val i = visitExp(index, env0)
         Expression.ArrayLoad(b, i, tpe, loc)
 
-      //
-      // ArrayStore Expressions.
-      //
       case Expression.ArrayStore(base, index, elm, tpe, loc) =>
         val b = visitExp(base, env0)
         val i = visitExp(index, env0)
         val e = visitExp(elm, env0)
         Expression.ArrayStore(b, i, e, tpe, loc)
 
-      //
-      // ArraySlice Expressions.
-      //
       case Expression.ArrayLength(base, tpe, loc) =>
         val b = visitExp(base, env0)
         Expression.ArrayLength(b, tpe, loc)
 
-      //
-      // ArraySlice Expressions.
-      //
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         val b = visitExp(base, env0)
         val i1 = visitExp(startIndex, env0)
         val i2 = visitExp(endIndex, env0)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-      //
-      // Reference Expressions.
-      //
       case Expression.Ref(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Ref(e, tpe, loc)
 
-      //
-      // Dereference Expressions.
-      //
       case Expression.Deref(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.Deref(e, tpe, loc)
 
-      //
-      // Assign Expressions.
-      //
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
 
-      //
-      // HandleWith Expressions.
-      //
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visitExp(exp, env0)
         val bs = bindings map {
@@ -354,23 +251,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         Expression.HandleWith(e, bs, tpe, loc)
 
-      //
-      // Existential Expressions.
-      //
       case Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp, env0)
         Expression.Existential(fparam, e, loc)
 
-      //
-      // Universal Expressions.
-      //
       case Expression.Universal(fparam, exp, loc) =>
         val e = visitExp(exp, env0)
         Expression.Universal(fparam, e, loc)
 
-      //
-      // Try Catch Constructor.
-      //
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Cast(e, tpe, loc)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp, env0)
         val rs = rules map {
@@ -380,51 +272,48 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         Expression.TryCatch(e, rs, tpe, loc)
 
-      //
-      // Native Constructor.
-      //
-      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
-        Expression.NativeConstructor(constructor, as, tpe, loc)
+        Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      //
-      // Native Field.
-      //
-      case Expression.NativeField(field, tpe, loc) =>
-        Expression.NativeField(field, tpe, loc)
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        val as = args.map(visitExp(_, env0))
+        Expression.InvokeMethod(method, e, as, tpe, loc)
 
-      //
-      // Native Method.
-      //
-      case Expression.NativeMethod(method, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.NativeMethod(method, as, tpe, loc)
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp(_, env0))
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
 
-      //
-      // New Channel.
-      //
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        Expression.GetStaticField(field, tpe, loc)
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.PutStaticField(field, e, tpe, loc)
+
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.NewChannel(e, tpe, loc)
 
-      //
-      // Get Channel.
-      //
       case Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.GetChannel(e, tpe, loc)
 
-      //
-      // Put Channel.
-      //
       case Expression.PutChannel(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.PutChannel(e1, e2, tpe, loc)
 
-      //
-      // Select Channel.
-      //
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
           case SelectChannelRule(sym, chan, exp) =>
@@ -437,84 +326,55 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
         Expression.SelectChannel(rs, d, tpe, loc)
 
-      //
-      // ProcessSpawn.
-      //
       case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.ProcessSpawn(e, tpe, loc)
 
-      //
-      // ProcessSleep.
-      //
       case Expression.ProcessSleep(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.ProcessSleep(e, tpe, loc)
 
-      //
-      // ProcessPanic.
-      //
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
 
-      //
-      // ConstraintSet.
-      //
       case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint(_, env0))
         Expression.FixpointConstraintSet(cs, tpe, loc)
 
-      //
-      // Constraint Union.
-      //
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.FixpointCompose(e1, e2, tpe, loc)
 
-      //
-      // Fixpoint Solve.
-      //
       case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.FixpointSolve(e, stf, tpe, loc)
 
-      //
-      // Fixpoint Project.
-      //
       case Expression.FixpointProject(sym, exp, tpe, loc) =>
         val e = visitExp(exp, env0)
         Expression.FixpointProject(sym, e, tpe, loc)
 
-      //
-      // Fixpoint Entails.
-      //
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      //
-      // Fixpoint Fold.
-      //
       case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         val e3 = visitExp(exp3, env0)
         Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
 
-      //
-      // Error Expressions.
-      //
       case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
+
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
+
       case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
 
-      //
-      // Unexpected Expressions.
-      //
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+
       case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 

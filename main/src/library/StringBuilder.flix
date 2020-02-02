@@ -17,7 +17,7 @@
 ///
 /// Represents a StringBuilder.
 ///
-opaque type StringBuilder = ##flix.runtime.library.StringBuilderWrapper
+opaque type StringBuilder = ##java.lang.StringBuilder
 
 namespace StringBuilder {
 
@@ -25,106 +25,118 @@ namespace StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def new(): StringBuilder =
-        let msb = native new flix.runtime.library.StringBuilderWrapper();
-        StringBuilder(msb)
+        import new java.lang.StringBuilder() as newStringBuilder;
+        StringBuilder(newStringBuilder())
 
     ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder): Str =
+        import java.lang.StringBuilder.toString();
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.toString(msb) as Str
+        msb.toString()
 
     ///
     /// Append the StringBuilder `sb1` to the end of StringBuilder `sb`.
     ///
     pub def append(sb: StringBuilder, sb1: StringBuilder): Unit =
-        let StringBuilder(msb) = sb;
-        let s1: Str = toString(sb1);
-        native method flix.runtime.library.StringBuilderWrapper.appendString(msb, s1) as Unit
+        // TODO: Not efficient.
+        sb.appendString(toString(sb1))
 
     ///
-    /// Append the String `s` to the StringBuffer `sb`.
+    /// Append the String `s` to the StringBuilder `sb`.
     ///
-    pub def appendString(sb: StringBuilder, s: Str): Unit =
+    pub def appendString(sb: StringBuilder, s: String): Unit =
+        import java.lang.StringBuilder.append(String);
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendString(msb, s) as Unit
+        msb.append(s);
+        ()
 
     ///
-    /// Append the Char `c` to the StringBuffer `sb`.
+    /// Append the Char `c` to the StringBuilder `sb`.
     ///
     pub def appendChar(sb: StringBuilder, c: Char): Unit =
+        import java.lang.StringBuilder.append(Char);
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendChar(msb, c) as Unit
+        msb.append(c); 
+        ()
 
     ///
-    /// Append the Int8 `i` to the StringBuffer `sb`.
+    /// Append the Int8 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt8(sb: StringBuilder, i: Int8): Unit =
-        let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendByte(msb, i) as Unit
+        sb.appendString(Int8.toString(i));
+        ()
 
     ///
-    /// Append the Int16 `i` to the StringBuffer `sb`.
+    /// Append the Int16 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt16(sb: StringBuilder, i: Int16): Unit =
-        let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendShort(msb, i) as Unit
+        sb.appendString(Int16.toString(i));
+        ()
 
     ///
-    /// Append the Int32 `i` to the StringBuffer `sb`.
+    /// Append the Int32 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt32(sb: StringBuilder, i: Int32): Unit =
+        import java.lang.StringBuilder.append(Int32);
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendInt(msb, i) as Unit
+        msb.append(i);
+        ()
 
     ///
-    /// Append the Int64 `i` to the StringBuffer `sb`.
+    /// Append the Int64 `i` to the StringBuilder `sb`.
     ///
     pub def appendInt64(sb: StringBuilder, i: Int64): Unit =
+        import java.lang.StringBuilder.append(Int64);
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendLong(msb, i) as Unit
+        msb.append(i);
+        ()
 
     ///
-    /// Append the BigInt `i` to the StringBuffer `sb`.
+    /// Append the BigInt `i` to the StringBuilder `sb`.
     ///
     pub def appendBigInt(sb: StringBuilder, i: BigInt): Unit =
-        let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendBigInteger(msb, i) as Unit
+        sb.appendString(BigInt.toString(i));
+        ()
 
     ///
-    /// Append the Float32 `d` to the StringBuffer `sb`.
+    /// Append the Float32 `d` to the StringBuilder `sb`.
     ///
     pub def appendFloat32(sb: StringBuilder, d: Float32): Unit =
+        import java.lang.StringBuilder.append(Float32);
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendFloat(msb, d) as Unit
+        msb.append(d);
+        ()
 
     ///
-    /// Append the Float64 `d` to the StringBuffer `sb`.
+    /// Append the Float64 `d` to the StringBuilder `sb`.
     ///
     pub def appendFloat64(sb: StringBuilder, d: Float64): Unit =
+        import java.lang.StringBuilder.append(Float64);
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendDouble(msb, d) as Unit
+        msb.append(d);
+        ()
 
     ///
-    /// Append the system line separator to the StringBuffer `sb`.
+    /// Append the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLineSeparator(sb: StringBuilder): Unit =
-        let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.appendLineSeparator(msb) as Unit
+        sb.appendString(String.lineSeparator())
 
     ///
-    /// Append the String `s` followed by the system line separator to the StringBuffer `sb`.
+    /// Append the String `s` followed by the system line separator to the StringBuilder `sb`.
     ///
     pub def appendLine(sb: StringBuilder, s: Str) : Unit =
-        appendString(sb, s);
-        appendLineSeparator(sb)
+        sb.appendString(s);
+        sb.appendLineSeparator()
 
     ///
-    /// Return the length of the StringBuffer `sb`.
+    /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder): Int32 =
+        import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        native method flix.runtime.library.StringBuilderWrapper.length(msb) as Int32
+        msb.length()
 
 }

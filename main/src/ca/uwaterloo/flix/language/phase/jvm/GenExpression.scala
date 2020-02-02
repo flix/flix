@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.reflect.Modifier
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -537,12 +535,13 @@ object GenExpression {
       // We push the 'length' of the array on top of stack
       compileInt(visitor, elms.length, isLong = false)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+      val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
       // Instantiating a new array of type jvmType
-      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else { // Happens if the inner type is a primitive type
-        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+      jvmType match {
+        case ref: JvmType.Reference => // Happens if the inner type is an object type
+          visitor.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
+        case _ => // Happens if the inner type is a primitive type
+          visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // For each element we generate code to store it into the array
       for (i <- 0 until elms.length) {
@@ -738,6 +737,11 @@ object GenExpression {
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
+    case Expression.Cast(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
       addSourceLine(visitor, loc)
@@ -785,7 +789,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       visitor.visitLabel(afterTryAndCatch)
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val descriptor = asm.Type.getConstructorDescriptor(constructor)
@@ -808,40 +812,84 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.NativeField(field, tpe, loc) =>
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // Fetch a field from an object
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      val name = field.getName
-      // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
-      val getInsn = if (Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
-      visitor.visitFieldInsn(getInsn, declaration, name, JvmOps.getJvmType(tpe).toDescriptor)
 
-    case Expression.NativeMethod(method, args, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
+      // Evaluate the receiver object.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+      visitor.visitTypeInsn(CHECKCAST, thisType)
+
+      // Retrieve the signature.
+      val signature = method.getParameterTypes
+
       // Evaluate arguments left-to-right and push them onto the stack.
-      for ((arg, index) <- args.zipWithIndex) {
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-
-        // Cast the this parameter.
-        if (index == 0 && !Modifier.isStatic(method.getModifiers)) {
-          val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-          visitor.visitTypeInsn(CHECKCAST, thisType)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
         }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
-      // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
-      val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
-      visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      val signature = method.getParameterTypes
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
+      }
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+      visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
+      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+          AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
+      }
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
+
+      // Push Unit on the stack.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
+
+      // Push Unit on the stack.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)

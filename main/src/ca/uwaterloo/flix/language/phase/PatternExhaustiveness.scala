@@ -82,7 +82,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case class Tuple(args: List[TyCon]) extends TyCon
 
-    case object Array  extends TyCon
+    case object Array extends TyCon
 
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
@@ -301,13 +301,38 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
             _ <- sequence(rules.map(r => checkPats(r.exp, root)))
           } yield tast
-        case Expression.NativeConstructor(_, args, _, _, _) => sequence(args map {
+
+        case Expression.InvokeConstructor(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
-        case Expression.NativeField(_, _, _, _) => tast.toSuccess
-        case Expression.NativeMethod(_, args, _, _, _) => sequence(args map {
-          checkPats(_, root)
-        }).map(const(tast))
+
+        case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+            _ <- sequence(args.map(checkPats(_, root)))
+          } yield tast
+
+        case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+          for {
+            _ <- sequence(args.map(checkPats(_, root)))
+          } yield tast
+
+        case Expression.GetField(_, exp, _, _, _) =>
+          checkPats(exp, root)
+
+        case Expression.PutField(_, exp1, exp2, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
+
+        case Expression.GetStaticField(_, _, _, _) =>
+          tast.toSuccess
+
+        case Expression.PutStaticField(_, exp, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
 
         case Expression.NewChannel(exp, _, _, _) => for {
           _ <- checkPats(exp, root)
@@ -812,8 +837,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
       case Pattern.Array(elm, _, _) => TyCon.Array
-      case Pattern.ArrayTailSpread (elm, _, _, _) => TyCon.Array
-      case Pattern.ArrayHeadSpread (_, elm ,_ ,_) => TyCon.Array
+      case Pattern.ArrayTailSpread(elm, _, _, _) => TyCon.Array
+      case Pattern.ArrayHeadSpread(_, elm, _, _) => TyCon.Array
     }
 
     /**

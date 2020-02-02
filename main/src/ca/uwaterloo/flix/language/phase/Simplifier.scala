@@ -82,20 +82,35 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+
       case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
+
       case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
+
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
+
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
+
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
+
       case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
+
       case TypedAst.Expression.Char(lit, loc) => SimplifiedAst.Expression.Char(lit)
+
       case TypedAst.Expression.Float32(lit, loc) => SimplifiedAst.Expression.Float32(lit)
+
       case TypedAst.Expression.Float64(lit, loc) => SimplifiedAst.Expression.Float64(lit)
+
       case TypedAst.Expression.Int8(lit, loc) => SimplifiedAst.Expression.Int8(lit)
+
       case TypedAst.Expression.Int16(lit, loc) => SimplifiedAst.Expression.Int16(lit)
+
       case TypedAst.Expression.Int32(lit, loc) => SimplifiedAst.Expression.Int32(lit)
+
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
+
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
+
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
 
       case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
@@ -489,7 +504,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
-      case TypedAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
+      case TypedAst.Expression.Cast(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Cast(e, tpe, loc)
 
       case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -500,16 +517,34 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, loc)
 
-      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-        val es = args.map(e => visitExp(e))
-        SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
+      case TypedAst.Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      case TypedAst.Expression.NativeField(field, tpe, eff, loc) =>
-        SimplifiedAst.Expression.NativeField(field, tpe, loc)
+      case TypedAst.Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeMethod(method, e, as, tpe, loc)
 
-      case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) =>
-        val es = args.map(e => visitExp(e))
-        SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+      case TypedAst.Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case TypedAst.Expression.GetField(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.GetField(field, e, tpe, loc)
+
+      case TypedAst.Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.PutField(field, e1, e2, tpe, loc)
+
+      case TypedAst.Expression.GetStaticField(field, tpe, eff, loc) =>
+        SimplifiedAst.Expression.GetStaticField(field, tpe, loc)
+
+      case TypedAst.Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.PutStaticField(field, e, tpe, loc)
 
       case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -1189,53 +1224,81 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
     def visitExp(e: SimplifiedAst.Expression): SimplifiedAst.Expression = e match {
       case SimplifiedAst.Expression.Unit => e
+
       case SimplifiedAst.Expression.True => e
+
       case SimplifiedAst.Expression.False => e
+
       case SimplifiedAst.Expression.Char(lit) => e
+
       case SimplifiedAst.Expression.Float32(lit) => e
+
       case SimplifiedAst.Expression.Float64(lit) => e
+
       case SimplifiedAst.Expression.Int8(lit) => e
+
       case SimplifiedAst.Expression.Int16(lit) => e
+
       case SimplifiedAst.Expression.Int32(lit) => e
+
       case SimplifiedAst.Expression.Int64(lit) => e
+
       case SimplifiedAst.Expression.BigInt(lit) => e
+
       case SimplifiedAst.Expression.Str(lit) => e
+
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => m.get(sym) match {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
+
       case SimplifiedAst.Expression.Def(sym, tpe, loc) => e
+
       case SimplifiedAst.Expression.Eff(sym, tpe, loc) => e
+
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(fparams, visitExp(body), tpe, loc)
+
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(visitExp(exp), args.map(visitExp), tpe, loc)
+
       case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
         SimplifiedAst.Expression.Unary(sop, op, visitExp(exp), tpe, loc)
+
       case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc)
+
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
+
       case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
         val e = visitExp(exp)
         val bs = branches map {
           case (sym, br) => sym -> br
         }
         SimplifiedAst.Expression.Branch(e, bs, tpe, loc)
+
       case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
         SimplifiedAst.Expression.JumpTo(sym, tpe, loc)
+
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+
       case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         SimplifiedAst.Expression.Is(sym, tag, visitExp(exp), loc)
+
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, visitExp(exp), tpe, loc)
+
       case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
         SimplifiedAst.Expression.Untag(sym, tag, visitExp(exp), tpe, loc)
+
       case SimplifiedAst.Expression.Index(exp, offset, tpe, loc) =>
         SimplifiedAst.Expression.Index(visitExp(exp), offset, tpe, loc)
+
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visitExp), tpe, loc)
 
@@ -1257,32 +1320,49 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms.map(visitExp), tpe, loc)
+
       case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
         SimplifiedAst.Expression.ArrayNew(visitExp(elm), visitExp(len), tpe, loc)
+
       case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLoad(visitExp(base), visitExp(index), tpe, loc)
+
       case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
         SimplifiedAst.Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(elm), tpe, loc)
+
       case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLength(visitExp(base), tpe, loc)
+
       case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         SimplifiedAst.Expression.ArraySlice(visitExp(base), visitExp(startIndex), visitExp(endIndex), tpe, loc)
+
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visitExp(exp), tpe, loc)
+
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Deref(visitExp(exp), tpe, loc)
+
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
+
       case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visitExp(exp)
         val bs = bindings map {
           case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
         }
         SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
+
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
-        SimplifiedAst.Expression.Existential(params, visitExp(exp), loc)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Existential(params, e, loc)
+
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
-        SimplifiedAst.Expression.Universal(params, visitExp(exp), loc)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Universal(params, e, loc)
+
+      case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Cast(e, tpe, loc)
 
       case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
@@ -1293,16 +1373,34 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         SimplifiedAst.Expression.TryCatch(e, rs, tpe, loc)
 
-      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visitExp
-        SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
+      case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
-        SimplifiedAst.Expression.NativeField(field, tpe, loc)
+      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeMethod(method, e, as, tpe, loc)
 
-      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args map visitExp
-        SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+      case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        SimplifiedAst.Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case SimplifiedAst.Expression.GetField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.GetField(field, e, tpe, loc)
+
+      case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.PutField(field, e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.GetStaticField(field, tpe, loc) =>
+        exp0
+
+      case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.PutStaticField(field, e, tpe, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -1369,17 +1467,27 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
+
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
+
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
       case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 

@@ -49,16 +49,27 @@ object PrettyPrinter {
     def fmtExp(exp0: Expression, vt: VirtualTerminal): Unit = {
       def visitExp(e0: Expression): Unit = e0 match {
         case Expression.Unit => vt.text("Unit")
+
         case Expression.True => vt.text("true")
+
         case Expression.False => vt.text("false")
+
         case Expression.Char(lit) => vt.text("'").text(lit.toString).text("'")
+
         case Expression.Float32(lit) => vt.text(lit.toString).text("f32")
+
         case Expression.Float64(lit) => vt.text(lit.toString).text("f32")
+
         case Expression.Int8(lit) => vt.text(lit.toString).text("i8")
+
         case Expression.Int16(lit) => vt.text(lit.toString).text("i16")
+
         case Expression.Int32(lit) => vt.text(lit.toString).text("i32")
+
         case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
+
         case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
+
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
@@ -366,6 +377,11 @@ object PrettyPrinter {
           vt.text("). ")
           visitExp(exp)
 
+        case Expression.Cast(exp, tpe, loc) =>
+          visitExp(exp)
+          vt.text(" as ")
+          vt.text(tpe.toString)
+
         case Expression.TryCatch(exp, rules, tpe, loc) =>
           vt << "try {" << Indent << NewLine
           visitExp(exp)
@@ -379,7 +395,7 @@ object PrettyPrinter {
           }
           vt << Dedent << NewLine << "}" << NewLine
 
-        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
           vt.text(constructor.toString)
           vt.text("(")
           for (e <- args) {
@@ -388,9 +404,9 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NativeField(field, tpe, loc) => vt << field.toString
-
-        case Expression.NativeMethod(method, args, tpe, loc) =>
+        case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text(".")
           vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
           vt.text("(")
           for (e <- args) {
@@ -398,6 +414,39 @@ object PrettyPrinter {
             vt.text(", ")
           }
           vt.text(")")
+
+        case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
+          vt.text("(")
+          for (e <- args) {
+            visitExp(e)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.GetField(field, exp, tpe, loc) =>
+          vt.text("get field ")
+          vt.text(field.getName)
+          vt.text(" of ")
+          visitExp(exp)
+
+        case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+          vt.text("put field ")
+          vt.text(field.getName)
+          vt.text(" of ")
+          visitExp(exp1)
+          vt.text(" value ")
+          visitExp(exp2)
+
+        case Expression.GetStaticField(field, tpe, loc) =>
+          vt.text("get static field ")
+          vt.text(field.getName)
+
+        case Expression.PutStaticField(field, exp, tpe, loc) =>
+          vt.text("put static field ")
+          vt.text(field.getName)
+          vt.text(" value ")
+          visitExp(exp)
 
         case Expression.NewChannel(exp, tpe, loc) =>
           vt.text("Channel")

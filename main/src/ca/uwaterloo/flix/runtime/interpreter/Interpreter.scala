@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
-import java.lang.reflect.{InvocationTargetException, Modifier}
 import java.util.function
 
 import ca.uwaterloo.flix.api._
@@ -233,28 +232,28 @@ object Interpreter {
           throw ex
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    case Expression.NativeField(field, tpe, loc) =>
-      val clazz = field.getDeclaringClass
-      fromJava(field.get(clazz))
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      ??? // TODO
 
-    case Expression.NativeMethod(method, args, tpe, loc) => try {
-      val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
-      if (Modifier.isStatic(method.getModifiers)) {
-        val arguments = values.toArray
-        fromJava(method.invoke(null, arguments: _*))
-      } else {
-        val thisObj = values.head
-        val arguments = values.tail.toArray
-        fromJava(method.invoke(thisObj, arguments: _*))
-      }
-    } catch {
-      case ex: InvocationTargetException => throw ex.getTargetException
-    }
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      ??? //TODO
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      ??? // TODO
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val size = cast2int32(eval(exp, env0, henv0, lenv0, root))
@@ -387,6 +386,8 @@ object Interpreter {
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+
+    case Expression.Cast(exp, tpe, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
   /**
