@@ -49,10 +49,17 @@ namespace Validation {
     // TODO: foldLeft, foldRight
     // TODO: getOrElse
     // TODO: leftMap
-    // TODO: map
+
+    ///
+    /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.
+    ///
+    pub def map(f: t -> u, v: Validation[t, e]): Validation[u, e] = match v {
+        case Success(t) => Success(f(t))
+        case Failure(e) => Failure(e)
+    }
+
     // TODO: orElse
 
-    // TODO: swap
     // TODO: traverse
 
 
@@ -68,7 +75,7 @@ namespace Validation {
     }
 
     ///
-    /// Converts the Validation to an Option.
+    /// Converts a Validation to an Option.
     ///
     /// Returns `Some(t)` if `v` is `Success(t)`.
     /// Returns `None` otherwise.
@@ -79,7 +86,7 @@ namespace Validation {
     }
 
     ///
-    /// Converts the Validation to a Result.
+    /// Converts a Validation to a Result.
     ///
     /// Returns `Ok(t)` if `v` is `Success(t)`.
     /// Returns `Err(e)` if `v` is `Failure(e)`.
@@ -89,10 +96,16 @@ namespace Validation {
         case Failure(e) => Err(e)
     }
 
-
-
-    // TODO:, toList, etc.
-
+    ///
+    /// Converts a Validation to a List.
+    ///
+    /// Returns `t :: Nil` if `v` is `Success(v)`.
+    /// Returns `Nil` if `v` is `Failure(e)`.
+    ///
+    pub def toList(v: Validation[t, e]): List[t] = match v {
+        case Success(t) => t :: Nil
+        case Failure(_) => Nil
+    }
 
 }
 
