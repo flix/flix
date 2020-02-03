@@ -29,6 +29,14 @@ namespace Validation {
     // TODO: ensure?
 
     ///
+    /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
+    ///
+    pub def getWithDefault(v: Validation[t, e], d: t): t = match v {
+        case Success(t) => t
+        case Failure(_) => d
+    }
+
+    ///
     /// Returns `true` if and only if `v` is `Success(t)` and `f(t)` is true.
     ///
     /// Returns `false` if `v` is `Failure`.
