@@ -38,7 +38,13 @@ namespace Validation {
         case Failure(_) => false
     }
 
-    // TODO: forall
+    ///
+    /// Returns `true` if `v` is `Success(t)` and `f(t)` is true or if `v` is `Failure`.
+    ///
+    pub def forall(f: t -> Bool, v: Validation[t, e]): Bool = match v {
+        case Success(t) => f(t)
+        case Failure(_) => true
+    }
 
     // TODO: foldLeft, foldRight
     // TODO: getOrElse
@@ -48,6 +54,14 @@ namespace Validation {
 
     // TODO: swap
 
+    ///
+    /// Returns `Success(e)` if `v` is `Failure(e)`.
+    /// Returns `Failure(t)` if `v` is `Success(t)`.
+    ///
+    pub def swap(v: Validation[t, e]): Validation[Nel[e], v] = match v {
+        case Success(t) => Failure(Nel(t, Nil))
+        case Failure(e) => Success(e)
+    }
 
     // TODO: toResult, toOption, toList, etc.
 
