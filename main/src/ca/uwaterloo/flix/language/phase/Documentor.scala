@@ -182,6 +182,17 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.Tuple(l) => "(" + args.map(format).mkString(", ") + ")"
 
         case TypeConstructor.Vector => "Vector" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.True => "True" // TODO: Naming
+
+        case TypeConstructor.False => "False" // TODO: Naming
+
+        case TypeConstructor.Not => "Not"
+
+        case TypeConstructor.And => "And"
+
+        case TypeConstructor.Or => "Or"
+          
       }
 
       case Type.Zero => "Zero"
