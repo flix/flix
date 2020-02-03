@@ -153,7 +153,7 @@ object Type {
   /**
     * A type expression that represents functions.
     */
-  case class Arrow(eff: Eff, length: Int) extends Type {
+  case class Arrow(length: Int) extends Type { // TODO: Effect where?
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -189,7 +189,7 @@ object TypeError {
     case (Type.Cst(tc1), Type.Cst(tc2)) if tc1 == tc2 => TypeDiff.Star(TyCon.Other)
     case (Type.Zero, Type.Zero) => TypeDiff.Star(TyCon.Other)
     case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TyCon.Other)
-    case (Type.Arrow(f1, l1), Type.Arrow(f2, l2)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
+    case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TyCon.Arrow)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       (diff(t11, t21), diff(t12, t22)) match {
         case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TyCon.Other)
