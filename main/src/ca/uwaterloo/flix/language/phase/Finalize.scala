@@ -640,7 +640,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Tuple(l)) => MonoType.Tuple(args)
 
-      case Type.Arrow(_, l) => MonoType.Arrow(args.init, args.last)
+      case Type.Arrow(l) => MonoType.Arrow(args.init, args.last)
 
       case Type.RecordEmpty => MonoType.RecordEmpty()
 

@@ -37,7 +37,7 @@ sealed trait Type {
     case Type.Cst(tc) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
-    case Type.Arrow(_, _) => Set.empty
+    case Type.Arrow(_) => Set.empty
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
@@ -90,7 +90,7 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Arrow(eff, l) => s"Arrow($eff, $l)"
+    case Type.Arrow(l) => s"Arrow($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
@@ -242,13 +242,6 @@ object Type {
   // TODO: Deprecated
   def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
     as.foldRight(b)(mkArrow)
-  }
-
-  /**
-    * Constructs the arrow type A_1 -> .. -> A_n -> B with the effect `eff` on each arrow.
-    */
-  def mkArrow(as: List[Type], b: Type): Type = {
-    as.foldRight(b)(mkArrow) // TODO: Effect
   }
 
   /**
