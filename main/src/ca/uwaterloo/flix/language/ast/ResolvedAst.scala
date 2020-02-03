@@ -90,61 +90,73 @@ object ResolvedAst {
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Unit)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class True(loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Bool)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class False(loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Bool)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Char)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Float32)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Float64)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Int8)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Int16)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Int32)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Int64)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.BigInt)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression {
       def tvar: Type = Type.Cst(TypeConstructor.Str)
+
       def evar: Type = Type.Cst(TypeConstructor.True)
     }
 
@@ -174,47 +186,51 @@ object ResolvedAst {
 
     case class RecordEmpty(tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RecordSelect(exp: ResolvedAst.Expression, label: String, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RecordSelect(exp: ResolvedAst.Expression, label: String, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RecordExtend(label: String, value: ResolvedAst.Expression, rest: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RecordExtend(label: String, value: ResolvedAst.Expression, rest: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RecordRestrict(label: String, rest: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RecordRestrict(label: String, rest: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayStore(base: ResolvedAst.Expression, index: ResolvedAst.Expression, elm: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayStore(base: ResolvedAst.Expression, index: ResolvedAst.Expression, elm: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLength(base: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayLength(base: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLength(base: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLength(base: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Deref(exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class HandleWith(exp: ResolvedAst.Expression, bindings: List[ResolvedAst.HandlerBinding], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class HandleWith(exp: ResolvedAst.Expression, bindings: List[ResolvedAst.HandlerBinding], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Existential(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Existential(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression {
+      def tvar: Type = Type.Cst(TypeConstructor.Bool)
+    }
 
-    case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression {
+      def tvar: Type = Type.Cst(TypeConstructor.Bool)
+    }
 
     case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst.Expression
 
