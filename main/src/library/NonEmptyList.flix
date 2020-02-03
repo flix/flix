@@ -198,7 +198,82 @@ namespace NonEmptyList {
 
     // TODO: Flatten
 
+    ///
+    /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
+    ///
+    pub def exists(f: a -> Bool, xs: Nel[a]): Bool = match xs {
+        case Nel(h, l) => f(h) || List.exists(f, l)
+    }
 
+    ///
+    /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
+    ///
+    pub def forall(f: a -> Bool, xs: Nel[a]): Bool = match xs {
+        case Nel(h, l) => f(h) && List.forall(f, l)
+    }
+
+
+
+
+
+
+    ///
+    /// Returns a list of every element in `xs` that satisfies the predicate `f`.
+    ///
+    pub def filter(f: a -> Bool, xs: Nel[a]): List[a] = match xs {
+        case Nel(h, l) =>
+            if (f(h))
+                h :: List.filter(f, l)
+            else
+                List.filter(f, l)
+    }
+
+    // TODO: Slice
+
+
+    // TODO: partition
+
+    // TODO: span
+
+    // TODO: drop
+
+    // TODO: dropWhile
+
+    // TODO: take
+
+    // TODO: takeWhile
+
+    // TODO: groupBy
+
+    ///
+    /// Returns a non-empty list where the element at index `i` is `(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zip(xs: Nel[a], ys: Nel[b]): Nel[(a,b)] = match (xs, ys) {
+        case (Nel(h1, l1), Nel(h2, l2)) => Nel((h1, h2), List.zip(l1, l2))
+    }
+
+    ///
+    /// Returns a non-empty list where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    ///
+    pub def zipWith(f: (a, b) -> c, xs: Nel[a], ys: Nel[b]): Nel[c] = match (xs, ys) {
+        case (Nel(h1, l1), Nel(h2, l2)) => Nel(f(h1, h2), List.zipWith(f, l1, l2))
+    }
+
+    ///
+    /// Returns a pair of non-empty lists, the first containing all first components in `xs`
+    /// and the second containing all second components in `xs`.
+    ///
+    pub def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = match xs {
+        case Nel((a, b), l) =>
+            let (l1, l2) = List.unzip(l);
+            (Nel(a, l1), Nel(b, l2))
+    }
 
 }
 
