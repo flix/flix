@@ -82,16 +82,27 @@ object ClosureConv extends Phase[Root, Root] {
     */
   private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
     case Expression.Unit => exp0
+
     case Expression.True => exp0
+
     case Expression.False => exp0
+
     case Expression.Char(lit) => exp0
+
     case Expression.Float32(lit) => exp0
+
     case Expression.Float64(lit) => exp0
+
     case Expression.Int8(lit) => exp0
+
     case Expression.Int16(lit) => exp0
+
     case Expression.Int32(lit) => exp0
+
     case Expression.Int64(lit) => exp0
+
     case Expression.BigInt(lit) => exp0
+
     case Expression.Str(lit) => exp0
 
     case Expression.Var(sym, tpe, loc) => exp0
@@ -101,7 +112,7 @@ object ClosureConv extends Phase[Root, Root] {
       // We must create a closure, without free variables, of the definition symbol.
       Expression.Closure(sym, List.empty, tpe, loc)
 
-    case Expression.Eff(sym, tpe, loc) => ??? // TODO: ClosureConv Effect.
+    case Expression.Eff(sym, tpe, loc) => ???
 
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
@@ -268,6 +279,10 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Universal(params, e, loc) =>
       Expression.Universal(params, visitExp(e), loc)
 
+    case Expression.Cast(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Cast(e, tpe, loc)
+
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
@@ -277,15 +292,34 @@ object ClosureConv extends Phase[Root, Root] {
       }
       Expression.TryCatch(e, rs, tpe, loc)
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val as = args map visitExp
-      Expression.NativeConstructor(constructor, as, tpe, loc)
+      Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-    case Expression.NativeField(field, tpe, loc) => exp0
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      val e = visitExp(exp)
+      val as = args.map(visitExp)
+      Expression.InvokeMethod(method, e, as, tpe, loc)
 
-    case Expression.NativeMethod(method, args, tpe, loc) =>
-      val as = args map visitExp
-      Expression.NativeMethod(method, as, tpe, loc)
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      val as = args.map(visitExp)
+      Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.GetField(field, e, tpe, loc)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.PutField(field, e1, e2, tpe, loc)
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      Expression.GetStaticField(field, tpe, loc)
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.PutStaticField(field, e, tpe, loc)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -497,10 +531,23 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Universal(fparam, exp, loc) =>
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
+    case Expression.Cast(exp, tpe, loc) => freeVars(exp)
+
     case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
-    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
-    case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) => freeVars(exp) ++ args.flatMap(freeVars)
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.GetField(field, exp, tpe, loc) => freeVars(exp)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.GetStaticField(field, tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.PutStaticField(field, exp, tpe, loc) => freeVars(exp)
 
     case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
 
@@ -614,16 +661,27 @@ object ClosureConv extends Phase[Root, Root] {
 
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
+
       case Expression.True => e
+
       case Expression.False => e
+
       case Expression.Char(lit) => e
+
       case Expression.Float32(lit) => e
+
       case Expression.Float64(lit) => e
+
       case Expression.Int8(lit) => e
+
       case Expression.Int16(lit) => e
+
       case Expression.Int32(lit) => e
+
       case Expression.Int64(lit) => e
+
       case Expression.BigInt(lit) => e
+
       case Expression.Str(lit) => e
 
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
@@ -801,6 +859,10 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Universal(fs, e, loc)
 
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Cast(e, tpe, loc)
+
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
@@ -810,15 +872,34 @@ object ClosureConv extends Phase[Root, Root] {
         }
         Expression.TryCatch(e, rs, tpe, loc)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visitExp
-        Expression.NativeConstructor(constructor, es, tpe, loc)
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      case Expression.NativeField(field, tpe, loc) => e
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        val as = args.map(visitExp)
+        Expression.InvokeMethod(method, e, as, tpe, loc)
 
-      case Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args map visitExp
-        Expression.NativeMethod(method, es, tpe, loc)
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        e
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.PutStaticField(field, e, tpe, loc)
 
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -885,12 +966,17 @@ object ClosureConv extends Phase[Root, Root] {
         Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
 
       case Expression.HoleError(sym, tpe, loc) => e
+
       case Expression.MatchError(tpe, loc) => e
+
       case Expression.SwitchError(tpe, loc) => e
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+
       case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 

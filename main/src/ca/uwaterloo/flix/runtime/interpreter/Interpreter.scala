@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
-import java.lang.reflect.{InvocationTargetException, Modifier}
 import java.util.function
 
 import ca.uwaterloo.flix.api._
@@ -233,28 +232,28 @@ object Interpreter {
           throw ex
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    case Expression.NativeField(field, tpe, loc) =>
-      val clazz = field.getDeclaringClass
-      fromJava(field.get(clazz))
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+      ??? // TODO
 
-    case Expression.NativeMethod(method, args, tpe, loc) => try {
-      val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
-      if (Modifier.isStatic(method.getModifiers)) {
-        val arguments = values.toArray
-        fromJava(method.invoke(null, arguments: _*))
-      } else {
-        val thisObj = values.head
-        val arguments = values.tail.toArray
-        fromJava(method.invoke(thisObj, arguments: _*))
-      }
-    } catch {
-      case ex: InvocationTargetException => throw ex.getTargetException
-    }
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      ??? //TODO
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      ??? // TODO
 
     case Expression.NewChannel(exp, tpe, loc) =>
       val size = cast2int32(eval(exp, env0, henv0, lenv0, root))
@@ -356,10 +355,16 @@ object Interpreter {
       projected.getFacts().foldRight(init)((c, acc) => {
         val tuple = c.getHeadPredicate() match {
           // TODO: match may not be complete?
-          case p: AtomPredicate => p.getTerms().map({
-            // TODO: match may not be complete?
-            case l: LitTerm => l.getFunction().apply(new Object)
-          })
+          case p: AtomPredicate => p.getTerms().toList match {
+            case Nil => Value.Unit
+            case x :: Nil => x match {
+              case l: LitTerm => l.getFunction().apply(new Object)
+            }
+            case terms => terms.map({
+              // TODO: match may not be complete?
+              case l: LitTerm => l.getFunction().apply(new Object)
+            })
+          }
         }
         // TODO: maybe not the cleanest. The idea is the following:
         // evaluate f into a closure
@@ -373,7 +378,7 @@ object Interpreter {
         val Value.Closure(name2, bindings2) = cast2closure(eval(constant.exp, env1, henv0, Map.empty, root))
         val constant2 = root.defs(name2)
         // this results into a closure that again takes one argument
-        assert(constant2.formals.size == 1)
+        assert(constant2.formals.size == 1) // TODO: this seems broken
         // we feed it the acc as second argument and call it
         val env2 = env1 + (constant2.formals.head.sym.toString -> acc)
         eval(constant2.exp, env2, henv0, Map.empty, root)
@@ -387,6 +392,8 @@ object Interpreter {
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+
+    case Expression.Cast(exp, tpe, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
   /**

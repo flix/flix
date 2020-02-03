@@ -314,11 +314,6 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Cast(e, tpe, eff, loc)
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-      mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeConstructor(constructor, as, tpe, eff, loc)
-      }
-
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
@@ -327,12 +322,37 @@ object Stratifier extends Phase[Root, Root] {
         case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
       }
 
-    case Expression.NativeField(field, tpe, eff, loc) =>
-      Expression.NativeField(field, tpe, eff, loc).toSuccess
-
-    case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeMethod(method, as, tpe, eff, loc)
+        case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+      }
+
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      mapN(visitExp(exp), traverse(args)(visitExp)) {
+        case (e, as) => Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+      }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+      }
+
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.GetField(field, e, tpe, eff, loc)
+      }
+
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.PutField(field, e1, e2, tpe, eff, loc)
+      }
+
+    case Expression.GetStaticField(field, tpe, eff, loc) =>
+      Expression.GetStaticField(field, tpe, eff, loc).toSuccess
+
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.PutStaticField(field, e, tpe, eff, loc)
       }
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
@@ -586,23 +606,37 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Cast(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(dependencyGraphOfExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + dependencyGraphOfExp(e)
       }
 
-    case Expression.NativeField(_, _, _, _) =>
-      DependencyGraph.empty
-
-    case Expression.NativeMethod(_, args, _, _, _) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(dependencyGraphOfExp(exp)) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(DependencyGraph.empty) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      DependencyGraph.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
 
     case Expression.NewChannel(exp, _, _, _) =>
       dependencyGraphOfExp(exp)

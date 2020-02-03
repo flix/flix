@@ -18,39 +18,42 @@ namespace Path {
     ///
     /// Returns a path from the given string `s`.
     ///
-    pub def new(s: Str): Path =
-        let f = native new java.io.File(s : Str);
-        Path(f)
+    pub def new(s: String): Path =
+        import new java.io.File(String) as newFile;
+        Path(newFile(s))
 
     ///
     /// Returns `true` if the given path `p` exists.
     ///
     pub def exists(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.exists();
         let Path(javaFile) = p;
-        native method java.io.File.exists(javaFile) as Bool
+        javaFile.exists()
     })
 
     ///
     /// Returns the name of the directory or file denoted by the given path `p`.
     ///
     pub def getName(p: Path): Result[Str, IOError] = tryWithCatch(_ -> {
-         let Path(javaFile) = p;
-         native method java.io.File.getName(javaFile) as Str
+        import java.io.File.getName();
+        let Path(javaFile) = p;
+        javaFile.getName()
      })
 
-     ///
-     /// Optionally returns the path to the parent of the given path `p`.
-     ///
-     /// Returns `None` if `p` has no parent.
-     ///
-     pub def getParent(p: Path): Result[Option[Path], IOError] = tryWithCatch(_ -> {
-          let Path(javaFile) = p;
-          let parent = native method java.io.File.getParentFile(javaFile) as ##java.io.File;
-          if (isNull(parent))
+    ///
+    /// Optionally returns the path to the parent of the given path `p`.
+    ///
+    /// Returns `None` if `p` has no parent.
+    ///
+    pub def getParent(p: Path): Result[Option[Path], IOError] = tryWithCatch(_ -> {
+        import java.io.File.getParentFile();
+        let Path(javaFile) = p;
+        let parent = javaFile.getParentFile();
+        if (isNull(parent))
             None
-          else
+        else
             Some(Path(parent))
-      })
+    })
 
     ///
     /// Returns a list of children for the given path `p`.
@@ -58,8 +61,9 @@ namespace Path {
     /// Returns `None` if the path `p` does not denote a directory.
     ///
     pub def getChildren(p: Path): Result[Option[List[Path]], IOError] = tryWithCatch(_ -> {
+        import java.io.File.listFiles();
         let Path(javaFile) = p;
-        let children = native method java.io.File.listFiles(javaFile);
+        let children = javaFile.listFiles();
         if (isNull(children))
             None
         else
@@ -70,58 +74,67 @@ namespace Path {
     /// Returns `true` if the given path `p` is a directory.
     ///
     pub def isDirectory(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.isDirectory();
         let Path(javaFile) = p;
-        native method java.io.File.isDirectory(javaFile) as Bool
+        javaFile.isDirectory()
     })
 
     ///
     /// Returns `true` if the given path `p` is executable.
     ///
     pub def isExecutable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.canExecute();
         let Path(javaFile) = p;
-        native method java.io.File.canExecute(javaFile) as Bool
+        javaFile.canExecute()
     })
 
     ///
     /// Returns `true` if the given path `p` is readable.
     ///
     pub def isReadable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.canRead();
         let Path(javaFile) = p;
-        native method java.io.File.canRead(javaFile) as Bool
+        javaFile.canRead()
     })
 
     ///
     /// Returns `true` if the given path `p` is a file.
     ///
     pub def isFile(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.isFile();
         let Path(javaFile) = p;
-        native method java.io.File.isFile(javaFile) as Bool
+        javaFile.isFile()
     })
 
     ///
     /// Returns `true` if the given path `p` is a symbolic link.
     ///
     pub def isSymbolicLink(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.toPath();
+        import java.nio.file.Files:isSymbolicLink(##java.nio.file.Path);
         let Path(javaFile) = p;
-        let javaPath = native method java.io.File.toPath(javaFile);
-        native method java.nio.file.Files.isSymbolicLink(javaPath) as Bool
+        let javaPath = javaFile.toPath();
+        javaPath.isSymbolicLink()
     })
 
     ///
     /// Returns `true` if the given path `p` is writable.
     ///
     pub def isWritable(p: Path): Result[Bool, IOError] = tryWithCatch(_ -> {
+        import java.io.File.canWrite();
         let Path(javaFile) = p;
-        native method java.io.File.canWrite(javaFile) as Bool
+        javaFile.canWrite()
     })
 
     ///
     /// Returns a list of all the lines in the given path `p`.
     ///
     pub def readLines(p: Path): Result[List[Str], IOError] = tryWithCatch(_ -> {
+        import java.io.File.toPath();
+        import java.nio.file.Files:newBufferedReader(##java.nio.file.Path);
         let Path(javaFile) = p;
-        let javaPath = native method java.io.File.toPath(javaFile);
-        let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
+        let javaPath = javaFile.toPath();
+        let reader = javaPath.newBufferedReader();
         readAll(reader)
     })
 
@@ -129,7 +142,8 @@ namespace Path {
     /// Reads all lines from the given buffered reader `r` until it is empty.
     ///
     def readAll(r: ##java.io.BufferedReader): List[Str] =
-        let line = native method java.io.BufferedReader.readLine(r);
+        import java.io.BufferedReader.readLine();
+        let line = r.readLine();
         if (isNull(line))
             Nil
         else
@@ -139,22 +153,26 @@ namespace Path {
     /// Writes all lines in the list `l` to the path `p`.
     ///
     pub def writeLines(p: Path, l: List[Str]): Result[Unit, IOError] = tryWithCatch(_ -> {
+        import new java.io.PrintWriter(##java.io.File) as newPrintWriter;
+        import java.io.PrintWriter.close();
         let Path(javaFile) = p;
-        let w = native new java.io.PrintWriter(javaFile : ##java.io.File);
+        let w = newPrintWriter(javaFile);
         writeAll(l, w);
-        native method java.io.PrintWriter.close(w) as Unit;
+        w.close();
         ()
     })
 
     ///
     /// Writes all lines in `l` to the writer `w`.
     ///
-    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit = match l {
-        case Nil => ()
-        case x :: xs =>
-            native method java.io.PrintWriter.println(w, x : Str) as Unit;
-            writeAll(xs, w)
-    }
+    def writeAll(l: List[Str], w: ##java.io.PrintWriter): Unit =
+        import java.io.PrintWriter.println(String);
+        match l {
+            case Nil => ()
+            case x :: xs =>
+                println(w, x);
+                writeAll(xs, w)
+        }
 
     ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.

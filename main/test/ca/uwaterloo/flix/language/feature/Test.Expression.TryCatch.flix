@@ -78,14 +78,6 @@ def trycatch11(): Bool =
     }
 
 @test
-def trycatch12(): Bool =
-    try {
-        native method java.lang.String.charAt("", 0)
-    } catch {
-        case ex: ##java.lang.StringIndexOutOfBoundsException => true
-    }
-
-@test
 def trycatch13(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
@@ -112,15 +104,6 @@ def trycatch15(): Bool =
             let z = 0.5;
                 true
     }
-
-//@test // TODO: Currently broken.
-//def trycatch16(): Bool =
-//    try (0 / 0) == 0 catch {
-//        case ex: ##java.lang.ArithmeticException =>
-//            let msg = native method java.lang.Throwable.getMessage(ex);
-//                true
-//    }
-
 
 //@test // TODO: Currently broken.
 def trytrycatchcatch01(): Bool =

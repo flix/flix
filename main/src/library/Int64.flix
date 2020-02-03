@@ -238,16 +238,18 @@ namespace Int64 {
     ///
     /// Return a string representation of `x`.
     ///
-    pub def toString(x: Int64): Str =
-        native method flix.runtime.library.InterimReadShow.longToString(x) as Str
+    pub def toString(x: Int64): String =
+        import java.lang.Long:toString(Int64);
+        x.toString()
 
     ///
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def fromString(s: Str): Result[Int64, Str] = try {
-         let i = native method flix.runtime.library.InterimReadShow.longFromString(s) as Int64;
-         Ok(i)
+    pub def fromString(s: String): Result[Int64, String] = try {
+        import java.lang.String.strip();
+        import java.lang.Long:parseLong(String);
+        Ok(s.strip().parseLong())
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
      }
