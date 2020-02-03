@@ -18,7 +18,7 @@
 /// The NonEmptyList type.
 ///
 
-enum Nel[a] {
+pub enum Nel[a] {
     case Nel(a, List[a])
 }
 

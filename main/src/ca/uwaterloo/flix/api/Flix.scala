@@ -91,6 +91,7 @@ class Flix {
     "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
+    "Validation.flix" -> LocalResource.get("/library/Validation.flix"),
 
     "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
