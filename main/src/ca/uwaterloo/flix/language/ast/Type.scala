@@ -234,12 +234,7 @@ object Type {
     * Constructs the arrow type A -> B.
     */
   // TODO: Deprecated
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(Eff.Pure, 2), a), b) // TODO: Pure?
-
-  /**
-    * Constructs the arrow type A -> B with the effect `eff`.
-    */
-  def mkArrow(a: Type, eff: Eff, b: Type): Type = Apply(Apply(Arrow(eff, 2), a), b)
+  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b) // TODO: Pure?
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
@@ -252,15 +247,15 @@ object Type {
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B with the effect `eff` on each arrow.
     */
-  def mkArrow(as: List[Type], eff: Eff, b: Type): Type = {
-    as.foldRight(b)(mkArrow(_, eff, _))
+  def mkArrow(as: List[Type], b: Type): Type = {
+    as.foldRight(b)(mkArrow) // TODO: Effect
   }
 
   /**
     * Constructs the arrow type [A] -> B.
     */
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    val arrow = Arrow(Eff.Pure, as.length + 1) // TODO: Pure?
+    val arrow = Arrow(as.length + 1) // TODO: Pure?
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -347,7 +342,7 @@ object Type {
           //
           // Arrow.
           //
-          case Type.Arrow(_, l) =>
+          case Type.Arrow(l) =>
             val argumentTypes = args.init
             val resultType = args.last
             if (argumentTypes.length == 1) {
