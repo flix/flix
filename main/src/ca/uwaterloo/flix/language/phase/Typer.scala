@@ -190,7 +190,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           _______ <- unifyEffM(topEff, Type.Cst(TypeConstructor.True), loc)
           _______ <- unifyEffM(equEff, Type.Cst(TypeConstructor.True), loc)
           _______ <- unifyEffM(leqEff, Type.Cst(TypeConstructor.True), loc)
-          _______ <- unifyEffM(lubEff, Type.Cst(TypeConstructor.True)e, loc)
+          _______ <- unifyEffM(lubEff, Type.Cst(TypeConstructor.True), loc)
           _______ <- unifyEffM(glbEff, Type.Cst(TypeConstructor.True), loc)
           // Check the type of each component:
           _______ <- unifyTypM(botType, declaredType, loc)
@@ -431,17 +431,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val argType = fparam.tpe
         for {
           (bodyType, bodyEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
-          resultEff <- unifyEffM(evar, Eff.freshEffVar(), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkArrow(argType, bodyType), loc)
+          resultEff <- unifyEffM(evar, Type.freshTypeVar(), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshTypeVar()
-        val lambdaBodyEff = Eff.freshEffVar()
+        val lambdaBodyEff = Type.freshTypeVar()
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
-          lambdaType <- unifyTypM(tpe1, Type.mkArrow(tpe2, lambdaBodyEff, lambdaBodyType), loc)
+          lambdaType <- unifyTypM(tpe1, Type.mkArrow(tpe2, lambdaBodyType), loc)
           resultTyp <- unifyTypM(tvar, lambdaBodyType, loc)
           resultEff <- unifyEffM(evar, eff1, eff2, lambdaBodyEff, loc)
         } yield (resultTyp, resultEff)
@@ -1290,7 +1290,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
           constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
-          fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Eff.Pure, Type.mkArrow(initType, Eff.Pure, initType)), loc)
+          fType2 <- unifyTypM(fType, Type.mkArrow(tupleType, Type.mkArrow(initType, initType)), loc)
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
           resultTyp <- unifyTypM(tvar, initType, loc) // the result of the fold is the same type as init
         } yield (resultTyp, resultEff)
@@ -1827,7 +1827,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
-        pureTermEffects <- unifyEffM(Eff.Pure :: termEffects, loc)
+        pureTermEffects <- unifyEffM(Type.Cst(TypeConstructor.True) :: termEffects, loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
       } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
 
@@ -1839,7 +1839,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //
       for {
         (typ, eff) <- inferExp(exp, program)
-        pureEff <- unifyEffM(Eff.Pure, eff, loc)
+        pureEff <- unifyEffM(Type.Cst(TypeConstructor.True), eff, loc)
         resultType <- unifyTypM(tvar, typ, loc)
       } yield resultType
   }
@@ -1902,7 +1902,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // Infer the types of the terms.
       for {
         (tpe, eff) <- inferExp(exp, program)
-        expEff <- unifyEffM(Eff.Pure, eff, loc)
+        expEff <- unifyEffM(Type.Cst(TypeConstructor.True), eff, loc)
         expTyp <- unifyTypM(mkBoolType(), tpe, loc)
       } yield mkAnySchemaType()
   }

@@ -690,13 +690,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
-          } yield ResolvedAst.Expression.Ascribe(e, t, eff, loc)
+            f <- lookupType(eff, ns0, prog0)
+          } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
 
         case NamedAst.Expression.Cast(exp, tpe, eff, loc) =>
           for {
             e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
-          } yield ResolvedAst.Expression.Cast(e, t, eff, loc)
+            f <- lookupType(eff, ns0, prog0)
+          } yield ResolvedAst.Expression.Cast(e, t, f, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, tpe, evar, loc) =>
           val rulesVal = traverse(rules) {
