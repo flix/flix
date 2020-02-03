@@ -275,5 +275,39 @@ namespace NonEmptyList {
             (Nel(a, l1), Nel(b, l2))
     }
 
+
+
+
+
+    ///
+    /// Returns a non-empty list where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    ///
+    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
+    /// Functionally equivalent to zipWith.
+    ///
+    pub def map2(f: (a, b) -> c, xs: Nel[a], ys: Nel[b]): Nel[c] = zipWith(f, xs, ys)
+
+
+    // TODO: flatMap2
+
+    // TODO: fold2
+
+    // TODO: foldLeft2
+
+    // TODO: foldRight2
+
+    // TODO: filterMap
+
+    // TODO: findMap
+
+    // TODO: toString
+
+    // TODO: toSet
+
+    // TODO: toMap
+
+    // TOOD: __eq__
+
 }
 
