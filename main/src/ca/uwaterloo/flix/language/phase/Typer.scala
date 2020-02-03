@@ -641,7 +641,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap, Map.empty)
+        }.toMap)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
@@ -1214,7 +1214,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           constraintTypes <- seqM(cs.map(visitConstraint))
           resultTyp <- unifyTypAllowEmptyM(tvar :: constraintTypes, loc)
-          resultEff <- unifyEffM(Eff.freshEffVar(), evar, loc)
+          resultEff <- unifyEffM(Type.Cst(TypeConstructor.True), evar, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, evar, loc) =>
@@ -1710,7 +1710,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
           case param => param.tpe -> Type.freshTypeVar()
-        }.toMap, Map.empty)
+        }.toMap)
 
         // Retrieve the enum type.
         val enumType = decl.tpe
