@@ -53,7 +53,11 @@ namespace Validation {
     // TODO: orElse
 
     // TODO: swap
+    // TODO: traverse
 
+
+    ///
+    /// Swaps the success and failure values.
     ///
     /// Returns `Success(e)` if `v` is `Failure(e)`.
     /// Returns `Failure(t)` if `v` is `Success(t)`.
@@ -63,9 +67,32 @@ namespace Validation {
         case Failure(e) => Success(e)
     }
 
-    // TODO: toResult, toOption, toList, etc.
+    ///
+    /// Converts the Validation to an Option.
+    ///
+    /// Returns `Some(t)` if `v` is `Success(t)`.
+    /// Returns `None` otherwise.
+    ///
+    pub def toOption(v: Validation[t, e]): Option[t] = match v {
+        case Success(t) => Some(t)
+        case Failure(_) => None
+    }
 
-    // TODO: traverse
+    ///
+    /// Converts the Validation to a Result.
+    ///
+    /// Returns `Ok(t)` if `v` is `Success(t)`.
+    /// Returns `Err(e)` if `v` is `Failure(e)`.
+    ///
+    pub def toResult(v: Validation[t, e]): Result[t, Nel[e]] = match v {
+        case Success(t) => Ok(t)
+        case Failure(e) => Err(e)
+    }
+
+
+
+    // TODO:, toList, etc.
+
 
 }
 
