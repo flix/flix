@@ -67,12 +67,13 @@ object ResolvedAst {
   case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
   sealed trait Expression {
+    // TODO: Add tvar and evar?
     def loc: SourceLocation
   }
 
   object Expression {
 
-    case class Wild(tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Wild(tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Var(sym: Symbol.VarSym, tvar: Type, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -108,7 +109,7 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Apply(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Apply(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
