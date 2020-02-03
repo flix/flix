@@ -358,12 +358,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given expression `exp0`.
     */
-  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[(Type, Eff)] = {
+  private def inferExp(exp0: ResolvedAst.Expression, program: ResolvedAst.Program)(implicit flix: Flix): InferMonad[(Type, Type)] = {
 
     /**
       * Infers the type of the given expression `exp0` inside the inference monad.
       */
-    def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Eff)] = e0 match {
+    def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Type)] = e0 match {
 
       case ResolvedAst.Expression.Wild(tvar, evar, loc) => liftM((tvar, evar))
 
