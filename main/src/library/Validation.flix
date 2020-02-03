@@ -27,15 +27,30 @@ namespace Validation {
     // TODO: app
     // TODO: combine
     // TODO: ensure?
-    // TODO: exists
+
+    ///
+    /// Returns `true` if and only if `v` is `Success(t)` and `f(t)` is true.
+    ///
+    /// Returns `false` if `v` is `Failure`.
+    ///
+    pub def exists(f: t -> Bool, v: Validation[t, e]): Bool = match v {
+        case Success(t) => f(t)
+        case Failure(_) => false
+    }
+
     // TODO: forall
+
     // TODO: foldLeft, foldRight
     // TODO: getOrElse
     // TODO: leftMap
     // TODO: map
     // TODO: orElse
+
     // TODO: swap
+
+
     // TODO: toResult, toOption, toList, etc.
+
     // TODO: traverse
 
 }
