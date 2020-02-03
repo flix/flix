@@ -67,9 +67,9 @@ object ResolvedAst {
   case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
   sealed trait Expression {
-    def tvar: Type
+    def tvar: Type // TODO: Rename.
 
-    def evar: Type
+    def evar: Type // TODO: Rename.
 
     def loc: SourceLocation
   }
@@ -232,51 +232,51 @@ object ResolvedAst {
       def tvar: Type = Type.Cst(TypeConstructor.Bool)
     }
 
-    case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, tvar: Type, evar: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cast(exp: ResolvedAst.Expression, tvar: Type, evar: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], tpe: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class TryCatch(exp: ResolvedAst.Expression, rules: List[ResolvedAst.CatchRule], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[ResolvedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class InvokeConstructor(constructor: Constructor[_], args: List[ResolvedAst.Expression], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class InvokeMethod(method: Method, exp: ResolvedAst.Expression, args: List[ResolvedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class InvokeMethod(method: Method, exp: ResolvedAst.Expression, args: List[ResolvedAst.Expression], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class InvokeStaticMethod(method: Method, args: List[ResolvedAst.Expression], tpe: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class InvokeStaticMethod(method: Method, args: List[ResolvedAst.Expression], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class GetField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class GetField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class PutField(field: Field, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class PutField(field: Field, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class GetStaticField(field: Field, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class GetStaticField(field: Field, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class PutStaticField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class PutStaticField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(exp: ResolvedAst.Expression, tpe: Type, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], default: Option[ResolvedAst.Expression], tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], default: Option[ResolvedAst.Expression], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ProcessSpawn(exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ProcessSpawn(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ProcessSleep(exp: ResolvedAst.Expression, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ProcessSleep(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ProcessPanic(msg: String, tvar: Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ProcessPanic(msg: String, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointConstraintSet(cs: List[ResolvedAst.Constraint], tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointConstraintSet(cs: List[ResolvedAst.Constraint], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointCompose(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointCompose(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointSolve(exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointSolve(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointProject(sym: Symbol.PredSym, exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointEntails(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class FixpointFold(sym: Symbol.PredSym, init: ResolvedAst.Expression, f: ResolvedAst.Expression, constraints: ResolvedAst.Expression, tvar: ast.Type.Var, evar: ast.Eff.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class FixpointFold(sym: Symbol.PredSym, init: ResolvedAst.Expression, f: ResolvedAst.Expression, constraints: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 
