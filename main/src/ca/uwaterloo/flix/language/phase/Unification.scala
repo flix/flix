@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -37,11 +37,6 @@ object Unification {
       * Returns the singleton substitution mapping the type variable `x` to `tpe`.
       */
     def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe), Map.empty)
-
-    /**
-      * Returns the singleton substitution mapping the effect variable `x` to `eff`.
-      */
-    def singleton(x: Eff.Var, eff: Eff): Substitution = Substitution(Map.empty, Map(x -> eff))
   }
 
   /**

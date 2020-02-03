@@ -57,24 +57,6 @@ object TypeError {
   }
 
   /**
-    * Mismatched Effects.
-    *
-    * @param eff1 the first effect.
-    * @param eff2 the second effect.
-    * @param loc  the location where the error occurred.
-    */
-  case class MismatchedEffects(eff1: Eff, eff2: Eff, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the effects: '" << Red(eff1.toString) << "' and '" << Red(eff2.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "mismatched effects.") << NewLine
-    }
-  }
-
-  /**
     * Mismatched Arity.
     *
     * @param tpe1 the first type.
