@@ -217,8 +217,9 @@ object Type {
       * from the kind of the first type argument `t1`.
       */
     def kind: Kind = tpe1.kind match {
-      case Kind.Star => throw InternalCompilerException("Illegal kind.")
       case Kind.Arrow(_, k) => k
+      case Kind.Star => throw InternalCompilerException("Illegal kind.")
+      case Kind.Effect => throw InternalCompilerException("Illegal kind.")
     }
   }
 
