@@ -74,10 +74,10 @@ class FeatureSuite extends Suites(
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix"),
   new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix"),
-  new FlixTest("TestEffects", "main/test/ca/uwaterloo/flix/language/feature/TestEffects.flix"),
   new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix"),
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix"),
   new FlixTest("Test.Decl.Impl", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Impl.flix"),
+
   new FlixTest("Test.Expression.ArrayLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix"),
   new FlixTest("Test.Expression.ArrayNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayNew.flix"),
   new FlixTest("Test.Expression.ArrayLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLoad.flix"),
@@ -87,6 +87,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.ArraySliceNoEndIndex", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySliceNoEndIndex.flix"),
   new FlixTest("Test.Expression.ArraySliceNoStartIndex", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySliceNoStartIndex.flix"),
   new FlixTest("Test.Expression.ArraySliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySliceNoIndexes.flix"),
+
   new FlixTest("Test.Expression.VectorLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLit.flix"),
   new FlixTest("Test.Expression.VectorNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorNew.flix"),
   new FlixTest("Test.Expression.VectorLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLoad.flix"),
@@ -148,6 +149,17 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix"),
   new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix"),
   new FlixTest("Test.Expression.FixpointFold", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointFold.flix"),
+
+  //
+  // Interop.
+  //
+  new FlixTest("Test.Expression.Jvm.InvokeConstructor", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeConstructor.flix"),
+  new FlixTest("Test.Expression.Jvm.InvokeMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeMethod.flix"),
+  new FlixTest("Test.Expression.Jvm.InvokeStaticMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeStaticMethod.flix"),
+  new FlixTest("Test.Expression.Jvm.GetField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetField.flix"),
+  new FlixTest("Test.Expression.Jvm.PutField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutField.flix"),
+  new FlixTest("Test.Expression.Jvm.GetStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetStaticField.flix"),
+  new FlixTest("Test.Expression.Jvm.PutStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutStaticField.flix"),
 
   //
   // Predicates

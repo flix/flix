@@ -95,14 +95,13 @@ class Flix {
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
+    "flix/time/Instant.flix" -> LocalResource.get("/library/flix/time/Instant.flix"),
 
 
     "StringBuilder.flix" -> LocalResource.get("/library/StringBuilder.flix"),
 
     //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
     //"Vec.flix" -> LocalResource.get("/library/Vec.flix"),
-
-    //"flix/actor/Actor.flix" -> LocalResource.get("/library/flix/actor/Actor.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),

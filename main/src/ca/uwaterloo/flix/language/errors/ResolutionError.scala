@@ -16,13 +16,15 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import java.lang.reflect.{Constructor, Field, Method}
+
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Type._
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
-import ca.uwaterloo.flix.language.ast.Type._
-import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 /**
   * A common super-type for resolution errors.
@@ -132,6 +134,23 @@ object ResolutionError {
         vt << Code(l, "tag is defined in this enum.") << NewLine
       }
       vt << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
+    }
+  }
+
+  /**
+    * Illegal Type Error.
+    *
+    * @param tpe the illegal type.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal type.") << NewLine
     }
   }
 
@@ -436,7 +455,7 @@ object ResolutionError {
     * @param name the class name.
     * @param loc  the location of the class name.
     */
-  case class UndefinedNativeClass(name: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -446,5 +465,100 @@ object ResolutionError {
       vt << Code(loc, "undefined class.") << NewLine
     }
   }
+
+  /**
+    * An error raised to indicate that a matching constructor was not found.
+    *
+    * @param className    the class name.
+    * @param signature    the signature of the constructor.
+    * @param constructors the constructors in the class.
+    * @param loc          the location of the constructor name.
+    */
+  case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined constructor in class '" << Cyan(className) << "' with the given signature." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined constructor.") << NewLine
+      vt << "No constructor matches the signature:" << NewLine
+      vt << "  " << className << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
+      vt << "Available constructors:" << NewLine
+      for (constructor <- constructors) {
+        vt << "  " << stripAccessModifier(constructor.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that a matching method was not found.
+    *
+    * @param className  the class name.
+    * @param methodName the method name.
+    * @param static     whether the method is static.
+    * @param signature  the signature of the method.
+    * @param methods    the methods of the class.
+    * @param loc        the location of the method name.
+    */
+  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      if (!static) {
+        vt << ">> Undefined " << Magenta("object") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      } else {
+        vt << ">> Undefined " << Magenta("static") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      }
+      vt << NewLine
+      vt << Code(loc, "undefined method.") << NewLine
+      vt << "No method matches the signature:" << NewLine
+      vt << "  " << methodName << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
+      vt << "Available methods:" << NewLine
+      for (method <- methods) {
+        vt << "  " << stripAccessModifier(method.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that the field name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the field name.
+    * @param static    whether the field is static.
+    * @param fields    the fields of the class.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      if (!static) {
+        vt << ">> Undefined " << Magenta("object") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      } else {
+        vt << ">> Undefined " << Magenta("static") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      }
+      vt << NewLine
+      vt << Code(loc, "undefined field.") << NewLine
+      vt << "Available fields:" << NewLine
+      for (field <- fields) {
+        vt << "  " << stripAccessModifier(field.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * Removes all access modifiers from the given string `s`.
+    */
+  private def stripAccessModifier(s: String): String =
+    s.replace("public", "").
+      replace("protected", "").
+      replace("private", "")
 
 }

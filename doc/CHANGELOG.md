@@ -2,6 +2,11 @@
 
 HEAD:
 
+Version 0.10.0:
+
+- Reworked and improved Java interoperability.
+- Added support for folding on Datalog constraints.
+
 Version 0.9.1:
 
 - Fixed several bugs. 

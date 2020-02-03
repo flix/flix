@@ -68,7 +68,6 @@ namespace Path {
                              let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
                              let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
                              let childList = childrenHelper(dirIterator, Nil);
-                             //let _ = native method java.nio.file.DirectoryStream.close(dirStream); TODO: Have this line compile
                              k(Ok(childList))
             case Ok(false) => k(Err(IOError("The provided path is not a directory. Children is only available for directories")))
             case Err(IOError(errorString)) => k(Err(IOError(errorString)))

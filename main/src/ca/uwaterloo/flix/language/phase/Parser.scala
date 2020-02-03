@@ -102,40 +102,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = {
-    def Imports: Rule1[Seq[ParsedAst.Import]] = rule {
-      zeroOrMore(Import).separatedBy(optWS)
-    }
-
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
       zeroOrMore(Declaration)
     }
 
     rule {
-      SP ~ Imports ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+      SP ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Imports                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  def Import: Rule1[ParsedAst.Import] = rule {
-    Imports.Wildcard | Imports.Definition | Imports.Namespace
-  }
-
-  object Imports {
-
-    def Wildcard: Rule1[ParsedAst.Import.Wild] = rule {
-      SP ~ atomic("import") ~ WS ~ Names.Namespace ~ "/" ~ "_" ~ SP ~> ParsedAst.Import.Wild
-    }
-
-    def Definition: Rule1[ParsedAst.Import.Definition] = rule {
-      SP ~ atomic("import") ~ WS ~ Names.Namespace ~ "/" ~ Names.Definition ~ SP ~> ParsedAst.Import.Definition
-    }
-
-    def Namespace: Rule1[ParsedAst.Import.Namespace] = rule {
-      SP ~ atomic("import") ~ WS ~ Names.Namespace ~ SP ~> ParsedAst.Import.Namespace
-    }
-
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -596,7 +569,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -636,16 +609,71 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
     }
 
-    def LetRec: Rule1[ParsedAst.Expression.LetRec] = rule {
-      SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetRec
-    }
-
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
       SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def LetMatchStar: Rule1[ParsedAst.Expression.LetMatchStar] = rule {
       SP ~ atomic("let*") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatchStar
+    }
+
+    def LetRec: Rule1[ParsedAst.Expression.LetRec] = rule {
+      SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetRec
+    }
+
+    def LetImport: Rule1[ParsedAst.Expression] = {
+
+      def JvmIdent: Rule1[String] = rule {
+        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum + '_'))
+      }
+
+      def JvmName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".")
+      }
+
+      def JvmStaticName: Rule1[Seq[String]] = rule {
+        oneOrMore(JvmIdent).separatedBy(".") ~ ":" ~ JvmIdent ~> ((xs: Seq[String], x: String) => xs :+ x)
+      }
+
+      def Constructor: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("new") ~ WS ~ JvmName ~ optWS ~ Signature ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
+      }
+
+      def Method: Rule1[ParsedAst.JvmOp] = rule {
+        JvmName ~ optWS ~ Signature ~ optional(WS ~ atomic("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
+      }
+
+      def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
+        JvmStaticName ~ optWS ~ Signature ~ optional(WS ~ atomic("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
+      }
+
+      def GetField: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("get") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
+      }
+
+      def PutField: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("set") ~ WS ~ JvmName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+      }
+
+      def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("get") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
+      }
+
+      def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("set") ~ WS ~ JvmStaticName ~ WS ~ atomic("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+      }
+
+      def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
+        "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      def Import: Rule1[ParsedAst.JvmOp] = rule {
+        atomic("import") ~ WS ~ (Constructor | Method | StaticMethod | GetField | PutField | GetStaticField | PutStaticField)
+      }
+
+      rule {
+        SP ~ Import ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetImport
+      }
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -679,24 +707,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("try") ~ WS ~ Expression ~ optWS ~ atomic("catch") ~ optWS ~ CatchBody ~ SP ~> ParsedAst.Expression.TryCatch
-      }
-    }
-
-    def Native: Rule1[ParsedAst.Expression] = {
-      def NativeConstructor: Rule1[ParsedAst.Expression.NativeConstructor] = rule {
-        atomic("new") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeConstructor
-      }
-
-      def NativeField: Rule1[ParsedAst.Expression.NativeField] = rule {
-        atomic("field") ~ WS ~ SP ~ Names.JavaName ~ SP ~> ParsedAst.Expression.NativeField
-      }
-
-      def NativeMethod: Rule1[ParsedAst.Expression.NativeMethod] = rule {
-        atomic("method") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
-      }
-
-      rule {
-        atomic("native") ~ WS ~ (NativeField | NativeMethod | NativeConstructor)
       }
     }
 

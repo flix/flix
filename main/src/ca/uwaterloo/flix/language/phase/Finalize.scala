@@ -376,6 +376,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.Universal(p, e, loc)
 
+      case SimplifiedAst.Expression.Cast(exp, tpe, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.Cast(e, t, loc)
+
       case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visit(exp)
         val rs = rules map {
@@ -386,19 +391,41 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.TryCatch(e, rs, t, loc)
 
-      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visit
+      case SimplifiedAst.Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.NativeConstructor(constructor, es, t, loc)
+        FinalAst.Expression.InvokeConstructor(constructor, as, t, loc)
 
-      case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
+      case SimplifiedAst.Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visit(exp)
+        val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.NativeField(field, t, loc)
+        FinalAst.Expression.InvokeMethod(method, e, as, t, loc)
 
-      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args map visit
+      case SimplifiedAst.Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visit)
         val t = visitType(tpe)
-        FinalAst.Expression.NativeMethod(method, es, t, loc)
+        FinalAst.Expression.InvokeStaticMethod(method, as, t, loc)
+
+      case SimplifiedAst.Expression.GetField(field, exp, tpe, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.GetField(field, e, t, loc)
+
+      case SimplifiedAst.Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        val t = visitType(tpe)
+        FinalAst.Expression.PutField(field, e1, e2, t, loc)
+
+      case SimplifiedAst.Expression.GetStaticField(field, tpe, loc) =>
+        val t = visitType(tpe)
+        FinalAst.Expression.GetStaticField(field, t, loc)
+
+      case SimplifiedAst.Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visit(exp)
+        val t = visitType(tpe)
+        FinalAst.Expression.PutStaticField(field, e, t, loc)
 
       case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
         val e = visit(exp)

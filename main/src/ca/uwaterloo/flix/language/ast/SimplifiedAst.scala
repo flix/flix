@@ -222,13 +222,23 @@ object SimplifiedAst {
       def tpe: Type = Type.Cst(TypeConstructor.Bool)
     }
 
+    case class Cast(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NativeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class InvokeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class InvokeMethod(method: Method, exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class InvokeStaticMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class GetField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class PutField(field: Field, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class GetStaticField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class PutStaticField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

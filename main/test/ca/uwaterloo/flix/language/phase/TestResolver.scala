@@ -357,6 +357,70 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleLattice](result)
   }
 
+  test("RecursionLimit.01") {
+    val input =
+      s"""
+         |type alias Foo = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.02") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.03") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Baz
+         |type alias Baz = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.04") {
+    val input =
+      s"""
+         |type alias Foo = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
+  test("RecursionLimit.05") {
+    val input =
+      s"""
+         |type alias Foo = Option[Bar]
+         |type alias Bar = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.RecursionLimit](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int = x"
     val result = new Flix().addStr(input).compile()
@@ -477,6 +541,238 @@ class TestResolver extends FunSuite with TestUtils {
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedJvmConstructor.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import new java.io.File() as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import new java.io.File(Int32) as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import new java.lang.String(Bool) as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import new java.lang.String(Bool, Char, String) as _;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmClass.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import new foo.bar.Baz() as newObject;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import foo.bar.Baz.f();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import foo.bar.Baz:f();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get foo.bar.Baz.f as getF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.05") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import set foo.bar.Baz.f as setF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.06") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get foo.bar.Baz:f as getF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmClass.07") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import set foo.bar.Baz:f as setF;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmMethod.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.getFoo();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.charAt();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.charAt(Int32, Int32);
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.isEmpty(Bool);
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.05") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String:isEmpty();
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmMethod.06") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import java.lang.String.valueOf(Bool);
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmMethod](result)
+  }
+
+  test("UndefinedJvmField.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get java.lang.Character.foo as getFoo;
+         |    ()
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import set java.lang.Character.foo as setFoo;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import get java.lang.Character:foo as getFoo;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    import set java.lang.Character:foo as setFoo;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedJvmField](result)
   }
 
   test("UndefinedTag.01") {
@@ -601,68 +897,5 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UnhandledEffect](result)
   }
 
-  test("RecursionLimit.01") {
-    val input =
-      s"""
-         |type alias Foo = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.02") {
-    val input =
-      s"""
-         |type alias Foo = Bar
-         |type alias Bar = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.03") {
-    val input =
-      s"""
-         |type alias Foo = Bar
-         |type alias Bar = Baz
-         |type alias Baz = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.04") {
-    val input =
-      s"""
-         |type alias Foo = Option[Foo]
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
-
-  test("RecursionLimit.05") {
-    val input =
-      s"""
-         |type alias Foo = Option[Bar]
-         |type alias Bar = Option[Foo]
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.RecursionLimit](result)
-  }
 
 }
