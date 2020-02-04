@@ -69,7 +69,19 @@ object Unification {
           case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
           case Type.Zero => Type.Zero
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
-          case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
+          case Type.Apply(t1, t2) =>
+            (visit(t1), visit(t2)) match {
+                // TODO: All kinds of optimizations.
+                // TODO: Reduce allocation.
+              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Type.Cst(TypeConstructor.Impure)
+              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Type.Cst(TypeConstructor.Pure)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Type.Cst(TypeConstructor.Impure)
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) =>  Type.Cst(TypeConstructor.Pure)
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
+              case (x, y) => Type.Apply(x, y)
+            }
+
           case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
         }
 
@@ -420,37 +432,49 @@ object Unification {
   def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
 
     /**
-      * Returns the negation of the effect `eff`.
+      * Represents the Pure effect. (TRUE in the Boolean algebra.)
       */
-    // TODO: Optimize
-    def mkNot(eff: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Not), eff)
+    val Pure = Type.Cst(TypeConstructor.Pure)
+    val True = Pure
+
+    /**
+      * Represents the Impure effect. (FALSE in the Boolean algebra.)
+      */
+    val Impure = Type.Cst(TypeConstructor.Impure)
+    val False = Impure
+
+    /**
+      * Returns the negation of the effect `eff0`.
+      */
+    def mkNot(eff0: Type): Type = eff0 match {
+      case Type.Cst(TypeConstructor.Pure) => Impure
+      case Type.Cst(TypeConstructor.Impure) => Pure
+      case Type.Apply(Type.Cst(TypeConstructor.Not), eff) => eff
+      case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
+    }
 
     /**
       * Returns the conjunction of the two effects `eff1` and `eff2`.
       */
     // TODO: Optimize
-    def mkAnd(eff1: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+    def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+      case (Type.Cst(TypeConstructor.Pure), _) => eff2
+      case (_, Type.Cst(TypeConstructor.Pure)) => eff1
+      case (Type.Cst(TypeConstructor.Impure), _) => Impure
+      case (_, Type.Cst(TypeConstructor.Impure)) => Impure
+      case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+    }
 
     /**
       * Returns the disjunction of the two effects `eff1` and `eff2`.
       */
-      // TODO: Optimize
+    // TODO: Optimize
     def mkOr(ef1f: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
 
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
     def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), (mkAnd(mkNot(p), q)))
-
-    /**
-      * Represents the Pure effect. (TRUE in the Boolean algebra.)
-      */
-    val True = Type.Cst(TypeConstructor.Pure)
-
-    /**
-      * Represents the Impure effect. (FALSE in the Boolean algebra.)
-      */
-    val False = Type.Cst(TypeConstructor.Impure)
 
     /**
       * Performs success variable elimination on the given boolean expression `eff`.
@@ -477,10 +501,7 @@ object Unification {
     println(subst)
     println(result)
 
-    (eff1, eff2) match {
-      // TODO: Do the actual unification of boolean constraints.
-      case _ => Ok(Substitution.empty)
-    }
+    Ok(subst)
   }
 
   /**
