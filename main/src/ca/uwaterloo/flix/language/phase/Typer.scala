@@ -680,8 +680,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Pure, loc)
         } yield (resultType, resultEff)
 
-      // TODO: --- Continue to look over type rules from here. ----
-
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
         //
         // r : { label = tpe | row }
@@ -706,7 +704,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           resultTyp <- unifyTypM(tvar, Type.RecordExtend(label, tpe1, tpe2), loc)
-          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.RecordRestrict(label, exp, tvar, evar, loc) =>
@@ -723,7 +721,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) => // TODO: Effects
         //
         //  e1 : t ... en: t
         //  ----------------------
@@ -742,7 +740,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.ArrayNew(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayNew(exp1, exp2, tvar, evar, loc) => // TODO: Effects
         //
         //  exp1 : t    exp2: Int
         //  ------------------------
@@ -756,7 +754,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, evar, loc) => // TODO: Effects
         //
         //  exp1 : Array[t]    exp2: Int
         //  ----------------------------
@@ -770,7 +768,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (tvar, resultEff)
 
-      case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) => // TODO: Effects
         //
         //  exp : Array[t]
         //  ----------------
@@ -784,7 +782,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, evar, loc) => // TODO: Effects
         //
         //  exp1 : Array[t]    exp2 : Int    exp3 : t
         //  -----------------------------------------
@@ -802,7 +800,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, evar, loc) =>
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, evar, loc) => // TODO: Effects
         //
         //  exp1 : Array[t]    exp2 : Int    exp3 : Int
         //  -------------------------------------------
@@ -819,7 +817,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) => // TODO: Effects
         //
         // elm1: t ...  elm_len: t  len: Succ(n, Zero)
         // -------------------------------------------
@@ -838,7 +836,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.VectorNew(exp, len, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorNew(exp, len, tvar, evar, loc) => // TODO: Effects
         //
         // exp: t    len: Succ(n, Zero)
         // --------------------------------
@@ -850,7 +848,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLoad(exp, index, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorLoad(exp, index, tvar, evar, loc) => // TODO: Effects
         //
         //  exp : Vector[t, len1]   index: len2   len1: Succ(n1, Zero) len2: Succ(n2, Var)
         //  ------------------------------------------------------------------------------
@@ -865,7 +863,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorStore(exp1, index, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorStore(exp1, index, exp2, tvar, evar, loc) => // TODO: Effects
         //
         //  exp1 : Vector[t, len1]   index: len2   exp2: t    len1: Succ(n1, Zero)  len2: Succ(n2, Var)
         //  -------------------------------------------------------------------------------------------
@@ -882,7 +880,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLength(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorLength(exp, tvar, evar, loc) => // TODO: Effects
         //
         // exp: Vector[t, len1]   index: len2   len1: Succ(n1, Zero)  len2: Succ(n2, Var)
         // ------------------------------------------------------------------------------
@@ -897,7 +895,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorSlice(exp, startIndex, optEndIndex, tvar, evar, loc) =>
+      case ResolvedAst.Expression.VectorSlice(exp, startIndex, optEndIndex, tvar, evar, loc) => // TODO: Effects
         //
         //  Case None =
         //  exp : Vector[t, len2]   startIndex : len3
@@ -934,7 +932,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) => // TODO: Effects
         //
         //  exp : t
         //  ----------------
@@ -946,7 +944,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) => // TODO: Effects
         //
         //  exp : Ref[t]
         //  -------------
@@ -959,7 +957,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, elementType, loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) => // TODO: Effects
         //
         //  exp1 : Ref[t]    exp2: t
         //  ------------------------
@@ -973,7 +971,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) =>
+      case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) => // TODO: Effects
         // TODO: Need to check that the return types are consistent.
 
         // Typecheck each handler binding.
@@ -993,6 +991,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, tpe, loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
+
+      // TODO: --- Continue to look over type rules from here. ----
 
       case ResolvedAst.Expression.Existential(fparam, exp, evar, loc) =>
         // TODO: Check formal parameter type.
@@ -2139,8 +2139,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns the type `And(eff1, eff2)`.
     */
-  // TODO: Optimize if true or false etc.
-  private def mkAnd(eff1: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+  private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+    case (Type.Cst(TypeConstructor.Pure), _) => eff2
+    case (_, Type.Cst(TypeConstructor.Pure)) => eff1
+    case (Type.Cst(TypeConstructor.Impure), _) => Impure
+    case (_, Type.Cst(TypeConstructor.Impure)) => Impure
+    case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+  }
 
   /**
     * Returns the type `And(eff1, And(eff2, eff3))`.
