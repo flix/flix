@@ -25,6 +25,16 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 object Unification {
 
   /**
+    * Represents the Pure effect. (TRUE in the Boolean algebra.)
+    */
+  private val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    */
+  private val Impure: Type = Type.Cst(TypeConstructor.Impure)
+
+  /**
     * Companion object for the [[Substitution]] class.
     */
   object Substitution {
@@ -432,18 +442,6 @@ object Unification {
   def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
 
     /**
-      * Represents the Pure effect. (TRUE in the Boolean algebra.)
-      */
-    val Pure = Type.Cst(TypeConstructor.Pure)
-    val True = Pure
-
-    /**
-      * Represents the Impure effect. (FALSE in the Boolean algebra.)
-      */
-    val Impure = Type.Cst(TypeConstructor.Impure)
-    val False = Impure
-
-    /**
       * Returns the negation of the effect `eff0`.
       */
     def mkNot(eff0: Type): Type = eff0 match {
@@ -456,13 +454,14 @@ object Unification {
     /**
       * Returns the conjunction of the two effects `eff1` and `eff2`.
       */
-    // TODO: Optimize and rewrite.
-    def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
-      case (Type.Cst(TypeConstructor.Pure), _) => eff2
-      case (_, Type.Cst(TypeConstructor.Pure)) => eff1
-      case (Type.Cst(TypeConstructor.Impure), _) => Impure
-      case (_, Type.Cst(TypeConstructor.Impure)) => Impure
-      case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+    def mkAnd(eff1: Type, eff2: Type): Type = eff1 match {
+      case Type.Cst(TypeConstructor.Pure) => eff2
+      case Type.Cst(TypeConstructor.Impure) => Impure
+      case _ => eff2 match {
+        case Type.Cst(TypeConstructor.Pure) => eff1
+        case Type.Cst(TypeConstructor.Impure) => Impure
+        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+      }
     }
 
     /**
@@ -481,7 +480,13 @@ object Unification {
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
-    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), (mkAnd(mkNot(p), q)))
+    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+
+    /**
+      * Aliases to make the success variable elimination easier to understand.
+      */
+    val True = Pure
+    val False = Impure
 
     /**
       * Performs success variable elimination on the given boolean expression `eff`.
