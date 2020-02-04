@@ -473,7 +473,7 @@ object Unification {
     /**
       * Returns the disjunction of the two effects `eff1` and `eff2`.
       */
-    def mkOr(ef1f: Type, eff2: Type): Type = eff1 match {
+    def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
       case Type.Cst(TypeConstructor.Pure) => Pure
       case Type.Cst(TypeConstructor.Impure) => eff2
       case _ => eff2 match {
@@ -519,6 +519,8 @@ object Unification {
     println(s"eff1: $eff1, eff2: $eff2")
     println(subst)
     println(result)
+    if (result == Pure)
+      println("unification failed")
     println()
 
     Ok(subst)
