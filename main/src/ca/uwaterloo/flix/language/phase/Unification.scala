@@ -89,11 +89,13 @@ object Unification {
               case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
               case (Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Cst(TypeConstructor.Impure)) => Impure
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
 
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
               case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
               case (Type.Apply(Type.Cst(TypeConstructor.Or), x), Type.Cst(TypeConstructor.Impure)) => x
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
 
               case (x, y) => Type.Apply(x, y)
             }
@@ -517,7 +519,8 @@ object Unification {
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
     println(s"eff1: $eff1, eff2: $eff2")
-    println(subst)
+    val s = subst.toString
+    println(s.substring(0, Math.min(s.length, 140)))
     println(result)
     if (result == Pure)
       println("unification failed")
