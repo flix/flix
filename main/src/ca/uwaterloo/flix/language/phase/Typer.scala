@@ -1170,7 +1170,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // check that default case has same type as bodies (the same as result type)
         def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.Expression]): InferMonad[Unit] = {
           defaultCase match {
-            case None => liftM(UnitType)
+            case None => liftM(Type.Cst(TypeConstructor.Unit)) // TODO: Bug in Scalac?
 
             case Some(exp) =>
               for {
