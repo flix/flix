@@ -485,6 +485,12 @@ object Unification {
     def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
       case Type.Cst(TypeConstructor.Pure) => Pure
       case Type.Cst(TypeConstructor.Impure) => eff2
+      case Type.Var(id1, _) =>
+        eff2 match {
+          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
+          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
+          case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+        }
       case _ => eff2 match {
         case Type.Cst(TypeConstructor.Pure) => Pure
         case Type.Cst(TypeConstructor.Impure) => eff1
@@ -537,12 +543,12 @@ object Unification {
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
     // TODO
-    //println(s"eff1: $eff1, eff2: $eff2")
-    //val s = subst.toString
-    //println(s.substring(0, Math.min(s.length, 140)))
+    println(s"eff1: $eff1, eff2: $eff2")
+    val s = subst.toString
+    println(s.substring(0, Math.min(s.length, 140)))
     if (result == Pure)
       println("unification failed")
-    //println()
+    println()
 
     Ok(subst)
   }
