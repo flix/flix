@@ -690,6 +690,45 @@ def reverse06(): Bool =
     Array.sameElements(a, [4,3,2,1])
 
 /////////////////////////////////////////////////////////////////////////////
+// reverseInPlace                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reverseInPlace01(): Bool =
+    let a: Array[Int32] = [];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def reverseInPlace02(): Bool =
+    let a = [1];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [1])
+
+@test
+def reverseInPlace03(): Bool =
+    let a = [1,2];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [2,1])
+
+@test
+def reverseInPlace04(): Bool =
+    let a = [1,1];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [1,1])
+
+@test
+def reverseInPlace05(): Bool =
+    let a = [1,2,3];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [3,2,1])
+
+@test
+def reverseInPlace06(): Bool =
+    let a = [1,2,3,4];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [4,3,2,1])
+
+/////////////////////////////////////////////////////////////////////////////
 // scan                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test

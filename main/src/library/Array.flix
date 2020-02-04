@@ -281,6 +281,27 @@ namespace Array {
         init(i -> a[end - i], len)
 
     ///
+    /// Returns the reverse of `a`.
+    ///
+    pub def reverseInPlace(a: Array[a]): Unit =
+        let len = length(a);
+        reverseInPlaceHelper(a, len / 2, 0, len - 1)
+
+    ///
+    /// Helper for `reverseInPlace`.
+    ///
+    def reverseInPlaceHelper(a: Array[a], halflen: Int32, i: Int32, j: Int32): Unit =
+        if (i >= halflen)
+            ()
+        else {
+            let x = a[i];
+            let y = a[j];
+            put(a, i, y);
+            put(a, j, x);
+            reverseInPlaceHelper(a, halflen, i+1, j-1)
+        }
+
+    ///
     /// Alias for `scanLeft`.
     ///
     pub def scan(f: (b, a) -> b, s: b, xs: Array[a]): Array[b] = scanLeft(f, s, xs)
