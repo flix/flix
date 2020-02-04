@@ -552,8 +552,9 @@ object Unification {
     //val s = subst.toString
     //println(s.substring(0, Math.min(s.length, 300)))
     if (result == Pure) {
+      // TODO
       println("unification failed")
-      ???
+      return Err(UnificationError.MismatchedTypes(eff1, eff2))
     }
     //println()
 
@@ -665,7 +666,9 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))
-        case Result.Err(e) => throw InternalCompilerException(s"Unexpected error: '$e'.")
+        case Result.Err(e) =>
+          println(loc)
+          throw InternalCompilerException(s"Unexpected error: '$e'.")
       }
     }
     )
