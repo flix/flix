@@ -42,12 +42,12 @@ object Unification {
   /**
     * A substitution is a map from type variables to types.
     */
-  case class Substitution(typeMap: Map[Type.Var, Type]) {
+  case class Substitution(m: Map[Type.Var, Type]) {
 
     /**
       * Returns `true` if `this` is the empty substitution.
       */
-    val isEmpty: Boolean = typeMap.isEmpty
+    val isEmpty: Boolean = m.isEmpty
 
     /**
       * Applies `this` substitution to the given type `tpe0`.
@@ -56,7 +56,7 @@ object Unification {
       def visit(t: Type): Type =
         t match {
           case x: Type.Var =>
-            typeMap.get(x) match {
+            m.get(x) match {
               case None => x
               case Some(y) if x.kind == t.kind => y
               case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
@@ -92,7 +92,7 @@ object Unification {
         this
       } else {
         Substitution(
-          this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1))
+          this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
         )
       }
     }
@@ -106,7 +106,7 @@ object Unification {
       } else if (that.isEmpty) {
         this
       } else {
-        val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
+        val newTypeMap = that.m.foldLeft(Map.empty[Type.Var, Type]) {
           case (macc, (x, t)) => macc.updated(x, this.apply(t))
         }
         Substitution(newTypeMap) ++ this
@@ -417,9 +417,70 @@ object Unification {
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = (eff1, eff2) match {
+  def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
+
+    /**
+      * Returns the negation of the effect `eff`.
+      */
+    // TODO: Optimize
+    def mkNot(eff: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Not), eff)
+
+    /**
+      * Returns the conjunction of the two effects `eff1` and `eff2`.
+      */
+    // TODO: Optimize
+    def mkAnd(eff1: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+
+    /**
+      * Returns the disjunction of the two effects `eff1` and `eff2`.
+      */
+      // TODO: Optimize
+    def mkOr(ef1f: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+
+    /**
+      * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+      */
+    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), (mkAnd(mkNot(p), q)))
+
+    /**
+      * Represents the Pure effect. (TRUE in the Boolean algebra.)
+      */
+    val True = Type.Cst(TypeConstructor.Pure)
+
+    /**
+      * Represents the Impure effect. (FALSE in the Boolean algebra.)
+      */
+    val False = Type.Cst(TypeConstructor.Impure)
+
+    /**
+      * Performs success variable elimination on the given boolean expression `eff`.
+      */
+    def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
+      case Nil => (Substitution.empty, eff)
+      case x :: xs =>
+        val t0 = Substitution.singleton(x, False)(eff)
+        val t1 = Substitution.singleton(x, True)(eff)
+        val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
+        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, se(mkNot(t1)))))
+        (st ++ se, cc)
+    }
+
+    // The boolean expression we want to show is 0.
+    val query = eq(eff1, eff2)
+
+    // The free type (effect) variables in the query.
+    val freeVars = eff1.typeVars.toList
+
+    // Eliminate all variables.
+    val (subst, result) = successiveVariableElimination(query, freeVars)
+
+    println(subst)
+    println(result)
+
+    (eff1, eff2) match {
       // TODO: Do the actual unification of boolean constraints.
-    case _ => Ok(Substitution.empty)
+      case _ => Ok(Substitution.empty)
+    }
   }
 
   /**
