@@ -495,7 +495,13 @@ object Unification {
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
-    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+    def eq(p: Type, q: Type): Type = {
+      // TODO: Optimize based on arguments.
+      print(">> " + p + " :: " + q)
+      println()
+
+      mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+    }
 
     /**
       * Aliases to make the success variable elimination easier to understand.
