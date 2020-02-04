@@ -511,13 +511,15 @@ object Unification {
     val query = eq(eff1, eff2)
 
     // The free type (effect) variables in the query.
-    val freeVars = eff1.typeVars.toList
+    val freeVars = query.typeVars.toList
 
     // Eliminate all variables.
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
+    println(s"eff1: $eff1, eff2: $eff2")
     println(subst)
     println(result)
+    println()
 
     Ok(subst)
   }
