@@ -81,14 +81,20 @@ object Unification {
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
           case Type.Apply(t1, t2) =>
             (visit(t1), visit(t2)) match {
-              // TODO: All kinds of optimizations.
-              // TODO: Reduce allocation.
-              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Type.Cst(TypeConstructor.Impure)
-              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Type.Cst(TypeConstructor.Pure)
+              // TODO: Optimize
+              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Impure
+              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Pure
+
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Type.Cst(TypeConstructor.Impure)
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Type.Cst(TypeConstructor.Pure)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
+              case (Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Cst(TypeConstructor.Impure)) => Impure
+
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), Type.Cst(TypeConstructor.Impure)) => x
+
               case (x, y) => Type.Apply(x, y)
             }
 
