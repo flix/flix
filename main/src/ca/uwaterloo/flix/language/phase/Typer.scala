@@ -992,35 +992,35 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      // TODO: --- Continue to look over type rules from here. ----
-
       case ResolvedAst.Expression.Existential(fparam, exp, evar, loc) =>
         // TODO: Check formal parameter type.
         for {
-          (bodyType, bodyEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(bodyType, mkBoolType(), loc)
-        } yield (resultTyp, evar)
+          (typ, eff) <- visitExp(exp)
+          resultTyp <- unifyTypM(typ, mkBoolType(), loc)
+          resultEff <- unifyEffM(evar, eff, Pure, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
         // TODO: Check formal parameter type.
         for {
-          (bodyType, bodyEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(bodyType, mkBoolType(), loc)
-        } yield (resultTyp, evar)
+          (typ, eff) <- visitExp(exp)
+          resultTyp <- unifyTypM(typ, mkBoolType(), loc)
+          resultEff <- unifyEffM(evar, eff, Pure, loc)
+        } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
+      case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
           (actualType, actualEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(actualType, expectedType, loc)
+          resultTyp <- unifyTypM(actualType, expectedTyp, loc)
           resultEff <- unifyEffM(actualEff, expectedEff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Cast(exp, declaredType, eff, loc) =>
+      case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, loc) =>
         // An cast expression is unsound; the type system assumes the declared type is correct.
         for {
           actualType <- visitExp(exp)
-        } yield (declaredType, eff)
+        } yield (declaredTyp, declaredEff)
 
       case ResolvedAst.Expression.TryCatch(exp, rules, tvar, evar, loc) =>
         val rulesType = rules map {
@@ -1035,7 +1035,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, evar, loc) =>
+      case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, evar, loc) => // TODO: Effects
         val classType = getFlixType(constructor.getDeclaringClass)
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
@@ -1043,7 +1043,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) =>
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) => // TODO: Effects
         val classType = getFlixType(method.getDeclaringClass)
         val returnType = getFlixType(method.getReturnType)
         for {
@@ -1054,7 +1054,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar :: baseEff :: argTypesAndEffects.map(_._2), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) =>
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) => // TODO: Effects
         val returnType = getFlixType(method.getReturnType)
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
@@ -1062,7 +1062,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) => // TODO: Effects
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
@@ -1072,7 +1072,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, baseEff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
+      case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) => // TODO: Effects
         val fieldType = getFlixType(field.getType)
         val classType = getFlixType(field.getDeclaringClass)
         for {
@@ -1084,19 +1084,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, baseEff, valueEff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
+      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) => // TODO: Effects
         val fieldType = getFlixType(field.getType)
         for {
           resultTyp <- unifyTypM(tvar, fieldType, loc)
         } yield (resultTyp, evar)
 
-      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) => // TODO: Effects
         for {
           (valueTyp, valueEff) <- visitExp(exp)
           fieldTyp <- unifyTypM(getFlixType(field.getType), valueTyp, loc)
           resultTyp <- unifyTypM(tvar, mkUnitType(), loc)
           resultEff <- unifyEffM(evar, valueEff, loc)
         } yield (resultTyp, resultEff)
+
+      // TODO: --- Continue to look over type rules from here. ----
 
       case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
@@ -1344,7 +1346,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         TypedAst.Expression.Eff(sym, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.Sig(sym, tvar, evar, loc) =>
-        ??? // TODO
+        throw InternalCompilerException("Not yet supported")
 
       case ResolvedAst.Expression.Hole(sym, tpe, evar, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)
@@ -2027,23 +2029,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns an open schema type.
     */
   private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshTypeVar()
-
-  /**
-    * Returns the Flix Type of a Java Type
-    */
-  private def getGenericFlixType(t: java.lang.reflect.Type)(implicit flix: Flix): Type = {
-    t match {
-      case arrayType: java.lang.reflect.GenericArrayType =>
-        val comp = arrayType.getGenericComponentType
-        val elmType = getGenericFlixType(comp)
-        mkArray(elmType)
-      case c: Class[_] =>
-        getFlixType(c)
-      case _ =>
-        // TODO: Can we do better than this for Parametric Types?
-        Type.freshTypeVar()
-    }
-  }
 
   /**
     * Returns the Flix Type of a Java Class
