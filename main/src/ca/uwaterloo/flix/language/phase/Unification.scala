@@ -71,13 +71,13 @@ object Unification {
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
           case Type.Apply(t1, t2) =>
             (visit(t1), visit(t2)) match {
-                // TODO: All kinds of optimizations.
-                // TODO: Reduce allocation.
+              // TODO: All kinds of optimizations.
+              // TODO: Reduce allocation.
               case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Type.Cst(TypeConstructor.Impure)
               case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Type.Cst(TypeConstructor.Pure)
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Type.Cst(TypeConstructor.Impure)
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) =>  Type.Cst(TypeConstructor.Pure)
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Type.Cst(TypeConstructor.Pure)
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
               case (x, y) => Type.Apply(x, y)
             }
@@ -456,7 +456,7 @@ object Unification {
     /**
       * Returns the conjunction of the two effects `eff1` and `eff2`.
       */
-    // TODO: Optimize
+    // TODO: Optimize and rewrite.
     def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
       case (Type.Cst(TypeConstructor.Pure), _) => eff2
       case (_, Type.Cst(TypeConstructor.Pure)) => eff1
@@ -468,8 +468,15 @@ object Unification {
     /**
       * Returns the disjunction of the two effects `eff1` and `eff2`.
       */
-    // TODO: Optimize
-    def mkOr(ef1f: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+    def mkOr(ef1f: Type, eff2: Type): Type = eff1 match {
+      case Type.Cst(TypeConstructor.Pure) => Pure
+      case Type.Cst(TypeConstructor.Impure) => eff2
+      case _ => eff2 match {
+        case Type.Cst(TypeConstructor.Pure) => Pure
+        case Type.Cst(TypeConstructor.Impure) => eff1
+        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+      }
+    }
 
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
