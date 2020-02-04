@@ -418,7 +418,8 @@ object Unification {
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
   def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = (eff1, eff2) match {
-    case _ => ??? // TODO
+      // TODO: Do the actual unification of boolean constraints.
+    case _ => Ok(Substitution.empty)
   }
 
   /**

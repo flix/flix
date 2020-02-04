@@ -78,7 +78,7 @@ object ResolvedAst {
 
     case class Wild(tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Var(sym: Symbol.VarSym, tvar: Type, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -252,7 +252,7 @@ object ResolvedAst {
 
     case class PutStaticField(field: Field, exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(exp: ResolvedAst.Expression, tvar: Type, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

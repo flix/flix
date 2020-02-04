@@ -92,7 +92,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Eff.freshEffVar()
+          val eff = Type.freshTypeVar()
           val loc = SourceLocation.Unknown
           val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
           sym -> defn
@@ -189,7 +189,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff0, loc)
+        eff <- lookupEffect(eff0)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
   }
 
   /**
@@ -201,7 +202,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-      } yield ResolvedAst.Eff(doc, ann, mod, sym, tparams, fparams, scheme, eff0, loc)
+        eff <- lookupEffect(eff0)
+      } yield ResolvedAst.Eff(doc, ann, mod, sym, tparams, fparams, scheme, eff, loc)
   }
 
   /**
@@ -221,7 +223,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         exp <- Expressions.resolve(exp0, tenv0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-      } yield ResolvedAst.Handler(doc, ann, mod, eff.sym, tparams, fparams, exp, scheme, eff0, loc)
+        eff1 <- lookupEffect(eff0)
+      } yield ResolvedAst.Handler(doc, ann, mod, eff.sym, tparams, fparams, exp, scheme, eff1, loc)
   }
 
   /**
@@ -544,7 +547,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, Eff.freshEffVar(), loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, Type.freshTypeVar(), loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), evar, loc)
@@ -690,14 +693,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
-            f <- lookupType(eff, ns0, prog0)
+            f <- lookupEffect(eff)
           } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
 
         case NamedAst.Expression.Cast(exp, tpe, eff, loc) =>
           for {
             e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
-            f <- lookupType(eff, ns0, prog0)
+            f <- lookupEffect(eff)
           } yield ResolvedAst.Expression.Cast(e, t, f, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, tpe, evar, loc) =>
@@ -1542,6 +1545,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
+    * Resolves the given effect `eff`.
+    */
+  private def lookupEffect(eff: NamedAst.Effect): Validation[Type, ResolutionError] = eff match {
+    case NamedAst.Effect.Pure => Type.Cst(TypeConstructor.True).toSuccess
+    case NamedAst.Effect.Impure => Type.Cst(TypeConstructor.False).toSuccess
+  }
+
+  /**
     * Successfully returns the given class `clazz0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
@@ -1849,7 +1860,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
       case Type.Cst(_) => t
 
-      case Type.Arrow(_, _) => t
+      case Type.Arrow(_) => t
 
       case Type.RecordEmpty => t
 
