@@ -496,11 +496,16 @@ object Unification {
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
     def eq(p: Type, q: Type): Type = {
-      // TODO: Optimize based on arguments.
-      print(">> " + p + " :: " + q)
-      println()
-
-      mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+      // Note: Specialized for performance.
+      p match {
+        case Type.Cst(TypeConstructor.Pure) => mkNot(q)
+        case Type.Cst(TypeConstructor.Impure) => q
+        case _ => q match {
+          case Type.Cst(TypeConstructor.Pure) => mkNot(p)
+          case Type.Cst(TypeConstructor.Impure) => p
+          case _ => mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+        }
+      }
     }
 
     /**
