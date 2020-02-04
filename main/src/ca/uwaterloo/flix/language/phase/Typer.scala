@@ -365,69 +365,70 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Type)] = e0 match {
 
-      case ResolvedAst.Expression.Wild(tvar, evar, loc) => liftM((tvar, evar))
+      case ResolvedAst.Expression.Wild(tvar, evar, loc) =>
+        liftM((tvar, evar))
 
-      case ResolvedAst.Expression.Var(sym, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Var(sym, tpe, evar, loc) =>
         for {
-          resultTyp <- unifyTypM(sym.tvar, tvar, loc)
-        } yield (resultTyp, evar)
+          resultTyp <- unifyTypM(sym.tvar, tpe, loc)
+        } yield (resultTyp, Pure)
 
       case ResolvedAst.Expression.Def(sym, tvar, evar, loc) =>
         val defn = program.defs(sym)
         for {
           resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc), loc)
-        } yield (resultTyp, evar)
+        } yield (resultTyp, Pure)
 
       case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
         val eff = program.effs(sym)
         for {
           resultTyp <- unifyTypM(tvar, Scheme.instantiate(eff.sc), loc)
-        } yield (resultTyp, evar)
+        } yield (resultTyp, Pure)
 
       case ResolvedAst.Expression.Sig(sym, tvar, evar, loc) =>
-        val sig = program.classes(sym.clazz)
-        ??? // TODO: Sig
+        throw InternalCompilerException("Not yet supported")
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
         liftM((tvar, evar))
 
       case ResolvedAst.Expression.Unit(loc) =>
-        liftM((mkUnitType(), Type.Cst(TypeConstructor.Pure)))
+        liftM((mkUnitType(), Pure))
 
       case ResolvedAst.Expression.True(loc) =>
-        liftM((mkBoolType(), Type.Cst(TypeConstructor.Pure)))
+        liftM((mkBoolType(), Pure))
 
       case ResolvedAst.Expression.False(loc) =>
-        liftM((mkBoolType(), Type.Cst(TypeConstructor.Pure)))
+        liftM((mkBoolType(), Pure))
 
       case ResolvedAst.Expression.Char(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Char), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Char), Pure))
 
       case ResolvedAst.Expression.Float32(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Float32), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Float32), Pure))
 
       case ResolvedAst.Expression.Float64(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Float64), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Float64), Pure))
 
       case ResolvedAst.Expression.Int8(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int8), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Int8), Pure))
 
       case ResolvedAst.Expression.Int16(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int16), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Int16), Pure))
 
       case ResolvedAst.Expression.Int32(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int32), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Int32), Pure))
 
       case ResolvedAst.Expression.Int64(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int64), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Int64), Pure))
 
       case ResolvedAst.Expression.BigInt(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.BigInt), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.BigInt), Pure))
 
       case ResolvedAst.Expression.Str(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Str), Type.Cst(TypeConstructor.Pure)))
+        liftM((Type.Cst(TypeConstructor.Str), Pure))
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
+        // TODO: Effects
         val argType = fparam.tpe
         for {
           (bodyType, bodyEff) <- visitExp(exp)
@@ -436,6 +437,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
+        // TODO: Effects
         val lambdaBodyType = Type.freshTypeVar()
         val lambdaBodyEff = Type.freshTypeVar()
         for {
@@ -2092,11 +2094,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns the Unit type.
     */
+  // TODO: Should be val
   private def mkUnitType(): Type = Type.Cst(TypeConstructor.Unit)
 
   /**
     * Returns the Bool type.
     */
+  // TODO: Should be val
   private def mkBoolType(): Type = Type.Cst(TypeConstructor.Bool)
 
   /**
@@ -2118,5 +2122,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns the type `Vector[tpe, len]`.
     */
   private def mkVector(tpe: Type, len: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), tpe), len)
+
+  /**
+    * Represents the Pure effect.
+    */
+  private val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect.
+    */
+  private val Impure: Type = Type.Cst(TypeConstructor.Impure)
 
 }
