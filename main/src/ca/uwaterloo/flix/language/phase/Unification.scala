@@ -536,12 +536,13 @@ object Unification {
     // Eliminate all variables.
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
-    println(s"eff1: $eff1, eff2: $eff2")
-    val s = subst.toString
-    println(s.substring(0, Math.min(s.length, 140)))
+    // TODO
+    //println(s"eff1: $eff1, eff2: $eff2")
+    //val s = subst.toString
+    //println(s.substring(0, Math.min(s.length, 140)))
     if (result == Pure)
       println("unification failed")
-    println()
+    //println()
 
     Ok(subst)
   }
