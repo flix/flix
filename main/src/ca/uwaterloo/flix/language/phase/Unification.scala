@@ -46,7 +46,14 @@ object Unification {
     /**
       * Returns the singleton substitution mapping the type variable `x` to `tpe`.
       */
-    def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe))
+    def singleton(x: Type.Var, tpe: Type): Substitution = {
+      // Ensure that we do not add any x -> x mappings.
+      tpe match {
+        case y: Type.Var if x.id == y.id => empty
+        case _ => Substitution(Map(x -> tpe))
+      }
+    }
+
   }
 
   /**
@@ -521,7 +528,6 @@ object Unification {
     println(s"eff1: $eff1, eff2: $eff2")
     val s = subst.toString
     println(s.substring(0, Math.min(s.length, 140)))
-    println(result)
     if (result == Pure)
       println("unification failed")
     println()
