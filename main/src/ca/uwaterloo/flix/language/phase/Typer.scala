@@ -484,7 +484,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Minus =>
@@ -492,7 +492,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Times =>
@@ -500,7 +500,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Divide =>
@@ -508,7 +508,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Modulo =>
@@ -516,7 +516,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Exponentiate =>
@@ -524,7 +524,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Equal | BinaryOperator.NotEqual =>
@@ -533,7 +533,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypM(tpe1, tpe2, loc)
             resultTyp <- unifyTypM(tvar, mkBoolType(), loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.Less | BinaryOperator.LessEqual | BinaryOperator.Greater | BinaryOperator.GreaterEqual =>
@@ -542,7 +542,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             valueType <- unifyTypM(tpe1, tpe2, loc)
             resultTyp <- unifyTypM(tvar, mkBoolType(), loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
@@ -550,7 +550,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultType <- unifyTypM(tvar, tpe1, tpe2, mkBoolType(), loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultType, resultEff)
 
         case BinaryOperator.BitwiseAnd | BinaryOperator.BitwiseOr | BinaryOperator.BitwiseXor =>
@@ -558,7 +558,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe1, eff1) <- visitExp(exp1)
             (tpe2, eff2) <- visitExp(exp2)
             resultTyp <- unifyTypM(tvar, tpe1, tpe2, loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
         case BinaryOperator.BitwiseLeftShift | BinaryOperator.BitwiseRightShift =>
@@ -567,7 +567,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             (tpe2, eff2) <- visitExp(exp2)
             lhsType <- unifyTypM(tvar, tpe1, loc)
             rhsType <- unifyTypM(tpe2, Type.Cst(TypeConstructor.Int32), loc)
-            resultEff <- unifyEffM(evar, eff1, eff2, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (lhsType, resultEff)
       }
 
@@ -2104,6 +2104,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   private def mkBoolType(): Type = Type.Cst(TypeConstructor.Bool)
 
   /**
+    * Represents the Pure effect.
+    */
+  private val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect.
+    */
+  private val Impure: Type = Type.Cst(TypeConstructor.Impure)
+
+  /**
     * Returns the type `Array[tpe]`.
     */
   private def mkArray(elmType: Type): Type = Type.Apply(Type.Cst(TypeConstructor.Array), elmType)
@@ -2124,13 +2134,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   private def mkVector(tpe: Type, len: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), tpe), len)
 
   /**
-    * Represents the Pure effect.
+    * Returns the type `And(eff1, eff2)`.
     */
-  private val Pure: Type = Type.Cst(TypeConstructor.Pure)
+  // TODO: Optimize if true or false etc.
+  private def mkAnd(eff1: Type, eff2: Type): Type = Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
 
   /**
-    * Represents the Impure effect.
+    * Returns the type `And(eff1, And(eff2, eff3))`.
     */
-  private val Impure: Type = Type.Cst(TypeConstructor.Impure)
+  private def mkAnd(eff1: Type, eff2: Type, eff3: Type): Type = mkAnd(eff1, mkAnd(eff2, eff3))
 
 }
