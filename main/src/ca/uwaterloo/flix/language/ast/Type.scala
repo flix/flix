@@ -149,7 +149,6 @@ object Type {
     def kind: Kind = tc.kind
   }
 
-
   /**
     * A type expression that represents functions.
     */

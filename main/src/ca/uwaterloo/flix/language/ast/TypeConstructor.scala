@@ -168,15 +168,19 @@ object TypeConstructor {
 
   /**
     * A type constructor that represents a pure effect.
+    *
+    * Pure represents TRUE in the Boolean algebra.
     */
-  case object True extends TypeConstructor { // TODO: Rename
+  case object Pure extends TypeConstructor {
     def kind: Kind = Kind.Effect
   }
 
   /**
     * A type constructor that represents an impure effect.
+    *
+    * Impure represents FALSE in the Boolean algebra.
     */
-  case object False extends TypeConstructor { // TODO: Rename
+  case object Impure extends TypeConstructor {
     def kind: Kind = Kind.Effect
   }
 

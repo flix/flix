@@ -68,73 +68,73 @@ object TypedAst {
     case class Unit(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Unit)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class True(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class False(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Char)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Float32)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Float64)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int8)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int16)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int32)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Int64)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.BigInt)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Cst(TypeConstructor.Str)
 
-      final def eff: Type = Type.Cst(TypeConstructor.True)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Wild(tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression

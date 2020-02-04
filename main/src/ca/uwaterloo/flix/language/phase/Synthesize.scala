@@ -1328,7 +1328,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns the pure effect.
       */
-    def mkPure(): Type = Type.Cst(TypeConstructor.True)
+    def mkPure(): Type = Type.Cst(TypeConstructor.Pure)
 
     /**
       * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.

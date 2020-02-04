@@ -183,9 +183,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case TypeConstructor.Vector => "Vector" + "[" + args.map(format).mkString(", ") + "]"
 
-        case TypeConstructor.True => "True" // TODO: Naming
+        case TypeConstructor.Pure => "True" // TODO: Naming
 
-        case TypeConstructor.False => "False" // TODO: Naming
+        case TypeConstructor.Impure => "False" // TODO: Naming
 
         case TypeConstructor.Not => "Not"
 
