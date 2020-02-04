@@ -113,7 +113,7 @@ namespace Array {
     ///
     pub def copy(a: Array[a]): Array[a] =
         let len = length(a);
-        init(x-> a[x], len)
+        init(i -> a[i], len)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -218,12 +218,12 @@ namespace Array {
     ///
     /// Helper of `mapInPlace`
     ///
-    pub def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], ix: Int32): Unit =
-        if (ix >= len)
+    pub def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], i: Int32): Unit =
+        if (i >= len)
             ()
         else {
-            a[ix] = f(a[ix]);
-            mapInPlaceHelper(f, len, a, ix+1)
+            a[i] = f(a[i]);
+            mapInPlaceHelper(f, len, a, i+1)
         }
 
     ///
@@ -754,6 +754,12 @@ namespace Array {
         map(e -> if (e == x) y else e, a)
 
     ///
+    /// Returns `a` with every occurrence of `x` replaced by `y`.
+    ///
+    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit =
+        mapInPlace(e -> if (e == x) y else e, a)
+
+    ///
     /// Returns an array where the element at index `i` is `(x, y)` where
     /// `x` is the element at index `i` in `a` and `y` is the element at index `i` in `b`.
     ///
@@ -801,7 +807,7 @@ namespace Array {
     /// Render the array `a` as a String. Elements are rendered with the
     /// function `f` and seperated with the string `sep`.
     ///
-    pub def mkStringBy(f: a -> Str, sep: Str, a: Array[a]): Str =
+    pub def mkStringBy(f: a -> String, sep: String, a: Array[a]): String =
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)

@@ -13,59 +13,78 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/////////////////////////////////////////////////////////////////////////////
+// new                                                                     //
+/////////////////////////////////////////////////////////////////////////////
 @test
-def testNew01(): Bool = Array.new(42, 10)[0] == 42
+def new01(): Bool = Array.new(42, 10)[0] == 42
 
 @test
-def testNew02(): Bool = Array.new(42, 10)[5] == 42
+def new02(): Bool = Array.new(42, 10)[5] == 42
 
 @test
-def testNew03(): Bool = Array.new(42, 10)[9] == 42
+def new03(): Bool = Array.new(42, 10)[9] == 42
+
+/////////////////////////////////////////////////////////////////////////////
+// get                                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def get01(): Bool = Array.get([1, 2, 3], 0) == 1
 
 @test
-def testGet01(): Bool = Array.get([1, 2, 3], 0) == 1
+def get02(): Bool = Array.get([1, 2, 3], 1) == 2
 
 @test
-def testGet02(): Bool = Array.get([1, 2, 3], 1) == 2
+def get03(): Bool = Array.get([1, 2, 3], 2) == 3
+
+/////////////////////////////////////////////////////////////////////////////
+// put                                                                     //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def put01(): Bool = Array.put([1], 0, 42)[0] == 42
 
 @test
-def testGet03(): Bool = Array.get([1, 2, 3], 2) == 3
+def put02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
 
 @test
-def testPut01(): Bool = Array.put([1], 0, 42)[0] == 42
+def put03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
+
+/////////////////////////////////////////////////////////////////////////////
+// length                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def length01(): Bool = Array.length([]) == 0
 
 @test
-def testPut02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
+def length02(): Bool = Array.length([1]) == 1
 
 @test
-def testPut03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
+def length03(): Bool = Array.length([1, 2, 3]) == 3
+
+/////////////////////////////////////////////////////////////////////////////
+// slice                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def slice01(): Bool = Array.slice([1, 2, 3], 0, 1)[0] == 1
 
 @test
-def testLength01(): Bool = Array.length([]) == 0
+def slice02(): Bool = Array.slice([1, 2, 3], 1, 2)[0] == 2
 
 @test
-def testLength02(): Bool = Array.length([1]) == 1
+def slice03(): Bool = Array.slice([1, 2, 3], 2, 3)[0] == 3
+
+/////////////////////////////////////////////////////////////////////////////
+// toList                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toList01(): Bool = Array.toList([]) == Nil
 
 @test
-def testLength03(): Bool = Array.length([1, 2, 3]) == 3
+def toList02(): Bool = Array.toList([1]) == 1 :: Nil
 
 @test
-def testSlice01(): Bool = Array.slice([1, 2, 3], 0, 1)[0] == 1
-
-@test
-def testSlice02(): Bool = Array.slice([1, 2, 3], 1, 2)[0] == 2
-
-@test
-def testSlice03(): Bool = Array.slice([1, 2, 3], 2, 3)[0] == 3
-
-@test
-def testToList01(): Bool = Array.toList([]) == Nil
-
-@test
-def testToList02(): Bool = Array.toList([1]) == 1 :: Nil
-
-@test
-def testToList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
+def toList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // sameElements                                                            //
@@ -1768,6 +1787,57 @@ def replace07(): Bool =
 @test
 def replace08(): Bool =
     let a = Array.replace(3, 4, [3,3]);
+    Array.sameElements(a, [4,4])
+
+/////////////////////////////////////////////////////////////////////////////
+// replaceInPlace                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replaceInPlace01(): Bool =
+    let a: Array[Int32] = [];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def replaceInPlace02(): Bool =
+    let a = [1];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [1])
+
+@test
+def replaceInPlace03(): Bool =
+    let a = [3];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4])
+
+@test
+def replaceInPlace04(): Bool =
+    let a = [4];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4])
+
+@test
+def replaceInPlace05(): Bool =
+    let a = [1, 2];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [1,2])
+
+@test
+def replaceInPlace06(): Bool =
+    let a = [1,3];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [1,4])
+
+@test
+def replaceInPlace07(): Bool =
+    let a = [3,4];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4,4])
+
+@test
+def replaceInPlace08(): Bool =
+    let a = [3,3];
+    Array.replaceInPlace(3, 4, a);
     Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
