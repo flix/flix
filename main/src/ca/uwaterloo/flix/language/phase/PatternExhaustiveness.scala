@@ -748,7 +748,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Ref) => 0
       case Type.Cst(TypeConstructor.Relation(_)) => 0
       case Type.Cst(TypeConstructor.Lattice(_)) => 0
-      case Type.Arrow(_, length) => length
+      case Type.Arrow(length) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
@@ -762,6 +762,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
+      case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 

@@ -42,7 +42,7 @@ object Scheme {
     def visit(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(f, l) => Type.Arrow(f, l)
+      case Type.Arrow(l) => Type.Arrow(l)
       case Type.RecordEmpty => Type.RecordEmpty
       case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
