@@ -265,11 +265,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val argumentTypes = defn0.fparams.map(_.tpe).map(openSchemaType)
 
     // TODO: Use resultEff
-    val result = for (
-      (inferredTyp, inferredEff) <- inferExp(defn0.exp, program);
+    val result = for {
+      (inferredTyp, inferredEff) <- inferExp(defn0.exp, program)
       unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, inferredTyp), defn0.loc)
-      // unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc) // TODO
-    ) yield unifiedTyp
+      unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc) // TODO
+    } yield unifiedTyp
 
     // TODO: See if this can be rewritten nicer
     result match {

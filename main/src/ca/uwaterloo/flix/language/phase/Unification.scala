@@ -670,9 +670,13 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))
-        case Result.Err(e) =>
-          println(loc)
-          throw InternalCompilerException(s"Unexpected error: '$e'.")
+
+        case Result.Err(e) => e match {
+          case UnificationError.MismatchedEffects(baseType1, baseType2) =>
+            Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
+
+          case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
+        }
       }
     }
     )

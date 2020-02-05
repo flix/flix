@@ -18,17 +18,17 @@ namespace Console {
     ///
     /// Alias for `Console.StdIn.readLine`.
     ///
-    pub def readLine(): Option[Str] @ IO = Console/StdIn.readLine(())
+    pub def readLine(): Option[Str] = Console/StdIn.readLine(())
 
     ///
     /// Alias for `Console.StdOut.print`.
     ///
-    pub def print(s: String): Unit @ IO = Console/StdOut.print(s)
+    pub def print(s: String): Unit = Console/StdOut.print(s)
 
     ///
     /// Alias for `Console.StdOut.printLine`.
     ///
-    pub def printLine(s: String): Unit @ IO = Console/StdOut.printLine(s)
+    pub def printLine(s: String): Unit = Console/StdOut.printLine(s)
 
     ///
     /// Operations on the Standard Input Stream.
