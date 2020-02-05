@@ -1154,7 +1154,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ------------------------------------------------
         //  select { rule_i; (default) } : t
         //
-        liftM(rules.nonEmpty)
         val bodies = rules.map(_.exp)
 
         // check that each rules channel expression is a channel
@@ -1278,8 +1277,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, BoolType, loc)
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (resultTyp, resultEff)
-
-      // TODO: --- Continue to look over type rules from here. ----
 
       case ResolvedAst.Expression.FixpointFold(sym, exp1, exp2, exp3, tvar, evar, loc) =>
         //
