@@ -939,10 +939,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ref exp : Ref[t] @ Impure
         //
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, mkRefType(tpe), loc)
-          resultEff <- unifyEffM(evar, eff, loc)
-        } yield (resultTyp, Impure)
+          resultEff <- unifyEffM(evar, Impure, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
         //
