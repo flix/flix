@@ -42,13 +42,22 @@ def get03(): Bool = Array.get([1, 2, 3], 2) == 3
 // put                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def put01(): Bool = Array.put([1], 0, 42)[0] == 42
+def put01(): Bool =
+    let a = [1];
+    Array.put(a, 0, 42);
+    a[0] == 42
 
 @test
-def put02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
+def put02(): Bool =
+    let a = [1, 2];
+    Array.put(a, 1, 42);
+    a[1] == 42
 
 @test
-def put03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
+def put03(): Bool =
+    let a = [1, 2, 3];
+    Array.put(a, 2, 42);
+    a[2] == 42
 
 /////////////////////////////////////////////////////////////////////////////
 // length                                                                  //

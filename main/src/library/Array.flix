@@ -35,7 +35,7 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[i] = x`.
     ///
-    pub def put(a: Array[a], i: Int, x: a): Array[a] = a[i] = x; a
+    pub def put(a: Array[a], i: Int, x: a): Unit = a[i] = x
 
     ///
     /// Returns the length of the array `a`.
