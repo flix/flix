@@ -932,30 +932,31 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.Ref(exp, tvar, evar, loc) =>
         //
-        //  exp : t
-        //  ----------------
-        //  ref exp : Ref[t]
+        //  exp : t @ eff
+        //  -------------------------
+        //  ref exp : Ref[t] @ Impure
         //
         for {
           (tpe, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, mkRefType(tpe), loc)
           resultEff <- unifyEffM(evar, eff, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Impure)
 
-      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.Deref(exp, tvar, evar, loc) =>
         //
-        //  exp : Ref[t]
-        //  -------------
-        //  deref exp : t
+        //  exp : Ref[t] @ eff
+        //  -------------------
+        //  deref exp : t @ eff
         //
         val elementType = Type.freshTypeVar()
         for {
-          (tpe, eff) <- visitExp(exp)
-          refType <- unifyTypM(tpe, mkRefType(elementType), loc)
+          (expTyp, expEff) <- visitExp(exp)
+          refType <- unifyTypM(expTyp, mkRefType(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-        } yield (resultTyp, evar)
+          resultEff <- unifyEffM(evar, expEff, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) => // TODO: Effects
         //
