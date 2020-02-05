@@ -547,18 +547,11 @@ object Unification {
     // Eliminate all variables.
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
-    // TODO
-    //println(s"eff1: $eff1, eff2: $eff2")
-    //val s = subst.toString
-    //println(s.substring(0, Math.min(s.length, 300)))
-    if (result == Pure) {
-      // TODO
-      println("unification failed")
-      return Err(UnificationError.MismatchedTypes(eff1, eff2))
-    }
-    //println()
-
-    Ok(subst)
+    // Determine if unification was successful.
+    if (result != Pure)
+      Ok(subst)
+    else
+      Err(UnificationError.MismatchedTypes(eff1, eff2))
   }
 
   /**
