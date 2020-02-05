@@ -217,6 +217,14 @@ object Unification {
     case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
 
     /**
+      * An unification error due to a mismatch between the effects `tpe1` and `tpe2`.
+      *
+      * @param eff1 the first effect.
+      * @param eff2 the second effect.
+      */
+    case class MismatchedEffects(eff1: Type, eff2: Type) extends UnificationError
+
+    /**
       * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
       *
       * @param ts1 the first list of types.
@@ -551,7 +559,7 @@ object Unification {
     if (result != Pure)
       Ok(subst)
     else
-      Err(UnificationError.MismatchedTypes(eff1, eff2))
+      Err(UnificationError.MismatchedEffects(eff1, eff2))
   }
 
   /**
@@ -584,6 +592,9 @@ object Unification {
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+
+        case Result.Err(UnificationError.MismatchedEffects(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
