@@ -122,24 +122,17 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Finds the arity of the Def, including lambdas nested directly beneath it.
+    * Finds the arity of the Def.
     */
-  private def arity(defn: Def): Int = {
-    val topArity = defn.fparams.size
-    val lambdaArity = defn.exp match {
-      case lambda: Expression.Lambda => arity(lambda)
-      case _ => 0
-    }
-    topArity + lambdaArity
-  }
+  private def arity(defn: Def): Int = arity(defn.tpe)
 
   /**
-    * Finds the arity of the Lambda: the number of lambdas nested below, including this one.
+    * Finds the arity of the Type
     */
   @tailrec
-  private def arity(lambda: Expression.Lambda, acc: Int = 0): Int = lambda.exp match {
-    case lambda1: Expression.Lambda => arity(lambda1, acc + 1)
-    case _ => 1
+  private def arity(tpe: Type, acc: Int = 0): Int = tpe match {
+    case Type.Apply(_, tpe2) => arity(tpe2, acc + 1)
+    case _ => acc
   }
 
   /**
@@ -801,9 +794,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, sym) => acc + sym
     }
 
-    // TODO docs
+    /**
+      * Updates `this` environment, marking that an application has been made.
+      */
     def addApply: Env = copy(recursionContext = recursionContext.map(r => r.addApply))
 
+    /**
+      * Resets the consecutive application count of `this` environment.
+      */
     def resetApplies: Env = copy(recursionContext = recursionContext.map(r => r.resetApplies))
   }
 
