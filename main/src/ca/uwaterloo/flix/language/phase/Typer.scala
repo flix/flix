@@ -268,7 +268,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val result = for {
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, program)
       unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, inferredTyp), defn0.loc)
-      //unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc) // TODO
+      unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc)
     } yield unifiedTyp
 
     // TODO: See if this can be rewritten nicer
@@ -1044,7 +1044,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) =>
         val classType = getFlixType(method.getDeclaringClass)
         val returnType = getFlixType(method.getReturnType)
         for {
@@ -1052,15 +1052,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)
-          resultEff <- unifyEffM(evar :: baseEff :: argTypesAndEffects.map(_._2), loc)
+          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) =>
         val returnType = getFlixType(method.getReturnType)
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)
-          resultEff <- unifyEffM(evar :: argTypesAndEffects.map(_._2), loc)
+          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) => // TODO: Effects
