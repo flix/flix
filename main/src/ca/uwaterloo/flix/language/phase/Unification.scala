@@ -718,23 +718,54 @@ object Unification {
   /**
     * Returns the conjunction of the two effects `eff1` and `eff2`.
     */
-  private def mkAnd(eff1: Type, eff2: Type): Type = eff1 match {
-    case Type.Cst(TypeConstructor.Pure) => eff2
-    case Type.Cst(TypeConstructor.Impure) => Impure
-    case _ => eff2 match {
-      case Type.Cst(TypeConstructor.Pure) => eff1
-      case Type.Cst(TypeConstructor.Impure) => Impure
-      case _ =>
-        if (eff1 == eff2) {
-          eff1
-        } else if (Type.Apply(Type.Cst(TypeConstructor.Not), eff1) == eff2) {
-          Impure
-        } else if (eff1 == Type.Apply(Type.Cst(TypeConstructor.Not), eff2)) {
-          Impure
-        } else {
-          Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
-        }
-    }
+  private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+    // T ∧ x => x
+    case (Pure, _) => eff2
+
+    // x ∧ T => x
+    case (_, Pure) => eff1
+
+    // F ∧ x => F
+    case (Impure, _) => Impure
+
+    // x ∧ F => F
+    case (_, Impure) => Impure
+
+    // x ∧ (y ∧ x) => (x ∧ y)
+    case (x1, AND(y, x2)) if x1 == x2 => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x1), y)
+
+    // (x ∧ y) ∧ x) => (x ∧ y)
+    case (AND(x1, y), x2) if x1 == x2 => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x1), y)
+
+    // x ∧ (x ∨ y) => x
+    case (x1, OR(x2, _)) if x1 == x2 => x1
+
+    // (x ∨ y) ∧ x => x
+    case (OR(x1, _), x2) if x1 == x2 => x1
+
+    // x ∧ ¬x => F
+    case (x1, NOT(x2)) if x1 == x2 => Impure
+
+    // ¬x ∧ x => F
+    case (NOT(x1), x2) if x1 == x2 => Impure
+
+    // x ∧ ¬(x ∨ y) => F
+    case (x1, NOT(OR(x2, _))) if x1 == x2 => Impure
+
+    // ¬(x ∨ y) ∧ => F
+    case (NOT(OR(x1, _)), x2) if x1 == x2 => Impure
+
+    // x ∧ x => x
+    case _ if eff1 == eff2 => eff1
+
+    case _ =>
+//      val s = s"And($eff1, $eff2)"
+//      val len = s.length
+//      if (len > 30) {
+//        println(s.substring(0, Math.min(len, 300)))
+//      }
+
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
   }
 
   /**
@@ -764,8 +795,6 @@ object Unification {
 
     // x ∨ (¬x ∨ y) => T
     case (x, OR(NOT(y), _)) if x == y => Pure
-
-
 
     // x ∨ x => x
     case _ if eff1 == eff2 => eff1
