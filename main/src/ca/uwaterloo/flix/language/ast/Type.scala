@@ -37,7 +37,7 @@ sealed trait Type {
     case Type.Cst(tc) => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
-    case Type.Arrow(_) => Set.empty
+    case Type.Arrow(_, eff) => eff.typeVars
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => Set.empty
@@ -90,7 +90,7 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Arrow(l) => s"Arrow($l)"
+    case Type.Arrow(l, eff) => s"Arrow($l, $eff)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
@@ -152,8 +152,8 @@ object Type {
   /**
     * A type expression that represents functions.
     */
-  case class Arrow(length: Int) extends Type { // TODO: Effect where?
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  case class Arrow(arity: Int, eff: Type) extends Type {
+    def kind: Kind = Kind.Arrow((0 until arity).map(_ => Kind.Star).toList, Kind.Star)
   }
 
   /**
@@ -230,24 +230,33 @@ object Type {
   def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
 
   /**
-    * Constructs the arrow type A -> B.
+    * Constructs an arrow with the given effect type A ->eff B.
     */
-  // TODO: Deprecated
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b) // TODO: Pure?
+  def mkArrow(a: Type, f: Type, b: Type): Type = Apply(Apply(Arrow(2, f), a), b)
+
+  /**
+    * Constructs the pure arrow type A -> B.
+    */
+  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Pure)), a), b)
+
+  /**
+    * Constructs the impure arrow type A -> B.
+    */
+  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Impure)), a), b)
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
   // TODO: Deprecated
   def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
-    as.foldRight(b)(mkArrow)
+    as.foldRight(b)(mkPureArrow) // TODO: Purity
   }
 
   /**
     * Constructs the arrow type [A] -> B.
     */
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    val arrow = Arrow(as.length + 1) // TODO: Pure?
+    val arrow = Arrow(as.length + 1, Type.Cst(TypeConstructor.Pure)) // TODO: Pure?
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -334,7 +343,7 @@ object Type {
           //
           // Arrow.
           //
-          case Type.Arrow(l) =>
+          case Type.Arrow(l, _) =>
             val argumentTypes = args.init
             val resultType = args.last
             if (argumentTypes.length == 1) {

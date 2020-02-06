@@ -134,7 +134,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   @tailrec
   private def getReturnType(tpe0: Type): Type = tpe0 match {
-    case Type.Apply(Type.Apply(Type.Arrow(_), _), tpe) => getReturnType(tpe)
+    case Type.Apply(Type.Apply(Type.Arrow(_, _), _), tpe) => getReturnType(tpe)
     case _ => tpe0
   }
 
@@ -199,7 +199,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Type.Succ(n, t) => n.toString + " " + t.toString
 
-      case Type.Arrow(l) =>
+      case Type.Arrow(l, _) =>
         val argumentTypes = args.init
         val resultType = args.last
         if (argumentTypes.length == 1) {

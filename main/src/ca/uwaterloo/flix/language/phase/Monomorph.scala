@@ -77,7 +77,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visit(t: Type): Type = t match {
         case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
         case Type.Cst(tc) => Type.Cst(tc)
-        case Type.Arrow(l) => Type.Arrow(l)
+        case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
@@ -231,7 +231,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, eqType, eff, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Cst(TypeConstructor.Bool)), eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Cst(TypeConstructor.Bool)), eff, loc)
               val outer = Expression.Apply(inner, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
 
               // Check whether the whether the operator is equality or inequality.

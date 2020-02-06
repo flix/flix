@@ -1860,7 +1860,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case tvar: Type.Var => subst.getOrElse(tvar, tvar)
       case Type.Cst(_) => t
 
-      case Type.Arrow(_) => t
+      case Type.Arrow(l, eff) => Type.Arrow(l, eval(eff, subst))
 
       case Type.RecordEmpty => t
 

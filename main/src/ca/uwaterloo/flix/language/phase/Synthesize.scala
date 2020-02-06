@@ -471,7 +471,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkArrow(tpe, Type.Cst(TypeConstructor.Bool)), Pure, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Cst(TypeConstructor.Bool)), Pure, sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool))
@@ -774,7 +774,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
 
-        case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Arrow(l, _), _) => Expression.Int32(123, sl)
 
         case _ =>
 
@@ -1057,7 +1057,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Vector), _), Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 
-        case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
+        case Type.Apply(Type.Arrow(l, _), _) => Expression.Str("<<clo>>", sl)
 
         case _ =>
           //
@@ -1255,7 +1255,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is an arrow type.
       */
     def isArrow(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Arrow(_) => true
+      case Type.Arrow(_, _) => true
       case _ => false
     }
 

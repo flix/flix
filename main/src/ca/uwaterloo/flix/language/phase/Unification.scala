@@ -79,7 +79,7 @@ object Unification {
               case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
             }
           case Type.Cst(tc) => Type.Cst(tc)
-          case Type.Arrow(l) => Type.Arrow(l)
+          case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
           case Type.RecordEmpty => Type.RecordEmpty
           case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
           case Type.SchemaEmpty => Type.SchemaEmpty
@@ -101,7 +101,7 @@ object Unification {
 
               // TODO: This is getting out of hand...
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id1, k))), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Var(id1, k)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Cst(TypeConstructor.Pure)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Cst(TypeConstructor.Impure)
 
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
               case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
@@ -329,7 +329,7 @@ object Unification {
         else
           Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
-      case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty) // TODO
+      case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => unifyEffects(eff1, eff2)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
@@ -554,6 +554,10 @@ object Unification {
 
     // Eliminate all variables.
     val (subst, result) = successiveVariableElimination(query, freeVars)
+
+    val s = subst.toString
+    println(s.substring(0, Math.min(s.length, 300)))
+    println()
 
     // Determine if unification was successful.
     if (result != Pure)
