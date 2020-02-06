@@ -488,7 +488,14 @@ object Unification {
       case _ => eff2 match {
         case Type.Cst(TypeConstructor.Pure) => eff1
         case Type.Cst(TypeConstructor.Impure) => Impure
-        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+        case _ =>
+          if (eff1 == eff2) {
+            eff1
+          } else if (Type.Apply(Type.Cst(TypeConstructor.Not), eff1) == eff2) {
+            Impure
+          } else {
+            Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+          }
       }
     }
 
@@ -528,11 +535,14 @@ object Unification {
     }
 
     /**
-      * Constructs the formula: x ∨ (y ∧ ¬(z))
+      * Constructs the formula: x ∨ (y ∧ ¬z).
       */
     def rewrite(x: Type, y: Type, z: Type): Type = {
-      // Optimization 1: x ∨ (y ∧ ¬(z)) == x ∨ (y ∧ ¬(¬x)) == x ∨ (y ∧ x) == x
-      if (Type.Apply(Type.Cst(TypeConstructor.Not), x) == z) {
+      // Optimization 1: z == ¬x  ==> x ∨ (y ∧ ¬z) == x ∨ (y ∧ ¬¬x) == x ∨ (y ∧ x) == x
+      if (z == Type.Apply(Type.Cst(TypeConstructor.Not), x)) {
+        x
+        // Optimization 2: y == z ==> x ∨ (y ∧ ¬y) == x
+      } else if (y == z) {
         x
       } else {
         mkOr(x, mkAnd(y, mkNot(z)))
@@ -567,9 +577,15 @@ object Unification {
     // Eliminate all variables.
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
-    val s = subst.toString
-    println(s.substring(0, Math.min(s.length, 300)))
-    println()
+    // TODO: Debugging
+    if (!subst.isEmpty) {
+      val s = subst.toString
+      val len = s.length
+      if (len > 100) {
+        println(s.substring(0, Math.min(len, 300)))
+        println()
+      }
+    }
 
     // Determine if unification was successful.
     if (result != Pure)
