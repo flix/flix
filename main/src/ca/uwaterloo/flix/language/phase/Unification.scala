@@ -740,46 +740,58 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
-  private def mkOr(eff1: Type, eff2: Type): Type = {
-    (eff1, eff2) match {
-      // T ∨ x => T
-      case (Type.Cst(TypeConstructor.Pure), _) => Pure
+  private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+    // T ∨ x => T
+    case (Pure, _) => Pure
 
-      // x ∨ T => T
-      case (_, Type.Cst(TypeConstructor.Pure)) => Pure
+    // x ∨ T => T
+    case (_, Pure) => Pure
 
-      // F ∨ y => y
-      case (Type.Cst(TypeConstructor.Impure), _) => eff2
+    // F ∨ y => y
+    case (Impure, _) => eff2
 
-      // x ∨ F => x
-      case (_, Type.Cst(TypeConstructor.Impure)) => eff1
+    // x ∨ F => x
+    case (_, Impure) => eff1
 
-      // ¬x ∨ x => T
-      case (Type.Apply(Type.Cst(TypeConstructor.Not), x), y) if x == y => Pure
+    // ¬x ∨ x => T
+    case (NOT(x), y) if x == y => Pure
 
-      // x ∨ ¬x => T
-      case (x, Type.Apply(Type.Cst(TypeConstructor.Not), y)) if x == y => Pure
+    // x ∨ ¬x => T
+    case (x, NOT(y)) if x == y => Pure
 
-      // (¬x ∨ y) ∨ x)
-      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), Type.Apply(Type.Cst(TypeConstructor.Not), x)), _), y) if x == y => Pure
+    // (¬x ∨ y) ∨ x) => T
+    case (OR(NOT(x), _), y) if x == y => Pure
 
-      // x ∨ (¬x ∨ y)
-      case (x, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), Type.Apply(Type.Cst(TypeConstructor.Not), y)), _)) if x == y => Pure
+    // x ∨ (¬x ∨ y) => T
+    case (x, OR(NOT(y), _)) if x == y => Pure
 
-      //case (OR(x, y), _) => ???
 
-      // x ∨ x => x
-      case _ if eff1 == eff2 => eff1
 
-      case _ =>
+    // x ∨ x => x
+    case _ if eff1 == eff2 => eff1
 
-//        val s = s"Or($eff1, $eff2)"
-//        val len = s.length
-//        if (len > 30) {
-//          println(s.substring(0, Math.min(len, 300)))
-//        }
+    case _ =>
 
-        Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+//              val s = s"Or($eff1, $eff2)"
+//              val len = s.length
+//              if (len > 30) {
+//                println(s.substring(0, Math.min(len, 300)))
+//              }
+
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+  }
+
+  object NOT {
+    def unapply(eff: Type): Option[Type] = eff match {
+      case Type.Apply(Type.Cst(TypeConstructor.Not), x) => Some(x)
+      case _ => None
+    }
+  }
+
+  object AND {
+    def unapply(eff: Type): Option[(Type, Type)] = eff match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x), y) => Some((x, y))
+      case _ => None
     }
   }
 
