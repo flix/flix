@@ -581,7 +581,7 @@ object Unification {
     if (!subst.isEmpty) {
       val s = subst.toString
       val len = s.length
-      if (len > 100) {
+      if (len > 50) {
         println(s.substring(0, Math.min(len, 300)))
         println()
       }
