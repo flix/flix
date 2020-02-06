@@ -9,7 +9,7 @@ def writeData(path: Path): Result[Unit, Path.IOError] =
     Path.writeLines(path, getData())
 
 /// Reads the list of prominent figures back, returning surnames.
-def readData(path: Path): Result[List[Str], Path.IOError] =
+def readData(path: Path): Result[List[Str], Path.IOError] @ Impure =
     let splitAndGetFirst = (s: Str -> String.split(s, ",")[0]);
     let getSurname = (xs: List[Str]) -> List.map(splitAndGetFirst, xs);
     Result.map(getSurname, Path.readLines(path))
