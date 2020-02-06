@@ -709,9 +709,15 @@ object Unification {
     * Returns the negation of the effect `eff0`.
     */
   private def mkNot(eff0: Type): Type = eff0 match {
-    case Type.Cst(TypeConstructor.Pure) => Impure
-    case Type.Cst(TypeConstructor.Impure) => Pure
-    case Type.Apply(Type.Cst(TypeConstructor.Not), eff) => eff
+    case Pure => Impure
+
+    case Impure => Pure
+
+    case NOT(x) => x
+
+    // ¬(¬x ∨ y) => x ∧ ¬y
+    case NOT(OR(NOT(x), y)) => mkAnd(x, mkNot(y))
+
     case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
   }
 
