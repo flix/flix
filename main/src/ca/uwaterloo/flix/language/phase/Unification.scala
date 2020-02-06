@@ -718,7 +718,10 @@ object Unification {
     case NOT(x) => x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
-    case NOT(OR(NOT(x), y)) => mkAnd(x, mkNot(y))
+    case OR(NOT(x), y) => mkAnd(x, mkNot(y))
+
+    // ¬(x ∨ ¬y) => ¬x ∧ y
+    case OR(x, NOT(y)) => mkAnd(mkNot(x), y)
 
     case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
   }
