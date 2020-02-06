@@ -88,10 +88,10 @@ object Unification {
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
           case Type.Apply(t1, t2) =>
             (visit(t1), visit(t2)) match {
-              // TODO: Optimize
-              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Impure
-              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Pure
+              case (Type.Cst(TypeConstructor.Not), x) => mkNot(x)
 
+              // TODO: Rewrite to use smart constructors.
+                // TODO: Move into mkAnd...
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
               case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
@@ -99,9 +99,12 @@ object Unification {
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
 
+
               // TODO: This is getting out of hand...
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id1, k))), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Var(id1, k)
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Cst(TypeConstructor.Impure)
+
+              case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => mkAnd(x, y)
 
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
               case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
@@ -470,38 +473,6 @@ object Unification {
   def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
 
     /**
-      * Returns the negation of the effect `eff0`.
-      */
-    def mkNot(eff0: Type): Type = eff0 match {
-      case Type.Cst(TypeConstructor.Pure) => Impure
-      case Type.Cst(TypeConstructor.Impure) => Pure
-      case Type.Apply(Type.Cst(TypeConstructor.Not), eff) => eff
-      case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
-    }
-
-    /**
-      * Returns the conjunction of the two effects `eff1` and `eff2`.
-      */
-    def mkAnd(eff1: Type, eff2: Type): Type = eff1 match {
-      case Type.Cst(TypeConstructor.Pure) => eff2
-      case Type.Cst(TypeConstructor.Impure) => Impure
-      case _ => eff2 match {
-        case Type.Cst(TypeConstructor.Pure) => eff1
-        case Type.Cst(TypeConstructor.Impure) => Impure
-        case _ =>
-          if (eff1 == eff2) {
-            eff1
-          } else if (Type.Apply(Type.Cst(TypeConstructor.Not), eff1) == eff2) {
-            Impure
-          } else if (eff1 == Type.Apply(Type.Cst(TypeConstructor.Not), eff2)) {
-            Impure
-          } else {
-            Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
-          }
-      }
-    }
-
-    /**
       * Returns the disjunction of the two effects `eff1` and `eff2`.
       */
     def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
@@ -751,4 +722,39 @@ object Unification {
       }
     }
   }
+
+  /**
+    * Returns the negation of the effect `eff0`.
+    */
+  private def mkNot(eff0: Type): Type = eff0 match {
+    case Type.Cst(TypeConstructor.Pure) => Impure
+    case Type.Cst(TypeConstructor.Impure) => Pure
+    case Type.Apply(Type.Cst(TypeConstructor.Not), eff) => eff
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
+  }
+
+  /**
+    * Returns the conjunction of the two effects `eff1` and `eff2`.
+    */
+  private def mkAnd(eff1: Type, eff2: Type): Type = eff1 match {
+    case Type.Cst(TypeConstructor.Pure) => eff2
+    case Type.Cst(TypeConstructor.Impure) => Impure
+    case _ => eff2 match {
+      case Type.Cst(TypeConstructor.Pure) => eff1
+      case Type.Cst(TypeConstructor.Impure) => Impure
+      case _ =>
+        if (eff1 == eff2) {
+          eff1
+        } else if (Type.Apply(Type.Cst(TypeConstructor.Not), eff1) == eff2) {
+          Impure
+        } else if (eff1 == Type.Apply(Type.Cst(TypeConstructor.Not), eff2)) {
+          Impure
+        } else {
+          Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+        }
+    }
+  }
+
+  // TODO: Move other helper functions here.
+
 }
