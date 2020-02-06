@@ -757,6 +757,12 @@ object Unification {
     // ¬x ∧ x => F
     case (NOT(x1), x2) if x1 == x2 => Impure
 
+    // x ∧ (y ∧ ¬x) => F
+    case (x1, AND(_, NOT(x2))) if x1 == x2 => Impure
+
+    // (¬x ∧ y) ∧ x => F
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Impure
+
     // x ∧ ¬(x ∨ y) => F
     case (x1, NOT(OR(x2, _))) if x1 == x2 => Impure
 
@@ -767,11 +773,11 @@ object Unification {
     case _ if eff1 == eff2 => eff1
 
     case _ =>
-      //      val s = s"And($eff1, $eff2)"
-      //      val len = s.length
-      //      if (30 < len && len < 50) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //      }
+//      val s = s"And($eff1, $eff2)"
+//      val len = s.length
+//      if (30 < len && len < 50) {
+//        println(s.substring(0, Math.min(len, 300)))
+//      }
 
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
   }
