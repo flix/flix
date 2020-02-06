@@ -528,6 +528,18 @@ object Unification {
     }
 
     /**
+      * Constructs the formula: x ∨ (y ∧ ¬(z))
+      */
+    def rewrite(x: Type, y: Type, z: Type): Type = {
+      // Optimization 1: x ∨ (y ∧ ¬(z)) == x ∨ (y ∧ ¬(¬x)) == x ∨ (y ∧ x) == x
+      if (Type.Apply(Type.Cst(TypeConstructor.Not), x) == z) {
+        x
+      } else {
+        mkOr(x, mkAnd(y, mkNot(z)))
+      }
+    }
+
+    /**
       * Aliases to make the success variable elimination easier to understand.
       */
     val True = Pure
@@ -542,7 +554,7 @@ object Unification {
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)
         val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, se(mkNot(t1)))))
+        val st = Substitution.singleton(x, rewrite(se(t0), x, se(t1)))
         (st ++ se, cc)
     }
 
