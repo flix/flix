@@ -62,16 +62,17 @@ class FeatureSuite extends Suites(
 
   new FlixTest("Test.Expression.Interpolation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Interpolation.flix"),
 
-  // TODO: XXX: Broken test cases
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix"),
-  //  new FlixTest("Test.Expression.IfThenElse", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix"),
+  new FlixTest("Test.Expression.IfThenElse", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix"),
   new FlixTest("Test.Expression.Infix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Infix.flix"),
-  //  new FlixTest("Test.Expression.Let", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Let.flix"),
+  new FlixTest("Test.Expression.Let", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Let.flix"),
   new FlixTest("Test.Expression.Tag", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Tag.flix"),
   new FlixTest("Test.Expression.Tag.Lambda", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Tag.Lambda.flix"),
   new FlixTest("Test.Expression.Switch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Switch.flix"),
   new FlixTest("Test.Expression.Postfix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Postfix.flix"),
-  //  new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix"),
+  new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix"),
+
+  // TODO: XXX: Broken test cases
   //  new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
 
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix"),
@@ -156,7 +157,9 @@ class FeatureSuite extends Suites(
   //
   // Interop.
   //
-  //new FlixTest("Test.Expression.Jvm.InvokeConstructor", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeConstructor.flix"),
+
+  // TODO: XXX: Broken test cases
+  new FlixTest("Test.Expression.Jvm.InvokeConstructor", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeConstructor.flix"),
   //new FlixTest("Test.Expression.Jvm.InvokeMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeMethod.flix"),
   //new FlixTest("Test.Expression.Jvm.InvokeStaticMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Expression.Jvm.GetField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetField.flix"),
