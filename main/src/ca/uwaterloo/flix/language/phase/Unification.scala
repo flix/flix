@@ -493,6 +493,8 @@ object Unification {
             eff1
           } else if (Type.Apply(Type.Cst(TypeConstructor.Not), eff1) == eff2) {
             Impure
+          } else if (eff1 == Type.Apply(Type.Cst(TypeConstructor.Not), eff2)) {
+            Impure
           } else {
             Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
           }
