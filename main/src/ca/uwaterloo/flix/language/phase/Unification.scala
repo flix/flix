@@ -742,11 +742,17 @@ object Unification {
     // x ∧ F => F
     case (_, Impure) => Impure
 
+    // x ∧ (x ∧ y) => (x ∧ y)
+    case (x1, AND(x2, y)) if x1 == x2 => mkAnd(x1, y)
+
     // x ∧ (y ∧ x) => (x ∧ y)
     case (x1, AND(y, x2)) if x1 == x2 => mkAnd(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
     case (AND(x1, y), x2) if x1 == x2 => mkAnd(x1, y)
+
+    // (x ∧ y) ∧ y) => (x ∧ y)
+    case (AND(x, y1), y2) if y1 == y2 => mkAnd(x, y1)
 
     // x ∧ (x ∨ y) => x
     case (x1, OR(x2, _)) if x1 == x2 => x1
