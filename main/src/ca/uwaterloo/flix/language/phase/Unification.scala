@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.annotation.tailrec
+
 object Unification {
 
   /**
@@ -738,10 +740,10 @@ object Unification {
     case (_, Impure) => Impure
 
     // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x1), y)
+    case (x1, AND(y, x2)) if x1 == x2 => mkAnd(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x1), y)
+    case (AND(x1, y), x2) if x1 == x2 => mkAnd(x1, y)
 
     // x ∧ (x ∨ y) => x
     case (x1, OR(x2, _)) if x1 == x2 => x1
@@ -765,11 +767,11 @@ object Unification {
     case _ if eff1 == eff2 => eff1
 
     case _ =>
-//      val s = s"And($eff1, $eff2)"
-//      val len = s.length
-//      if (len > 30) {
-//        println(s.substring(0, Math.min(len, 300)))
-//      }
+      //      val s = s"And($eff1, $eff2)"
+      //      val len = s.length
+      //      if (30 < len && len < 50) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //      }
 
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
   }
@@ -790,6 +792,12 @@ object Unification {
     // x ∨ F => x
     case (_, Impure) => eff1
 
+    // x ∨ (y ∨ x) => x ∨ y
+    case (x1, OR(y, x2)) if x1 == x2 => mkOr(x1, y)
+
+    // (x ∨ y) ∨ x => x ∨ y
+    case (OR(x1, y), x2) if x1 == x2 => mkOr(x1, y)
+
     // ¬x ∨ x => T
     case (NOT(x), y) if x == y => Pure
 
@@ -807,11 +815,11 @@ object Unification {
 
     case _ =>
 
-//              val s = s"Or($eff1, $eff2)"
-//              val len = s.length
-//              if (len > 30) {
-//                println(s.substring(0, Math.min(len, 300)))
-//              }
+      //              val s = s"Or($eff1, $eff2)"
+      //              val len = s.length
+      //              if (len > 30) {
+      //                println(s.substring(0, Math.min(len, 300)))
+      //              }
 
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
   }
