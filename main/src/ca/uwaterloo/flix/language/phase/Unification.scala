@@ -533,14 +533,14 @@ object Unification {
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
     // TODO: Debugging
-    if (!subst.isEmpty) {
-      val s = subst.toString
-      val len = s.length
-      if (len > 50) {
-        println(s.substring(0, Math.min(len, 300)))
-        println()
-      }
-    }
+    //    if (!subst.isEmpty) {
+    //      val s = subst.toString
+    //      val len = s.length
+    //      if (len > 50) {
+    //        println(s.substring(0, Math.min(len, 300)))
+    //        println()
+    //      }
+    //    }
 
     // Determine if unification was successful.
     if (result != Pure)
@@ -740,21 +740,50 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
-  private def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
-    case Type.Cst(TypeConstructor.Pure) => Pure
-    case Type.Cst(TypeConstructor.Impure) => eff2
-    case Type.Apply(Type.Cst(TypeConstructor.Not), x) if x == eff2 => Pure // TODO: Need symmetric case.
-    case Type.Var(id1, _) =>
-      eff2 match {
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
-        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
-        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-      }
-    case _ => eff2 match {
-      case Type.Cst(TypeConstructor.Pure) => Pure
-      case Type.Cst(TypeConstructor.Impure) => eff1
-      case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+  private def mkOr(eff1: Type, eff2: Type): Type = {
+    (eff1, eff2) match {
+      // T ∨ x => T
+      case (Type.Cst(TypeConstructor.Pure), _) => Pure
+
+      // x ∨ T => T
+      case (_, Type.Cst(TypeConstructor.Pure)) => Pure
+
+      // F ∨ y => y
+      case (Type.Cst(TypeConstructor.Impure), _) => eff2
+
+      // x ∨ F => x
+      case (_, Type.Cst(TypeConstructor.Impure)) => eff1
+
+      // ¬x ∨ x => T
+      case (Type.Apply(Type.Cst(TypeConstructor.Not), x), y) if x == y => Pure
+
+      // x ∨ ¬x => T
+      case (x, Type.Apply(Type.Cst(TypeConstructor.Not), y)) if x == y => Pure
+
+      // x ∨ x => x
+      case _ if eff1 == eff2 => eff1
+
+      case _ =>
+
+//        val s = s"Or($eff1, $eff2)"
+//        val len = s.length
+//        if (len > 30) {
+//          println(s.substring(0, Math.min(len, 300)))
+//        }
+
+        Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
     }
   }
+
+  // True  x ∨ (y ∧ ¬¬x)
+  //
+  //    eff1 match {
+  //    case Type.Var(id1, _) =>
+  //      eff2 match {
+  //        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
+  //        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
+  //        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+  //      }
+  //  }
 
 }
