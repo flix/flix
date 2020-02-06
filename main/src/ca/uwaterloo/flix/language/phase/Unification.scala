@@ -766,6 +766,8 @@ object Unification {
       // x ∨ (¬x ∨ y)
       case (x, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), Type.Apply(Type.Cst(TypeConstructor.Not), y)), _)) if x == y => Pure
 
+      //case (OR(x, y), _) => ???
+
       // x ∨ x => x
       case _ if eff1 == eff2 => eff1
 
@@ -778,6 +780,13 @@ object Unification {
 //        }
 
         Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+    }
+  }
+
+  object OR {
+    def unapply(eff: Type): Option[(Type, Type)] = eff match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => Some((x, y))
+      case _ => None
     }
   }
 
