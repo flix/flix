@@ -760,6 +760,12 @@ object Unification {
       // x ∨ ¬x => T
       case (x, Type.Apply(Type.Cst(TypeConstructor.Not), y)) if x == y => Pure
 
+      // (¬x ∨ y) ∨ x)
+      case (Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), Type.Apply(Type.Cst(TypeConstructor.Not), x)), _), y) if x == y => Pure
+
+      // x ∨ (¬x ∨ y)
+      case (x, Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), Type.Apply(Type.Cst(TypeConstructor.Not), y)), _)) if x == y => Pure
+
       // x ∨ x => x
       case _ if eff1 == eff2 => eff1
 
