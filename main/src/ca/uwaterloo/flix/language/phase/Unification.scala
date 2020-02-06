@@ -91,14 +91,13 @@ object Unification {
               case (Type.Cst(TypeConstructor.Not), x) => mkNot(x)
 
               // TODO: Rewrite to use smart constructors.
-                // TODO: Move into mkAnd...
+              // TODO: Move into mkAnd...
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
               case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
               case (Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Cst(TypeConstructor.Impure)) => Impure
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-
 
               // TODO: This is getting out of hand...
               case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id1, k))), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Var(id1, k)
@@ -111,6 +110,8 @@ object Unification {
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
               case (Type.Apply(Type.Cst(TypeConstructor.Or), x), Type.Cst(TypeConstructor.Impure)) => x
               case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
+
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => mkOr(x, y)
 
               case (x, y) => Type.Apply(x, y)
             }
@@ -473,25 +474,6 @@ object Unification {
   def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
 
     /**
-      * Returns the disjunction of the two effects `eff1` and `eff2`.
-      */
-    def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
-      case Type.Cst(TypeConstructor.Pure) => Pure
-      case Type.Cst(TypeConstructor.Impure) => eff2
-      case Type.Var(id1, _) =>
-        eff2 match {
-          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
-          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
-          case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-        }
-      case _ => eff2 match {
-        case Type.Cst(TypeConstructor.Pure) => Pure
-        case Type.Cst(TypeConstructor.Impure) => eff1
-        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-      }
-    }
-
-    /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
     def eq(p: Type, q: Type): Type = {
@@ -755,6 +737,24 @@ object Unification {
     }
   }
 
-  // TODO: Move other helper functions here.
+  /**
+    * Returns the disjunction of the two effects `eff1` and `eff2`.
+    */
+  private def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
+    case Type.Cst(TypeConstructor.Pure) => Pure
+    case Type.Cst(TypeConstructor.Impure) => eff2
+    case Type.Apply(Type.Cst(TypeConstructor.Not), x) if x == eff2 => Pure // TODO: Need symmetric case.
+    case Type.Var(id1, _) =>
+      eff2 match {
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
+        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+      }
+    case _ => eff2 match {
+      case Type.Cst(TypeConstructor.Pure) => Pure
+      case Type.Cst(TypeConstructor.Impure) => eff1
+      case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+    }
+  }
 
 }
