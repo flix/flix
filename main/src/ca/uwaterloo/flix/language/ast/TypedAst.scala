@@ -137,10 +137,13 @@ object TypedAst {
       final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
+    // TODO: Remove effect.
     case class Wild(tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    // TODO: Remove effect.
     case class Var(sym: Symbol.VarSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+    // TODO: Remove effect.
     case class Def(sym: Symbol.DefnSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Eff(sym: Symbol.EffSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression

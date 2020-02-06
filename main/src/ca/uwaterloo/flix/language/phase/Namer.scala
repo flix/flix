@@ -615,21 +615,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
 
     case WeededAst.Expression.Wild(loc) =>
-      NamedAst.Expression.Wild(Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
       // lookup the variable name in the environment.
       env0.get(name.ident.name) match {
         case None =>
           // Case 1: reference.
-          NamedAst.Expression.Def(name, Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+          NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
         case Some(sym) =>
           // Case 2: variable.
-          NamedAst.Expression.Var(sym, Type.freshTypeVar(), loc).toSuccess
+          NamedAst.Expression.Var(sym, loc).toSuccess
       }
 
     case WeededAst.Expression.VarOrDef(name, loc) =>
-      NamedAst.Expression.Def(name, Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.Hole(name, loc) =>
       val tpe = Type.freshTypeVar()

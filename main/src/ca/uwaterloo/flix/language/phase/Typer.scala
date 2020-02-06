@@ -365,15 +365,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitExp(e0: ResolvedAst.Expression): InferMonad[(Type, Type)] = e0 match {
 
-      case ResolvedAst.Expression.Wild(tvar, evar, loc) =>
-        liftM((tvar, evar))
+      case ResolvedAst.Expression.Wild(tvar, loc) =>
+        liftM((tvar, Pure))
 
-      case ResolvedAst.Expression.Var(sym, tpe, evar, loc) =>
+      case ResolvedAst.Expression.Var(sym, tpe, loc) =>
         for {
           resultTyp <- unifyTypM(sym.tvar, tpe, loc)
         } yield (resultTyp, Pure)
 
-      case ResolvedAst.Expression.Def(sym, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = program.defs(sym)
         for {
           resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc), loc)
@@ -1330,14 +1330,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def visitExp(exp0: ResolvedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
 
-      case ResolvedAst.Expression.Wild(tvar, evar, loc) =>
-        TypedAst.Expression.Wild(subst0(tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.Wild(tvar, loc) =>
+        TypedAst.Expression.Wild(subst0(tvar), Pure, loc)
 
-      case ResolvedAst.Expression.Var(sym, tvar, evar, loc) =>
-        TypedAst.Expression.Var(sym, subst0(sym.tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.Var(sym, tvar, loc) =>
+        TypedAst.Expression.Var(sym, subst0(sym.tvar),Pure,  loc)
 
-      case ResolvedAst.Expression.Def(sym, tvar, evar, loc) =>
-        TypedAst.Expression.Def(sym, subst0(tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.Def(sym, tvar, loc) =>
+        TypedAst.Expression.Def(sym, subst0(tvar), Pure,  loc)
 
       case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
         TypedAst.Expression.Eff(sym, subst0(tvar), subst0(evar), loc)
