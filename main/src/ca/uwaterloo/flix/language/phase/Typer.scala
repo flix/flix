@@ -952,24 +952,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         val elementType = Type.freshTypeVar()
         for {
-          (expTyp, expEff) <- visitExp(exp)
-          refType <- unifyTypM(expTyp, mkRefType(elementType), loc)
+          (typ, eff) <- visitExp(exp)
+          refType <- unifyTypM(typ, mkRefType(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, expEff, loc)
+          resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
         //
-        //  exp1 : Ref[t]    exp2: t
-        //  ------------------------
-        //  exp1 := exp2 : Unit
+        //  exp1 : Ref[t] @ eff1   exp2: t @ eff2
+        //  -------------------------------------
+        //  exp1 := exp2 : Unit @ Impure
         //
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
           refType <- unifyTypM(tpe1, mkRefType(tpe2), loc)
           resultTyp <- unifyTypM(tvar, UnitType, loc)
-          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) => // TODO: Effects
