@@ -333,6 +333,10 @@ object NamedAst {
 
     case class Not(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
+    case class And(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Or(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
   }
 
   case class Scheme(quantifiers: List[ast.Type.Var], base: NamedAst.Type)

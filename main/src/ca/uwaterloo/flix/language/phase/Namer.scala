@@ -1224,6 +1224,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(visitType(tpe, tenv0)) {
         case t => NamedAst.Type.Not(t, loc)
       }
+
+    case WeededAst.Type.And(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1, tenv0), visitType(tpe2, tenv0)) {
+        case (t1, t2) => NamedAst.Type.And(t1, t2, loc)
+      }
+
+    case WeededAst.Type.Or(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1, tenv0), visitType(tpe2, tenv0)) {
+        case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
+      }
+
   }
 
   /**
