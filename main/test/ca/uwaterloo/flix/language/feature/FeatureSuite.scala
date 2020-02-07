@@ -72,8 +72,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Postfix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Postfix.flix"),
   new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix"),
 
-  // TODO: XXX: Broken test cases
-  //  new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
+  new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
 
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix"),
   new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix"),
@@ -161,8 +160,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Jvm.InvokeMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeMethod.flix"),
   new FlixTest("Test.Expression.Jvm.InvokeStaticMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Expression.Jvm.GetField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetField.flix"),
-  // TODO: XXX: Broken test cases
-  //new FlixTest("Test.Expression.Jvm.PutField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutField.flix"),
+  new FlixTest("Test.Expression.Jvm.PutField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutField.flix"),
   new FlixTest("Test.Expression.Jvm.GetStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetStaticField.flix"),
   new FlixTest("Test.Expression.Jvm.PutStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutStaticField.flix"),
 
