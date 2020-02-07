@@ -778,6 +778,12 @@ object Unification {
     // ¬(x ∨ y) ∧ x => F
     case (NOT(OR(x1, _)), x2) if x1 == x2 => Impure
 
+    // x ∧ (¬x ∧ y) => F
+    case (x1, AND(NOT(x2), _)) if x1 == x2 => Impure
+
+    // (¬x ∧ y) ∧ x => F
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Impure
+
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (NOT(x1), OR(x2, y)) if x1 == x2 => mkAnd(mkNot(x1), y)
 
