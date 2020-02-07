@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show
 
+import scala.collection.immutable.SortedSet
+
 /**
   * Representation of types.
   */
@@ -32,15 +34,16 @@ sealed trait Type {
   /**
     * Returns the type variables in `this` type.
     */
-  def typeVars: Set[Type.Var] = this match {
-    case x: Type.Var => Set(x)
-    case Type.Cst(tc) => Set.empty
-    case Type.Zero => Set.empty
-    case Type.Succ(n, t) => Set.empty
+  // NB: This must be a sorted set to ensure that the compiler is deterministic.
+  def typeVars: SortedSet[Type.Var] = this match {
+    case x: Type.Var => SortedSet(x)
+    case Type.Cst(tc) => SortedSet.empty
+    case Type.Zero => SortedSet.empty
+    case Type.Succ(n, t) => t.typeVars
     case Type.Arrow(_, eff) => eff.typeVars
-    case Type.RecordEmpty => Set.empty
+    case Type.RecordEmpty => SortedSet.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
-    case Type.SchemaEmpty => Set.empty
+    case Type.SchemaEmpty => SortedSet.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -110,7 +113,7 @@ object Type {
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind) extends Type {
+  case class Var(id: Int, kind: Kind) extends Type with Ordered[Type.Var] {
     /**
       * The optional textual name of `this` type variable.
       */
@@ -140,6 +143,11 @@ object Type {
       * Returns the hash code of `this` type variable.
       */
     override def hashCode(): Int = id
+
+    /**
+      * Compares `this` type variable to `that` type variable.
+      */
+    override def compare(that: Type.Var): Int = this.id - that.id
   }
 
   /**

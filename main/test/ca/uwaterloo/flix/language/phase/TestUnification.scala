@@ -242,13 +242,13 @@ class TestUnification extends FunSuite {
 
   test("Unify.Succ.02") {
     val freshVar = Type.Var(1, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, freshVar))
+    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(1, freshVar))
     assert(isOk(result))
   }
 
   test("Unify.Succ.03") {
     val freshVar = Type.Var(1, Kind.Star)
-    val freshVar2 = Type.Var(1, Kind.Star)
+    val freshVar2 = Type.Var(2, Kind.Star)
     val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, freshVar2))
     assert(isOk(result))
   }

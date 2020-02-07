@@ -793,7 +793,7 @@ object Unification {
     case _ =>
 //      val s = s"And($eff1, $eff2)"
 //      val len = s.length
-//      if (30 < len && len < 50) {
+//      if (true) {
 //        println(s.substring(0, Math.min(len, 300)))
 //      }
 
