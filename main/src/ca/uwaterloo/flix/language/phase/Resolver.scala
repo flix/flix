@@ -1504,6 +1504,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Impure(loc) =>
       Type.Cst(TypeConstructor.Impure).toSuccess
 
+    case NamedAst.Type.Not(tpe, loc) =>
+      mapN(lookupType(tpe, ns0, root)) {
+        case t => Type.Apply(Type.Cst(TypeConstructor.Not), t)
+      }
+
+    case NamedAst.Type.And(tpe1, tpe2, loc) =>
+      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), t1), t2)
+      }
+
+    case NamedAst.Type.Or(tpe1, tpe2, loc) =>
+      mapN(lookupType(tpe1, ns0, root), lookupType(tpe2, ns0, root)) {
+        case (t1, t2) => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), t1), t2)
+      }
+
   }
 
   /**
