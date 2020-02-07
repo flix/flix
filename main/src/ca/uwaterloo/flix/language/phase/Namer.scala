@@ -131,9 +131,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case fparams =>
               val env0 = getVarEnv(fparams)
               val sym = Symbol.mkEffSym(ns0, ident)
-              mapN(getScheme(tparams, tpe, tenv0)) {
-                case sc =>
-                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, ???, loc) // TODO: Effects
+              mapN(getScheme(tparams, tpe, tenv0), visitType(eff0, tenv0)) {
+                case (sc, f) =>
+                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, f, loc)
                   prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff))))
               }
           }
@@ -160,10 +160,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           flatMapN(getFormalParams(fparams0, tenv0)) {
             case fparams =>
               val env0 = getVarEnv(fparams)
-              mapN(visitExp(exp, env0, tenv0), getScheme(tparams, tpe, tenv0)) {
-                case (e, sc) =>
+              mapN(visitExp(exp, env0, tenv0), getScheme(tparams, tpe, tenv0), visitType(eff0, tenv0)) {
+                case (e, sc, f) =>
                   val sym = Symbol.mkEffSym(ns0, ident)
-                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, ???, loc) // TODO: Effects
+                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, f, loc)
                   prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
               }
           }
