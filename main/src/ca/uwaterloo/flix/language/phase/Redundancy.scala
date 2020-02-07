@@ -749,15 +749,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !used.varSyms.contains(sym)
 
   /**
-    * Returns `true` if the given effect `eff` is pure.
-    */
-  private def isPure(eff: ast.Eff): Boolean = eff match {
-    case ast.Eff.Var(_) => true
-    case ast.Eff.Pure => true
-    case ast.Eff.Impure => false
-  }
-
-  /**
     * Companion object for the [[Env]] class.
     */
   private object Env {

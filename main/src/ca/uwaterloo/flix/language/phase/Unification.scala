@@ -17,12 +17,22 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Eff, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 object Unification {
+
+  /**
+    * Represents the Pure effect. (TRUE in the Boolean algebra.)
+    */
+  private val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    */
+  private val Impure: Type = Type.Cst(TypeConstructor.Impure)
 
   /**
     * Companion object for the [[Substitution]] class.
@@ -31,28 +41,30 @@ object Unification {
     /**
       * Returns the empty substitution.
       */
-    val empty: Substitution = Substitution(Map.empty, Map.empty)
+    val empty: Substitution = Substitution(Map.empty)
 
     /**
       * Returns the singleton substitution mapping the type variable `x` to `tpe`.
       */
-    def singleton(x: Type.Var, tpe: Type): Substitution = Substitution(Map(x -> tpe), Map.empty)
+    def singleton(x: Type.Var, tpe: Type): Substitution = {
+      // Ensure that we do not add any x -> x mappings.
+      tpe match {
+        case y: Type.Var if x.id == y.id => empty
+        case _ => Substitution(Map(x -> tpe))
+      }
+    }
 
-    /**
-      * Returns the singleton substitution mapping the effect variable `x` to `eff`.
-      */
-    def singleton(x: Eff.Var, eff: Eff): Substitution = Substitution(Map.empty, Map(x -> eff))
   }
 
   /**
     * A substitution is a map from type variables to types.
     */
-  case class Substitution(typeMap: Map[Type.Var, Type], effectMap: Map[Eff.Var, Eff]) {
+  case class Substitution(m: Map[Type.Var, Type]) {
 
     /**
       * Returns `true` if `this` is the empty substitution.
       */
-    val isEmpty: Boolean = typeMap.isEmpty && effectMap.isEmpty
+    val isEmpty: Boolean = m.isEmpty
 
     /**
       * Applies `this` substitution to the given type `tpe0`.
@@ -61,20 +73,45 @@ object Unification {
       def visit(t: Type): Type =
         t match {
           case x: Type.Var =>
-            typeMap.get(x) match {
+            m.get(x) match {
               case None => x
               case Some(y) if x.kind == t.kind => y
               case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
             }
           case Type.Cst(tc) => Type.Cst(tc)
-          case Type.Arrow(f, l) => Type.Arrow(f, l)
+          case Type.Arrow(l) => Type.Arrow(l)
           case Type.RecordEmpty => Type.RecordEmpty
           case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
           case Type.SchemaEmpty => Type.SchemaEmpty
           case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
           case Type.Zero => Type.Zero
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
-          case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
+          case Type.Apply(t1, t2) =>
+            (visit(t1), visit(t2)) match {
+              // TODO: Optimize
+              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Impure
+              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Pure
+
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
+              case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
+              case (Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Cst(TypeConstructor.Impure)) => Impure
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
+
+              // TODO: This is getting out of hand...
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id1, k))), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Var(id1, k)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Cst(TypeConstructor.Pure)
+
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), Type.Cst(TypeConstructor.Impure)) => x
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
+
+              case (x, y) => Type.Apply(x, y)
+            }
+
           case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
         }
 
@@ -88,18 +125,6 @@ object Unification {
     def apply(ts: List[Type]): List[Type] = if (isEmpty) ts else ts map apply
 
     /**
-      * Applies `this` substitution to the given effect `eff`.
-      */
-    def apply(eff: Eff): Eff = eff match {
-      case x: Eff.Var => effectMap.get(x) match {
-        case None => x
-        case Some(y) => y
-      }
-      case Eff.Pure => Eff.Pure
-      case Eff.Impure => Eff.Impure
-    }
-
-    /**
       * Returns the left-biased composition of `this` substitution with `that` substitution.
       */
     def ++(that: Substitution): Substitution = {
@@ -109,8 +134,7 @@ object Unification {
         this
       } else {
         Substitution(
-          this.typeMap ++ that.typeMap.filter(kv => !this.typeMap.contains(kv._1)),
-          this.effectMap ++ that.effectMap.filter(kv => !this.effectMap.contains(kv._1))
+          this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
         )
       }
     }
@@ -124,13 +148,10 @@ object Unification {
       } else if (that.isEmpty) {
         this
       } else {
-        val newTypeMap = that.typeMap.foldLeft(Map.empty[Type.Var, Type]) {
+        val newTypeMap = that.m.foldLeft(Map.empty[Type.Var, Type]) {
           case (macc, (x, t)) => macc.updated(x, this.apply(t))
         }
-        val newEffectMap = that.effectMap.foldLeft(Map.empty[Eff.Var, Eff]) {
-          case (macc, (x, t)) => macc.updated(x, this.apply(t))
-        }
-        Substitution(newTypeMap, newEffectMap) ++ this
+        Substitution(newTypeMap) ++ this
       }
     }
 
@@ -194,14 +215,6 @@ object Unification {
       * @param tpe2 the second type.
       */
     case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
-
-    /**
-      * An unification error due to a mismatch between the effects `eff1` and `eff2`.
-      *
-      * @param eff1 the first effect.
-      * @param eff2 the second effect.
-      */
-    case class MismatchedEffects(eff1: Eff, eff2: Eff) extends UnificationError
 
     /**
       * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
@@ -308,8 +321,7 @@ object Unification {
         else
           Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
-      case (Type.Arrow(f1, l1), Type.Arrow(f2, l2)) if l1 == l2 =>
-        unifyEffects(f1, f2)
+      case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty) // TODO
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
@@ -447,12 +459,99 @@ object Unification {
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Eff, eff2: Eff): Result[Substitution, UnificationError] = (eff1, eff2) match {
-    case (x: Eff.Var, _) => Ok(Substitution.singleton(x, eff2))
-    case (_, y: Eff.Var) => Ok(Substitution.singleton(y, eff1))
-    case (Eff.Pure, Eff.Pure) => Ok(Substitution.empty)
-    case (Eff.Impure, Eff.Impure) => Ok(Substitution.empty)
-    case _ => Err(UnificationError.MismatchedEffects(eff1, eff2))
+  def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
+
+    /**
+      * Returns the negation of the effect `eff0`.
+      */
+    def mkNot(eff0: Type): Type = eff0 match {
+      case Type.Cst(TypeConstructor.Pure) => Impure
+      case Type.Cst(TypeConstructor.Impure) => Pure
+      case Type.Apply(Type.Cst(TypeConstructor.Not), eff) => eff
+      case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
+    }
+
+    /**
+      * Returns the conjunction of the two effects `eff1` and `eff2`.
+      */
+    def mkAnd(eff1: Type, eff2: Type): Type = eff1 match {
+      case Type.Cst(TypeConstructor.Pure) => eff2
+      case Type.Cst(TypeConstructor.Impure) => Impure
+      case _ => eff2 match {
+        case Type.Cst(TypeConstructor.Pure) => eff1
+        case Type.Cst(TypeConstructor.Impure) => Impure
+        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+      }
+    }
+
+    /**
+      * Returns the disjunction of the two effects `eff1` and `eff2`.
+      */
+    def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
+      case Type.Cst(TypeConstructor.Pure) => Pure
+      case Type.Cst(TypeConstructor.Impure) => eff2
+      case Type.Var(id1, _) =>
+        eff2 match {
+          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
+          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
+          case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+        }
+      case _ => eff2 match {
+        case Type.Cst(TypeConstructor.Pure) => Pure
+        case Type.Cst(TypeConstructor.Impure) => eff1
+        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+      }
+    }
+
+    /**
+      * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+      */
+    def eq(p: Type, q: Type): Type = {
+      // Note: Specialized for performance.
+      p match {
+        case Type.Cst(TypeConstructor.Pure) => mkNot(q)
+        case Type.Cst(TypeConstructor.Impure) => q
+        case _ => q match {
+          case Type.Cst(TypeConstructor.Pure) => mkNot(p)
+          case Type.Cst(TypeConstructor.Impure) => p
+          case _ => mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+        }
+      }
+    }
+
+    /**
+      * Aliases to make the success variable elimination easier to understand.
+      */
+    val True = Pure
+    val False = Impure
+
+    /**
+      * Performs success variable elimination on the given boolean expression `eff`.
+      */
+    def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
+      case Nil => (Substitution.empty, eff)
+      case x :: xs =>
+        val t0 = Substitution.singleton(x, False)(eff)
+        val t1 = Substitution.singleton(x, True)(eff)
+        val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
+        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, se(mkNot(t1)))))
+        (st ++ se, cc)
+    }
+
+    // The boolean expression we want to show is 0.
+    val query = eq(eff1, eff2)
+
+    // The free type (effect) variables in the query.
+    val freeVars = query.typeVars.toList
+
+    // Eliminate all variables.
+    val (subst, result) = successiveVariableElimination(query, freeVars)
+
+    // Determine if unification was successful.
+    if (result != Pure)
+      Ok(subst)
+    else
+      Err(UnificationError.MismatchedTypes(eff1, eff2))
   }
 
   /**
@@ -485,9 +584,6 @@ object Unification {
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
-
-        case Result.Err(UnificationError.MismatchedEffects(eff1, eff2)) =>
-          Err(TypeError.MismatchedEffects(eff1, eff2, loc))
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
@@ -555,7 +651,7 @@ object Unification {
   /**
     * Unifies the two given effects `eff1` and `eff2`.
     */
-  def unifyEffM(eff1: Eff, eff2: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = {
+  def unifyEffM(eff1: Type, eff2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     InferMonad((s: Substitution) => {
       val effect1 = s(eff1)
       val effect2 = s(eff2)
@@ -563,8 +659,9 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))
-        case Result.Err(UnificationError.MismatchedEffects(e1, e2)) => Err(TypeError.MismatchedEffects(e1, e2, loc))
-        case Result.Err(e) => throw InternalCompilerException(s"Unexpected error: '$e'.")
+        case Result.Err(e) =>
+          println(loc)
+          throw InternalCompilerException(s"Unexpected error: '$e'.")
       }
     }
     )
@@ -573,18 +670,18 @@ object Unification {
   /**
     * Unifies the three given effects `eff1`, `eff2`, and `eff3`.
     */
-  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = unifyEffM(List(eff1, eff2, eff3), loc)
+  def unifyEffM(eff1: Type, eff2: Type, eff3: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyEffM(List(eff1, eff2, eff3), loc)
 
   /**
     * Unifies the four given effects `eff1`, `eff2`, `eff3`, and `eff4`.
     */
-  def unifyEffM(eff1: Eff, eff2: Eff, eff3: Eff, eff4: Eff, loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = unifyEffM(List(eff1, eff2, eff3, eff4), loc)
+  def unifyEffM(eff1: Type, eff2: Type, eff3: Type, eff4: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = unifyEffM(List(eff1, eff2, eff3, eff4), loc)
 
   /**
     * Unifies all the effects in the given non-empty list `fs`.
     */
-  def unifyEffM(fs: List[Eff], loc: SourceLocation)(implicit flix: Flix): InferMonad[Eff] = {
-    def visit(x0: InferMonad[Eff], xs: List[Eff]): InferMonad[Eff] = xs match {
+  def unifyEffM(fs: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
         case tpe => visit(unifyEffM(tpe, y, loc), ys)
