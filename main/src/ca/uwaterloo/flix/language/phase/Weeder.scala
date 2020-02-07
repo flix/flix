@@ -2138,6 +2138,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Arrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Pure(sp1, _) => sp1
+    case ParsedAst.Type.Impure(sp1, _) => sp1
   }
 
   /**

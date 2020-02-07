@@ -1160,72 +1160,70 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded type `tpe` into a named type under the given type environment `tenv0`.
     */
-  private def visitType(tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
-    /**
-      * Inner visitor.
-      */
-    def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): Validation[NamedAst.Type, NameError] = tpe0 match {
-      case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
+  private def visitType(tpe0: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
+    case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
-      case WeededAst.Type.Var(ident, loc) => env0.get(ident.name) match {
-        case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
-        case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
-      }
-
-      case WeededAst.Type.Ambiguous(qname, loc) =>
-        if (qname.isUnqualified)
-          env0.get(qname.ident.name) match {
-            case None => NamedAst.Type.Ambiguous(qname, loc).toSuccess
-            case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
-          }
-        else
-          NamedAst.Type.Ambiguous(qname, loc).toSuccess
-
-      case WeededAst.Type.Tuple(elms, loc) =>
-        mapN(traverse(elms)(visitType(_, env0))) {
-          case ts => NamedAst.Type.Tuple(ts, loc)
-        }
-
-      case WeededAst.Type.RecordEmpty(loc) =>
-        NamedAst.Type.RecordEmpty(loc).toSuccess
-
-      case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
-        mapN(visit(value, env0), visit(rest, env0)) {
-          case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
-        }
-
-      case WeededAst.Type.SchemaEmpty(loc) =>
-        NamedAst.Type.SchemaEmpty(loc).toSuccess
-
-      case WeededAst.Type.Schema(ps, rest, loc) =>
-        mapN(traverse(ps)(visitType(_, env0)), visitType(rest, env0)) {
-          case (ts, t) => NamedAst.Type.Schema(ts, t, loc)
-        }
-
-      case WeededAst.Type.Nat(len, loc) =>
-        NamedAst.Type.Nat(len, loc).toSuccess
-
-      case WeededAst.Type.Native(fqn, loc) =>
-        NamedAst.Type.Native(fqn, loc).toSuccess
-
-      case WeededAst.Type.Arrow(tparams, tresult, loc) =>
-        mapN(traverse(tparams)(visitType(_, env0)), visitType(tresult, env0)) {
-          case (ts, t) => NamedAst.Type.Arrow(ts, t, loc)
-        }
-
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
-        mapN(visit(tpe1, env0), visit(tpe2, env0)) {
-          case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
-        }
-
-      case WeededAst.Type.Pure(loc) =>
-        NamedAst.Type.Pure(loc).toSuccess
-
-      case WeededAst.Type.Impure(loc) =>
-        NamedAst.Type.Impure(loc).toSuccess
+    case WeededAst.Type.Var(ident, loc) => tenv0.get(ident.name) match {
+      case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
+      case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
     }
 
-    visit(tpe, tenv0)
+    case WeededAst.Type.Ambiguous(qname, loc) =>
+      if (qname.isUnqualified)
+        tenv0.get(qname.ident.name) match {
+          case None => NamedAst.Type.Ambiguous(qname, loc).toSuccess
+          case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
+        }
+      else
+        NamedAst.Type.Ambiguous(qname, loc).toSuccess
+
+    case WeededAst.Type.Tuple(elms, loc) =>
+      mapN(traverse(elms)(visitType(_, tenv0))) {
+        case ts => NamedAst.Type.Tuple(ts, loc)
+      }
+
+    case WeededAst.Type.RecordEmpty(loc) =>
+      NamedAst.Type.RecordEmpty(loc).toSuccess
+
+    case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
+      mapN(visitType(value, tenv0), visitType(rest, tenv0)) {
+        case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)
+      }
+
+    case WeededAst.Type.SchemaEmpty(loc) =>
+      NamedAst.Type.SchemaEmpty(loc).toSuccess
+
+    case WeededAst.Type.Schema(ps, rest, loc) =>
+      mapN(traverse(ps)(visitType(_, tenv0)), visitType(rest, tenv0)) {
+        case (ts, t) => NamedAst.Type.Schema(ts, t, loc)
+      }
+
+    case WeededAst.Type.Nat(len, loc) =>
+      NamedAst.Type.Nat(len, loc).toSuccess
+
+    case WeededAst.Type.Native(fqn, loc) =>
+      NamedAst.Type.Native(fqn, loc).toSuccess
+
+    case WeededAst.Type.Arrow(tparams, tresult, loc) =>
+      mapN(traverse(tparams)(visitType(_, tenv0)), visitType(tresult, tenv0)) {
+        case (ts, t) => NamedAst.Type.Arrow(ts, t, loc)
+      }
+
+    case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
+      mapN(visitType(tpe1, tenv0), visitType(tpe2, tenv0)) {
+        case (t1, t2) => NamedAst.Type.Apply(t1, t2, loc)
+      }
+
+    case WeededAst.Type.Pure(loc) =>
+      NamedAst.Type.Pure(loc).toSuccess
+
+    case WeededAst.Type.Impure(loc) =>
+      NamedAst.Type.Impure(loc).toSuccess
+
+    case WeededAst.Type.Not(tpe, loc) =>
+      mapN(visitType(tpe, tenv0)) {
+        case t => NamedAst.Type.Not(t, loc)
+      }
   }
 
   /**

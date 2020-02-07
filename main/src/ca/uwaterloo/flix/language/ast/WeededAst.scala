@@ -320,6 +320,12 @@ object WeededAst {
 
     case class Impure(loc: SourceLocation) extends WeededAst.Type
 
+    case class Not(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class And(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Or(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
   }
 
   sealed trait TypeParams

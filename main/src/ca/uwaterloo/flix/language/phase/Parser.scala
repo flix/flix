@@ -1160,7 +1160,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure // TODO: Remove IO
+      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure
     }
 
     def Var: Rule1[ParsedAst.Type] = rule {
