@@ -802,7 +802,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Resets the consecutive application count of `this` environment.
       */
-    def resetApplies: Env = copy(recursionContext = recursionContext.map(r => r.resetApplies))
+    def resetApplies: Env = {
+      if (recursionContext.isEmpty || recursionContext.get.applies == 0) {
+        this
+      } else {
+        copy(recursionContext = recursionContext.map(r => r.resetApplies))
+      }
+    }
   }
 
   private object Used {
@@ -1001,7 +1007,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param arity number of parameters required to execute recursion
     */
   private case class RecursionContext(defn: Symbol.DefnSym, arity: Int, applies: Int = 0) {
-    def resetApplies: RecursionContext = copy(applies = 0)
+    def resetApplies: RecursionContext = {
+      if (applies == 0) {
+        this
+      } else {
+        copy(applies = 0)
+      }
+    }
 
     def addApply: RecursionContext = copy(applies = applies + 1)
 
