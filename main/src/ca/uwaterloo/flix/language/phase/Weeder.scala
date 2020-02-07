@@ -1733,9 +1733,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) =>
-      // Construct a curried arrow type.
-      tparams.foldRight(visitType(tresult)) {
+    case ParsedAst.Type.Arrow(sp1, tparams, effOpt, tresult, sp2) =>
+      // Construct a curried arrow type. The effect (if any) goes on the last arrow.
+      val eff = effOpt.map(visitType)
+      val returnType = visitType(tresult)
+
+      val base = WeededAst.Type.Arrow(List(visitType(tparams.last)), returnType, mkSL(sp1, sp2))
+      tparams.init.foldRight(base) {
         case (tparam, tacc) => WeededAst.Type.Arrow(List(visitType(tparam)), tacc, mkSL(sp1, sp2))
       }
 
@@ -1758,15 +1762,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
+    // TODO: Cleanup and deal correctly with sequences of effects.
   private def visitEff(effOpt: Option[ParsedAst.Effect])(implicit flix: Flix): Validation[WeededAst.Effect, WeederError] = effOpt match {
-      // TODO: Update
     case None => WeededAst.Effect.Pure.toSuccess
     case Some(ParsedAst.Effect(xs)) =>
-      if (xs.exists(_.name == "Pure"))
+        if (xs.length == 1 && xs.head.name.charAt(0).isLower)
+          WeededAst.Effect.Var(xs.head).toSuccess
+      else if (xs.exists(_.name == "Pure"))
         WeededAst.Effect.Pure.toSuccess
       else if (xs.exists(_.name == "Impure"))
         WeededAst.Effect.Impure.toSuccess
-      else if (xs.exists(_.name == "IO"))
+      else if (xs.exists(_.name == "IO")) // TODO: Remove
         WeededAst.Effect.Impure.toSuccess
       else
         throw InternalCompilerException(s"Unexpected effects: ${xs.mkString(" ,")}") // TODO: What effects to recognize?
@@ -2134,7 +2140,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
-    case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
+    case ParsedAst.Type.Arrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
   }

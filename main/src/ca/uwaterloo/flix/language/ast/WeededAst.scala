@@ -323,6 +323,8 @@ object WeededAst {
 
   object Effect {
 
+    case class Var(ident: Name.Ident) extends Effect
+
     case object Pure extends Effect
 
     case object Impure extends Effect

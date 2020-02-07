@@ -136,7 +136,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val sym = Symbol.mkEffSym(ns0, ident)
               mapN(getScheme(tparams, tpe, tenv0)) {
                 case sc =>
-                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, visitEff(eff0), loc)
+                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, visitEff(eff0, tenv0), loc)
                   prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff))))
               }
           }
@@ -166,7 +166,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               mapN(visitExp(exp, env0, tenv0), getScheme(tparams, tpe, tenv0)) {
                 case (e, sc) =>
                   val sym = Symbol.mkEffSym(ns0, ident)
-                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, visitEff(eff0), loc)
+                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, visitEff(eff0, tenv0), loc)
                   prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
               }
           }
@@ -522,7 +522,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           mapN(visitExp(exp, env0, tenv), getScheme(tparams, tpe, tenv)) {
             case (e, sc) =>
               val sym = Symbol.mkDefnSym(ns0, ident)
-              NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, visitEff(eff0), loc)
+              NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, visitEff(eff0, tenv), loc)
           }
       }
   }
@@ -575,7 +575,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tenv = tenv0 ++ getTypeEnv(tparams)
 
       mapN(getFormalParams(fparams0, tenv), getScheme(tparams, tpe, tenv)) {
-        case (fparams, sc) => NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, visitEff(eff), loc)
+        case (fparams, sc) => NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, visitEff(eff, tenv), loc)
       }
   }
 
@@ -873,12 +873,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) =>
       mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
-        case (e, t) => NamedAst.Expression.Ascribe(e, t, visitEff(eff), loc)
+        case (e, t) => NamedAst.Expression.Ascribe(e, t, visitEff(eff, tenv0), loc)
       }
 
     case WeededAst.Expression.Cast(exp, tpe, eff, loc) =>
       mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
-        case (e, t) => NamedAst.Expression.Cast(e, t, visitEff(eff), loc)
+        case (e, t) => NamedAst.Expression.Cast(e, t, visitEff(eff, tenv0), loc)
       }
 
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
@@ -1228,7 +1228,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded effect `eff` into a named effect.
     */
-  private def visitEff(eff: WeededAst.Effect)(implicit flix: Flix): NamedAst.Effect = eff match {
+    // TODO: Should return a validation.
+    // TODO: Replace by types?
+  private def visitEff(eff: WeededAst.Effect, tenv0: Map[String, Type.Var])(implicit flix: Flix): NamedAst.Effect = eff match {
+    case WeededAst.Effect.Var(ident) =>tenv0.get(ident.name) match {
+      case None => throw InternalCompilerException(s"Unknown effect variable: '${ident}'.")
+      case Some(tvar) => NamedAst.Effect.Var(tvar)
+    }
     case WeededAst.Effect.Pure => NamedAst.Effect.Pure
     case WeededAst.Effect.Impure => NamedAst.Effect.Impure
   }

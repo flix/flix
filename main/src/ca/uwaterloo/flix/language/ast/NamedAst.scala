@@ -333,6 +333,8 @@ object NamedAst {
 
   object Effect {
 
+    case class Var(tvar: ast.Type.Var) extends Effect
+
     case object Pure extends Effect
 
     case object Impure extends Effect

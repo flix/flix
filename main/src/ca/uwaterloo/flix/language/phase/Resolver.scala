@@ -1548,6 +1548,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Resolves the given effect `eff`.
     */
   private def lookupEffect(eff: NamedAst.Effect): Validation[Type, ResolutionError] = eff match {
+    case NamedAst.Effect.Var(tvar) => tvar.toSuccess
     case NamedAst.Effect.Pure => Type.Cst(TypeConstructor.Pure).toSuccess
     case NamedAst.Effect.Impure => Type.Cst(TypeConstructor.Impure).toSuccess
   }
