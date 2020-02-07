@@ -38,10 +38,10 @@ namespace Console {
         ///
         /// Returns the next line read from the standard input stream.
         ///
-        pub def readLine(): Option[String] @ IO =
+        pub def readLine(): Option[String] @ Impure =
             import flix.runtime.library.Console:readLine();
             let s = readLine();
-            (if (isNull(s)) None else Some(s)) as Option[String] @ IO
+            (if (isNull(s)) None else Some(s)) as Option[String] @ Impure
 
     }
 
@@ -53,28 +53,28 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard output stream.
         ///
-        pub def print(s: String): Unit @ IO =
+        pub def print(s: String): Unit @ Impure =
             import java.io.PrintStream.print(String);
             getOutputStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
-        pub def printLine(s: String): Unit @ IO =
+        pub def printLine(s: String): Unit @ Impure =
             import java.io.PrintStream.println(String);
             getOutputStream().println(s)
 
         ///
         /// Prints a newline to the standard output stream.
         ///
-        pub def newLine(): Unit @ IO =
+        pub def newLine(): Unit @ Impure =
             import java.io.PrintStream.println();
             getOutputStream().println()
 
         ///
         /// Flushes the standard output stream.
         ///
-        pub def flush(): Unit @ IO =
+        pub def flush(): Unit @ Impure =
             import java.io.PrintStream.flush();
             getOutputStream().flush()
 
@@ -95,28 +95,28 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard error stream.
         ///
-        pub def print(s: String): Unit @ IO =
+        pub def print(s: String): Unit @ Impure =
             import java.io.PrintStream.print(String);
             getErrorStream().print(s)
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
-        pub def printLine(s: String): Unit @ IO =
+        pub def printLine(s: String): Unit @ Impure =
             import java.io.PrintStream.println(String);
             getErrorStream().println(s)
 
         ///
         /// Prints a newline to the standard error stream.
         ///
-        pub def newLine(): Unit @ IO =
+        pub def newLine(): Unit @ Impure =
             import java.io.PrintStream.println();
             getErrorStream().println()
 
         ///
         /// Flushes the standard error stream.
         ///
-        pub def flush(): Unit @ IO =
+        pub def flush(): Unit @ Impure =
             import java.io.PrintStream.flush();
             getErrorStream().flush()
 

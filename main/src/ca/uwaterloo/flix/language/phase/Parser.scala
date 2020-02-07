@@ -1102,7 +1102,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Schema | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native |  Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1155,6 +1155,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
+    def Pure: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.Pure
+    }
+
+    def Impure: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure // TODO: Remove IO
+    }
+
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
@@ -1169,17 +1177,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Effects                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  def Effect: Rule1[ParsedAst.Effect] = rule {
-    oneOrMore(Names.Effect).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.Effect
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Type and (optional) Effects                                             //
   /////////////////////////////////////////////////////////////////////////////
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Effect]] = rule {
-    Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
+    Type ~ optional(WS ~ atomic("@") ~ WS ~ Type)
   }
 
   /////////////////////////////////////////////////////////////////////////////

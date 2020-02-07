@@ -189,7 +189,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-        eff <- lookupEffect(eff0)
+        eff <- lookupType(eff0, ns0, prog0)
       } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
   }
 
@@ -202,7 +202,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-        eff <- lookupEffect(eff0)
+        eff <- lookupType(eff0, ns0, prog0)
       } yield ResolvedAst.Eff(doc, ann, mod, sym, tparams, fparams, scheme, eff, loc)
   }
 
@@ -223,7 +223,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         exp <- Expressions.resolve(exp0, tenv0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-        eff1 <- lookupEffect(eff0)
+        eff1 <- lookupType(eff0, ns0, prog0)
       } yield ResolvedAst.Handler(doc, ann, mod, eff.sym, tparams, fparams, exp, scheme, eff1, loc)
   }
 
@@ -693,14 +693,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
-            f <- lookupEffect(eff)
+            f <- lookupType(eff, ns0, prog0)
           } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
 
         case NamedAst.Expression.Cast(exp, tpe, eff, loc) =>
           for {
             e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
-            f <- lookupEffect(eff)
+            f <- lookupType(eff, ns0, prog0)
           } yield ResolvedAst.Expression.Cast(e, t, f, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, tpe, evar, loc) =>
@@ -1498,6 +1498,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         tpe2 <- lookupType(targ0, ns0, root)
       ) yield simplify(Type.Apply(tpe1, tpe2))
 
+    case NamedAst.Type.Pure(loc) =>
+      Type.Cst(TypeConstructor.Pure).toSuccess
+
+    case NamedAst.Type.Impure(loc) =>
+      Type.Cst(TypeConstructor.Impure).toSuccess
+
   }
 
   /**
@@ -1542,15 +1548,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
       typeAliasesInRootNS.get(typeName)
     }
-  }
-
-  /**
-    * Resolves the given effect `eff`.
-    */
-  private def lookupEffect(eff: NamedAst.Effect): Validation[Type, ResolutionError] = eff match {
-    case NamedAst.Effect.Var(tvar) => tvar.toSuccess
-    case NamedAst.Effect.Pure => Type.Cst(TypeConstructor.Pure).toSuccess
-    case NamedAst.Effect.Impure => Type.Cst(TypeConstructor.Impure).toSuccess
   }
 
   /**

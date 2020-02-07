@@ -191,7 +191,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val t = mkArrowType(fs, visitType(tpe), loc)
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, WeededAst.Effect.Pure, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, WeededAst.Type.Pure(loc), loc))
       }
   }
 
@@ -1757,25 +1757,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       args.foldLeft(visitType(t1)) {
         case (acc, t2) => WeededAst.Type.Apply(acc, visitType(t2), mkSL(sp1, sp2))
       }
+
+    case ParsedAst.Type.Pure(sp1, sp2) =>
+      WeededAst.Type.Pure(mkSL(sp1, sp2))
+
+    case ParsedAst.Type.Impure(sp1, sp2) =>
+      WeededAst.Type.Impure(mkSL(sp1, sp2))
   }
 
   /**
     * Weeds the given parsed optional effect `effOpt`.
     */
-    // TODO: Cleanup and deal correctly with sequences of effects.
-  private def visitEff(effOpt: Option[ParsedAst.Effect])(implicit flix: Flix): Validation[WeededAst.Effect, WeederError] = effOpt match {
-    case None => WeededAst.Effect.Pure.toSuccess
-    case Some(ParsedAst.Effect(xs)) =>
-        if (xs.length == 1 && xs.head.name.charAt(0).isLower)
-          WeededAst.Effect.Var(xs.head).toSuccess
-      else if (xs.exists(_.name == "Pure"))
-        WeededAst.Effect.Pure.toSuccess
-      else if (xs.exists(_.name == "Impure"))
-        WeededAst.Effect.Impure.toSuccess
-      else if (xs.exists(_.name == "IO")) // TODO: Remove
-        WeededAst.Effect.Impure.toSuccess
-      else
-        throw InternalCompilerException(s"Unexpected effects: ${xs.mkString(" ,")}") // TODO: What effects to recognize?
+  private def visitEff(effOpt: Option[ParsedAst.Type])(implicit flix: Flix): Validation[WeededAst.Type, WeederError] = effOpt match {
+    case None => WeededAst.Type.Pure(SourceLocation.Unknown).toSuccess
+    case Some(tpe) => visitType(tpe).toSuccess
   }
 
   /**
@@ -1977,7 +1972,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = tpe0 match {
     case None => exp0
-    case Some(t) => WeededAst.Expression.Ascribe(exp0, visitType(t), WeededAst.Effect.Pure, exp0.loc) // TODO: Effect
+    case Some(t) => WeededAst.Expression.Ascribe(exp0, visitType(t), WeededAst.Type.Pure(exp0.loc), exp0.loc) // TODO: Should the effect param be optional?
   }
 
   /**
@@ -2241,14 +2236,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
-    val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), WeededAst.Effect.Pure, loc)
+    val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), WeededAst.Type.Pure(loc), loc)
     val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
 
     // The type and effect of the generated main.
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
     val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
     val tpe = WeededAst.Type.Arrow(argumentType :: Nil, resultType, loc)
-    val eff = WeededAst.Effect.Pure // TODO
+    val eff = WeededAst.Type.Pure(loc)
 
     // Construct the declaration.
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
