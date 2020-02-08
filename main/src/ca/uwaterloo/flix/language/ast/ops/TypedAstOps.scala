@@ -15,11 +15,11 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given expression `exp0`.
       */
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
-      case Expression.Wild(tpe, eff, loc) => Map.empty
+      case Expression.Wild(tpe, loc) => Map.empty
 
-      case Expression.Var(sym, tpe, eff, loc) => Map.empty
+      case Expression.Var(sym, tpe, loc) => Map.empty
 
-      case Expression.Def(sym, tpe, eff, loc) => Map.empty
+      case Expression.Def(sym, tpe, loc) => Map.empty
 
       case Expression.Eff(sym, tpe, eff, loc) => Map.empty
 

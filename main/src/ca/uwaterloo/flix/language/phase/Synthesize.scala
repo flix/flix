@@ -63,9 +63,9 @@ object Synthesize extends Phase[Root, Root] {
       * Rewrites equality operations to call generated equality functions.
       */
     def visitExp(exp0: Expression): Expression = exp0 match {
-      case Expression.Wild(tpe, eff, loc) => exp0
-      case Expression.Var(sym, tpe, eff, loc) => exp0
-      case Expression.Def(sym, tpe, eff, loc) => exp0
+      case Expression.Wild(tpe, loc) => exp0
+      case Expression.Var(sym, tpe, loc) => exp0
+      case Expression.Def(sym, tpe, loc) => exp0
       case Expression.Eff(sym, tpe, eff, loc) => exp0
       case Expression.Hole(sym, tpe, eff, loc) => exp0
       case Expression.Unit(loc) => exp0
@@ -416,7 +416,7 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool)), Pure, sl)
+      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool)), sl)
       val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Bool)), Pure, sl)
       val outer = Expression.Apply(inner, exp2, Type.Cst(TypeConstructor.Bool), Pure, sl)
       outer
@@ -493,8 +493,8 @@ object Synthesize extends Phase[Root, Root] {
       /*
        * An ordinary binary equality test to be used for primitive types.
        */
-      val exp1 = Expression.Var(varX, tpe, Pure, sl)
-      val exp2 = Expression.Var(varY, tpe, Pure, sl)
+      val exp1 = Expression.Var(varX, tpe, sl)
+      val exp2 = Expression.Var(varY, tpe, sl)
       val default = Expression.Binary(BinaryOperator.Equal, exp1, exp2, Type.Cst(TypeConstructor.Bool), Pure, sl)
 
       /*
@@ -593,8 +593,8 @@ object Synthesize extends Phase[Root, Root] {
                 val g = Expression.True(sl)
 
                 // Generate the rule body: freshX == freshY.
-                val expX = Expression.Var(freshX, caseType, Pure, sl)
-                val expY = Expression.Var(freshY, caseType, Pure, sl)
+                val expX = Expression.Var(freshX, caseType, sl)
+                val expY = Expression.Var(freshY, caseType, sl)
                 val b = mkApplyEq(expX, expY)
 
                 // Put the components together.
@@ -654,8 +654,8 @@ object Synthesize extends Phase[Root, Root] {
             // The body of the rule.
             val b = (freshVarsX zip freshVarsY zip elementTypes).foldRight(Expression.True(sl): Expression) {
               case (((freshX, freshY), elementType), eacc) =>
-                val expX = Expression.Var(freshX, elementType, Pure, sl)
-                val expY = Expression.Var(freshY, elementType, Pure, sl)
+                val expX = Expression.Var(freshX, elementType, sl)
+                val expY = Expression.Var(freshY, elementType, sl)
 
                 val e1 = mkApplyEq(expX, expY)
                 val e2 = eacc
@@ -684,7 +684,7 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32)), Pure, sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32)), sl)
       Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Int32), Pure, sl)
     }
 
@@ -736,7 +736,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def mkHashExp(tpe: Type, varX: Symbol.VarSym): Expression = {
       // An expression that evaluates to the value of varX.
-      val exp0 = Expression.Var(varX, tpe, Pure, sl)
+      val exp0 = Expression.Var(varX, tpe, sl)
 
       // TODO: The quality of the generated hash function is not very good.
 
@@ -844,7 +844,7 @@ object Synthesize extends Phase[Root, Root] {
                 val b = Expression.Binary(
                   BinaryOperator.Plus,
                   Expression.Int32(index, sl),
-                  mkApplyHash(Expression.Var(freshX, caseType, Pure, sl)),
+                  mkApplyHash(Expression.Var(freshX, caseType, sl)),
                   Type.Cst(TypeConstructor.Int32),
                   Pure,
                   sl
@@ -893,7 +893,7 @@ object Synthesize extends Phase[Root, Root] {
 
             // The elements of the tuple.
             val inner = (freshVarsX zip elementTypes).map {
-              case (freshX, elementType) => mkApplyHash(Expression.Var(freshX, elementType, Pure, sl))
+              case (freshX, elementType) => mkApplyHash(Expression.Var(freshX, elementType, sl))
             }
 
             // Construct the sum expression e1 + e2 + e3
@@ -930,7 +930,7 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkToString(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str)), Pure, sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Str)), sl)
       Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Str), Pure, sl)
     }
 
@@ -982,7 +982,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def mkToStringExp(tpe: Type, varX: Symbol.VarSym): Expression = {
       // An expression that evaluates to the value of varX.
-      val exp0 = Expression.Var(varX, tpe, Pure, sl)
+      val exp0 = Expression.Var(varX, tpe, sl)
 
       // Determine the string representation based on the type `tpe`.
       tpe match {
@@ -1110,7 +1110,7 @@ object Synthesize extends Phase[Root, Root] {
                 val b = concatAll(List(
                   Expression.Str(tag, sl),
                   Expression.Str("(", sl),
-                  mkApplyToString(Expression.Var(freshX, caseType, Pure, sl)),
+                  mkApplyToString(Expression.Var(freshX, caseType, sl)),
                   Expression.Str(")", sl)
                 ))
 
@@ -1173,7 +1173,7 @@ object Synthesize extends Phase[Root, Root] {
 
             // The elements of the tuple.
             val inner = (freshVarsX zip elementTypes).map {
-              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, Pure, sl))
+              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, sl))
             }
 
             // Construct the string expression (e1, e2, e3, ...)

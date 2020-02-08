@@ -1068,7 +1068,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (baseTyp, _) <- visitExp(exp)
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           resultTyp <- unifyTypM(tvar, fieldType, loc)
-          resultEff <- unifyEffM(evar, Pure, loc)  // TODO: Effects
+          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
@@ -1331,13 +1331,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def visitExp(exp0: ResolvedAst.Expression, subst0: Substitution): TypedAst.Expression = exp0 match {
 
       case ResolvedAst.Expression.Wild(tvar, loc) =>
-        TypedAst.Expression.Wild(subst0(tvar), Pure, loc)
+        TypedAst.Expression.Wild(subst0(tvar), loc)
 
       case ResolvedAst.Expression.Var(sym, tvar, loc) =>
-        TypedAst.Expression.Var(sym, subst0(sym.tvar),Pure,  loc)
+        TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
 
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
-        TypedAst.Expression.Def(sym, subst0(tvar), Pure,  loc)
+        TypedAst.Expression.Def(sym, subst0(tvar), loc)
 
       case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
         TypedAst.Expression.Eff(sym, subst0(tvar), subst0(evar), loc)
