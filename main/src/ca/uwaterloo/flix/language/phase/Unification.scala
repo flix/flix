@@ -90,34 +90,12 @@ object Unification {
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
           case Type.Apply(t1, t2) =>
             (visit(t1), visit(t2)) match {
+              // Simplify boolean equations.
               case (Type.Cst(TypeConstructor.Not), x) => mkNot(x)
-
-              // TODO: Rewrite to use smart constructors.
-              // TODO: Move into mkAnd...
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
-              case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
-              case (Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Cst(TypeConstructor.Impure)) => Impure
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-
-              // TODO: This is getting out of hand...
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id1, k))), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Var(id1, k)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Cst(TypeConstructor.Impure)
-
               case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => mkAnd(x, y)
-
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), Type.Cst(TypeConstructor.Impure)) => x
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-
               case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => mkOr(x, y)
-
               case (x, y) => Type.Apply(x, y)
             }
-
           case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
         }
 
@@ -791,11 +769,11 @@ object Unification {
     case _ if eff1 == eff2 => eff1
 
     case _ =>
-//      val s = s"And($eff1, $eff2)"
-//      val len = s.length
-//      if (true) {
-//        println(s.substring(0, Math.min(len, 300)))
-//      }
+      //      val s = s"And($eff1, $eff2)"
+      //      val len = s.length
+      //      if (true) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //      }
 
       Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
   }
