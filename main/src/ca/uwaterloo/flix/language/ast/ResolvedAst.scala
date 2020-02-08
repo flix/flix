@@ -77,15 +77,15 @@ object ResolvedAst {
   object Expression {
 
     case class Wild(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression {
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression {
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression {
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
     case class Eff(sym: Symbol.EffSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
