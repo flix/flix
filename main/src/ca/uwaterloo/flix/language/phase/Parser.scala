@@ -1101,12 +1101,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
-      def Eff: Rule1[Option[ParsedAst.Type]] = rule {
+      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
+        "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      def EffList: Rule1[Option[ParsedAst.Type]] = rule {
         optional("{" ~ optWS ~ Type ~ optWS ~ "}")
       }
 
       rule {
-        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ Eff ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+        SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
       }
     }
 
