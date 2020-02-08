@@ -38,16 +38,16 @@ object NamedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Effect, loc: SourceLocation)
+  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
-  case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Effect, loc: SourceLocation)
+  case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
-  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Effect, loc: SourceLocation)
+  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
   // TODO
   case class Law()
 
-  case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Effect, loc: SourceLocation)
+  case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
@@ -73,11 +73,11 @@ object NamedAst {
 
   object Expression {
 
-    case class Wild(tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Wild(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Def(name: Name.QName, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Def(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Hole(name: Option[Name.Ident], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -173,9 +173,9 @@ object NamedAst {
 
     case class Universal(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ascribe(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: NamedAst.Effect, loc: SourceLocation) extends NamedAst.Expression
+    case class Ascribe(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Cast(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: NamedAst.Effect, loc: SourceLocation) extends NamedAst.Expression
+    case class Cast(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -327,15 +327,15 @@ object NamedAst {
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-  }
+    case class Pure(loc: SourceLocation) extends NamedAst.Type
 
-  sealed trait Effect
+    case class Impure(loc: SourceLocation) extends NamedAst.Type
 
-  object Effect {
+    case class Not(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case object Pure extends Effect
+    case class And(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case object Impure extends Effect
+    case class Or(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
   }
 

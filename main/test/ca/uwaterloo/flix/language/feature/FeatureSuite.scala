@@ -71,9 +71,12 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Switch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Switch.flix"),
   new FlixTest("Test.Expression.Postfix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Postfix.flix"),
   new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix"),
+
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
+
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix"),
   new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix"),
+
   new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix"),
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix"),
   new FlixTest("Test.Decl.Impl", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Impl.flix"),
@@ -133,10 +136,10 @@ class FeatureSuite extends Suites(
   //
   // References.
   //
-  new FlixTest("Test.Expression.Reference.Assign", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Assign.flix"),
-  new FlixTest("Test.Expression.Reference.Ref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Ref.flix"),
-  new FlixTest("Test.Expression.Reference.Deref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Deref.flix"),
-  new FlixTest("Test.Expression.Reference.Precedence", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Reference.Precedence.flix"),
+  new FlixTest("Test.Exp.Reference.Assign", "main/test/flix/Test.Exp.Reference.Assign.flix"),
+  new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix"),
+  new FlixTest("Test.Exp.Reference.Ref.flix", "main/test/flix/Test.Exp.Reference.Ref.flix"),
+  new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
 
   //
   // Constraints.

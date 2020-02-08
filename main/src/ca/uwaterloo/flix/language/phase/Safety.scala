@@ -57,11 +57,11 @@ object Safety extends Phase[Root, Root] {
     case Expression.BigInt(lit, loc) => Nil
     case Expression.Str(lit, loc) => Nil
 
-    case Expression.Wild(tpe, eff, loc) => Nil
+    case Expression.Wild(tpe, loc) => Nil
 
-    case Expression.Var(sym, tpe, eff, loc) => Nil
+    case Expression.Var(sym, tpe, loc) => Nil
 
-    case Expression.Def(sym, tpe, eff, loc) => Nil
+    case Expression.Def(sym, tpe, loc) => Nil
 
     case Expression.Eff(sym, tpe, eff, loc) => Nil
 

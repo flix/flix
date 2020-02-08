@@ -137,11 +137,17 @@ object TypedAst {
       final def eff: Type = Type.Cst(TypeConstructor.Pure)
     }
 
-    case class Wild(tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
+    }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
+    }
 
-    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      final def eff: Type = Type.Cst(TypeConstructor.Pure)
+    }
 
     case class Eff(sym: Symbol.EffSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 

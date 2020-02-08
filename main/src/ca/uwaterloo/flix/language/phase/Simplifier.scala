@@ -81,9 +81,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given expression `exp` to the SimplifiedAst.
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
 
-      case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
+      case TypedAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
       case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
 
@@ -574,7 +574,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
-        val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e.tpe)
+        val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), eff, e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.ProcessSpawn(lambda, newTpe, loc)
@@ -628,7 +628,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
                 SimplifiedAst.Expression.Var(var3, e3.tpe, loc), tpe, loc), tpe, loc), tpe, loc), tpe, loc)
 
-      case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
+      case TypedAst.Expression.Wild(tpe, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
     }
 
@@ -689,7 +689,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given expression `e0` to the SimplifiedAst.
       */
     def exp2HeadTerm(e0: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Head = e0 match {
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
+      case TypedAst.Expression.Var(sym, tpe, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
           SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc)
@@ -725,7 +725,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val varX = Symbol.freshVarSym()
           val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
           val exp = visitExp(exp0)
-          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkArrow(Type.Cst(TypeConstructor.Unit), exp.tpe), loc)
+          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Cst(TypeConstructor.Unit), exp.tpe), loc)
 
           toplevel += (freshSym -> freshDef)
           freshSym
@@ -796,8 +796,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given expression `e` to a body term.
       */
     def exp2BodyTerm(e: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Body = e match {
-      case TypedAst.Expression.Wild(tpe, eff, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
+      case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
           SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc)

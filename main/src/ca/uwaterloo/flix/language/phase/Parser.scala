@@ -1086,14 +1086,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Infix ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
+      SP ~ Apply ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
         case None => t
-        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
+        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), None, r, sp2) // TODO: Effect
       })
-    }
-
-    def Infix: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(optWS ~ "`" ~ Ambiguous ~ "`" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Infix)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1101,11 +1097,25 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Schema | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native |  Pure | Impure | Var | Ambiguous
     }
 
-    def Arrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+    def Arrow: Rule1[ParsedAst.Type] = {
+      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
+        "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      def EffList: Rule1[Option[ParsedAst.Type]] = rule {
+        optional("{" ~ optWS ~ Type ~ optWS ~ "}")
+      }
+
+      def PolymorphicArrow: Rule1[ParsedAst.Type] = rule {
+        SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+      }
+
+      rule {
+        PolymorphicArrow
+      }
     }
 
     def Nat: Rule1[ParsedAst.Type] = rule {
@@ -1148,6 +1158,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
+    def Pure: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.Pure
+    }
+
+    def Impure: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure
+    }
+
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
@@ -1162,17 +1180,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Effects                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  def Effect: Rule1[ParsedAst.Effect] = rule {
-    oneOrMore(Names.Effect).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.Effect
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Type and (optional) Effects                                             //
   /////////////////////////////////////////////////////////////////////////////
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Effect]] = rule {
-    Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
+    Type ~ optional(WS ~ atomic("@") ~ WS ~ Type)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1341,7 +1352,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Handler: Rule1[Name.Ident] = LowerCaseName
 
-    def Effect: Rule1[Name.Ident] = UpperCaseName
+    def Effect: Rule1[Name.Ident] = rule {
+      LowerCaseName | UpperCaseName
+    }
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 

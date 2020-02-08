@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
+import scala.annotation.tailrec
+
 object Unification {
 
   /**
@@ -79,7 +81,7 @@ object Unification {
               case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
             }
           case Type.Cst(tc) => Type.Cst(tc)
-          case Type.Arrow(l) => Type.Arrow(l)
+          case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
           case Type.RecordEmpty => Type.RecordEmpty
           case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
           case Type.SchemaEmpty => Type.SchemaEmpty
@@ -88,30 +90,12 @@ object Unification {
           case Type.Succ(n, t) => Type.Succ(n, visit(t))
           case Type.Apply(t1, t2) =>
             (visit(t1), visit(t2)) match {
-              // TODO: Optimize
-              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Pure)) => Impure
-              case (Type.Cst(TypeConstructor.Not), Type.Cst(TypeConstructor.Impure)) => Pure
-
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Pure)), y) => y
-              case (Type.Apply(Type.Cst(TypeConstructor.And), x), Type.Cst(TypeConstructor.Pure)) => x
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Cst(TypeConstructor.Impure)), _) => Impure
-              case (Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Cst(TypeConstructor.Impure)) => Impure
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-
-              // TODO: This is getting out of hand...
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id1, k))), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Var(id1, k)
-              case (Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id1, k)), Type.Apply(Type.Cst(TypeConstructor.Not), Type.Var(id2, _))) if id1 == id2 => Type.Cst(TypeConstructor.Pure)
-
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Pure)), _) => Pure
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), _), Type.Cst(TypeConstructor.Pure)) => Pure
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Cst(TypeConstructor.Impure)), y) => y
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), Type.Cst(TypeConstructor.Impure)) => x
-              case (Type.Apply(Type.Cst(TypeConstructor.Or), Type.Var(id1, k)), Type.Var(id2, _)) if id1 == id2 => Type.Var(id1, k)
-
+              // Simplify boolean equations.
+              case (Type.Cst(TypeConstructor.Not), x) => mkNot(x)
+              case (Type.Apply(Type.Cst(TypeConstructor.And), x), y) => mkAnd(x, y)
+              case (Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => mkOr(x, y)
               case (x, y) => Type.Apply(x, y)
             }
-
           case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type '$tpe0'.")
         }
 
@@ -215,6 +199,14 @@ object Unification {
       * @param tpe2 the second type.
       */
     case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
+
+    /**
+      * An unification error due to a mismatch between the effects `eff1` and `eff2`.
+      *
+      * @param eff1 the first effect.
+      * @param eff2 the second effect.
+      */
+    case class MismatchedEffects(eff1: Type, eff2: Type) extends UnificationError
 
     /**
       * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
@@ -321,7 +313,7 @@ object Unification {
         else
           Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
-      case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty) // TODO
+      case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => unifyEffects(eff1, eff2)
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
@@ -462,48 +454,6 @@ object Unification {
   def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
 
     /**
-      * Returns the negation of the effect `eff0`.
-      */
-    def mkNot(eff0: Type): Type = eff0 match {
-      case Type.Cst(TypeConstructor.Pure) => Impure
-      case Type.Cst(TypeConstructor.Impure) => Pure
-      case Type.Apply(Type.Cst(TypeConstructor.Not), eff) => eff
-      case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
-    }
-
-    /**
-      * Returns the conjunction of the two effects `eff1` and `eff2`.
-      */
-    def mkAnd(eff1: Type, eff2: Type): Type = eff1 match {
-      case Type.Cst(TypeConstructor.Pure) => eff2
-      case Type.Cst(TypeConstructor.Impure) => Impure
-      case _ => eff2 match {
-        case Type.Cst(TypeConstructor.Pure) => eff1
-        case Type.Cst(TypeConstructor.Impure) => Impure
-        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
-      }
-    }
-
-    /**
-      * Returns the disjunction of the two effects `eff1` and `eff2`.
-      */
-    def mkOr(eff1: Type, eff2: Type): Type = eff1 match {
-      case Type.Cst(TypeConstructor.Pure) => Pure
-      case Type.Cst(TypeConstructor.Impure) => eff2
-      case Type.Var(id1, _) =>
-        eff2 match {
-          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
-          case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
-          case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-        }
-      case _ => eff2 match {
-        case Type.Cst(TypeConstructor.Pure) => Pure
-        case Type.Cst(TypeConstructor.Impure) => eff1
-        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-      }
-    }
-
-    /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
     def eq(p: Type, q: Type): Type = {
@@ -516,6 +466,21 @@ object Unification {
           case Type.Cst(TypeConstructor.Impure) => p
           case _ => mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
         }
+      }
+    }
+
+    /**
+      * Constructs the formula: x ∨ (y ∧ ¬z).
+      */
+    def rewrite(x: Type, y: Type, z: Type): Type = {
+      // Optimization 1: z == ¬x  ==> x ∨ (y ∧ ¬z) == x ∨ (y ∧ ¬¬x) == x ∨ (y ∧ x) == x
+      if (z == Type.Apply(Type.Cst(TypeConstructor.Not), x)) {
+        x
+        // Optimization 2: y == z ==> x ∨ (y ∧ ¬y) == x
+      } else if (y == z) {
+        x
+      } else {
+        mkOr(x, mkAnd(y, mkNot(z)))
       }
     }
 
@@ -534,7 +499,7 @@ object Unification {
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)
         val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, se(mkNot(t1)))))
+        val st = Substitution.singleton(x, rewrite(se(t0), x, se(t1)))
         (st ++ se, cc)
     }
 
@@ -547,11 +512,21 @@ object Unification {
     // Eliminate all variables.
     val (subst, result) = successiveVariableElimination(query, freeVars)
 
+    // TODO: Debugging
+    //    if (!subst.isEmpty) {
+    //      val s = subst.toString
+    //      val len = s.length
+    //      if (len > 50) {
+    //        println(s.substring(0, Math.min(len, 300)))
+    //        println()
+    //      }
+    //    }
+
     // Determine if unification was successful.
     if (result != Pure)
       Ok(subst)
     else
-      Err(UnificationError.MismatchedTypes(eff1, eff2))
+      Err(UnificationError.MismatchedEffects(eff1, eff2))
   }
 
   /**
@@ -584,6 +559,9 @@ object Unification {
 
         case Result.Err(UnificationError.MismatchedTypes(baseType1, baseType2)) =>
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
+
+        case Result.Err(UnificationError.MismatchedEffects(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
@@ -659,9 +637,13 @@ object Unification {
         case Result.Ok(s1) =>
           val subst = s1 @@ s
           Ok(subst, subst(eff1))
-        case Result.Err(e) =>
-          println(loc)
-          throw InternalCompilerException(s"Unexpected error: '$e'.")
+
+        case Result.Err(e) => e match {
+          case UnificationError.MismatchedEffects(baseType1, baseType2) =>
+            Err(TypeError.MismatchedEffects(baseType1, baseType2, loc))
+
+          case _ => throw InternalCompilerException(s"Unexpected error: '$e'.")
+        }
       }
     }
     )
@@ -702,4 +684,169 @@ object Unification {
       }
     }
   }
+
+  /**
+    * Returns the negation of the effect `eff0`.
+    */
+  private def mkNot(eff0: Type): Type = eff0 match {
+    case Pure => Impure
+
+    case Impure => Pure
+
+    case NOT(x) => x
+
+    // ¬(¬x ∨ y) => x ∧ ¬y
+    case OR(NOT(x), y) => mkAnd(x, mkNot(y))
+
+    // ¬(x ∨ ¬y) => ¬x ∧ y
+    case OR(x, NOT(y)) => mkAnd(mkNot(x), y)
+
+    case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
+  }
+
+  /**
+    * Returns the conjunction of the two effects `eff1` and `eff2`.
+    */
+  @tailrec
+  private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+    // T ∧ x => x
+    case (Pure, _) => eff2
+
+    // x ∧ T => x
+    case (_, Pure) => eff1
+
+    // F ∧ x => F
+    case (Impure, _) => Impure
+
+    // x ∧ F => F
+    case (_, Impure) => Impure
+
+    // x ∧ (x ∧ y) => (x ∧ y)
+    case (x1, AND(x2, y)) if x1 == x2 => mkAnd(x1, y)
+
+    // x ∧ (y ∧ x) => (x ∧ y)
+    case (x1, AND(y, x2)) if x1 == x2 => mkAnd(x1, y)
+
+    // (x ∧ y) ∧ x) => (x ∧ y)
+    case (AND(x1, y), x2) if x1 == x2 => mkAnd(x1, y)
+
+    // (x ∧ y) ∧ y) => (x ∧ y)
+    case (AND(x, y1), y2) if y1 == y2 => mkAnd(x, y1)
+
+    // x ∧ (x ∨ y) => x
+    case (x1, OR(x2, _)) if x1 == x2 => x1
+
+    // (x ∨ y) ∧ x => x
+    case (OR(x1, _), x2) if x1 == x2 => x1
+
+    // x ∧ ¬x => F
+    case (x1, NOT(x2)) if x1 == x2 => Impure
+
+    // ¬x ∧ x => F
+    case (NOT(x1), x2) if x1 == x2 => Impure
+
+    // x ∧ (y ∧ ¬x) => F
+    case (x1, AND(_, NOT(x2))) if x1 == x2 => Impure
+
+    // (¬x ∧ y) ∧ x => F
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Impure
+
+    // x ∧ ¬(x ∨ y) => F
+    case (x1, NOT(OR(x2, _))) if x1 == x2 => Impure
+
+    // ¬(x ∨ y) ∧ x => F
+    case (NOT(OR(x1, _)), x2) if x1 == x2 => Impure
+
+    // x ∧ (¬x ∧ y) => F
+    case (x1, AND(NOT(x2), _)) if x1 == x2 => Impure
+
+    // (¬x ∧ y) ∧ x => F
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Impure
+
+    // ¬x ∧ (x ∨ y) => ¬x ∧ y
+    case (NOT(x1), OR(x2, y)) if x1 == x2 => mkAnd(mkNot(x1), y)
+
+    // x ∧ x => x
+    case _ if eff1 == eff2 => eff1
+
+    case _ =>
+      //      val s = s"And($eff1, $eff2)"
+      //      val len = s.length
+      //      if (true) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //      }
+
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), eff1), eff2)
+  }
+
+  /**
+    * Returns the disjunction of the two effects `eff1` and `eff2`.
+    */
+  @tailrec
+  private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
+    // T ∨ x => T
+    case (Pure, _) => Pure
+
+    // x ∨ T => T
+    case (_, Pure) => Pure
+
+    // F ∨ y => y
+    case (Impure, _) => eff2
+
+    // x ∨ F => x
+    case (_, Impure) => eff1
+
+    // x ∨ (y ∨ x) => x ∨ y
+    case (x1, OR(y, x2)) if x1 == x2 => mkOr(x1, y)
+
+    // (x ∨ y) ∨ x => x ∨ y
+    case (OR(x1, y), x2) if x1 == x2 => mkOr(x1, y)
+
+    // ¬x ∨ x => T
+    case (NOT(x), y) if x == y => Pure
+
+    // x ∨ ¬x => T
+    case (x, NOT(y)) if x == y => Pure
+
+    // (¬x ∨ y) ∨ x) => T
+    case (OR(NOT(x), _), y) if x == y => Pure
+
+    // x ∨ (¬x ∨ y) => T
+    case (x, OR(NOT(y), _)) if x == y => Pure
+
+    // x ∨ x => x
+    case _ if eff1 == eff2 => eff1
+
+    case _ =>
+
+      //              val s = s"Or($eff1, $eff2)"
+      //              val len = s.length
+      //              if (len > 30) {
+      //                println(s.substring(0, Math.min(len, 300)))
+      //              }
+
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
+  }
+
+  object NOT {
+    def unapply(eff: Type): Option[Type] = eff match {
+      case Type.Apply(Type.Cst(TypeConstructor.Not), x) => Some(x)
+      case _ => None
+    }
+  }
+
+  object AND {
+    def unapply(eff: Type): Option[(Type, Type)] = eff match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), x), y) => Some((x, y))
+      case _ => None
+    }
+  }
+
+  object OR {
+    def unapply(eff: Type): Option[(Type, Type)] = eff match {
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), x), y) => Some((x, y))
+      case _ => None
+    }
+  }
+
 }

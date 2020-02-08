@@ -51,9 +51,9 @@ class TestUnification extends FunSuite {
   }
 
   test("Substitution.Empty.04") {
-    val tpe = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Unit))
+    val tpe = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Unit))
     val subst = Unification.Substitution.empty
-    assertResult(Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Unit)))(subst(tpe))
+    assertResult(Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Unit)))(subst(tpe))
   }
 
   test("Substitution.Singleton.01") {
@@ -102,16 +102,16 @@ class TestUnification extends FunSuite {
     val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Cst(TypeConstructor.Bool))
     val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Cst(TypeConstructor.Char))
 
-    val tpe = Type.mkArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    assertResult(Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char)))((subst1 ++ subst2) (tpe))
+    val tpe = Type.mkPureArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    assertResult(Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char)))((subst1 ++ subst2) (tpe))
   }
 
   test("Substitution.@@.01") {
     val subst1 = Unification.Substitution.singleton(Type.Var(1, Kind.Star), Type.Cst(TypeConstructor.Bool))
     val subst2 = Unification.Substitution.singleton(Type.Var(2, Kind.Star), Type.Cst(TypeConstructor.Char))
 
-    val tpe = Type.mkArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    assertResult(Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char)))((subst2 @@ subst1) (tpe))
+    val tpe = Type.mkPureArrow(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
+    assertResult(Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char)))((subst2 @@ subst1) (tpe))
   }
 
   test("Substitution.@@.02") {
@@ -215,7 +215,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Arrow") {
-    val result = Unification.unifyTypes(Type.Arrow(3), Type.Arrow(3))
+    val result = Unification.unifyTypes(Type.Arrow(3, Type.Cst(TypeConstructor.Pure)), Type.Arrow(3, Type.Cst(TypeConstructor.Pure)))
     assert(isOk(result))
   }
 
@@ -242,13 +242,13 @@ class TestUnification extends FunSuite {
 
   test("Unify.Succ.02") {
     val freshVar = Type.Var(1, Kind.Star)
-    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, freshVar))
+    val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(1, freshVar))
     assert(isOk(result))
   }
 
   test("Unify.Succ.03") {
     val freshVar = Type.Var(1, Kind.Star)
-    val freshVar2 = Type.Var(1, Kind.Star)
+    val freshVar2 = Type.Var(2, Kind.Star)
     val result = Unification.unifyTypes(Type.Succ(1, freshVar), Type.Succ(2, freshVar2))
     assert(isOk(result))
   }
@@ -296,23 +296,23 @@ class TestUnification extends FunSuite {
 
   test("Unify.03") {
     val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
-    val tpe2 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), A)
+    val tpe1 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
+    val tpe2 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), A)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Char))(result(A))
   }
 
   test("Unify.04") {
     val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
-    val tpe2 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), A)
+    val tpe1 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
+    val tpe2 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), A)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Char))(result(A))
   }
 
   test("Unify.05") {
     val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
+    val tpe1 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
     val tpe2 = A
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(tpe1)(result(A))
@@ -321,15 +321,15 @@ class TestUnification extends FunSuite {
   test("Unify.06") {
     val A = Type.Var(1, Kind.Star)
     val tpe1 = A
-    val tpe2 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
+    val tpe2 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(tpe2)(result(A))
   }
 
   test("Unify.07") {
     val A = Type.Var(1, Kind.Star)
-    val tpe1 = Type.mkArrow(A, Type.Cst(TypeConstructor.Bool))
-    val tpe2 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), A)
+    val tpe1 = Type.mkPureArrow(A, Type.Cst(TypeConstructor.Bool))
+    val tpe2 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), A)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Bool))(result(A))
   }
@@ -337,8 +337,8 @@ class TestUnification extends FunSuite {
   test("Unify.08") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
-    val tpe1 = Type.mkArrow(A, B)
-    val tpe2 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
+    val tpe1 = Type.mkPureArrow(A, B)
+    val tpe2 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Bool))(result(A))
     assertResult(Type.Cst(TypeConstructor.Char))(result(B))
@@ -347,8 +347,8 @@ class TestUnification extends FunSuite {
   test("Unify.09") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
-    val tpe1 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
-    val tpe2 = Type.mkArrow(A, B)
+    val tpe1 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), Type.Cst(TypeConstructor.Char))
+    val tpe2 = Type.mkPureArrow(A, B)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Bool))(result(A))
     assertResult(Type.Cst(TypeConstructor.Char))(result(B))
@@ -357,8 +357,8 @@ class TestUnification extends FunSuite {
   test("Unify.10") {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
-    val tpe1 = Type.mkArrow(A, Type.Cst(TypeConstructor.Char))
-    val tpe2 = Type.mkArrow(Type.Cst(TypeConstructor.Bool), B)
+    val tpe1 = Type.mkPureArrow(A, Type.Cst(TypeConstructor.Char))
+    val tpe2 = Type.mkPureArrow(Type.Cst(TypeConstructor.Bool), B)
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Bool))(result(A))
     assertResult(Type.Cst(TypeConstructor.Char))(result(B))
@@ -368,8 +368,8 @@ class TestUnification extends FunSuite {
     val A = Type.Var(1, Kind.Star)
     val B = Type.Var(2, Kind.Star)
     val C = Type.Var(3, Kind.Star)
-    val tpe1 = Type.mkArrow(A, B)
-    val tpe2 = Type.mkArrow(C, Type.Cst(TypeConstructor.Bool))
+    val tpe1 = Type.mkPureArrow(A, B)
+    val tpe2 = Type.mkPureArrow(C, Type.Cst(TypeConstructor.Bool))
     val result = Unification.unifyTypes(tpe1, tpe2).get
     assertResult(Type.Cst(TypeConstructor.Bool))(result(B))
     assertResult(C)(result(A))
