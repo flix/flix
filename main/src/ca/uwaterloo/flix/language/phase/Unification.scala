@@ -201,7 +201,7 @@ object Unification {
     case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
 
     /**
-      * An unification error due to a mismatch between the effects `tpe1` and `tpe2`.
+      * An unification error due to a mismatch between the effects `eff1` and `eff2`.
       *
       * @param eff1 the first effect.
       * @param eff2 the second effect.
@@ -707,6 +707,7 @@ object Unification {
   /**
     * Returns the conjunction of the two effects `eff1` and `eff2`.
     */
+  @tailrec
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
     case (Pure, _) => eff2
@@ -781,6 +782,7 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
+  @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
     case (Pure, _) => Pure
@@ -846,16 +848,5 @@ object Unification {
       case _ => None
     }
   }
-
-  // True  x ∨ (y ∧ ¬¬x)
-  //
-  //    eff1 match {
-  //    case Type.Var(id1, _) =>
-  //      eff2 match {
-  //        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), Type.Var(id2, _)), _) if id1 == id2 => eff1
-  //        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And), _), Type.Var(id2, _)) if id1 == id2 => eff1
-  //        case _ => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), eff1), eff2)
-  //      }
-  //  }
 
 }
