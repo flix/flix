@@ -1109,8 +1109,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         optional("{" ~ optWS ~ Type ~ optWS ~ "}")
       }
 
-      rule {
+      def PolymorphicArrow: Rule1[ParsedAst.Type] = rule {
         SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+      }
+
+      rule {
+        PolymorphicArrow
       }
     }
 
