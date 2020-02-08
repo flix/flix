@@ -1086,15 +1086,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Infix ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
+      SP ~ Apply ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
         case None => t
         case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), None, r, sp2) // TODO: Effect
       })
-    }
-
-    // TODO: Remove infix types.
-    def Infix: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(optWS ~ "`" ~ Ambiguous ~ "`" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Infix)
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {

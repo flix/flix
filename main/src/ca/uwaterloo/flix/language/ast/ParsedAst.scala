@@ -1259,17 +1259,6 @@ object ParsedAst {
     case class Arrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], eff: Option[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Infix Type Application.
-      *
-      * @param tpe1 the first type parameter.
-      * @param base the base type.
-      * @param tpe2 the second type parameter.
-      * @param sp2  the position of the last character in the type.
-      */
-    // TODO: Remove
-    case class Infix(tpe1: ParsedAst.Type, base: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
       * Native Type.
       *
       * @param sp1 the position of the first character in the type.

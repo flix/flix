@@ -1743,14 +1743,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (tparam, tacc) => WeededAst.Type.Arrow(List(visitType(tparam)), tacc, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Type.Infix(tpe1, base0, tpe2, sp2) =>
-      /*
-       * Rewrites infix type applications to regular type applications.
-       */
-      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
-      // Construct the type: base[tpe1][tpe2]
-      WeededAst.Type.Apply(WeededAst.Type.Apply(visitType(base0), visitType(tpe1), loc), visitType(tpe2), loc)
-
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.
       val sp1 = leftMostSourcePosition(t1)
@@ -2136,7 +2128,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _, _) => sp1
-    case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
