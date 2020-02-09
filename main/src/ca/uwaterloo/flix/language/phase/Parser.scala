@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -1085,11 +1085,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Types {
 
-    def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Apply ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
-        case None => t
-        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), None, r, sp2) // TODO: Effect
-      })
+    def UnaryArrow: Rule1[ParsedAst.Type] = {
+      def UnaryPureArrow: Rule1[ParsedAst.Type] = rule {
+        Apply ~ optional(optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow)
+      }
+
+      def UnaryImpureArrow: Rule1[ParsedAst.Type] = rule {
+        Apply ~ optional(optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow)
+      }
+
+      def UnaryPolymorphicArrow: Rule1[ParsedAst.Type] = rule {
+        Apply ~ optional(optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      }
+
+      rule {
+        UnaryPolymorphicArrow | UnaryPureArrow | UnaryImpureArrow
+      }
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1097,7 +1108,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Schema | Native |  Pure | Impure | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1105,18 +1116,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def EffList: Rule1[Option[ParsedAst.Type]] = rule {
-        optional("{" ~ optWS ~ Type ~ optWS ~ "}")
+      def PureArrow: Rule1[ParsedAst.Type] = rule {
+        SP ~ TypeList ~ optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow
       }
 
-      // TODO: Add other arrow types.
+      def ImpureArrow: Rule1[ParsedAst.Type] = rule {
+        SP ~ TypeList ~ optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow
+      }
 
       def PolymorphicArrow: Rule1[ParsedAst.Type] = rule {
-        SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+        SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow
       }
 
       rule {
-        PolymorphicArrow
+        PolymorphicArrow | PureArrow | ImpureArrow
       }
     }
 
@@ -1178,6 +1191,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+    }
+
+    def EffList: Rule1[Option[ParsedAst.Type]] = rule {
+      optional("{" ~ optWS ~ Type ~ optWS ~ "}")
     }
   }
 

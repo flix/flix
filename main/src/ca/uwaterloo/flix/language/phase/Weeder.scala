@@ -1733,7 +1733,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Arrow(sp1, tparams, effOpt, tresult, sp2) =>
+      // TODO: Cleanup
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, effOpt, tpe2, sp2) =>
+      val sp1 = leftMostSourcePosition(tpe1)
+      // Construct a curried arrow type. The effect (if any) goes on the last arrow.
+      val eff = effOpt.map(visitType)
+      val returnType = visitType(tpe2)
+
+      WeededAst.Type.Arrow(List(visitType(tpe1)), returnType, mkSL(sp1, sp2))
+
+    // TODO: Cleanup
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, effOpt, tresult, sp2) =>
       // Construct a curried arrow type. The effect (if any) goes on the last arrow.
       val eff = effOpt.map(visitType)
       val returnType = visitType(tresult)
@@ -2127,7 +2137,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
-    case ParsedAst.Type.Arrow(sp1, _, _, _, _) => sp1
+    case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
