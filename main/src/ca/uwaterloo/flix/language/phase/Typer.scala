@@ -195,10 +195,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // Check the type of each component:
           _______ <- unifyTypM(botType, declaredType, loc)
           _______ <- unifyTypM(topType, declaredType, loc)
-          _______ <- unifyTypM(equType, Type.mkArrow(List(declaredType, declaredType), BoolType), loc)
-          _______ <- unifyTypM(leqType, Type.mkArrow(List(declaredType, declaredType), BoolType), loc)
-          _______ <- unifyTypM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
-          _______ <- unifyTypM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
+          _______ <- unifyTypM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Pure), BoolType), loc)
+          _______ <- unifyTypM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Pure), BoolType), loc)
+          _______ <- unifyTypM(lubType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Pure), declaredType), loc)
+          _______ <- unifyTypM(glbType, Type.mkArrow(List(declaredType, declaredType), Type.Cst(TypeConstructor.Pure), declaredType), loc)
         } yield declaredType
 
         // Evaluate the type inference monad with the empty substitution
@@ -304,7 +304,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       val result = for {
         (resultType, resultEff) <- inferExp(exp0, program0)
-        unifiedType <- unifyTypM(declaredType, effectType, Type.mkArrow(argumentTypes, resultType), loc)
+        unifiedType <- unifyTypM(declaredType, effectType, Type.mkArrow(argumentTypes, eff0, resultType), loc)
       } yield unifiedType
 
       result.run(Substitution.empty) map {
