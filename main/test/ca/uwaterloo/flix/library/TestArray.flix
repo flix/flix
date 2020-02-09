@@ -169,36 +169,36 @@ def init05(): Bool =
     Array.length(a) == 50
 
 /////////////////////////////////////////////////////////////////////////////
-// copy                                                                    //
+// shallowCopy                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def copy01(): Bool =
+def shallowCopy01(): Bool =
     let a: Array[Int32] = [];
-    let b: Array[Int32] = Array.copy(a);
+    let b: Array[Int32] = Array.shallowCopy(a);
     Array.sameElements(a, b)
 
 @test
-def copy02(): Bool =
+def shallowCopy02(): Bool =
     let a: Array[Int32] = [0];
-    let b: Array[Int32] = Array.copy(a);
+    let b: Array[Int32] = Array.shallowCopy(a);
     Array.sameElements(a, b)
 
 @test
-def copy03(): Bool =
+def shallowCopy03(): Bool =
     let a: Array[Int32] = [0,1];
-    let b: Array[Int32] = Array.copy(a);
+    let b: Array[Int32] = Array.shallowCopy(a);
     Array.sameElements(a, b)
 
 @test
-def copy04(): Bool =
+def shallowCopy04(): Bool =
     let a: Array[Int32] = [0,1,2];
-    let b: Array[Int32] = Array.copy(a);
+    let b: Array[Int32] = Array.shallowCopy(a);
     Array.sameElements(a, b)
 
 @test
-def copy05(): Bool =
+def shallowCopy05(): Bool =
     let a: Array[Char] = ['a', 'b', 'c'];
-    let b: Array[Char] = Array.copy(a);
+    let b: Array[Char] = Array.shallowCopy(a);
     Array.sameElements(a, b)
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2121,3 +2121,190 @@ def mkStringBy04(): Bool =
     let a = [1,2,3];
     let s = Array.mkStringBy(Int32.toString, ",", a);
     s == "1,2,3"
+
+/////////////////////////////////////////////////////////////////////////////
+// update                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def update01(): Bool =
+    let a = Array.update(0, 2, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def update02(): Bool =
+    let a = Array.update(-1, 2, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def update03(): Bool =
+    let a = Array.update(0, 2, [1]);
+    Array.sameElements(a, [2])
+
+@test
+def update04(): Bool =
+    let a = Array.update(1, 2, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def update05(): Bool =
+    let a = Array.update(0, 5, [1,2]);
+    Array.sameElements(a, [5,2])
+
+@test
+def update06(): Bool =
+    let a = Array.update(1, 5, [1,2]);
+    Array.sameElements(a, [1,5])
+
+@test
+def update07(): Bool =
+    let a = Array.update(2, 5, [1,2]);
+    Array.sameElements(a, [1,2])
+
+/////////////////////////////////////////////////////////////////////////////
+// isPrefixOf                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isPrefixOf01(): Bool = Array.isPrefixOf([]: Array[Int32], []: Array[Int32])
+
+@test
+def isPrefixOf02(): Bool = Array.isPrefixOf([1], []: Array[Int32]) == false
+
+@test
+def isPrefixOf03(): Bool = Array.isPrefixOf([]: Array[Int32], [1])
+
+@test
+def isPrefixOf04(): Bool = Array.isPrefixOf([1], [1])
+
+@test
+def isPrefixOf05(): Bool = Array.isPrefixOf([2], [1]) == false
+
+@test
+def isPrefixOf06(): Bool = Array.isPrefixOf([1,2], [1]) == false
+
+@test
+def isPrefixOf07(): Bool = Array.isPrefixOf([]: Array[Int32], [1,2])
+
+@test
+def isPrefixOf08(): Bool = Array.isPrefixOf([1], [1,2])
+
+@test
+def isPrefixOf09(): Bool = Array.isPrefixOf([2], [1,2]) == false
+
+@test
+def isPrefixOf10(): Bool = Array.isPrefixOf([1,2], [1,2])
+
+@test
+def isPrefixOf11(): Bool = Array.isPrefixOf([1,3], [1,2]) == false
+
+@test
+def isPrefixOf12(): Bool = Array.isPrefixOf([1,2,3], [1,2]) == false
+
+@test
+def isPrefixOf13(): Bool = Array.isPrefixOf([1,2,3], [89,11,1,2,3,4]) == false
+
+/////////////////////////////////////////////////////////////////////////////
+// isInfixOf                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isInfixOf01(): Bool = Array.isInfixOf([]: Array[Int32], []: Array[Int32])
+
+@test
+def isInfixOf02(): Bool = Array.isInfixOf([1], []: Array[Int32]) == false
+
+@test
+def isInfixOf03(): Bool = Array.isInfixOf([]: Array[Int32], [1])
+
+@test
+def isInfixOf04(): Bool = Array.isInfixOf([1], [1])
+
+@test
+def isInfixOf05(): Bool = Array.isInfixOf([2], [1]) == false
+
+@test
+def isInfixOf06(): Bool = Array.isInfixOf([1,2], [1]) == false
+
+@test
+def isInfixOf07(): Bool = Array.isInfixOf([]: Array[Int32], [1,2])
+
+@test
+def isInfixOf08(): Bool = Array.isInfixOf([1], [1,2])
+
+@test
+def isInfixOf09(): Bool = Array.isInfixOf([2], [1,2])
+
+@test
+def isInfixOf10(): Bool = Array.isInfixOf([1,2], [1,2])
+
+@test
+def isInfixOf11(): Bool = Array.isInfixOf([1,3], [1,2]) == false
+
+@test
+def isInfixOf12(): Bool = Array.isInfixOf([1,2,3], [1,2]) == false
+
+@test
+def isInfixOf13(): Bool = Array.isInfixOf([1,2,3], [89,11,1,2,3,4])
+
+/////////////////////////////////////////////////////////////////////////////
+// isSuffixOf                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def isSuffixOf01(): Bool = Array.isSuffixOf([]: Array[Int32], []: Array[Int32])
+
+@test
+def isSuffixOf02(): Bool = Array.isSuffixOf([1], []: Array[Int32]) == false
+
+@test
+def isSuffixOf03(): Bool = Array.isSuffixOf([]: Array[Int32], [1])
+
+@test
+def isSuffixOf04(): Bool = Array.isSuffixOf([1], [1])
+
+@test
+def isSuffixOf05(): Bool = Array.isSuffixOf([2], [1]) == false
+
+@test
+def isSuffixOf06(): Bool = Array.isSuffixOf([1,2], [1]) == false
+
+@test
+def isSuffixOf07(): Bool = Array.isSuffixOf([]: Array[Int32], [1,2])
+
+@test
+def isSuffixOf08(): Bool = Array.isSuffixOf([1], [1,2]) == false
+
+@test
+def isSuffixOf09(): Bool = Array.isSuffixOf([2], [1,2])
+
+@test
+def isSuffixOf10(): Bool = Array.isSuffixOf([1,2], [1,2])
+
+@test
+def isSuffixOf11(): Bool = Array.isSuffixOf([1,3], [1,2]) == false
+
+@test
+def isSuffixOf12(): Bool = Array.isSuffixOf([1,2,3], [1,2]) == false
+
+@test
+def isSuffixOf13(): Bool = Array.isSuffixOf([1,2,3], [89,11,1,2,3])
+
+/////////////////////////////////////////////////////////////////////////////
+// unzip                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def unzip01(): Bool =
+    let (a,b) = Array.unzip([]);
+    Array.sameElements(a, []) && Array.sameElements(b, [])
+
+@test
+def unzip02(): Bool =
+    let (a,b) = Array.unzip([(1, true)]);
+    Array.sameElements(a, [1]) && Array.sameElements(b, [true])
+
+@test
+def unzip03(): Bool =
+    let (a,b) = Array.unzip([(1, true), (2, true)]);
+    Array.sameElements(a, [1,2])  && Array.sameElements(b, [true,true])
+
+@test
+def unzip04(): Bool =
+    let (a,b) = Array.unzip([(1, true), (2, true), (3, false)]);
+    Array.sameElements(a, [1,2,3]) && Array.sameElements(b, [true,true,false])
