@@ -1205,8 +1205,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.Type.Native(fqn, loc).toSuccess
 
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
-      mapN(traverse(tparams)(visitType(_, tenv0)), visitType(tresult, tenv0)) {
-        case (ts, t) => NamedAst.Type.Arrow(ts, NamedAst.Type.Pure(loc), t, loc) // TODO: Effect
+      mapN(traverse(tparams)(visitType(_, tenv0)), visitType(eff, tenv0), visitType(tresult, tenv0)) {
+        case (ts, f, t) => NamedAst.Type.Arrow(ts, f, t, loc)
       }
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
