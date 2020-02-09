@@ -1757,9 +1757,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
       mkArrow(t1, eff, t2, loc)
 
-    case ParsedAst.Type.PureArrow(sp1, targs, tresult, sp2) =>
+    case ParsedAst.Type.PureArrow(sp1, tparams, tresult, sp2) =>
       val loc = mkSL(sp1, sp2)
-      ??? // TODO
+      val ts = tparams.map(visitType)
+      val tr = visitType(tresult)
+      val eff = WeededAst.Type.Pure(loc)
+      mkCurriedArrow(ts, eff, tr, loc)
 
     case ParsedAst.Type.ImpureArrow(sp1, targs, tresult, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1792,9 +1795,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   /**
     * Returns an arrow type from `tpe1` to `tpe2` with effect `eff`.
+    *
+    * In other words, the type is of the form `tpe1 ->{eff} tpe2`
     */
   private def mkArrow(tpe1: WeededAst.Type, eff: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
     WeededAst.Type.Arrow(List(tpe1), tpe2, loc)
+
+  /**
+    * Returns a sequence of arrow types type from `tparams` to `tresult` where every arrow is pure except the last which has effect `eff`.
+    *
+    * In other words, the type is of the form `tpe1 ->> tpe2 ->> ... ->{eff} tresult`.
+    */
+  private def mkCurriedArrow(tparams: Seq[WeededAst.Type], eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
+    val base = mkArrow(tparams.last, eff, tresult, loc)
+    tparams.init.foldRight(base)(mkArrow(_, WeededAst.Type.Pure(loc), _, loc))
+  }
 
   /**
     * Weeds the given parsed optional effect `effOpt`.
@@ -1955,6 +1970,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Returns the arrow type constructed from the given formal parameters `fparams0` and return type `tpe0`.
     */
+  @deprecated
   private def mkArrowType(fparams0: List[WeededAst.FormalParam], tpe0: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
     // Construct a curried arrow type.
     fparams0.foldRight(tpe0) {
