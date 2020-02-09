@@ -318,11 +318,7 @@ namespace Array {
     ///
     pub def update(i: Int32, x: a, a: Array[a]): Array[a] =
         let f = ix -> if (ix == i) x else a[ix];
-        let len = length(a);
-        if (i < 0 || i > len-1)
-            shallowCopy(a)
-        else
-            init(f, length(a))
+        init(f, length(a))
 
     ///
     /// Returns a copy of `a` with every occurrence of `x` replaced by `y`.
@@ -330,6 +326,47 @@ namespace Array {
     pub def replace(x: a, y: a, a: Array[a]): Array[a] =
         map(e -> if (e == x) y else e, a)
 
+    ///
+    ///
+    /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
+    ///
+    /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
+    /// If `a` becomes depleted then no further patching is done.
+    /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
+    ///
+    pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] =
+        let len = length(b);
+        let c = slice(b, 0, len);
+        if (n <= 0)
+            c
+        else {
+            let f = {(j,k) -> if (j < 0 || j >= len) () else c[i+j] = a[k] };
+            patchHelper(f, 0, i, i+n);
+            c
+        }
+
+    def patchHelper(f: (Int32, Int32) -> Unit, j: Int32, b: Int32, e: Int32): Unit =
+        if (b >= e)
+            ()
+        else {
+            f(b, j);
+            patchHelper(f, j+1, b+1, e)
+        }
+
+    ///
+    /// Returns `a` with `x` inserted between every two adjacent elements.
+    ///
+    pub def intersperse(x: a, a: Array[a]): Array[a] =
+        let len1 = length(a);
+        let len2 = len1 + len1 - 1;
+        if (len2 <= 0)
+            []
+        else {
+            let b = new(x, len2);
+            let f = { (v,i) -> let j = i + i; b[j] = v };
+            iterWithIndex(f, a);
+            b
+        }
 
     ///
     /// Returns the transpose of `a`.
@@ -994,13 +1031,6 @@ namespace Array {
         else {
             if (a[i] != b[i]) false else sameElementsHelper(a, b, len, i+1)
         }
-
-    ///
-    /// Return a shallow copy of array `a`.
-    ///
-    pub def shallowCopy(a: Array[a]): Array[a] =
-        let len = length(a);
-        init(i -> a[i], len)
 
     ///
     /// Apply `f` to every element in array `a`. Array `a` is mutated.

@@ -819,6 +819,177 @@ def replace08(): Bool =
     Array.sameElements(a, [4,4])
 
 /////////////////////////////////////////////////////////////////////////////
+// patch                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def patch01(): Bool =
+    let a = Array.patch(0, 0, []: Array[Int32], []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def patch02(): Bool =
+    let a = Array.patch(0, 2, [1,2], []);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def patch03(): Bool =
+    let a = Array.patch(0, 2, [], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def patch04(): Bool =
+    let a = Array.patch(-3, 3, [1,2,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def patch05(): Bool =
+    let a = Array.patch(2, 3, [1,2,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def patch06(): Bool =
+    let a = Array.patch(0, 0, [], [1]);
+    Array.sameElements(a, [1])
+
+@test
+def patch07(): Bool =
+    let a = Array.patch(1, 0, [2], [1]);
+    Array.sameElements(a, [1])
+
+@test
+def patch08(): Bool =
+    let a = Array.patch(0, 1, [2], [1]);
+    Array.sameElements(a, [2])
+
+@test
+def patch09(): Bool =
+    let a = Array.patch(0, 2, [2,4], [1]);
+    Array.sameElements(a, [2])
+
+@test
+def patch10(): Bool =
+    let a = Array.patch(-1, 2, [2,4], [1]);
+    Array.sameElements(a, [4])
+
+@test
+def patch11(): Bool =
+    let a = Array.patch(-1, 2, [3,4], [1,2]);
+    Array.sameElements(a, [4,2])
+
+@test
+def patch12(): Bool =
+    let a = Array.patch(1, 2, [3,4], [1,2]);
+    Array.sameElements(a, [1,3])
+
+@test
+def patch13(): Bool =
+    let a = Array.patch(-2, 2, [3,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def patch14(): Bool =
+    let a = Array.patch(2, 2, [3,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def patch15(): Bool =
+    let a = Array.patch(1, 1, [3], [1,2]);
+    Array.sameElements(a, [1,3])
+
+@test
+def patch16(): Bool =
+    let a = Array.patch(0, 2, [3,4], [1,2]);
+    Array.sameElements(a, [3,4])
+
+@test
+def patch17(): Bool =
+    let a = Array.patch(0, 1, [4], [1, 2, 3]);
+    Array.sameElements(a, [4, 2, 3])
+
+@test
+def patch18(): Bool =
+    let a = Array.patch(1, 1, [4], [1, 2, 3]);
+    Array.sameElements(a, [1, 4, 3])
+
+@test
+def patch19(): Bool =
+    let a = Array.patch(2, 1, [4], [1, 2, 3]);
+    Array.sameElements(a, [1, 2, 4])
+
+@test
+def patch20(): Bool =
+    let a = Array.patch(0, 2, [4, 5], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 3])
+
+@test
+def patch21(): Bool =
+    let a = Array.patch(1, 2, [4, 5], [1, 2, 3]);
+    Array.sameElements(a, [1, 4, 5])
+
+@test
+def patch22(): Bool =
+    let a = Array.patch(0, 2, [4, 5, 6], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 3])
+
+@test
+def patch23(): Bool =
+    let a = Array.patch(0, 3, [4, 5, 6], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 6])
+
+@test
+def patch24(): Bool =
+    let a = Array.patch(2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
+
+@test
+def patch25(): Bool =
+    let a = Array.patch(-2, 4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
+
+@test
+def patch26(): Bool =
+    let a = Array.patch(4, 5, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
+
+@test
+def patch27(): Bool =
+    let a = Array.patch(4, 2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
+
+@test
+def patch28(): Bool =
+    let a = Array.patch(-1, 10, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
+
+/////////////////////////////////////////////////////////////////////////////
+// intersperse                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def intersperse01(): Bool =
+    let a = Array.intersperse(11, []);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def intersperse02(): Bool =
+    let a = Array.intersperse(11, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def intersperse03(): Bool =
+    let a = Array.intersperse(11, [1,2]);
+    Array.sameElements(a,  [1,11,2])
+
+@test
+def intersperse04(): Bool =
+    let a = Array.intersperse(11, [1,2,3]);
+    Array.sameElements(a,  [1,11,2,11,3])
+
+@test
+def intersperse05(): Bool =
+    let a = Array.intersperse(11, [1,2,3,4]);
+    Array.sameElements(a,  [1,11,2,11,3,11,4])
+
+/////////////////////////////////////////////////////////////////////////////
 // transpose                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2404,37 +2575,77 @@ def init05(): Bool =
     Array.length(a) == 50
 
 /////////////////////////////////////////////////////////////////////////////
-// shallowCopy                                                             //
+// init2                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def shallowCopy01(): Bool =
-    let a: Array[Int32] = [];
-    let b: Array[Int32] = Array.shallowCopy(a);
-    Array.sameElements(a, b)
+def init201(): Bool =
+    let (a,b) = Array.init2(x -> (x,true), 0);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Bool])
 
 @test
-def shallowCopy02(): Bool =
-    let a: Array[Int32] = [0];
-    let b: Array[Int32] = Array.shallowCopy(a);
-    Array.sameElements(a, b)
+def init202(): Bool =
+    let (a,b) = Array.init2(x -> (x,true), -1);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Bool])
 
 @test
-def shallowCopy03(): Bool =
-    let a: Array[Int32] = [0,1];
-    let b: Array[Int32] = Array.shallowCopy(a);
-    Array.sameElements(a, b)
+def init203(): Bool =
+    let (a,b) = Array.init2(x -> (x,true), 1);
+    Array.sameElements(a, [0]) && Array.sameElements(b, [true])
 
 @test
-def shallowCopy04(): Bool =
-    let a: Array[Int32] = [0,1,2];
-    let b: Array[Int32] = Array.shallowCopy(a);
-    Array.sameElements(a, b)
+def init204(): Bool =
+    let (a,b) = Array.init2(x -> (x,true), 2);
+    Array.sameElements(a, [0,1]) && Array.sameElements(b, [true, true])
 
 @test
-def shallowCopy05(): Bool =
-    let a: Array[Char] = ['a', 'b', 'c'];
-    let b: Array[Char] = Array.shallowCopy(a);
-    Array.sameElements(a, b)
+def init205(): Bool =
+    let (a,b) = Array.init2(x -> (x,true), 50);
+    Array.length(a) == 50 && Array.length(b) == 50
+
+/////////////////////////////////////////////////////////////////////////////
+// sameElements                                                            //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def sameElements01(): Bool =
+    let a = []: Array[Int32];
+    let b = []: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements02(): Bool =
+    let a = [1]: Array[Int32];
+    let b = []: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements03(): Bool =
+    let a = []: Array[Int32];
+    let b = [1]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements04(): Bool =
+    let a = [1]: Array[Int32];
+    let b = [1]: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements05(): Bool =
+    let a = [1]: Array[Int32];
+    let b = [0]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements06(): Bool =
+    let a = [1,2]: Array[Int32];
+    let b = [1,2]: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements07(): Bool =
+    let a = [1,2]: Array[Int32];
+    let b = [2,1]: Array[Int32];
+    Array.sameElements(a,b) == false
 
 /////////////////////////////////////////////////////////////////////////////
 // iter                                                                    //
@@ -2513,9 +2724,6 @@ def iterWithIndex05(): Bool =
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
     Array.iterWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTTT"
-
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 // mapInPlace                                                              //
@@ -2753,48 +2961,4 @@ def mkStringBy04(): Bool =
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-// sameElements                                                            //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def sameElements01(): Bool =
-    let a = []: Array[Int32];
-    let b = []: Array[Int32];
-    Array.sameElements(a,b) == true
-
-@test
-def sameElements02(): Bool =
-    let a = [1]: Array[Int32];
-    let b = []: Array[Int32];
-    Array.sameElements(a,b) == false
-
-@test
-def sameElements03(): Bool =
-    let a = []: Array[Int32];
-    let b = [1]: Array[Int32];
-    Array.sameElements(a,b) == false
-
-@test
-def sameElements04(): Bool =
-    let a = [1]: Array[Int32];
-    let b = [1]: Array[Int32];
-    Array.sameElements(a,b) == true
-
-@test
-def sameElements05(): Bool =
-    let a = [1]: Array[Int32];
-    let b = [0]: Array[Int32];
-    Array.sameElements(a,b) == false
-
-@test
-def sameElements06(): Bool =
-    let a = [1,2]: Array[Int32];
-    let b = [1,2]: Array[Int32];
-    Array.sameElements(a,b) == true
-
-@test
-def sameElements07(): Bool =
-    let a = [1,2]: Array[Int32];
-    let b = [2,1]: Array[Int32];
-    Array.sameElements(a,b) == false
 
