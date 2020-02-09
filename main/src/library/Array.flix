@@ -63,29 +63,6 @@ namespace Array {
         else
             a[i] :: toListHelper(a, i + 1)
 
-    ///
-    /// Build an array of length `len` by applying `f` to the successive indices.
-    ///
-    pub def init(f: Int32 -> a, len: Int32): Array[a] =
-        if (len <= 0)
-            []
-        else {
-            let x = f(0);
-            let a = new(x, len);
-            initHelper(a, f, len, 1);
-            a
-        }
-
-    ///
-    /// Helper function for `init`.
-    ///
-    def initHelper(a: Array[a], f: i -> a, len: Int32, i: Int32): Unit =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(i);
-            initHelper(a, f, len, i+1)
-        }
 
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
@@ -865,12 +842,30 @@ namespace Array {
         else
             if (f(a[i])) i else findIndexOfRightHelper(f, a, i - 1)
 
-    ///
-    /// Returns `a` with every occurrence of `x` replaced by `y`.
-    ///
-    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit =
-        mapInPlace(e -> if (e == x) y else e, a)
 
+    ///
+    /// Build an array of length `len` by applying `f` to the successive indices.
+    ///
+    pub def init(f: Int32 -> a, len: Int32): Array[a] =
+        if (len <= 0)
+            []
+        else {
+            let x = f(0);
+            let a = new(x, len);
+            initHelper(a, f, len, 1);
+            a
+        }
+
+    ///
+    /// Helper function for `init`.
+    ///
+    def initHelper(a: Array[a], f: i -> a, len: Int32, i: Int32): Unit =
+        if (i >= len)
+            ()
+        else {
+            a[i] = f(i);
+            initHelper(a, f, len, i+1)
+        }
 
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
@@ -899,6 +894,13 @@ namespace Array {
     pub def shallowCopy(a: Array[a]): Array[a] =
         let len = length(a);
         init(i -> a[i], len)
+
+    ///
+    /// Returns `a` with every occurrence of `x` replaced by `y`.
+    ///
+    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit =
+        mapInPlace(e -> if (e == x) y else e, a)
+
 
     ///
     /// Returns the reverse of `a`.
@@ -970,7 +972,7 @@ namespace Array {
         }
 
     ///
-    /// Helper function for `init`.
+    /// Helper function for `init2`.
     ///
     def init2Helper(a: Array[a], b: Array[b], f: i -> (a,b), len: Int32, i: Int32): Unit =
         if (i >= len)
