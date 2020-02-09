@@ -1764,20 +1764,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Pure(loc)
       mkCurriedArrow(ts, eff, tr, loc)
 
-    case ParsedAst.Type.ImpureArrow(sp1, targs, tresult, sp2) =>
+    case ParsedAst.Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
       val loc = mkSL(sp1, sp2)
-      ??? // TODO
+      val ts = tparams.map(visitType)
+      val tr = visitType(tresult)
+      val eff = WeededAst.Type.Impure(loc)
+      mkCurriedArrow(ts, eff, tr, loc)
 
-    // TODO: Cleanup
     case ParsedAst.Type.PolymorphicArrow(sp1, tparams, effOpt, tresult, sp2) =>
-      // Construct a curried arrow type. The effect (if any) goes on the last arrow.
-      val eff = effOpt.map(visitType)
-      val returnType = visitType(tresult)
-
-      val base = WeededAst.Type.Arrow(List(visitType(tparams.last)), returnType, mkSL(sp1, sp2))
-      tparams.init.foldRight(base) {
-        case (tparam, tacc) => WeededAst.Type.Arrow(List(visitType(tparam)), tacc, mkSL(sp1, sp2))
+      val loc = mkSL(sp1, sp2)
+      val ts = tparams.map(visitType)
+      val tr = visitType(tresult)
+      val eff = effOpt match {
+        case None => WeededAst.Type.Pure(loc) // TODO: Invent a polymorphic variable name?
+        case Some(f) => visitType(f)
       }
+      mkCurriedArrow(ts, eff, tr, loc)
 
     case ParsedAst.Type.Apply(t1, args, sp2) =>
       // Curry the type arguments.
