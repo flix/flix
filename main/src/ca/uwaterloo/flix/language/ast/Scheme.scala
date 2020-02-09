@@ -61,7 +61,6 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-// TODO: Need to include effect....
 case class Scheme(quantifiers: List[Type.Var], base: Type) {
 
   /**
