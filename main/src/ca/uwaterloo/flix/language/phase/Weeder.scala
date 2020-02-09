@@ -1805,7 +1805,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * In other words, the type is of the form `tpe1 ->{eff} tpe2`
     */
   private def mkArrow(tpe1: WeededAst.Type, eff: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
-    WeededAst.Type.Arrow(List(tpe1), tpe2, loc)
+    WeededAst.Type.Arrow(List(tpe1), eff, tpe2, loc)
 
   /**
     * Returns a sequence of arrow types type from `tparams` to `tresult` where every arrow is pure except the last which has effect `eff`.
