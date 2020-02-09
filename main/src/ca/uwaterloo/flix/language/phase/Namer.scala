@@ -1206,7 +1206,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Type.Arrow(tparams, tresult, loc) =>
       mapN(traverse(tparams)(visitType(_, tenv0)), visitType(tresult, tenv0)) {
-        case (ts, t) => NamedAst.Type.Arrow(ts, t, loc)
+        case (ts, t) => NamedAst.Type.Arrow(ts, NamedAst.Type.Pure(loc), t, loc)       // TODO: Effect
       }
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>

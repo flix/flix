@@ -1486,11 +1486,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         }
       }
 
-    case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
-      for (
-        tparams <- traverse(tparams0)(tpe => lookupType(tpe, ns0, root));
+    case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
+      for {
+        tparams <- traverse(tparams0)(lookupType(_, ns0, root));
         tresult <- lookupType(tresult0, ns0, root)
-      ) yield Type.mkArrow(tparams, tresult)
+        eff <- lookupType(eff0, ns0, root)
+      } yield Type.mkArrow(tparams, eff, tresult)
 
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for (

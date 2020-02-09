@@ -253,6 +253,15 @@ object Type {
   def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Impure)), a), b)
 
   /**
+    * Constructs the arrow type A_1 ->> ... ->> A_n ->{eff} B.
+    */
+  def mkArrow(as: List[Type], eff: Type, b: Type): Type = {
+    val a = as.last
+    val base = mkArrow(a, eff, b)
+    as.init.foldRight(base)(mkPureArrow)
+  }
+
+  /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
   // TODO: Split into two: one for pure and one for impure.
