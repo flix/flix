@@ -630,6 +630,10 @@ object Unification {
     * Unifies the two given effects `eff1` and `eff2`.
     */
   def unifyEffM(eff1: Type, eff2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    // Determine if effect checking is enabled.
+    if (flix.options.xnoeffects)
+      return liftM(Type.Cst(TypeConstructor.Pure))
+
     InferMonad((s: Substitution) => {
       val effect1 = s(eff1)
       val effect2 = s(eff2)

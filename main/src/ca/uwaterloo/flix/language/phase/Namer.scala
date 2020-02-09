@@ -1204,9 +1204,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Native(fqn, loc) =>
       NamedAst.Type.Native(fqn, loc).toSuccess
 
-    case WeededAst.Type.Arrow(tparams, tresult, loc) =>
+    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) =>
       mapN(traverse(tparams)(visitType(_, tenv0)), visitType(tresult, tenv0)) {
-        case (ts, t) => NamedAst.Type.Arrow(ts, NamedAst.Type.Pure(loc), t, loc)       // TODO: Effect
+        case (ts, t) => NamedAst.Type.Arrow(ts, NamedAst.Type.Pure(loc), t, loc) // TODO: Effect
       }
 
     case WeededAst.Type.Apply(tpe1, tpe2, loc) =>
@@ -1387,7 +1387,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Schema(ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
-    case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
+    case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
     case WeededAst.Type.Pure(loc) => Nil
     case WeededAst.Type.Impure(loc) => Nil

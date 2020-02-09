@@ -83,6 +83,7 @@ object Main {
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
+      xnoeffects = cmdOpts.xnoeffects,
       xnostratifier = cmdOpts.xnostratifier
     )
 
@@ -218,6 +219,7 @@ object Main {
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xnoeffects: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
@@ -353,6 +355,10 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xno-effects
+      opt[Unit]("Xno-effects").action((_, c) => c.copy(xnoeffects = true)).
+        text("[experimental] disables effect checking.")
 
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
