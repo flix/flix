@@ -126,8 +126,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(annVal, modVal, formalsVal, expVal, effVal) {
         case (as, mod, fs, exp, eff) =>
+          val ts = fs.map(_.tpe.get)
           val e = mkCurried(fs.tail, exp, loc)
-          val t = mkArrowType(fs, visitType(tpe), loc)
+          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
           List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
       }
   }
@@ -147,7 +148,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(annVal, modVal, formalsVal, effVal) {
         case (as, mod, fs, eff) =>
-          val t = mkArrowType(fs, visitType(tpe), loc)
+          val ts = fs.map(_.tpe.get)
+          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
           List(WeededAst.Declaration.Eff(doc, as, mod, ident, tparams, fs, t, eff, loc))
       }
   }
@@ -168,8 +170,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       mapN(annVal, modVal, formalsVal, expVal, effVal) {
         case (as, mod, fs, exp, eff) =>
+          val ts = fs.map(_.tpe.get)
           val e = mkCurried(fs.tail, exp, loc)
-          val t = mkArrowType(fs, visitType(tpe), loc)
+          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
           List(WeededAst.Declaration.Handler(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
       }
   }
@@ -188,7 +191,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(formalsVal, expVal) {
         case (fs, exp) =>
           val e = mkCurried(fs.tail, exp, loc)
-          val t = mkArrowType(fs, visitType(tpe), loc)
+          val ts = fs.map(_.tpe.get)
+          val t = mkCurriedArrow(ts, WeededAst.Type.Pure(loc), visitType(tpe), loc)
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
           List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, WeededAst.Type.Pure(loc), loc))
@@ -1939,7 +1943,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val formalsVal = visitFormalParams(fparams0, typeRequired = true)
       mapN(annVal, modVal, formalsVal, effVal) {
         case (ann, mod, fs, eff) =>
-          val t = WeededAst.Type.Arrow(fs map (_.tpe.get), visitType(tpe), loc)
+          val ts = fs.map(_.tpe.get)
+          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
           WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fs, t, eff, loc)
       }
   }
@@ -1967,17 +1972,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitTypeParams(tparams0: ParsedAst.TypeParams): WeededAst.TypeParams = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided
     case ParsedAst.TypeParams.Explicit(bounds) => WeededAst.TypeParams.Explicit(bounds.map(_.ident))
-  }
-
-  /**
-    * Returns the arrow type constructed from the given formal parameters `fparams0` and return type `tpe0`.
-    */
-  @deprecated
-  private def mkArrowType(fparams0: List[WeededAst.FormalParam], tpe0: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
-    // Construct a curried arrow type.
-    fparams0.foldRight(tpe0) {
-      case (fparam, tacc) => WeededAst.Type.Arrow(List(fparam.tpe.get), tacc, loc)
-    }
   }
 
   /**
@@ -2295,9 +2289,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
 
     // The type and effect of the generated main.
-    val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
+    val argType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
     val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
-    val tpe = WeededAst.Type.Arrow(argumentType :: Nil, resultType, loc)
+    val tpe = mkArrow(argType, WeededAst.Type.Pure(loc), resultType, loc)
     val eff = WeededAst.Type.Pure(loc)
 
     // Construct the declaration.
