@@ -1734,23 +1734,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
     case ParsedAst.Type.UnaryPureArrow(tpe1, tpe2, sp2) =>
-      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      WeededAst.Type.Arrow(List(t1), t2, mkSL(sp1, sp2)) // TODO: Effect
+      val eff = WeededAst.Type.Pure(loc)
+      mkArrow(t1, eff, t2, loc)
 
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
-      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      WeededAst.Type.Arrow(List(t1), t2, mkSL(sp1, sp2)) // TODO: Effect
+      val eff = WeededAst.Type.Impure(loc)
+      mkArrow(t1, eff, t2, loc)
 
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, effOpt, tpe2, sp2) =>
-      val sp1 = leftMostSourcePosition(tpe1)
+      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      val eff = effOpt.map(visitType)
-      WeededAst.Type.Arrow(List(t1), t2, mkSL(sp1, sp2)) // TODO: Effect
+      val eff = effOpt match {
+        case None => WeededAst.Type.Pure(loc) // TODO: Invent a polymorphic variable name?
+        case Some(f) => visitType(f)
+      }
+      mkArrow(t1, eff, t2, loc)
 
     case ParsedAst.Type.PureArrow(sp1, targs, tresult, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1784,6 +1789,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Impure(sp1, sp2) =>
       WeededAst.Type.Impure(mkSL(sp1, sp2))
   }
+
+  /**
+    * Returns an arrow type from `tpe1` to `tpe2` with effect `eff`.
+    */
+  private def mkArrow(tpe1: WeededAst.Type, eff: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
+    WeededAst.Type.Arrow(List(tpe1), tpe2, loc)
 
   /**
     * Weeds the given parsed optional effect `effOpt`.
