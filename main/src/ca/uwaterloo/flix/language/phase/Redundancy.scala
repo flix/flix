@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
@@ -106,8 +105,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute the used symbols inside the definition.
-    val recursionContext = RecursionContext(defn.sym, arity(defn))
-    val usedExp = visitExp(defn.exp, Env.of(Some(recursionContext)) ++ defn.fparams.map(_.sym))
+    val recursionContext = RecursionContext.Apply0(defn.sym, arity(defn))
+    val usedExp = visitExp(defn.exp, Env.of(recursionContext) ++ defn.fparams.map(_.sym))
 
     // Check for unused parameters and remove all variable symbols.
     val usedAll = (usedExp and checkUnusedFormalParameters(usedExp) and checkUnusedTypeParameters(usedExp)).copy(varSyms = Set.empty)
@@ -270,7 +269,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used.empty + HiddenVarSym(sym, loc)
 
     case Expression.Def(sym, _, _, _) =>
-      if (env0.recursionContext.exists(r => r.isRecursiveCall(sym))) {
+      if (env0.recursionContext.isRecursiveCall(sym)) {
         Used.of(sym, unconditionallyRecurses = true)
       } else {
         Used.of(sym, unconditionallyRecurses = false)
@@ -764,13 +763,13 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, sym) => acc + sym
     }
 
-    def of(recursionContext: Option[RecursionContext]): Env = Env.empty.copy(recursionContext = recursionContext)
+    def of(recursionContext: RecursionContext): Env = Env.empty.copy(recursionContext = recursionContext)
   }
 
   /**
     * Represents an environment.
     */
-  private case class Env(varSyms: Map[String, Symbol.VarSym], recursionContext: Option[RecursionContext] = None) {
+  private case class Env(varSyms: Map[String, Symbol.VarSym], recursionContext: RecursionContext = RecursionContext.NoContext) {
     /**
       * Updates `this` environment with a new variable symbol `sym`.
       */
@@ -788,16 +787,16 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Updates `this` environment, marking that an application has been made.
       */
-    def addApply: Env = copy(recursionContext = recursionContext.map(r => r.addApply))
+    def addApply: Env = copy(recursionContext = recursionContext.addApply)
 
     /**
       * Resets the consecutive application count of `this` environment.
       */
     def resetApplies: Env = {
-      if (recursionContext.isEmpty || recursionContext.get.applies == 0) {
-        this
-      } else {
-        copy(recursionContext = recursionContext.map(r => r.resetApplies))
+      recursionContext match {
+        case RecursionContext.Apply0(_, _) => this
+        case RecursionContext.ApplyN(_, _, _) => copy(recursionContext = recursionContext.resetApplies)
+        case RecursionContext.NoContext => this
       }
     }
   }
@@ -994,23 +993,70 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * @param defn  def whose context we are in
-    * @param arity number of parameters required to execute recursion
+    * Describes the context where a def call might be recursive.
+    * Tracks the def, its arity, and the number of applications made to allow for detection of [[UnconditionalRecursion]]
     */
-  private case class RecursionContext(defn: Symbol.DefnSym, arity: Int, applies: Int = 0) {
-    def resetApplies: RecursionContext = {
-      if (applies == 0) {
-        this
-      } else {
-        copy(applies = 0)
+  private sealed trait RecursionContext {
+    /**
+      * Set the apply count to 0.
+      */
+    def resetApplies: RecursionContext
+
+    /**
+      * Add 1 to the apply count.
+      */
+    def addApply: RecursionContext
+
+    /**
+      * True iff the call is recursive in this context.
+      */
+    def isRecursiveCall(call: Symbol.DefnSym): Boolean
+  }
+
+  private object RecursionContext {
+
+    /**
+      * Context without a definition to be recursed on.
+      */
+    case object NoContext extends RecursionContext {
+      override def resetApplies: RecursionContext = this
+
+      override def addApply: RecursionContext = this
+
+      override def isRecursiveCall(call: Symbol.DefnSym): Boolean = false
+    }
+
+    /**
+      * Context where no applications have been made.
+      * @param defn Def whose context we are in
+      * @param arity Arity of `defn`
+      */
+    case class Apply0(defn: Symbol.DefnSym, arity: Int) extends RecursionContext {
+      override def resetApplies: RecursionContext = this
+
+      override def addApply: RecursionContext = ApplyN(defn, arity, 1)
+
+      override def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
+        defn == call && arity == 0
       }
     }
 
-    def addApply: RecursionContext = copy(applies = applies + 1)
+    /**
+      * Context where N applications have been made.
+      * @param defn Def whose context we are in
+      * @param arity Arity of `defn`
+      * @param applies number of applications mad
+      */
+    case class ApplyN(defn: Symbol.DefnSym, arity: Int, applies: Int) extends RecursionContext {
+      override def resetApplies: RecursionContext = Apply0(defn, arity)
 
-    def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
-      defn == call && applies == arity
+      override def addApply: RecursionContext = copy(applies = applies + 1)
+
+      override def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
+        defn == call && applies == arity
+      }
     }
   }
+
 
 }
