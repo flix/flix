@@ -1085,22 +1085,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Types {
 
-    def UnaryArrow: Rule1[ParsedAst.Type] = {
-      def UnaryPureArrow: Rule1[ParsedAst.Type] = rule {
-        Apply ~ optional(optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow)
-      }
-
-      def UnaryImpureArrow: Rule1[ParsedAst.Type] = rule {
-        Apply ~ optional(optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow)
-      }
-
-      def UnaryPolymorphicArrow: Rule1[ParsedAst.Type] = rule {
-        Apply ~ optional(optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
-      }
-
-      rule {
-        UnaryPolymorphicArrow | UnaryPureArrow | UnaryImpureArrow
-      }
+    def UnaryArrow: Rule1[ParsedAst.Type] = rule {
+      Apply ~ optional(
+          (optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow) |
+          (optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
+          (optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      )
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1116,20 +1106,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def PureArrow: Rule1[ParsedAst.Type] = rule {
-        SP ~ TypeList ~ optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow
-      }
-
-      def ImpureArrow: Rule1[ParsedAst.Type] = rule {
-        SP ~ TypeList ~ optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow
-      }
-
-      def PolymorphicArrow: Rule1[ParsedAst.Type] = rule {
-        SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow
-      }
-
       rule {
-        PolymorphicArrow | PureArrow | ImpureArrow
+        SP ~ TypeList ~ optWS ~ (
+            (atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow) |
+            (atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
+            (atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+        )
       }
     }
 
