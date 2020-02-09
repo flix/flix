@@ -596,12 +596,18 @@ namespace Array {
     pub def filter(f: a -> Bool, a: Array[a]): Array[a] =
         foldRight((x,xs) -> if (f(x)) x :: xs else xs, Nil, a) |> List.toArray
 
+
+    ///
+    /// Alias for `dropLeft`.
+    ///
+    pub def drop(n: Int, a: Array[a]) : Array[a] = dropLeft(n, a)
+
     ///
     /// Returns a copy of array `a`, dropping the first `n` elements.
     ///
-    /// Returns `[]` if `n > length(xs)`.
+    /// Returns `[]` if `n > length(a)`.
     ///
-    pub def drop(n: Int, a: Array[a]) : Array[a] =
+    pub def dropLeft(n: Int, a: Array[a]) : Array[a] =
         let len = length(a);
         if (n > len)
             []
@@ -611,21 +617,55 @@ namespace Array {
         }
 
     ///
+    /// Returns a copy of array `a`, dropping the last `n` elements.
+    ///
+    /// Returns `[]` if `n > length(a)`.
+    ///
+    pub def dropRight(n: Int, a: Array[a]) : Array[a] =
+        let len = length(a);
+        if (n >= len)
+            []
+        else {
+            let end = if (n < 0) len else len - n;
+            slice(a, 0, end)
+        }
+
+    ///
+    /// Alias for `dropWhileLeft`.
+    ///
+    pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] = dropWhileLeft(f, a)
+
+    ///
     /// Returns copy of array `a` without the longest prefix that satisfies the predicate `f`.
     ///
-    pub def dropWhile(f: a -> Bool, a: Array[a]): Array[a] =
-        match findIndexOf(x -> !(f(x)), a) {
+    pub def dropWhileLeft(f: a -> Bool, a: Array[a]): Array[a] =
+        match findIndexOfLeft(x -> !(f(x)), a) {
             case None => []
-            case Some(i) => drop(i, a)
+            case Some(i) => dropLeft(i, a)
         }
+
+    ///
+    /// Returns copy of array `a` without the longest suffix that satisfies the predicate `f`.
+    ///
+    pub def dropWhileRight(f: a -> Bool, a: Array[a]): Array[a] =
+        match findIndexOfRight(x -> !(f(x)), a) {
+            case None => []
+            case Some(i) => slice(a, 0, i+1)
+        }
+
+    ///
+    /// Alias for `takeLeft`.
+    ///
+    pub def take(n: Int, a: Array[a]) : Array[a] = takeLeft(n, a)
+
 
     ///
     /// Returns a fresh array taking first `n` elements of `a`.
     ///
     /// Returns `a` if `n > length(xs)`.
     ///
-    pub def take(n: Int, a: Array[a]) : Array[a] =
-        if (n < 1)
+    pub def takeLeft(n: Int, a: Array[a]) : Array[a] =
+        if (n <= 0)
             []
         else {
             let len = length(a);
@@ -634,12 +674,40 @@ namespace Array {
         }
 
     ///
+    /// Returns a fresh array taking last `n` elements of `a`.
+    ///
+    /// Returns `a` if `n > length(xs)`.
+    ///
+    pub def takeRight(n: Int, a: Array[a]) : Array[a] =
+        if (n <= 0)
+            []
+        else {
+            let len = length(a);
+            let start = if (n > len) 0 else len - n;
+            slice(a, start, len)
+        }
+
+    ///
+    /// Alias for `takeWhileLeft`.
+    ///
+    pub def takeWhile(f: a -> Bool, a: Array[a]): Array[a] = takeWhileLeft(f, a)
+
+    ///
     /// Returns the longest prefix of `a` that satisfies the predicate `f`.
     ///
-    pub def takeWhile(f: a -> Bool, a: Array[a]): Array[a] =
-        match findIndexOf(x -> !(f(x)), a) {
+    pub def takeWhileLeft(f: a -> Bool, a: Array[a]): Array[a] =
+        match findIndexOfLeft(x -> !(f(x)), a) {
             case None => a
-            case Some(i) => take(i, a)
+            case Some(i) => takeLeft(i, a)
+        }
+
+    ///
+    /// Returns the longest suffix of `a` that satisfies the predicate `f`.
+    ///
+    pub def takeWhileRight(f: a -> Bool, a: Array[a]): Array[a] =
+        match findIndexOfRight(x -> !(f(x)), a) {
+            case None => slice(a, 0, length(a))
+            case Some(i) => slice(a, i+1, length(a))
         }
 
     ///
@@ -757,43 +825,19 @@ namespace Array {
                 case None => findMapHelper(f, a, i+1)
             }
 
-
-
     ///
-    /// Apply the effectful function `f` to all the elements in the array `a`.
+    /// Returns the array `a` as a set.
     ///
-    pub def iter(f: a -> Unit, a: Array[a]): Unit =
-        let len = length(a);
-        if (len < 1) () else iterHelper(f, a, len, 0)
+    pub def toSet(a: Array[a]): Set[a] = foldRight(Set.insert, Set.empty(), a)
 
     ///
-    /// Helper for `iter`.
+    /// Returns the association list `xs` as a map.
     ///
-    def iterHelper(f: a -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
-        if (i >= len)
-            ()
-        else {
-            f(a[i]);
-            iterHelper(f, a, len, i + 1)
-        }
+    /// If `xs` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toMap(a: Array[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
-    ///
-    /// Apply the effectful function `f` to all the elements in the array `a`.
-    ///
-    pub def iterWithIndex(f: (a, Int32) -> Unit, a: Array[a]): Unit =
-        let len = length(a);
-        if (len < 1) () else iterWithIndexHelper(f, a, len, 0)
-
-    ///
-    /// Helper for `iterWithIndex`.
-    ///
-    def iterWithIndexHelper(f: (a, Int32) -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
-        if (i >= len)
-            ()
-        else {
-            f(a[i], i);
-            iterWithIndexHelper(f, a, len, i + 1)
-        }
 
     ///
     /// Alias for `findIndexOfLeft`.
@@ -868,96 +912,6 @@ namespace Array {
         }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
-    ///
-    pub def sameElements(a: Array[a], b: Array[b]): Bool =
-        let alen = Array.length(a);
-        let blen = Array.length(b);
-        if (alen == blen)
-            sameElementsHelper(a, b, alen, 0)
-        else
-            false
-
-    ///
-    /// Helper for `sameElements`.
-    ///
-    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool =
-        if (i >= len)
-            true
-        else {
-            if (a[i] != b[i]) false else sameElementsHelper(a, b, len, i+1)
-        }
-
-    ///
-    /// Return a shallow copy of array `a`.
-    ///
-    pub def shallowCopy(a: Array[a]): Array[a] =
-        let len = length(a);
-        init(i -> a[i], len)
-
-    ///
-    /// Returns `a` with every occurrence of `x` replaced by `y`.
-    ///
-    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit =
-        mapInPlace(e -> if (e == x) y else e, a)
-
-
-    ///
-    /// Returns the reverse of `a`.
-    ///
-    pub def reverseInPlace(a: Array[a]): Unit =
-        let len = length(a);
-        reverseInPlaceHelper(a, len / 2, 0, len - 1)
-
-    ///
-    /// Helper for `reverseInPlace`.
-    ///
-    def reverseInPlaceHelper(a: Array[a], halflen: Int32, i: Int32, j: Int32): Unit =
-        if (i >= halflen)
-            ()
-        else {
-            let x = a[i];
-            let y = a[j];
-            put(a, i, y);
-            put(a, j, x);
-            reverseInPlaceHelper(a, halflen, i+1, j-1)
-        }
-
-    ///
-    /// Apply `f` to every element in array `a`. Array `a` is mutated.
-    ///
-    pub def mapInPlace(f: a -> a, a: Array[a]): Unit =
-        let len = length(a);
-        mapInPlaceHelper(f, len, a, 0)
-
-    ///
-    /// Helper of `mapInPlace`
-    ///
-    pub def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], i: Int32): Unit =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(a[i]);
-            mapInPlaceHelper(f, len, a, i+1)
-        }
-
-    ///
-    /// Render the array `a` as a String. Elements are rendered with the
-    /// function `f` and seperated with the string `sep`.
-    ///
-    pub def mkStringBy(f: a -> String, sep: String, a: Array[a]): String =
-        let sb = StringBuilder.new();
-        let step = (x,i) ->
-            if (i == 0)
-                StringBuilder.appendString(sb, f(x))
-            else {
-                StringBuilder.appendString(sb, sep);
-                StringBuilder.appendString(sb, f(x))
-            };
-        iterWithIndex(step, a);
-        StringBuilder.toString(sb)
-
-    ///
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
     pub def init2(f: Int32 -> (a,b), len: Int32): (Array[a], Array[b]) =
@@ -983,4 +937,131 @@ namespace Array {
             b[i] = y;
             init2Helper(a, b, f, len, i+1)
         }
+
+    ///
+    /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
+    ///
+    pub def sameElements(a: Array[a], b: Array[b]): Bool =
+        let alen = Array.length(a);
+        let blen = Array.length(b);
+        if (alen == blen)
+            sameElementsHelper(a, b, alen, 0)
+        else
+            false
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the array `a`.
+    ///
+    pub def iter(f: a -> Unit, a: Array[a]): Unit =
+        let len = length(a);
+        if (len < 1) () else iterHelper(f, a, len, 0)
+
+    ///
+    /// Helper for `iter`.
+    ///
+    def iterHelper(f: a -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
+        if (i >= len)
+            ()
+        else {
+            f(a[i]);
+            iterHelper(f, a, len, i + 1)
+        }
+
+    ///
+    /// Apply the effectful function `f` to all the elements in the array `a`.
+    ///
+    pub def iterWithIndex(f: (a, Int32) -> Unit, a: Array[a]): Unit =
+        let len = length(a);
+        if (len < 1) () else iterWithIndexHelper(f, a, len, 0)
+
+    ///
+    /// Helper for `iterWithIndex`.
+    ///
+    def iterWithIndexHelper(f: (a, Int32) -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
+        if (i >= len)
+            ()
+        else {
+            f(a[i], i);
+            iterWithIndexHelper(f, a, len, i + 1)
+        }
+
+    ///
+    /// Helper for `sameElements`.
+    ///
+    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool =
+        if (i >= len)
+            true
+        else {
+            if (a[i] != b[i]) false else sameElementsHelper(a, b, len, i+1)
+        }
+
+    ///
+    /// Return a shallow copy of array `a`.
+    ///
+    pub def shallowCopy(a: Array[a]): Array[a] =
+        let len = length(a);
+        init(i -> a[i], len)
+
+    ///
+    /// Apply `f` to every element in array `a`. Array `a` is mutated.
+    ///
+    pub def mapInPlace(f: a -> a, a: Array[a]): Unit =
+        let len = length(a);
+        mapInPlaceHelper(f, len, a, 0)
+
+    ///
+    /// Helper of `mapInPlace`
+    ///
+    def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], i: Int32): Unit =
+        if (i >= len)
+            ()
+        else {
+            a[i] = f(a[i]);
+            mapInPlaceHelper(f, len, a, i+1)
+        }
+
+    ///
+    /// Returns the reverse of `a`.
+    ///
+    pub def reverseInPlace(a: Array[a]): Unit =
+        let len = length(a);
+        reverseInPlaceHelper(a, len / 2, 0, len - 1)
+
+    ///
+    /// Helper for `reverseInPlace`.
+    ///
+    def reverseInPlaceHelper(a: Array[a], halflen: Int32, i: Int32, j: Int32): Unit =
+        if (i >= halflen)
+            ()
+        else {
+            let x = a[i];
+            let y = a[j];
+            put(a, i, y);
+            put(a, j, x);
+            reverseInPlaceHelper(a, halflen, i+1, j-1)
+        }
+
+    ///
+    /// Returns `a` with every occurrence of `x` replaced by `y`.
+    ///
+    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit =
+        mapInPlace(e -> if (e == x) y else e, a)
+
+    ///
+    /// Render the array `a` as a String. Elements are rendered with the
+    /// function `f` and seperated with the string `sep`.
+    ///
+    pub def mkStringBy(f: a -> String, sep: String, a: Array[a]): String =
+        let sb = StringBuilder.new();
+        let step = (x,i) ->
+            if (i == 0)
+                StringBuilder.appendString(sb, f(x))
+            else {
+                StringBuilder.appendString(sb, sep);
+                StringBuilder.appendString(sb, f(x))
+            };
+        iterWithIndex(step, a);
+        StringBuilder.toString(sb)
+
+
 }

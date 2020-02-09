@@ -1426,6 +1426,132 @@ def drop12(): Bool =
     Array.sameElements(a, [5,6])
 
 /////////////////////////////////////////////////////////////////////////////
+// dropLeft                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def dropLeft01(): Bool =
+    let a = Array.dropLeft(-1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropLeft02(): Bool =
+    let a = Array.dropLeft(0, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropLeft03(): Bool =
+    let a = Array.dropLeft(1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropLeft04(): Bool =
+    let a = Array.dropLeft(-1, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropLeft05(): Bool =
+    let a = Array.dropLeft(0, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropLeft06(): Bool =
+    let a = Array.dropLeft(1, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropLeft07(): Bool =
+    let a = Array.dropLeft(2, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropLeft08(): Bool =
+    let a = Array.dropLeft(0, [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def dropLeft09(): Bool =
+    let a = Array.dropLeft(1, [1,2]);
+    Array.sameElements(a, [2])
+
+@test
+def dropLeft10(): Bool =
+    let a = Array.dropLeft(2, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropLeft11(): Bool =
+    let a = Array.dropLeft(2, [1,2,3,4,5,6]);
+    Array.sameElements(a, [3,4,5,6])
+
+@test
+def dropLeft12(): Bool =
+    let a = Array.dropLeft(4, [1,2,3,4,5,6]);
+    Array.sameElements(a, [5,6])
+
+/////////////////////////////////////////////////////////////////////////////
+// dropRight                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def dropRight01(): Bool =
+    let a = Array.dropRight(-1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropRight02(): Bool =
+    let a = Array.dropRight(0, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropRight03(): Bool =
+    let a = Array.dropRight(1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropRight04(): Bool =
+    let a = Array.dropRight(-1, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropRight05(): Bool =
+    let a = Array.dropRight(0, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropRight06(): Bool =
+    let a = Array.dropRight(1, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropRight07(): Bool =
+    let a = Array.dropRight(2, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropRight08(): Bool =
+    let a = Array.dropRight(0, [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def dropRight09(): Bool =
+    let a = Array.dropRight(1, [1,2]);
+    Array.sameElements(a, [1])
+
+@test
+def dropRight10(): Bool =
+    let a = Array.dropRight(2, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropRight11(): Bool =
+    let a = Array.dropRight(2, [1,2,3,4,5,6]);
+    Array.sameElements(a, [1,2,3,4])
+
+@test
+def dropRight12(): Bool =
+    let a = Array.dropRight(4, [1,2,3,4,5,6]);
+    Array.sameElements(a, [1,2])
+
+/////////////////////////////////////////////////////////////////////////////
 // dropWhile                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1467,6 +1593,92 @@ def dropWhile07(): Bool =
 def dropWhile08(): Bool =
     let a = Array.dropWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
     Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+
+/////////////////////////////////////////////////////////////////////////////
+// dropWhileLeft                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def dropWhileLeft01(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, []);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropWhileLeft02(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropWhileLeft03(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [4]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropWhileLeft04(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def dropWhileLeft05(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [1,5]);
+    Array.sameElements(a, [1,5])
+
+@test
+def dropWhileLeft06(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [5,1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropWhileLeft07(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [5,8]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropWhileLeft08(): Bool =
+    let a = Array.dropWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+    Array.sameElements(a, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+
+/////////////////////////////////////////////////////////////////////////////
+// dropWhileRight                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def dropWhileRight01(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, []);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropWhileRight02(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def dropWhileRight03(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [4]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropWhileRight04(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def dropWhileRight05(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [1,5]);
+    Array.sameElements(a, [1])
+
+@test
+def dropWhileRight06(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [5,1]);
+    Array.sameElements(a, [5,1])
+
+@test
+def dropWhileRight07(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [5,8]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def dropWhileRight08(): Bool =
+    let a = Array.dropWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+    Array.sameElements(a, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1])
 
 /////////////////////////////////////////////////////////////////////////////
 // take                                                                    //
@@ -1532,6 +1744,132 @@ def take12(): Bool =
     Array.sameElements(a, [1,2,3,4])
 
 /////////////////////////////////////////////////////////////////////////////
+// takeLeft                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def takeLeft01(): Bool =
+    let a = Array.takeLeft(-1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeLeft02(): Bool =
+    let a = Array.takeLeft(0, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeLeft03(): Bool =
+    let a = Array.takeLeft(1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeLeft04(): Bool =
+    let a = Array.takeLeft(-1, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeLeft05(): Bool =
+    let a = Array.takeLeft(0, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeLeft06(): Bool =
+    let a = Array.takeLeft(1, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def takeLeft07(): Bool =
+    let a = Array.takeLeft(2, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def takeLeft08(): Bool =
+    let a = Array.takeLeft(0, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeLeft09(): Bool =
+    let a = Array.takeLeft(1, [1,2]);
+    Array.sameElements(a, [1])
+
+@test
+def takeLeft10(): Bool =
+    let a = Array.takeLeft(2, [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def takeLeft11(): Bool =
+    let a = Array.takeLeft(2, [1,2,3,4,5,6]);
+    Array.sameElements(a, [1,2])
+
+@test
+def takeLeft12(): Bool =
+    let a = Array.takeLeft(4, [1,2,3,4,5,6]);
+    Array.sameElements(a, [1,2,3,4])
+
+/////////////////////////////////////////////////////////////////////////////
+// takeRight                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def takeRight01(): Bool =
+    let a = Array.takeRight(-1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeRight02(): Bool =
+    let a = Array.takeRight(0, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeRight03(): Bool =
+    let a = Array.takeRight(1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeRight04(): Bool =
+    let a = Array.takeRight(-1, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeRight05(): Bool =
+    let a = Array.takeRight(0, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeRight06(): Bool =
+    let a = Array.takeRight(1, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def takeRight07(): Bool =
+    let a = Array.takeRight(2, [1]);
+    Array.sameElements(a, [1])
+
+@test
+def takeRight08(): Bool =
+    let a = Array.takeRight(0, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeRight09(): Bool =
+    let a = Array.takeRight(1, [1,2]);
+    Array.sameElements(a, [2])
+
+@test
+def takeRight10(): Bool =
+    let a = Array.takeRight(2, [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def takeRight11(): Bool =
+    let a = Array.takeRight(2, [1,2,3,4,5,6]);
+    Array.sameElements(a, [5,6])
+
+@test
+def takeRight12(): Bool =
+    let a = Array.takeRight(4, [1,2,3,4,5,6]);
+    Array.sameElements(a, [3,4,5,6])
+
+/////////////////////////////////////////////////////////////////////////////
 // takeWhile                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1573,6 +1911,92 @@ def takeWhile07(): Bool =
 def takeWhile08(): Bool =
     let a = Array.takeWhile(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
     Array.sameElements(a, [4, 6])
+
+/////////////////////////////////////////////////////////////////////////////
+// takeWhileLeft                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def takeWhileLeft01(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileLeft02(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileLeft03(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [4]);
+    Array.sameElements(a, [4])
+
+@test
+def takeWhileLeft04(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileLeft05(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [1,5]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileLeft06(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [5,1]);
+    Array.sameElements(a, [5])
+
+@test
+def takeWhileLeft07(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [5,8]);
+    Array.sameElements(a, [5,8])
+
+@test
+def takeWhileLeft08(): Bool =
+    let a = Array.takeWhileLeft(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+    Array.sameElements(a, [4, 6])
+
+/////////////////////////////////////////////////////////////////////////////
+// takeWhileRight                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def takeWhileRight01(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileRight02(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileRight03(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [4]);
+    Array.sameElements(a, [4])
+
+@test
+def takeWhileRight04(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileRight05(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [1,5]);
+    Array.sameElements(a, [5])
+
+@test
+def takeWhileRight06(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [5,1]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def takeWhileRight07(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [5,8]);
+    Array.sameElements(a, [5,8])
+
+@test
+def takeWhileRight08(): Bool =
+    let a = Array.takeWhileRight(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+    Array.sameElements(a, [7])
 
 /////////////////////////////////////////////////////////////////////////////
 // zip                                                                     //
@@ -1909,7 +2333,47 @@ def findMap07(): Bool = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, 
 @test
 def findMap08(): Bool = Array.findMap(i -> if (i % 2 == 0) Some(i/2) else None, [0,1,2,3,4,5,10]) == Some(0)
 
+/////////////////////////////////////////////////////////////////////////////
+// toSet                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toSet01(): Bool = Array.toSet([]) == Set#{}
 
+@test
+def toSet02(): Bool = Array.toSet([1]) == Set#{1}
+
+@test
+def toSet03(): Bool = Array.toSet([1,2]) == Set#{1, 2}
+
+@test
+def toSet04(): Bool = Array.toSet([1,1]) == Set#{1}
+
+@test
+def toSet05(): Bool = Array.toSet([1,2,3]) == Set#{1, 2, 3}
+
+@test
+def toSet06(): Bool = Array.toSet([1,2,1]) == Set#{1, 2}
+
+@test
+def toSet07(): Bool = Array.toSet([1,1,2]) == Set#{1, 2}
+
+@test
+def toSet08(): Bool = Array.toSet([2,1,2,3,4,5,6,3,3]) == Set#{1, 2, 3, 4, 5, 6}
+
+/////////////////////////////////////////////////////////////////////////////
+// toMap                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toMap01(): Bool = Array.toMap([]) == Map#{}
+
+@test
+def toMap02(): Bool = Array.toMap([(1, true)]) == Map#{1 -> true}
+
+@test
+def toMap03(): Bool = Array.toMap([(1, true), (2, false)]) == Map#{1 -> true, 2 -> false}
+
+@test
+def toMap04(): Bool = Array.toMap([(1, true), (1, false)]) == Map#{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //
