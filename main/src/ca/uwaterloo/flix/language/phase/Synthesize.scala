@@ -416,9 +416,9 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool)), sl)
-      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Bool)), Type.Pure, sl)
-      val outer = Expression.Apply(inner, exp2, Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Bool), sl)
+      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Bool), Type.Pure, sl)
+      val outer = Expression.Apply(inner, exp2, Type.Bool, Type.Pure, sl)
       outer
     }
 
@@ -432,7 +432,7 @@ object Synthesize extends Phase[Root, Root] {
       val e = mkApplyEq(exp1, exp2)
 
       // Negate the result.
-      Expression.Unary(UnaryOperator.LogicalNot, e, Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+      Expression.Unary(UnaryOperator.LogicalNot, e, Type.Bool, Type.Pure, sl)
     }
 
     /**
@@ -471,10 +471,10 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Cst(TypeConstructor.Bool)), Type.Pure, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), Type.Pure, sl)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Cst(TypeConstructor.Bool))
+      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Bool)
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
@@ -495,7 +495,7 @@ object Synthesize extends Phase[Root, Root] {
        */
       val exp1 = Expression.Var(varX, tpe, sl)
       val exp2 = Expression.Var(varY, tpe, sl)
-      val default = Expression.Binary(BinaryOperator.Equal, exp1, exp2, Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+      val default = Expression.Binary(BinaryOperator.Equal, exp1, exp2, Type.Bool, Type.Pure, sl)
 
       /*
        * Match on the type to determine what equality expression to generate.
@@ -520,7 +520,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isArrow(tpe)) {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
           }
 
           //
@@ -528,7 +528,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isChannel(tpe)) {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
           }
 
           //
@@ -536,7 +536,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isNative(tpe)) {
             val method = classOf[java.lang.Object].getMethod("equals", classOf[java.lang.Object])
-            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+            return Expression.InvokeMethod(method, exp1, List(exp2), Type.Bool, Type.Pure, sl)
           }
 
           //
@@ -608,7 +608,7 @@ object Synthesize extends Phase[Root, Root] {
             val default = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs ::: default :: Nil, Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+            return Expression.Match(matchValue, rs ::: default :: Nil, Type.Bool, Type.Pure, sl)
           }
 
           //
@@ -659,14 +659,14 @@ object Synthesize extends Phase[Root, Root] {
 
                 val e1 = mkApplyEq(expX, expY)
                 val e2 = eacc
-                Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+                Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, Type.Pure, sl)
             }
 
             // Put the components together.
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Bool), Type.Pure, sl)
+            return Expression.Match(matchValue, rule :: Nil, Type.Bool, Type.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

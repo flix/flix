@@ -213,7 +213,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkArrow(List(valueType, valueType), Type.Cst(TypeConstructor.Bool))
+          val eqType = Type.mkArrow(List(valueType, valueType), Type.Bool)
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -221,9 +221,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
@@ -231,14 +231,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, eqType, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Cst(TypeConstructor.Bool)), eff, loc)
-              val outer = Expression.Apply(inner, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Bool), eff, loc)
+              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
                 outer
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
               }
           }
 

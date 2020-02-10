@@ -111,6 +111,11 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+    * Returns the Bool type.
+    */
+  val Bool: Type = Type.Cst(TypeConstructor.Bool)
+
+  /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
     */
   val Pure: Type = Type.Cst(TypeConstructor.Pure)

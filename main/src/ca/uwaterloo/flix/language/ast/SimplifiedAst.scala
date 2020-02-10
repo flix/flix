@@ -65,12 +65,12 @@ object SimplifiedAst {
     }
 
     case object True extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Bool)
+      final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
     }
 
     case object False extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Bool)
+      final val tpe = Type.Bool
       final val loc = SourceLocation.Unknown
     }
 
@@ -175,7 +175,7 @@ object SimplifiedAst {
     case class LetRec(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe: Type = Type.Cst(TypeConstructor.Bool)
+      final val tpe: Type = Type.Bool
     }
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -215,11 +215,11 @@ object SimplifiedAst {
     case class HandleWith(exp: SimplifiedAst.Expression, bindings: List[SimplifiedAst.HandlerBinding], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Existential(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Bool)
+      def tpe: Type = Type.Bool
     }
 
     case class Universal(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Bool)
+      def tpe: Type = Type.Bool
     }
 
     case class Cast(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

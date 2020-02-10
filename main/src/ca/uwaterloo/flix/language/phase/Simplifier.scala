@@ -899,7 +899,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
-      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), loc)
+      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, loc)
     }
 
     /**
@@ -1145,7 +1145,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             }
           }
           val op = SemanticOperator.Int32Op.Ge
-          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
@@ -1185,7 +1185,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             }
           }
           val ge = SemanticOperator.Int32Op.Ge
-          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
 

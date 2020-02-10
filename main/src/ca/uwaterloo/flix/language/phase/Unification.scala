@@ -26,6 +26,13 @@ import scala.annotation.tailrec
 
 object Unification {
 
+
+  /**
+    * Aliases to make the success variable elimination easier to understand.
+    */
+  private val True: Type = Type.Pure
+  private val False: Type = Type.Impure
+
   /**
     * Companion object for the [[Substitution]] class.
     */
@@ -473,12 +480,6 @@ object Unification {
         mkOr(x, mkAnd(y, mkNot(z)))
       }
     }
-
-    /**
-      * Aliases to make the success variable elimination easier to understand.
-      */
-    val True = Type.Pure
-    val False = Type.Impure
 
     /**
       * Performs success variable elimination on the given boolean expression `eff`.
