@@ -66,7 +66,7 @@ object TypedAst {
   object Expression {
 
     case class Unit(loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Cst(TypeConstructor.Unit)
+      final def tpe: Type = Type.Unit
 
       final def eff: Type = Type.Pure
     }
@@ -288,7 +288,7 @@ object TypedAst {
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Unit(loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Cst(TypeConstructor.Unit)
+      def tpe: Type = Type.Unit
     }
 
     case class True(loc: SourceLocation) extends TypedAst.Pattern {

@@ -60,7 +60,7 @@ object SimplifiedAst {
   object Expression {
 
     case object Unit extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Unit)
+      final val tpe = Type.Unit
       final val loc = SourceLocation.Unknown
     }
 

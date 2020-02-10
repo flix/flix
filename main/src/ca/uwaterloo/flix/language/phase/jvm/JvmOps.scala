@@ -809,8 +809,8 @@ object JvmOps {
   // TODO: Should be removed.
   private def hackMonoType2Type(tpe: MonoType): Type = tpe match {
     case MonoType.Var(id) => Type.Var(id, Kind.Star)
-    case MonoType.Unit => Type.Cst(TypeConstructor.Unit)
-    case MonoType.Bool => Type.Cst(TypeConstructor.Bool)
+    case MonoType.Unit => Type.Unit
+    case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Cst(TypeConstructor.Char)
     case MonoType.Float32 => Type.Cst(TypeConstructor.Float32)
     case MonoType.Float64 => Type.Cst(TypeConstructor.Float64)

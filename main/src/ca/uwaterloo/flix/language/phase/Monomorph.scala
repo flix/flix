@@ -75,7 +75,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
+        case Type.Var(_, _) => Type.Unit
         case Type.Cst(tc) => Type.Cst(tc)
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.RecordEmpty => Type.RecordEmpty

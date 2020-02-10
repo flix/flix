@@ -89,7 +89,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Ast.Modifier.EntryPoint :: Nil)
           val tparams = Nil
-          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Type.freshTypeVar()
@@ -332,7 +332,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         val ts = attributes.map(_.tpe)
         val base = Type.Cst(TypeConstructor.Relation(sym)): Type
         val args: Type = ts match {
-          case Nil => Type.Cst(TypeConstructor.Unit)
+          case Nil => Type.Unit
           case x :: Nil => x
           case l =>
             val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
@@ -361,7 +361,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         val ts = attributes.map(_.tpe)
         val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
         val args: Type = ts match {
-          case Nil => Type.Cst(TypeConstructor.Unit)
+          case Nil => Type.Unit
           case x :: Nil => x
           case l =>
             val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
@@ -1376,10 +1376,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
-    case NamedAst.Type.Unit(loc) => Type.Cst(TypeConstructor.Unit).toSuccess
+    case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
-      case "Unit" => Type.Cst(TypeConstructor.Unit).toSuccess
+      case "Unit" => Type.Unit.toSuccess
       case "Bool" => Type.Bool.toSuccess
       case "Char" => Type.Cst(TypeConstructor.Char).toSuccess
       case "Float" => Type.Cst(TypeConstructor.Float64).toSuccess
@@ -1808,7 +1808,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case sym: Symbol.RelSym =>
       val base = Type.Cst(TypeConstructor.Relation(sym)): Type
       val args: Type = ts match {
-        case Nil => Type.Cst(TypeConstructor.Unit)
+        case Nil => Type.Unit
         case x :: Nil => x
         case l =>
           val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
@@ -1821,7 +1821,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case sym: Symbol.LatSym =>
       val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
       val args: Type = ts match {
-        case Nil => Type.Cst(TypeConstructor.Unit)
+        case Nil => Type.Unit
         case x :: Nil => x
         case l =>
           val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type

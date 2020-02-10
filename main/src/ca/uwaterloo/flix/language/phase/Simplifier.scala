@@ -574,7 +574,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
-        val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), eff, e.tpe)
+        val newTpe = Type.mkArrow(Type.Unit, eff, e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.ProcessSpawn(lambda, newTpe, loc)
@@ -723,9 +723,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
           val varX = Symbol.freshVarSym()
-          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val exp = visitExp(exp0)
-          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Cst(TypeConstructor.Unit), exp.tpe), loc)
+          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Unit, exp.tpe), loc)
 
           toplevel += (freshSym -> freshDef)
           freshSym

@@ -111,6 +111,11 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
+    * Returns the Unit type.
+    */
+  val Unit: Type = Type.Cst(TypeConstructor.Unit)
+
+  /**
     * Returns the Bool type.
     */
   val Bool: Type = Type.Cst(TypeConstructor.Bool)
