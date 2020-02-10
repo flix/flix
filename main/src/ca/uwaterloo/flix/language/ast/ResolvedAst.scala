@@ -113,7 +113,7 @@ object ResolvedAst {
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Char)
+      def tpe: Type = Type.Char
 
       def eff: Type = Type.Pure
     }

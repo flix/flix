@@ -811,7 +811,7 @@ object JvmOps {
     case MonoType.Var(id) => Type.Var(id, Kind.Star)
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
-    case MonoType.Char => Type.Cst(TypeConstructor.Char)
+    case MonoType.Char => Type.Char
     case MonoType.Float32 => Type.Cst(TypeConstructor.Float32)
     case MonoType.Float64 => Type.Cst(TypeConstructor.Float64)
     case MonoType.Int8 => Type.Cst(TypeConstructor.Int8)

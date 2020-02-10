@@ -107,18 +107,23 @@ sealed trait Type {
 object Type {
 
   /////////////////////////////////////////////////////////////////////////////
-  // Common Type Constants                                                   //
+  // Type Constants                                                          //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-    * Returns the Unit type.
+    * Represents the Unit type.
     */
   val Unit: Type = Type.Cst(TypeConstructor.Unit)
 
   /**
-    * Returns the Bool type.
+    * Represents the Bool type.
     */
   val Bool: Type = Type.Cst(TypeConstructor.Bool)
+
+  /**
+    * Represents the Bool type.
+    */
+  val Char: Type = Type.Cst(TypeConstructor.Char)
 
   /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
