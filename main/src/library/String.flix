@@ -41,7 +41,7 @@ namespace String {
     ///
     pub def isEmpty(s: String): Bool =
         import java.lang.String.isEmpty();
-        s.isEmpty()
+        s.isEmpty() as Bool @ Pure
 
     ///
     /// Returns the length of the string `s`.
@@ -90,13 +90,13 @@ namespace String {
     ///
     pub def trim(s: String): String =
         import java.lang.String.trim();
-        s.trim()
+        s.trim() as String @ Pure
 
     ///
     /// Get the system line separator.
     ///
     pub def lineSeparator(): String =
         import java.lang.System:lineSeparator();
-        lineSeparator()
+        lineSeparator() as String @ Pure
 
 }

@@ -29,14 +29,6 @@ namespace StringBuilder {
         StringBuilder(newStringBuilder())
 
     ///
-    /// Convert the StringBuilder `sb` to a string.
-    ///
-    pub def toString(sb: StringBuilder): Str =
-        import java.lang.StringBuilder.toString();
-        let StringBuilder(msb) = sb;
-        msb.toString()
-
-    ///
     /// Append the StringBuilder `sb1` to the end of StringBuilder `sb`.
     ///
     pub def append(sb: StringBuilder, sb1: StringBuilder): Unit @ Impure =
@@ -137,6 +129,14 @@ namespace StringBuilder {
     pub def length(sb: StringBuilder): Int32 =
         import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        msb.length()
+        msb.length() as Int32 @ Pure
+
+    ///
+    /// Convert the StringBuilder `sb` to a string.
+    ///
+    pub def toString(sb: StringBuilder): String =
+        import java.lang.StringBuilder.toString();
+        let StringBuilder(msb) = sb;
+        msb.toString() as String @ Pure
 
 }
