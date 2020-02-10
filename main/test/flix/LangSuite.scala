@@ -6,6 +6,11 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Casts.
+  //
+  new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix"),
+
+  //
   // JVM.
   //
   new FlixTest("Test.Exp.Jvm.GetField", "main/test/flix/Test.Exp.Jvm.GetField.flix"),
@@ -15,7 +20,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.InvokeStaticMethod", "main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
   new FlixTest("Test.Exp.Jvm.PutField", "main/test/flix/Test.Exp.Jvm.PutField.flix"),
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
-  
+
   //
   // References.
   //
