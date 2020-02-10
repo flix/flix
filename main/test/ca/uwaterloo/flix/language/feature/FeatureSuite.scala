@@ -134,14 +134,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix"),
 
   //
-  // References.
-  //
-  new FlixTest("Test.Exp.Reference.Assign", "main/test/flix/Test.Exp.Reference.Assign.flix"),
-  new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix"),
-  new FlixTest("Test.Exp.Reference.Ref.flix", "main/test/flix/Test.Exp.Reference.Ref.flix"),
-  new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
-
-  //
   // Constraints.
   //
   new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix"),
@@ -152,17 +144,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix"),
   new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix"),
   new FlixTest("Test.Expression.FixpointFold", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointFold.flix"),
-
-  //
-  // Interop.
-  //
-  new FlixTest("Test.Expression.Jvm.InvokeConstructor", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeConstructor.flix"),
-  new FlixTest("Test.Expression.Jvm.InvokeMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeMethod.flix"),
-  new FlixTest("Test.Expression.Jvm.InvokeStaticMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeStaticMethod.flix"),
-  new FlixTest("Test.Exp.Jvm.GetField", "main/test/flix/Test.Exp.Jvm.GetField.flix"),
-  new FlixTest("Test.Expression.Jvm.PutField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutField.flix"),
-  new FlixTest("Test.Expression.Jvm.GetStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetStaticField.flix"),
-  new FlixTest("Test.Expression.Jvm.PutStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutStaticField.flix"),
 
   //
   // Predicates
