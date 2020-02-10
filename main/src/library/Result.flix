@@ -71,13 +71,13 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
+    pub def exists(f: t ->{f} Bool, r: Result[t, e]): Bool @ f = getWithDefault(map(f, r), false)
 
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
     ///
-    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
+    pub def forall(f: t ->{f} Bool, r: Result[t, e]): Bool @ f = getWithDefault(map(f, r), true)
 
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
@@ -98,7 +98,7 @@ namespace Result {
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
+    pub def count(f: t ->{f} Bool, r: Result[t, e]): Int32 @ f = match r {
         case Ok(v) => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -106,7 +106,7 @@ namespace Result {
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
-    pub def find(f: t -> Bool, r: Result[t, e]): Option[t] = match r {
+    pub def find(f: t ->{f} Bool, r: Result[t, e]): Option[t] @ f = match r {
         case Ok(v) => if (f(v)) Some(v) else None
         case Err(_) => None
     }
@@ -114,7 +114,7 @@ namespace Result {
     ///
     /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (a, t) -> a, z: a, r: Result[t, e]): a = match r {
+    pub def foldLeft(f: (a, t) ->{f} a, z: a, r: Result[t, e]): a @ f = match r {
         case Ok(v) => f(z, v)
         case Err(_) => z
     }
@@ -122,7 +122,7 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (t, a) -> a, r: Result[t, e], z: a): a = match r {
+    pub def foldRight(f: (t, a) ->{f} a, r: Result[t, e], z: a): a @ f = match r {
         case Ok(v) => f(v, z)
         case Err(_) => z
     }
