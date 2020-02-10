@@ -119,7 +119,7 @@ object ResolvedAst {
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Float32)
+      def tpe: Type = Type.Float32
 
       def eff: Type = Type.Pure
     }

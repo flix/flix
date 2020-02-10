@@ -175,7 +175,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Float32") {
-    val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Float32), Type.Cst(TypeConstructor.Float32))
+    val result = Unification.unifyTypes(Type.Float32, Type.Float32)
     assert(isOk(result))
   }
 

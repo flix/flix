@@ -410,7 +410,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         liftM((Type.Char, Type.Pure))
 
       case ResolvedAst.Expression.Float32(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Float32), Type.Pure))
+        liftM((Type.Float32, Type.Pure))
 
       case ResolvedAst.Expression.Float64(lit, loc) =>
         liftM((Type.Cst(TypeConstructor.Float64), Type.Pure))
@@ -1706,7 +1706,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.True(loc) => liftM(Type.Bool)
       case ResolvedAst.Pattern.False(loc) => liftM(Type.Bool)
       case ResolvedAst.Pattern.Char(c, loc) => liftM(Type.Char)
-      case ResolvedAst.Pattern.Float32(i, loc) => liftM(Type.Cst(TypeConstructor.Float32))
+      case ResolvedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
       case ResolvedAst.Pattern.Float64(i, loc) => liftM(Type.Cst(TypeConstructor.Float64))
       case ResolvedAst.Pattern.Int8(i, loc) => liftM(Type.Cst(TypeConstructor.Int8))
       case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Cst(TypeConstructor.Int16))
@@ -2055,7 +2055,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       Type.Char
     }
     else if (c == java.lang.Float.TYPE) {
-      Type.Cst(TypeConstructor.Float32)
+      Type.Float32
     }
     else if (c == java.lang.Double.TYPE) {
       Type.Cst(TypeConstructor.Float64)

@@ -80,7 +80,7 @@ object SimplifiedAst {
     }
 
     case class Float32(lit: scala.Float) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Float32)
+      final val tpe = Type.Float32
       final val loc = SourceLocation.Unknown
     }
 
