@@ -143,7 +143,7 @@ object ResolvedAst {
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Int32)
+      def tpe: Type = Type.Int32
 
       def eff: Type = Type.Pure
     }

@@ -114,7 +114,7 @@ object TypedAst {
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Cst(TypeConstructor.Int32)
+      final def tpe: Type = Type.Int32
 
       final def eff: Type = Type.Pure
     }
@@ -320,7 +320,7 @@ object TypedAst {
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Cst(TypeConstructor.Int32)
+      def tpe: Type = Type.Int32
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Pattern {

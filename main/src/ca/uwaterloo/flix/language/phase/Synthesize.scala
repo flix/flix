@@ -684,8 +684,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32)), sl)
-      Expression.Apply(exp1, exp2, Type.Cst(TypeConstructor.Int32), Type.Pure, sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Int32), sl)
+      Expression.Apply(exp1, exp2, Type.Int32, Type.Pure, sl)
     }
 
     /**
@@ -719,7 +719,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkHashExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Cst(TypeConstructor.Int32))
+      val lambdaType = Type.mkArrow(List(tpe), Type.Int32)
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
@@ -783,7 +783,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isArrow(tpe)) {
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Int32), Type.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
           }
 
           //
@@ -791,7 +791,7 @@ object Synthesize extends Phase[Root, Root] {
           //
           if (isChannel(tpe)) {
             val method = classOf[java.lang.Object].getMethod("hashCode")
-            return Expression.InvokeMethod(method, exp0, Nil, Type.Cst(TypeConstructor.Int32), Type.Pure, sl)
+            return Expression.InvokeMethod(method, exp0, Nil, Type.Int32, Type.Pure, sl)
           }
 
           //
@@ -845,7 +845,7 @@ object Synthesize extends Phase[Root, Root] {
                   BinaryOperator.Plus,
                   Expression.Int32(index, sl),
                   mkApplyHash(Expression.Var(freshX, caseType, sl)),
-                  Type.Cst(TypeConstructor.Int32),
+                  Type.Int32,
                   Type.Pure,
                   sl
                 )
@@ -855,7 +855,7 @@ object Synthesize extends Phase[Root, Root] {
             }
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rs, Type.Cst(TypeConstructor.Int32), Type.Pure, sl)
+            return Expression.Match(matchValue, rs, Type.Int32, Type.Pure, sl)
           }
 
           //
@@ -902,7 +902,7 @@ object Synthesize extends Phase[Root, Root] {
                 BinaryOperator.Plus,
                 e1,
                 e2,
-                Type.Cst(TypeConstructor.Int32),
+                Type.Int32,
                 Type.Pure,
                 sl
               )
@@ -912,7 +912,7 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Assemble the entire match expression.
-            return Expression.Match(matchValue, rule :: Nil, Type.Cst(TypeConstructor.Int32), Type.Pure, sl)
+            return Expression.Match(matchValue, rule :: Nil, Type.Int32, Type.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

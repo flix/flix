@@ -816,7 +816,7 @@ object JvmOps {
     case MonoType.Float64 => Type.Float64
     case MonoType.Int8 => Type.Int8
     case MonoType.Int16 => Type.Int16
-    case MonoType.Int32 => Type.Cst(TypeConstructor.Int32)
+    case MonoType.Int32 => Type.Int32
     case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.Cst(TypeConstructor.BigInt)
     case MonoType.Str => Type.Cst(TypeConstructor.Str)

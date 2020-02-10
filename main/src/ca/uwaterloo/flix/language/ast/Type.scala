@@ -146,9 +146,16 @@ object Type {
   val Int16: Type = Type.Cst(TypeConstructor.Int16)
 
   /**
+    * Represents the Int32 type.
+    */
+  val Int32: Type = Type.Cst(TypeConstructor.Int32)
+
+  /**
     * Represents the Int64 type.
     */
   val Int64: Type = Type.Cst(TypeConstructor.Int64)
+
+
 
   /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
