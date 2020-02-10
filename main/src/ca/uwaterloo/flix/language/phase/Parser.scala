@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -560,12 +560,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       (SP ~ atomic("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = rule {
-      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Cast)
+    def Cast: Rule1[ParsedAst.Expression] = {
+      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
+        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+      }
+
+      rule {
+        Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Cast)
+      }
     }
 
-    def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
+    def Ascribe: Rule1[ParsedAst.Expression] = {
+      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
+        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+      }
+
+      rule {
+        FAppend ~ optional(optWS ~ ":" ~ optWS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Ascribe)
+      }
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -1086,10 +1098,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Apply ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
-        case None => t
-        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), None, r, sp2) // TODO: Effect
-      })
+      Apply ~ optional(
+          (optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow) |
+          (optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
+          (optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      )
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1097,7 +1110,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Schema | Native |  Pure | Impure | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1105,16 +1118,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
       }
 
-      def EffList: Rule1[Option[ParsedAst.Type]] = rule {
-        optional("{" ~ optWS ~ Type ~ optWS ~ "}")
-      }
-
-      def PolymorphicArrow: Rule1[ParsedAst.Type] = rule {
-        SP ~ TypeList ~ optWS ~ atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
-      }
-
       rule {
-        PolymorphicArrow
+        SP ~ TypeList ~ optWS ~ (
+            (atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow) |
+            (atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
+            (atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+        )
       }
     }
 
@@ -1176,6 +1185,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+    }
+
+    def EffList: Rule1[Option[ParsedAst.Type]] = rule {
+      optional("{" ~ optWS ~ Type ~ optWS ~ "}")
     }
   }
 

@@ -168,9 +168,9 @@ object WeededAst {
 
     case class Universal(tparams: WeededAst.TypeParams, fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Ascribe(exp: WeededAst.Expression, tpe: WeededAst.Type, eff: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Ascribe(exp: WeededAst.Expression, expectedType: Option[WeededAst.Type], expectedEff: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Cast(exp: WeededAst.Expression, tpe: WeededAst.Type, eff: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class Cast(exp: WeededAst.Expression, declaredType: Option[WeededAst.Type], declaredEff: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst.Expression
 
     case class TryCatch(exp: WeededAst.Expression, rules: List[WeededAst.CatchRule], loc: SourceLocation) extends WeededAst.Expression
 
@@ -312,7 +312,7 @@ object WeededAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type
 
-    case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Arrow(tparams: List[WeededAst.Type], eff: WeededAst.Type, tresult: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Apply(tpe1: WeededAst.Type, tpe2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 

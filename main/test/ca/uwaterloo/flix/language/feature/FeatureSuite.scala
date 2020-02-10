@@ -35,13 +35,11 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.LetMatchStar", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LetMatchStar.flix"),
   new FlixTest("Test.Pattern.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Pattern.List.flix"),
   new FlixTest("Test.Expression.LambdaMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LambdaMatch.flix"),
-  new FlixTest("Test.Expression.Ascribe", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ascribe.flix"),
   new FlixTest("Test.Expression.Binary.Arithmetic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"),
   new FlixTest("Test.Expression.Binary.Comparison", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix"),
   new FlixTest("Test.Expression.Binary.Logic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Logic.flix"),
   new FlixTest("Test.Expression.Block", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Block.flix"),
   new FlixTest("Test.Expression.Binary.Bitwise", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix"),
-  new FlixTest("Test.Expression.Cast", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Cast.flix"),
   new FlixTest("Test.Expression.Unit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unit.flix"),
   new FlixTest("Test.Expression.Bool", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Bool.flix"),
   new FlixTest("Test.Expression.Char", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Char.flix"),
@@ -134,14 +132,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix"),
 
   //
-  // References.
-  //
-  new FlixTest("Test.Exp.Reference.Assign", "main/test/flix/Test.Exp.Reference.Assign.flix"),
-  new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix"),
-  new FlixTest("Test.Exp.Reference.Ref.flix", "main/test/flix/Test.Exp.Reference.Ref.flix"),
-  new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
-
-  //
   // Constraints.
   //
   new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix"),
@@ -152,17 +142,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix"),
   new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix"),
   new FlixTest("Test.Expression.FixpointFold", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointFold.flix"),
-
-  //
-  // Interop.
-  //
-  new FlixTest("Test.Expression.Jvm.InvokeConstructor", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeConstructor.flix"),
-  new FlixTest("Test.Expression.Jvm.InvokeMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeMethod.flix"),
-  new FlixTest("Test.Expression.Jvm.InvokeStaticMethod", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.InvokeStaticMethod.flix"),
-  new FlixTest("Test.Expression.Jvm.GetField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetField.flix"),
-  new FlixTest("Test.Expression.Jvm.PutField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutField.flix"),
-  new FlixTest("Test.Expression.Jvm.GetStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.GetStaticField.flix"),
-  new FlixTest("Test.Expression.Jvm.PutStaticField", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Jvm.PutStaticField.flix"),
 
   //
   // Predicates

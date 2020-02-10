@@ -244,7 +244,7 @@ namespace Int8 {
     ///
     pub def toString(x: Int8): String =
         import java.lang.Byte:toString(Int8);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.

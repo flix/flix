@@ -173,9 +173,9 @@ object NamedAst {
 
     case class Universal(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ascribe(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
+    case class Ascribe(exp: NamedAst.Expression, expectedType: Option[NamedAst.Type], expectedEff: Option[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Cast(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
+    case class Cast(exp: NamedAst.Expression, declaredType: Option[NamedAst.Type], declaredEff: Option[NamedAst.Type], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -323,7 +323,7 @@ object NamedAst {
 
     case class Lattice(sym: Symbol.LatSym, loc: SourceLocation) extends NamedAst.Type
 
-    case class Arrow(params: List[NamedAst.Type], ret: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class Arrow(tparams: List[NamedAst.Type], eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 

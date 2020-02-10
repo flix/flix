@@ -859,21 +859,21 @@ object ParsedAst {
       * Ascribe Expression.
       *
       * @param exp the expression.
-      * @param tpe the type.
-      * @param eff the effect.
+      * @param tpe the optional type.
+      * @param eff the optional effect.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Ascribe(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Cast Expression.
       *
       * @param exp the expression.
-      * @param tpe the type.
-      * @param eff the effect.
+      * @param tpe the optional type.
+      * @param eff the optional effect.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Cast(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Try Catch Expression.
@@ -1248,7 +1248,55 @@ object ParsedAst {
     case class Nat(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Arrow Type.
+      * Unary Pure Arrow Type.
+      *
+      * @param tpe1 the argument type.
+      * @param tpe2 the result type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class UnaryPureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Unary Impure Arrow Type.
+      *
+      * @param tpe1 the argument type.
+      * @param tpe2 the result type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class UnaryImpureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Unary Polymorphic Arrow Type.
+      *
+      * @param tpe1 the argument type.
+      * @param eff  the optional effect.
+      * @param tpe2 the result type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, eff: Option[ParsedAst.Type], tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Pure Arrow Type.
+      *
+      * @param sp1     the position of the first character in the type.
+      * @param tparams the arguments types.
+      * @param tresult the result type.
+      * @param sp2     the position of the last character in the type.
+      */
+    case class PureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Impure Arrow Type.
+      *
+      * @param sp1     the position of the first character in the type.
+      * @param tparams the arguments types.
+      * @param tresult the result type.
+      * @param sp2     the position of the last character in the type.
+      */
+    case class ImpureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Effect Polymorphic Arrow Type.
       *
       * @param sp1     the position of the first character in the type.
       * @param tparams the arguments types.
@@ -1256,7 +1304,7 @@ object ParsedAst {
       * @param eff     the optional effect.
       * @param sp2     the position of the last character in the type.
       */
-    case class Arrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], eff: Option[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], eff: Option[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Native Type.

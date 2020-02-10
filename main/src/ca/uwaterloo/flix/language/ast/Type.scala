@@ -107,6 +107,75 @@ sealed trait Type {
 object Type {
 
   /////////////////////////////////////////////////////////////////////////////
+  // Type Constants                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Represents the Unit type.
+    */
+  val Unit: Type = Type.Cst(TypeConstructor.Unit)
+
+  /**
+    * Represents the Bool type.
+    */
+  val Bool: Type = Type.Cst(TypeConstructor.Bool)
+
+  /**
+    * Represents the Char type.
+    */
+  val Char: Type = Type.Cst(TypeConstructor.Char)
+
+  /**
+    * Represents the Float32 type.
+    */
+  val Float32: Type = Type.Cst(TypeConstructor.Float32)
+
+  /**
+    * Represents the Float64 type.
+    */
+  val Float64: Type = Type.Cst(TypeConstructor.Float64)
+
+  /**
+    * Represents the Int8 type.
+    */
+  val Int8: Type = Type.Cst(TypeConstructor.Int8)
+
+  /**
+    * Represents the Int16 type.
+    */
+  val Int16: Type = Type.Cst(TypeConstructor.Int16)
+
+  /**
+    * Represents the Int32 type.
+    */
+  val Int32: Type = Type.Cst(TypeConstructor.Int32)
+
+  /**
+    * Represents the Int64 type.
+    */
+  val Int64: Type = Type.Cst(TypeConstructor.Int64)
+
+  /**
+    * Represents the BigInt type.
+    */
+  val BigInt: Type = Type.Cst(TypeConstructor.BigInt)
+
+  /**
+    * Represents the String type.
+    */
+  val Str: Type = Type.Cst(TypeConstructor.Str)
+
+  /**
+    * Represents the Pure effect. (TRUE in the Boolean algebra.)
+    */
+  val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    */
+  val Impure: Type = Type.Cst(TypeConstructor.Impure)
+
+  /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -245,12 +314,21 @@ object Type {
   /**
     * Constructs the arrow type A ->> B.
     */
-  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Pure)), a), b)
+  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Pure), a), b)
 
   /**
     * Constructs the arrow type A ~>> B.
     */
-  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Impure)), a), b)
+  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
+
+  /**
+    * Constructs the arrow type A_1 ->> ... ->> A_n ->{eff} B.
+    */
+  def mkArrow(as: List[Type], eff: Type, b: Type): Type = {
+    val a = as.last
+    val base = mkArrow(a, eff, b)
+    as.init.foldRight(base)(mkPureArrow)
+  }
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
@@ -265,7 +343,8 @@ object Type {
     */
   // TODO: Split into two: one for pure and one for impure.
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    val arrow = Arrow(as.length + 1, Type.Cst(TypeConstructor.Pure))
+    // TODO: Folding in wrong order?
+    val arrow = Arrow(as.length + 1, Pure)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }

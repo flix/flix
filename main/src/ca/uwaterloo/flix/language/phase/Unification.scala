@@ -26,15 +26,12 @@ import scala.annotation.tailrec
 
 object Unification {
 
-  /**
-    * Represents the Pure effect. (TRUE in the Boolean algebra.)
-    */
-  private val Pure: Type = Type.Cst(TypeConstructor.Pure)
 
   /**
-    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    * Aliases to make the success variable elimination easier to understand.
     */
-  private val Impure: Type = Type.Cst(TypeConstructor.Impure)
+  private val True: Type = Type.Pure
+  private val False: Type = Type.Impure
 
   /**
     * Companion object for the [[Substitution]] class.
@@ -451,7 +448,7 @@ object Unification {
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
+  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
@@ -485,12 +482,6 @@ object Unification {
     }
 
     /**
-      * Aliases to make the success variable elimination easier to understand.
-      */
-    val True = Pure
-    val False = Impure
-
-    /**
       * Performs success variable elimination on the given boolean expression `eff`.
       */
     def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
@@ -502,6 +493,10 @@ object Unification {
         val st = Substitution.singleton(x, rewrite(se(t0), x, se(t1)))
         (st ++ se, cc)
     }
+
+    // Determine if effect checking is enabled.
+    if (flix.options.xnoeffects)
+      return Ok(Substitution.empty)
 
     // The boolean expression we want to show is 0.
     val query = eq(eff1, eff2)
@@ -523,7 +518,7 @@ object Unification {
     //    }
 
     // Determine if unification was successful.
-    if (result != Pure)
+    if (result != Type.Pure)
       Ok(subst)
     else
       Err(UnificationError.MismatchedEffects(eff1, eff2))
@@ -630,6 +625,10 @@ object Unification {
     * Unifies the two given effects `eff1` and `eff2`.
     */
   def unifyEffM(eff1: Type, eff2: Type, loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
+    // Determine if effect checking is enabled.
+    if (flix.options.xnoeffects)
+      return liftM(Type.Pure)
+
     InferMonad((s: Substitution) => {
       val effect1 = s(eff1)
       val effect2 = s(eff2)
@@ -689,9 +688,9 @@ object Unification {
     * Returns the negation of the effect `eff0`.
     */
   private def mkNot(eff0: Type): Type = eff0 match {
-    case Pure => Impure
+    case Type.Pure => Type.Impure
 
-    case Impure => Pure
+    case Type.Impure => Type.Pure
 
     case NOT(x) => x
 
@@ -710,16 +709,16 @@ object Unification {
   @tailrec
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
-    case (Pure, _) => eff2
+    case (Type.Pure, _) => eff2
 
     // x ∧ T => x
-    case (_, Pure) => eff1
+    case (_, Type.Pure) => eff1
 
     // F ∧ x => F
-    case (Impure, _) => Impure
+    case (Type.Impure, _) => Type.Impure
 
     // x ∧ F => F
-    case (_, Impure) => Impure
+    case (_, Type.Impure) => Type.Impure
 
     // x ∧ (x ∧ y) => (x ∧ y)
     case (x1, AND(x2, y)) if x1 == x2 => mkAnd(x1, y)
@@ -740,28 +739,28 @@ object Unification {
     case (OR(x1, _), x2) if x1 == x2 => x1
 
     // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 => Impure
+    case (x1, NOT(x2)) if x1 == x2 => Type.Impure
 
     // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 => Impure
+    case (NOT(x1), x2) if x1 == x2 => Type.Impure
 
     // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 => Impure
+    case (x1, AND(_, NOT(x2))) if x1 == x2 => Type.Impure
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 => Impure
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Type.Impure
 
     // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 => Impure
+    case (x1, NOT(OR(x2, _))) if x1 == x2 => Type.Impure
 
     // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 => Impure
+    case (NOT(OR(x1, _)), x2) if x1 == x2 => Type.Impure
 
     // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 => Impure
+    case (x1, AND(NOT(x2), _)) if x1 == x2 => Type.Impure
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 => Impure
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Type.Impure
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
     case (NOT(x1), OR(x2, y)) if x1 == x2 => mkAnd(mkNot(x1), y)
@@ -785,16 +784,16 @@ object Unification {
   @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
-    case (Pure, _) => Pure
+    case (Type.Pure, _) => Type.Pure
 
     // x ∨ T => T
-    case (_, Pure) => Pure
+    case (_, Type.Pure) => Type.Pure
 
     // F ∨ y => y
-    case (Impure, _) => eff2
+    case (Type.Impure, _) => eff2
 
     // x ∨ F => x
-    case (_, Impure) => eff1
+    case (_, Type.Impure) => eff1
 
     // x ∨ (y ∨ x) => x ∨ y
     case (x1, OR(y, x2)) if x1 == x2 => mkOr(x1, y)
@@ -803,16 +802,16 @@ object Unification {
     case (OR(x1, y), x2) if x1 == x2 => mkOr(x1, y)
 
     // ¬x ∨ x => T
-    case (NOT(x), y) if x == y => Pure
+    case (NOT(x), y) if x == y => Type.Pure
 
     // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y => Pure
+    case (x, NOT(y)) if x == y => Type.Pure
 
     // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y => Pure
+    case (OR(NOT(x), _), y) if x == y => Type.Pure
 
     // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y => Pure
+    case (x, OR(NOT(y), _)) if x == y => Type.Pure
 
     // x ∨ x => x
     case _ if eff1 == eff2 => eff1

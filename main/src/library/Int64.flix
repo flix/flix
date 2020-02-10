@@ -240,7 +240,7 @@ namespace Int64 {
     ///
     pub def toString(x: Int64): String =
         import java.lang.Long:toString(Int64);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
