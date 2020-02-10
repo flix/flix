@@ -6,6 +6,11 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Ascribe.
+  //
+  new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix"),
+
+  //
   // Casts.
   //
   new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix"),

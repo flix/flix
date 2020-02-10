@@ -71,6 +71,7 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
+    flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
     flix.addPath("main/test/flix/Test.Exp.Cast.flix")
 
     flix.addPath("main/test/flix/Test.Exp.Jvm.GetField.flix")

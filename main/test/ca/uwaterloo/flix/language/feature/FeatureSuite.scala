@@ -35,7 +35,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.LetMatchStar", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LetMatchStar.flix"),
   new FlixTest("Test.Pattern.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Pattern.List.flix"),
   new FlixTest("Test.Expression.LambdaMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LambdaMatch.flix"),
-  new FlixTest("Test.Expression.Ascribe", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ascribe.flix"),
   new FlixTest("Test.Expression.Binary.Arithmetic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"),
   new FlixTest("Test.Expression.Binary.Comparison", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix"),
   new FlixTest("Test.Expression.Binary.Logic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Logic.flix"),
