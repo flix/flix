@@ -96,10 +96,8 @@ object BenchmarkCompiler {
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLength.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLoad.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayNew.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySlice.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayStore.flix")
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix")
