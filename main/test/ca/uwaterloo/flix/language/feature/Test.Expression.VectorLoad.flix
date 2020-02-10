@@ -113,13 +113,13 @@ def testVectorLoad37(): Vector[Int, 2] = let x = [|[|2 ; 2|]; 2|]; x[|1|]
 def testVectorLoad38(): List[Int] = let x = [|(1 :: Nil), (2 :: Nil)|]; x[|0|]
 
 @test
-def testVectorLoad39(): Int = let x = [|[1, 2], [3, 4]|]; x[|0|][0]
+def testVectorLoad39(): Int @ Impure = let x = [|[1, 2], [3, 4]|]; x[|0|][0]
 
 @test
 def testVectorLoad40(): (Int, Int) = let x = [|(1, 2), (3, 4)|]; x[|0|]
 
 @test
-def testVectorLoad41(): Option[Int] = let x = [|[Some(1), Some(2), Some(3)], [Some(4), Some(5), None, None]|]; x[|1|][2]
+def testVectorLoad41(): Option[Int] @ Impure = let x = [|[Some(1), Some(2), Some(3)], [Some(4), Some(5), None, None]|]; x[|1|][2]
 
 
 

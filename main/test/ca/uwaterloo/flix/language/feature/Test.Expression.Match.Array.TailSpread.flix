@@ -305,7 +305,7 @@ def matchBigIntArrayTailSpread7(): Bool = match [1ii, 2ii, 3ii, 4ii] {
 }
 
 @test
-def matchBigIntArrayTailSpread8(): Bool = match [1ii, 2ii, 3ii, 4ii] {
+def matchBigIntArrayTailSpread8(): Bool @ Impure = match [1ii, 2ii, 3ii, 4ii] {
     case [1ii, 2ii, ..xs] => xs[1] == 4ii
     case _ => false
 }
@@ -551,7 +551,7 @@ def matchFloat32ArrayTailSpread7(): Bool = match [1.1f32, 2.2f32, 3.3f32, 4.4f32
 }
 
 @test
-def matchFloat32ArrayTailSpread8(): Bool = match [1.1f32, 2.2f32, 3.3f32, 4.4f32] {
+def matchFloat32ArrayTailSpread8(): Bool @ Impure = match [1.1f32, 2.2f32, 3.3f32, 4.4f32] {
     case [1.1f32, 2.2f32, ..xs] => xs[1] == 4.4f32
     case _ => false
 }
@@ -599,7 +599,7 @@ def matchCharArrayTailSpread7(): Bool = match ['1', '2', '3', '4'] {
 }
 
 @test
-def matchCharArrayTailSpread8(): Bool = match ['1', '2', '3', '4'] {
+def matchCharArrayTailSpread8(): Bool @ Impure = match ['1', '2', '3', '4'] {
     case ['1', '2', ..xs] => xs[1] == '4'
     case _ => false
 }
