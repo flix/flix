@@ -77,15 +77,15 @@ object ResolvedAst {
   object Expression {
 
     case class Wild(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression {
-      final def eff: Type = Type.Cst(TypeConstructor.Pure)
+      final def eff: Type = Type.Pure
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression {
-      final def eff: Type = Type.Cst(TypeConstructor.Pure)
+      final def eff: Type = Type.Pure
     }
 
     case class Def(sym: Symbol.DefnSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression {
-      final def eff: Type = Type.Cst(TypeConstructor.Pure)
+      final def eff: Type = Type.Pure
     }
 
     case class Eff(sym: Symbol.EffSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
@@ -97,73 +97,73 @@ object ResolvedAst {
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Unit)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class True(loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class False(loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Bool)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Char)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Float32)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Float64)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Int8)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Int16)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Int32)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Int64)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.BigInt)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression {
       def tpe: Type = Type.Cst(TypeConstructor.Str)
 
-      def eff: Type = Type.Cst(TypeConstructor.Pure)
+      def eff: Type = Type.Pure
     }
 
     case class Apply(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

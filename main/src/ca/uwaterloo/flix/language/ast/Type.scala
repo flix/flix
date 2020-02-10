@@ -107,6 +107,20 @@ sealed trait Type {
 object Type {
 
   /////////////////////////////////////////////////////////////////////////////
+  // Common Type Constants                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Represents the Pure effect. (TRUE in the Boolean algebra.)
+    */
+  val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    */
+  val Impure: Type = Type.Cst(TypeConstructor.Impure)
+
+  /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -245,12 +259,12 @@ object Type {
   /**
     * Constructs the arrow type A ->> B.
     */
-  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Pure)), a), b)
+  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Pure), a), b)
 
   /**
     * Constructs the arrow type A ~>> B.
     */
-  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Type.Cst(TypeConstructor.Impure)), a), b)
+  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
 
   /**
     * Constructs the arrow type A_1 ->> ... ->> A_n ->{eff} B.
@@ -275,7 +289,7 @@ object Type {
   // TODO: Split into two: one for pure and one for impure.
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
     // TODO: Folding in wrong order?
-    val arrow = Arrow(as.length + 1, Type.Cst(TypeConstructor.Pure))
+    val arrow = Arrow(as.length + 1, Pure)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }

@@ -1500,7 +1500,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       ) yield simplify(Type.Apply(tpe1, tpe2))
 
     case NamedAst.Type.Pure(loc) =>
-      Type.Cst(TypeConstructor.Pure).toSuccess
+      Type.Pure.toSuccess
 
     case NamedAst.Type.Impure(loc) =>
       Type.Cst(TypeConstructor.Impure).toSuccess
