@@ -41,7 +41,7 @@ namespace Console {
         pub def readLine(): Option[String] @ Impure =
             import flix.runtime.library.Console:readLine();
             let s = readLine();
-            (if (isNull(s)) None else Some(s)) as Option[String] @ Impure
+            (if (isNull(s)) None else Some(s))
 
     }
 
