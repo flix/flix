@@ -110,7 +110,7 @@ def testVectorstore36(): Unit = let x = [|[|1, 2, 3|]; 3|]; x[|2|] = [|3; 3|]
 def testVectorstore37(): Unit = let x = [|[|2; 2|]; 2|]; x[|1|] = [|1, 1|]
 
 @test
-def testVectorstore38(): Unit = let x = [| [ 1, 2, 3 ], [ 1, 2, 3] |]; x[|1|][1] = 42
+def testVectorstore38(): Unit @ Impure = let x = [| [ 1, 2, 3 ], [ 1, 2, 3] |]; x[|1|][1] = 42
 
 @test
 def testVectorstore39(): Unit = let x = [|[7 :: 10 :: Nil], [7 :: Nil]|]; x[|1|] = [19 :: Nil]

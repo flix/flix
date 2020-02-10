@@ -6,12 +6,17 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Array.
+  //
+  new FlixTest("Test.Exp.ArrayStore", "main/test/flix/Test.Exp.ArrayStore.flix"),
+
+  //
   // Ascribe.
   //
   new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix"),
 
   //
-  // Casts.
+  // Cast.
   //
   new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix"),
 
@@ -27,7 +32,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Jvm.PutStaticField", "main/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
 
   //
-  // References.
+  // Reference.
   //
   new FlixTest("Test.Exp.Reference.Assign", "main/test/flix/Test.Exp.Reference.Assign.flix"),
   new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix"),
