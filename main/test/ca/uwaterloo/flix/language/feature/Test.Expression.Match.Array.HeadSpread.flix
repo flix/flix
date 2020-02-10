@@ -35,7 +35,7 @@ def matchUnitArrayHeadSpread6(): Bool = match [(), (), (), ()] {
 }
 
 @test
-def matchUnitArrayHeadSpread7(): Bool = match [(), (), (), ()] {
+def matchUnitArrayHeadSpread7(): Bool @ Impure = match [(), (), (), ()] {
     case [xs.., (), ()] => xs[0] == ()
     case _ => false
 }
@@ -113,7 +113,7 @@ def matchIntArrayHeadSpread12(): Bool = match [1, 2, 3, 4] {
 }
 
 @test
-def matchIntArrayHeadSpread13(): Bool = match [1, 2, 3, 4] {
+def matchIntArrayHeadSpread13(): Bool @ Impure = match [1, 2, 3, 4] {
     case [xs.., 3, 4] => xs[1] == 2
     case _ => false
 }
@@ -161,7 +161,7 @@ def matchInt8ArrayHeadSpread7(): Bool = match [1i8, 2i8, 3i8, 4i8] {
 }
 
 @test
-def matchInt8ArrayHeadSpread8(): Bool = match [1i8, 2i8, 3i8, 4i8] {
+def matchInt8ArrayHeadSpread8(): Bool @ Impure = match [1i8, 2i8, 3i8, 4i8] {
     case [xs.., 3i8, 4i8] => xs[1] == 2i8
     case _ => false
 }
@@ -209,7 +209,7 @@ def matchInt16ArrayHeadSpread7(): Bool = match [1i16, 2i16, 3i16, 4i16] {
 }
 
 @test
-def matchInt16ArrayHeadSpread8(): Bool = match [1i16, 2i16, 3i16, 4i16] {
+def matchInt16ArrayHeadSpread8(): Bool @ Impure = match [1i16, 2i16, 3i16, 4i16] {
     case [xs.., 3i16, 4i16] => xs[1] == 2i16
     case _ => false
 }
@@ -257,7 +257,7 @@ def matchInt64ArrayHeadSpread7(): Bool = match [1i64, 2i64, 3i64, 4i64] {
 }
 
 @test
-def matchInt64ArrayHeadSpread8(): Bool = match [1i64, 2i64, 3i64, 4i64] {
+def matchInt64ArrayHeadSpread8(): Bool @ Impure = match [1i64, 2i64, 3i64, 4i64] {
     case [xs.., 3i64, 4i64] => xs[1] == 2i64
     case _ => false
 }
@@ -305,7 +305,7 @@ def matchBigIntArrayHeadSpread7(): Bool = match [1ii, 2ii, 3ii, 4ii] {
 }
 
 @test
-def matchBigIntArrayHeadSpread8(): Bool = match [1ii, 2ii, 3ii, 4ii] {
+def matchBigIntArrayHeadSpread8(): Bool @ Impure = match [1ii, 2ii, 3ii, 4ii] {
     case [xs.., 3ii, 4ii] => xs[1] == 2ii
     case _ => false
 }
@@ -353,7 +353,7 @@ def matchStrArrayHeadSpread7(): Bool = match ["one", "two", "three", "four"] {
 }
 
 @test
-def matchStrArrayHeadSpread8(): Bool = match ["one", "two", "three", "four"] {
+def matchStrArrayHeadSpread8(): Bool @ Impure = match ["one", "two", "three", "four"] {
     case [xs.., "three",  "four"] => xs[1] == "two"
     case _ => false
 }
@@ -401,7 +401,7 @@ def matchBoolArrayHeadSpread7(): Bool = match [true, false, false, true] {
 }
 
 @test
-def matchBoolArrayHeadSpread8(): Bool = match [true, false, false, true] {
+def matchBoolArrayHeadSpread8(): Bool @ Impure = match [true, false, false, true] {
     case [xs.., false, true] => xs[1] == false
     case _ => false
 }
@@ -455,7 +455,7 @@ def matchTupleArrayHeadSpread8(): Bool = match [(1, "one"), (2, "two"), (3, "thr
 }
 
 @test
-def matchTupleArrayHeadSpread9(): Bool = match [(1, "one"), (2, "two"), (3, "three"), (4, "four")] {
+def matchTupleArrayHeadSpread9(): Bool @ Impure = match [(1, "one"), (2, "two"), (3, "three"), (4, "four")] {
     case [xs.., (3, "three"), (4, "four")] => xs[1] == (2, "two")
     case _ => false
 }
@@ -503,7 +503,7 @@ def matchFloatArrayHeadSpread7(): Bool = match [1.1, 2.2, 3.3, 4.4] {
 }
 
 @test
-def matchFloatArrayHeadSpread8(): Bool = match [1.1, 2.2, 3.3, 4.4] {
+def matchFloatArrayHeadSpread8(): Bool @ Impure = match [1.1, 2.2, 3.3, 4.4] {
     case [xs.., 3.3, 4.4] => xs[1] == 2.2
     case _ => false
 }
@@ -551,7 +551,7 @@ def matchFloat32ArrayHeadSpread7(): Bool = match [1.1f32, 2.2f32, 3.3f32, 4.4f32
 }
 
 @test
-def matchFloat32ArrayHeadSpread8(): Bool = match [1.1f32, 2.2f32, 3.3f32, 4.4f32] {
+def matchFloat32ArrayHeadSpread8(): Bool @ Impure = match [1.1f32, 2.2f32, 3.3f32, 4.4f32] {
     case [xs.., 3.3f32, 4.4f32] => xs[1] == 2.2f32
     case _ => false
 }
@@ -650,7 +650,7 @@ def matchOptionArrayHeadSpread7(): Bool = match [Some(1), Some(2), None(), Some(
 }
 
 @test
-def matchOptionArrayHeadSpread8(): Bool = match [Some(1), Some(2), None(), Some(42)] {
+def matchOptionArrayHeadSpread8(): Bool @ Impure = match [Some(1), Some(2), None(), Some(42)] {
     case [xs.., None(), Some(42)] => xs[1] == Some(2)
     case _ => false
 }
@@ -698,7 +698,7 @@ def matchResultArrayHeadSpread7(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)]
 }
 
 @test
-def matchResultArrayHeadSpread8(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)] {
+def matchResultArrayHeadSpread8(): Bool @ Impure = match [Ok(42), Err(23), Ok(1), Err(2)] {
     case [xs.., Ok(1), Err(2)] => xs[1] == Err(23)
     case _ => false
 }
