@@ -2270,6 +2270,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val sp2 = SourcePosition.Unknown
     val loc = SourceLocation.Generated
 
+    // Useful types.
+    val StringType = WeededAst.Type.Ambiguous(Name.mkQName("String"), loc)
+
     // Documentation, annotations, and modifiers for the generated main.
     val doc = Ast.Doc(Nil, loc)
     val ann = Ast.Annotations.Empty
@@ -2287,15 +2290,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
     val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), WeededAst.Type.Pure(loc), loc)
     val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
+    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, StringType, WeededAst.Type.Pure(loc), loc)
 
     // The type and effect of the generated main.
     val argType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
-    val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
+    val resultType = StringType
     val tpe = mkArrow(argType, WeededAst.Type.Pure(loc), resultType, loc)
     val eff = WeededAst.Type.Pure(loc)
 
     // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
     WeededAst.Root(List(decl), SourceLocation.Unknown)
