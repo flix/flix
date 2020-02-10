@@ -166,15 +166,14 @@ namespace Path {
     /// Writes all lines in `l` to the writer `w`.
     ///
     // TODO: What about exceptions?
-    def writeAll(l: List[String], w: ##java.io.PrintWriter): Unit @ Impure = ??? as Unit @ Impure
-    // TODO: Effect inference is broken
-//        import java.io.PrintWriter.println(String);
-//        match l {
-//            case Nil => ()
-//            case x :: xs =>
-//                println(w, x);
-//                writeAll(xs, w)
-//        }
+    def writeAll(l: List[String], w: ##java.io.PrintWriter): Unit @ Impure =
+        import java.io.PrintWriter.println(String);
+        match l {
+            case Nil => ()
+            case x :: xs =>
+                println(w, x);
+                writeAll(xs, w)
+        }
 
     ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.
