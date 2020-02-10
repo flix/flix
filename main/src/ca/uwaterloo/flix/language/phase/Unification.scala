@@ -448,7 +448,7 @@ object Unification {
   /**
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
-  def unifyEffects(eff1: Type, eff2: Type): Result[Substitution, UnificationError] = {
+  def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
@@ -493,6 +493,10 @@ object Unification {
         val st = Substitution.singleton(x, rewrite(se(t0), x, se(t1)))
         (st ++ se, cc)
     }
+
+    // Determine if effect checking is enabled.
+    if (flix.options.xnoeffects)
+      return Ok(Substitution.empty)
 
     // The boolean expression we want to show is 0.
     val query = eq(eff1, eff2)
