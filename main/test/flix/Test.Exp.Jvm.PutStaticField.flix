@@ -1,4 +1,4 @@
-namespace Test/Expression/Jvm/PutStaticField {
+namespace Test/Exp/Jvm/PutStaticField {
 
     @test
     def testPutStaticBoolField01(): Bool @ Impure =

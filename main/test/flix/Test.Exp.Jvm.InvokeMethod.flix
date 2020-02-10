@@ -1,4 +1,4 @@
-namespace Test/Expression/Jvm/InvokeMethod {
+namespace Test/Exp/Jvm/InvokeMethod {
 
     @test
     def testInvokeMethod01(): Bool @ Impure =

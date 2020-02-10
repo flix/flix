@@ -1,4 +1,4 @@
-namespace Test/Expression/Jvm/PutField {
+namespace Test/Exp/Jvm/PutField {
 
     @test
     def testPutBoolField01(): Bool @ Impure =

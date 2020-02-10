@@ -1,4 +1,4 @@
-namespace Test/Expression/Jvm/GetField {
+namespace Test/Exp/Jvm/GetField {
 
     @test
     def testGetBoolField01(): Bool @ Impure =

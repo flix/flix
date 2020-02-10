@@ -1,4 +1,4 @@
-namespace Test/Expression/Jvm/InvokeStaticMethod {
+namespace Test/Exp/Jvm/InvokeStaticMethod {
 
     @test
     def testInvokeStaticMethod01(): Bool @ Impure =

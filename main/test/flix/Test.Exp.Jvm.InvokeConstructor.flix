@@ -1,4 +1,4 @@
-namespace Test/Expression/Jvm/InvokeConstructor {
+namespace Test/Exp/Jvm/InvokeConstructor {
 
     @test
     def testInvokeConstructor01(): ##java.lang.Boolean @ Impure =
