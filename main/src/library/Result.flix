@@ -82,7 +82,7 @@ namespace Result {
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def map(f: t1 -> t2, r: Result[t1, e]): Result[t2, e] = match r {
+    pub def map(f: t1 ->{f} t2, r: Result[t1, e]): Result[t2, e] @ f = match r {
         case Ok(v) => Ok(f(v))
         case Err(w) => Err(w)
     }

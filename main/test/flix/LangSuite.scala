@@ -8,6 +8,7 @@ class LangSuite extends Suites(
   //
   // Array.
   //
+  new FlixTest("Test.Exp.ArrayLoad", "main/test/flix/Test.Exp.ArrayLoad.flix"),
   new FlixTest("Test.Exp.ArrayStore", "main/test/flix/Test.Exp.ArrayStore.flix"),
 
   //
