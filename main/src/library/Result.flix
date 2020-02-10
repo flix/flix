@@ -90,7 +90,7 @@ namespace Result {
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def flatMap(f: t1 ->{f} Result[t2, e], r: Result[t1, e]): Result[t2, e] @ f = match r { // TODO: Effects
+    pub def flatMap(f: t1 ->{f} Result[t2, e], r: Result[t1, e]): Result[t2, e] @ f = match r {
         case Ok(v) => f(v)
         case Err(w) => Err(w)
     }
