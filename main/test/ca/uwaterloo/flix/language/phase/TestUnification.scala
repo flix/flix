@@ -190,7 +190,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Int16") {
-    val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Int16), Type.Cst(TypeConstructor.Int16))
+    val result = Unification.unifyTypes(Type.Int16, Type.Int16)
     assert(isOk(result))
   }
 
@@ -200,7 +200,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.Int64") {
-    val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Int64), Type.Cst(TypeConstructor.Int64))
+    val result = Unification.unifyTypes(Type.Int64, Type.Int64)
     assert(isOk(result))
   }
 

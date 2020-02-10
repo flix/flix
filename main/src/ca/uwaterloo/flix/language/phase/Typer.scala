@@ -419,13 +419,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         liftM((Type.Int8, Type.Pure))
 
       case ResolvedAst.Expression.Int16(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int16), Type.Pure))
+        liftM((Type.Int16, Type.Pure))
 
       case ResolvedAst.Expression.Int32(lit, loc) =>
         liftM((Type.Cst(TypeConstructor.Int32), Type.Pure))
 
       case ResolvedAst.Expression.Int64(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Int64), Type.Pure))
+        liftM((Type.Int64, Type.Pure))
 
       case ResolvedAst.Expression.BigInt(lit, loc) =>
         liftM((Type.Cst(TypeConstructor.BigInt), Type.Pure))
@@ -1213,7 +1213,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         for {
           (tpe, eff) <- visitExp(exp)
-          durationType <- unifyTypM(tpe, Type.Cst(TypeConstructor.Int64), loc)
+          durationType <- unifyTypM(tpe, Type.Int64, loc)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
@@ -1709,9 +1709,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Float32(i, loc) => liftM(Type.Float32)
       case ResolvedAst.Pattern.Float64(i, loc) => liftM(Type.Float64)
       case ResolvedAst.Pattern.Int8(i, loc) => liftM(Type.Int8)
-      case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Cst(TypeConstructor.Int16))
+      case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
       case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Cst(TypeConstructor.Int32))
-      case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Cst(TypeConstructor.Int64))
+      case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
       case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.Cst(TypeConstructor.BigInt))
       case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Cst(TypeConstructor.Str))
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
@@ -2043,13 +2043,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       Type.Int8
     }
     else if (c == java.lang.Short.TYPE) {
-      Type.Cst(TypeConstructor.Int16)
+      Type.Int16
     }
     else if (c == java.lang.Integer.TYPE) {
       Type.Cst(TypeConstructor.Int32)
     }
     else if (c == java.lang.Long.TYPE) {
-      Type.Cst(TypeConstructor.Int64)
+      Type.Int64
     }
     else if (c == java.lang.Character.TYPE) {
       Type.Char

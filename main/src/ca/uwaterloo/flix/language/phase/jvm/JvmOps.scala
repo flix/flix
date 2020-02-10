@@ -815,9 +815,9 @@ object JvmOps {
     case MonoType.Float32 => Type.Float32
     case MonoType.Float64 => Type.Float64
     case MonoType.Int8 => Type.Int8
-    case MonoType.Int16 => Type.Cst(TypeConstructor.Int16)
+    case MonoType.Int16 => Type.Int16
     case MonoType.Int32 => Type.Cst(TypeConstructor.Int32)
-    case MonoType.Int64 => Type.Cst(TypeConstructor.Int64)
+    case MonoType.Int64 => Type.Int64
     case MonoType.BigInt => Type.Cst(TypeConstructor.BigInt)
     case MonoType.Str => Type.Cst(TypeConstructor.Str)
     case MonoType.Array(elm) => Type.mkApply(Type.Cst(TypeConstructor.Array), hackMonoType2Type(elm) :: Nil)

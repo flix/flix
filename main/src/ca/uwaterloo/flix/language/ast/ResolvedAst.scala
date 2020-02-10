@@ -137,7 +137,7 @@ object ResolvedAst {
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Int16)
+      def tpe: Type = Type.Int16
 
       def eff: Type = Type.Pure
     }
@@ -149,7 +149,7 @@ object ResolvedAst {
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Int64)
+      def tpe: Type = Type.Int64
 
       def eff: Type = Type.Pure
     }

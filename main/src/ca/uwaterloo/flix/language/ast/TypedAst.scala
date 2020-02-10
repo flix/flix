@@ -108,7 +108,7 @@ object TypedAst {
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Cst(TypeConstructor.Int16)
+      final def tpe: Type = Type.Int16
 
       final def eff: Type = Type.Pure
     }
@@ -120,7 +120,7 @@ object TypedAst {
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
-      final def tpe: Type = Type.Cst(TypeConstructor.Int64)
+      final def tpe: Type = Type.Int64
 
       final def eff: Type = Type.Pure
     }
@@ -316,7 +316,7 @@ object TypedAst {
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Cst(TypeConstructor.Int16)
+      def tpe: Type = Type.Int16
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Pattern {
@@ -324,7 +324,7 @@ object TypedAst {
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Cst(TypeConstructor.Int64)
+      def tpe: Type = Type.Int64
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Pattern {
