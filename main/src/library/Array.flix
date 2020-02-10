@@ -335,23 +335,10 @@ namespace Array {
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
     pub def patch(i: Int32, n: Int32, a: Array[a], b: Array[a]): Array[a] =
-        let len = length(b);
-        let c = slice(b, 0, len);
-        if (n <= 0)
-            c
-        else {
-            let f = {(j,k) -> if (j < 0 || j >= len) () else c[i+j] = a[k] };
-            patchHelper(f, 0, i, i+n);
-            c
-        }
-
-    def patchHelper(f: (Int32, Int32) -> Unit, j: Int32, b: Int32, e: Int32): Unit =
-        if (b >= e)
-            ()
-        else {
-            f(b, j);
-            patchHelper(f, j+1, b+1, e)
-        }
+        let len1 = length(a);
+        let size = if (n > len1) len1 else n;
+        let sub = slice(a, 0, size);
+        updates(i, sub, b)
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
@@ -1021,6 +1008,16 @@ namespace Array {
             f(a[i], i);
             iterWithIndexHelper(f, a, len, i + 1)
         }
+
+    ///
+    /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
+    ///
+    /// Returns a copy of `a` if `i < 0` or `i > length(xs)-1`.
+    ///
+    pub def updates(i: Int32, sub: Array[a], a: Array[a]): Array[a] =
+        let end = i + length(sub);
+        let f = { ix -> if (ix >= i && ix < end) sub[ix-i] else a[ix]};
+        init(f, length(a))
 
     ///
     /// Helper for `sameElements`.

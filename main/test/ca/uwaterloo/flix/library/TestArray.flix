@@ -2603,6 +2603,151 @@ def init205(): Bool =
     Array.length(a) == 50 && Array.length(b) == 50
 
 /////////////////////////////////////////////////////////////////////////////
+// updates                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def updates01(): Bool =
+     let a = Array.updates(0, []: Array[Int32], []: Array[Int32]);
+     Array.sameElements(a, []: Array[Int32])
+
+@test
+def updates02(): Bool =
+    let a = Array.updates(0, [1,2], []);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def updates03(): Bool =
+    let a = Array.updates(0, [], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updates04(): Bool =
+    let a = Array.updates(-3, [1,2,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updates05(): Bool =
+    let a = Array.updates(2, [1,2,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updates06(): Bool =
+    let a = Array.updates(0, [], [1]);
+    Array.sameElements(a, [1])
+
+@test
+def updates07(): Bool =
+    let a = Array.updates(1, [2], [1]);
+    Array.sameElements(a, [1])
+
+@test
+def updates08(): Bool =
+    let a = Array.updates(0, [2], [1]);
+    Array.sameElements(a, [2])
+
+@test
+def updates09(): Bool =
+    let a = Array.updates(0, [2,4], [1]);
+    Array.sameElements(a, [2])
+
+@test
+def updates10(): Bool =
+    let a = Array.updates(-1, [2,4], [1]);
+    Array.sameElements(a, [4])
+
+@test
+def updates11(): Bool =
+    let a = Array.updates(-1, [3,4], [1,2]);
+    Array.sameElements(a, [4,2])
+
+@test
+def updates12(): Bool =
+    let a = Array.updates(1, [3,4], [1,2]);
+    Array.sameElements(a, [1,3])
+
+@test
+def updates13(): Bool =
+    let a = Array.updates(-2, [3,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updates14(): Bool =
+    let a = Array.updates(2, [3,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updates15(): Bool =
+    let a = Array.updates(1, [3], [1,2]);
+    Array.sameElements(a, [1,3])
+
+@test
+def updates16(): Bool =
+    let a = Array.updates(0, [3,4], [1,2]);
+    Array.sameElements(a, [3,4])
+
+@test
+def updates17(): Bool =
+    let a = Array.updates(0, [4], [1, 2, 3]);
+    Array.sameElements(a, [4, 2, 3])
+
+@test
+def updates18(): Bool =
+    let a = Array.updates(1, [4], [1, 2, 3]);
+    Array.sameElements(a, [1, 4, 3])
+
+@test
+def updates19(): Bool =
+    let a = Array.updates(2, [4], [1, 2, 3]);
+    Array.sameElements(a, [1, 2, 4])
+
+@test
+def updates20(): Bool =
+    let a = Array.updates(0, [4, 5], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 3])
+
+@test
+def updates21(): Bool =
+    let a = Array.updates(1, [4, 5], [1, 2, 3]);
+    Array.sameElements(a, [1, 4, 5])
+
+@test
+def updates22(): Bool =
+    let a = Array.updates(-1, [4, 5, 6], [1, 2, 3]);
+    Array.sameElements(a, [5, 6, 3])
+
+@test
+def updates23(): Bool =
+    let a = Array.updates(0, [4, 5, 6], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 6])
+
+@test
+def updates24(): Bool =
+    let a = Array.updates(2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
+
+@test
+def updates25(): Bool =
+    let a = Array.updates(-2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
+
+@test
+def updates26(): Bool =
+    let a = Array.updates(4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
+
+@test
+def updates27(): Bool =
+    let a = Array.updates(4, [14, 15], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
+
+@test
+def updates28(): Bool =
+    let a = Array.updates(-1, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
+
+
+/////////////////////////////////////////////////////////////////////////////
 // sameElements                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2725,6 +2870,8 @@ def iterWithIndex05(): Bool =
     Array.iterWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTTT"
 
+
+
 /////////////////////////////////////////////////////////////////////////////
 // mapInPlace                                                              //
 /////////////////////////////////////////////////////////////////////////////
@@ -2751,12 +2898,6 @@ def mapInPlace04(): Bool =
     let a = [0,1,2];
     Array.mapInPlace(x -> x+1, a);
     Array.sameElements(a, [1,2,3])
-
-
-
-
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2797,10 +2938,6 @@ def reverseInPlace06(): Bool =
     let a = [1,2,3,4];
     Array.reverseInPlace(a);
     Array.sameElements(a, [4,3,2,1])
-
-
-
-
 
 
 
