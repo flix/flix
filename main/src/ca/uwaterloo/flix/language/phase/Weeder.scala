@@ -1150,7 +1150,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         e <- visitExp(exp)
         eff <- visitEff(effOpt)
       } yield {
-        WeededAst.Expression.Ascribe(e, visitType(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
+        WeededAst.Expression.Ascribe(e, Some(visitType(tpe)), Some(eff), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
       }
 
     case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
@@ -1158,7 +1158,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         e <- visitExp(exp)
         eff <- visitEff(effOpt)
       } yield {
-        WeededAst.Expression.Cast(e, visitType(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
+        WeededAst.Expression.Cast(e, Some(visitType(tpe)), Some(eff), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
       }
 
     case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
@@ -2015,7 +2015,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = tpe0 match {
     case None => exp0
-    case Some(t) => WeededAst.Expression.Ascribe(exp0, visitType(t), WeededAst.Type.Pure(exp0.loc), exp0.loc) // TODO: Should the effect param be optional?
+    case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(visitType(t)), Some(WeededAst.Type.Pure(exp0.loc)), exp0.loc) // TODO: Should the effect param be optional?
   }
 
   /**
@@ -2288,9 +2288,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
-    val castedExp = WeededAst.Expression.Cast(outerExp, WeededAst.Type.Native("java.lang.Object", loc), WeededAst.Type.Pure(loc), loc)
+    val castedExp = WeededAst.Expression.Cast(outerExp, Some(WeededAst.Type.Native("java.lang.Object", loc)), Some(WeededAst.Type.Pure(loc)), loc)
     val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
-    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, StringType, WeededAst.Type.Pure(loc), loc)
+    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, Some(StringType), Some(WeededAst.Type.Pure(loc)), loc)
 
     // The type and effect of the generated main.
     val argType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)

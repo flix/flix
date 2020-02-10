@@ -689,19 +689,37 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Universal(fp, e, evar, loc)
 
-        case NamedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-            t <- lookupType(tpe, ns0, prog0)
-            f <- lookupType(eff, ns0, prog0)
-          } yield ResolvedAst.Expression.Ascribe(e, t, f, loc)
+        case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, tvar, evar, loc) =>
+          val expectedTypVal = expectedType match {
+            case None => (None: Option[Type]).toSuccess
+            case Some(t) => mapN(lookupType(t, ns0, prog0))(x => Some(x))
+          }
+          val expectedEffVal = expectedEff match {
+            case None => (None: Option[Type]).toSuccess
+            case Some(f) => mapN(lookupType(f, ns0, prog0))(x => Some(x))
+          }
 
-        case NamedAst.Expression.Cast(exp, tpe, eff, loc) =>
           for {
             e <- visit(exp, tenv0)
-            t <- lookupType(tpe, ns0, prog0)
-            f <- lookupType(eff, ns0, prog0)
-          } yield ResolvedAst.Expression.Cast(e, t, f, loc)
+            t <- expectedTypVal
+            f <- expectedEffVal
+          } yield ResolvedAst.Expression.Ascribe(e, t, f, tvar, evar, loc)
+
+        case NamedAst.Expression.Cast(exp, declaredType, declaredEff, tvar, evar, loc) =>
+          val declaredTypVal = declaredType match {
+            case None => (None: Option[Type]).toSuccess
+            case Some(t) => mapN(lookupType(t, ns0, prog0))(x => Some(x))
+          }
+          val declaredEffVal = declaredEff match {
+            case None => (None: Option[Type]).toSuccess
+            case Some(f) => mapN(lookupType(f, ns0, prog0))(x => Some(x))
+          }
+
+          for {
+            e <- visit(exp, tenv0)
+            t <- declaredTypVal
+            f <- declaredEffVal
+          } yield ResolvedAst.Expression.Cast(e, t, f, tvar, evar, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, tpe, evar, loc) =>
           val rulesVal = traverse(rules) {

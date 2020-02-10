@@ -868,14 +868,34 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
 
-    case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0), visitType(eff, tenv0)) {
-        case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, loc)
+    case WeededAst.Expression.Ascribe(exp, expectedType, expectedEff, loc) =>
+      val expVal = visitExp(exp, env0, tenv0)
+      val expectedTypVal = expectedType match {
+        case None => (None: Option[NamedAst.Type]).toSuccess
+        case Some(t) => mapN(visitType(t, tenv0))(x => Some(x))
+      }
+      val expectedEffVal = expectedEff match {
+        case None => (None: Option[NamedAst.Type]).toSuccess
+        case Some(f) => mapN(visitType(f, tenv0))(x => Some(x))
       }
 
-    case WeededAst.Expression.Cast(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0), visitType(eff, tenv0)) {
-        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, loc)
+      mapN(expVal, expectedTypVal, expectedEffVal) {
+        case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
+      val expVal = visitExp(exp, env0, tenv0)
+      val declaredTypVal = declaredType match {
+        case None => (None: Option[NamedAst.Type]).toSuccess
+        case Some(t) => mapN(visitType(t, tenv0))(x => Some(x))
+      }
+      val declaredEffVal = declaredEff match {
+        case None => (None: Option[NamedAst.Type]).toSuccess
+        case Some(f) => mapN(visitType(f, tenv0))(x => Some(x))
+      }
+
+      mapN(expVal, declaredTypVal, declaredEffVal) {
+        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, Type.freshTypeVar(), Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>

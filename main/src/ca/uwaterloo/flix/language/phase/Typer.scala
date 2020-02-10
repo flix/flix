@@ -1013,19 +1013,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, Type.Pure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, loc) =>
+      case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, evar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         for {
-          (actualType, actualEff) <- visitExp(exp)
-          resultTyp <- unifyTypM(actualType, expectedTyp, loc)
-          resultEff <- unifyEffM(actualEff, expectedEff, loc)
+          (actualTyp, actualEff) <- visitExp(exp)
+          resultTyp <- unifyTypM(tvar, actualTyp, expectedTyp.getOrElse(tvar), loc)
+          resultEff <- unifyEffM(evar, actualEff, expectedEff.getOrElse(evar), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, loc) =>
-        // An cast expression is unsound; the type system assumes the declared type is correct.
+      case ResolvedAst.Expression.Cast(exp, declaredTyp, declaredEff, tvar, evar, loc) =>
+        // A cast expression is unsound; the type system assumes the declared type is correct.
         for {
-          actualType <- visitExp(exp)
-        } yield (declaredTyp, declaredEff)
+          (actualTyp, actualEff) <- visitExp(exp)
+          resultTyp <- unifyTypM(tvar, declaredTyp.getOrElse(actualTyp), loc)
+          resultEff <- unifyEffM(evar, declaredEff.getOrElse(actualEff), loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.TryCatch(exp, rules, tvar, evar, loc) =>
         val rulesType = rules map {
@@ -1551,13 +1553,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Universal(visitParam(fparam), e, subst0(evar), loc)
 
-      case ResolvedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
+      case ResolvedAst.Expression.Ascribe(exp, _, _, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Ascribe(e, tpe, subst0(eff), loc)
+        TypedAst.Expression.Ascribe(e, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.Cast(exp, tpe, eff, loc) =>
+      case ResolvedAst.Expression.Cast(exp, _, _, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Cast(e, tpe, subst0(eff), loc)
+        TypedAst.Expression.Cast(e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.TryCatch(exp, rules, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
