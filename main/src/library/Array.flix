@@ -70,27 +70,13 @@ namespace Array {
     pub def append(a: Array[a], b: Array[b]): Array[a] =
         let len1 = length(a);
         let len2 = length(b);
-        if (len2 == 0)
-            slice(a, 0, len1)
-        else
-            if (len1 == 0)
-                slice(b, 0, len2)
-            else {
-                let c = new(b[0], len1 + len2);
-                let j = appendHelper(a, c, 0, 0);
-                let _ = appendHelper(b, c, 0, j);
-                c
-            }
-
-    ///
-    /// Helper function for `append`.
-    ///
-    def appendHelper(a: Array[a], c: Array[a], i: Int32, j: Int32): Int32 =
-        if (i >= length(a))
-            j
+        if (len1 == 0)
+            slice(b, 0, len2)
         else {
-            let _ = c[j] = a[i];
-            appendHelper(a, c, i+1, j+1)
+            let ans = new(a[0], len1 + len2);
+            updateSequenceInPlace(0, a, ans);
+            updateSequenceInPlace(len1, b, ans);
+            ans
         }
 
     ///
@@ -257,7 +243,6 @@ namespace Array {
     pub def flatMap(f: a -> Array[b], a: Array[a]): Array[b] =
         let len = length(a);
         init(i -> f(a[i]), len) |> flatten
-
 
     ///
     /// Returns the reverse of `a`.
@@ -533,10 +518,10 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def reduceLeft(f: (a, a) -> a, a: Array[a]): Option[a] =
-        if (length(a) > 0)
-            Some(reduceLeftHelper(f, a, a[0], 1))
-        else
+        if (length(a) == 0)
             None
+        else
+            Some(reduceLeftHelper(f, a, a[0], 1))
 
     ///
     /// Helper function for `reduceLeft`.
@@ -553,12 +538,13 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a, a: Array[a]): Option[a] =
-        if (length(a) > 0)
+        if (length(a) == 0)
+            None
+        else {
             let end = length(a) - 1;
             let ac = a[end];
             Some(reduceRightHelper(f, a, ac, end-1))
-        else
-            None
+        }
 
     ///
     /// Helper function for `reduceRight`.
@@ -867,7 +853,8 @@ namespace Array {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(a: Array[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
+    pub def toMap(a: Array[(a, b)]): Map[a, b] =
+        foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
 
     ///
@@ -916,7 +903,6 @@ namespace Array {
             -1
         else
             if (f(a[i])) i else findIndexOfRightHelper(f, a, i - 1)
-
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
