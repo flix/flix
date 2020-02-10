@@ -121,7 +121,7 @@ object Type {
   val Bool: Type = Type.Cst(TypeConstructor.Bool)
 
   /**
-    * Represents the Bool type.
+    * Represents the Char type.
     */
   val Char: Type = Type.Cst(TypeConstructor.Char)
 
