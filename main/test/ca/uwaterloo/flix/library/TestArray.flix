@@ -32,13 +32,13 @@ def testGet02(): Bool = Array.get([1, 2, 3], 1) == 2
 def testGet03(): Bool = Array.get([1, 2, 3], 2) == 3
 
 @test
-def testPut01(): Bool = Array.put([1], 0, 42)[0] == 42
+def testPut01(): Bool @ Impure = Array.put([1], 0, 42)[0] == 42
 
 @test
-def testPut02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
+def testPut02(): Bool @ Impure = Array.put([1, 2], 1, 42)[1] == 42
 
 @test
-def testPut03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
+def testPut03(): Bool @ Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
 
 @test
 def testLength01(): Bool = Array.length([]) == 0

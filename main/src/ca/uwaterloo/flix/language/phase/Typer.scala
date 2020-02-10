@@ -769,7 +769,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (tpe2, eff2) <- visitExp(exp2)
           arrayType <- unifyTypM(tpe1, mkArray(tvar), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
-          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (tvar, resultEff)
 
       case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) => // TODO: Effects
@@ -786,22 +786,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, evar, loc) =>
         //
-        //  exp1 : Array[t]    exp2 : Int    exp3 : t
-        //  -----------------------------------------
-        //  exp1[exp2] = exp3 : Unit
+        //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : t @ _
+        //  ---------------------------------------------------
+        //  exp1[exp2] = exp3 : Unit @ Impure
         //
-        val elementType = Type.freshTypeVar()
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
-          (tpe3, eff3) <- visitExp(exp3)
-          arrayType <- unifyTypM(tpe1, mkArray(elementType), loc)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
+          (tpe3, _) <- visitExp(exp3)
+          arrayType <- unifyTypM(tpe1, mkArray(tpe3), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
-          elementType <- unifyTypM(tpe3, elementType, loc)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, evar, loc) => // TODO: Effects
