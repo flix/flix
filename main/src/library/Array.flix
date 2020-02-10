@@ -338,7 +338,7 @@ namespace Array {
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
         let sub = slice(a, 0, size);
-        updates(i, sub, b)
+        updateSequence(i, sub, b)
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
@@ -354,6 +354,13 @@ namespace Array {
             iterWithIndex(f, a);
             b
         }
+
+    ///
+    /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
+    ///
+    pub def intercalate(sep: Array[a], arrs: Array[Array[a]]): Array[a] =
+        let f = { (ac,a1) ->  let (i,a0) = ac; if (i == 0) (1, a1) else (i+1, append(a0, append(sep, a1))) };
+        foldLeft(f, (0,[]), arrs) |> snd
 
     ///
     /// Returns the transpose of `a`.
@@ -1012,9 +1019,7 @@ namespace Array {
     ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
-    /// Returns a copy of `a` if `i < 0` or `i > length(xs)-1`.
-    ///
-    pub def updates(i: Int32, sub: Array[a], a: Array[a]): Array[a] =
+    pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] =
         let end = i + length(sub);
         let f = { ix -> if (ix >= i && ix < end) sub[ix-i] else a[ix]};
         init(f, length(a))
@@ -1075,6 +1080,18 @@ namespace Array {
         mapInPlace(e -> if (e == x) y else e, a)
 
     ///
+    /// Update `a` with the elements starting at index `i` replaced by `sub`.
+    ///
+    pub def updateSequenceInPlace(i: Int32, sub: Array[a], a: Array[a]): Unit =
+        let end = i + length(sub);
+        let f = { (_,ix) ->
+            if (ix >= i && ix < end)
+                put(a, ix, sub[ix-i])
+            else ()
+        };
+        iterWithIndex(f, a)
+
+    ///
     /// Render the array `a` as a String. Elements are rendered with the
     /// function `f` and seperated with the string `sep`.
     ///
@@ -1089,6 +1106,5 @@ namespace Array {
             };
         iterWithIndex(step, a);
         StringBuilder.toString(sb)
-
 
 }
