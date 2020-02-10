@@ -28,7 +28,7 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[i]`.
     ///
-    pub def get(a: Array[a], i: Int): a = a[i]
+    pub def get(a: Array[a], i: Int): a @ Impure = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
@@ -52,12 +52,12 @@ namespace Array {
     ///
     /// Returns the array `a` as a list.
     ///
-    pub def toList(a: Array[a]): List[a] = toListHelper(a, 0)
+    pub def toList(a: Array[a]): List[a] @ Impure = toListHelper(a, 0)
 
     ///
     /// Helper for toList.
     ///
-    def toListHelper(a: Array[a], i: Int): List[a] =
+    def toListHelper(a: Array[a], i: Int): List[a] @ Impure =
         if (i == length(a))
             Nil
         else

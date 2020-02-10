@@ -180,7 +180,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a -> b, xs: List[a]): List[b] = match xs {
+    pub def map(f: a ->{e} b, xs: List[a]): List[b] @ e = match xs {
         case Nil => Nil
         case x :: rs => f(x) :: map(f, rs)
     }

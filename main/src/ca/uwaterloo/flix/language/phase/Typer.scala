@@ -758,18 +758,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff1, eff2, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
         //
-        //  exp1 : Array[t]    exp2: Int
-        //  ----------------------------
-        //  exp1[exp2] : t
+        //  exp1 : Array[t] @ _   exp2: Int @ _
+        //  -----------------------------------
+        //  exp1[exp2] : t @ Impure
         //
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
           arrayType <- unifyTypM(tpe1, mkArray(tvar), loc)
           indexType <- unifyTypM(tpe2, Type.Int32, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (tvar, resultEff)
 
       case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) => // TODO: Effects
