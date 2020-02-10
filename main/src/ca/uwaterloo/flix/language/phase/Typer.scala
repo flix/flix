@@ -264,11 +264,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // TODO: Some duplication
     val argumentTypes = defn0.fparams.map(_.tpe).map(openSchemaType)
 
+    // TODO: Very ugly hack.
+    val expectedEff = defn0.exp match {
+      case ResolvedAst.Expression.Lambda(_, _, _, _, _) => Type.Cst(TypeConstructor.Pure)
+      case _ => defn0.eff
+    }
+
     // TODO: Use resultEff
     val result = for {
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, program)
-      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, defn0.eff, inferredTyp), defn0.loc)
-      //unifiedEff <- unifyEffM(defn0.eff, inferredEff, defn0.loc) //  TODO: use resultEff
+      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
     } yield unifiedTyp
 
     // TODO: See if this can be rewritten nicer
@@ -1039,18 +1044,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, classType, loc)
-          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.InvokeMethod(method, exp, args, tvar, evar, loc) =>
         val classType = getFlixType(method.getDeclaringClass)
         val returnType = getFlixType(method.getReturnType)
         for {
-          (baseTyp, baseEff) <- visitExp(exp)
+          (baseTyp, _) <- visitExp(exp)
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)
-          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.InvokeStaticMethod(method, args, tvar, evar, loc) =>
@@ -1058,7 +1063,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           argTypesAndEffects <- seqM(args.map(visitExp))
           resultTyp <- unifyTypM(tvar, returnType, loc)
-          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.GetField(field, exp, tvar, evar, loc) =>
@@ -1068,7 +1073,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (baseTyp, _) <- visitExp(exp)
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           resultTyp <- unifyTypM(tvar, fieldType, loc)
-          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.PutField(field, exp1, exp2, tvar, evar, loc) =>
@@ -1080,21 +1085,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           objectTyp <- unifyTypM(baseTyp, classType, loc)
           valueTyp <- unifyTypM(valueType, fieldType, loc)
           resultTyp <- unifyTypM(tvar, UnitType, loc)
-          resultEff <- unifyEffM(evar, Pure, loc) // TODO: Effects
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.GetStaticField(field, tvar, evar, loc) =>
         val fieldType = getFlixType(field.getType)
         for {
           resultTyp <- unifyTypM(tvar, fieldType, loc)
-        } yield (resultTyp, evar)
+          resultEff <- unifyEffM(evar, Impure, loc)
+        } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.PutStaticField(field, exp, tvar, evar, loc) =>
         for {
-          (valueTyp, valueEff) <- visitExp(exp)
+          (valueTyp, _) <- visitExp(exp)
           fieldTyp <- unifyTypM(getFlixType(field.getType), valueTyp, loc)
           resultTyp <- unifyTypM(tvar, UnitType, loc)
-          resultEff <- unifyEffM(evar, valueEff, loc)
+          resultEff <- unifyEffM(evar, Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) => // TODO: Effects

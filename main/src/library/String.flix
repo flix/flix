@@ -20,21 +20,21 @@ namespace String {
     ///
     pub def charAt(i: Int, s: String): Char =
         import java.lang.String.charAt(Int32);
-        s.charAt(i)
+        s.charAt(i) as Char @ Pure
 
     ///
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
         import java.lang.String.concat(String);
-        s1.concat(s2)
+        s1.concat(s2) as String @ Pure
 
     ///
     /// Returns `true` if the string `s1` ends with the string `s2`.
     ///
     pub def endsWith(s1: String, s2: String): Bool =
         import java.lang.String.endsWith(String);
-        s1.endsWith(s2)
+        s1.endsWith(s2) as Bool @ Pure
 
     ///
     /// Returns `true` if the string `s` is the empty string.
@@ -48,35 +48,35 @@ namespace String {
     ///
     pub def length(s: String): Int =
         import java.lang.String.length();
-        s.length()
+        s.length() as Int @ Pure
 
     ///
     /// Returns `true` if the string `s1` starts with the string `s2`.
     ///
     pub def startsWith(s1: String, s2: String): Bool =
         import java.lang.String.startsWith(String);
-        s1.startsWith(s2)
+        s1.startsWith(s2) as Bool @ Pure
 
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
     ///
     pub def split(s: String, r: String): Array[String] =
         import java.lang.String.split(String);
-        s.split(r)
+        s.split(r) as Array[String] @ Pure // TODO: Impure?
 
     //
     // Returns the lower case version of the string `s`.
     //
     pub def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
-        s.toLowerCase()
+        s.toLowerCase() as String @ Pure
 
     //
     // Returns the upper case version of the string `s`.
     //
     pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
-        s.toUpperCase()
+        s.toUpperCase() as String @ Pure
 
     ///
     /// Returns the given string `s` as a list of characters.

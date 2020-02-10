@@ -274,6 +274,7 @@ object Type {
     */
   // TODO: Split into two: one for pure and one for impure.
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
+    // TODO: Folding in wrong order?
     val arrow = Arrow(as.length + 1, Type.Cst(TypeConstructor.Pure))
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
