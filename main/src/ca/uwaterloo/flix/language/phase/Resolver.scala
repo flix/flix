@@ -1382,11 +1382,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Unit" => Type.Unit.toSuccess
       case "Bool" => Type.Bool.toSuccess
       case "Char" => Type.Char.toSuccess
-      case "Float" => Type.Cst(TypeConstructor.Float64).toSuccess
+      case "Float" => Type.Float64.toSuccess
       case "Float32" => Type.Float32.toSuccess
-      case "Float64" => Type.Cst(TypeConstructor.Float64).toSuccess
+      case "Float64" => Type.Float64.toSuccess
       case "Int" => Type.Cst(TypeConstructor.Int32).toSuccess
-      case "Int8" => Type.Cst(TypeConstructor.Int8).toSuccess
+      case "Int8" => Type.Int8.toSuccess
       case "Int16" => Type.Cst(TypeConstructor.Int16).toSuccess
       case "Int32" => Type.Cst(TypeConstructor.Int32).toSuccess
       case "Int64" => Type.Cst(TypeConstructor.Int64).toSuccess

@@ -125,13 +125,13 @@ object ResolvedAst {
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Float64)
+      def tpe: Type = Type.Float64
 
       def eff: Type = Type.Pure
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Int8)
+      def tpe: Type = Type.Int8
 
       def eff: Type = Type.Pure
     }

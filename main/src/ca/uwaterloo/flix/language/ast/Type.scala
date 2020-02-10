@@ -131,6 +131,16 @@ object Type {
   val Float32: Type = Type.Cst(TypeConstructor.Float32)
 
   /**
+    * Represents the Float64 type.
+    */
+  val Float64: Type = Type.Cst(TypeConstructor.Float64)
+
+  /**
+    * Represents the Int8 type.
+    */
+  val Int8: Type = Type.Cst(TypeConstructor.Int8)
+
+  /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
     */
   val Pure: Type = Type.Cst(TypeConstructor.Pure)
