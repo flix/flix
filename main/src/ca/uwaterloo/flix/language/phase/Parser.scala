@@ -560,12 +560,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       (SP ~ atomic("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = rule {
-      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Cast)
+    def Cast: Rule1[ParsedAst.Expression] = {
+      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
+        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+      }
+
+      rule {
+        Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Cast)
+      }
     }
 
-    def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
+    def Ascribe: Rule1[ParsedAst.Expression] = {
+      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
+        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+      }
+
+      rule {
+        FAppend ~ optional(optWS ~ ":" ~ optWS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Ascribe)
+      }
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {

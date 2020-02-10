@@ -1145,20 +1145,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
       }
 
-    case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
-      for {
-        e <- visitExp(exp)
-        f <- visitEff(effOpt)
-      } yield {
-        WeededAst.Expression.Ascribe(e, Some(visitType(tpe)), Some(f), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
+    case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
+      val t = expectedType.map(visitType)
+      val f = expectedEff.map(visitType)
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
-      for {
-        e <- visitExp(exp)
-        f <- visitEff(effOpt)
-      } yield {
-        WeededAst.Expression.Cast(e, Some(visitType(tpe)), Some(f), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
+    case ParsedAst.Expression.Cast(exp, declaredType, declaredEff, sp2) =>
+      val t = declaredType.map(visitType)
+      val f = declaredEff.map(visitType)
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.Cast(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
     case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
@@ -2015,7 +2013,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def withAscription(exp0: WeededAst.Expression, tpe0: Option[ParsedAst.Type])(implicit flix: Flix): WeededAst.Expression = tpe0 match {
     case None => exp0
-    case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(visitType(t)), Some(WeededAst.Type.Pure(exp0.loc)), exp0.loc) // TODO: Should the effect param be optional?
+    case Some(t) => WeededAst.Expression.Ascribe(exp0, Some(visitType(t)), None, exp0.loc)
   }
 
   /**
@@ -2096,6 +2094,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Returns the left most source position in the sub-tree of the expression `e`.
     */
+  @tailrec
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
