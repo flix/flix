@@ -1148,17 +1148,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
       for {
         e <- visitExp(exp)
-        eff <- visitEff(effOpt)
+        f <- visitEff(effOpt)
       } yield {
-        WeededAst.Expression.Ascribe(e, Some(visitType(tpe)), Some(eff), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
+        WeededAst.Expression.Ascribe(e, Some(visitType(tpe)), Some(f), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
       }
 
     case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
       for {
         e <- visitExp(exp)
-        eff <- visitEff(effOpt)
+        f <- visitEff(effOpt)
       } yield {
-        WeededAst.Expression.Cast(e, Some(visitType(tpe)), Some(eff), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
+        WeededAst.Expression.Cast(e, Some(visitType(tpe)), Some(f), mkSL(leftMostSourcePosition(exp), sp2)) // TODO
       }
 
     case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
@@ -2288,9 +2288,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // The solve expression.
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
-    val castedExp = WeededAst.Expression.Cast(outerExp, Some(WeededAst.Type.Native("java.lang.Object", loc)), Some(WeededAst.Type.Pure(loc)), loc)
+    val castedExp = WeededAst.Expression.Cast(outerExp, Some(WeededAst.Type.Native("java.lang.Object", loc)), None, loc)
     val toStringExp = WeededAst.Expression.InvokeMethod("java.lang.Object", "toString", castedExp, Nil, Nil, loc)
-    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, Some(StringType), Some(WeededAst.Type.Pure(loc)), loc)
+    val castedToStringExp = WeededAst.Expression.Cast(toStringExp, None, Some(WeededAst.Type.Pure(loc)), loc)
 
     // The type and effect of the generated main.
     val argType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
