@@ -35,7 +35,7 @@ def matchUnitArrayTailSpread6(): Bool = match [(), (), (), ()] {
 }
 
 @test
-def matchUnitArrayTailSpread7(): Bool = match [(), (), (), ()] {
+def matchUnitArrayTailSpread7(): Bool @ Impure = match [(), (), (), ()] {
     case [(), (), ..xs] => xs[1] == ()
     case _ => false
 }
@@ -113,7 +113,7 @@ def matchIntArrayTailSpread12(): Bool = match [1, 2, 3, 4] {
 }
 
 @test
-def matchIntArrayTailSpread13(): Bool = match [1, 2, 3, 4] {
+def matchIntArrayTailSpread13(): Bool @ Impure = match [1, 2, 3, 4] {
     case [1, 2, ..xs] => xs[1] == 4
     case _ => false
 }
@@ -161,7 +161,7 @@ def matchInt8ArrayTailSpread7(): Bool = match [1i8, 2i8, 3i8, 4i8] {
 }
 
 @test
-def matchInt8ArrayTailSpread8(): Bool = match [1i8, 2i8, 3i8, 4i8] {
+def matchInt8ArrayTailSpread8(): Bool @ Impure = match [1i8, 2i8, 3i8, 4i8] {
     case [1i8, 2i8, ..xs] => xs[1] == 4i8
     case _ => false
 }
@@ -209,7 +209,7 @@ def matchInt16ArrayTailSpread7(): Bool = match [1i16, 2i16, 3i16, 4i16] {
 }
 
 @test
-def matchInt16ArrayTailSpread8(): Bool = match [1i16, 2i16, 3i16, 4i16] {
+def matchInt16ArrayTailSpread8(): Bool @ Impure = match [1i16, 2i16, 3i16, 4i16] {
     case [1i16, 2i16, ..xs] => xs[1] == 4i16
     case _ => false
 }
@@ -257,7 +257,7 @@ def matchInt64ArrayTailSpread7(): Bool = match [1i64, 2i64, 3i64, 4i64] {
 }
 
 @test
-def matchInt64ArrayTailSpread8(): Bool = match [1i64, 2i64, 3i64, 4i64] {
+def matchInt64ArrayTailSpread8(): Bool @ Impure = match [1i64, 2i64, 3i64, 4i64] {
     case [1i64, 2i64, ..xs] => xs[1] == 4i64
     case _ => false
 }
@@ -353,7 +353,7 @@ def matchStrArrayTailSpread7(): Bool = match ["one", "two", "three", "four"] {
 }
 
 @test
-def matchStrArrayTailSpread8(): Bool = match ["one", "two", "three", "four"] {
+def matchStrArrayTailSpread8(): Bool @ Impure = match ["one", "two", "three", "four"] {
     case ["one", "two", ..xs] => xs[1] == "four"
     case _ => false
 }
@@ -401,7 +401,7 @@ def matchBoolArrayTailSpread7(): Bool = match [true, false, false, true] {
 }
 
 @test
-def matchBoolArrayTailSpread8(): Bool = match [true, false, false, true] {
+def matchBoolArrayTailSpread8(): Bool @ Impure = match [true, false, false, true] {
     case [true, false, ..xs] => xs[1] == true
     case _ => false
 }
@@ -455,7 +455,7 @@ def matchTupleArrayTailSpread8(): Bool = match [(1, "one"), (2, "two"), (3, "thr
 }
 
 @test
-def matchTupleArrayTailSpread9(): Bool = match [(1, "one"), (2, "two"), (3, "three"), (4, "four")] {
+def matchTupleArrayTailSpread9(): Bool @ Impure = match [(1, "one"), (2, "two"), (3, "three"), (4, "four")] {
     case [(1, "one"), (2, "two"), ..xs] => xs[1] == (4, "four")
     case _ => false
 }
@@ -503,7 +503,7 @@ def matchFloatArrayTailSpread7(): Bool = match [1.1, 2.2, 3.3, 4.4] {
 }
 
 @test
-def matchFloatArrayTailSpread8(): Bool = match [1.1, 2.2, 3.3, 4.4] {
+def matchFloatArrayTailSpread8(): Bool @ Impure = match [1.1, 2.2, 3.3, 4.4] {
     case [1.1, 2.2, ..xs] => xs[1] == 4.4
     case _ => false
 }
@@ -647,7 +647,7 @@ def matchOptionArrayTailSpread7(): Bool = match [Some(1), Some(2), None(), Some(
 }
 
 @test
-def matchOptionArrayTailSpread8(): Bool = match [Some(1), Some(2), None(), Some(42)] {
+def matchOptionArrayTailSpread8(): Bool @ Impure = match [Some(1), Some(2), None(), Some(42)] {
     case [Some(1), Some(2), ..xs] => xs[1] == Some(42)
     case _ => false
 }
@@ -695,7 +695,7 @@ def matchResultArrayTailSpread7(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)]
 }
 
 @test
-def matchResultArrayTailSpread8(): Bool = match [Ok(42), Err(23), Ok(1), Err(2)] {
+def matchResultArrayTailSpread8(): Bool @ Impure = match [Ok(42), Err(23), Ok(1), Err(2)] {
     case [Ok(42), Err(23), ..xs]  => xs[1] == Err(2)
     case _ => false
 }
