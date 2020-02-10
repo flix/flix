@@ -155,13 +155,13 @@ object ResolvedAst {
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.BigInt)
+      def tpe: Type = Type.BigInt
 
       def eff: Type = Type.Pure
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Str)
+      def tpe: Type = Type.Str
 
       def eff: Type = Type.Pure
     }

@@ -1390,9 +1390,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Int16" => Type.Int16.toSuccess
       case "Int32" => Type.Int32.toSuccess
       case "Int64" => Type.Int64.toSuccess
-      case "BigInt" => Type.Cst(TypeConstructor.BigInt).toSuccess
-      case "Str" => Type.Cst(TypeConstructor.Str).toSuccess
-      case "String" => Type.Cst(TypeConstructor.Str).toSuccess
+      case "BigInt" => Type.BigInt.toSuccess
+      case "Str" => Type.Str.toSuccess
+      case "String" => Type.Str.toSuccess
       case "Array" => Type.Cst(TypeConstructor.Array).toSuccess
       case "Channel" => Type.Cst(TypeConstructor.Channel).toSuccess
       case "Ref" => Type.Cst(TypeConstructor.Ref).toSuccess
@@ -1479,8 +1479,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case NamedAst.Type.Native(fqn, loc) =>
       fqn match {
-        case "java.math.BigInteger" => Type.Cst(TypeConstructor.BigInt).toSuccess
-        case "java.lang.String" => Type.Cst(TypeConstructor.Str).toSuccess
+        case "java.math.BigInteger" => Type.BigInt.toSuccess
+        case "java.lang.String" => Type.Str.toSuccess
         case _ => lookupJvmClass(fqn, loc) map {
           case clazz => Type.Cst(TypeConstructor.Native(clazz))
         }

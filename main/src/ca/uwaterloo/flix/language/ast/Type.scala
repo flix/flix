@@ -155,7 +155,15 @@ object Type {
     */
   val Int64: Type = Type.Cst(TypeConstructor.Int64)
 
+  /**
+    * Represents the BigInt type.
+    */
+  val BigInt: Type = Type.Cst(TypeConstructor.BigInt)
 
+  /**
+    * Represents the String type.
+    */
+  val Str: Type = Type.Cst(TypeConstructor.Str)
 
   /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)

@@ -428,10 +428,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         liftM((Type.Int64, Type.Pure))
 
       case ResolvedAst.Expression.BigInt(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.BigInt), Type.Pure))
+        liftM((Type.BigInt, Type.Pure))
 
       case ResolvedAst.Expression.Str(lit, loc) =>
-        liftM((Type.Cst(TypeConstructor.Str), Type.Pure))
+        liftM((Type.Str, Type.Pure))
 
       case ResolvedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
         val argType = fparam.tpe
@@ -1712,8 +1712,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Pattern.Int16(i, loc) => liftM(Type.Int16)
       case ResolvedAst.Pattern.Int32(i, loc) => liftM(Type.Int32)
       case ResolvedAst.Pattern.Int64(i, loc) => liftM(Type.Int64)
-      case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.Cst(TypeConstructor.BigInt))
-      case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Cst(TypeConstructor.Str))
+      case ResolvedAst.Pattern.BigInt(i, loc) => liftM(Type.BigInt)
+      case ResolvedAst.Pattern.Str(s, loc) => liftM(Type.Str)
       case ResolvedAst.Pattern.Tag(sym, tag, pat, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = program.enums(sym)
@@ -2061,10 +2061,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       Type.Float64
     }
     else if (c == classOf[java.math.BigInteger]) {
-      Type.Cst(TypeConstructor.BigInt)
+      Type.BigInt
     }
     else if (c == classOf[java.lang.String]) {
-      Type.Cst(TypeConstructor.Str)
+      Type.Str
     }
     else if (c == java.lang.Void.TYPE) {
       Type.Unit

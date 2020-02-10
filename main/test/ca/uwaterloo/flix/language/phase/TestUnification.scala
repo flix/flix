@@ -205,12 +205,12 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.BigInt") {
-    val result = Unification.unifyTypes(Type.Cst(TypeConstructor.BigInt), Type.Cst(TypeConstructor.BigInt))
+    val result = Unification.unifyTypes(Type.BigInt, Type.BigInt)
     assert(isOk(result))
   }
 
   test("Unify.Str") {
-    val result = Unification.unifyTypes(Type.Cst(TypeConstructor.Str), Type.Cst(TypeConstructor.Str))
+    val result = Unification.unifyTypes(Type.Str, Type.Str)
     assert(isOk(result))
   }
 
