@@ -820,7 +820,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) =>
         //
         // elm1: t ...  elm_len: t  len: Succ(n, Zero)
         // -------------------------------------------
@@ -832,23 +832,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield (resultType, evar)
         } else {
           for {
-            (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
+            (elementTypes, _) <- seqM(elms.map(visitExp)).map(_.unzip)
             elementType <- unifyTypM(elementTypes, loc)
             resultTyp <- unifyTypM(tvar, mkVector(elementType, Type.Succ(elms.length, Type.Zero)), loc)
-            resultEff <- unifyEffM(evar :: elementEffects, loc)
+            resultEff <- unifyEffM(evar, Type.Impure, loc)
           } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.VectorNew(exp, len, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.VectorNew(exp, len, tvar, evar, loc) =>
         //
         // exp: t    len: Succ(n, Zero)
         // --------------------------------
         // [|exp1 ; len |] : Vector[t, len]
         //
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, mkVector(tpe, Type.Succ(len, Type.Zero)), loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.VectorLoad(exp, index, tvar, evar, loc) =>
