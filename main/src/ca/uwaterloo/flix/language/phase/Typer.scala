@@ -1149,7 +1149,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /*
        * Select Channel Expression.
        */
-      case ResolvedAst.Expression.SelectChannel(rules, default, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.SelectChannel(rules, default, tvar, evar, loc) =>
         //  SelectChannelRule
         //
         //  chan: Channel[t1],   exp: t2
@@ -1162,13 +1162,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ------------------------------------------------
         //  select { rule_i; (default) } : t
         //
-        val bodies = rules.map(_.exp)
-
         // check that each rules channel expression is a channel
         def inferSelectChannelRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
           rule match {
             case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
-              (channelType, channelEffect) <- visitExp(chan) // TODO: Effect
+              (channelType, _) <- visitExp(chan)
               _ <- unifyTypM(channelType, mkChannel(Type.freshTypeVar()), loc)
             } yield liftM(Type.Unit)
           }
@@ -1177,23 +1175,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // check that default case has same type as bodies (the same as result type)
         def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.Expression]): InferMonad[Unit] = {
           defaultCase match {
-            case None => liftM(Type.Cst(TypeConstructor.Unit)) // TODO: Bug in Scalac?
-
+            case None => liftM(Type.Cst(TypeConstructor.Unit))
             case Some(exp) =>
               for {
-                (tpe, eff) <- visitExp(exp) // TODO: Effect
+                (tpe, _) <- visitExp(exp)
                 _ <- unifyTypM(rtpe, tpe, loc)
               } yield liftM(Type.Unit)
           }
         }
 
+        val bodies = rules.map(_.exp)
         for {
           _ <- seqM(rules.map(inferSelectChannelRule))
-          (bodyTypes, bodyEffects) <- seqM(bodies map visitExp).map(_.unzip)
+          (bodyTypes, _) <- seqM(bodies map visitExp).map(_.unzip)
           actualResultType <- unifyTypM(bodyTypes, loc)
           _ <- inferSelectChannelDefault(actualResultType, default)
           resultTyp <- unifyTypM(tvar, actualResultType, loc)
-          resultEff <- unifyEffM(evar :: bodyEffects, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
