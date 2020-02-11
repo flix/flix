@@ -71,6 +71,13 @@ object TypeError {
       vt << ">> Unable to unify the effects: '" << Red(eff1.show) << "' and '" << Red(eff2.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched effects.") << NewLine
+      vt << "Possible fixes:" << NewLine
+      vt << NewLine
+      vt << "  (1)  Did you forget to mark the function as impure?" << NewLine
+      vt << "  (2)  Are you trying to pass a pure function where an impure is required?" << NewLine
+      vt << "  (3)  Are you trying to pass an impure function where a pure is required?" << NewLine
+      vt << NewLine
+      vt
     }
   }
 
