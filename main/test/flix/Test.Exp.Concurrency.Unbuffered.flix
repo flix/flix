@@ -158,5 +158,41 @@ namespace Test/Exp/Concurrency/Unbuffered {
         spawn <- c;
         c <- "Hello World!"
 
+    @test
+    def testUnbufferedChannelGetPut11(): Channel[Option[Int]] @ Impure =
+        let c = chan Option[Int] 0;
+        spawn <- c;
+        c <- None
 
+    @test
+    def testUnbufferedChannelGetPut12(): Channel[Option[Int]] @ Impure =
+        let c = chan Option[Int] 0;
+        spawn <- c;
+        c <- Some(123)
+
+    @test
+    def testUnbufferedChannelGetPut13(): Channel[Result[Int, String]] @ Impure =
+        let c = chan Result[Int, String] 0;
+        spawn <- c;
+        c <- Ok(123)
+
+    @test
+    def testUnbufferedChannelGetPut14(): Channel[Result[Int, String]] @ Impure =
+        let c = chan Result[Int, String] 0;
+        spawn <- c;
+        c <- Err("Goodbye World!")
+
+    @test
+    def testUnbufferedChannelGetPut15(): Channel[Array[Int]] @ Impure =
+        let c = chan Array[Int] 0;
+        spawn <- c;
+        c <- [1, 2, 3]
+
+    @test
+    def testUnbufferedChannelGetPut16(): Channel[Int] @ Impure =
+        let c1 = chan Channel[Int] 0;
+        let c2 = chan Int 0;
+        spawn <- <- c1;
+        spawn c1 <- c2;
+        c2 <- 42
 }
