@@ -102,7 +102,7 @@ def testPutChannel08(): Channel[Channel[Int]] =
   let c = chan Channel[Int] 100;
   c <- chan Int 100
 @test
-def testPutChannel09(): Channel[Array[Str]] =
+def testPutChannel09(): Channel[Array[Str]] @ Impure =
   let c = chan Array[Str] 100;
   c <- ["1", "2"]
 

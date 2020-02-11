@@ -47,7 +47,7 @@ def testGetChannel08(): Channel[Int] =
   <- c
 
 @test
-def testGetChannel09(): Array[Str] =
+def testGetChannel09(): Array[String] @ Impure =
   let c = chan Array[Str] 100;
   c <- ["a", "b"];
   <- c
