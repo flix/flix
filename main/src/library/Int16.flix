@@ -253,7 +253,7 @@ namespace Int16 {
     pub def fromString(s: String): Result[Int16, String] = try {
         import java.lang.String.strip();
         import java.lang.Short:parseShort(String);
-        Ok(s.strip().parseShort())
+        Ok(s.strip().parseShort()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
      }

@@ -1036,10 +1036,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         for {
           (tpe, eff) <- visitExp(exp)
-          (ruleTypes, ruleEffects) <- seqM(rulesType).map(_.unzip) // TODO: Effects.
+          (ruleTypes, ruleEffects) <- seqM(rulesType).map(_.unzip)
           ruleType <- unifyTypM(ruleTypes, loc)
           resultTyp <- unifyTypM(tvar, tpe, ruleType, loc)
-        } yield (resultTyp, evar)
+          resultEff <- unifyEffM(evar, mkAnd(eff :: ruleEffects), loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.InvokeConstructor(constructor, args, tvar, evar, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)

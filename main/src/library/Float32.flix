@@ -100,7 +100,7 @@ namespace Float32 {
     pub def fromString(s: String): Result[Float32, String] = try {
         import java.lang.String.strip();
         import java.lang.Float:parseFloat(String);
-        Ok(s.strip().parseFloat())
+        Ok(s.strip().parseFloat()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
      }

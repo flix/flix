@@ -249,7 +249,7 @@ namespace Int64 {
     pub def fromString(s: String): Result[Int64, String] = try {
         import java.lang.String.strip();
         import java.lang.Long:parseLong(String);
-        Ok(s.strip().parseLong())
+        Ok(s.strip().parseLong()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
      }
