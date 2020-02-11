@@ -598,7 +598,7 @@ namespace Array {
         foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a)
 
     ///
-    /// Returns the concatenation of the elements in `a`.
+    /// Returns the concatenation of the arrays of in the array `arrs`.
     ///
     pub def flatten(arrs: Array[Array[a]]) : Array[a] =
         let len = sumLengths(arrs);
@@ -656,6 +656,31 @@ namespace Array {
     ///
     pub def filter(f: a -> Bool, a: Array[a]): Array[a] =
         foldRight((x,xs) -> if (f(x)) x :: xs else xs, Nil, a) |> List.toArray
+
+    ///
+    /// Returns a pair of lists `(a1, a2)`.
+    ///
+    /// `a1` contains all elements of `a` that satisfy the predicate `f`.
+    /// `a2` contains all elements of `a` that do not satisfy the predicate `f`.
+    ///
+    pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) =
+        let step = { (x, ac) ->
+            let (a1,a2) = ac;
+            if (f(x)) (x :: a1, a2) else (a1, x :: a2) };
+        let (xs,ys) = foldRight(step, (Nil,Nil), a);
+        (List.toArray(xs), List.toArray(ys))
+
+    ///
+    /// Returns a pair of arrays `(a1, a2)`.
+    ///
+    /// `a1` is the longest prefix of `a` that satisfies the predicate `f`.
+    /// `a2` is the remainder of `a`.
+    ///
+    pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) =
+        match findIndexOfLeft(x -> !(f(x)), a) {
+            case None => (takeLeft(length(a), a), [])
+            case Some(i) => (takeLeft(i, a), dropLeft(i, a))
+        }
 
 
     ///

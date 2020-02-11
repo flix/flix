@@ -1603,6 +1603,92 @@ def filter08(): Bool =
     Array.sameElements(a, [4,11,17])
 
 /////////////////////////////////////////////////////////////////////////////
+// partition                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def partition01(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Int32])
+
+@test
+def partition02(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [1]);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1])
+
+@test
+def partition03(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [4]);
+    Array.sameElements(a, [4]) && Array.sameElements(b, []: Array[Int32])
+
+@test
+def partition04(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [1,2]);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1,2])
+
+@test
+def partition05(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [1,5]);
+    Array.sameElements(a, [5]) && Array.sameElements(b, [1])
+
+@test
+def partition06(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [5,1]);
+    Array.sameElements(a, [5]) && Array.sameElements(b, [1])
+
+@test
+def partition07(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [5,8]);
+    Array.sameElements(a, [5,8]) && Array.sameElements(b, []: Array[Int32])
+
+@test
+def partition08(): Bool =
+    let (a,b) = Array.partition(i -> i > 3, [4, -3, -5, 1, 2, 16, 7, 1, 7]);
+    Array.sameElements(a, [4, 16, 7, 7]) && Array.sameElements(b, [-3, -5, 1, 2, 1])
+
+/////////////////////////////////////////////////////////////////////////////
+// span                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def span01(): Bool =
+    let (a,b) = Array.span(i -> i > 3, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, []: Array[Int32])
+
+@test
+def span02(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [1]);
+    Array.sameElements(a,[]: Array[Int32]) && Array.sameElements(b, [1])
+
+@test
+def span03(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [4]);
+    Array.sameElements(a, [4]) && Array.sameElements(b, []: Array[Int32])
+
+@test
+def span04(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [1,2]);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1,2])
+
+@test
+def span05(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [1,5]);
+    Array.sameElements(a, []: Array[Int32]) && Array.sameElements(b, [1,5])
+
+@test
+def span06(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [5,1]);
+    Array.sameElements(a, [5]) && Array.sameElements(b, [1])
+
+@test
+def span07(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [5,8]);
+    Array.sameElements(a, [5,8]) && Array.sameElements(b, []: Array[Int32])
+
+@test
+def span08(): Bool =
+    let (a,b) = Array.span(i -> i > 3, [4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7]);
+    Array.sameElements(a, [4, 6]) && Array.sameElements(b, [-3, 11, -5, 1, 2, 16, 7, 1, 7])
+
+/////////////////////////////////////////////////////////////////////////////
 // drop                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2343,22 +2429,22 @@ def map201(): Bool =
     Array.sameElements(arr, []: Array[Int32])
 
 @test
-def map202(): Bool = // List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, Nil) == Nil
+def map202(): Bool =
     let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], []);
     Array.sameElements(arr, []: Array[Int32])
 
 @test
-def map203(): Bool = // List.map2((a, b) -> if (b) a+1 else a, Nil, true :: Nil) == Nil
+def map203(): Bool =
     let arr = Array.map2((a, b) -> if (b) a+1 else a, [], [true]);
     Array.sameElements(arr, []: Array[Int32])
 
 @test
-def map204(): Bool = // List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, true :: Nil) == 2 :: Nil
+def map204(): Bool =
     let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [true]);
     Array.sameElements(arr, [2])
 
 @test
-def map205(): Bool = // List.map2((a, b) -> if (b) a+1 else a, 1 :: Nil, false :: Nil) == 1 :: Nil
+def map205(): Bool =
     let arr = Array.map2((a, b) -> if (b) a+1 else a, [1], [false]);
     Array.sameElements(arr, [1])
 
