@@ -907,11 +907,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
       }
 
-    case ParsedAst.Expression.ArrayLength(sp1, base, sp2) =>
-      visitExp(base) map {
-        case b => WeededAst.Expression.ArrayLength(b, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
       val sp1 = leftMostSourcePosition(base)
       val loc = mkSL(sp1, sp2)
@@ -2130,7 +2125,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.VectorNew(sp1, _, _, _) => sp1
