@@ -28,6 +28,11 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix"),
 
+  ///
+  /// Concurrency.
+  ///
+  new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix"),
+
   //
   // JVM.
   //
@@ -46,11 +51,5 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Reference.Deref", "main/test/flix/Test.Exp.Reference.Deref.flix"),
   new FlixTest("Test.Exp.Reference.Ref.flix", "main/test/flix/Test.Exp.Reference.Ref.flix"),
   new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
-
-  ///
-  /// Spawn.
-  ///
-  new FlixTest("Test.Exp.Spawn", "main/test/flix/Test.Exp.Spawn.flix"),
-
 
 )
