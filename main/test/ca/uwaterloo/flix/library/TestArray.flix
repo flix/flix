@@ -96,6 +96,36 @@ def toList02(): Bool = Array.toList([1]) == 1 :: Nil
 def toList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
+// head                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def head01(): Bool = Array.head([]: Array[Int32]) == None
+
+@test
+def head02(): Bool = Array.head([1]) == Some(1)
+
+@test
+def head03(): Bool = Array.head([2,1]) == Some(2)
+
+@test
+def head04(): Bool = Array.head([3,2,1]) == Some(3)
+
+/////////////////////////////////////////////////////////////////////////////
+// last                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def last01(): Bool = Array.last([]) == None
+
+@test
+def last02(): Bool = Array.last([1]) == Some(1)
+
+@test
+def last03(): Bool = Array.last([1,2]) == Some(2)
+
+@test
+def last04(): Bool = Array.last([1,2,3]) == Some(3)
+
+/////////////////////////////////////////////////////////////////////////////
 // append                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -2832,83 +2862,82 @@ def sameElements07(): Bool =
     Array.sameElements(a,b) == false
 
 /////////////////////////////////////////////////////////////////////////////
-// iter                                                                    //
+// foreach                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def iter01(): Bool =
+def foreach01(): Bool =
     let a = []: Array[Int32];
     let sb = StringBuilder.new();
     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iter(fn, a);
+    Array.foreach(fn, a);
     StringBuilder.toString(sb) == ""
 
 @test
-def iter02(): Bool =
+def foreach02(): Bool =
     let a = [0];
     let sb = StringBuilder.new();
     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iter(fn, a);
+    Array.foreach(fn, a);
     StringBuilder.toString(sb) == "F"
 
 @test
-def iter03(): Bool =
+def foreach03(): Bool =
     let a = [1];
     let sb = StringBuilder.new();
     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iter(fn, a);
+    Array.foreach(fn, a);
     StringBuilder.toString(sb) == "T"
 
 @test
-def iter04(): Bool =
+def foreach04(): Bool =
     let a = [0,1];
     let sb = StringBuilder.new();
     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iter(fn, a);
+    Array.foreach(fn, a);
     StringBuilder.toString(sb) == "FT"
 
 /////////////////////////////////////////////////////////////////////////////
-// iterWithIndex                                                           //
+// foreachWithIndex                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def iterWithIndex01(): Bool =
+def foreachWithIndex01(): Bool =
     let a = []: Array[Float32];
     let sb = StringBuilder.new();
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iterWithIndex(fn, a);
+    Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == ""
 
 @test
-def iterWithIndex02(): Bool =
+def foreachWithIndex02(): Bool =
     let a = [0.0];
     let sb = StringBuilder.new();
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iterWithIndex(fn, a);
+    Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "F"
 
 @test
-def iterWithIndex03(): Bool =
+def foreachWithIndex03(): Bool =
     let a = [0.0, 0.1];
     let sb = StringBuilder.new();
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iterWithIndex(fn, a);
+    Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FT"
 
 @test
-def iterWithIndex04(): Bool =
+def foreachWithIndex04(): Bool =
     let a = [0.0, 0.1, 0.2];
     let sb = StringBuilder.new();
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iterWithIndex(fn, a);
+    Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTT"
 
 @test
-def iterWithIndex05(): Bool =
+def foreachWithIndex05(): Bool =
     let a = [0.0, 0.1, 0.2, 0.3];
     let sb = StringBuilder.new();
     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-    Array.iterWithIndex(fn, a);
+    Array.foreachWithIndex(fn, a);
     StringBuilder.toString(sb) == "FTTT"
-
 
 
 /////////////////////////////////////////////////////////////////////////////

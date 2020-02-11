@@ -65,6 +65,23 @@ namespace Array {
 
 
     ///
+    /// Returns `Some(x)` if `x` is the first element of `a`.
+    ///
+    /// Returns `None` if `a` is empty.
+    ///
+    pub def head(a: Array[a]): Option[a] =
+        if (length(a) > 0) Some(a[0]) else None
+
+    ///
+    /// Returns `Some(x)` if `x` is the last element of `a`.
+    ///
+    /// Returns `None` if `a` is empty.
+    ///
+    pub def last(a: Array[a]): Option[a] =
+        let len = length(a);
+        if (len > 0) Some(a[len-1]) else None
+
+    ///
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
     pub def append(a: Array[a], b: Array[b]): Array[a] =
@@ -336,7 +353,7 @@ namespace Array {
         else {
             let b = new(x, len2);
             let f = { (v,i) -> let j = i + i; b[j] = v };
-            iterWithIndex(f, a);
+            foreachWithIndex(f, a);
             b
         }
 
@@ -370,7 +387,6 @@ namespace Array {
     ///
     def uniformHelper(a: Array[Array[a]], l: Int32): Bool =
         exists(x -> length(x) != l, a)
-
 
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
@@ -969,37 +985,37 @@ namespace Array {
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
-    pub def iter(f: a -> Unit, a: Array[a]): Unit =
+    pub def foreach(f: a -> Unit, a: Array[a]): Unit =
         let len = length(a);
-        if (len < 1) () else iterHelper(f, a, len, 0)
+        if (len < 1) () else foreachHelper(f, a, len, 0)
 
     ///
-    /// Helper for `iter`.
+    /// Helper for `foreach`.
     ///
-    def iterHelper(f: a -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
+    def foreachHelper(f: a -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
         if (i >= len)
             ()
         else {
             f(a[i]);
-            iterHelper(f, a, len, i + 1)
+            foreachHelper(f, a, len, i + 1)
         }
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
-    pub def iterWithIndex(f: (a, Int32) -> Unit, a: Array[a]): Unit =
+    pub def foreachWithIndex(f: (a, Int32) -> Unit, a: Array[a]): Unit =
         let len = length(a);
-        if (len < 1) () else iterWithIndexHelper(f, a, len, 0)
+        if (len < 1) () else foreachWithIndexHelper(f, a, len, 0)
 
     ///
-    /// Helper for `iterWithIndex`.
+    /// Helper for `foreachWithIndex`.
     ///
-    def iterWithIndexHelper(f: (a, Int32) -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
+    def foreachWithIndexHelper(f: (a, Int32) -> Unit, a: Array[a], len: Int32, i: Int32): Unit =
         if (i >= len)
             ()
         else {
             f(a[i], i);
-            iterWithIndexHelper(f, a, len, i + 1)
+            foreachWithIndexHelper(f, a, len, i + 1)
         }
 
     ///
@@ -1075,7 +1091,7 @@ namespace Array {
                 put(a, ix, sub[ix-i])
             else ()
         };
-        iterWithIndex(f, a)
+        foreachWithIndex(f, a)
 
     ///
     /// Render the array `a` as a String. Elements are rendered with the
@@ -1090,7 +1106,7 @@ namespace Array {
                 StringBuilder.appendString(sb, sep);
                 StringBuilder.appendString(sb, f(x))
             };
-        iterWithIndex(step, a);
+        foreachWithIndex(step, a);
         StringBuilder.toString(sb)
 
 }
