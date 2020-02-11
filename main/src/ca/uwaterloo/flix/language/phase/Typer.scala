@@ -851,7 +851,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLoad(exp, index, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.VectorLoad(exp, index, tvar, evar, loc) =>
         //
         //  exp : Vector[t, len1]   index: len2   len1: Succ(n1, Zero) len2: Succ(n2, Var)
         //  ------------------------------------------------------------------------------
@@ -860,13 +860,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val elementType = Type.freshTypeVar()
         val indexOffsetType = Type.freshTypeVar()
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           vectorType <- unifyTypM(tpe, mkVector(elementType, Type.Succ(index, indexOffsetType)), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorStore(exp1, index, exp2, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.VectorStore(exp1, index, exp2, tvar, evar, loc) =>
         //
         //  exp1 : Vector[t, len1]   index: len2   exp2: t    len1: Succ(n1, Zero)  len2: Succ(n2, Var)
         //  -------------------------------------------------------------------------------------------
@@ -875,12 +875,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val elementType = Type.freshTypeVar()
         val indexOffsetType = Type.freshTypeVar()
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
           vectorType <- unifyTypM(tpe1, mkVector(elementType, Type.Succ(index, indexOffsetType)), loc)
           elementType <- unifyTypM(tpe2, elementType, loc)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.VectorLength(exp, tvar, evar, loc) =>
