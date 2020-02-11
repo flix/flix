@@ -1,4 +1,4 @@
-namespace Test/Exp/Spawn {
+namespace Test/Exp/Concurrency/Spawn {
 
     @test
     def testSpawn01(): Unit @ Impure = spawn ()
