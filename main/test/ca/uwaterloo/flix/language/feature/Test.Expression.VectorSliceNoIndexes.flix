@@ -80,7 +80,7 @@ def testVectorSliceNoIndexes26(): Vector[Vector[Int, 3], 3] = let x = [|[|1, 2, 
 def testVectorSliceNoIndexes27(): Vector[Int, 10] = let x = [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10|]; x[|..|]
 
 @test
-def testVectorSliceNoIndexes28(): Vector[Array[Int], 3] = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|..|]
+def testVectorSliceNoIndexes28(): Vector[Array[Int], 3] @ Impure = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|..|]
 
 @test
 def testVectorSliceNoIndexes29(): Vector[List[(Int)], 3] = let x = [|(1 :: Nil), (2 :: Nil), (3 :: Nil)|]; x[|..|]

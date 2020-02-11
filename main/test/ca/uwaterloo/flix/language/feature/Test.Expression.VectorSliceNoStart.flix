@@ -80,7 +80,7 @@ def testVectorSliceNoStart26(): Vector[Vector[Int, 3], 3] = let x = [|[|1, 2, 3|
 def testVectorSliceNoStart27(): Vector[Int, 10] = let x = [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10|]; x[|..10|]
 
 @test
-def testVectorSliceNoStart28(): Vector[Array[Int], 3] = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|..3|]
+def testVectorSliceNoStart28(): Vector[Array[Int], 3] @ Impure = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|..3|]
 
 @test
 def testVectorSliceNoStart29(): Vector[List[(Int)], 3] = let x = [|(1 :: Nil), (2 :: Nil), (3 :: Nil)|]; x[|..3|]
