@@ -22,7 +22,6 @@ import org.scalatest.{ParallelTestExecution, Suites}
 // TODO: Sort
 class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.PutChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.PutChannel.flix"),
-  new FlixTest("Test.Expression.GetChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.GetChannel.flix"),
   new FlixTest("Test.Expression.SelectChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.SelectChannel.flix"),
   new FlixTest("Test.Expression.Stm", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Stm.flix"),
 
