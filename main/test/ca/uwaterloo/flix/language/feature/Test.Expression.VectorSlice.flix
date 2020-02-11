@@ -80,7 +80,7 @@ def testVectorSlice26(): Vector[Vector[Int, 3], 2] = let x = [|[|1, 2, 3|], [|1,
 def testVectorSlice27(): Vector[Int, 10] = let x = [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10|]; x[|0..10|]
 
 @test
-def testVectorSlice28(): Vector[Array[Int], 2] = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|1..3|]
+def testVectorSlice28(): Vector[Array[Int], 2] @ Impure = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|1..3|]
 
 @test
 def testVectorSlice29(): Vector[List[(Int)], 2] = let x = [|(1 :: Nil), (2 :: Nil), (3 :: Nil)|]; x[|1..3|]
@@ -90,5 +90,4 @@ def testVectorSlice30(): Vector[(Int, Int), 2] = let x = [|(1, 2), (3, 4), (5, 6
 
 @test
 def testVectorSlice31(): Vector[Option[Int], 2] = let x = [|Some(65), None, None|]; x[|1..3|]
-
 

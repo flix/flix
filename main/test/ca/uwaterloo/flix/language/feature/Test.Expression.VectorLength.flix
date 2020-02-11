@@ -116,10 +116,10 @@ def testVectorLength38(): Int = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|
 def testVectorLength39(): Int = let x = [|(1, 2), (3, 4)|]; length[|x|]
 
 @test
-def testVectorLength40(): Int = let x = [|[1, 2], [3, 4]|]; length[|x|]
+def testVectorLength40(): Int @ Impure = let x = [|[1, 2], [3, 4]|]; length[|x|]
 
 @test
-def testVectorLength41(): Int = let x = [|[1 :: Nil], [3 :: 4 :: 5 :: Nil]|]; length[|x|]
+def testVectorLength41(): Int @ Impure = let x = [|[1 :: Nil], [3 :: 4 :: 5 :: Nil]|]; length[|x|]
 
 @test
 def testVectorLength42(): Int = let x = [|Some(1), Some(2), Some(3)|]; length[|x|]

@@ -107,7 +107,7 @@ def testVectorNew35(): Vector[(List[Int]), 2] = [|(1 :: Nil) ; 2|]
 def testVectorNew36(): Vector[Option[Int], 3] = [|Some(5); 3|]
 
 @test
-def testVectorNew37(): Vector[Array[Int], 1] = [|[3 ; 1]|]
+def testVectorNew37(): Vector[Array[Int], 1] @ Impure = [|[3 ; 1]|]
 
 @test
 def testVectorNew38(): Vector[Vector[Int, 2], 2] = [|[|1, 2|]; 2|]

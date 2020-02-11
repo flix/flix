@@ -125,4 +125,4 @@ def testVectorLit41(): Vector[Option[Int], 1] = [|None|]
 def testVectorLit42(): Vector[Option[Int], 3] = [|None, Some(1), Some(2)|]
 
 @test
-def testVectorLit43(): Vector[Array[Int], 2] = [|[2, 1], [2, 1]|]
+def testVectorLit43(): Vector[Array[Int], 2] @ Impure = [|[2, 1], [2, 1]|]

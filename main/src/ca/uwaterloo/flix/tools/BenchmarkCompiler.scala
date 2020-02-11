@@ -71,7 +71,9 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
+    flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArrayNew.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayStore.flix")
 
     flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
@@ -95,8 +97,6 @@ object BenchmarkCompiler {
     // Over time we should extend this list, but note that this will invalidate historical data.
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLength.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayNew.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySlice.flix")
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
