@@ -55,6 +55,7 @@ object BenchmarkCompiler {
             val totalTime = compilationResult.getTotalTime()
             val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
+            println(s"Total Lines of Source Code: $totalLines.")
             println(s"${currentTime}, ${throughput}")
           }
         case Validation.Failure(errors) =>
@@ -71,6 +72,7 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
+    flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayNew.flix")
