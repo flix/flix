@@ -6,6 +6,11 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Equality.
+  //
+  new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
+
+  //
   // Array.
   //
   new FlixTest("Test.Exp.ArrayLength", "main/test/flix/Test.Exp.ArrayLength.flix"),
