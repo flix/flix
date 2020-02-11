@@ -90,10 +90,10 @@ namespace Array {
         if (len1 == 0)
             slice(b, 0, len2)
         else {
-            let ans = new(a[0], len1 + len2);
-            updateSequenceInPlace(0, a, ans);
-            updateSequenceInPlace(len1, b, ans);
-            ans
+            let out = new(a[0], len1 + len2);
+            updateSequenceInPlace(0, a, out);
+            updateSequenceInPlace(len1, b, out);
+            out
         }
 
     ///
@@ -361,8 +361,28 @@ namespace Array {
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
     pub def intercalate(sep: Array[a], arrs: Array[Array[a]]): Array[a] =
-        let f = { (ac,a1) ->  let (i,a0) = ac; if (i == 0) (1, a1) else (i+1, append(a0, append(sep, a1))) };
-        foldLeft(f, (0,[]), arrs) |> snd
+        let count = Array.length(arrs);
+        let sepLength = Array.length(sep);
+        let sepCount = if (count < 2) 0 else count - 1;
+        let len = sumLengths(arrs) + (sepCount * sepLength);
+        match headArrays(arrs){
+            case None => []
+            case Some(x) =>
+                let out = Array.new(x, len);
+                let overwrite = { (st,a) ->
+                    let (pos,i) = st;
+                    if (i == 0) {
+                        let pos1 = arrayWrites(0, a, out);
+                        (pos1, 1)
+                    } else {
+                        let pos1 = arrayWrites(pos, sep, out);
+                        let pos2 = arrayWrites(pos1, a, out);
+                        (pos2, i+1)
+                    }};
+                foreachAccum(overwrite, (0,0), arrs);
+                out
+        }
+
 
     ///
     /// Returns the transpose of `a`.
@@ -580,8 +600,16 @@ namespace Array {
     ///
     /// Returns the concatenation of the elements in `a`.
     ///
-    pub def flatten(a: Array[Array[a]]) : Array[a] =
-        foldLeft((acc,b) -> append(acc,b), [], a)
+    pub def flatten(arrs: Array[Array[a]]) : Array[a] =
+        let len = sumLengths(arrs);
+        match headArrays(arrs) {
+            case None => []
+            case Some(x) => {
+                let out = Array.new(x, len);
+                foreachAccum((pos,a) -> arrayWrites(pos, a, out), 0, arrs);
+                out
+            }
+        }
 
     ///
     /// Returns `true` if and only if at least one element in `a` satisfies the predicate `f`.
@@ -1019,6 +1047,24 @@ namespace Array {
         }
 
     ///
+    /// Apply the effectful function `f` to all the elements in the array `a`.
+    ///
+    pub def foreachAccum(f: (st, a) -> st, s: st, a: Array[a]): st =
+        let len = length(a);
+        if (len < 1) s else foreachAccumHelper(f, a, len, s, 0)
+
+    ///
+    /// Helper for `foreachWithIndex`.
+    ///
+    def foreachAccumHelper(f: (st, a) -> st, a: Array[a], len: Int32, s: st, i: int32): st =
+        if (i >= len)
+            s
+        else {
+            let s1 = f(s, a[i]);
+            foreachAccumHelper(f, a, len, s1, i + 1)
+        }
+
+    ///
     /// Returns a copy of `a` with the elements starting at index `i` replaced by `sub`.
     ///
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] =
@@ -1108,5 +1154,38 @@ namespace Array {
             };
         foreachWithIndex(step, a);
         StringBuilder.toString(sb)
+
+
+    ///
+    /// Sum the lengths of an array of arrays.
+    ///
+    def sumLengths(arrs: Array[Array[a]]): Int32 =
+        Array.foldLeft((ac,a) -> ac + Array.length(a), 0, arrs)
+
+    ///
+    /// Find the head of an array of arrays.
+    ///
+    def headArrays(arrs: Array[Array[a]]): Option[a] =
+        let len = Array.length(arrs);
+        headArraysHelper(arrs, len, 0)
+
+    /// Helper for `headArrays`.
+    def headArraysHelper(arrs: Array[Array[a]], len: Int32, i: Int32): Option[a] =
+        if (i >= len)
+            None
+        else
+            match Array.head(arrs[i]) {
+                case Some(x) => Some(x)
+                case None => headArraysHelper(arrs, len, i+1)
+            }
+
+    ///
+    /// Imperatively write `sub` at position `pos` in array `out`.
+    ///
+    /// Return the new write position which is `pos + length(sub)`.
+    ///
+    def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 =
+        Array.updateSequenceInPlace(pos, sub, out);
+        pos + Array.length(sub)
 
 }
