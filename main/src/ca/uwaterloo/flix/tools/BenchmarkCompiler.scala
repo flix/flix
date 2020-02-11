@@ -74,6 +74,10 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayNew.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySlice.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySliceCopy.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayStore.flix")
 
     flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
@@ -95,9 +99,6 @@ object BenchmarkCompiler {
 
     // A subset of test cases.
     // Over time we should extend this list, but note that this will invalidate historical data.
-
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLength.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySlice.flix")
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix")
