@@ -88,6 +88,7 @@ object BenchmarkCompiler {
 
     flix.addPath("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
     flix.addPath("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
+    flix.addPath("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
     flix.addPath("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
 
     flix.addPath("main/test/flix/Test.Exp.Jvm.GetField.flix")
