@@ -33,13 +33,13 @@ namespace Channel {
     ///
     /// Equivalent to the expression `<- c`.
     ///
-    pub def get(c: Channel[a]): a = <- c
+    pub def get(c: Channel[a]): a @ Impure = <- c
 
     ///
     /// Sends the element `x` on the channel `c`.
     ///
     /// Equivalent to the expression `c <- x`.
     ///
-    pub def put(c: Channel[a], x: a): Channel[a] = c <- x
+    pub def put(c: Channel[a], x: a): Channel[a] @ Impure = c <- x
 
 }

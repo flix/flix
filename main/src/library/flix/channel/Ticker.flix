@@ -96,7 +96,7 @@ namespace Ticker {
     
     def newTicker(): Ticker @ Impure = Ticker(chan Int 100, chan Unit 100)
 
-    pub def stop(ticker: Ticker): Unit = {
+    pub def stop(ticker: Ticker): Unit @ Impure = {
       match ticker {
         case Ticker(_tickChannel, stopChannel) => stopChannel <- (); ()
       }

@@ -1,20 +1,23 @@
  /// Mooo's `n` times on channel `c`.
-def mooo(c: Channel[Str], n: Int): Unit = match n with {
-    case 0 => ()
-    case x => c <- "Mooo!"; mooo(c, x - 1)
-}
+def mooo(c: Channel[Str], n: Int): Unit @ Impure =
+    match n with {
+        case 0 => ()
+        case x => c <- "Mooo!"; mooo(c, x - 1)
+    }
 
 /// Meow's `n` times on channel `c`.
-def meow(c: Channel[Str], n: Int): Unit = match n with {
-    case 0 => ()
-    case x => c <- "Meow!"; meow(c, x - 1)
-}
+def meow(c: Channel[Str], n: Int): Unit @ Impure =
+    match n with {
+        case 0 => ()
+        case x => c <- "Meow!"; meow(c, x - 1)
+    }
 
 /// Hiss'es `n` times on channel `c`.
-def hiss(c: Channel[Str], n: Int): Unit = match n with {
-    case 0 => ()
-    case x => c <- "Hiss!"; hiss(c, x - 1)
-}
+def hiss(c: Channel[Str], n: Int): Unit @ Impure =
+    match n with {
+        case 0 => ()
+        case x => c <- "Hiss!"; hiss(c, x - 1)
+    }
 
 /// Start the animal farm...
 def main(): String @ Impure =

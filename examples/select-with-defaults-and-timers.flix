@@ -1,5 +1,5 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int, c: Channel[Int]): Unit =
+def slow(x: Int, c: Channel[Int]): Unit @ Impure =
     sleep(Duration.oneMinute());
     c <- x;
     ()

@@ -75,6 +75,6 @@ namespace Timer {
     ///
     /// Sleeps for `s` nanoseconds and then sends the Unit value to the given channel `c`.
     ///
-    def sleepAndSend(s: Int64, c: Channel[Unit]): Unit =
+    def sleepAndSend(s: Int64, c: Channel[Unit]): Unit @ Impure =
         sleep(s); c <- (); ()
 }

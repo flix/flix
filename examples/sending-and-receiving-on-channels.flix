@@ -1,5 +1,5 @@
 /// A function that sends every element of a list
-def send(o: Channel[Int], l: List[Int]): Unit =
+def send(o: Channel[Int], l: List[Int]): Unit @ Impure =
     match l with {
         case Nil     => ()
         case x :: xs => o <- x; send(o, xs)
@@ -7,14 +7,14 @@ def send(o: Channel[Int], l: List[Int]): Unit =
 
 /// A function that receives n elements
 /// and collects them into a list.
-def recv(i: Channel[Int], n: Int): List[Int] =
+def recv(i: Channel[Int], n: Int): List[Int] @ Impure =
     match n with {
         case 0 => Nil
         case _ => (<- i) :: recv(i, n - 1)
     }
 
 /// A function that calls receive and sends the result on d.
-def wait(i: Channel[Int], n: Int, d: Channel[List[Int]]): Unit =
+def wait(i: Channel[Int], n: Int, d: Channel[List[Int]]): Unit @ Impure =
     d <- recv(i, n);
     ()
 

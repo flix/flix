@@ -1119,31 +1119,31 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.GetChannel(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.GetChannel(exp, tvar, evar, loc) =>
         //
-        //  exp: Channel[t]
-        //  ---------------
-        //  <- exp : tvar
+        //  exp: Channel[t] @ _
+        //  -------------------
+        //  <- exp : t @ Impure
         //
         val elementType = Type.freshTypeVar()
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           channelType <- unifyTypM(tpe, mkChannel(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, evar, loc) =>
         //
-        //  exp1: Channel[t]    exp2: t
-        //  ---------------------------
-        //  exp1 <- exp2 : Channel[t]
+        //  exp1: Channel[t] @ _   exp2: t @ _
+        //  ----------------------------------
+        //  exp1 <- exp2 : Channel[t] @ Impure
         //
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
           resultTyp <- unifyTypM(tvar, tpe1, mkChannel(tpe2), loc)
-          resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       /*
