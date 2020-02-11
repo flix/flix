@@ -44,60 +44,54 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannel08(): Bool @ Impure =
-        let c = chan Int32 1;
-        c <- 42i32;
-        42i32 == <- c
-
-    @test
-    def testBufferedChannel09(): Bool @ Impure =
         let c = chan Int64 1;
         c <- 42i64;
         42i64 == <- c
 
     @test
-    def testBufferedChannel10(): Bool @ Impure =
+    def testBufferedChannel09(): Bool @ Impure =
         let c = chan BigInt 1;
         c <- 42ii;
         42ii == <- c
 
     @test
-    def testBufferedChannel11(): Bool @ Impure =
+    def testBufferedChannel10(): Bool @ Impure =
         let c = chan String 1;
         c <- "Hello World!";
         "Hello World!" == <- c
 
     @test
-    def testBufferedChannel12(): Bool @ Impure =
+    def testBufferedChannel11(): Bool @ Impure =
         let c = chan Option[Int] 1;
         c <- None;
         None == <- c
 
     @test
-    def testBufferedChannel13(): Bool @ Impure =
+    def testBufferedChannel12(): Bool @ Impure =
         let c = chan Option[Int] 1;
         c <- Some(123);
         Some(123) == <- c
 
     @test
-    def testBufferedChannel14(): Bool @ Impure =
+    def testBufferedChannel13(): Bool @ Impure =
         let c = chan Result[Int, String] 1;
         c <- Ok(123);
         Ok(123) == <- c
 
     @test
-    def testBufferedChannel15(): Bool @ Impure =
+    def testBufferedChannel14(): Bool @ Impure =
         let c = chan Result[Int, String] 1;
         c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
     @test
-    def testBufferedChannel16(): Bool @ Impure =
+    def testBufferedChannel15(): Bool @ Impure =
         let c = chan Array[Int] 1;
         c <- [1, 2, 3];
         2 == (<- c)[1]
 
     @test
-    def testBufferedChannel17(): Bool @ Impure =
+    def testBufferedChannel16(): Bool @ Impure =
         let c1 = chan Channel[Int] 1;
         let c2 = chan Int 1;
         c1 <- c2;
@@ -148,60 +142,54 @@ namespace Test/Exp/Concurrency/Buffered {
 
     @test
     def testBufferedChannelWithSpawn08(): Bool @ Impure =
-        let c = chan Int32 1;
-        spawn c <- 42i32;
-        42i32 == <- c
-
-    @test
-    def testBufferedChannelWithSpawn09(): Bool @ Impure =
         let c = chan Int64 1;
         spawn c <- 42i64;
         42i64 == <- c
 
     @test
-    def testBufferedChannelWithSpawn10(): Bool @ Impure =
+    def testBufferedChannelWithSpawn09(): Bool @ Impure =
         let c = chan BigInt 1;
         spawn c <- 42ii;
         42ii == <- c
 
     @test
-    def testBufferedChannelWithSpawn11(): Bool @ Impure =
+    def testBufferedChannelWithSpawn10(): Bool @ Impure =
         let c = chan String 1;
         spawn c <- "Hello World!";
         "Hello World!" == <- c
 
     @test
-    def testBufferedChannelWithSpawn12(): Bool @ Impure =
+    def testBufferedChannelWithSpawn11(): Bool @ Impure =
         let c = chan Option[Int] 1;
         spawn c <- None;
         None == <- c
 
     @test
-    def testBufferedChannelWithSpawn13(): Bool @ Impure =
+    def testBufferedChannelWithSpawn12(): Bool @ Impure =
         let c = chan Option[Int] 1;
         spawn c <- Some(123);
         Some(123) == <- c
 
     @test
-    def testBufferedChannelWithSpawn14(): Bool @ Impure =
+    def testBufferedChannelWithSpawn13(): Bool @ Impure =
         let c = chan Result[Int, String] 1;
         spawn c <- Ok(123);
         Ok(123) == <- c
 
     @test
-    def testBufferedChannelWithSpawn15(): Bool @ Impure =
+    def testBufferedChannelWithSpawn14(): Bool @ Impure =
         let c = chan Result[Int, String] 1;
         spawn c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
     @test
-    def testBufferedChannelWithSpawn16(): Bool @ Impure =
+    def testBufferedChannelWithSpawn15(): Bool @ Impure =
         let c = chan Array[Int] 1;
         spawn c <- [1, 2, 3];
         2 == (<- c)[1]
 
     @test
-    def testBufferedChannelWithSpawn17(): Bool @ Impure =
+    def testBufferedChannelWithSpawn16(): Bool @ Impure =
         let c1 = chan Channel[Int] 1;
         let c2 = chan Int 1;
         spawn c1 <- c2;
