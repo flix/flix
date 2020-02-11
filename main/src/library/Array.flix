@@ -21,7 +21,7 @@ namespace Array {
     ///
     /// Equivalent to the expression `[x; l]`.
     ///
-    pub def new(x: a, l: Int): Array[a] = [x; l]
+    pub def new(x: a, l: Int): Array[a] @ Impure = [x; l]
 
     ///
     /// Returns the element at position `i` in the array `a`.

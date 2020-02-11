@@ -725,37 +725,38 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ArrayLit(elms, tvar, evar, loc) =>
         //
         //  e1 : t ... en: t
-        //  ----------------------
-        //  [e1,...,en] : Array[t]
+        //  --------------------------------
+        //  [e1,..., en] : Array[t] @ Impure
         //
         if (elms.isEmpty) {
           for {
             resultType <- unifyTypM(tvar, mkArray(Type.freshTypeVar()), loc)
+            resultEff <- unifyEffM(evar, Type.Impure, loc)
           } yield (resultType, evar)
         } else {
           for {
-            (elementTypes, elementEffects) <- seqM(elms.map(visitExp)).map(_.unzip)
+            (elementTypes, _) <- seqM(elms.map(visitExp)).map(_.unzip)
             elementType <- unifyTypM(elementTypes, loc)
             resultTyp <- unifyTypM(tvar, mkArray(elementType), loc)
-            resultEff <- unifyEffM(evar :: elementEffects, loc)
+            resultEff <- unifyEffM(evar, Type.Impure, loc)
           } yield (resultTyp, resultEff)
         }
 
-      case ResolvedAst.Expression.ArrayNew(exp1, exp2, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ArrayNew(exp1, exp2, tvar, evar, loc) =>
         //
-        //  exp1 : t    exp2: Int
-        //  ------------------------
-        //  [exp1 ; exp2] : Array[t]
+        //  exp1 : t @ _    exp2: Int @ _
+        //  ---------------------------------
+        //  [exp1 ; exp2] : Array[t] @ Impure
         //
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
           lengthType <- unifyTypM(tpe2, Type.Int32, loc)
           resultTyp <- unifyTypM(tvar, mkArray(tpe1), loc)
-          resultEff <- unifyEffM(evar, eff1, eff2, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
@@ -772,11 +773,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (tvar, resultEff)
 
-      case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ArrayLength(exp, tvar, evar, loc) =>
         //
-        //  exp : Array[t]
-        //  ----------------
-        //  exp.length : Int
+        //  exp : Array[t] @ e
+        //  --------------------
+        //  exp.length : Int @ e
         //
         val elementType = Type.freshTypeVar()
         for {

@@ -41,13 +41,13 @@ def testPut02(): Bool @ Impure = Array.put([1, 2], 1, 42)[1] == 42
 def testPut03(): Bool @ Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
 
 @test
-def testLength01(): Bool = Array.length([]) == 0
+def testLength01(): Bool @ Impure = Array.length([]) == 0
 
 @test
-def testLength02(): Bool = Array.length([1]) == 1
+def testLength02(): Bool @ Impure = Array.length([1]) == 1
 
 @test
-def testLength03(): Bool = Array.length([1, 2, 3]) == 3
+def testLength03(): Bool @ Impure = Array.length([1, 2, 3]) == 3
 
 @test
 def testSlice01(): Bool @ Impure = Array.slice([1, 2, 3], 0, 1)[0] == 1
