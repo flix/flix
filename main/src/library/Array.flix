@@ -40,7 +40,7 @@ namespace Array {
     ///
     /// Returns the length of the array `a`.
     ///
-    pub def length(a: Array[a]): Int = length[a]
+    pub def length(a: Array[a]): Int = a.length
 
     ///
     /// Returns a fresh array with the elements from the array `a` from index `b` (inclusive) until index `e` (exclusive).
