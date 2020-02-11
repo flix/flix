@@ -1196,16 +1196,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar :: bodyEffects, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
         //
-        //  exp: t
-        //  ----------------
-        //  spawn exp : Unit
+        //  exp: t @ _
+        //  -------------------------
+        //  spawn exp : Unit @ Impure
         //
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-        } yield (resultTyp, evar)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
+        } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) => // TODO: Effects
         //
