@@ -1208,20 +1208,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) =>
         //
-        // exp: Int
-        // ----------------
-        // sleep exp : Unit
+        // exp: Int @ _
+        // -------------------------
+        // sleep exp : Unit @ Impure
         //
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           durationType <- unifyTypM(tpe, Type.Int64, loc)
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
+        // A panic is, by nature, not type safe.
         liftM((tvar, evar))
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, evar, loc) =>
