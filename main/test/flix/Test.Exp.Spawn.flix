@@ -27,5 +27,31 @@ namespace Test/Exp/Spawn {
     @test
     def testSpawn09(): Unit @ Impure = spawn 1i64 + 2i64
 
+    @test
+    def testSpawn10(): Unit @ Impure = spawn 1ii + 2ii
+
+    @test
+    def testSpawn11(): Unit @ Impure = spawn "Hello World!"
+
+    @test
+    def testSpawn12(): Unit @ Impure = spawn (123, 456)
+
+    @test
+    def testSpawn13(): Unit @ Impure = spawn None
+
+    @test
+    def testSpawn14(): Unit @ Impure = spawn Some(42)
+
+    @test
+    def testSpawn15(): Unit @ Impure = spawn Ok(42)
+
+    @test
+    def testSpawn16(): Unit @ Impure = spawn Err(42)
+
+    @test
+    def testSpawn17(): Unit @ Impure = spawn spawn 123
+
+    @test
+    def testSpawn18(): Unit @ Impure = spawn spawn spawn 123
 
 }
