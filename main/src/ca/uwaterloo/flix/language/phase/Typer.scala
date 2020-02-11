@@ -883,7 +883,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorLength(exp, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.VectorLength(exp, tvar, evar, loc) =>
         //
         // exp: Vector[t, len1]   index: len2   len1: Succ(n1, Zero)  len2: Succ(n2, Var)
         // ------------------------------------------------------------------------------
@@ -898,7 +898,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.VectorSlice(exp, startIndex, optEndIndex, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.VectorSlice(exp, startIndex, optEndIndex, tvar, evar, loc) =>
         //
         //  Case None =
         //  exp : Vector[t, len2]   startIndex : len3
@@ -919,19 +919,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         optEndIndex match {
           case None =>
             for {
-              (tpe, eff) <- visitExp(exp)
+              (tpe, _) <- visitExp(exp)
               fstIndex <- unifyTypM(tpe, mkVector(freshElmType, Type.Succ(startIndex, freshEndIndex)), loc)
               resultTyp <- unifyTypM(tvar, mkVector(freshElmType, freshEndIndex), loc)
-              resultEff <- unifyEffM(evar, eff, loc)
+              resultEff <- unifyEffM(evar, Type.Impure, loc)
             } yield (resultTyp, resultEff)
 
           case Some(endIndex) =>
             for {
-              (tpe, eff) <- visitExp(exp)
+              (tpe, _) <- visitExp(exp)
               fstIndex <- unifyTypM(tpe, mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc)
               lstIndex <- unifyTypM(tpe, mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc)
               resultTyp <- unifyTypM(tvar, mkVector(freshElmType, Type.Succ(endIndex - startIndex, Type.Zero)), loc)
-              resultEff <- unifyEffM(evar, eff, loc)
+              resultEff <- unifyEffM(evar, Type.Impure, loc)
             } yield (resultTyp, resultEff)
         }
 
