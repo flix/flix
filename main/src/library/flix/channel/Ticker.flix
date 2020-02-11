@@ -94,7 +94,7 @@ namespace Ticker {
       case Ticker(Channel[Int], Channel[Unit])
     }
     
-    def newTicker(): Ticker = Ticker(chan Int 100, chan Unit 100)
+    def newTicker(): Ticker @ Impure = Ticker(chan Int 100, chan Unit 100)
 
     pub def stop(ticker: Ticker): Unit = {
       match ticker {

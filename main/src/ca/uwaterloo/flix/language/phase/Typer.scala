@@ -1106,17 +1106,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.NewChannel(exp, declaredType, evar, loc) =>
         //
-        //  exp: Int
-        //  ------------------------
-        //  channel exp : Channel[t]
+        //  exp: Int @ _
+        //  ---------------------------------
+        //  channel exp : Channel[t] @ Impure
         //
         for {
-          (tpe, eff) <- visitExp(exp)
+          (tpe, _) <- visitExp(exp)
           lengthType <- unifyTypM(tpe, Type.Int32, loc)
           resultTyp <- liftM(mkChannel(declaredType))
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.GetChannel(exp, tvar, evar, loc) => // TODO: Effects
