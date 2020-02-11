@@ -104,4 +104,34 @@ namespace Test/Exp/Concurrency/Unbuffered {
         spawn c2 <- 42;
         42 == <- <- c1
 
+    @test
+    def testUnbufferedChannelGetPut01(): Channel[Unit] @ Impure =
+        let c = chan Unit 0;
+        spawn <- c;
+        c <- ()
+
+    @test
+    def testUnbufferedChannelGetPut02(): Channel[Bool] @ Impure =
+        let c = chan Bool 0;
+        spawn <- c;
+        c <- true
+
+    @test
+    def testUnbufferedChannelGetPut03(): Channel[Float32] @ Impure =
+        let c = chan Float32 0;
+        spawn <- c;
+        c <- 123.456f32
+
+    @test
+    def testUnbufferedChannelGetPut04(): Channel[Float64] @ Impure =
+        let c = chan Float64 0;
+        spawn <- c;
+        c <- 123.456f64
+
+    @test
+    def testUnbufferedChannelGetPut05(): Channel[Int8] @ Impure =
+        let c = chan Int8 0;
+        spawn <- c;
+        c <- 42i8
+
 }
