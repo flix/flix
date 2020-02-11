@@ -44,60 +44,54 @@ namespace Test/Exp/Concurrency/Unbuffered {
 
     @test
     def testUnbufferedChannelPutGet08(): Bool @ Impure =
-        let c = chan Int32 0;
-        spawn c <- 42i32;
-        42i32 == <- c
-
-    @test
-    def testUnbufferedChannelPutGet09(): Bool @ Impure =
         let c = chan Int64 0;
         spawn c <- 42i64;
         42i64 == <- c
 
     @test
-    def testUnbufferedChannelPutGet10(): Bool @ Impure =
+    def testUnbufferedChannelPutGet09(): Bool @ Impure =
         let c = chan BigInt 0;
         spawn c <- 42ii;
         42ii == <- c
 
     @test
-    def testUnbufferedChannelPutGet11(): Bool @ Impure =
+    def testUnbufferedChannelPutGet10(): Bool @ Impure =
         let c = chan String 0;
         spawn c <- "Hello World!";
         "Hello World!" == <- c
 
     @test
-    def testUnbufferedChannelPutGet12(): Bool @ Impure =
+    def testUnbufferedChannelPutGet11(): Bool @ Impure =
         let c = chan Option[Int] 0;
         spawn c <- None;
         None == <- c
 
     @test
-    def testUnbufferedChannelPutGet13(): Bool @ Impure =
+    def testUnbufferedChannelPutGet12(): Bool @ Impure =
         let c = chan Option[Int] 0;
         spawn c <- Some(123);
         Some(123) == <- c
 
     @test
-    def testUnbufferedChannelPutGet14(): Bool @ Impure =
+    def testUnbufferedChannelPutGet13(): Bool @ Impure =
         let c = chan Result[Int, String] 0;
         spawn c <- Ok(123);
         Ok(123) == <- c
 
     @test
-    def testUnbufferedChannelPutGet15(): Bool @ Impure =
+    def testUnbufferedChannelPutGet14(): Bool @ Impure =
         let c = chan Result[Int, String] 0;
         spawn c <- Err("Goodbye World!");
         Err("Goodbye World!") == <- c
 
     @test
-    def testUnbufferedChannelPutGet16(): Bool @ Impure =
+    def testUnbufferedChannelPutGet15(): Bool @ Impure =
         let c = chan Array[Int] 0;
         spawn c <- [1, 2, 3];
         2 == (<- c)[1]
 
     @test
-    def testUnbufferedChannelPutGet17(): Bool @ Impure =
+    def testUnbufferedChannelPutGet16(): Bool @ Impure =
         let c1 = chan Channel[Int] 0;
         let c2 = chan Int 0;
         spawn c1 <- c2;
@@ -133,5 +127,16 @@ namespace Test/Exp/Concurrency/Unbuffered {
         let c = chan Int8 0;
         spawn <- c;
         c <- 42i8
+    @test
 
+    def testUnbufferedChannelGetPut06(): Channel[Int16] @ Impure =
+        let c = chan Int16 0;
+        spawn <- c;
+        c <- 42i16
+
+    @test
+    def testUnbufferedChannelGetPut07(): Channel[Int32] @ Impure =
+        let c = chan Int32 0;
+        spawn <- c;
+        c <- 42i32
 }
