@@ -131,7 +131,7 @@ def testGetChannelUnit02(): Bool = getChannelUnit02() `assertEq!` ()
 def fUnit03(ch: Channel[Unit]): Channel[Unit] =
   ch <- ()
 
-def getChannelUnit03(): Unit =
+def getChannelUnit03(): Unit @ Impure =
   let ch = chan Unit 100;
   let _ = spawn fUnit03(ch);
   <- ch
@@ -142,7 +142,7 @@ def testGetChannelUnit03(): Bool = getChannelUnit03() `assertEq!` ()
 def fUnit04(ch: Channel[Unit]): Channel[Unit] =
   ch <- ()
 
-def getChannelUnit04(): Unit =
+def getChannelUnit04(): Unit @ Impure =
   let ch = chan Unit 100;
   let _ = spawn fUnit04(ch);
   <- ch
@@ -169,7 +169,7 @@ def testGetChannelBool02(): Bool = getChannelBool02() `assertEq!` false
 def fBool03(ch: Channel[Bool]): Channel[Bool] =
   ch <- true
 
-def getChannelBool03(): Bool =
+def getChannelBool03(): Bool @ Impure =
   let ch = chan Bool 100;
   let _ = spawn fBool03(ch);
   <- ch
@@ -180,7 +180,7 @@ def testGetChannelBool03(): Bool = getChannelBool03() `assertEq!` true
 def fBool04(ch: Channel[Bool]): Channel[Bool] =
   ch <- false
 
-def getChannelBool04(): Bool =
+def getChannelBool04(): Bool @ Impure =
   let ch = chan Bool 100;
   let _ = spawn fBool04(ch);
   <- ch

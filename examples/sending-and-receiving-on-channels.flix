@@ -19,7 +19,7 @@ def wait(i: Channel[Int], n: Int, d: Channel[List[Int]]): Unit =
     ()
 
 /// Spawn a process for send and wait, and print the result.
-def main(): List[Int] =
+def main(): List[Int] @ Impure =
     let l = 1 :: 2 :: 3 :: Nil;
     let c = chan Int 100;
     let d = chan List[Int] 100;

@@ -17,7 +17,7 @@ def hiss(c: Channel[Str], n: Int): Unit = match n with {
 }
 
 /// Start the animal farm...
-def main(): Str =
+def main(): String @ Impure =
     let c1 = chan Str 1;
     let c2 = chan Str 1;
     let c3 = chan Str 1;
