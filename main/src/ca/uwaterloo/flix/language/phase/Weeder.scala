@@ -840,7 +840,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.RecordSelect(exp, label, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.RecordSelect(e, label, mkSL(sp1, sp2))
+        case e =>
+          // Special Case: Array Length
+          if (label.name == "length")
+            WeededAst.Expression.ArrayLength(e, mkSL(sp1, sp2))
+          else
+            WeededAst.Expression.RecordSelect(e, label, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordSelectLambda(sp1, label, sp2) =>

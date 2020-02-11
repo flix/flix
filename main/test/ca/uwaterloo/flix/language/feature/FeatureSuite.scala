@@ -79,8 +79,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix"),
   new FlixTest("Test.Decl.Impl", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Impl.flix"),
 
-  new FlixTest("Test.Expression.ArrayLength", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLength.flix"),
-
   new FlixTest("Test.Expression.VectorLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLit.flix"),
   new FlixTest("Test.Expression.VectorNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorNew.flix"),
   new FlixTest("Test.Expression.VectorLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLoad.flix"),
