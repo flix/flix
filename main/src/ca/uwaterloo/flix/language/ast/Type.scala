@@ -54,6 +54,7 @@ sealed trait Type {
     *
     * For example,
     *
+    * {{{
     * Celsius                       =>      Celsius
     * Option[Int]                   =>      Option
     * Arrow[Bool, Char]             =>      Arrow
@@ -61,6 +62,7 @@ sealed trait Type {
     * Result[Bool, Int]             =>      Result
     * Result[Bool][Int]             =>      Result
     * Option[Result[Bool, Int]]     =>      Option
+    * }}}
     */
   def typeConstructor: Type = this match {
     case Type.Apply(t1, _) => t1.typeConstructor
@@ -72,6 +74,7 @@ sealed trait Type {
     *
     * For example,
     *
+    * {{{
     * Celsius                       =>      Nil
     * Option[Int]                   =>      Int :: Nil
     * Arrow[Bool, Char]             =>      Bool :: Char :: Nil
@@ -79,6 +82,7 @@ sealed trait Type {
     * Result[Bool, Int]             =>      Bool :: Int :: Nil
     * Result[Bool][Int]             =>      Bool :: Int :: Nil
     * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
+    * }}}
     */
   def typeArguments: List[Type] = this match {
     case Type.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
@@ -237,28 +241,28 @@ object Type {
     * A type constructor that represents the empty record type.
     */
   case object RecordEmpty extends Type {
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.Record
   }
 
   /**
     * A type constructor that represents a record extension type.
     */
   case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.Star -> Kind.Record
   }
 
   /**
     * A type constructor that represents the empty schema type.
     */
   case object SchemaEmpty extends Type {
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.Schema
   }
 
   /**
     * A type constructor that represents a schema extension type.
     */
   case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.Star -> Kind.Schema
   }
 
   /**
@@ -279,7 +283,7 @@ object Type {
     * A type expression that represents a type abstraction [x] => tpe.
     */
   case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.Star -> Kind.Star
   }
 
   /**
@@ -331,14 +335,6 @@ object Type {
   }
 
   /**
-    * Constructs the arrow type A_1 -> .. -> A_n -> B.
-    */
-  // TODO: Split into two: one for pure and one for impure.
-  def mkArrow(as: List[Type], b: Type): Type = {
-    as.foldRight(b)(mkPureArrow)
-  }
-
-  /**
     * Constructs the arrow type [A] -> B.
     */
   // TODO: Split into two: one for pure and one for impure.
@@ -358,7 +354,6 @@ object Type {
     case (acc, t) => Apply(acc, t)
   }
 
-  // TODO: Move these helpers into the Typer.
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
@@ -368,7 +363,6 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   // Type Class Instances                                                    //

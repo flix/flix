@@ -213,7 +213,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkArrow(List(valueType, valueType), Type.Bool)
+          val eqType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
