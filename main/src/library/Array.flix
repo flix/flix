@@ -47,7 +47,7 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[b..e]`.
     ///
-    pub def slice(a: Array[a], b: Int, e: Int): Array[a] = a[b..e]
+    pub def slice(a: Array[a], b: Int, e: Int): Array[a] @ Impure = a[b..e]
 
     ///
     /// Returns the array `a` as a list.

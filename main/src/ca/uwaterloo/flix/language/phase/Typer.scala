@@ -803,21 +803,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, evar, loc) => // TODO: Effects
+      case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, evar, loc) =>
         //
-        //  exp1 : Array[t]    exp2 : Int    exp3 : Int
-        //  -------------------------------------------
-        //  exp1[exp2..exp3] : Array[t]
+        //  exp1 : Array[t] @ _   exp2 : Int @ _   exp3 : Int @ _
+        //  -----------------------------------------------------
+        //  exp1[exp2..exp3] : Array[t] @ Impure
         //
         val elementType = Type.freshTypeVar()
         for {
-          (tpe1, eff1) <- visitExp(exp1)
-          (tpe2, eff2) <- visitExp(exp2)
-          (tpe3, eff3) <- visitExp(exp3)
+          (tpe1, _) <- visitExp(exp1)
+          (tpe2, _) <- visitExp(exp2)
+          (tpe3, _) <- visitExp(exp3)
           fstIndexType <- unifyTypM(tpe2, Type.Int32, loc)
           lstIndexType <- unifyTypM(tpe3, Type.Int32, loc)
           resultTyp <- unifyTypM(tvar, tpe1, mkArray(elementType), loc)
-          resultEff <- unifyEffM(evar, eff1, eff2, eff3, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.VectorLit(elms, tvar, evar, loc) => // TODO: Effects
