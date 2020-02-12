@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.io.PrintWriter
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
@@ -24,9 +26,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, StatUtils, Validation}
-
-import scala.annotation.tailrec
+import ca.uwaterloo.flix.util.{AsciiTable, InternalCompilerException, ParOps, Result, StatUtils, Validation}
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -63,10 +63,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Performs type inference and reassembly on the given definition `defn`.
       */
-    def visitDefn(defn: ResolvedAst.Def): Result[(Symbol.DefnSym, TypedAst.Def), TypeError] = defn match {
+    def visitDefn(defn: ResolvedAst.Def): Result[((Symbol.DefnSym, TypedAst.Def), (Symbol.DefnSym, Substitution)), TypeError] = defn match {
       case ResolvedAst.Def(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
         typeCheckDef(defn, program) map {
-          case d => sym -> d
+          case (defn, subst) => ((sym, defn), (sym, subst))
         }
     }
 
@@ -76,8 +76,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // Visit every definition in parallel.
     val results = ParOps.parMap(visitDefn, defs)
 
-    // Sequence the results and convert them back to a map.
-    Result.sequence(results).map(_.toMap)
+    // Sequence the results
+    Result.sequence(results).map(_.unzip).map {
+      case (m, m2) =>
+        if (flix.options.xstatistics) {
+          printStatistics(m2.toMap)
+        }
+        m.toMap
+    }
   }
 
   /**
@@ -259,7 +265,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Infers the type of the given definition `defn0`.
     */
-  private def typeCheckDef(defn0: ResolvedAst.Def, program: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Def, TypeError] = {
+  private def typeCheckDef(defn0: ResolvedAst.Def, program: ResolvedAst.Program)(implicit flix: Flix): Result[(TypedAst.Def, Substitution), TypeError] = {
     // Resolve the declared scheme.
     val declaredScheme = defn0.sc
 
@@ -282,17 +288,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // TODO: See if this can be rewritten nicer
     result match {
       case InferMonad(run) =>
-        val subst0 = getSubstFromParams(defn0.fparams)
-        run(subst0) match {
+        val initialSubst = getSubstFromParams(defn0.fparams)
+        run(initialSubst) match {
           case Ok((subst, resultType)) =>
-            if (flix.options.xstatistics) {
-              printStatistics(defn0.sym, subst)
-            }
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
             // TODO: XXX: We should preserve type schemas here to ensure that monomorphization happens correctly. and remove .tpe
-            Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, resultType, defn0.eff, defn0.loc))
+            Ok((TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, defn0.sc, resultType, defn0.eff, defn0.loc), subst))
 
           case Err(e) => Err(e)
         }
@@ -2132,14 +2135,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Computes and prints statistics about the given substitution.
     */
-  def printStatistics(sym: Symbol.DefnSym, subst0: Substitution): Unit = {
-    val name = sym.toString.padTo(40, ' ').take(40)
-    val size = subst0.m.size
-    val sizes = subst0.m.values.map(_.size.toLong).toList
-    val mean = StatUtils.mean(sizes)
-    val median = StatUtils.median(sizes)
-    val total = sizes.sum
-    println(f"$name (vars = $size%4d; mean = $mean%2.2f; median = $median; total = $total%4d)")
+  private def printStatistics(m: Map[Symbol.DefnSym, Substitution]): Unit = {
+    val t = new AsciiTable().
+      withTitle("Substitution Statistics").
+      withCols("Def", "Type Vars", "Mean Type Size", "Median Type Size", "Total Type Size")
+
+    for ((sym, subst) <- m) {
+      val size = subst.m.size
+      val sizes = subst.m.values.map(_.size.toLong).toList
+      val mean = StatUtils.mean(sizes)
+      val median = StatUtils.median(sizes)
+      val total = sizes.sum
+      t.mkRow(List(sym.toString, size, f"$mean%2.1f", median, total))
+    }
+    t.write(new PrintWriter(System.out))
   }
 
 }
