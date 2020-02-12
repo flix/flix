@@ -100,6 +100,8 @@ namespace List {
     ///
     /// Alias for `findLeft`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def find(f: a ->> Bool, xs: List[a]): Option[a] = findLeft(f, xs)
 
     ///
