@@ -822,9 +822,15 @@ namespace List {
     ///
     pub def toMap(xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
-
-
-
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~>> Unit, xs: List[a]): Unit @ Impure = match xs {
+        case Nil => ()
+        case x :: rs => f(x); foreach(f, rs)
+    }
 
 
     ///
