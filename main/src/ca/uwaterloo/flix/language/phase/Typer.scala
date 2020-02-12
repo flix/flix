@@ -2153,9 +2153,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val numberOfEffects: Int = effects.length
     val numberOfTypes: Int = totalSize - numberOfEffects
     println(f"Substitution($totalSize%4d entries; $numberOfTypes%4d types; $numberOfEffects%4d effects)")
-    for (eff <- effects) {
-      println(s"  ${eff.size}")
-    }
   }
 
 }
