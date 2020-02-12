@@ -163,14 +163,19 @@ namespace Result {
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
     ///
     pub def toOption(r: Result[t, e]): Option[t] = match r {
-        case Ok(v) => Some(v)
+        case Ok(v)  => Some(v)
         case Err(_) => None
     }
 
-
-
-
-
+    ///
+    /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~>> Unit, r: Result[t, e]): Unit @ Impure = match r {
+        case Ok(v)  => f(v)
+        case Err(_) => ()
+    }
 
     ///
     /// Returns `true` if and only if `r1` and `r2` and equal.
