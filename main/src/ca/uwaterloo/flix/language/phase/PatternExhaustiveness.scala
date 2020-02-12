@@ -151,9 +151,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
-        case Expression.Wild(_, _, _) => tast.toSuccess
-        case Expression.Var(_, _, _, _) => tast.toSuccess
-        case Expression.Def(_, _, _, _) => tast.toSuccess
+        case Expression.Wild(_, _) => tast.toSuccess
+        case Expression.Var(_, _, _) => tast.toSuccess
+        case Expression.Def(_, _, _) => tast.toSuccess
         case Expression.Eff(_, _, _, _) => tast.toSuccess
         case Expression.Hole(_, _, _, _) => tast.toSuccess
         case Expression.Unit(_) => tast.toSuccess
@@ -748,7 +748,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Ref) => 0
       case Type.Cst(TypeConstructor.Relation(_)) => 0
       case Type.Cst(TypeConstructor.Lattice(_)) => 0
-      case Type.Arrow(length) => length
+      case Type.Arrow(length, _) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?

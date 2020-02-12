@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity, Source}
+import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -560,12 +560,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       (SP ~ atomic("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = rule {
-      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Cast)
+    def Cast: Rule1[ParsedAst.Expression] = {
+      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
+        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+      }
+
+      rule {
+        Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Cast)
+      }
     }
 
-    def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
+    def Ascribe: Rule1[ParsedAst.Expression] = {
+      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
+        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+      }
+
+      rule {
+        FAppend ~ optional(optWS ~ ":" ~ optWS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Ascribe)
+      }
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -1086,14 +1098,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Types {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Infix ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
-        case None => t
-        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
-      })
-    }
-
-    def Infix: Rule1[ParsedAst.Type] = rule {
-      Apply ~ optional(optWS ~ "`" ~ Ambiguous ~ "`" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Infix)
+      Apply ~ optional(
+          (optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow) |
+          (optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
+          (optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+      )
     }
 
     def Apply: Rule1[ParsedAst.Type] = rule {
@@ -1101,11 +1110,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Schema | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native | Pure | Impure | Var | Ambiguous
     }
 
-    def Arrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+    def Arrow: Rule1[ParsedAst.Type] = {
+      def TypeList: Rule1[Seq[ParsedAst.Type]] = rule {
+        "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+      }
+
+      rule {
+        SP ~ TypeList ~ optWS ~ (
+            (atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow) |
+            (atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
+            (atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+        )
+      }
     }
 
     def Nat: Rule1[ParsedAst.Type] = rule {
@@ -1148,6 +1167,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
+    def Pure: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Pure") ~ SP ~> ParsedAst.Type.Pure
+    }
+
+    def Impure: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Impure") ~ SP ~> ParsedAst.Type.Impure
+    }
+
     def Var: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
@@ -1159,20 +1186,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
-  }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Effects                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-  def Effect: Rule1[ParsedAst.Effect] = rule {
-    oneOrMore(Names.Effect).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.Effect
+    def EffList: Rule1[Option[ParsedAst.Type]] = rule {
+      optional("{" ~ optWS ~ Type ~ optWS ~ "}")
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Type and (optional) Effects                                             //
   /////////////////////////////////////////////////////////////////////////////
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Effect]] = rule {
-    Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
+    Type ~ optional(WS ~ atomic("@") ~ WS ~ Type)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1341,7 +1365,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Handler: Rule1[Name.Ident] = LowerCaseName
 
-    def Effect: Rule1[Name.Ident] = UpperCaseName
+    def Effect: Rule1[Name.Ident] = rule {
+      LowerCaseName | UpperCaseName
+    }
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 

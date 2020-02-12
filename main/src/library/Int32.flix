@@ -240,7 +240,7 @@ namespace Int32 {
     ///
     pub def toString(x: Int32): String =
         import java.lang.Integer:toString(Int32);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.

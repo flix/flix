@@ -39,21 +39,21 @@ object Scheme {
     /**
       * Replaces every variable occurrence in the given type using the map `freeVars`.
       */
-    def visit(t0: Type): Type = t0 match {
+    def visitType(t0: Type): Type = t0 match {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(l) => Type.Arrow(l)
+      case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
+      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visitType(value), visitType(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
-      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visit(t), visit(rest))
+      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visitType(t), visitType(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
-      case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
+      case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
     }
 
-    visit(tpe)
+    visitType(tpe)
   }
 
 }

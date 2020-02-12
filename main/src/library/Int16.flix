@@ -244,7 +244,7 @@ namespace Int16 {
     ///
     pub def toString(x: Int16): String =
         import java.lang.Short:toString(Int16);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.

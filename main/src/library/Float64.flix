@@ -91,7 +91,7 @@ namespace Float64 {
     ///
     pub def toString(x: Float64): String =
         import java.lang.Double:toString(Float64);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.

@@ -260,9 +260,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Str(_, _) => Used.empty
 
-    case Expression.Wild(_, _, _) => Used.empty
+    case Expression.Wild(_, _) => Used.empty
 
-    case Expression.Var(sym, _, _, loc) =>
+    case Expression.Var(sym, _, loc) =>
       if (!sym.isWild())
         Used.of(sym)
       else

@@ -91,7 +91,7 @@ namespace Float32 {
     ///
     pub def toString(x: Float32): String =
         import java.lang.Float:toString(Float32);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as a Float32, leading or trailing whitespace is trimmed.

@@ -75,9 +75,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
+        case Type.Var(_, _) => Type.Unit
         case Type.Cst(tc) => Type.Cst(tc)
-        case Type.Arrow(l) => Type.Arrow(l)
+        case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
@@ -144,15 +144,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
         */
       def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
-        case Expression.Wild(tpe, eff, loc) => Expression.Wild(subst0(tpe), eff, loc)
-        case Expression.Var(sym, tpe, eff, loc) => Expression.Var(env0(sym), subst0(tpe), eff, loc)
+        case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
+        case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
 
-        case Expression.Def(sym, tpe, eff, loc) =>
+        case Expression.Def(sym, tpe, loc) =>
           /*
            * !! This is where all the magic happens !!
            */
           val newSym = specializeDefSym(sym, subst0(tpe))
-          Expression.Def(newSym, subst0(tpe), eff, loc)
+          Expression.Def(newSym, subst0(tpe), loc)
 
         case Expression.Eff(sym, tpe, eff, loc) =>
           /*
@@ -213,7 +213,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkArrow(List(valueType, valueType), Type.Cst(TypeConstructor.Bool))
+          val eqType = Type.mkArrow(List(valueType, valueType), Type.Bool)
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -221,24 +221,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeDefSym(eqSym, eqType)
-              val base = Expression.Def(newSym, eqType, eff, loc)
+              val base = Expression.Def(newSym, eqType, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Cst(TypeConstructor.Bool)), eff, loc)
-              val outer = Expression.Apply(inner, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Bool), eff, loc)
+              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
                 outer
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
               }
           }
 

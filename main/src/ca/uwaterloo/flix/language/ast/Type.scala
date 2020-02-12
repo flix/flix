@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show
 
+import scala.collection.immutable.SortedSet
+
 /**
   * Representation of types.
   */
@@ -32,15 +34,16 @@ sealed trait Type {
   /**
     * Returns the type variables in `this` type.
     */
-  def typeVars: Set[Type.Var] = this match {
-    case x: Type.Var => Set(x)
-    case Type.Cst(tc) => Set.empty
-    case Type.Zero => Set.empty
-    case Type.Succ(n, t) => Set.empty
-    case Type.Arrow(_) => Set.empty
-    case Type.RecordEmpty => Set.empty
+  // NB: This must be a sorted set to ensure that the compiler is deterministic.
+  def typeVars: SortedSet[Type.Var] = this match {
+    case x: Type.Var => SortedSet(x)
+    case Type.Cst(tc) => SortedSet.empty
+    case Type.Zero => SortedSet.empty
+    case Type.Succ(n, t) => t.typeVars
+    case Type.Arrow(_, eff) => eff.typeVars
+    case Type.RecordEmpty => SortedSet.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
-    case Type.SchemaEmpty => Set.empty
+    case Type.SchemaEmpty => SortedSet.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -90,7 +93,7 @@ sealed trait Type {
     case Type.Cst(tc) => tc.toString
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Arrow(l) => s"Arrow($l)"
+    case Type.Arrow(l, eff) => s"Arrow($l, $eff)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
@@ -104,13 +107,82 @@ sealed trait Type {
 object Type {
 
   /////////////////////////////////////////////////////////////////////////////
+  // Type Constants                                                          //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Represents the Unit type.
+    */
+  val Unit: Type = Type.Cst(TypeConstructor.Unit)
+
+  /**
+    * Represents the Bool type.
+    */
+  val Bool: Type = Type.Cst(TypeConstructor.Bool)
+
+  /**
+    * Represents the Char type.
+    */
+  val Char: Type = Type.Cst(TypeConstructor.Char)
+
+  /**
+    * Represents the Float32 type.
+    */
+  val Float32: Type = Type.Cst(TypeConstructor.Float32)
+
+  /**
+    * Represents the Float64 type.
+    */
+  val Float64: Type = Type.Cst(TypeConstructor.Float64)
+
+  /**
+    * Represents the Int8 type.
+    */
+  val Int8: Type = Type.Cst(TypeConstructor.Int8)
+
+  /**
+    * Represents the Int16 type.
+    */
+  val Int16: Type = Type.Cst(TypeConstructor.Int16)
+
+  /**
+    * Represents the Int32 type.
+    */
+  val Int32: Type = Type.Cst(TypeConstructor.Int32)
+
+  /**
+    * Represents the Int64 type.
+    */
+  val Int64: Type = Type.Cst(TypeConstructor.Int64)
+
+  /**
+    * Represents the BigInt type.
+    */
+  val BigInt: Type = Type.Cst(TypeConstructor.BigInt)
+
+  /**
+    * Represents the String type.
+    */
+  val Str: Type = Type.Cst(TypeConstructor.Str)
+
+  /**
+    * Represents the Pure effect. (TRUE in the Boolean algebra.)
+    */
+  val Pure: Type = Type.Cst(TypeConstructor.Pure)
+
+  /**
+    * Represents the Impure effect. (FALSE in the Boolean algebra.)
+    */
+  val Impure: Type = Type.Cst(TypeConstructor.Impure)
+
+  /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind) extends Type {
+  case class Var(id: Int, kind: Kind) extends Type with Ordered[Type.Var] {
     /**
       * The optional textual name of `this` type variable.
       */
@@ -140,6 +212,11 @@ object Type {
       * Returns the hash code of `this` type variable.
       */
     override def hashCode(): Int = id
+
+    /**
+      * Compares `this` type variable to `that` type variable.
+      */
+    override def compare(that: Type.Var): Int = this.id - that.id
   }
 
   /**
@@ -152,8 +229,8 @@ object Type {
   /**
     * A type expression that represents functions.
     */
-  case class Arrow(length: Int) extends Type { // TODO: Effect where?
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  case class Arrow(arity: Int, eff: Type) extends Type {
+    def kind: Kind = Kind.Arrow((0 until arity).map(_ => Kind.Star).toList, Kind.Star)
   }
 
   /**
@@ -230,24 +307,44 @@ object Type {
   def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
 
   /**
-    * Constructs the arrow type A -> B.
+    * Constructs an arrow with the given effect type A ->eff B.
     */
-  // TODO: Deprecated
-  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b) // TODO: Pure?
+  def mkArrow(a: Type, f: Type, b: Type): Type = Apply(Apply(Arrow(2, f), a), b)
+
+  /**
+    * Constructs the arrow type A ->> B.
+    */
+  def mkPureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Pure), a), b)
+
+  /**
+    * Constructs the arrow type A ~>> B.
+    */
+  def mkImpureArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2, Impure), a), b)
+
+  /**
+    * Constructs the arrow type A_1 ->> ... ->> A_n ->{eff} B.
+    */
+  def mkArrow(as: List[Type], eff: Type, b: Type): Type = {
+    val a = as.last
+    val base = mkArrow(a, eff, b)
+    as.init.foldRight(base)(mkPureArrow)
+  }
 
   /**
     * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
-  // TODO: Deprecated
-  def mkArrow(as: List[Type], b: Type): Type = { // TODO: Pure?
-    as.foldRight(b)(mkArrow)
+  // TODO: Split into two: one for pure and one for impure.
+  def mkArrow(as: List[Type], b: Type): Type = {
+    as.foldRight(b)(mkPureArrow)
   }
 
   /**
     * Constructs the arrow type [A] -> B.
     */
+  // TODO: Split into two: one for pure and one for impure.
   def mkUncurriedArrow(as: List[Type], b: Type): Type = {
-    val arrow = Arrow(as.length + 1) // TODO: Pure?
+    // TODO: Folding in wrong order?
+    val arrow = Arrow(as.length + 1, Pure)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
     }
@@ -334,7 +431,7 @@ object Type {
           //
           // Arrow.
           //
-          case Type.Arrow(l) =>
+          case Type.Arrow(l, _) =>
             val argumentTypes = args.init
             val resultType = args.last
             if (argumentTypes.length == 1) {
