@@ -687,24 +687,18 @@ object Unification {
   /**
     * Returns the negation of the effect `eff0`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
   private def mkNot(eff0: Type): Type = eff0 match {
-    case Type.Pure =>
-      Type.Impure
+    case Type.Pure => Type.Impure
 
-    case Type.Impure =>
-      Type.Pure
+    case Type.Impure => Type.Pure
 
-    case NOT(x) =>
-      x
+    case NOT(x) => x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) =>
-      mkAnd(x, mkNot(y))
+    case OR(NOT(x), y) => mkAnd(x, mkNot(y))
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) =>
-      mkAnd(mkNot(x), y)
+    case OR(x, NOT(y)) => mkAnd(mkNot(x), y)
 
     case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
   }
@@ -712,84 +706,64 @@ object Unification {
   /**
     * Returns the conjunction of the two effects `eff1` and `eff2`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
   @tailrec
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
-    case (Type.Pure, _) =>
-      eff2
+    case (Type.Pure, _) => eff2
 
     // x ∧ T => x
-    case (_, Type.Pure) =>
-      eff1
+    case (_, Type.Pure) => eff1
 
     // F ∧ x => F
-    case (Type.Impure, _) =>
-      Type.Impure
+    case (Type.Impure, _) => Type.Impure
 
     // x ∧ F => F
-    case (_, Type.Impure) =>
-      Type.Impure
-
-    // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
-      mkAnd(mkNot(x1), y)
-
-    // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.Impure
-
-    // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.Impure
+    case (_, Type.Impure) => Type.Impure
 
     // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (x1, AND(x2, y)) if x1 == x2 => mkAnd(x1, y)
 
     // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (x1, AND(y, x2)) if x1 == x2 => mkAnd(x1, y)
 
     // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 =>
-      mkAnd(x1, y)
+    case (AND(x1, y), x2) if x1 == x2 => mkAnd(x1, y)
 
     // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 =>
-      mkAnd(x, y1)
+    case (AND(x, y1), y2) if y1 == y2 => mkAnd(x, y1)
 
     // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 =>
-      x1
+    case (x1, OR(x2, _)) if x1 == x2 => x1
 
     // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 =>
-      x1
+    case (OR(x1, _), x2) if x1 == x2 => x1
+
+    // x ∧ ¬x => F
+    case (x1, NOT(x2)) if x1 == x2 => Type.Impure
+
+    // ¬x ∧ x => F
+    case (NOT(x1), x2) if x1 == x2 => Type.Impure
 
     // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
-      Type.Impure
+    case (x1, AND(_, NOT(x2))) if x1 == x2 => Type.Impure
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.Impure
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Type.Impure
 
     // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
-      Type.Impure
+    case (x1, NOT(OR(x2, _))) if x1 == x2 => Type.Impure
 
     // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
-      Type.Impure
+    case (NOT(OR(x1, _)), x2) if x1 == x2 => Type.Impure
 
     // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
-      Type.Impure
+    case (x1, AND(NOT(x2), _)) if x1 == x2 => Type.Impure
 
     // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 =>
-      Type.Impure
+    case (AND(NOT(x1), _), x2) if x1 == x2 => Type.Impure
+
+    // ¬x ∧ (x ∨ y) => ¬x ∧ y
+    case (NOT(x1), OR(x2, y)) if x1 == x2 => mkAnd(mkNot(x1), y)
 
     // x ∧ x => x
     case _ if eff1 == eff2 => eff1
@@ -807,20 +781,19 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
   @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
     case (Type.Pure, _) =>
       Type.Pure
 
-    // F ∨ y => y
-    case (Type.Impure, _) =>
-      eff2
-
     // x ∨ T => T
     case (_, Type.Pure) =>
       Type.Pure
+
+    // F ∨ y => y
+    case (Type.Impure, _) =>
+      eff2
 
     // x ∨ F => x
     case (_, Type.Impure) =>
