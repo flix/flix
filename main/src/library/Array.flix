@@ -682,7 +682,6 @@ namespace Array {
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
         }
 
-
     ///
     /// Alias for `dropLeft`.
     ///
@@ -794,6 +793,37 @@ namespace Array {
         match findIndexOfRight(x -> !(f(x)), a) {
             case None => slice(a, 0, length(a))
             case Some(i) => slice(a, i+1, length(a))
+        }
+
+    ///
+    /// Partitions `a` into subarrays such that for any two elements `x` and `y` in a subarray, `f(x, y)` is true.
+    ///
+    /// A subarray is created by iterating through the remaining elements of `a` from left to right and adding an
+    /// element to the subarray if and only if doing so creates no conflicts with the elements already in the subarray.
+    ///
+    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] =
+        groupByHelper(f, a, length(a), 0) |> List.toArray
+
+    ///
+    /// Helper for `groupBy`.
+    ///
+    def groupByHelper(f: (a, a) -> Bool, a: Array[a], len: Int32, i: Int32): List[Array[a]] =
+        if (i >= len)
+            Nil
+        else {
+            let x = a[i];
+            let end = forwardSpan(f(x), a, len, i+1);
+            slice(a, i, end) :: groupByHelper(f, a, len, end)
+        }
+
+    ///
+    /// Helper for `groupBy`.
+    ///
+    def forwardSpan(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Int32 =
+        if (i >= len)
+            len
+        else {
+            if (!f(a[i])) i else forwardSpan(f, a, len, i+1)
         }
 
     ///
