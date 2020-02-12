@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, StatUtils, Validation}
 
 import scala.annotation.tailrec
 
@@ -285,11 +285,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val subst0 = getSubstFromParams(defn0.fparams)
         run(subst0) match {
           case Ok((subst, resultType)) =>
-
             if (flix.options.xstatistics) {
-              statistics(subst)
+              printStatistics(defn0.sym, subst)
             }
-
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
@@ -2134,25 +2132,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Computes and prints statistics about the given substitution.
     */
-  def statistics(subst0: Substitution): Unit = {
-    @tailrec
-    def isEff(tpe: Type): Boolean = tpe match {
-      case Type.Cst(TypeConstructor.Pure) => true
-      case Type.Cst(TypeConstructor.Impure) => true
-      case Type.Cst(TypeConstructor.Not) => true
-      case Type.Cst(TypeConstructor.And) => true
-      case Type.Cst(TypeConstructor.Or) => true
-      case Type.Apply(tpe1, _) => isEff(tpe1)
-      case _ => false
-    }
-
-    // TODO: Maybe the division into effects and types does not work, since one is embedded in the other?
-
-//    val effects = subst0.m.values.filter(isEff).toList
-//    val totalSize: Int = subst0.m.size
-//    val numberOfEffects: Int = effects.length
-//    val numberOfTypes: Int = totalSize - numberOfEffects
-//    println(f"Substitution($totalSize%4d entries; $numberOfTypes%4d types; $numberOfEffects%4d effects)")
+  def printStatistics(sym: Symbol.DefnSym, subst0: Substitution): Unit = {
+    val name = sym.toString.padTo(40, ' ').take(40)
+    val size = subst0.m.size
+    val sizes = subst0.m.values.map(_.size.toLong).toList
+    val mean = StatUtils.mean(sizes)
+    val median = StatUtils.median(sizes)
+    val total = sizes.sum
+    println(f"$name (vars = $size%4d; mean = $mean%2.2f; median = $median; total = $total%4d)")
   }
 
 }

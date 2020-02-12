@@ -44,7 +44,7 @@ object Options {
     xallowredundancies = false,
     xnoeffects = false,
     xnostratifier = false,
-    xstatistics = true // TODO
+    xstatistics = false
   )
 
   /**
