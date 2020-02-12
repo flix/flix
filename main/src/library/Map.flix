@@ -495,7 +495,14 @@ namespace Map {
         let Map(xs) = m;
             List.toSet(xs)
 
-
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: (k, v) ~>> Unit, m: Map[k, v]): Unit @ Impure = match m {
+        case Map(xs) => List.foreach(p -> f(fst(p), snd(p)), xs)
+    }
 
 
 
