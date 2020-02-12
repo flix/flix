@@ -731,6 +731,18 @@ object Unification {
     case (_, Type.Impure) =>
       Type.Impure
 
+    // ¬x ∧ (x ∨ y) => ¬x ∧ y
+    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
+      mkAnd(mkNot(x1), y)
+
+    // x ∧ ¬x => F
+    case (x1, NOT(x2)) if x1 == x2 =>
+      Type.Impure
+
+    // ¬x ∧ x => F
+    case (NOT(x1), x2) if x1 == x2 =>
+      Type.Impure
+
     // x ∧ (x ∧ y) => (x ∧ y)
     case (x1, AND(x2, y)) if x1 == x2 =>
       mkAnd(x1, y)
@@ -754,14 +766,6 @@ object Unification {
     // (x ∨ y) ∧ x => x
     case (OR(x1, _), x2) if x1 == x2 =>
       x1
-
-    // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 =>
-      Type.Impure
-
-    // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 =>
-      Type.Impure
 
     // x ∧ (y ∧ ¬x) => F
     case (x1, AND(_, NOT(x2))) if x1 == x2 =>
@@ -787,10 +791,6 @@ object Unification {
     case (AND(NOT(x1), _), x2) if x1 == x2 =>
       Type.Impure
 
-    // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
-      mkAnd(mkNot(x1), y)
-
     // x ∧ x => x
     case _ if eff1 == eff2 => eff1
 
@@ -814,13 +814,13 @@ object Unification {
     case (Type.Pure, _) =>
       Type.Pure
 
-    // x ∨ T => T
-    case (_, Type.Pure) =>
-      Type.Pure
-
     // F ∨ y => y
     case (Type.Impure, _) =>
       eff2
+
+    // x ∨ T => T
+    case (_, Type.Pure) =>
+      Type.Pure
 
     // x ∨ F => x
     case (_, Type.Impure) =>
