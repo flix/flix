@@ -328,6 +328,11 @@ object Type {
   def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
 
   /**
+    * Returns a fresh type variable of effect kind.
+    */
+  def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
+
+  /**
     * Constructs an arrow with the given effect type A ->eff B.
     */
   def mkArrow(a: Type, f: Type, b: Type): Type = Apply(Apply(Arrow(2, f), a), b)

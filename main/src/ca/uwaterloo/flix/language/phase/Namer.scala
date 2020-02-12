@@ -647,7 +647,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Apply(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
@@ -655,17 +655,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           val env1 = env0 + (p.sym.text -> p.sym)
           mapN(visitExp(exp, env1, tenv0)) {
-            case e => NamedAst.Expression.Lambda(p, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+            case e => NamedAst.Expression.Lambda(p, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
           }
       }
 
     case WeededAst.Expression.Unary(op, exp, loc) => visitExp(exp, env0, tenv0) map {
-      case e => NamedAst.Expression.Unary(op, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+      case e => NamedAst.Expression.Unary(op, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
     }
 
     case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -673,21 +673,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val e2 = visitExp(exp2, env0, tenv0)
       val e3 = visitExp(exp3, env0, tenv0)
       mapN(e1, e2, e3) {
-        NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1, env0, tenv0)
       val e2 = visitExp(exp2, env0, tenv0)
       mapN(e1, e2) {
-        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        NamedAst.Expression.Stm(_, _, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident)
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0 + (ident.name -> sym), tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) =>
@@ -695,7 +695,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val sym = Symbol.freshVarSym(ident)
       val env1 = env0 + (ident.name -> sym)
       mapN(visitExp(exp1, env1, tenv0), visitExp(exp2, env1, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Match(exp, rules, loc) =>
@@ -711,7 +711,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Switch(rules, loc) =>
@@ -722,116 +722,116 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       rulesVal map {
-        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
       case None =>
         // Case 1: The tag does not have an expression. Nothing more to be done.
-        NamedAst.Expression.Tag(enum, tag, None, Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+        NamedAst.Expression.Tag(enum, tag, None, Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
       case Some(exp) =>
         // Case 2: The tag has an expression. Perform naming on it.
         visitExp(exp, env0, tenv0) map {
-          case e => NamedAst.Expression.Tag(enum, tag, Some(e), Type.freshTypeVar(), Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Tag(enum, tag, Some(e), Type.freshTypeVar(), Type.freshEffectVar(), loc)
         }
     }
 
     case WeededAst.Expression.Tuple(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
-        case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
       mapN(visitExp(value, env0, tenv0), visitExp(rest, env0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.RecordRestrict(label, rest, loc) =>
       mapN(visitExp(rest, env0, tenv0)) {
-        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
-        case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArrayNew(elm, len, loc) =>
       mapN(visitExp(elm, env0, tenv0), visitExp(len, env0, tenv0)) {
-        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLoad(base, index, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(index, env0, tenv0)) {
-        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(index, env0, tenv0), visitExp(elm, env0, tenv0)) {
-        case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLength(base, loc) =>
       visitExp(base, env0, tenv0) map {
-        case (b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(startIndex, env0, tenv0), visitExp(endIndex, env0, tenv0)) {
-        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.VectorLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
-        case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.VectorNew(elm, len, loc) =>
       visitExp(elm, env0, tenv0) map {
-        case e => NamedAst.Expression.VectorNew(e, len, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.VectorNew(e, len, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.VectorLoad(base, index, loc) =>
       visitExp(base, env0, tenv0) map {
-        case b => NamedAst.Expression.VectorLoad(b, index, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.VectorLoad(b, index, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.VectorStore(base, index, elm, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(elm, env0, tenv0)) {
-        case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.VectorLength(base, loc) =>
       visitExp(base, env0, tenv0) map {
-        case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.VectorSlice(base, startIndex, optEndIndex, loc) =>
       visitExp(base, env0, tenv0) map {
-        case b => NamedAst.Expression.VectorSlice(b, startIndex, optEndIndex, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case b => NamedAst.Expression.VectorSlice(b, startIndex, optEndIndex, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Ref(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Deref(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Deref(e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.Deref(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Assign(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.HandleWith(exp, bindings, loc) =>
@@ -843,7 +843,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
       }
       mapN(baseVal, bindingsVal) {
-        case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
@@ -853,7 +853,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
             // TODO: Preserve type parameters in NamedAst?
-            case e => NamedAst.Expression.Existential(p, e, Type.freshTypeVar(), loc)
+            case e => NamedAst.Expression.Existential(p, e, Type.freshEffectVar(), loc)
           }
       }
 
@@ -864,7 +864,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
             // TODO: Preserve type parameters in NamedAst?
-            case e => NamedAst.Expression.Universal(p, e, Type.freshTypeVar(), loc)
+            case e => NamedAst.Expression.Universal(p, e, Type.freshEffectVar(), loc)
           }
       }
 
@@ -880,7 +880,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
-        case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e, t, f) => NamedAst.Expression.Ascribe(e, t, f, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.Cast(exp, declaredType, declaredEff, loc) =>
@@ -895,7 +895,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
-        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e, t, f) => NamedAst.Expression.Cast(e, t, f, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.TryCatch(exp, rules, loc) =>
@@ -913,14 +913,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(expVal, rulesVal) {
-        case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.InvokeConstructor(className, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
       val sigVal = traverse(sig)(visitType(_, tenv0))
       mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (as, sig) => NamedAst.Expression.InvokeConstructor(className, as, sig, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.InvokeMethod(className, methodName, exp, args, sig, loc) =>
@@ -928,47 +928,47 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
       val sigVal = traverse(sig)(visitType(_, tenv0))
       mapN(expVal, argsVal, sigVal) {
-        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e, as, sig) => NamedAst.Expression.InvokeMethod(className, methodName, e, as, sig, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.InvokeStaticMethod(className, methodName, args, sig, loc) =>
       val argsVal = traverse(args)(visitExp(_, env0, tenv0))
       val sigVal = traverse(sig)(visitType(_, tenv0))
       mapN(argsVal, sigVal) {
-        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (as, sig) => NamedAst.Expression.InvokeStaticMethod(className, methodName, as, sig, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.GetField(className, fieldName, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.GetField(className, fieldName, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.PutField(className, fieldName, exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.PutField(className, fieldName, e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.PutField(className, fieldName, e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expression.GetStaticField(className, fieldName, Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.GetStaticField(className, fieldName, Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
 
     case WeededAst.Expression.PutStaticField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.PutStaticField(className, fieldName, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.PutStaticField(className, fieldName, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
       mapN(visitExp(exp, env0, tenv0), visitType(tpe, tenv0)) {
-        case (e, t) => NamedAst.Expression.NewChannel(e, t, Type.freshTypeVar(), loc)
+        case (e, t) => NamedAst.Expression.NewChannel(e, t, Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>
@@ -990,51 +990,51 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       mapN(rulesVal, defaultVal) {
-        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ProcessSpawn(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ProcessSleep(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ProcessPanic(msg, loc) =>
-      NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
 
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, tenv0))) {
         case cs =>
-          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
       mapN(visitExp(init, env0, tenv0), visitExp(f, env0, tenv0), visitExp(constraints, env0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Type.freshTypeVar(), loc)
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
   }
 
