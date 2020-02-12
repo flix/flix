@@ -327,7 +327,14 @@ namespace Set {
         let Set(s) = xs;
             List.toMap(s)
 
-
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~>> Unit, xs: Set[a]): Unit @ Impure = match xs {
+        case Set(l) => List.foreach(f, l)
+    }
 
 
 
