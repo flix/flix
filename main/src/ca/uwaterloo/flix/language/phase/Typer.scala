@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
+import scala.annotation.tailrec
+
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
   /**
@@ -283,6 +285,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val subst0 = getSubstFromParams(defn0.fparams)
         run(subst0) match {
           case Ok((subst, resultType)) =>
+
+            if (flix.options.xstatistics) {
+              statistics(subst)
+            }
+
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
             val fparams = getFormalParams(defn0.fparams, subst)
@@ -2123,5 +2130,32 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns the type `And(eff1, And(eff2, ...))`.
     */
   private def mkAnd(effs: List[Type]): Type = effs.foldLeft(Type.Pure: Type)(mkAnd)
+
+  /**
+    * Computes and prints statistics about the given substitution.
+    */
+  def statistics(subst0: Substitution): Unit = {
+    @tailrec
+    def isEff(tpe: Type): Boolean = tpe match {
+      case Type.Cst(TypeConstructor.Pure) => true
+      case Type.Cst(TypeConstructor.Impure) => true
+      case Type.Cst(TypeConstructor.Not) => true
+      case Type.Cst(TypeConstructor.And) => true
+      case Type.Cst(TypeConstructor.Or) => true
+      case Type.Apply(tpe1, _) => isEff(tpe1)
+      case _ => false
+    }
+
+    // TODO: Maybe the division into effects and types does not work, since one is embedded in the other?
+
+    val effects = subst0.m.values.filter(isEff).toList
+    val totalSize: Int = subst0.m.size
+    val numberOfEffects: Int = effects.length
+    val numberOfTypes: Int = totalSize - numberOfEffects
+    println(f"Substitution($totalSize%4d entries; $numberOfTypes%4d types; $numberOfEffects%4d effects)")
+    for (eff <- effects) {
+      println(s"  ${eff.size}")
+    }
+  }
 
 }

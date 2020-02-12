@@ -90,6 +90,23 @@ sealed trait Type {
   }
 
   /**
+    * Returns the size of `this` type.
+    */
+  def size: Int = this match {
+    case Type.Var(_, _) => 1
+    case Type.Cst(tc) => 1
+    case Type.Arrow(_, eff) => eff.size + 1
+    case Type.RecordEmpty => 1
+    case Type.RecordExtend(_, value, rest) => value.size + rest.size
+    case Type.SchemaEmpty => 1
+    case Type.SchemaExtend(_, tpe, rest) => tpe.size + rest.size
+    case Type.Zero => 1
+    case Type.Succ(_, t) => t.size + 1
+    case Type.Lambda(_, tpe) => tpe.size + 1
+    case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
+  }
+
+  /**
     * Returns a human readable string representation of `this` type.
     */
   override def toString: String = this match {

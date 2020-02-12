@@ -43,7 +43,8 @@ object Options {
     writeClassFiles = true,
     xallowredundancies = false,
     xnoeffects = false,
-    xnostratifier = false
+    xnostratifier = false,
+    xstatistics = true // TODO
   )
 
   /**
@@ -74,6 +75,7 @@ object Options {
   * @param xallowredundancies disables the redundancy checker.
   * @param xnoeffects         disables effect checking.
   * @param xnostratifier      disables computation of stratification.
+  * @param xstatistics        prints compiler statistics.
   */
 case class Options(core: Boolean,
                    debug: Boolean,
@@ -94,7 +96,9 @@ case class Options(core: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
                    xnoeffects: Boolean,
-                   xnostratifier: Boolean)
+                   xnostratifier: Boolean,
+                   xstatistics: Boolean
+                  )
 
 /**
   * An option to control the evaluation strategy.
