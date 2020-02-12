@@ -226,6 +226,16 @@ namespace Option {
     }
 
     ///
+    /// Applies `f` to `v` if `o` is `Some(v)`. Otherwise does nothing.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~>> Unit, o: Option[a]): Unit @ Impure = match o {
+        case None    => ()
+        case Some(v) => f(v)
+    }
+
+    ///
     /// Returns `true` if and only if `o1` and `o2` and equal.
     ///
     def __eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
