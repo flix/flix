@@ -2,6 +2,9 @@
 
 HEAD:
 
+- Added light-weight polymorphic effects.
+- Reworked array length from `length[x]` to `x.length`.
+
 Version 0.10.0:
 
 - Reworked and improved Java interoperability.

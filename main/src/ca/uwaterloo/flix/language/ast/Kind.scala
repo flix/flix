@@ -43,6 +43,16 @@ object Kind {
   case object Star extends Kind
 
   /**
+    * The kind of records.
+    */
+  case object Record extends Kind
+
+  /**
+    * The kind of schemas.
+    */
+  case object Schema extends Kind
+
+  /**
     * The kind of natural number expressions.
     */
   case object Nat extends Kind
@@ -69,6 +79,8 @@ object Kind {
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
       case Kind.Star => "*"
+      case Kind.Record => "Record"
+      case Kind.Schema => "Schema"
       case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"
       case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"

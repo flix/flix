@@ -416,8 +416,8 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Bool), sl)
-      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Bool), Type.Pure, sl)
+      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool), sl)
+      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Pure, Type.Bool), Type.Pure, sl)
       val outer = Expression.Apply(inner, exp2, Type.Bool, Type.Pure, sl)
       outer
     }
@@ -474,7 +474,7 @@ object Synthesize extends Phase[Root, Root] {
       val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), Type.Pure, sl)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Bool)
+      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
@@ -684,7 +684,7 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Int32), sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Pure, Type.Int32), sl)
       Expression.Apply(exp1, exp2, Type.Int32, Type.Pure, sl)
     }
 
@@ -719,7 +719,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkHashExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Int32)
+      val lambdaType = Type.mkArrow(List(tpe), Type.Pure, Type.Int32)
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)
@@ -930,7 +930,7 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkToString(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Str), sl)
+      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Pure, Type.Str), sl)
       Expression.Apply(exp1, exp2, Type.Str, Type.Pure, sl)
     }
 
@@ -965,7 +965,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkToStringExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Str)
+      val lambdaType = Type.mkArrow(List(tpe), Type.Pure, Type.Str)
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, Scheme(Nil, lambdaType), lambdaType, Type.Pure, sl)

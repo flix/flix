@@ -71,18 +71,22 @@ namespace Result {
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
+    /// The function `f` must be pure.
+    ///
+    pub def exists(f: t ->> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
 
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
     /// Otherwise returns `false`.
     ///
-    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
+    /// The function `f` must be pure.
+    ///
+    pub def forall(f: t ->> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
 
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def map(f: t1 -> t2, r: Result[t1, e]): Result[t2, e] = match r {
+    pub def map(f: t1 ->{f} t2, r: Result[t1, e]): Result[t2, e] @ f = match r {
         case Ok(v) => Ok(f(v))
         case Err(w) => Err(w)
     }
@@ -98,7 +102,9 @@ namespace Result {
     ///
     /// Returns `1` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
+    /// The function `f` must be pure.
+    ///
+    pub def count(f: t ->> Bool, r: Result[t, e]): Int32 = match r {
         case Ok(v) => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -106,7 +112,9 @@ namespace Result {
     ///
     /// Returns `Some(v)` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
-    pub def find(f: t -> Bool, r: Result[t, e]): Option[t] = match r {
+    /// The function `f` must be pure.
+    ///
+    pub def find(f: t ->> Bool, r: Result[t, e]): Option[t] = match r {
         case Ok(v) => if (f(v)) Some(v) else None
         case Err(_) => None
     }
@@ -114,7 +122,7 @@ namespace Result {
     ///
     /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (a, t) -> a, z: a, r: Result[t, e]): a = match r {
+    pub def foldLeft(f: (a, t) ->{f} a, z: a, r: Result[t, e]): a @ f = match r {
         case Ok(v) => f(z, v)
         case Err(_) => z
     }
@@ -122,7 +130,7 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (t, a) -> a, r: Result[t, e], z: a): a = match r {
+    pub def foldRight(f: (t, a) ->{f} a, r: Result[t, e], z: a): a @ f = match r {
         case Ok(v) => f(v, z)
         case Err(_) => z
     }
@@ -155,14 +163,19 @@ namespace Result {
     /// Returns `Some(v)` if `r` is `Ok(v)`. Otherwise returns `None`.
     ///
     pub def toOption(r: Result[t, e]): Option[t] = match r {
-        case Ok(v) => Some(v)
+        case Ok(v)  => Some(v)
         case Err(_) => None
     }
 
-
-
-
-
+    ///
+    /// Applies `f` to `v` if `r` is `Ok(v)`. Otherwise does nothing.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~>> Unit, r: Result[t, e]): Unit @ Impure = match r {
+        case Ok(v)  => f(v)
+        case Err(_) => ()
+    }
 
     ///
     /// Returns `true` if and only if `r1` and `r2` and equal.

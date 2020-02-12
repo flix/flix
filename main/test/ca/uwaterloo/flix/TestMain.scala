@@ -170,4 +170,10 @@ class TestMain extends FunSuite {
     assert(opts.xnotailcalls)
   }
 
+  test("--Xstatistics") {
+    val args = Array("--Xstatistics", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xstatistics)
+  }
+
 }

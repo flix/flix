@@ -20,10 +20,10 @@ namespace Random {
     /// Returns `None` if the given array `a` is empty.
     ///
     pub def choose[a](r: Random, a: Array[a]): Option[a] @ Impure =
-        if (length[a] == 0) {
+        if (a.length == 0) {
             None
         } else {
-            let m = length[a];
+            let m = a.length;
             let i = nextNatWithMax(r, m);
             Some(a[i])
         }

@@ -666,15 +666,6 @@ object ParsedAst {
     case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayLength Expression
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param base the array
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class ArrayLength(sp1: SourcePosition, base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * ArraySlice Expression
       *
       * @param base       the array
