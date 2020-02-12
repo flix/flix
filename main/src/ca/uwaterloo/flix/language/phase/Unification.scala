@@ -784,37 +784,48 @@ object Unification {
   @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
-    case (Type.Pure, _) => Type.Pure
+    case (Type.Pure, _) =>
+      Type.Pure
 
     // x ∨ T => T
-    case (_, Type.Pure) => Type.Pure
+    case (_, Type.Pure) =>
+      Type.Pure
 
     // F ∨ y => y
-    case (Type.Impure, _) => eff2
+    case (Type.Impure, _) =>
+      eff2
 
     // x ∨ F => x
-    case (_, Type.Impure) => eff1
+    case (_, Type.Impure) =>
+      eff1
 
     // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 => mkOr(x1, y)
+    case (x1, OR(y, x2)) if x1 == x2 =>
+      mkOr(x1, y)
 
     // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 => mkOr(x1, y)
+    case (OR(x1, y), x2) if x1 == x2 =>
+      mkOr(x1, y)
 
     // ¬x ∨ x => T
-    case (NOT(x), y) if x == y => Type.Pure
+    case (NOT(x), y) if x == y =>
+      Type.Pure
 
     // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y => Type.Pure
+    case (x, NOT(y)) if x == y =>
+      Type.Pure
 
     // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y => Type.Pure
+    case (OR(NOT(x), _), y) if x == y =>
+      Type.Pure
 
     // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y => Type.Pure
+    case (x, OR(NOT(y), _)) if x == y =>
+      Type.Pure
 
     // x ∨ x => x
-    case _ if eff1 == eff2 => eff1
+    case _ if eff1 == eff2 =>
+      eff1
 
     case _ =>
 
