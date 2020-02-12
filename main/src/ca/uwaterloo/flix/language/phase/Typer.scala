@@ -2148,11 +2148,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     // TODO: Maybe the division into effects and types does not work, since one is embedded in the other?
 
-    val effects = subst0.m.values.filter(isEff).toList
-    val totalSize: Int = subst0.m.size
-    val numberOfEffects: Int = effects.length
-    val numberOfTypes: Int = totalSize - numberOfEffects
-    println(f"Substitution($totalSize%4d entries; $numberOfTypes%4d types; $numberOfEffects%4d effects)")
+//    val effects = subst0.m.values.filter(isEff).toList
+//    val totalSize: Int = subst0.m.size
+//    val numberOfEffects: Int = effects.length
+//    val numberOfTypes: Int = totalSize - numberOfEffects
+//    println(f"Substitution($totalSize%4d entries; $numberOfTypes%4d types; $numberOfEffects%4d effects)")
   }
 
 }
