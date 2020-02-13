@@ -350,6 +350,9 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
       // TODO: Ensure that `exp1` is non-pure.
+      if (exp1.tpe == Type.Pure) {
+        println("Useless!")
+      }
       val us1 = visitExp(exp1, env0.resetApplies)
       val us2 = visitExp(exp2, env0.resetApplies)
       us1 and us2
