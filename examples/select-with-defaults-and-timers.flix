@@ -1,19 +1,19 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int, c: Channel[Int]): Unit =
+def slow(x: Int, c: Channel[Int]): Unit @ Impure =
     sleep(Duration.oneMinute());
     c <- x;
     ()
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `1` if `c` is not ready.
-def recvWithDefault(c: Channel[Int]): Int = select {
+def recvWithDefault(c: Channel[Int]): Int @ Impure = select {
     case x <- c => x
     case _      => 1
 }
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `2` if after a timeout.
-def recvWithTimeout(c: Channel[Int]): Int = select {
+def recvWithTimeout(c: Channel[Int]): Int @ Impure = select {
     case x <- c                   => x
     case y <- Timer.seconds(1i64) => 2
 }

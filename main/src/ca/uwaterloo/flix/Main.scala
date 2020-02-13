@@ -84,7 +84,8 @@ object Main {
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
       xnoeffects = cmdOpts.xnoeffects,
-      xnostratifier = cmdOpts.xnostratifier
+      xnostratifier = cmdOpts.xnostratifier,
+      xstatistics = cmdOpts.xstatistics
     )
 
     // check if command was passed.
@@ -222,6 +223,7 @@ object Main {
                      xnoeffects: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
+                     xstatistics: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -367,6 +369,10 @@ object Main {
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
         text("[experimental] disables tail call elimination.")
+
+      // Xstatistics
+      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
+        text("[experimental] prints statistics about the compilation.")
 
       note("")
 

@@ -19,7 +19,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` days.
     ///
-    pub def days(n: Int64): Ticker =
+    pub def days(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneDay(), ticker, 0);
         ticker
@@ -27,7 +27,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` hours.
     ///
-    pub def hours(n: Int64): Ticker =
+    pub def hours(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneHour(), ticker, 0);
         ticker
@@ -35,7 +35,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` minutes.
     ///
-    pub def minutes(n: Int64): Ticker =
+    pub def minutes(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneMinute(), ticker, 0);
         ticker
@@ -43,7 +43,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` seconds.
     ///
-    pub def seconds(n: Int64): Ticker =
+    pub def seconds(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneSecond(), ticker, 0);
         ticker
@@ -51,7 +51,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` milliseconds.
     ///
-    pub def milliseconds(n: Int64): Ticker =
+    pub def milliseconds(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneMillisecond(), ticker, 0);
         ticker
@@ -59,7 +59,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` microseconds.
     ///
-    pub def microseconds(n: Int64): Ticker =
+    pub def microseconds(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneMicrosecond(), ticker, 0);
         ticker
@@ -67,7 +67,7 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` nanoseconds.
     ///
-    pub def nanoseconds(n: Int64): Ticker =
+    pub def nanoseconds(n: Int64): Ticker @ Impure =
         let ticker = newTicker();
         spawn sleepSendAndRepeat(n * Duration.oneNanosecond(), ticker, 0);
         ticker
@@ -75,7 +75,7 @@ namespace Ticker {
     ///
     /// Sleeps for `s` nanoseconds, sends the Unit value to the given channel `c`, and then repeats.
     ///
-    def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int): Unit =
+    def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int): Unit @ Impure =
         let (tickChannel, stopChannel) = match ticker {
           case Ticker(t, s) => (t, s)
         };
@@ -94,9 +94,9 @@ namespace Ticker {
       case Ticker(Channel[Int], Channel[Unit])
     }
     
-    def newTicker(): Ticker = Ticker(chan Int 100, chan Unit 100)
+    def newTicker(): Ticker @ Impure = Ticker(chan Int 100, chan Unit 100)
 
-    pub def stop(ticker: Ticker): Unit = {
+    pub def stop(ticker: Ticker): Unit @ Impure = {
       match ticker {
         case Ticker(_tickChannel, stopChannel) => stopChannel <- (); ()
       }

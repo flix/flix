@@ -92,7 +92,7 @@ namespace BigInt {
     pub def fromString(s: String): Result[BigInt, String] = try {
         import java.lang.String.strip();
         import new java.math.BigInteger(String) as parseBigInt;
-        Ok(s.strip().parseBigInt())
+        Ok(s.strip().parseBigInt()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
      }

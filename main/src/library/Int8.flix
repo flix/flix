@@ -253,7 +253,7 @@ namespace Int8 {
     pub def fromString(s: String): Result[Int8, String] = try {
         import java.lang.String.strip();
         import java.lang.Byte:parseByte(String);
-        Ok(s.strip().parseByte())
+        Ok(s.strip().parseByte()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
      }

@@ -840,7 +840,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.RecordSelect(exp, label, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expression.RecordSelect(e, label, mkSL(sp1, sp2))
+        case e =>
+          // Special Case: Array Length
+          if (label.name == "length")
+            WeededAst.Expression.ArrayLength(e, mkSL(sp1, sp2))
+          else
+            WeededAst.Expression.RecordSelect(e, label, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordSelectLambda(sp1, label, sp2) =>
@@ -900,11 +905,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
           }
           WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
-      }
-
-    case ParsedAst.Expression.ArrayLength(sp1, base, sp2) =>
-      visitExp(base) map {
-        case b => WeededAst.Expression.ArrayLength(b, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
@@ -2125,7 +2125,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
     case ParsedAst.Expression.VectorNew(sp1, _, _, _) => sp1
