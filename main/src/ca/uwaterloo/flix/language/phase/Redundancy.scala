@@ -268,7 +268,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         Used.empty + HiddenVarSym(sym, loc)
 
-    case Expression.Def(sym, _, _, _) =>
+    case Expression.Def(sym, _, _) =>
       if (env0.recursionContext.isRecursiveCall(sym)) {
         Used.of(sym, unconditionallyRecurses = true)
       } else {
