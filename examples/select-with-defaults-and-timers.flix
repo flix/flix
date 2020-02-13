@@ -1,6 +1,7 @@
 /// Sends the value `x` on the channel `c` after a delay.
 def slow(x: Int, c: Channel[Int]): Unit @ Impure =
-    sleep(Duration.oneMinute());
+    import java.lang.Thread:sleep(Int64);
+    sleep(Duration.oneMinute() / 1000000i64);
     c <- x;
     ()
 

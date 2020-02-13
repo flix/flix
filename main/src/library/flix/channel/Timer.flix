@@ -77,5 +77,5 @@ namespace Timer {
     ///
     def sleepAndSend(ns: Int64, c: Channel[Unit]): Unit @ Impure =
         import java.lang.Thread:sleep(Int64);
-        sleep(ns); c <- (); ()
+        sleep(ns / 1000000i64); c <- (); ()
 }

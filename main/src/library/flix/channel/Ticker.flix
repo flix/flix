@@ -82,7 +82,7 @@ namespace Ticker {
           case Ticker(t, s) => (t, s)
         };
         
-        sleep(ns);
+        sleep(ns / 1000000i64);
         
         select {
           case _stop <- stopChannel => ()
