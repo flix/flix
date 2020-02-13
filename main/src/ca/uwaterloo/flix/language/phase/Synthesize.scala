@@ -332,10 +332,6 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.ProcessSpawn(e, tpe, eff, loc)
 
-      case Expression.ProcessSleep(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.ProcessSleep(e, tpe, eff, loc)
-
       case Expression.ProcessPanic(msg, tpe, eff, loc) =>
         Expression.ProcessPanic(msg, tpe, eff, loc)
 

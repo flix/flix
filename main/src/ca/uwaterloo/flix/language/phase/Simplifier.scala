@@ -579,10 +579,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.ProcessSpawn(lambda, newTpe, loc)
 
-      case TypedAst.Expression.ProcessSleep(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
-
       case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
@@ -1428,10 +1424,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.ProcessSpawn(e, tpe, loc)
-
-      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
 
       case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)

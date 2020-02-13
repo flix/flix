@@ -263,9 +263,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessSpawn(exp, _, _) =>
         visitExp(exp)
 
-      case Expression.ProcessSleep(exp, _, _) =>
-        visitExp(exp)
-
       case Expression.ProcessPanic(_, _, _) =>
         Set.empty
 

@@ -301,17 +301,6 @@ object Interpreter {
       })
       Value.Unit
 
-    case Expression.ProcessSleep(exp, tpe, loc) =>
-      val duration = cast2int64(eval(exp, env0, henv0, lenv0, root))
-      if (duration < 0) {
-        throw InternalRuntimeException(s"Duration $duration must be non-negative.")
-      }
-      // Convert to ms and ns as Sleep receives parameter in ns
-      val ms = duration / 1000000
-      val ns = (duration % 1000000).toInt
-      Thread.sleep(ms, ns)
-      Value.Unit
-
     case Expression.ProcessPanic(msg, tpe, loc) =>
       throw new RuntimeException(msg)
 

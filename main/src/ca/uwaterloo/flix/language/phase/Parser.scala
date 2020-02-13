@@ -583,7 +583,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | ProcessSpawn | ProcessSleep | ProcessPanic | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | ProcessSpawn | ProcessPanic | ArrayLit | ArrayNew |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
         FixpointProject | Constraint | Interpolation | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
@@ -751,10 +751,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ProcessSpawn: Rule1[ParsedAst.Expression.ProcessSpawn] = rule {
       SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ProcessSpawn
-    }
-
-    def ProcessSleep: Rule1[ParsedAst.Expression.ProcessSleep] = rule {
-      SP ~ atomic("sleep") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.ProcessSleep
     }
 
     def ProcessPanic: Rule1[ParsedAst.Expression.ProcessPanic] = rule {

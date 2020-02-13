@@ -459,11 +459,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.ProcessSpawn(e, t, loc)
 
-      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.ProcessSleep(e, t, loc)
-
       case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.ProcessPanic(msg, t, loc)

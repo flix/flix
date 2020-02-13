@@ -357,10 +357,6 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      case Expression.ProcessSleep(exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
       case Expression.ProcessPanic(msg, tpe, loc) =>
         checkType(tpe)
 

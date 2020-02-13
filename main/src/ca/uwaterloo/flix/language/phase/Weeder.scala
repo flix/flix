@@ -1212,11 +1212,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.ProcessSpawn(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.ProcessSleep(sp1, exp, sp2) =>
-      visitExp(exp) map {
-        case e => WeededAst.Expression.ProcessSleep(e, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.ProcessPanic(sp1, msg, sp2) =>
       WeededAst.Expression.ProcessPanic(msg.lit, mkSL(sp1, sp2)).toSuccess
 
@@ -2152,7 +2147,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ProcessSpawn(sp1, _, _) => sp1
-    case ParsedAst.Expression.ProcessSleep(sp1, _, _) => sp1
     case ParsedAst.Expression.ProcessPanic(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraint(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointConstraintSet(sp1, _, _) => sp1

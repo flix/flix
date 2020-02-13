@@ -220,8 +220,6 @@ object TypedAstOps {
 
       case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp, env0)
-
       case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
       case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {

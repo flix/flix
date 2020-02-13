@@ -486,10 +486,6 @@ object PrettyPrinter {
           vt.text("spawn ")
           visitExp(exp)
 
-        case Expression.ProcessSleep(exp, tpe, loc) =>
-          vt.text("sleep ")
-          visitExp(exp)
-
         case Expression.ProcessPanic(msg, tpe, loc) =>
           vt.text("!!! " + msg)
 

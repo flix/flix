@@ -76,6 +76,8 @@ namespace Ticker {
     /// Sleeps for `s` nanoseconds, sends the Unit value to the given channel `c`, and then repeats.
     ///
     def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int): Unit @ Impure =
+        import java.lang.Thread:sleep(Int64);
+
         let (tickChannel, stopChannel) = match ticker {
           case Ticker(t, s) => (t, s)
         };
