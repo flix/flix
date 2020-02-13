@@ -830,11 +830,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.ProcessSpawn(e, tvar, evar, loc)
 
-        case NamedAst.Expression.ProcessSleep(exp, tvar, evar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.ProcessSleep(e, tvar, evar, loc)
-
         case NamedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
           ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc).toSuccess
 

@@ -198,8 +198,6 @@ object WeededAst {
 
     case class ProcessSpawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ProcessSleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class ProcessPanic(msg: String, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointConstraintSet(cs: List[WeededAst.Constraint], loc: SourceLocation) extends WeededAst.Expression

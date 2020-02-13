@@ -693,8 +693,6 @@ object JvmOps {
 
       case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.ProcessSleep(exp, tpe, loc) => visitExp(exp)
-
       case Expression.ProcessPanic(msg, tpe, loc) => Set.empty
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Set.empty[ClosureInfo]) {
@@ -1073,8 +1071,6 @@ object JvmOps {
         rs ++ d
 
       case Expression.ProcessSpawn(exp, tpe, loc) => visitExp(exp) + tpe
-
-      case Expression.ProcessSleep(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.ProcessPanic(msg, tpe, loc) => Set(tpe)
 

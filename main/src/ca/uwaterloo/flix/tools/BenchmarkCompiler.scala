@@ -55,7 +55,7 @@ object BenchmarkCompiler {
             val totalTime = compilationResult.getTotalTime()
             val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
-            println(s"Total Lines of Source Code: $totalLines.")
+            //println(s"Total Lines of Source Code: $totalLines.")
             println(s"${currentTime}, ${throughput}")
           }
         case Validation.Failure(errors) =>

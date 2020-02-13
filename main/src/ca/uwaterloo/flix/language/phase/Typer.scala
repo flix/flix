@@ -1214,19 +1214,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) =>
-        //
-        // exp: Int @ _
-        // -------------------------
-        // sleep exp : Unit @ Impure
-        //
-        for {
-          (tpe, _) <- visitExp(exp)
-          durationType <- unifyTypM(tpe, Type.Int64, loc)
-          resultTyp <- unifyTypM(tvar, Type.Unit, loc)
-          resultEff <- unifyEffM(evar, Type.Impure, loc)
-        } yield (resultTyp, resultEff)
-
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
         // A panic is, by nature, not type safe.
         liftM((tvar, evar))
@@ -1633,10 +1620,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.ProcessSpawn(e, subst0(tvar), subst0(evar), loc)
-
-      case ResolvedAst.Expression.ProcessSleep(exp, tvar, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.ProcessSleep(e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
         TypedAst.Expression.ProcessPanic(msg, subst0(tvar), subst0(evar), loc)

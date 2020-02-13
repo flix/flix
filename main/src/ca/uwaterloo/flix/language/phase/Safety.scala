@@ -209,8 +209,6 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp)
-
     case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil
 
     case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.flatMap(checkConstraint)

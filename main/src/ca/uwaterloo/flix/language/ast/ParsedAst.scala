@@ -924,15 +924,6 @@ object ParsedAst {
     case class ProcessSpawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Process Sleep Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ProcessSleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Process Panic Expression.
       *
       * @param sp1 the position of the first character in the expression.

@@ -330,10 +330,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp, env0)
         Expression.ProcessSpawn(e, tpe, loc)
 
-      case Expression.ProcessSleep(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.ProcessSleep(e, tpe, loc)
-
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
 

@@ -998,11 +998,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.ProcessSpawn(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.ProcessSleep(exp, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.ProcessSleep(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
-      }
-
     case WeededAst.Expression.ProcessPanic(msg, loc) =>
       NamedAst.Expression.ProcessPanic(msg, Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
 
@@ -1348,7 +1343,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.ProcessSpawn(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.ProcessSleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.ProcessPanic(msg, loc) => Nil
     case WeededAst.Expression.FixpointConstraintSet(cs, loc) => cs.flatMap(freeVarsConstraint)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

@@ -262,8 +262,6 @@ object SimplifiedAst {
 
     case class ProcessSpawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class ProcessSleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class ProcessPanic(msg: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointConstraintSet(cs: List[SimplifiedAst.Constraint], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

@@ -393,11 +393,6 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.ProcessSpawn(e, tpe, eff, loc)
       }
 
-    case Expression.ProcessSleep(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.ProcessSleep(e, tpe, eff, loc)
-      }
-
     case Expression.ProcessPanic(msg, tpe, eff, loc) =>
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
@@ -658,9 +653,6 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.ProcessSpawn(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
-    case Expression.ProcessSleep(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.ProcessPanic(_, _, _, _) =>
