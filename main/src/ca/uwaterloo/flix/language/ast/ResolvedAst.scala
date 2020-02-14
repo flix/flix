@@ -29,8 +29,6 @@ object ResolvedAst {
                      effs: Map[Symbol.EffSym, ResolvedAst.Eff],
                      handlers: Map[Symbol.EffSym, ResolvedAst.Handler],
                      enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                     classes: Map[Symbol.ClassSym, ResolvedAst.Class],
-                     impls: Map[Symbol.ClassSym, ResolvedAst.Impl],
                      relations: Map[Symbol.RelSym, ResolvedAst.Relation],
                      lattices: Map[Symbol.LatSym, ResolvedAst.Lattice],
                      latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
@@ -47,18 +45,9 @@ object ResolvedAst {
   // TODO
   case class Law()
 
-  // TODO
-  case class Sig()
-
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
-
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[Type.Var], head: ResolvedAst.SimpleClass, body: List[ResolvedAst.SimpleClass], sigs: Map[String, ResolvedAst.Sig], laws: List[ResolvedAst.Law], loc: SourceLocation)
-
-  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation)
-
-  // TODO: Disallow.
 
   case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[ResolvedAst.TypeParam], attr: List[ResolvedAst.Attribute], sc: ast.Scheme, loc: SourceLocation)
 
@@ -89,8 +78,6 @@ object ResolvedAst {
     }
 
     case class Eff(sym: Symbol.EffSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Sig(sym: Symbol.SigSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, eff: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

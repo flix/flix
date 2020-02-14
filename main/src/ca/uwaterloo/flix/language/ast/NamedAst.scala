@@ -28,8 +28,6 @@ object NamedAst {
                   handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  classes: Map[Name.NName, Map[String, NamedAst.Class]],
-                  impls: Map[Name.NName, List[NamedAst.Impl]],
                   relations: Map[Name.NName, Map[String, NamedAst.Relation]],
                   lattices: Map[Name.NName, Map[String, NamedAst.Lattice]],
                   latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
@@ -47,19 +45,11 @@ object NamedAst {
   // TODO
   case class Law()
 
-  case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
-
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
-
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[ast.Type.Var], head: NamedAst.SimpleClass, body: List[NamedAst.SimpleClass], sigs: Map[String, NamedAst.Sig], laws: List[NamedAst.Law], loc: SourceLocation)
-
-  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: NamedAst.ComplexClass, body: List[NamedAst.ComplexClass], defs: Map[String, NamedAst.Def], loc: SourceLocation)
-
-  case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation)
 
   case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
 
@@ -354,10 +344,6 @@ object NamedAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.ConstraintParam
 
   }
-
-  case class SimpleClass(qname: Name.QName, args: List[ast.Type.Var], loc: SourceLocation)
-
-  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[NamedAst.Type], loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation)
 
