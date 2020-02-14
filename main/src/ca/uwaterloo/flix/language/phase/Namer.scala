@@ -47,8 +47,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       handlers = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      classes = Map.empty,
-      impls = Map.empty,
       relations = Map.empty,
       lattices = Map.empty,
       latticeComponents = Map.empty,
@@ -173,11 +171,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     /*
-     * Sig.
-     */
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) => ??? // TODO
-
-    /*
      * Enum.
      */
     case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
@@ -271,97 +264,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val lattice = NamedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
           prog0.copy(latticeComponents = prog0.latticeComponents + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
-
-    //
-    // Class.
-    //
-    case decl@WeededAst.Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
-      // Check that the class name is not qualified.
-      if (head0.qname.isQualified) {
-        throw InternalCompilerException(s"Qualified class names are currently unsupported.")
-      }
-
-      // Retrieve the class name.
-      val ident = head0.qname.ident
-
-      // Check if the class already exists.
-      prog0.classes.get(ns0) match {
-        case None =>
-          // Case 1: The namespace does not yet exist. So the class does not yet exist.
-          visitClassDecl(decl, ns0) map {
-            case clazz =>
-              val classes = Map(ident.name -> clazz)
-              prog0.copy(classes = prog0.classes + (ns0 -> classes))
-          }
-        case Some(classes0) =>
-          // Case 2: The namespace exists. Lookup the class.
-          classes0.get(ident.name) match {
-            case None =>
-              // Case 2.1: The class does not exist in the namespace. Update it.
-              visitClassDecl(decl, ns0) map {
-                case clazz =>
-                  val classes = classes0 + (ident.name -> clazz)
-                  prog0.copy(classes = prog0.classes + (ns0 -> classes))
-              }
-            case Some(clazz) =>
-              // Case 2.2: Duplicate class.
-              val loc1 = clazz.head.qname.ident.loc
-              val loc2 = ident.loc
-              NameError.DuplicateClass(ident.name, loc1, loc2).toFailure
-          }
-      }
-
-    //
-    // Impl.
-    //
-    case WeededAst.Declaration.Impl(doc, mod, head0, body0, defs0, loc) =>
-      // Compute the free type variables in the head and body atoms.
-      val freeTypeVars: List[Name.Ident] = freeVars(head0) ++ (body0 flatMap freeVars)
-
-      // Introduce a fresh type variable for each free identifier.
-      val tenv0 = typeEnvFromFreeVars(freeTypeVars)
-
-      // Perform naming on the head and body class atoms.
-      val headVal = visitComplexClass(head0, ns0, tenv0)
-      val bodyVal = traverse(body0)(visitComplexClass(_, ns0, tenv0))
-
-      // Perform naming on the definitions in the implementation.
-      val defsVal = Validation.fold(defs0, Map.empty[String, NamedAst.Def]) {
-        case (macc, decl) =>
-          val name = decl.ident.name
-          visitDef(decl, tenv0, ns0) flatMap {
-            case defn => macc.get(name) match {
-              case None => (macc + (name -> defn)).toSuccess
-              case Some(otherDef) => NameError.DuplicateDef(name, otherDef.sym.loc, decl.ident.loc).toFailure
-            }
-          }
-      }
-
-      mapN(defsVal, headVal, bodyVal) {
-        case (defs, head, body) =>
-          // Reassemble the implementation.
-          val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
-
-          // Reassemble the implementations in the namespace.
-          val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
-          prog0.copy(impls = prog0.impls + (ns0 -> implsInNs))
-      }
-
-    //
-    // Disallow.
-    //
-    case WeededAst.Declaration.Disallow(doc, body0, loc) =>
-      // Compute the free type variables in the body atoms.
-      val freeTypeVars: List[Name.Ident] = body0 flatMap freeVars
-
-      // Introduce a fresh type variable for each free identifier.
-      val tenv0 = typeEnvFromFreeVars(freeTypeVars)
-
-      // Perform naming on the body class atoms.
-      val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
-
-      // TODO: Decide if these should be separate or go with the impls?
-      prog0.toSuccess
 
     /*
      * Relation.
@@ -521,77 +423,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val sym = Symbol.mkDefnSym(ns0, ident)
               NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
           }
-      }
-  }
-
-  /**
-    * Performs naming on the given class declaration `decl0` in the given namespace `ns0`.
-    */
-  private def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Class, NameError] = decl0 match {
-    case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
-      // Compute the free type variables in the head and body atoms.
-      val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
-
-      // Introduce a fresh type variable for each free identifier.
-      val tenv0 = typeEnvFromFreeVars(freeTypeVars)
-
-      // TODO
-      val ident = decl0.head.qname.ident
-      val sym = Symbol.mkClassSym(ns0, ident)
-      val quantifiers = tenv0.values.toList
-      val head = visitSimpleClass(head0, ns0, tenv0)
-      val body = body0.map(visitSimpleClass(_, ns0, tenv0))
-      val sigsVal = Validation.fold(sigs0, Map.empty[String, NamedAst.Sig]) {
-        case (macc, sig) =>
-          val name = sig.ident.name
-          macc.get(name) match {
-            case None =>
-              mapN(visitSig(sig, sym, tenv0, ns0)) {
-                case s => (macc + (sig.ident.name -> s))
-              }
-            case Some(otherSig) => NameError.DuplicateSig(name, otherSig.sym.loc, sig.ident.loc).toFailure
-          }
-      }
-      val laws = Nil
-
-      sigsVal map {
-        case sigs => NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
-      }
-  }
-
-  /**
-    * Performs naming on the given signature declaration `sig0` in the given namespace `ns0`.
-    */
-  private def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Sig, NameError] = sig0 match {
-    case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
-      val sym = Symbol.mkSigSym(classSym, ident)
-      val tparams = tparams0 match {
-        case TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
-      }
-      val tenv = tenv0 ++ getTypeEnv(tparams)
-
-      mapN(getFormalParams(fparams0, tenv), getScheme(tparams, tpe, tenv)) {
-        case (fparams, sc) => NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, NamedAst.Type.Pure(loc), loc) // TODO: Effect
-      }
-  }
-
-  /**
-    * Performs naming on the given simple class atom `a`.
-    */
-  private def visitSimpleClass(a: WeededAst.SimpleClass, ns0: Name.NName, tenv0: Map[String, Type.Var]): NamedAst.SimpleClass = a match {
-    case WeededAst.SimpleClass(qname, targs0, loc) =>
-      val targs = targs0.map(ident => tenv0(ident.name))
-      NamedAst.SimpleClass(qname, targs, loc)
-  }
-
-  /**
-    * Performs naming on the given complex class atom `a`.
-    */
-  private def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.ComplexClass, NameError] = a match {
-    case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
-      mapN(traverse(targs0)(visitType(_, tenv0))) {
-        case targs => NamedAst.ComplexClass(qname, polarity, targs, loc)
       }
   }
 
@@ -1251,16 +1082,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
   }
-
-  /**
-    * Returns the free variables in the given simple class atom `a`.
-    */
-  private def freeVars(a: WeededAst.SimpleClass): List[Name.Ident] = a.args
-
-  /**
-    * Returns the free variables in the given complex class atom `a`.
-    */
-  private def freeVars(a: WeededAst.ComplexClass): List[Name.Ident] = a.args.flatMap(freeVars)
 
   /**
     * Returns all the free variables in the given expression `exp0`.

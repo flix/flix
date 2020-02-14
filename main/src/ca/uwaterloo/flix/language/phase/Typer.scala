@@ -399,9 +399,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, Scheme.instantiate(eff.sc), loc)
         } yield (resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.Sig(sym, tvar, evar, loc) =>
-        throw InternalCompilerException("Not yet supported")
-
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
         liftM((tvar, evar))
 
@@ -1345,9 +1342,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
         TypedAst.Expression.Eff(sym, subst0(tvar), subst0(evar), loc)
-
-      case ResolvedAst.Expression.Sig(sym, tvar, evar, loc) =>
-        throw InternalCompilerException("Not yet supported")
 
       case ResolvedAst.Expression.Hole(sym, tpe, evar, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)
