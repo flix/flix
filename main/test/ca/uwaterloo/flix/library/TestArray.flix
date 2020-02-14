@@ -13,87 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/////////////////////////////////////////////////////////////////////////////
-// new                                                                     //
-/////////////////////////////////////////////////////////////////////////////
 @test
-def new01(): Bool = Array.new(42, 10)[0] == 42
+def testNew01(): Bool @ Impure = Array.new(42, 10)[0] == 42
 
 @test
-def new02(): Bool = Array.new(42, 10)[5] == 42
+def testNew02(): Bool @ Impure = Array.new(42, 10)[5] == 42
 
 @test
-def new03(): Bool = Array.new(42, 10)[9] == 42
-
-/////////////////////////////////////////////////////////////////////////////
-// get                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def get01(): Bool = Array.get([1, 2, 3], 0) == 1
+def testNew03(): Bool @ Impure = Array.new(42, 10)[9] == 42
 
 @test
-def get02(): Bool = Array.get([1, 2, 3], 1) == 2
+def testGet01(): Bool @ Impure = Array.get([1, 2, 3], 0) == 1
 
 @test
-def get03(): Bool = Array.get([1, 2, 3], 2) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// put                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def put01(): Bool =
-    let a = [1];
-    Array.put(a, 0, 42);
-    a[0] == 42
+def testGet02(): Bool @ Impure = Array.get([1, 2, 3], 1) == 2
 
 @test
-def put02(): Bool =
-    let a = [1, 2];
-    Array.put(a, 1, 42);
-    a[1] == 42
+def testGet03(): Bool @ Impure = Array.get([1, 2, 3], 2) == 3
 
 @test
-def put03(): Bool =
-    let a = [1, 2, 3];
-    Array.put(a, 2, 42);
-    a[2] == 42
-
-/////////////////////////////////////////////////////////////////////////////
-// length                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def length01(): Bool = Array.length([]) == 0
+def testPut01(): Bool @ Impure = Array.put([1], 0, 42)[0] == 42
 
 @test
-def length02(): Bool = Array.length([1]) == 1
+def testPut02(): Bool @ Impure = Array.put([1, 2], 1, 42)[1] == 42
 
 @test
-def length03(): Bool = Array.length([1, 2, 3]) == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// slice                                                                   //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def slice01(): Bool = Array.slice([1, 2, 3], 0, 1)[0] == 1
+def testPut03(): Bool @ Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
 
 @test
-def slice02(): Bool = Array.slice([1, 2, 3], 1, 2)[0] == 2
+def testLength01(): Bool @ Impure = Array.length([]) == 0
 
 @test
-def slice03(): Bool = Array.slice([1, 2, 3], 2, 3)[0] == 3
-
-/////////////////////////////////////////////////////////////////////////////
-// toList                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def toList01(): Bool = Array.toList([]) == Nil
+def testLength02(): Bool @ Impure = Array.length([1]) == 1
 
 @test
-def toList02(): Bool = Array.toList([1]) == 1 :: Nil
+def testLength03(): Bool @ Impure = Array.length([1, 2, 3]) == 3
 
 @test
-def toList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
+def testSlice01(): Bool @ Impure = Array.slice([1, 2, 3], 0, 1)[0] == 1
+
+@test
+def testSlice02(): Bool @ Impure = Array.slice([1, 2, 3], 1, 2)[0] == 2
+
+@test
+def testSlice03(): Bool @ Impure = Array.slice([1, 2, 3], 2, 3)[0] == 3
+
+@test
+def testToList01(): Bool @ Impure = Array.toList([]) == Nil
+
+@test
+def testToList02(): Bool @ Impure = Array.toList([1]) == 1 :: Nil
+
+@test
+def testToList03(): Bool @ Impure = Array.toList([1, 2]) == 1 :: 2 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // head                                                                    //
@@ -3465,7 +3437,3 @@ def mkStringBy04(): Bool =
     let a = [1,2,3];
     let s = Array.mkStringBy(Int32.toString, ",", a);
     s == "1,2,3"
-
-
-
-

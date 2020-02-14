@@ -116,8 +116,8 @@ object Uncurrier extends Phase[Root, Root] {
     val fs = List(paramX, paramY)
 
     // Construct an expression that calls the original symbol passing one argument at a time.
-    val innerExp = Expression.Def(sym, Type.mkArrow(List(typeX, typeY), returnType), loc)
-    val innerApply = Expression.Apply(innerExp, List(Expression.Var(varX, typeX, loc)), Type.mkArrow(typeY, returnType), loc)
+    val innerExp = Expression.Def(sym, Type.mkArrow(List(typeX, typeY), Type.Pure, returnType), loc)
+    val innerApply = Expression.Apply(innerExp, List(Expression.Var(varX, typeX, loc)), Type.mkPureArrow(typeY, returnType), loc)
     val outerApply = Expression.Apply(innerApply, List(Expression.Var(varY, typeY, loc)), returnType, loc)
 
     // Construct the uncurried definition.

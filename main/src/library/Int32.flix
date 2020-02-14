@@ -240,7 +240,7 @@ namespace Int32 {
     ///
     pub def toString(x: Int32): String =
         import java.lang.Integer:toString(Int32);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as an Int32, leading or trailing whitespace is trimmed.
@@ -249,7 +249,7 @@ namespace Int32 {
     pub def fromString(s: String): Result[Int32, String] = try {
         import java.lang.String.strip();
         import java.lang.Integer:parseInt(String);
-        Ok(s.strip().parseInt())
+        Ok(s.strip().parseInt()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
      }

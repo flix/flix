@@ -166,4 +166,43 @@ object TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 
+  /**
+    * A type constructor that represents a pure effect.
+    *
+    * Pure represents TRUE in the Boolean algebra.
+    */
+  case object Pure extends TypeConstructor {
+    def kind: Kind = Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents an impure effect.
+    *
+    * Impure represents FALSE in the Boolean algebra.
+    */
+  case object Impure extends TypeConstructor {
+    def kind: Kind = Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the negation of an effect.
+    */
+  case object Not extends TypeConstructor {
+    def kind: Kind = Kind.Effect -> Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the conjunction of two effects.
+    */
+  case object And extends TypeConstructor {
+    def kind: Kind = Kind.Effect -> Kind.Effect -> Kind.Effect
+  }
+
+  /**
+    * A type constructor that represents the disjunction of two effects.
+    */
+  case object Or extends TypeConstructor {
+    def kind: Kind = Kind.Effect -> Kind.Effect -> Kind.Effect
+  }
+
 }

@@ -1712,6 +1712,22 @@ def toMap03(): Bool = assert!(List.toMap((1, true) :: (2, false) :: Nil) == Map#
 def toMap04(): Bool = assert!(List.toMap((1, true) :: (1, false) :: Nil) == Map#{1 -> true})
 
 /////////////////////////////////////////////////////////////////////////////
+// foreach                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foreach01(): Bool @ Impure =
+    let r = ref 21;
+    List.foreach(x -> r := x, Nil);
+    21 == deref r
+
+@test
+def foreach02(): Bool @ Impure =
+    let r = ref 21;
+    List.foreach(x -> r := x, 1 :: 2 :: 3 :: Nil);
+    3 == deref r
+
+/////////////////////////////////////////////////////////////////////////////
 // toArray                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test

@@ -275,9 +275,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessSpawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.ProcessSleep(exp, tpe, loc) =>
-        visitExp(exp, i0)
-
       case Expression.ProcessPanic(msg, tpe, loc) =>
         i0
 

@@ -21,56 +21,56 @@ namespace Char {
     ///
     pub def isAscii(c: Char): Bool =
         import flix.runtime.library.Char:isAscii(Char);
-        c.isAscii()
+        c.isAscii() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
     ///
     pub def isLetter(c: Char): Bool =
         import java.lang.Character:isLetter(Char);
-        c.isLetter()
+        c.isLetter() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9.
     ///
     pub def isDigit(c: Char): Bool =
         import java.lang.Character:isDigit(Char);
-        c.isDigit()
+        c.isDigit() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
     pub def isOctDigit(c: Char): Bool =
         import flix.runtime.library.Char:isOctDigit(Char);
-        c.isOctDigit()
+        c.isOctDigit() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
     pub def isHexDigit(c: Char): Bool =
         import flix.runtime.library.Char:isHexDigit(Char);
-        c.isHexDigit()
+        c.isHexDigit() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is lowercase.
     ///
     pub def isLowerCase(c: Char): Bool =
         import java.lang.Character:isLowerCase(Char);
-        c.isLowerCase()
+        c.isLowerCase() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
     pub def isUpperCase(c: Char): Bool =
         import java.lang.Character:isUpperCase(Char);
-        c.isUpperCase()
+        c.isUpperCase() as Bool @ Pure
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhiteSpace(c: Char): Bool =
         import java.lang.Character:isWhitespace(Char);
-        c.isWhitespace()
+        c.isWhitespace() as Bool @ Pure
 
     ///
     /// Converts a letter to its lowercase version.
@@ -79,7 +79,7 @@ namespace Char {
     ///
     pub def toLowerCase(c: Char): Char =
         import java.lang.Character:toLowerCase(Char);
-        c.toLowerCase()
+        c.toLowerCase() as Char @ Pure
 
     ///
     /// Converts a letter to its uppercase version.
@@ -88,13 +88,13 @@ namespace Char {
     ///
     pub def toUpperCase(c: Char): Char =
         import java.lang.Character:toUpperCase(Char);
-        c.toUpperCase()
+        c.toUpperCase() as Char @ Pure
 
     ///
     /// Returns the character `c` as a string.
     ///
     pub def toString(c: Char): String =
         import java.lang.Character:toString(Char);
-        c.toString()
+        c.toString() as String @ Pure
 
 }

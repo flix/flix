@@ -152,6 +152,12 @@ class TestMain extends FunSuite {
     assert(opts.xinvariants)
   }
 
+  test("--Xno-effects") {
+    val args = Array("--Xno-effects", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoeffects)
+  }
+
   test("--Xno-stratifier") {
     val args = Array("--Xno-stratifier", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -162,6 +168,12 @@ class TestMain extends FunSuite {
     val args = Array("--Xno-tailcalls", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnotailcalls)
+  }
+
+  test("--Xstatistics") {
+    val args = Array("--Xstatistics", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xstatistics)
   }
 
 }

@@ -244,7 +244,7 @@ namespace Int8 {
     ///
     pub def toString(x: Int8): String =
         import java.lang.Byte:toString(Int8);
-        x.toString()
+        x.toString() as String @ Pure
 
     ///
     /// Parse the string `s` as an Int8, leading or trailing whitespace is trimmed.
@@ -253,7 +253,7 @@ namespace Int8 {
     pub def fromString(s: String): Result[Int8, String] = try {
         import java.lang.String.strip();
         import java.lang.Byte:parseByte(String);
-        Ok(s.strip().parseByte())
+        Ok(s.strip().parseByte()) as _ @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
      }
