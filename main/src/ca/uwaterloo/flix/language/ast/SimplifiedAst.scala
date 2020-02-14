@@ -264,6 +264,22 @@ object SimplifiedAst {
 
   }
 
+  case class LabeledExpression(label: Int, exp : Expression) extends Expression {
+    override def tpe: Type = exp.tpe
+
+    override def loc: SourceLocation = exp.loc
+
+    override def equals(obj: Any): Boolean =
+      obj match {
+        case that: LabeledExpression => this.label == that.label
+        case _ => false
+      }
+
+    override def hashCode(): Int = label.hashCode()
+  }
+
+  implicit def expToLabeled(exp: Expression): LabeledExpression = exp.asInstanceOf[LabeledExpression]
+
   case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
 
   sealed trait Predicate {

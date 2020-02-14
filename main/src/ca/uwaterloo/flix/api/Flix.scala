@@ -25,9 +25,9 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
@@ -262,6 +262,7 @@ class Flix {
       Tailrec |>
       Inliner |>
       Optimizer |>
+      ControlFlowAnalysis |>
       TreeShaker |>
       VarNumbering |>
       Finalize |>
