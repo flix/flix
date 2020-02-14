@@ -61,15 +61,11 @@ object Interpreter {
 
     case Expression.ApplyDef(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
-    case Expression.ApplyEff(sym, args, tpe, loc) => invokeEff(sym, args, env0, henv0, lenv0, root)
-
     case Expression.ApplyCloTail(exp, args, _, _) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
 
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
-
-    case Expression.ApplyEffTail(sym, args, _, _) => invokeEff(sym, args, env0, henv0, lenv0, root)
 
     case Expression.ApplySelfTail(sym, _, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
@@ -207,14 +203,6 @@ object Interpreter {
       val value = eval(exp2, env0, henv0, lenv0, root)
       box.setValue(value)
       Value.Unit
-
-    case Expression.HandleWith(exp, bindings, tpe, loc) =>
-      // Evaluate each handler expression and construct the new handler environment.
-      val henv = bindings.foldLeft(henv0) {
-        case (macc, HandlerBinding(sym, handler)) => macc + (sym -> eval(handler, env0, henv0, lenv0, root))
-      }
-      // Evaluate the expression in the new handler environment.
-      eval(exp, env0, henv, lenv0, root)
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       try {
@@ -701,35 +689,6 @@ object Interpreter {
 
     // Evaluate the body expression under the new local variable environment and an empty label environment.
     eval(defn.exp, env, henv0, Map.empty, root)
-  }
-
-  /**
-    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`.
-    */
-  private def invokeEff(sym: Symbol.EffSym, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
-    // Evaluate the arguments.
-    val as = evalArgs(args, env0, henv0, lenv0, root)
-
-    // Lookup the effect symbol in the current handler environment.
-    henv0.get(sym) match {
-      case Some(value) =>
-        // Case 1: Handler found.
-        val clo = cast2closure(value)
-        invokeClo(clo, args, env0, henv0, lenv0, root)
-      case None =>
-        // Case 2: No handler found. Try the default handler.
-        root.handlers.get(sym) match {
-          case None => throw InternalRuntimeException(s"No default effect handler for: '$sym'.")
-          case Some(handler) =>
-            // Bind arguments to formal parameters.
-            val env = handler.fparams.zip(as).foldLeft(Map.empty[String, AnyRef]) {
-              case (macc, (fparam, value)) => macc + (fparam.sym.toString -> value)
-            }
-            // Evaluate the body of the handler.
-            // TODO: What handler environment should be used here?
-            eval(handler.exp, env, henv0, Map.empty, root)
-        }
-    }
   }
 
   /**

@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
-                  effs: Map[Symbol.EffSym, FinalAst.Eff],
-                  handlers: Map[Symbol.EffSym, FinalAst.Handler],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
                   relations: Map[Symbol.RelSym, FinalAst.Relation],
                   lattices: Map[Symbol.LatSym, FinalAst.Lattice],
@@ -35,12 +33,8 @@ object FinalAst {
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) {
-    var method: Method = null
+    var method: Method = _
   }
-
-  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[FinalAst.FormalParam], tpe: MonoType, loc: SourceLocation)
-
-  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation)
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpe: MonoType, loc: SourceLocation)
 
@@ -131,13 +125,9 @@ object FinalAst {
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class ApplyEff(sym: Symbol.EffSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class ApplyCloTail(exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class ApplyEffTail(sym: Symbol.EffSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], actuals: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -194,8 +184,6 @@ object FinalAst {
 
     case class Assign(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class HandleWith(exp: FinalAst.Expression, bindings: List[FinalAst.HandlerBinding], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class Existential(fparam: FinalAst.FormalParam, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
       def tpe: MonoType = MonoType.Bool
     }
@@ -205,7 +193,7 @@ object FinalAst {
     }
 
     case class Cast(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-    
+
     case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
@@ -339,7 +327,5 @@ object FinalAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 
   case class FreeVar(sym: Symbol.VarSym, tpe: MonoType)
-
-  case class HandlerBinding(sym: Symbol.EffSym, exp: FinalAst.Expression)
 
 }
