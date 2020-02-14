@@ -135,36 +135,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
-  test("InaccessibleClass.01") {
-    val input =
-      s"""
-         |namespace A {
-         |  class X[a]
-         |}
-         |
-         |namespace B {
-         |  class Y[x] <= A.X[a]
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleClass](result)
-  }
-
-  test("InaccessibleClass.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  class X[a] <= A/B/C.Y[a]
-         |
-         |  namespace B/C {
-         |    class Y[a]
-         |  }
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleClass](result)
-  }
-
   test("InaccessibleDef.01") {
     val input =
       s"""
