@@ -1623,7 +1623,6 @@ object GenExpression {
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
       val div = new Label()
       val endDiv = new Label()
-      // check equality
       sop match {
         case Float32Op.Div => visitor.visitInsn(FDIV)
         case Float64Op.Div => visitor.visitInsn(DDIV)
