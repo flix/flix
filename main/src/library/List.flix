@@ -835,14 +835,16 @@ namespace List {
     ///
     /// Returns the list `xs` as an array.
     ///
-    pub def toArray(xs: List[a]) : Array[a] = match head(xs) {
-        case None => []
+    pub def toArray(xs: List[a]) : Array[a] @ Pure = match head(xs) {
+        case None => [] as Array[a] @ Pure
         case Some(x) =>
-            let a = Array.new(x, length(xs));
-            let f = (i,b) -> { a[i] = b; i + 1 };
+            let a = Array.new(x, length(xs)) as Array[a] @ Pure;
+            let f = (i,b) -> { a[i] = b as _ @ Pure ; i + 1 } as Int @ Pure;
             foldLeft(f, 0, xs);
             a
         }
+
+
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal.
