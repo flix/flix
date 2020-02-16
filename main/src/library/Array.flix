@@ -1135,7 +1135,7 @@ namespace Array {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: Array[a], b: Array[b]): Bool =
+    pub def sameElements(a: Array[a], b: Array[b]): Bool @ Pure =
         let alen = Array.length(a);
         let blen = Array.length(b);
         if (alen == blen)
