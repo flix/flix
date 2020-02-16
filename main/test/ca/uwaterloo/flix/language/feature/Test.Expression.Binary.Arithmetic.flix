@@ -579,6 +579,24 @@ def testBinaryDivide44(): Bool = assertEq!(-3ii / 1200000000000000000000ii, 0ii)
 def testBinaryDivide45(): Bool = assertEq!(-9223372036854775809ii / -1ii, 9223372036854775809ii)
 
 @test
+def testBinaryDivide46(): Bool = assertEq!(1 / 0, 0)
+
+@test
+def testBinaryDivide47(): Bool = assertEq!(1i8 / 0i8, 0i8)
+
+@test
+def testBinaryDivide48(): Bool = assertEq!(1i16 / 0i16, 0i16)
+
+@test
+def testBinaryDivide49(): Bool = assertEq!(1i32 / 0i32, 0i32)
+
+@test
+def testBinaryDivide50(): Bool = assertEq!(1i64 / 0i64, 0i64)
+
+@test
+def testBinaryDivide51(): Bool = assertEq!(1ii / 0ii, 0ii)
+
+@test
 def testBinaryModulo01(): Bool = assertEq!(1200000 % 200000, 0)
 
 @test

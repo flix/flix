@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
+import java.math.BigInteger
 import java.util.function
 
 import ca.uwaterloo.flix.api._
@@ -435,6 +436,27 @@ object Interpreter {
     */
   private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
 
+    implicit class TotallyDivisibleInt(dividend: Int) {
+      def div0(divisor: Int): Int = divisor match {
+        case 0 => 0
+        case _ => dividend / divisor
+      }
+    }
+
+    implicit class TotallyDivisibleLong(dividend: Long) {
+      def div0(divisor: Long): Long = divisor match {
+        case 0L => 0L
+        case _ => dividend / divisor
+      }
+    }
+
+    implicit class TotallyDivisibleBigInteger(dividend: BigInteger) {
+      def div0(divisor: BigInteger): BigInteger = divisor match {
+        case BigInteger.ZERO => BigInteger.ZERO
+        case _ => dividend divide divisor
+      }
+    }
+
     def evalBoolOp(sop: SemanticOperator.BoolOp): AnyRef = {
       // Evaluate the left operand.
       val v1 = cast2bool(eval(exp1, env0, henv0, lenv0, root))
@@ -523,7 +545,7 @@ object Interpreter {
         case SemanticOperator.Int8Op.Add => Value.Int8((cast2int8(v1) + cast2int8(v2)).toByte)
         case SemanticOperator.Int8Op.Sub => Value.Int8((cast2int8(v1) - cast2int8(v2)).toByte)
         case SemanticOperator.Int8Op.Mul => Value.Int8((cast2int8(v1) * cast2int8(v2)).toByte)
-        case SemanticOperator.Int8Op.Div => Value.Int8((cast2int8(v1) / cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Div => Value.Int8((cast2int8(v1) div0 cast2int8(v2)).toByte)
         case SemanticOperator.Int8Op.Rem => Value.Int8((cast2int8(v1) % cast2int8(v2)).toByte)
         case SemanticOperator.Int8Op.Exp => Value.Int8(math.pow(cast2int8(v1), cast2int8(v2)).toByte)
         case SemanticOperator.Int8Op.And => Value.Int8((cast2int8(v1) & cast2int8(v2)).toByte)
@@ -550,7 +572,7 @@ object Interpreter {
         case SemanticOperator.Int16Op.Add => Value.Int16((cast2int16(v1) + cast2int16(v2)).toShort)
         case SemanticOperator.Int16Op.Sub => Value.Int16((cast2int16(v1) - cast2int16(v2)).toShort)
         case SemanticOperator.Int16Op.Mul => Value.Int16((cast2int16(v1) * cast2int16(v2)).toShort)
-        case SemanticOperator.Int16Op.Div => Value.Int16((cast2int16(v1) / cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Div => Value.Int16((cast2int16(v1) div0 cast2int16(v2)).toShort)
         case SemanticOperator.Int16Op.Rem => Value.Int16((cast2int16(v1) % cast2int16(v2)).toShort)
         case SemanticOperator.Int16Op.Exp => Value.Int16(math.pow(cast2int16(v1), cast2int16(v2)).toShort)
         case SemanticOperator.Int16Op.And => Value.Int16((cast2int16(v1) & cast2int16(v2)).toShort)
@@ -577,7 +599,7 @@ object Interpreter {
         case SemanticOperator.Int32Op.Add => Value.Int32(cast2int32(v1) + cast2int32(v2))
         case SemanticOperator.Int32Op.Sub => Value.Int32(cast2int32(v1) - cast2int32(v2))
         case SemanticOperator.Int32Op.Mul => Value.Int32(cast2int32(v1) * cast2int32(v2))
-        case SemanticOperator.Int32Op.Div => Value.Int32(cast2int32(v1) / cast2int32(v2))
+        case SemanticOperator.Int32Op.Div => Value.Int32(cast2int32(v1) div0 cast2int32(v2))
         case SemanticOperator.Int32Op.Rem => Value.Int32(cast2int32(v1) % cast2int32(v2))
         case SemanticOperator.Int32Op.Exp => Value.Int32(math.pow(cast2int32(v1), cast2int32(v2)).toInt)
         case SemanticOperator.Int32Op.And => Value.Int32(cast2int32(v1) & cast2int32(v2))
@@ -604,7 +626,7 @@ object Interpreter {
         case SemanticOperator.Int64Op.Add => Value.Int64(cast2int64(v1) + cast2int64(v2))
         case SemanticOperator.Int64Op.Sub => Value.Int64(cast2int64(v1) - cast2int64(v2))
         case SemanticOperator.Int64Op.Mul => Value.Int64(cast2int64(v1) * cast2int64(v2))
-        case SemanticOperator.Int64Op.Div => Value.Int64(cast2int64(v1) / cast2int64(v2))
+        case SemanticOperator.Int64Op.Div => Value.Int64(cast2int64(v1) div0 cast2int64(v2))
         case SemanticOperator.Int64Op.Rem => Value.Int64(cast2int64(v1) % cast2int64(v2))
         case SemanticOperator.Int64Op.Exp => Value.Int64(math.pow(cast2int64(v1), cast2int64(v2)).toLong)
         case SemanticOperator.Int64Op.And => Value.Int64(cast2int64(v1) & cast2int64(v2))
@@ -631,7 +653,7 @@ object Interpreter {
         case SemanticOperator.BigIntOp.Add => Value.BigInt(cast2bigInt(v1) add cast2bigInt(v2))
         case SemanticOperator.BigIntOp.Sub => Value.BigInt(cast2bigInt(v1) subtract cast2bigInt(v2))
         case SemanticOperator.BigIntOp.Mul => Value.BigInt(cast2bigInt(v1) multiply cast2bigInt(v2))
-        case SemanticOperator.BigIntOp.Div => Value.BigInt(cast2bigInt(v1) divide cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Div => Value.BigInt(cast2bigInt(v1) div0 cast2bigInt(v2))
         case SemanticOperator.BigIntOp.Rem => Value.BigInt(cast2bigInt(v1) remainder cast2bigInt(v2))
         case SemanticOperator.BigIntOp.Exp => Value.BigInt(cast2bigInt(v1) pow cast2int32(v2))
         case SemanticOperator.BigIntOp.And => Value.BigInt(cast2bigInt(v1) and cast2bigInt(v2))
