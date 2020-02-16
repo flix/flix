@@ -21,10 +21,16 @@ import ca.uwaterloo.flix.util.tc.Show
 /**
   * A kind represents the "type" of a type expression.
   */
-trait Kind {
+sealed trait Kind {
 
+  /**
+    * Constructs an arrow kind.
+    */
   def ->(that: Kind): Kind = Kind.Arrow(List(this), that)
 
+  /**
+    * Returns a human readable representation of `this` kind.
+    */
   override def toString: String = Kind.ShowInstance.show(this)
 
 }
@@ -34,9 +40,27 @@ object Kind {
   /**
     * The kind of all nullary type expressions.
     */
-  object Star extends Kind
+  case object Star extends Kind
 
-  object Nat extends Kind
+  /**
+    * The kind of records.
+    */
+  case object Record extends Kind
+
+  /**
+    * The kind of schemas.
+    */
+  case object Schema extends Kind
+
+  /**
+    * The kind of natural number expressions.
+    */
+  case object Nat extends Kind
+
+  /**
+    * The kind of effects.
+    */
+  case object Effect extends Kind
 
   /**
     * The kind of type expressions that take a sequence of kinds `kparams` to a kind `kr`.
@@ -55,7 +79,10 @@ object Kind {
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
       case Kind.Star => "*"
+      case Kind.Record => "Record"
+      case Kind.Schema => "Schema"
       case Kind.Nat => "Nat"
+      case Kind.Effect => "Effect"
       case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
       case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
       case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"

@@ -232,8 +232,6 @@ object FinalAst {
 
     case class ProcessSpawn(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class ProcessSleep(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class ProcessPanic(msg: String, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointConstraintSet(cs: List[FinalAst.Constraint], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression

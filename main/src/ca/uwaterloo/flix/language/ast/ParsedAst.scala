@@ -74,7 +74,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.
@@ -89,7 +89,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Eff(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Eff(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Handler Declaration.
@@ -104,7 +104,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Handler(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Handler(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -119,7 +119,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.
@@ -666,15 +666,6 @@ object ParsedAst {
     case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayLength Expression
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param base the array
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class ArrayLength(sp1: SourcePosition, base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * ArraySlice Expression
       *
       * @param base       the array
@@ -859,21 +850,21 @@ object ParsedAst {
       * Ascribe Expression.
       *
       * @param exp the expression.
-      * @param tpe the type.
-      * @param eff the effect.
+      * @param tpe the optional type.
+      * @param eff the optional effect.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Ascribe(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ascribe(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Cast Expression.
       *
       * @param exp the expression.
-      * @param tpe the type.
-      * @param eff the effect.
+      * @param tpe the optional type.
+      * @param eff the optional effect.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Cast(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Cast(exp: ParsedAst.Expression, tpe: Option[ParsedAst.Type], eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Try Catch Expression.
@@ -931,15 +922,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class ProcessSpawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Process Sleep Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ProcessSleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Process Panic Expression.
@@ -1248,24 +1230,63 @@ object ParsedAst {
     case class Nat(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Arrow Type.
+      * Unary Pure Arrow Type.
+      *
+      * @param tpe1 the argument type.
+      * @param tpe2 the result type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class UnaryPureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Unary Impure Arrow Type.
+      *
+      * @param tpe1 the argument type.
+      * @param tpe2 the result type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class UnaryImpureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Unary Polymorphic Arrow Type.
+      *
+      * @param tpe1 the argument type.
+      * @param eff  the optional effect.
+      * @param tpe2 the result type.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, eff: Option[ParsedAst.Type], tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Pure Arrow Type.
       *
       * @param sp1     the position of the first character in the type.
       * @param tparams the arguments types.
       * @param tresult the result type.
       * @param sp2     the position of the last character in the type.
       */
-    case class Arrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class PureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Infix Type Application.
+      * Impure Arrow Type.
       *
-      * @param tpe1 the first type parameter.
-      * @param base the base type.
-      * @param tpe2 the second type parameter.
-      * @param sp2  the position of the last character in the type.
+      * @param sp1     the position of the first character in the type.
+      * @param tparams the arguments types.
+      * @param tresult the result type.
+      * @param sp2     the position of the last character in the type.
       */
-    case class Infix(tpe1: ParsedAst.Type, base: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class ImpureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Effect Polymorphic Arrow Type.
+      *
+      * @param sp1     the position of the first character in the type.
+      * @param tparams the arguments types.
+      * @param tresult the result type.
+      * @param eff     the optional effect.
+      * @param sp2     the position of the last character in the type.
+      */
+    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], eff: Option[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Native Type.
@@ -1285,12 +1306,23 @@ object ParsedAst {
       */
     case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
-  }
+    /**
+      * Pure Effect.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
-  /**
-    * Effects.
-    */
-  case class Effect(xs: Seq[Name.Ident]) extends ParsedAst
+    /**
+      * Impure Effect.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+
+  }
 
   /**
     * Attribute.

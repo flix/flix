@@ -155,26 +155,6 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Class Error.
-    *
-    * @param sym the definition symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
-  case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Class '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible class.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Mark the class as public." << NewLine
-    }
-  }
-
-  /**
     * Inaccessible Def Error.
     *
     * @param sym the def symbol.
@@ -308,26 +288,6 @@ object ResolutionError {
       vt << Code(loc, "recursion limit reached.") << NewLine
       vt << NewLine
       vt << "Ensure that there is no cyclic definition of type aliases."
-    }
-  }
-
-  /**
-    * Unresolved Class Error.
-    *
-    * @param qn  the unresolved definition name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined class '" << Red(qn.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "name not found") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
     }
   }
 

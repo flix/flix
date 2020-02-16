@@ -73,7 +73,7 @@ pub def >>(f: a -> b, g: b -> c): a -> c = x -> g(f(x))
 ///
 /// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
 ///
-pub def |>(x: a, f: a -> b): b = f(x)
+pub def |>(x: a, f: a ->{e} b): b @ e = f(x)
 
 ///
 /// Pipes the given pair `p` into the function `f`.
@@ -133,7 +133,7 @@ pub def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 ///
 pub def isNull(x: a): Bool =
     import java.util.Objects:isNull(##java.lang.Object);
-    isNull(x as ##java.lang.Object)
+    isNull(x as ##java.lang.Object) as Bool @ Pure
 
 ///
 /// Asserts that the given boolean `b` is `true`.

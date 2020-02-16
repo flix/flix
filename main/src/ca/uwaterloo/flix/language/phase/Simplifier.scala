@@ -81,9 +81,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given expression `exp` to the SimplifiedAst.
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
 
-      case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
+      case TypedAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
 
       case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
 
@@ -574,14 +574,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
-        val newTpe = Type.mkArrow(Type.Cst(TypeConstructor.Unit), e.tpe)
+        val newTpe = Type.mkArrow(Type.Unit, eff, e.tpe)
         // Rewrite our Spawn expression to a Lambda
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.ProcessSpawn(lambda, newTpe, loc)
-
-      case TypedAst.Expression.ProcessSleep(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
 
       case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
@@ -628,7 +624,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
                 SimplifiedAst.Expression.Var(var3, e3.tpe, loc), tpe, loc), tpe, loc), tpe, loc), tpe, loc)
 
-      case TypedAst.Expression.Wild(tpe, eff, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
+      case TypedAst.Expression.Wild(tpe, loc) => throw InternalCompilerException(s"Unexpected expression: $expr.")
 
     }
 
@@ -689,7 +685,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given expression `e0` to the SimplifiedAst.
       */
     def exp2HeadTerm(e0: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Head = e0 match {
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
+      case TypedAst.Expression.Var(sym, tpe, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
           SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc)
@@ -723,9 +719,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
           val varX = Symbol.freshVarSym()
-          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Cst(TypeConstructor.Unit), SourceLocation.Unknown)
+          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val exp = visitExp(exp0)
-          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkArrow(Type.Cst(TypeConstructor.Unit), exp.tpe), loc)
+          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkPureArrow(Type.Unit, exp.tpe), loc)
 
           toplevel += (freshSym -> freshDef)
           freshSym
@@ -796,8 +792,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given expression `e` to a body term.
       */
     def exp2BodyTerm(e: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Body = e match {
-      case TypedAst.Expression.Wild(tpe, eff, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
+      case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
           SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc)
@@ -899,7 +895,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
-      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), loc)
+      SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, loc)
     }
 
     /**
@@ -907,7 +903,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def mkAdd(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       val add = SemanticOperator.Int32Op.Add
-      val tpe = Type.Cst(TypeConstructor.Int32)
+      val tpe = Type.Int32
       SimplifiedAst.Expression.Binary(add, BinaryOperator.Plus, e1, e2, tpe, loc)
     }
 
@@ -916,7 +912,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def mkSub(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
       val sub = SemanticOperator.Int32Op.Sub
-      val tpe = Type.Cst(TypeConstructor.Int32)
+      val tpe = Type.Int32
       SimplifiedAst.Expression.Binary(sub, BinaryOperator.Minus, e1, e2, tpe, loc)
     }
 
@@ -1104,7 +1100,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
                   , exp, succ.tpe, loc)
             }
           }
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
           val lengthCheck = mkEqual(actualArrayLengthExp, expectedArrayLengthExp, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
@@ -1121,7 +1117,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           * created if clause
           */
         case (TypedAst.Pattern.ArrayTailSpread(elms, sym, tpe, loc) :: ps, v :: vs) =>
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
           val patternCheck = {
             val freshVars = elms.map(_ => Symbol.freshVarSym("arrayElm"))
@@ -1145,7 +1141,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             }
           }
           val op = SemanticOperator.Int32Op.Ge
-          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          val lengthCheck = SimplifiedAst.Expression.Binary(op, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
         /**
@@ -1160,7 +1156,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           * created if clause
           */
         case (TypedAst.Pattern.ArrayHeadSpread(sym, elms, tpe, loc) :: ps, v :: vs) =>
-          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Cst(TypeConstructor.Int32), loc)
+          val actualArrayLengthExp = SimplifiedAst.Expression.ArrayLength(SimplifiedAst.Expression.Var(v, tpe, loc), Type.Int32, loc)
           val expectedArrayLengthExp = SimplifiedAst.Expression.Int32(elms.length)
           val offset = mkSub(actualArrayLengthExp, expectedArrayLengthExp, loc)
           val patternCheck = {
@@ -1185,7 +1181,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             }
           }
           val ge = SemanticOperator.Int32Op.Ge
-          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Cst(TypeConstructor.Bool), loc)
+          val lengthCheck = SimplifiedAst.Expression.Binary(ge, BinaryOperator.GreaterEqual, actualArrayLengthExp, expectedArrayLengthExp, Type.Bool, loc)
           SimplifiedAst.Expression.IfThenElse(lengthCheck, patternCheck, fail, succ.tpe, loc)
 
 
@@ -1428,10 +1424,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.ProcessSpawn(e, tpe, loc)
-
-      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ProcessSleep(e, tpe, loc)
 
       case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)

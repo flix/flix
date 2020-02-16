@@ -459,11 +459,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.ProcessSpawn(e, t, loc)
 
-      case SimplifiedAst.Expression.ProcessSleep(exp, tpe, loc) =>
-        val e = visit(exp)
-        val t = visitType(tpe)
-        FinalAst.Expression.ProcessSleep(e, t, loc)
-
       case SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc) =>
         val t = visitType(tpe)
         FinalAst.Expression.ProcessPanic(msg, t, loc)
@@ -640,7 +635,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Cst(TypeConstructor.Tuple(l)) => MonoType.Tuple(args)
 
-      case Type.Arrow(_, l) => MonoType.Arrow(args.init, args.last)
+      case Type.Arrow(l, _) => MonoType.Arrow(args.init, args.last)
 
       case Type.RecordEmpty => MonoType.RecordEmpty()
 
@@ -656,7 +651,18 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Var(id, kind) => MonoType.Var(id) // TODO: Should never happen.
 
+      case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+      case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+      case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+      case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
+      case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
       case Type.Lambda(_, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+
       case Type.Apply(_, _) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
     }
   }

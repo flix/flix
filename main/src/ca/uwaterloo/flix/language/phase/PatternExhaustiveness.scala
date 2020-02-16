@@ -151,9 +151,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
-        case Expression.Wild(_, _, _) => tast.toSuccess
-        case Expression.Var(_, _, _, _) => tast.toSuccess
-        case Expression.Def(_, _, _, _) => tast.toSuccess
+        case Expression.Wild(_, _) => tast.toSuccess
+        case Expression.Var(_, _, _) => tast.toSuccess
+        case Expression.Def(_, _, _) => tast.toSuccess
         case Expression.Eff(_, _, _, _) => tast.toSuccess
         case Expression.Hole(_, _, _, _) => tast.toSuccess
         case Expression.Unit(_) => tast.toSuccess
@@ -359,10 +359,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         } yield tast
 
         case Expression.ProcessSpawn(exp, _, _, _) => for {
-          _ <- checkPats(exp, root)
-        } yield tast
-
-        case Expression.ProcessSleep(exp, _, _, _) => for {
           _ <- checkPats(exp, root)
         } yield tast
 
@@ -748,7 +744,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Ref) => 0
       case Type.Cst(TypeConstructor.Relation(_)) => 0
       case Type.Cst(TypeConstructor.Lattice(_)) => 0
-      case Type.Arrow(_, length) => length
+      case Type.Arrow(length, _) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
@@ -762,6 +758,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
+      case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 

@@ -182,13 +182,24 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.Tuple(l) => "(" + args.map(format).mkString(", ") + ")"
 
         case TypeConstructor.Vector => "Vector" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.Pure => "Pure"
+
+        case TypeConstructor.Impure => "Impure"
+
+        case TypeConstructor.Not => "Not"
+
+        case TypeConstructor.And => "And"
+
+        case TypeConstructor.Or => "Or"
+          
       }
 
       case Type.Zero => "Zero"
 
       case Type.Succ(n, t) => n.toString + " " + t.toString
 
-      case Type.Arrow(_, l) =>
+      case Type.Arrow(l, _) =>
         val argumentTypes = args.init
         val resultType = args.last
         if (argumentTypes.length == 1) {
