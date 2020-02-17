@@ -39,8 +39,10 @@ namespace Console {
         /// Returns the next line read from the standard input stream.
         ///
         pub def readLine(): Option[String] @ Impure =
-            import flix.runtime.library.Console:readLine();
-            let s = readLine();
+            import get java.lang.System:in as getStandardIn;
+            import new java.util.Scanner(##java.io.InputStream) as newScanner;
+            import java.util.Scanner.nextLine();
+            let s = nextLine(newScanner(getStandardIn()));
             (if (isNull(s)) None else Some(s))
 
     }
