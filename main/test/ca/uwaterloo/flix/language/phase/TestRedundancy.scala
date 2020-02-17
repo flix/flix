@@ -874,4 +874,49 @@ class TestRedundancy extends FunSuite with TestUtils {
          |""".stripMargin
     compile(input, DefaultOptions).get
   }
+
+  test("UselessExpression.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    123;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    21 + 42;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.03") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    List.map(x -> x + 42, 1 :: 2 :: 3 :: Nil);
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.04") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    List.map((x -> x + 21) >> (x -> x + 42), 1 :: 2 :: 3 :: Nil);
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
 }
