@@ -129,11 +129,16 @@ pub def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 ///
 /// Returns `true` if the given value `x` is `null`.
 ///
-/// NB: For internal use only.
-///
 pub def isNull(x: a): Bool =
     import java.util.Objects:isNull(##java.lang.Object);
     isNull(x as ##java.lang.Object) as Bool @ Pure
+
+///
+/// Returns the `null` value.
+///
+pub def getNull(): ##java.lang.Object =
+    import flix.runtime.JvmOps:getNull();
+    getNull() as ##java.lang.Object @ Pure
 
 ///
 /// Asserts that the given boolean `b` is `true`.
