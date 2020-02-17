@@ -724,14 +724,14 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.Existential(params, exp, loc) =>
-      // TODO: Better exception.
+      // TODO: We should not emit code for these...
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
+      visitor.visitInsn(ICONST_1)
 
     case Expression.Universal(params, exp, loc) =>
-      // TODO: Better exception.
+      // TODO: We should not emit code for these...
       addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
+      visitor.visitInsn(ICONST_1)
 
     case Expression.Cast(exp, tpe, loc) =>
       addSourceLine(visitor, loc)

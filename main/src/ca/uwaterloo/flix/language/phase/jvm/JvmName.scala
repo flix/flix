@@ -187,8 +187,6 @@ object JvmName {
 
     val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")
 
-    val NotImplementedError: JvmName = JvmName(List("flix", "runtime"), "NotImplementedError")
-
     val ReifiedSourceLocation: JvmName = JvmName(List("flix", "runtime"), "ReifiedSourceLocation")
 
     val SwitchError: JvmName = JvmName(List("flix", "runtime"), "SwitchError")
