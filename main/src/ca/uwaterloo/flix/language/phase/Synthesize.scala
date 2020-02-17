@@ -66,7 +66,6 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Wild(tpe, loc) => exp0
       case Expression.Var(sym, tpe, loc) => exp0
       case Expression.Def(sym, tpe, loc) => exp0
-      case Expression.Eff(sym, tpe, eff, loc) => exp0
       case Expression.Hole(sym, tpe, eff, loc) => exp0
       case Expression.Unit(loc) => exp0
       case Expression.True(loc) => exp0
@@ -241,13 +240,6 @@ object Synthesize extends Phase[Root, Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
-
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
-        }
-        Expression.HandleWith(e, bs, tpe, eff, loc)
 
       case Expression.Existential(fparam, exp, eff, loc) =>
         val e = visitExp(exp)

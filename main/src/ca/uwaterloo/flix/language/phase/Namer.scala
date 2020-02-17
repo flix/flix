@@ -43,8 +43,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Root(
       defs = Map.empty,
-      effs = Map.empty,
-      handlers = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
       relations = Map.empty,
@@ -110,65 +108,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Law.
      */
     case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) => ??? // TODO
-
-    /*
-     * Eff.
-     */
-    case WeededAst.Declaration.Eff(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
-      // Check if the effect already exists.
-      val effs = prog0.effs.getOrElse(ns0, Map.empty)
-      effs.get(ident.name) match {
-        case None =>
-          // Case 1: The effect does not already exist. Update it.
-          val tparams = tparams0 match {
-            case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-            case WeededAst.TypeParams.Explicit(tparams) => getExplicitTypeParams(tparams)
-          }
-          val tenv0 = getTypeEnv(tparams)
-          flatMapN(getFormalParams(fparams0, tenv0)) {
-            case fparams =>
-              val env0 = getVarEnv(fparams)
-              val sym = Symbol.mkEffSym(ns0, ident)
-              mapN(getScheme(tparams, tpe, tenv0), visitType(eff0, tenv0)) {
-                case (sc, f) =>
-                  val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, f, loc)
-                  prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff))))
-              }
-          }
-        case Some(eff) =>
-          // Case 2: Duplicate effect.
-          NameError.DuplicateEff(ident.name, eff.loc, ident.loc).toFailure
-      }
-
-    /*
-     * Handler.
-     */
-    case WeededAst.Declaration.Handler(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
-      // Check if the handler already exists.
-      val handlers = prog0.handlers.getOrElse(ns0, Map.empty)
-      handlers.get(ident.name) match {
-        case None =>
-          // Case 1: The handler does not already exist. Update it.
-          val tparams = tparams0 match {
-            case WeededAst.TypeParams.Elided => getImplicitTypeParams(fparams0, tpe, loc)
-            case WeededAst.TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
-          }
-
-          val tenv0 = getTypeEnv(tparams)
-          flatMapN(getFormalParams(fparams0, tenv0)) {
-            case fparams =>
-              val env0 = getVarEnv(fparams)
-              mapN(visitExp(exp, env0, tenv0), getScheme(tparams, tpe, tenv0), visitType(eff0, tenv0)) {
-                case (e, sc, f) =>
-                  val sym = Symbol.mkEffSym(ns0, ident)
-                  val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, f, loc)
-                  prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
-              }
-          }
-        case Some(handler) =>
-          // Case 2: Duplicate handler.
-          NameError.DuplicateHandler(ident.name, handler.loc, ident.loc).toFailure
-      }
 
     /*
      * Enum.
@@ -665,17 +604,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.HandleWith(exp, bindings, loc) =>
-      val baseVal = visitExp(exp, env0, tenv0)
-      val bindingsVal = traverse(bindings) {
-        case WeededAst.HandlerBinding(qname, exp) =>
-          visitExp(exp, env0, tenv0) map {
-            case e => NamedAst.HandlerBinding(qname, e)
-          }
-      }
-      mapN(baseVal, bindingsVal) {
-        case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
-      }
 
     case WeededAst.Expression.Existential(tparams0, fparam, exp, loc) =>
       // TODO: Should not pass Unit to getTypeParams. Refactor it instead.
@@ -1137,7 +1065,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.HandleWith(exp, bindings, loc) => freeVars(exp) ++ bindings.flatMap(b => freeVars(b.exp))
     case WeededAst.Expression.Existential(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Universal(tparams, fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
     case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)

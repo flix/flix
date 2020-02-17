@@ -77,8 +77,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
-      case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
-
       case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
           case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), varType)
@@ -94,10 +92,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val as = args map (visitExp(_, env0))
         Expression.ApplyDef(sym, as, tpe, loc)
 
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyEff(sym, as, tpe, loc)
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
@@ -106,10 +100,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyDefTail(sym, as, tpe, loc)
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyEffTail(sym, as, tpe, loc)
 
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         val as = actuals map (visitExp(_, env0))
@@ -243,13 +233,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
-
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler, env0))
-        }
-        Expression.HandleWith(e, bs, tpe, loc)
 
       case Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp, env0)

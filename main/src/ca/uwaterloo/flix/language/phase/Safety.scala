@@ -63,8 +63,6 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Def(sym, tpe, loc) => Nil
 
-    case Expression.Eff(sym, tpe, eff, loc) => Nil
-
     case Expression.Hole(sym, tpe, eff, loc) => Nil
 
     case Expression.Lambda(fparam, exp, tpe, eff, loc) => visitExp(exp)
@@ -146,11 +144,6 @@ object Safety extends Phase[Root, Root] {
     case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
-
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-      bindings.foldLeft(visitExp(exp)) {
-        case (acc, HandlerBinding(_, e)) => acc ::: visitExp(e)
-      }
 
     case Expression.Existential(fparam, exp, eff, loc) => visitExp(exp)
 

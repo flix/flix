@@ -112,7 +112,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
       */
     val defQueue: mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Queue.empty
-    val effQueue: mutable.Queue[(Symbol.EffSym, Handler, StrictSubstitution)] = mutable.Queue.empty
 
     /**
       * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -126,7 +125,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * -   (fst, (Int, Str) -> Int) -> fst$1
       */
     val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
-    val eff2eff: mutable.Map[(Symbol.EffSym, Type), Symbol.EffSym] = mutable.Map.empty
 
     /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
@@ -153,13 +151,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
            */
           val newSym = specializeDefSym(sym, subst0(tpe))
           Expression.Def(newSym, subst0(tpe), loc)
-
-        case Expression.Eff(sym, tpe, eff, loc) =>
-          /*
-           * !! This is where all the magic happens !!
-           */
-          val newSym = specializeEffSym(sym, subst0(tpe))
-          Expression.Eff(newSym, subst0(tpe), eff, loc)
 
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
@@ -382,16 +373,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.Assign(e1, e2, subst0(tpe), eff, loc)
-
-        case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          val bs = bindings map {
-            case HandlerBinding(sym, handler) =>
-              val specializedSym = specializeEffSym(sym, handler.tpe)
-              val e = visitExp(handler, env0)
-              HandlerBinding(specializedSym, e)
-          }
-          Expression.HandleWith(e, bs, subst0(tpe), eff, loc)
 
         case Expression.Existential(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
@@ -660,44 +641,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Returns the eff symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-      */
-    def specializeEffSym(sym: Symbol.EffSym, tpe: Type): Symbol.EffSym = {
-      // Lookup the eff and its declared type.
-      val eff = root.handlers(sym)
-      val declaredType = eff.tpe
-
-      // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
-
-      // Check if the substitution is empty, if so there is no need for specialization.
-      if (subst.isEmpty) {
-        return sym
-      }
-
-      // Check whether the effect handler has already been specialized.
-      eff2eff.get((sym, tpe)) match {
-        case None =>
-          // Case 1: The handler has not been specialized.
-          // Generate a fresh specialized symbol.
-          val freshSym = Symbol.freshEffSym(sym)
-
-          // Register the fresh symbol (and actual type) in the symbol2symbol map.
-          eff2eff.put((sym, tpe), freshSym)
-
-          // Enqueue the fresh symbol with the definition and substitution.
-          effQueue.enqueue((freshSym, eff, subst))
-
-          // Now simply refer to the freshly generated symbol.
-          freshSym
-        case Some(specializedSym) =>
-          // Case 2: The handler has already been specialized.
-          // Simply refer to the already existing specialized symbol.
-          specializedSym
-      }
-    }
-
-    /**
       * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
       *
       * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
@@ -789,7 +732,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * A map used to collect specialized definitions, etc.
      */
     val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
-    val specializedHandlers: mutable.Map[Symbol.EffSym, TypedAst.Handler] = mutable.Map.empty
     val specializedProperties: mutable.ListBuffer[TypedAst.Property] = mutable.ListBuffer.empty
     // TODO: Specialize expressions occurring in other places, e.g facts/rules/properties.
 
@@ -837,7 +779,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     /*
      * Performs function specialization until both queues are empty.
      */
-    while (defQueue.nonEmpty || effQueue.nonEmpty) {
+    while (defQueue.nonEmpty) {
 
       /*
        * Performs function specialization until the queue is empty.
@@ -860,33 +802,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         specializedDefns.put(freshSym, specializedDefn)
       }
 
-      /*
-       * Performs effect handler specialization until the queue is empty.
-       */
-      while (effQueue.nonEmpty) {
-        // Extract an effect from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, handler, subst) = effQueue.dequeue()
-
-        // Specialize the formal parameters and introduce fresh local variable symbols.
-        val (fparams, env0) = specializeFormalParams(handler.fparams, subst)
-
-        // Specialize the body expression.
-        val specializedExp = specialize(handler.exp, env0, subst)
-
-        // Reassemble the definition.
-        // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedHandler = handler.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(handler.tpe), tparams = Nil)
-
-        // Save the specialized handler.
-        specializedHandlers.put(freshSym, specializedHandler)
-      }
-
     }
 
     // Reassemble the AST.
     root.copy(
       defs = specializedDefns.toMap,
-      handlers = specializedHandlers.toMap,
       properties = specializedProperties.toList
     ).toSuccess
   }

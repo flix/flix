@@ -159,9 +159,6 @@ object GenExpression {
       visitor.visitInsn(POP)
       AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
 
-    case Expression.ApplyEff(sym, args, tpe, loc) =>
-      throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
-
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
@@ -259,8 +256,6 @@ object GenExpression {
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
       pushDummyValue(visitor, tpe)
-
-    case Expression.ApplyEffTail(sym, args, tpe, loc) => ??? // TODO
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
@@ -727,8 +722,6 @@ object GenExpression {
       // Since the return type is unit, we put an instance of unit on top of the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
-
-    case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
 
     case Expression.Existential(params, exp, loc) =>
       // TODO: Better exception.

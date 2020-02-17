@@ -119,8 +119,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     Declarations.Namespace |
       Declarations.Constraint |
       Declarations.Def |
-      Declarations.Eff |
-      Declarations.Handler |
       Declarations.Law |
       Declarations.Enum |
       Declarations.OpaqueType |
@@ -141,14 +139,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Statement ~ SP ~> ParsedAst.Declaration.Def
-    }
-
-    def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("eff") ~ WS ~ Names.Eff ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Eff
-    }
-
-    def Handler: Rule1[ParsedAst.Declaration.Handler] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("handler") ~ WS ~ Names.Handler ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Handler
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
@@ -585,7 +575,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessPanic | ArrayLit | ArrayNew |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
-        FixpointProject | Constraint | Interpolation | Literal | HandleWith | Existential | Universal |
+        FixpointProject | Constraint | Interpolation | Literal | Existential | Universal |
         UnaryLambda | QName | Tag | SName | Hole
     }
 
@@ -936,21 +926,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointFold: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
-    }
-
-    def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
-      def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
-        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.HandlerBinding
-      }
-
-      def HandlerBody: Rule1[Seq[ParsedAst.HandlerBinding]] = rule {
-        atomic("{") ~ optWS ~ oneOrMore(EffectHandler).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("}")
-      }
-
-      rule {
-        // Decide on the name...
-        SP ~ atomic("do") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ HandlerBody ~ SP ~> ParsedAst.Expression.HandleWith
-      }
     }
 
     // TODO: We should only allow one variant of these.
@@ -1355,19 +1330,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Eff: Rule1[Name.Ident] = LowerCaseName
 
-    def Handler: Rule1[Name.Ident] = LowerCaseName
-
-    def Effect: Rule1[Name.Ident] = rule {
-      LowerCaseName | UpperCaseName
-    }
-
     def Field: Rule1[Name.Ident] = LowerCaseName
 
     def Hole: Rule1[Name.Ident] = LowerCaseName
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
-
-    def QualifiedEffect: Rule1[Name.QName] = LowerCaseQName
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
 
