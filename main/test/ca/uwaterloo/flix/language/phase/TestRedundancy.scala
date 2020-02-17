@@ -900,19 +900,10 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UselessExpression.03") {
     val input =
       s"""
+         |def hof(f: a ->{e} b, x: a): b @ e = f(x)
+         |
          |def main(): Unit =
-         |    List.map(x -> x + 42, 1 :: 2 :: 3 :: Nil);
-         |    ()
-         |""".stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UselessExpression](result)
-  }
-
-  test("UselessExpression.04") {
-    val input =
-      s"""
-         |def main(): Unit =
-         |    List.map((x -> x + 21) >> (x -> x + 42), 1 :: 2 :: 3 :: Nil);
+         |    hof(x -> x + 21, 42);
          |    ()
          |""".stripMargin
     val result = compile(input, DefaultOptions)
