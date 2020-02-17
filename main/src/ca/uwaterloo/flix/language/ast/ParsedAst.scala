@@ -1273,6 +1273,14 @@ object ParsedAst {
       */
     case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
+    /**
+      * And Effect.
+      *
+      * @param eff1 the 1st effect.
+      * @param eff2 the 2nd effect.
+      */
+    case class And(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
+
   }
 
   /**

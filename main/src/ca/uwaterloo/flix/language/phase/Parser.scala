@@ -1058,7 +1058,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Apply ~ optional(
           (optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow) |
           (optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
-          (optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+          (optWS ~ atomic("->") ~ ArrowEff ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
     }
 
@@ -1079,7 +1079,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ TypeList ~ optWS ~ (
             (atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow) |
             (atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
-            (atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+            (atomic("->") ~ optWS ~ ArrowEff ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
         )
       }
     }
@@ -1144,7 +1144,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
 
-    def EffList: Rule1[Option[ParsedAst.Type]] = rule {
+    def ArrowEff: Rule1[Option[ParsedAst.Type]] = rule {
       optional("{" ~ optWS ~ Type ~ optWS ~ "}")
     }
   }
@@ -1152,8 +1152,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Type and (optional) Effects                                             //
   /////////////////////////////////////////////////////////////////////////////
-  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional(WS ~ atomic("@") ~ WS ~ Type)
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = {
+    def AndEff: Rule1[ParsedAst.Type] = rule {
+      "{" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~>
+        ((s: Seq[ParsedAst.Type]) => s.reduce(ParsedAst.Type.And.apply))
+    }
+
+    rule {
+      Type ~ optional(WS ~ atomic("@") ~ WS ~ (Type | AndEff))
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
