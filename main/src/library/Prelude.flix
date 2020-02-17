@@ -147,7 +147,7 @@ pub def getNull(): ##java.lang.Object =
 ///
 // TODO: Deprecated
 pub def assert!(b: Bool): Bool =
-    if (b) true else ?assertFailure
+    if (b) true else { panic("assertion failure"); false }
 
 ///
 /// Asserts that the given boolean `b` is `false`.
@@ -156,7 +156,7 @@ pub def assert!(b: Bool): Bool =
 ///
 // TODO: Deprecated
 pub def assertNot!(b: Bool): Bool =
-    if (!b) true else ?assertNotFailure
+    if (!b) true else { panic("assertion failure"); false }
 
 ///
 /// Asserts that the given values `x` and `y` are equal.
@@ -164,7 +164,14 @@ pub def assertNot!(b: Bool): Bool =
 /// NB: For internal use only.
 ///
 // TODO: Deprecated
-pub def assertEq!(x: a, y: a): Bool = if (x == y) true else ?assertEqFailure
+pub def assertEq!(x: a, y: a): Bool = if (x == y) true else { panic("assertion failure"); false }
+
+///
+/// Panics (crashes) the current process with the given message `m`.
+///
+pub def panic(m: String): Unit =
+    import flix.runtime.JvmOps:throwRuntimeException(String);
+    throwRuntimeException(m) as _ @ Pure
 
 ///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
