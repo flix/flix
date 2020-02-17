@@ -142,7 +142,7 @@ pub def isNull(x: a): Bool =
 ///
 // TODO: Deprecated
 pub def assert!(b: Bool): Bool =
-    if (b) true else {panic("assertion failed"); true}
+    if (b) true else ?assertFailure
 
 ///
 /// Asserts that the given boolean `b` is `false`.
@@ -151,7 +151,7 @@ pub def assert!(b: Bool): Bool =
 ///
 // TODO: Deprecated
 pub def assertNot!(b: Bool): Bool =
-    if (!b) true else {panic("assertion failed"); true}
+    if (!b) true else ?assertNotFailure
 
 ///
 /// Asserts that the given values `x` and `y` are equal.
@@ -159,17 +159,7 @@ pub def assertNot!(b: Bool): Bool =
 /// NB: For internal use only.
 ///
 // TODO: Deprecated
-pub def assertEq!(x: a, y: a): Bool = if (x == y) true else {panic("assertion failed"); true}
-
-///
-/// Panics the entire program.
-///
-// TODO: Should have polymorphic return type.
-pub def panic(s: String): Unit =
-    Console/StdErr.printLine("!!! PANIC !!!") as _ @ Pure;
-    Console/StdErr.printLine(s) as _ @ Pure;
-    import java.lang.System:exit(Int);
-    exit(1) as _ @ Pure
+pub def assertEq!(x: a, y: a): Bool = if (x == y) true else ?assertEqFailure
 
 ///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
