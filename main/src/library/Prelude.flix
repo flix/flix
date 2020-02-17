@@ -66,7 +66,7 @@ pub def <<(f: b -> c, g: a -> b): a -> c = x -> f(g(x))
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b, g: b -> c): a -> c = x -> g(f(x))
+pub def >>(f: a ->{e1} b, g: b ->{e2} c): a ->{e1, e2} c = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
