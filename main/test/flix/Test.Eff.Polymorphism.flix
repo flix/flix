@@ -50,6 +50,37 @@ namespace Test/Eff/Polymorphism {
         let g = f(true);
         g(true)
 
+    @test
+    def testEffPoly10(): Bool =
+        let f = x -> x;
+        let g = y -> y;
+        (f >> g)(true)
+
+    @test
+    def testEffPoly11(): Bool @ Impure =
+        let f = x -> {impure(); x};
+        let g = y -> y;
+        (f >> g)(true)
+
+    @test
+    def testEffPoly12(): Bool @ Impure =
+        let f = x -> x;
+        let g = y -> {impure(); y};
+        (f >> g)(true)
+
+    @test
+    def testEffPoly13(): Bool @ Impure =
+        let f = x -> {impure(); x};
+        let g = y -> {impure(); y};
+        (f >> g)(true)
+
+    @test
+    def testEffPoly14(): Bool =
+        let f = x -> {impure(); x};
+        let g = y -> {impure(); y};
+        let _ = f >> g;
+        true
+
     def impure(): Unit @ Impure = () as _ @ Impure
 
     def flip(f: (a, b) ->{e} c): (b, a) ->{e} c = (x, y) -> f(y, x)
