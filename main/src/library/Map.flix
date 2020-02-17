@@ -500,7 +500,7 @@ namespace Map {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: (k, v) ~>> Unit, m: Map[k, v]): Unit @ Impure = match m {
+    pub def foreach(f: (k, v) ~> Unit, m: Map[k, v]): Unit @ Impure = match m {
         case Map(xs) => List.foreach(p -> f(fst(p), snd(p)), xs)
     }
 

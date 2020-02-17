@@ -230,7 +230,7 @@ namespace Option {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~>> Unit, o: Option[a]): Unit @ Impure = match o {
+    pub def foreach(f: a ~> Unit, o: Option[a]): Unit @ Impure = match o {
         case None    => ()
         case Some(v) => f(v)
     }

@@ -827,7 +827,7 @@ namespace List {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~>> Unit, xs: List[a]): Unit @ Impure = match xs {
+    pub def foreach(f: a ~> Unit, xs: List[a]): Unit @ Impure = match xs {
         case Nil => ()
         case x :: rs => f(x); foreach(f, rs)
     }

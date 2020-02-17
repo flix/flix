@@ -332,7 +332,7 @@ namespace Set {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~>> Unit, xs: Set[a]): Unit @ Impure = match xs {
+    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit @ Impure = match xs {
         case Set(l) => List.foreach(f, l)
     }
 
