@@ -486,6 +486,7 @@ object Unification {
       */
     def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
       case Nil => (Substitution.empty, eff)
+        // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
       case x :: xs =>
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)

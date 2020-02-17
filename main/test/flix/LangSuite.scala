@@ -6,6 +6,12 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Effects.
+  //
+  new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix"),
+
+
+  //
   // Equality.
   //
   new FlixTest("Test.Equality.Channel", "main/test/flix/Test.Equality.Channel.flix"),
