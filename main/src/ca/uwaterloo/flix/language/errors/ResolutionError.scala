@@ -175,26 +175,6 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Eff Error.
-    *
-    * @param sym the eff symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
-  case class InaccessibleEff(sym: Symbol.EffSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Effect '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible effect.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Mark the effect as public." << NewLine
-    }
-  }
-
-  /**
     * Inaccessible Enum Error.
     *
     * @param sym the enum symbol.
@@ -388,24 +368,6 @@ object ResolutionError {
       vt << Code(loc, "type not found.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Possible typo or non-existent type?" << NewLine
-    }
-  }
-
-  /**
-    * Unhandled Effect Error.
-    *
-    * @param sym the unhandled effect symbol.
-    */
-  case class UnhandledEffect(sym: Symbol.EffSym) extends ResolutionError {
-    val source: Source = sym.loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unhandled effect '" << Red(sym.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(sym.loc, "no default handler.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent effect handler?" << NewLine
     }
   }
 

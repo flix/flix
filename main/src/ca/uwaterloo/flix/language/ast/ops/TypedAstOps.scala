@@ -21,8 +21,6 @@ object TypedAstOps {
 
       case Expression.Def(sym, tpe, loc) => Map.empty
 
-      case Expression.Eff(sym, tpe, eff, loc) => Map.empty
-
       case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
       case Expression.Unit(loc) => Map.empty
@@ -153,11 +151,6 @@ object TypedAstOps {
 
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
-
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-        bindings.foldLeft(visitExp(exp, env0)) {
-          case (macc, HandlerBinding(sym, handler)) => macc ++ visitExp(handler, env0)
-        }
 
       case Expression.Existential(fparam, exp, eff, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))

@@ -61,31 +61,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Translates the given effect `eff0` to the SimplifiedAst.
-      */
-    def visitEff(eff0: TypedAst.Eff): SimplifiedAst.Eff = {
-      val fs = eff0.fparams.map(visitFormalParam)
-      SimplifiedAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, eff0.tpe, eff0.loc)
-    }
-
-    /**
-      * Translates the given handler `handler0` to the SimplifiedAst.
-      */
-    def visitHandler(handler0: TypedAst.Handler): SimplifiedAst.Handler = {
-      val fs = handler0.fparams.map(visitFormalParam)
-      val exp = visitExp(handler0.exp)
-      SimplifiedAst.Handler(handler0.ann, handler0.mod, handler0.sym, fs, exp, handler0.tpe, handler0.loc)
-    }
-
-    /**
       * Translates the given expression `exp` to the SimplifiedAst.
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
       case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
 
       case TypedAst.Expression.Def(sym, tpe, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
-
-      case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
 
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, loc)
 
@@ -484,13 +465,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
-
-      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        val bs = bindings map {
-          case TypedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
-        }
-        SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
 
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
@@ -1192,8 +1166,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     // Main computation.
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
-    val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
-    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
     val enums = root.enums.map {
       case (k, TypedAst.Enum(doc, mod, sym, tparams, cases0, enumType, loc)) =>
         val cases = cases0 map {
@@ -1208,7 +1180,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   /**
@@ -1247,8 +1219,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       }
 
       case SimplifiedAst.Expression.Def(sym, tpe, loc) => e
-
-      case SimplifiedAst.Expression.Eff(sym, tpe, loc) => e
 
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(fparams, visitExp(body), tpe, loc)
@@ -1338,13 +1308,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
-
-      case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visitExp(exp)
-        val bs = bindings map {
-          case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
-        }
-        SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
 
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
         val e = visitExp(exp)
@@ -1470,13 +1433,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
-      case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
       case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-
-      case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }

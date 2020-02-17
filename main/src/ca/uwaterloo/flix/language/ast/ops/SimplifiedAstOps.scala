@@ -77,10 +77,6 @@ object SimplifiedAstOps {
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
         checkType(tpe)
 
-      case Expression.Eff(sym, tpe, loc) =>
-        assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
-        checkType(tpe)
-
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         checkExp(exp, env0 ++ fparams.map(_.sym), ienv0)
 
@@ -112,13 +108,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (arg <- args) {
@@ -128,13 +117,6 @@ object SimplifiedAstOps {
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
-        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
@@ -269,13 +251,6 @@ object SimplifiedAstOps {
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
-        checkType(tpe)
-
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        for (HandlerBinding(sym, handler) <- bindings) {
-          checkExp(handler, env0, ienv0)
-        }
         checkType(tpe)
 
       case Expression.Existential(fparam, exp, loc) =>

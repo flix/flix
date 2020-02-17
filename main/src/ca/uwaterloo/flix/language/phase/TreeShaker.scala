@@ -105,9 +105,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, _, _) =>
         Set(sym)
 
-      case Expression.Eff(_, _, _) =>
-        Set.empty
-
       case Expression.Lambda(_, exp, _, _) =>
         visitExp(exp)
 
@@ -120,17 +117,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDef(sym, args, _, _) =>
         Set(sym) ++ visitExps(args)
 
-      case Expression.ApplyEff(_, args, _, _) =>
-        visitExps(args)
-
       case Expression.ApplyCloTail(exp, args, _, _) =>
         visitExp(exp) ++ visitExps(args)
 
       case Expression.ApplyDefTail(sym, args, _, _) =>
         Set(sym) ++ visitExps(args)
-
-      case Expression.ApplyEffTail(_, args, _, _) =>
-        visitExps(args)
 
       case Expression.ApplySelfTail(sym, _, args, _, _) =>
         Set(sym) ++ visitExps(args)
@@ -209,9 +200,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Assign(exp1, exp2, tpe, _) =>
         visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.HandleWith(exp, bindings, _, _) =>
-        visitExp(exp) ++ visitExps(bindings.map(_.exp))
 
       case Expression.Existential(_, exp, _) =>
         visitExp(exp)

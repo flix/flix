@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation
 
 import scala.collection.mutable
 
@@ -44,22 +44,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
         case (_, defn) => resolve(defn, ns0, prog0) map {
-          case d => d.sym -> d
-        }
-      }
-    }
-
-    val effsVal = prog0.effs.flatMap {
-      case (ns0, effs) => effs.map {
-        case (_, eff) => resolveEff(eff, ns0, prog0) map {
-          case d => d.sym -> d
-        }
-      }
-    }
-
-    val handlersVal = prog0.handlers.flatMap {
-      case (ns0, handlers) => handlers.map {
-        case (_, handler) => resolveHandler(handler, ns0, prog0) map {
           case d => d.sym -> d
         }
       }
@@ -122,9 +106,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     for {
       definitions <- sequence(definitionsVal)
-      effs <- sequence(effsVal)
-      handlers <- sequence(handlersVal)
-      _ <- checkDefaultHandlers(effs, handlers)
       named <- sequence(namedVal)
       enums <- sequence(enumsVal)
       relations <- sequence(relationsVal)
@@ -132,7 +113,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Program(
-      definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap,
+      definitions.toMap ++ named.toMap, enums.toMap,
       relations.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
@@ -174,40 +155,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         scheme <- resolveScheme(sc0, ns0, prog0)
         eff <- lookupType(eff0, ns0, prog0)
       } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff, loc)
-  }
-
-  /**
-    * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
-    */
-  def resolveEff(eff0: NamedAst.Eff, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Eff, ResolutionError] = eff0 match {
-    case NamedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
-      for {
-        fparams <- resolveFormalParams(fparams0, ns0, prog0)
-        tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        scheme <- resolveScheme(sc0, ns0, prog0)
-        eff <- lookupType(eff0, ns0, prog0)
-      } yield ResolvedAst.Eff(doc, ann, mod, sym, tparams, fparams, scheme, eff, loc)
-  }
-
-  /**
-    * Performs name resolution on the given handler `handler0` in the given namespace `ns0`.
-    */
-  def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
-    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff0, loc) =>
-      // Compute the qualified name of the ident, since we need it to call lookupEff.
-      val qname = Name.mkQName(ident)
-
-      // TODO: Introduce appropriate type environment for handlers.
-      val tenv0 = Map.empty[Symbol.VarSym, Type]
-
-      for {
-        eff <- lookupEff(qname, ns0, prog0)
-        fparams <- resolveFormalParams(fparams0, ns0, prog0)
-        tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        exp <- Expressions.resolve(exp0, tenv0, ns0, prog0)
-        scheme <- resolveScheme(sc0, ns0, prog0)
-        eff1 <- lookupType(eff0, ns0, prog0)
-      } yield ResolvedAst.Handler(doc, ann, mod, eff.sym, tparams, fparams, exp, scheme, eff1, loc)
   }
 
   /**
@@ -335,7 +282,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.Def(qname, tvar, loc) =>
           lookupQName(qname, ns0, prog0) map {
             case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, loc)
-            case LookupResult.Eff(sym) => ResolvedAst.Expression.Eff(sym, tvar, Type.freshTypeVar(), loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -593,12 +539,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Assign(e1, e2, tvar, evar, loc)
-
-        case NamedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-            bs <- resolveHandlerBindings(bindings, tenv0, ns0, prog0)
-          } yield ResolvedAst.Expression.HandleWith(e, bs, tvar, evar, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, evar, loc) =>
           for {
@@ -968,25 +908,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     traverse(tparams0)(tparam => Params.resolve(tparam, ns0, prog0))
 
   /**
-    * Performs name resolution on the given handler bindings `bs0`.
-    */
-  def resolveHandlerBindings(bs0: List[NamedAst.HandlerBinding], tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[List[ResolvedAst.HandlerBinding], ResolutionError] = {
-    // TODO: Check that there is no overlap?
-    traverse(bs0)(b => resolveHandlerBindings(b, tenv0, ns0, prog0))
-  }
-
-  /**
-    * Performs name resolution on the given handler binding `b0`.
-    */
-  def resolveHandlerBindings(b0: NamedAst.HandlerBinding, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.HandlerBinding, ResolutionError] = b0 match {
-    case NamedAst.HandlerBinding(qname, exp0) =>
-      for {
-        eff <- lookupEff(qname, ns0, prog0)
-        exp <- Expressions.resolve(exp0, tenv0, ns0, prog0)
-      } yield ResolvedAst.HandlerBinding(eff.sym, exp)
-  }
-
-  /**
     * Performs name resolution on the given scheme `sc0`.
     */
   def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Root): Validation[Scheme, ResolutionError] = {
@@ -1004,8 +925,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case class Def(sym: Symbol.DefnSym) extends LookupResult
 
-    case class Eff(sym: Symbol.EffSym) extends LookupResult
-
   }
 
   /**
@@ -1013,13 +932,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def lookupQName(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[LookupResult, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, prog0)
-    val effOpt = tryLookupEff(qname, ns0, prog0)
 
-    (defOpt, effOpt) match {
-      case (None, None) => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case (Some(d), None) => getDefIfAccessible(d, ns0, qname.loc)
-      case (None, Some(e)) => getEffIfAccessible(e, ns0, qname.loc)
-      case (Some(d), Some(e)) => ResolutionError.AmbiguousName(qname, ns0, List(d.loc, e.loc), qname.loc).toFailure
+    defOpt match {
+      case None => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case Some(d) => getDefIfAccessible(d, ns0, qname.loc)
     }
   }
 
@@ -1043,39 +959,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     } else {
       // Case 2: Qualified. Lookup in the given namespace.
       prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
-    * Tries to find an eff with the qualified name `qname` in the namespace `ns0`.
-    */
-  def lookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Eff, ResolutionError] = {
-    tryLookupEff(qname, ns0, prog0) match {
-      case None => ResolutionError.UndefinedEff(qname, ns0, qname.loc).toFailure
-      case Some(eff) => eff.toSuccess
-    }
-  }
-
-  /**
-    * Finds the given effect with the qualified name `qname` in the namespace `ns0`.
-    */
-  def tryLookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Eff] = {
-    // Check whether the name is fully-qualified.
-    if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup in the current namespace.
-      val defnOpt = prog0.effs.getOrElse(ns0, Map.empty).get(qname.ident.name)
-
-      defnOpt match {
-        case Some(eff) =>
-          // Case 1.2: Found in the current namespace.
-          Some(eff)
-        case None =>
-          // Case 1.1: Try the global namespace.
-          prog0.effs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Case 2: Qualified. Lookup in the given namespace.
-      prog0.effs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -1189,28 +1072,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       // Lookup in the qualified namespace.
       prog0.lattices.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
-  }
-
-
-  // TODO: Move
-  /**
-    * Ensures that every declared effect in `effs` has one handler in `handlers`.
-    */
-  def checkDefaultHandlers(effs: List[(Symbol.EffSym, ResolvedAst.Eff)], handlers: List[(Symbol.EffSym, ResolvedAst.Handler)]): Validation[Unit, ResolutionError] = {
-    //
-    // Compute the declared and handled effects.
-    //
-    val declaredEffects = effs.map(_._1)
-    val declaredHandlers = handlers.map(_._1)
-
-    //
-    // Check if there are any unhandled effects.
-    //
-    val unhandledEffects = declaredEffects.toSet -- declaredHandlers.toSet
-    if (unhandledEffects.isEmpty)
-      ().toSuccess
-    else
-      ResolutionError.UnhandledEffect(unhandledEffects.head).toFailure
   }
 
   /**
@@ -1445,37 +1306,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     // The definition is not accessible.
     //
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
-  }
-
-  /**
-    * Successfully returns the given effect `eff0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
-    *
-    * An effect `eff0` is accessible from a namespace `ns0` if:
-    *
-    * (a) the effect is marked public, or
-    * (b) the effect is defined in the namespace `ns0` itself or in a parent of `ns0`.
-    */
-  def getEffIfAccessible(eff0: NamedAst.Eff, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
-    //
-    // Check if the effect is marked public.
-    //
-    if (eff0.mod.isPublic)
-      return LookupResult.Eff(eff0.sym).toSuccess
-
-    //
-    // Check if the effect is defined in `ns0` or in a parent of `ns0`.
-    //
-    val prefixNs = eff0.sym.namespace
-    val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return LookupResult.Eff(eff0.sym).toSuccess
-
-    //
-    // The effect is not accessible.
-    //
-    ResolutionError.InaccessibleEff(eff0.sym, ns0, loc).toFailure
   }
 
   /**

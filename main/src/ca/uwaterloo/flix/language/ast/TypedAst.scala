@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.debug.{FormatExpression, FormatPattern}
 object TypedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, TypedAst.Def],
-                  effs: Map[Symbol.EffSym, TypedAst.Eff],
-                  handlers: Map[Symbol.EffSym, TypedAst.Handler],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
                   relations: Map[Symbol.RelSym, TypedAst.Relation],
                   lattices: Map[Symbol.LatSym, TypedAst.Lattice],
@@ -37,10 +35,6 @@ object TypedAst {
 
   // TODO: Remove .tpe from here.
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, sc: Scheme, tpe: Type, eff: Type, loc: SourceLocation)
-
-  case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], tpe: Type, eff: Type, loc: SourceLocation)
-
-  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation)
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypedAst.TypeParam], cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation)
 
@@ -148,8 +142,6 @@ object TypedAst {
       def eff: Type = Type.Pure
     }
 
-    case class Eff(sym: Symbol.EffSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
     case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -213,8 +205,6 @@ object TypedAst {
     case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
-    case class HandleWith(exp: TypedAst.Expression, bindings: List[TypedAst.HandlerBinding], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: Type, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
@@ -395,8 +385,6 @@ object TypedAst {
   }
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
-
-  case class HandlerBinding(sym: Symbol.EffSym, exp: TypedAst.Expression)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
 

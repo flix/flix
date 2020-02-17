@@ -118,8 +118,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Def(_, _, _) => exp0.toSuccess
 
-    case Expression.Eff(_, _, _, _) => exp0.toSuccess
-
     case Expression.Hole(_, _, _, _) => exp0.toSuccess
 
     case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
@@ -284,14 +282,6 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
-      }
-
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-      val bindingsVal = traverse(bindings) {
-        case HandlerBinding(sym, b) => visitExp(exp).map(HandlerBinding(sym, _))
-      }
-      mapN(visitExp(exp), bindingsVal) {
-        case (e, bs) => Expression.HandleWith(e, bs, tpe, eff, loc)
       }
 
     case Expression.Existential(fparam, exp, eff, loc) =>
@@ -476,8 +466,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Def(_, _, _) => DependencyGraph.empty
 
-    case Expression.Eff(_, _, _, _) => DependencyGraph.empty
-
     case Expression.Hole(_, _, _, _) => DependencyGraph.empty
 
     case Expression.Lambda(_, exp, _, _, _) =>
@@ -583,11 +571,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Assign(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
-
-    case Expression.HandleWith(exp, bindings, _, _, _) =>
-      bindings.foldLeft(dependencyGraphOfExp(exp)) {
-        case (acc, HandlerBinding(_, e)) => acc + dependencyGraphOfExp(e)
-      }
 
     case Expression.Existential(_, exp, _, _) =>
       dependencyGraphOfExp(exp)

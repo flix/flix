@@ -54,50 +54,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given effect `name` is defined multiple times.
-    *
-    * @param name the name.
-    * @param loc1 the location of the first definition.
-    * @param loc2 the location of the second definition.
-    */
-  case class DuplicateEff(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source: Source = loc1.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate effect '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate that multiple handlers are defined for the same effect.
-    *
-    * @param name the name.
-    * @param loc1 the location of the first definition.
-    * @param loc2 the location of the second definition.
-    */
-  case class DuplicateHandler(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source: Source = loc1.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate handlers for the effect '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second occurrence was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the occurrences." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that the given type alias `name` is defined multiple times.
     *
     * @param name the name.

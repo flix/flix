@@ -275,8 +275,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used.of(sym, unconditionallyRecurses = false)
       }
 
-    case Expression.Eff(_, _, _, _) => Used.empty
-
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
     case Expression.Lambda(fparam, exp, _, _, _) =>
@@ -470,13 +468,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us1 = visitExp(exp1, env0.resetApplies)
       val us2 = visitExp(exp2, env0.resetApplies)
       us1 and us2
-
-    case Expression.HandleWith(exp, bindings, _, _, _) =>
-      val usedExp = visitExp(exp, env0.resetApplies)
-      val usedBindings = bindings.foldLeft(Used.empty) {
-        case (acc, HandlerBinding(_, body)) => acc and visitExp(body, env0.resetApplies)
-      }
-      usedExp and usedBindings
 
     case Expression.Existential(fparam, exp, _, _) =>
       // Check for variable shadowing.
