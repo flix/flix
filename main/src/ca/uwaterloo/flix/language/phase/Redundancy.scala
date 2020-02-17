@@ -349,13 +349,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       us1 and (us2 or us3)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
-      // TODO: Ensure that `exp1` is non-pure.
-      if (exp1.tpe == Type.Pure) {
-        println("Useless!")
-      }
       val us1 = visitExp(exp1, env0.resetApplies)
       val us2 = visitExp(exp2, env0.resetApplies)
-      us1 and us2
+
+      // Check for useless pure expressions.
+      if (exp1.eff == Type.Pure)
+        (us1 and us2) + UselessExpression(exp1.loc)
+      else
+        us1 and us2
 
     case Expression.Match(exp, rules, _, _, _) =>
       // Visit the match expression.
