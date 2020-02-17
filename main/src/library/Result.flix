@@ -73,7 +73,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: t ->> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
+    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
 
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
@@ -81,7 +81,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: t ->> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
+    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
 
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
@@ -104,7 +104,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: t ->> Bool, r: Result[t, e]): Int32 = match r {
+    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
         case Ok(v) => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -114,7 +114,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: t ->> Bool, r: Result[t, e]): Option[t] = match r {
+    pub def find(f: t -> Bool, r: Result[t, e]): Option[t] = match r {
         case Ok(v) => if (f(v)) Some(v) else None
         case Err(_) => None
     }

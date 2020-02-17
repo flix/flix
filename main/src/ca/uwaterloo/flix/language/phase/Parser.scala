@@ -1056,7 +1056,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
       Apply ~ optional(
-          (optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow) |
           (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
           (optWS ~ atomic("->") ~ optional(AndEffSeq) ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
@@ -1077,7 +1076,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ TypeList ~ optWS ~ (
-            (atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow) |
             (atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
             (atomic("->") ~ optWS ~ optional(AndEffSeq) ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
         )

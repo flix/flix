@@ -99,7 +99,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a ->> Bool, xs: Set[a]): Option[a] =
+    pub def find(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.find(f, s)
 
@@ -108,7 +108,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a ->> Bool, xs: Set[a]): Option[a] =
+    pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.findLeft(f, s)
 
@@ -117,7 +117,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a ->> Bool, xs: Set[a]): Option[a] =
+    pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.findRight(f, s)
 
@@ -186,7 +186,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a ->> Bool, xs: Set[a]): Int32 =
+    pub def count(f: a -> Bool, xs: Set[a]): Int32 =
         let Set(s) = xs;
             List.count(f, s)
 
@@ -205,7 +205,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a ->> Bool, xs: Set[a]): Bool =
+    pub def exists(f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.exists(f, s)
 
@@ -216,7 +216,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a ->> Bool, xs: Set[a]): Bool =
+    pub def forall(f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.forall(f, s)
 
@@ -263,7 +263,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: a ->> Bool, xs: Set[a]): Set[a] =
+    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
         let Set(s) = xs;
             Set(List.filter(f, s))
 
@@ -300,7 +300,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a ->> Bool, xs: Set[a]): (Set[a], Set[a]) =
+    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
         let Set(s) = xs;
         let (ys, zs) = List.partition(f, s);
             (Set(ys), Set(zs))

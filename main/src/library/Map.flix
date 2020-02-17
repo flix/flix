@@ -209,14 +209,14 @@ namespace Map {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: (k, v) ->> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
+    pub def find(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: (k, v) ->> Bool, m: Map[k, v]): Option[(k, v)] =
+    pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
             List.findLeft(x -> f(fst(x), snd(x)), xs)
 
@@ -225,7 +225,7 @@ namespace Map {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: (k, v) ->> Bool, m: Map[k, v]): Option[(k, v)] =
+    pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
             List.findRight(x -> f(fst(x), snd(x)), xs)
 
@@ -239,14 +239,14 @@ namespace Map {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: v ->> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((_, v) -> f(v), m)
+    pub def filter(f: v -> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def filterWithKey(f: (k, v) ->> Bool, m: Map[k, v]): Map[k, v] =
+    pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
             Map(List.filter(x -> f(fst(x), snd(x)), xs))
 
@@ -372,7 +372,7 @@ namespace Map {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: (k, v) ->> Bool, m: Map[k, v]): Int32 =
+    pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
         let Map(xs) = m;
             List.count(x -> f(fst(x), snd(x)), xs)
 
@@ -383,7 +383,7 @@ namespace Map {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: (k, v) ->> Bool, m: Map[k, v]): Bool =
+    pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
         let Map(xs) = m;
             List.exists(x -> f(fst(x), snd(x)), xs)
 
@@ -394,7 +394,7 @@ namespace Map {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: (k, v) ->> Bool, m: Map[k, v]): Bool =
+    pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
         let Map(xs) = m;
             List.forall(x -> f(fst(x), snd(x)), xs)
 

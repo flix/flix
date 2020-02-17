@@ -92,7 +92,7 @@ namespace Test/Eff/Polymorphism {
         hof(x -> x)
 
     @test
-    def testEffPoly17(): Bool ->> Bool =
+    def testEffPoly17(): Bool -> Bool =
         x -> !x
 
     @test
@@ -100,15 +100,15 @@ namespace Test/Eff/Polymorphism {
         x -> {impure(); !x}
 
     @test
-    def testEffPoly19(): Bool ->> Bool ->> Bool =
+    def testEffPoly19(): Bool -> Bool -> Bool =
         x -> y -> x && y
 
     @test
-    def testEffPoly20(): Bool ->> Bool ~> Bool =
+    def testEffPoly20(): Bool -> Bool ~> Bool =
         x -> y -> {impure(); x && y}
 
     @test
-    def testEffPoly21(): Bool ~> Bool ->> Bool =
+    def testEffPoly21(): Bool ~> Bool -> Bool =
         x -> {impure(); y -> x && y}
 
     @test

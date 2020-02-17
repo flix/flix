@@ -102,14 +102,14 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a ->> Bool, xs: List[a]): Option[a] = findLeft(f, xs)
+    pub def find(f: a -> Bool, xs: List[a]): Option[a] = findLeft(f, xs)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a ->> Bool, xs: List[a]): Option[a] = match xs {
+    pub def findLeft(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: rs => if (f(x)) Some(x) else findLeft(f, rs)
     }
@@ -119,7 +119,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a ->> Bool, xs: List[a]): Option[a] = match xs {
+    pub def findRight(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: rs => Option.withDefault(findRight(f, rs), if (f(x)) Some(x) else None)
     }
@@ -493,7 +493,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a ->> Bool, xs: List[a]): Int32 = match xs {
+    pub def count(f: a -> Bool, xs: List[a]): Int32 = match xs {
         case Nil => 0
         case x :: rs =>
             let r = count(f, rs);
@@ -515,7 +515,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a ->> Bool, xs: List[a]): Bool = match xs {
+    pub def exists(f: a -> Bool, xs: List[a]): Bool = match xs {
         case Nil => false
         case x :: rs => if (f(x)) true else exists(f, rs)
     }
@@ -527,7 +527,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a ->> Bool, xs: List[a]): Bool = match xs {
+    pub def forall(f: a -> Bool, xs: List[a]): Bool = match xs {
         case Nil => true
         case x :: rs => if (!f(x)) false else forall(f, rs)
     }
@@ -542,7 +542,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: a ->> Bool, xs: List[a]): List[a] = match xs {
+    pub def filter(f: a -> Bool, xs: List[a]): List[a] = match xs {
         case Nil => Nil
         case x :: rs =>
             let r = filter(f, rs);
@@ -575,7 +575,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a ->> Bool, xs: List[a]): (List[a], List[a]) = match xs {
+    pub def partition(f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs {
         case Nil => (Nil, Nil)
         case x :: rs =>
             let (r1, r2) = partition(f, rs);
@@ -590,7 +590,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def span(f: a ->> Bool, xs: List[a]): (List[a], List[a]) = match xs {
+    pub def span(f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs {
         case Nil => (Nil, Nil)
         case x :: rs =>
             if (f(x))
@@ -617,7 +617,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def dropWhile(f: a ->> Bool, xs: List[a]): List[a] = match xs {
+    pub def dropWhile(f: a -> Bool, xs: List[a]): List[a] = match xs {
         case Nil => Nil
         case x :: rs => if (f(x)) dropWhile(f, rs) else xs
     }
@@ -639,7 +639,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def takeWhile(f: a ->> Bool, xs: List[a]): List[a] = match xs {
+    pub def takeWhile(f: a -> Bool, xs: List[a]): List[a] = match xs {
         case Nil => Nil
         case x :: rs => if (f(x)) x :: takeWhile(f, rs) else Nil
     }
@@ -657,7 +657,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def groupBy(f: (a, a) ->> Bool, xs: List[a]): List[List[a]] = match xs {
+    pub def groupBy(f: (a, a) -> Bool, xs: List[a]): List[List[a]] = match xs {
         case Nil => Nil
         case x :: rs =>
             let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
@@ -667,7 +667,7 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) ->> Bool, xs: List[a], ps: List[a], ns: List[a]): (List[a], List[a]) = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (List[a], List[a]) = match xs {
         case Nil => (reverse(ps), reverse(ns))
         case x :: rs => if (agreeHelper(f, x, ps)) extractHelper(f, rs, x :: ps, ns) else extractHelper(f, rs, ps, x :: ns)
     }
@@ -675,7 +675,7 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    def agreeHelper(f: (a, a) ->> Bool, a: a, xs: List[a]): Bool = match xs {
+    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
         case Nil => true
         case x :: rs => if (f(x, a) && f(a, x)) agreeHelper(f, a, rs) else false
     }
