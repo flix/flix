@@ -456,11 +456,6 @@ object Unification {
     def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
     /**
-      * Constructs the formula: x ∨ (y ∧ ¬z).
-      */
-    def rewrite(x: Type, y: Type, z: Type): Type = mkOr(x, mkAnd(y, mkNot(z)))
-
-    /**
       * Performs success variable elimination on the given boolean expression `eff`.
       */
     def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
@@ -470,7 +465,7 @@ object Unification {
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)
         val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, rewrite(se(t0), x, se(t1)))
+        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
         (st ++ se, cc)
     }
 
