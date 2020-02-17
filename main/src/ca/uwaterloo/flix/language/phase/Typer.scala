@@ -1103,7 +1103,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Spawn(exp, tvar, evar, loc) =>
         //
         //  exp: t @ _
         //  -------------------------
@@ -1114,10 +1114,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, Type.Unit, loc)
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
-        // A panic is, by nature, not type safe.
-        liftM((tvar, evar))
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, evar, loc) =>
         for {
@@ -1505,12 +1501,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val d = default.map(visitExp(_, subst0))
         TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.ProcessSpawn(exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Spawn(exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.ProcessSpawn(e, subst0(tvar), subst0(evar), loc)
-
-      case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
-        TypedAst.Expression.ProcessPanic(msg, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.Spawn(e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, evar, loc) =>
         val cs = cs0.map(visitConstraint)

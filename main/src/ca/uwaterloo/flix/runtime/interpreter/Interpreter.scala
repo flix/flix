@@ -283,15 +283,12 @@ object Interpreter {
       // Evaluate the expression of the selected rule
       eval(selectedRule._3, newEnv, lenv0, root)
 
-    case Expression.ProcessSpawn(exp, tpe, loc) =>
+    case Expression.Spawn(exp, tpe, loc) =>
       Channel.spawn(() => {
         val e = eval(exp, env0, lenv0, root)
         invokeClo(e, List(), env0, lenv0, root)
       })
       Value.Unit
-
-    case Expression.ProcessPanic(msg, tpe, loc) =>
-      throw new RuntimeException(msg)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
       val empty = fixpoint.ConstraintSystem.of(Array.empty[fixpoint.Constraint])
