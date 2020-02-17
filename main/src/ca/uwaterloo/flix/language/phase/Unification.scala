@@ -453,33 +453,12 @@ object Unification {
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
-    def eq(p: Type, q: Type): Type = {
-      // Note: Specialized for performance.
-      p match {
-        case Type.Cst(TypeConstructor.Pure) => mkNot(q)
-        case Type.Cst(TypeConstructor.Impure) => q
-        case _ => q match {
-          case Type.Cst(TypeConstructor.Pure) => mkNot(p)
-          case Type.Cst(TypeConstructor.Impure) => p
-          case _ => mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
-        }
-      }
-    }
+    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
     /**
       * Constructs the formula: x ∨ (y ∧ ¬z).
       */
-    def rewrite(x: Type, y: Type, z: Type): Type = {
-      // Optimization 1: z == ¬x  ==> x ∨ (y ∧ ¬z) == x ∨ (y ∧ ¬¬x) == x ∨ (y ∧ x) == x
-      if (z == Type.Apply(Type.Cst(TypeConstructor.Not), x)) {
-        x
-        // Optimization 2: y == z ==> x ∨ (y ∧ ¬y) == x
-      } else if (y == z) {
-        x
-      } else {
-        mkOr(x, mkAnd(y, mkNot(z)))
-      }
-    }
+    def rewrite(x: Type, y: Type, z: Type): Type = mkOr(x, mkAnd(y, mkNot(z)))
 
     /**
       * Performs success variable elimination on the given boolean expression `eff`.
