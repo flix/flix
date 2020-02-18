@@ -476,7 +476,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
       case (sym, defn) => sym -> defn.copy(exp = labelExp(defn.exp))
     }
 
-    def closuresExp(acc: Set[Expression.Closure], exp: SimplifiedAst.Expression): Set[Expression.Closure] =
+    def closuresExp(acc: Map[Type, Set[Expression.Closure]], exp: SimplifiedAst.Expression): Map[Type, Set[Expression.Closure]] =
       exp match {
         //
         // Labeled Expressions.
@@ -517,7 +517,9 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         //
         // Closure Expressions.
         //
-        case Expression.Closure(sym, freeVars, tpe, loc) => acc + Expression.Closure(sym, freeVars, tpe, loc)
+        case Expression.Closure(sym, freeVars, tpe, loc) =>
+          val closures = acc.getOrElse(tpe, Set())
+          acc + (tpe -> (closures + Expression.Closure(sym, freeVars, tpe, loc)))
 
         //
         // ApplyClo Expressions.
@@ -798,7 +800,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
               c ++ e
           }
 
-          val d = default.fold(Set.empty[Expression.Closure])(closuresExp(acc, _))
+          val d = default.fold(Map.empty[Type, Set[Expression.Closure]])(closuresExp(acc, _))
           rs ++ d
 
         //
@@ -871,29 +873,25 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass}'.")
       }
 
-    val closures = labeledDefs.foldLeft(Set.empty[Expression.Closure]){
+    val closures = labeledDefs.foldLeft(Map.empty[Type, Set[Expression.Closure]]){
       case (c, (_, defn)) => closuresExp(c, defn.exp)
     }
 
     def visitExp(acc: (AbstractEnvironment, AbstractCache), lExp: LabeledExpression): (AbstractEnvironment, AbstractCache) = {
-      val result = lExp.tpe.typeConstructor match {
-        case Type.Arrow(_, _) =>
-          closures
-            .filter(clos => clos.tpe == lExp.tpe)
-            .foldLeft(acc) {
-              case ((varFlow, expFlow), clos) =>
-                lExp.exp match {
-                  case Expression.Var(sym, _, _) =>
-                    val flow = varFlow.getOrElse(sym, Set())
-                    val newFlow = varFlow + (sym -> (flow + clos))
-                    (newFlow, expFlow)
-                  case _ =>
-                    val flow = expFlow.getOrElse(lExp, Set())
-                    val newFlow = expFlow + (lExp -> (flow + clos))
-                    (varFlow, newFlow)
-                }
-            }
-        case _ => acc
+      val (varFlow, expFlow) = acc
+      val result = closures.get(lExp.tpe) match {
+        case Some(c) =>
+          lExp.exp match {
+            case Expression.Var(sym, tpe, loc) =>
+              val flow = varFlow.getOrElse(sym, Set())
+              val newFlow = varFlow + (sym -> (flow ++ c))
+              (newFlow, expFlow)
+            case _ =>
+              val flow = expFlow.getOrElse(lExp, Set())
+              val newFlow = expFlow + (lExp -> (flow ++ c))
+              (varFlow, newFlow)
+          }
+        case None => acc
       }
       lExp.exp match {
         //
