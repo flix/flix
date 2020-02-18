@@ -139,10 +139,10 @@ namespace Domain/Interval {
     pub def eq(x: Interval, y: Interval): Belnap.Belnap = match (x, y) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
-        case (Range(b1, e1), Range(b2, e2))   => switch {
-            case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap/Belnap.True
-            case (e1 < b2) || (e2 < b1)                         => Belnap/Belnap.False
-            case true                                           => Belnap/Belnap.Top
+        case (Range(b1, e1), Range(b2, e2)) => {
+            if      ((b1 == e1) && ((e1 == b2) && (b2 == e2)))     Belnap/Belnap.True
+            else if ((e1 < b2) || (e2 < b1))                       Belnap/Belnap.False
+            else                                                   Belnap/Belnap.Top
         }
         case _                                                  => Belnap/Belnap.Top
     }

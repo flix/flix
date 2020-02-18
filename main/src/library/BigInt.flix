@@ -39,10 +39,10 @@ namespace BigInt {
     ///
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
-    pub def compare(x: BigInt, y: BigInt): Int32 = switch {
-        case x == y  => 0
-        case x < y   => -1
-        case x > y   => 1
+    pub def compare(x: BigInt, y: BigInt): Int32 = {
+        if (x == y)     0
+        else if (x < y) -1
+        else            1
     }
 
     ///
