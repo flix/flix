@@ -46,7 +46,7 @@ namespace Int32 {
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
     pub def abs(x: Int32): Int32 = {
-        if      (x >= 0)                 x
+        if      (x >= 0)            x
         else if (x == minValue())   -1
         else                        -x
     }

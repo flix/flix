@@ -79,11 +79,6 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
-      case Expression.Switch(rules, tpe, eff, loc) =>
-        rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, (exp1, exp2)) => macc ++ visitExp(exp1, env0) ++ visitExp(exp2, env0)
-        }
-
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 

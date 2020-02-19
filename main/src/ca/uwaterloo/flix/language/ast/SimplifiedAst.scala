@@ -264,8 +264,6 @@ object SimplifiedAst {
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)

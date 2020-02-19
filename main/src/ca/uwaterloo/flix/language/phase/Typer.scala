@@ -557,17 +557,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, mkAnd(eff :: guardEffects ::: bodyEffects), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Switch(rules, tvar, evar, loc) =>
-        val condExps = rules.map(_._1)
-        val bodyExps = rules.map(_._2)
-        for {
-          (condTypes, condEffects) <- seqM(condExps map visitExp).map(_.unzip)
-          (bodyTypes, bodyEffects) <- seqM(bodyExps map visitExp).map(_.unzip)
-          condType <- unifyTypM(Type.Bool :: condTypes, loc)
-          resultTyp <- unifyTypM(tvar :: bodyTypes, loc)
-          resultEff <- unifyEffM(evar, mkAnd(condEffects ::: bodyEffects), loc)
-        } yield (resultTyp, resultEff)
-
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, evar, loc) =>
         // TODO: Use a type scheme?
 
@@ -1322,12 +1311,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             TypedAst.MatchRule(p, g, b)
         }
         TypedAst.Expression.Match(e1, rs, subst0(tvar), subst0(evar), loc)
-
-      case ResolvedAst.Expression.Switch(rules, tvar, evar, loc) =>
-        val rs = rules.map {
-          case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
-        }
-        TypedAst.Expression.Switch(rs, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)

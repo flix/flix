@@ -484,17 +484,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.Switch(rules, loc) =>
-      val rulesVal = traverse(rules) {
-        case (cond, body) => mapN(visitExp(cond, env0, tenv0), visitExp(body, env0, tenv0)) {
-          case (c, b) => (c, b)
-        }
-      }
-
-      rulesVal map {
-        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
-      }
-
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
       case None =>
         // Case 1: The tag does not have an expression. Nothing more to be done.
@@ -1040,9 +1029,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.LetRec(ident, exp1, exp2, loc) => filterBoundVars(freeVars(exp1), List(ident)) ++ filterBoundVars(freeVars(exp2), List(ident))
     case WeededAst.Expression.Match(exp, rules, loc) => freeVars(exp) ++ rules.flatMap {
       case WeededAst.MatchRule(pat, guard, body) => filterBoundVars(freeVars(guard) ++ freeVars(body), freeVars(pat))
-    }
-    case WeededAst.Expression.Switch(rules, loc) => rules flatMap {
-      case (cond, body) => freeVars(cond) ++ freeVars(body)
     }
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)

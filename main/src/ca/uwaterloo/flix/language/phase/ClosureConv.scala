@@ -360,7 +360,6 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.HoleError(sym, tpe, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
-    case Expression.SwitchError(tpe, loc) => exp0
 
     case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
@@ -550,7 +549,6 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
 
     case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
@@ -916,8 +914,6 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.HoleError(sym, tpe, loc) => e
 
       case Expression.MatchError(tpe, loc) => e
-
-      case Expression.SwitchError(tpe, loc) => e
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
 

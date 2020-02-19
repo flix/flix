@@ -296,8 +296,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.MatchError(tpe, loc) => i0
 
-      case Expression.SwitchError(tpe, loc) => i0
-
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
 
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")

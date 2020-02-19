@@ -348,8 +348,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
 
-      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
-
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
 
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")

@@ -122,8 +122,8 @@ namespace Domain/PrefixSuffix {
         case (Bot, _)            => Belnap/Belnap.Bot
         case (_, Bot)            => Belnap/Belnap.Bot
         case (PreSuf(p1, s1), PreSuf(p2, s2)) => {
-            if      ((p1 != p2))    Belnap/Belnap.False
-            else if ((s1 != s2))    Belnap/Belnap.False
+            if      (p1 != p2)      Belnap/Belnap.False
+            else if (s1 != s2)      Belnap/Belnap.False
             else                    Belnap/Belnap.Top
         }
         case (Pre(p1), Pre(p2))           => if (p1 != p2) Belnap/Belnap.False else Belnap/Belnap.Top

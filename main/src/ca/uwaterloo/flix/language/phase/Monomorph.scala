@@ -275,12 +275,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
-        case Expression.Switch(rules, tpe, eff, loc) =>
-          val rs = rules map {
-            case (e1, e2) => (visitExp(e1, env0), visitExp(e2, env0))
-          }
-          Expression.Switch(rs, subst0(tpe), eff, loc)
-
         case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.Tag(sym, tag, e, subst0(tpe), eff, loc)

@@ -44,10 +44,10 @@ namespace Domain/ConstantParity {
         case (Bot, x)           => x
         case (x, Bot)           => x
         case (Cst(n1), Cst(n2)) => {
-            if      ((n1 == n2))                    Cst(n1)
-            else if ((isOdd(n1) && isOdd(n2)))      Odd
-            else if ((isEven(n1) && isEven(n2)))    Even
-            else                                    Top
+            if      (n1 == n2)                  Cst(n1)
+            else if (isOdd(n1) && isOdd(n2))    Odd
+            else if (isEven(n1) && isEven(n2))  Even
+            else                                Top
         }
         case (Cst(n), Odd)      => if (isOdd(n))  Odd else Top
         case (Odd, Cst(n))      => if (isOdd(n))  Odd else Top

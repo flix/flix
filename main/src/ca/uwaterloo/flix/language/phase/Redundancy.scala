@@ -384,11 +384,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
       usedMatch and usedRules.reduceLeft(_ or _)
 
-    case Expression.Switch(rules, _, _, _) =>
-      rules.map {
-        case (cond, body) => visitExp(cond, env0.resetApplies) and visitExp(body, env0.resetApplies)
-      }.reduceLeft(_ or _)
-
     case Expression.Tag(sym, tag, exp, _, _, _) =>
       val us = visitExp(exp, env0.resetApplies)
       Used.of(sym, tag) and us

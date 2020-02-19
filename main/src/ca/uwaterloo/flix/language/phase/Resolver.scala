@@ -379,16 +379,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, tvar, evar, loc)
 
-        case NamedAst.Expression.Switch(rules, tvar, evar, loc) =>
-          val rulesVal = traverse(rules) {
-            case (cond, body) => mapN(visit(cond, tenv0), visit(body, tenv0)) {
-              case (c, b) => (c, b)
-            }
-          }
-          rulesVal map {
-            case rs => ResolvedAst.Expression.Switch(rs, tvar, evar, loc)
-          }
-
         case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, evar, loc) => expOpt match {
           case None =>
             // Case 1: The tag has does not have an expression.

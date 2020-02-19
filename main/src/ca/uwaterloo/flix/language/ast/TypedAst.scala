@@ -162,8 +162,6 @@ object TypedAst {
 
     case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
