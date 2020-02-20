@@ -133,7 +133,7 @@ pub def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 ///
 pub def isNull(x: a): Bool =
     import java.util.Objects:isNull(##java.lang.Object);
-    isNull(x as ##java.lang.Object) as Bool @ Pure
+    isNull(x as ##java.lang.Object) as @ Pure
 
 ///
 /// Asserts that the given boolean `b` is `true`.

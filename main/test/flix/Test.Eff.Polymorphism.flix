@@ -115,7 +115,7 @@ namespace Test/Eff/Polymorphism {
     def testEffPoly22(): Bool ~> Bool ~> Bool =
         x -> {impure(); y -> {impure(); x && y}}
 
-    def impure(): Unit @ Impure = () as _ @ Impure
+    def impure(): Unit @ Impure = () as @ Impure
 
     def flip(f: (a, b) ->{e} c): (b, a) ->{e} c = (x, y) -> f(y, x)
 

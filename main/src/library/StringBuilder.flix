@@ -129,7 +129,7 @@ namespace StringBuilder {
     pub def length(sb: StringBuilder): Int32 =
         import java.lang.StringBuilder.length();
         let StringBuilder(msb) = sb;
-        msb.length() as Int32 @ Pure
+        msb.length() as @ Pure
 
     ///
     /// Convert the StringBuilder `sb` to a string.
@@ -137,6 +137,6 @@ namespace StringBuilder {
     pub def toString(sb: StringBuilder): String =
         import java.lang.StringBuilder.toString();
         let StringBuilder(msb) = sb;
-        msb.toString() as String @ Pure
+        msb.toString() as @ Pure
 
 }

@@ -86,46 +86,46 @@ namespace Test/Exp/Cast {
     def testCastWithEff14(): Option[Int] @ Impure = Some(42) as Option[Int] @ Impure
 
     @test
-    def testCastWithWildAndEff01(): Unit @ Impure = () as _ @ Impure
+    def testCastWithWildAndEff01(): Unit @ Impure = () as @ Impure
 
     @test
-    def testCastWithWildAndEff02(): Bool @ Impure = true as _ @ Impure
+    def testCastWithWildAndEff02(): Bool @ Impure = true as @ Impure
 
     @test
-    def testCastWithWildAndEff03(): Bool @ Impure = !false as _ @ Impure
+    def testCastWithWildAndEff03(): Bool @ Impure = !false as @ Impure
 
     @test
-    def testCastWithWildAndEff04(): Char @ Impure = 'a' as _ @ Impure
+    def testCastWithWildAndEff04(): Char @ Impure = 'a' as @ Impure
 
     @test
-    def testCastWithWildAndEff05(): Float32 @ Impure = 0.0f32 as _ @ Impure
+    def testCastWithWildAndEff05(): Float32 @ Impure = 0.0f32 as @ Impure
 
     @test
-    def testCastWithWildAndEff06(): Float64 @ Impure = 0.0f64 as _ @ Impure
+    def testCastWithWildAndEff06(): Float64 @ Impure = 0.0f64 as @ Impure
 
     @test
-    def testCastWithWildAndEff07(): Int8 @ Impure = 0i8 as _ @ Impure
+    def testCastWithWildAndEff07(): Int8 @ Impure = 0i8 as @ Impure
 
     @test
-    def testCastWithWildAndEff08(): Int16 @ Impure = 0i16 as _ @ Impure
+    def testCastWithWildAndEff08(): Int16 @ Impure = 0i16 as @ Impure
 
     @test
-    def testCastWithWildAndEff09(): Int32 @ Impure = 0i32 as _ @ Impure
+    def testCastWithWildAndEff09(): Int32 @ Impure = 0i32 as @ Impure
 
     @test
-    def testCastWithWildAndEff10(): Int64 @ Impure = 0i64 as _ @ Impure
+    def testCastWithWildAndEff10(): Int64 @ Impure = 0i64 as @ Impure
 
     @test
-    def testCastWithWildAndEff11(): BigInt @ Impure = 0ii as _ @ Impure
+    def testCastWithWildAndEff11(): BigInt @ Impure = 0ii as @ Impure
 
     @test
-    def testCastWithWildAndEff12(): Str @ Impure = "hello world" as _ @ Impure
+    def testCastWithWildAndEff12(): Str @ Impure = "hello world" as @ Impure
 
     // TODO: Currently broken
     // @test
-    // def testCastWithWildAndEff13(): (Int, Int, Int) @ Impure = (1, 2, 3) as _ @ Impure
+    // def testCastWithWildAndEff13(): (Int, Int, Int) @ Impure = (1, 2, 3) as @ Impure
 
     @test
-    def testCastWithWildAndEff14(): Option[Int] @ Impure = Some(42) as _ @ Impure
+    def testCastWithWildAndEff14(): Option[Int] @ Impure = Some(42) as @ Impure
 
 }

@@ -83,7 +83,7 @@ namespace BigInt {
     ///
     pub def toString(x: BigInt): String =
         import java.math.BigInteger.toString();
-        x.toString() as String @ Pure
+        x.toString() as @ Pure
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
@@ -92,7 +92,7 @@ namespace BigInt {
     pub def fromString(s: String): Result[BigInt, String] = try {
         import java.lang.String.strip();
         import new java.math.BigInteger(String) as parseBigInt;
-        Ok(s.strip().parseBigInt()) as _ @ Pure
+        Ok(s.strip().parseBigInt()) as @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
      }

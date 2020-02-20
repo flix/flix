@@ -88,10 +88,10 @@ namespace Test/Exp/Precedence {
         h();
         x
 
-    def f(): Unit @ Impure = () as _ @ Impure
+    def f(): Unit @ Impure = () as @ Impure
 
-    def g(): Unit @ Impure = () as _ @ Impure
+    def g(): Unit @ Impure = () as @ Impure
 
-    def h(): Unit @ Impure = () as _ @ Impure
+    def h(): Unit @ Impure = () as @ Impure
 
 }

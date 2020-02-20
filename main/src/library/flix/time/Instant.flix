@@ -35,7 +35,7 @@ namespace Instant {
         import java.time.Instant.isBefore(##java.time.Instant);
         let Instant(t1) = x;
         let Instant(t2) = y;
-        t1.isBefore(t2) as Bool @ Pure
+        t1.isBefore(t2) as @ Pure
 
     ///
     /// Returns `true` if `x` is after `y`.
@@ -44,7 +44,7 @@ namespace Instant {
         import java.time.Instant.isAfter(##java.time.Instant);
         let Instant(t1) = x;
         let Instant(t2) = y;
-        t1.isAfter(t2) as Bool @ Pure
+        t1.isAfter(t2) as @ Pure
 
     ///
     /// Returns the given instant `x` plus `d` number of nano seconds.
@@ -52,7 +52,7 @@ namespace Instant {
     pub def plus(x: Instant, d: Int64): Instant =
         import java.time.Instant.plusNanos(Int64);
         let Instant(t) = x;
-        Instant(t.plusNanos(d)) as Instant @ Pure
+        Instant(t.plusNanos(d)) as @ Pure
 
     ///
     /// Returns the given instant `x` minus `d` number of nano seconds.
@@ -60,6 +60,6 @@ namespace Instant {
     pub def minus(x: Instant, d: Int64): Instant =
         import java.time.Instant.minusNanos(Int64);
         let Instant(t) = x;
-        Instant(t.minusNanos(d)) as Instant @ Pure
+        Instant(t.minusNanos(d)) as @ Pure
 
 }

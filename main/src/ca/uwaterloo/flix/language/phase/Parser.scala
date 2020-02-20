@@ -550,23 +550,37 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       (SP ~ atomic("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = {
-      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
-        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
-      }
-
-      rule {
-        Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Cast)
-      }
+    def Cast: Rule1[ParsedAst.Expression] = rule {
+      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypAndEffFragment ~ SP ~> ParsedAst.Expression.Cast)
     }
 
-    def Ascribe: Rule1[ParsedAst.Expression] = {
-      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
-        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+    def Ascribe: Rule1[ParsedAst.Expression] = rule {
+      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndEffFragment ~ SP ~> ParsedAst.Expression.Ascribe)
+    }
+
+    def TypAndEffFragment: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = {
+      def SomeTyp: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
+      }
+
+      def SomeEff: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
+      }
+
+      def TypOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        SomeTyp ~ push(None)
+      }
+
+      def EffOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        push(None) ~ atomic("@") ~ WS ~ SomeEff
+      }
+
+      def TypAndEff: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        SomeTyp ~ WS ~ atomic("@") ~ WS ~ SomeEff
       }
 
       rule {
-        FAppend ~ optional(optWS ~ ":" ~ optWS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Ascribe)
+        TypAndEff | TypOnly | EffOnly
       }
     }
 

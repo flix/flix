@@ -91,7 +91,7 @@ namespace Float64 {
     ///
     pub def toString(x: Float64): String =
         import java.lang.Double:toString(Float64);
-        x.toString() as String @ Pure
+        x.toString() as @ Pure
 
     ///
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
@@ -100,7 +100,7 @@ namespace Float64 {
     pub def fromString(s: String): Result[Float64, String] = try {
         import java.lang.String.strip();
         import java.lang.Double:parseDouble(String);
-        Ok(s.strip().parseDouble()) as _ @ Pure
+        Ok(s.strip().parseDouble()) as @ Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
      }
