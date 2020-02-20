@@ -77,7 +77,7 @@ namespace Domain/Mod3 {
     ///
     pub def alpha(i: BigInt): Mod3 = {
     // TODO: The verifier must handle errors so it never enters a Switch/MatchError.
-        if ((i % 3ii == 1ii) || (i % 3ii == -1ii))      One
+        if      ((i % 3ii == 1ii) || (i % 3ii == -1ii)) One
         else if ((i % 3ii == 2ii) || (i % 3ii == -2ii)) Two
         else                                            Zer
     }

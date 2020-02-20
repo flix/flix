@@ -173,8 +173,8 @@ namespace Domain/IntervalInf {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
         case (Range(b1, e1), Range(b2, e2)) => {
-            if      (b1 == e1) && ((e1 == b2) && (b2 == e2))       Belnap/Belnap.True
-            else if (e1 < b2) || (e2 < b1)                         Belnap/Belnap.False
+            if      ((b1 == e1) && ((e1 == b2) && (b2 == e2)))     Belnap/Belnap.True
+            else if ((e1 < b2) || (e2 < b1))                       Belnap/Belnap.False
             else                                                   Belnap/Belnap.Top
         }
         case (Range(b1, e1), Upper(e2))                         => if (b1 > e2) Belnap/Belnap.False else Belnap/Belnap.Top
