@@ -1,6 +1,6 @@
 package flix.runtime.fixpoint.ram;
 
-public enum RamTableClassifier {
+public enum TableClassifier {
     NEW, // Delta' or new in litterature
     DELTA,
     RESULT // the cumulative result

@@ -6,4 +6,8 @@ public class LocalVariable {
     public LocalVariable(String varName) {
         this.varName = varName;
     }
+
+    public String getVarName() {
+        return varName;
+    }
 }

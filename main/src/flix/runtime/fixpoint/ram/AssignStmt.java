@@ -1,13 +1,19 @@
 package flix.runtime.fixpoint.ram;
 
+import java.io.PrintStream;
+
 public class AssignStmt implements Stmt {
     private TableName name;
-    private RamTableClassifier classifier;
     private RelationExp relationExp;
 
-    public AssignStmt(TableName name, RamTableClassifier classifier, RelationExp relationExp) {
+    public AssignStmt(TableName name, RelationExp relationExp) {
         this.name = name;
-        this.classifier = classifier;
         this.relationExp = relationExp;
+    }
+
+    @Override
+    public void prettyPrint(PrintStream stream, int indentLevel) {
+        stream.print("\t".repeat(indentLevel) + name.toString() + " := ");
+        relationExp.prettyPrint(stream, indentLevel);
     }
 }
