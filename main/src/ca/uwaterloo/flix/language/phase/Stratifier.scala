@@ -120,9 +120,9 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Hole(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lambda(fparam, e, tpe, eff, loc)
+        case e => Expression.Lambda(fparam, e, tpe, loc)
       }
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
@@ -181,8 +181,8 @@ object Stratifier extends Phase[Root, Root] {
         case es => Expression.Tuple(es, tpe, eff, loc)
       }
 
-    case Expression.RecordEmpty(tpe, eff, loc) =>
-      Expression.RecordEmpty(tpe, eff, loc).toSuccess
+    case Expression.RecordEmpty(tpe, loc) =>
+      Expression.RecordEmpty(tpe, loc).toSuccess
 
     case Expression.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
@@ -274,14 +274,14 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.Existential(fparam, exp, eff, loc) =>
+    case Expression.Existential(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, eff, loc)
+        case e => Expression.Existential(fparam, e, loc)
       }
 
-    case Expression.Universal(fparam, exp, eff, loc) =>
+    case Expression.Universal(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, eff, loc)
+        case e => Expression.Universal(fparam, e, loc)
       }
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
@@ -376,14 +376,14 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ProcessPanic(msg, tpe, eff, loc) =>
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
-    case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
         case _ =>
           val cs = cs0.map(reorder)
-          Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+          Expression.FixpointConstraintSet(cs, tpe, loc)
       }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
@@ -458,7 +458,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Hole(_, _, _, _) => DependencyGraph.empty
 
-    case Expression.Lambda(_, exp, _, _, _) =>
+    case Expression.Lambda(_, exp, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
@@ -496,7 +496,7 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
-    case Expression.RecordEmpty(_, _, _) =>
+    case Expression.RecordEmpty(_, _) =>
       DependencyGraph.empty
 
     case Expression.RecordSelect(base, _, _, _, _) =>
@@ -557,10 +557,10 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
-    case Expression.Existential(_, exp, _, _) =>
+    case Expression.Existential(_, exp, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.Universal(_, exp, _, _) =>
+    case Expression.Universal(_, exp, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Ascribe(exp, _, _, _) =>
@@ -626,7 +626,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ProcessPanic(_, _, _, _) =>
       DependencyGraph.empty
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {
         case (dg, c) => dg + dependencyGraphOfConstraint(c)
       }

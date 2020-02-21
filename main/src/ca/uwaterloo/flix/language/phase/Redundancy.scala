@@ -277,7 +277,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
-    case Expression.Lambda(fparam, exp, _, _, _) =>
+    case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + fparam.sym
 
@@ -395,7 +395,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Tuple(elms, _, _, _) =>
       visitExps(elms, env0.resetApplies)
 
-    case Expression.RecordEmpty(_, _, _) =>
+    case Expression.RecordEmpty(_, _) =>
       Used.empty
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
@@ -468,7 +468,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(exp2, env0.resetApplies)
       us1 and us2
 
-    case Expression.Existential(fparam, exp, _, _) =>
+    case Expression.Existential(fparam, exp, _) =>
       // Check for variable shadowing.
       val us1 = shadowing(fparam.sym, env0)
 
@@ -481,7 +481,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         us1 and us2 - fparam.sym
 
-    case Expression.Universal(fparam, exp, _, _) =>
+    case Expression.Universal(fparam, exp, _) =>
       // Check for variable shadowing.
       val us1 = shadowing(fparam.sym, env0.resetApplies)
 
@@ -577,7 +577,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.ProcessPanic(msg, _, _, _) => Used.empty
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used and visitConstraint(con, env0.resetApplies)
       }

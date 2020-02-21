@@ -80,9 +80,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.BigInt(lit, loc) => exp0
       case Expression.Str(lit, loc) => exp0
 
-      case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Lambda(fparams, e, tpe, eff, loc)
+        Expression.Lambda(fparams, e, tpe, loc)
 
       case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -150,8 +150,8 @@ object Synthesize extends Phase[Root, Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
 
-      case Expression.RecordEmpty(tpe, eff, loc) =>
-        Expression.RecordEmpty(tpe, eff, loc)
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
 
       case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
@@ -235,13 +235,13 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
 
-      case Expression.Existential(fparam, exp, eff, loc) =>
+      case Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp)
-        Expression.Existential(fparam, e, eff, loc)
+        Expression.Existential(fparam, e, loc)
 
-      case Expression.Universal(fparam, exp, eff, loc) =>
+      case Expression.Universal(fparam, exp, loc) =>
         val e = visitExp(exp)
-        Expression.Universal(fparam, e, eff, loc)
+        Expression.Universal(fparam, e, loc)
 
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -321,9 +321,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.ProcessPanic(msg, tpe, eff, loc) =>
         Expression.ProcessPanic(msg, tpe, eff, loc)
 
-      case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
-        Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -453,7 +453,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), Type.Pure, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)

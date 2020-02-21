@@ -425,7 +425,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           val env1 = env0 + (p.sym.text -> p.sym)
           mapN(visitExp(exp, env1, tenv0)) {
-            case e => NamedAst.Expression.Lambda(p, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+            case e => NamedAst.Expression.Lambda(p, e, Type.freshTypeVar(), loc)
           }
       }
 
@@ -501,7 +501,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
@@ -601,7 +601,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
             // TODO: Preserve type parameters in NamedAst?
-            case e => NamedAst.Expression.Existential(p, e, Type.freshEffectVar(), loc)
+            case e => NamedAst.Expression.Existential(p, e, loc)
           }
       }
 
@@ -612,7 +612,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case p =>
           mapN(visitExp(exp, env0 + (p.sym.text -> p.sym), tenv0 ++ getTypeEnv(tparams))) {
             // TODO: Preserve type parameters in NamedAst?
-            case e => NamedAst.Expression.Universal(p, e, Type.freshEffectVar(), loc)
+            case e => NamedAst.Expression.Universal(p, e, loc)
           }
       }
 
@@ -752,7 +752,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointConstraintSet(cs0, loc) =>
       mapN(traverse(cs0)(visitConstraint(_, env0, tenv0))) {
         case cs =>
-          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+          NamedAst.Expression.FixpointConstraintSet(cs, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
