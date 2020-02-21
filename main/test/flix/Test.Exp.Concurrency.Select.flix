@@ -1,7 +1,7 @@
 namespace Test/Exp/Concurrency/Select {
 
     @test
-    def testSelectBuffered01(): Bool @ Impure =
+    def testSelectBuffered01(): Bool & Impure =
         let c1 = chan Int 1;
         spawn c1 <- 1;
         select {
@@ -9,7 +9,7 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
-    def testSelectBuffered02(): Bool @ Impure =
+    def testSelectBuffered02(): Bool & Impure =
         let c1 = chan Int 1;
         let c2 = chan Int 1;
         spawn c1 <- 1;
@@ -20,7 +20,7 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
-    def testSelectBuffered03(): Bool @ Impure =
+    def testSelectBuffered03(): Bool & Impure =
         let c1 = chan Int 1;
         let c2 = chan Int 1;
         let c3 = chan Int 1;
@@ -34,28 +34,7 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
-    def testSelectBuffered04(): Bool @ Impure =
-        let c1 = chan Int 1;
-        let c2 = chan Int 1;
-        let c3 = chan Int 1;
-        let c4 = chan Int 1;
-        spawn c1 <- 1;
-        spawn c2 <- 2;
-        spawn c3 <- 3;
-        spawn c4 <- 4;
-        select {
-            case x <- c1 => x == 1
-            case x <- c1 => x == 1
-            case x <- c2 => x == 2
-            case x <- c2 => x == 2
-            case x <- c3 => x == 3
-            case x <- c3 => x == 3
-            case x <- c4 => x == 4
-            case x <- c4 => x == 4
-        }
-
-    @test
-    def testSelectBuffered05(): Bool @ Impure =
+    def testSelectBuffered04(): Bool & Impure =
         let c1 = chan Int 1;
         let c2 = chan Int 1;
         let c3 = chan Int 1;
@@ -65,6 +44,27 @@ namespace Test/Exp/Concurrency/Select {
         spawn c3 <- 3;
         spawn c4 <- 4;
         select {
+            case x <- c1 => x == 1
+            case x <- c1 => x == 1
+            case x <- c2 => x == 2
+            case x <- c2 => x == 2
+            case x <- c3 => x == 3
+            case x <- c3 => x == 3
+            case x <- c4 => x == 4
+            case x <- c4 => x == 4
+        }
+
+    @test
+    def testSelectBuffered05(): Bool & Impure =
+        let c1 = chan Int 1;
+        let c2 = chan Int 1;
+        let c3 = chan Int 1;
+        let c4 = chan Int 1;
+        spawn c1 <- 1;
+        spawn c2 <- 2;
+        spawn c3 <- 3;
+        spawn c4 <- 4;
+        select {
             case x <- c4 => x == 4
             case x <- c3 => x == 3
             case x <- c2 => x == 2
@@ -76,7 +76,7 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
-    def testSelectBuffered06(): Bool @ Impure =
+    def testSelectBuffered06(): Bool & Impure =
         let c1 = chan Int 1;
         let c2 = chan Int 1;
         let c3 = chan Int 1;
@@ -90,7 +90,7 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
-    def testSelectBuffered07(): Bool @ Impure =
+    def testSelectBuffered07(): Bool & Impure =
         let c1 = chan Int8 1;
         let c2 = chan Int16 1;
         let c3 = chan Int32 1;
@@ -107,7 +107,7 @@ namespace Test/Exp/Concurrency/Select {
         }
 
     @test
-    def testSelectRandom01(): Unit @ Impure = {
+    def testSelectRandom01(): Unit & Impure = {
         let c9 = chan Unit 0;
         let c10 = chan Unit 0;
         let c11 = chan Unit 0;
@@ -141,7 +141,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom02(): Unit @ Impure = {
+    def testSelectRandom02(): Unit & Impure = {
         let c10 = chan Unit 0;
         let c11 = chan Unit 0;
         let c12 = chan Unit 0;
@@ -155,7 +155,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom03(): Unit @ Impure = {
+    def testSelectRandom03(): Unit & Impure = {
         let c14 = chan Unit 0;
         let c15 = chan Unit 0;
         let c16 = chan Unit 0;
@@ -190,7 +190,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom04(): Unit @ Impure = {
+    def testSelectRandom04(): Unit & Impure = {
         let c10 = chan Unit 0;
         let c11 = chan Unit 0;
         let c12 = chan Unit 0;
@@ -214,7 +214,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom05(): Unit @ Impure = {
+    def testSelectRandom05(): Unit & Impure = {
         let c14 = chan Unit 0;
         let c15 = chan Unit 0;
         let c16 = chan Unit 0;
@@ -251,7 +251,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom06(): Unit @ Impure = {
+    def testSelectRandom06(): Unit & Impure = {
         let c2 = chan Unit 0;
         let c3 = chan Unit 0;
         spawn { c3 <- () ; () ; () } ; spawn { c2 <- () ; () ; () } ; () ; <- c3 ; select {
@@ -266,7 +266,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom07(): Unit @ Impure = {
+    def testSelectRandom07(): Unit & Impure = {
         let c12 = chan Unit 0;
         let c13 = chan Unit 0;
         let c14 = chan Unit 0;
@@ -298,7 +298,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom08(): Unit @ Impure = {
+    def testSelectRandom08(): Unit & Impure = {
         let c15 = chan Unit 0;
         let c16 = chan Unit 0;
         let c17 = chan Unit 0;
@@ -335,7 +335,7 @@ namespace Test/Exp/Concurrency/Select {
     }
 
     @test
-    def testSelectRandom09(): Unit @ Impure = {
+    def testSelectRandom09(): Unit & Impure = {
         let c6 = chan Unit 0;
         let c7 = chan Unit 0;
         let c8 = chan Unit 0;

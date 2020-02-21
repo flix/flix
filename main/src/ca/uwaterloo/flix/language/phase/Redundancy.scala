@@ -277,7 +277,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.Hole(sym, _, _, _) => Used.of(sym)
 
-    case Expression.Lambda(fparam, exp, _, _, _) =>
+    case Expression.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + fparam.sym
 
@@ -294,7 +294,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         innerUsed and shadowedVar - fparam.sym
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
-      val env1 = env0.addApply
+      val env1 = env0.incApply
       val env2 = env0.resetApplies
       val us1 = visitExp(exp1, env1)
       val us2 = visitExp(exp2, env2)
@@ -349,10 +349,14 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       us1 and (us2 or us3)
 
     case Expression.Stm(exp1, exp2, _, _, _) =>
-      // TODO: Ensure that `exp1` is non-pure.
       val us1 = visitExp(exp1, env0.resetApplies)
       val us2 = visitExp(exp2, env0.resetApplies)
-      us1 and us2
+
+      // Check for useless pure expressions.
+      if (exp1.eff == Type.Pure)
+        (us1 and us2) + UselessExpression(exp1.loc)
+      else
+        us1 and us2
 
     case Expression.Match(exp, rules, _, _, _) =>
       // Visit the match expression.
@@ -391,7 +395,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.Tuple(elms, _, _, _) =>
       visitExps(elms, env0.resetApplies)
 
-    case Expression.RecordEmpty(_, _, _) =>
+    case Expression.RecordEmpty(_, _) =>
       Used.empty
 
     case Expression.RecordSelect(exp, _, _, _, _) =>
@@ -464,7 +468,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       val us2 = visitExp(exp2, env0.resetApplies)
       us1 and us2
 
-    case Expression.Existential(fparam, exp, _, _) =>
+    case Expression.Existential(fparam, exp, _) =>
       // Check for variable shadowing.
       val us1 = shadowing(fparam.sym, env0)
 
@@ -477,7 +481,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       else
         us1 and us2 - fparam.sym
 
-    case Expression.Universal(fparam, exp, _, _) =>
+    case Expression.Universal(fparam, exp, _) =>
       // Check for variable shadowing.
       val us1 = shadowing(fparam.sym, env0.resetApplies)
 
@@ -573,7 +577,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case Expression.ProcessPanic(msg, _, _, _) => Used.empty
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used and visitConstraint(con, env0.resetApplies)
       }
@@ -771,7 +775,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Updates `this` environment, marking that an application has been made.
       */
-    def addApply: Env = copy(recursionContext = recursionContext.addApply)
+    def incApply: Env = copy(recursionContext = recursionContext.incApply)
 
     /**
       * Resets the consecutive application count of `this` environment.
@@ -790,7 +794,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -905,79 +909,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Companion object of the [[Substitution]] class.
-    */
-  private object Substitution {
-    /**
-      * The empty substitution.
-      */
-    val empty: Substitution = Substitution(Map.empty)
-  }
-
-  /**
-    * A substitution is a map from variable symbols to patterns.
-    */
-  private case class Substitution(m: Map[Symbol.VarSym, Pattern]) {
-    /**
-      * Applies `this` substitution to the given pattern `pat0`.
-      */
-    def apply(pat0: Pattern): Pattern = pat0 match {
-      case Pattern.Wild(_, _) => pat0
-      case Pattern.Var(sym, _, _) => m.get(sym) match {
-        case None => pat0
-        case Some(pat) => pat
-      }
-      case Pattern.Unit(_) => pat0
-      case Pattern.True(_) => pat0
-      case Pattern.False(_) => pat0
-      case Pattern.Char(_, _) => pat0
-      case Pattern.Float32(_, _) => pat0
-      case Pattern.Float64(_, _) => pat0
-      case Pattern.Int8(_, _) => pat0
-      case Pattern.Int16(_, _) => pat0
-      case Pattern.Int32(_, _) => pat0
-      case Pattern.Int64(_, _) => pat0
-      case Pattern.BigInt(_, _) => pat0
-      case Pattern.Str(_, _) => pat0
-      case Pattern.Tag(sym, tag, pat, tpe, loc) => Pattern.Tag(sym, tag, apply(pat), tpe, loc)
-      case Pattern.Tuple(elms, tpe, loc) => Pattern.Tuple(apply(elms), tpe, loc)
-      case Pattern.Array(elms, tpe, loc) => Pattern.Array(apply(elms), tpe, loc)
-      //TODO: The sym is not handled correctly.
-      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) => m.get(sym) match {
-        case None => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
-        case Some(pat) => Pattern.ArrayTailSpread(apply(elms), sym, tpe, loc)
-      }
-      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) => m.get(sym) match {
-        case None => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
-        case Some(pat) => Pattern.ArrayHeadSpread(sym, apply(elms), tpe, loc)
-      }
-    }
-
-    /**
-      * Applies `this` substitution to the given patterns `ps`.
-      */
-    def apply(ps: List[Pattern]): List[Pattern] = ps map apply
-
-    /**
-      * Returns the left-biased composition of `this` substitution with `that` substitution.
-      */
-    def ++(that: Substitution): Substitution = {
-      Substitution(this.m ++ that.m.filter(kv => !this.m.contains(kv._1)))
-    }
-
-    /**
-      * Returns the composition of `this` substitution with `that` substitution.
-      */
-    def @@(that: Substitution): Substitution = {
-      val m = that.m.foldLeft(Map.empty[Symbol.VarSym, Pattern]) {
-        case (macc, (x, t)) => macc.updated(x, this.apply(t))
-      }
-      Substitution(m) ++ this
-    }
-  }
-
-  /**
     * Describes the context where a def call might be recursive.
+    *
     * Tracks the def, its arity, and the number of applications made to allow for detection of [[UnconditionalRecursion]]
     */
   private sealed trait RecursionContext {
@@ -989,7 +922,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Add 1 to the apply count.
       */
-    def addApply: RecursionContext
+    def incApply: RecursionContext
 
     /**
       * True iff the call is recursive in this context.
@@ -1000,25 +933,26 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
   private object RecursionContext {
 
     /**
-      * Context without a definition to be recursed on.
+      * Context without a definition to be recursed on..
       */
     case object NoContext extends RecursionContext {
       override def resetApplies: RecursionContext = this
 
-      override def addApply: RecursionContext = this
+      override def incApply: RecursionContext = this
 
       override def isRecursiveCall(call: Symbol.DefnSym): Boolean = false
     }
 
     /**
       * Context where no applications have been made.
-      * @param defn Def whose context we are in
-      * @param arity Arity of `defn`
+      *
+      * @param defn  Def whose context we are in.
+      * @param arity Arity of `defn`.
       */
     case class Apply0(defn: Symbol.DefnSym, arity: Int) extends RecursionContext {
       override def resetApplies: RecursionContext = this
 
-      override def addApply: RecursionContext = ApplyN(defn, arity, 1)
+      override def incApply: RecursionContext = ApplyN(defn, arity, 1)
 
       override def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
         defn == call && arity == 0
@@ -1027,19 +961,21 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
 
     /**
       * Context where N applications have been made.
-      * @param defn Def whose context we are in
-      * @param arity Arity of `defn`
-      * @param applies number of applications mad
+      *
+      * @param defn    Def whose context we are in.
+      * @param arity   Arity of `defn`.
+      * @param applies number of applications made.
       */
     case class ApplyN(defn: Symbol.DefnSym, arity: Int, applies: Int) extends RecursionContext {
       override def resetApplies: RecursionContext = Apply0(defn, arity)
 
-      override def addApply: RecursionContext = copy(applies = applies + 1)
+      override def incApply: RecursionContext = copy(applies = applies + 1)
 
       override def isRecursiveCall(call: Symbol.DefnSym): Boolean = {
         defn == call && applies == arity
       }
     }
+
   }
 
 

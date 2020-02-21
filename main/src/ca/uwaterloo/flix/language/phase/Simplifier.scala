@@ -94,7 +94,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
 
-      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      case TypedAst.Expression.Lambda(fparam, exp, tpe, loc) =>
         val p = visitFormalParam(fparam)
         val e = visitExp(exp)
         SimplifiedAst.Expression.Lambda(List(p), e, tpe, loc)
@@ -367,7 +367,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, loc)
 
-      case TypedAst.Expression.RecordEmpty(tpe, eff, loc) =>
+      case TypedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
       case TypedAst.Expression.RecordSelect(base, label, tpe, eff, loc) =>
@@ -457,12 +457,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
+      case TypedAst.Expression.Existential(fparam, exp, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = visitExp(exp)
         SimplifiedAst.Expression.Existential(p, e, loc)
 
-      case TypedAst.Expression.Universal(fparam, exp, eff, loc) =>
+      case TypedAst.Expression.Universal(fparam, exp, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = visitExp(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
@@ -547,7 +547,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.ProcessPanic(msg, tpe, eff, loc) =>
         SimplifiedAst.Expression.ProcessPanic(msg, tpe, loc)
 
-      case TypedAst.Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
         SimplifiedAst.Expression.FixpointConstraintSet(cs, tpe, loc)
 

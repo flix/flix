@@ -321,12 +321,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Apply(e1, e2, tvar, evar, loc)
 
-        case NamedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
+        case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
             paramType <- lookupType(fparam.tpe, ns0, prog0)
             e <- visit(exp, tenv0 + (fparam.sym -> paramType))
             p <- Params.resolve(fparam, ns0, prog0)
-          } yield ResolvedAst.Expression.Lambda(p, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
         case NamedAst.Expression.Unary(op, exp, tvar, evar, loc) =>
           for {
@@ -412,7 +412,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), evar, loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), evar, loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
                 }
             }
           case Some(exp) =>
@@ -428,8 +428,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.Tuple(es, tvar, evar, loc)
 
-        case NamedAst.Expression.RecordEmpty(tvar, evar, loc) =>
-          ResolvedAst.Expression.RecordEmpty(tvar, evar, loc).toSuccess
+        case NamedAst.Expression.RecordEmpty(tvar, loc) =>
+          ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
 
         case NamedAst.Expression.RecordSelect(base, label, tvar, evar, loc) =>
           for {
@@ -530,17 +530,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Assign(e1, e2, tvar, evar, loc)
 
-        case NamedAst.Expression.Existential(fparam, exp, evar, loc) =>
+        case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Existential(fp, e, evar, loc)
+          } yield ResolvedAst.Expression.Existential(fp, e, loc)
 
-        case NamedAst.Expression.Universal(fparam, exp, evar, loc) =>
+        case NamedAst.Expression.Universal(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.Universal(fp, e, evar, loc)
+          } yield ResolvedAst.Expression.Universal(fp, e, loc)
 
         case NamedAst.Expression.Ascribe(exp, expectedType, expectedEff, tvar, evar, loc) =>
           val expectedTypVal = expectedType match {
@@ -686,10 +686,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
           ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc).toSuccess
 
-        case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
           for {
             cs <- traverse(cs0)(Constraints.resolve(_, tenv0, ns0, prog0))
-          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, evar, loc)
+          } yield ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc)
 
         case NamedAst.Expression.FixpointCompose(exp1, exp2, tvar, evar, loc) =>
           for {

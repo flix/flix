@@ -65,7 +65,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Hole(sym, tpe, eff, loc) => Nil
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
@@ -93,7 +93,7 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
-    case Expression.RecordEmpty(tpe, eff, loc) => Nil
+    case Expression.RecordEmpty(tpe, loc) => Nil
 
     case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
       visitExp(exp)
@@ -140,9 +140,9 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.Existential(fparam, exp, eff, loc) => visitExp(exp)
+    case Expression.Existential(fparam, exp, loc) => visitExp(exp)
 
-    case Expression.Universal(fparam, exp, eff, loc) => visitExp(exp)
+    case Expression.Universal(fparam, exp, loc) => visitExp(exp)
 
     case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
@@ -199,7 +199,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil
 
-    case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.flatMap(checkConstraint)
+    case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.flatMap(checkConstraint)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 

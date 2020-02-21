@@ -15,37 +15,37 @@
  */
 
 @test
-def testNew01(): Channel[Bool] @ Impure = Channel.new()
+def testNew01(): Channel[Bool] & Impure = Channel.new()
 
 @test
-def testNew02(): Channel[Int] @ Impure = Channel.new()
+def testNew02(): Channel[Int] & Impure = Channel.new()
 
 @test
-def testNew03(): Channel[Str] @ Impure = Channel.new()
+def testNew03(): Channel[Str] & Impure = Channel.new()
 
 @test
-def testNewWithCapacity01(): Channel[Bool] @ Impure = Channel.newWithCapacity(123)
+def testNewWithCapacity01(): Channel[Bool] & Impure = Channel.newWithCapacity(123)
 
 @test
-def testNewWithCapacity02(): Channel[Int] @ Impure = Channel.newWithCapacity(123)
+def testNewWithCapacity02(): Channel[Int] & Impure = Channel.newWithCapacity(123)
 
 @test
-def testNewWithCapacity03(): Channel[Str] @ Impure = Channel.newWithCapacity(123)
+def testNewWithCapacity03(): Channel[Str] & Impure = Channel.newWithCapacity(123)
 
 @test
-def testGetPut01(): Bool @ Impure =
+def testGetPut01(): Bool & Impure =
     let c = Channel.newWithCapacity(1);
     Channel.put(c, true);
     Channel.get(c)
 
 @test
-def testGetPut02(): Int @ Impure =
+def testGetPut02(): Int & Impure =
     let c = Channel.newWithCapacity(1);
     Channel.put(c, 123);
     Channel.get(c)
 
 @test
-def testGetPut03(): String @ Impure =
+def testGetPut03(): String & Impure =
     let c = Channel.newWithCapacity(1);
     Channel.put(c, "Hello World!");
     Channel.get(c)

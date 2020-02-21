@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1601,13 +1601,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.UnaryPureArrow(tpe1, tpe2, sp2) =>
-      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      val eff = WeededAst.Type.Pure(loc)
-      mkArrow(t1, eff, t2, loc)
-
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
@@ -1615,22 +1608,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Impure(loc)
       mkArrow(t1, eff, t2, loc)
 
-    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, effOpt, tpe2, sp2) =>
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOpt, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
       val eff = effOpt match {
-        case None => WeededAst.Type.Pure(loc) // TODO: Invent a polymorphic variable name?
+        // NB: If there is no explicit effect then the arrow is pure.
+        case None => WeededAst.Type.Pure(loc)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
-
-    case ParsedAst.Type.PureArrow(sp1, tparams, tresult, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val ts = tparams.map(visitType)
-      val tr = visitType(tresult)
-      val eff = WeededAst.Type.Pure(loc)
-      mkCurriedArrow(ts, eff, tr, loc)
 
     case ParsedAst.Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1639,12 +1626,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Impure(loc)
       mkCurriedArrow(ts, eff, tr, loc)
 
-    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, effOpt, tresult, sp2) =>
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOpt, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)
       val eff = effOpt match {
-        case None => WeededAst.Type.Pure(loc) // TODO: Invent a polymorphic variable name?
+        // NB: If there is no explicit effect then the arrow is pure.
+        case None => WeededAst.Type.Pure(loc)
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
@@ -1661,6 +1649,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Impure(sp1, sp2) =>
       WeededAst.Type.Impure(mkSL(sp1, sp2))
+
+    case ParsedAst.Type.And(eff1, eff2) =>
+      val t1 = visitType(eff1)
+      val t2 = visitType(eff2)
+      WeededAst.Type.And(t1, t2, SourceLocation.Unknown)
   }
 
   /**
@@ -1946,15 +1939,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
-    case ParsedAst.Type.UnaryPureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.PureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
+    case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
   }
 
   /**

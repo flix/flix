@@ -240,7 +240,7 @@ namespace Int64 {
     ///
     pub def toString(x: Int64): String =
         import java.lang.Long:toString(Int64);
-        x.toString() as String @ Pure
+        x.toString() as & Pure
 
     ///
     /// Parse the string `s` as an Int64, leading or trailing whitespace is trimmed.
@@ -249,7 +249,7 @@ namespace Int64 {
     pub def fromString(s: String): Result[Int64, String] = try {
         import java.lang.String.strip();
         import java.lang.Long:parseLong(String);
-        Ok(s.strip().parseLong()) as _ @ Pure
+        Ok(s.strip().parseLong()) as & Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
      }

@@ -99,7 +99,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a ->> Bool, xs: Set[a]): Option[a] =
+    pub def find(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.find(f, s)
 
@@ -108,7 +108,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a ->> Bool, xs: Set[a]): Option[a] =
+    pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.findLeft(f, s)
 
@@ -117,7 +117,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a ->> Bool, xs: Set[a]): Option[a] =
+    pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(s) = xs;
             List.findRight(f, s)
 
@@ -129,7 +129,7 @@ namespace Set {
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold(f: (b, a) ->{e} b, s: b, xs: Set[a]): b @ e =
+    pub def fold(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
             List.fold(f, s, es)
 
@@ -138,7 +138,7 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) ->{e} b, s: b, xs: Set[a]): b @ e =
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
             List.foldLeft(f, s, es)
 
@@ -147,14 +147,14 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) ->{e} b, s: b, xs: Set[a]): b @ e =
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
             List.foldRight(f, s, es)
 
     ///
     /// Alias for `reduceLeftOpt`.
     ///
-    pub def reduce(f: (a, a) ->{e} a, xs: Set[a]): Option[a] @ e =
+    pub def reduce(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(s) = xs;
             List.reduce(f, s)
 
@@ -163,7 +163,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) ->{e} a, xs: Set[a]): Option[a] @ e =
+    pub def reduceLeft(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(s) = xs;
             List.reduceLeft(f, s)
 
@@ -172,7 +172,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) ->{e} a, xs: Set[a]): Option[a] @ e =
+    pub def reduceRight(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(s) = xs;
             List.reduceRight(f, s)
 
@@ -186,7 +186,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a ->> Bool, xs: Set[a]): Int32 =
+    pub def count(f: a -> Bool, xs: Set[a]): Int32 =
         let Set(s) = xs;
             List.count(f, s)
 
@@ -205,7 +205,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a ->> Bool, xs: Set[a]): Bool =
+    pub def exists(f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.exists(f, s)
 
@@ -216,7 +216,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a ->> Bool, xs: Set[a]): Bool =
+    pub def forall(f: a -> Bool, xs: Set[a]): Bool =
         let Set(s) = xs;
             List.forall(f, s)
 
@@ -263,7 +263,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: a ->> Bool, xs: Set[a]): Set[a] =
+    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
         let Set(s) = xs;
             Set(List.filter(f, s))
 
@@ -272,7 +272,7 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def map(f: a ->{e} b, xs: Set[a]): Set[b] @ e = match xs {
+    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e = match xs {
         case Set(Nil) => Set(Nil)
         case Set(x :: rs) => insert(f(x), map(f, Set(rs)))
     }
@@ -280,7 +280,7 @@ namespace Set {
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
-    pub def flatMap(f: a ->{e} Set[b], xs: Set[a]): Set[b] @ e = match xs {
+    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e = match xs {
         case Set(Nil) => Set(Nil)
         case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
     }
@@ -300,7 +300,7 @@ namespace Set {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a ->> Bool, xs: Set[a]): (Set[a], Set[a]) =
+    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
         let Set(s) = xs;
         let (ys, zs) = List.partition(f, s);
             (Set(ys), Set(zs))
@@ -332,7 +332,7 @@ namespace Set {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~>> Unit, xs: Set[a]): Unit @ Impure = match xs {
+    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure = match xs {
         case Set(l) => List.foreach(f, l)
     }
 

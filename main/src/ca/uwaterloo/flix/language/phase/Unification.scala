@@ -453,44 +453,19 @@ object Unification {
     /**
       * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
       */
-    def eq(p: Type, q: Type): Type = {
-      // Note: Specialized for performance.
-      p match {
-        case Type.Cst(TypeConstructor.Pure) => mkNot(q)
-        case Type.Cst(TypeConstructor.Impure) => q
-        case _ => q match {
-          case Type.Cst(TypeConstructor.Pure) => mkNot(p)
-          case Type.Cst(TypeConstructor.Impure) => p
-          case _ => mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
-        }
-      }
-    }
-
-    /**
-      * Constructs the formula: x ∨ (y ∧ ¬z).
-      */
-    def rewrite(x: Type, y: Type, z: Type): Type = {
-      // Optimization 1: z == ¬x  ==> x ∨ (y ∧ ¬z) == x ∨ (y ∧ ¬¬x) == x ∨ (y ∧ x) == x
-      if (z == Type.Apply(Type.Cst(TypeConstructor.Not), x)) {
-        x
-        // Optimization 2: y == z ==> x ∨ (y ∧ ¬y) == x
-      } else if (y == z) {
-        x
-      } else {
-        mkOr(x, mkAnd(y, mkNot(z)))
-      }
-    }
+    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
     /**
       * Performs success variable elimination on the given boolean expression `eff`.
       */
     def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
       case Nil => (Substitution.empty, eff)
+        // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
       case x :: xs =>
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)
         val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, rewrite(se(t0), x, se(t1)))
+        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
         (st ++ se, cc)
     }
 
@@ -687,18 +662,24 @@ object Unification {
   /**
     * Returns the negation of the effect `eff0`.
     */
+  // NB: The order of clauses has been determined by code coverage analysis.
   private def mkNot(eff0: Type): Type = eff0 match {
-    case Type.Pure => Type.Impure
+    case Type.Pure =>
+      Type.Impure
 
-    case Type.Impure => Type.Pure
+    case Type.Impure =>
+      Type.Pure
 
-    case NOT(x) => x
+    case NOT(x) =>
+      x
 
     // ¬(¬x ∨ y) => x ∧ ¬y
-    case OR(NOT(x), y) => mkAnd(x, mkNot(y))
+    case OR(NOT(x), y) =>
+      mkAnd(x, mkNot(y))
 
     // ¬(x ∨ ¬y) => ¬x ∧ y
-    case OR(x, NOT(y)) => mkAnd(mkNot(x), y)
+    case OR(x, NOT(y)) =>
+      mkAnd(mkNot(x), y)
 
     case _ => Type.Apply(Type.Cst(TypeConstructor.Not), eff0)
   }
@@ -706,64 +687,84 @@ object Unification {
   /**
     * Returns the conjunction of the two effects `eff1` and `eff2`.
     */
+  // NB: The order of clauses has been determined by code coverage analysis.
   @tailrec
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
-    case (Type.Pure, _) => eff2
+    case (Type.Pure, _) =>
+      eff2
 
     // x ∧ T => x
-    case (_, Type.Pure) => eff1
+    case (_, Type.Pure) =>
+      eff1
 
     // F ∧ x => F
-    case (Type.Impure, _) => Type.Impure
+    case (Type.Impure, _) =>
+      Type.Impure
 
     // x ∧ F => F
-    case (_, Type.Impure) => Type.Impure
-
-    // x ∧ (x ∧ y) => (x ∧ y)
-    case (x1, AND(x2, y)) if x1 == x2 => mkAnd(x1, y)
-
-    // x ∧ (y ∧ x) => (x ∧ y)
-    case (x1, AND(y, x2)) if x1 == x2 => mkAnd(x1, y)
-
-    // (x ∧ y) ∧ x) => (x ∧ y)
-    case (AND(x1, y), x2) if x1 == x2 => mkAnd(x1, y)
-
-    // (x ∧ y) ∧ y) => (x ∧ y)
-    case (AND(x, y1), y2) if y1 == y2 => mkAnd(x, y1)
-
-    // x ∧ (x ∨ y) => x
-    case (x1, OR(x2, _)) if x1 == x2 => x1
-
-    // (x ∨ y) ∧ x => x
-    case (OR(x1, _), x2) if x1 == x2 => x1
-
-    // x ∧ ¬x => F
-    case (x1, NOT(x2)) if x1 == x2 => Type.Impure
-
-    // ¬x ∧ x => F
-    case (NOT(x1), x2) if x1 == x2 => Type.Impure
-
-    // x ∧ (y ∧ ¬x) => F
-    case (x1, AND(_, NOT(x2))) if x1 == x2 => Type.Impure
-
-    // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 => Type.Impure
-
-    // x ∧ ¬(x ∨ y) => F
-    case (x1, NOT(OR(x2, _))) if x1 == x2 => Type.Impure
-
-    // ¬(x ∨ y) ∧ x => F
-    case (NOT(OR(x1, _)), x2) if x1 == x2 => Type.Impure
-
-    // x ∧ (¬x ∧ y) => F
-    case (x1, AND(NOT(x2), _)) if x1 == x2 => Type.Impure
-
-    // (¬x ∧ y) ∧ x => F
-    case (AND(NOT(x1), _), x2) if x1 == x2 => Type.Impure
+    case (_, Type.Impure) =>
+      Type.Impure
 
     // ¬x ∧ (x ∨ y) => ¬x ∧ y
-    case (NOT(x1), OR(x2, y)) if x1 == x2 => mkAnd(mkNot(x1), y)
+    case (NOT(x1), OR(x2, y)) if x1 == x2 =>
+      mkAnd(mkNot(x1), y)
+
+    // x ∧ ¬x => F
+    case (x1, NOT(x2)) if x1 == x2 =>
+      Type.Impure
+
+    // ¬x ∧ x => F
+    case (NOT(x1), x2) if x1 == x2 =>
+      Type.Impure
+
+    // x ∧ (x ∧ y) => (x ∧ y)
+    case (x1, AND(x2, y)) if x1 == x2 =>
+      mkAnd(x1, y)
+
+    // x ∧ (y ∧ x) => (x ∧ y)
+    case (x1, AND(y, x2)) if x1 == x2 =>
+      mkAnd(x1, y)
+
+    // (x ∧ y) ∧ x) => (x ∧ y)
+    case (AND(x1, y), x2) if x1 == x2 =>
+      mkAnd(x1, y)
+
+    // (x ∧ y) ∧ y) => (x ∧ y)
+    case (AND(x, y1), y2) if y1 == y2 =>
+      mkAnd(x, y1)
+
+    // x ∧ (x ∨ y) => x
+    case (x1, OR(x2, _)) if x1 == x2 =>
+      x1
+
+    // (x ∨ y) ∧ x => x
+    case (OR(x1, _), x2) if x1 == x2 =>
+      x1
+
+    // x ∧ (y ∧ ¬x) => F
+    case (x1, AND(_, NOT(x2))) if x1 == x2 =>
+      Type.Impure
+
+    // (¬x ∧ y) ∧ x => F
+    case (AND(NOT(x1), _), x2) if x1 == x2 =>
+      Type.Impure
+
+    // x ∧ ¬(x ∨ y) => F
+    case (x1, NOT(OR(x2, _))) if x1 == x2 =>
+      Type.Impure
+
+    // ¬(x ∨ y) ∧ x => F
+    case (NOT(OR(x1, _)), x2) if x1 == x2 =>
+      Type.Impure
+
+    // x ∧ (¬x ∧ y) => F
+    case (x1, AND(NOT(x2), _)) if x1 == x2 =>
+      Type.Impure
+
+    // (¬x ∧ y) ∧ x => F
+    case (AND(NOT(x1), _), x2) if x1 == x2 =>
+      Type.Impure
 
     // x ∧ x => x
     case _ if eff1 == eff2 => eff1
@@ -781,40 +782,52 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
+  // NB: The order of clauses has been determined by code coverage analysis.
   @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
-    case (Type.Pure, _) => Type.Pure
-
-    // x ∨ T => T
-    case (_, Type.Pure) => Type.Pure
+    case (Type.Pure, _) =>
+      Type.Pure
 
     // F ∨ y => y
-    case (Type.Impure, _) => eff2
+    case (Type.Impure, _) =>
+      eff2
+
+    // x ∨ T => T
+    case (_, Type.Pure) =>
+      Type.Pure
 
     // x ∨ F => x
-    case (_, Type.Impure) => eff1
+    case (_, Type.Impure) =>
+      eff1
 
     // x ∨ (y ∨ x) => x ∨ y
-    case (x1, OR(y, x2)) if x1 == x2 => mkOr(x1, y)
+    case (x1, OR(y, x2)) if x1 == x2 =>
+      mkOr(x1, y)
 
     // (x ∨ y) ∨ x => x ∨ y
-    case (OR(x1, y), x2) if x1 == x2 => mkOr(x1, y)
+    case (OR(x1, y), x2) if x1 == x2 =>
+      mkOr(x1, y)
 
     // ¬x ∨ x => T
-    case (NOT(x), y) if x == y => Type.Pure
+    case (NOT(x), y) if x == y =>
+      Type.Pure
 
     // x ∨ ¬x => T
-    case (x, NOT(y)) if x == y => Type.Pure
+    case (x, NOT(y)) if x == y =>
+      Type.Pure
 
     // (¬x ∨ y) ∨ x) => T
-    case (OR(NOT(x), _), y) if x == y => Type.Pure
+    case (OR(NOT(x), _), y) if x == y =>
+      Type.Pure
 
     // x ∨ (¬x ∨ y) => T
-    case (x, OR(NOT(y), _)) if x == y => Type.Pure
+    case (x, OR(NOT(y), _)) if x == y =>
+      Type.Pure
 
     // x ∨ x => x
-    case _ if eff1 == eff2 => eff1
+    case _ if eff1 == eff2 =>
+      eff1
 
     case _ =>
 

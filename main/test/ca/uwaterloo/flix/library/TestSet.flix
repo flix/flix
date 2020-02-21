@@ -1014,13 +1014,13 @@ def eq19(): Bool = assert!(Set.__eq(Set#{1, 2, 3}, Set#{2, 1, 3}))
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool @ Impure =
+def foreach01(): Bool & Impure =
     let r = ref 21;
     Set.foreach(x -> r := x, Set#{});
     21 == deref r
 
 @test
-def foreach02(): Bool @ Impure =
+def foreach02(): Bool & Impure =
     let r = ref 21;
     Set.foreach(x -> r := x, Set#{42});
     42 == deref r

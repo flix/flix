@@ -21,21 +21,21 @@ namespace Array {
     ///
     /// Equivalent to the expression `[x; l]`.
     ///
-    pub def new(x: a, l: Int): Array[a] @ Impure = [x; l]
+    pub def new(x: a, l: Int): Array[a] & Impure = [x; l]
 
     ///
     /// Returns the element at position `i` in the array `a`.
     ///
     /// Equivalent to the expression `a[i]`.
     ///
-    pub def get(a: Array[a], i: Int): a @ Impure = a[i]
+    pub def get(a: Array[a], i: Int): a & Impure = a[i]
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     /// Equivalent to the expression `a[i] = x`.
     ///
-    pub def put(a: Array[a], i: Int, x: a): Array[a] @ Impure = a[i] = x; a
+    pub def put(a: Array[a], i: Int, x: a): Array[a] & Impure = a[i] = x; a
 
     ///
     /// Returns the length of the array `a`.
@@ -47,17 +47,17 @@ namespace Array {
     ///
     /// Equivalent to the expression `a[b..e]`.
     ///
-    pub def slice(a: Array[a], b: Int, e: Int): Array[a] @ Impure = a[b..e]
+    pub def slice(a: Array[a], b: Int, e: Int): Array[a] & Impure = a[b..e]
 
     ///
     /// Returns the array `a` as a list.
     ///
-    pub def toList(a: Array[a]): List[a] @ Impure = toListHelper(a, 0)
+    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, 0)
 
     ///
     /// Helper for toList.
     ///
-    def toListHelper(a: Array[a], i: Int): List[a] @ Impure =
+    def toListHelper(a: Array[a], i: Int): List[a] & Impure =
         if (i == length(a))
             Nil
         else

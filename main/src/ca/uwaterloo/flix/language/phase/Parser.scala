@@ -550,23 +550,37 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       (SP ~ atomic("deref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
-    def Cast: Rule1[ParsedAst.Expression] = {
-      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
-        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
-      }
-
-      rule {
-        Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Cast)
-      }
+    def Cast: Rule1[ParsedAst.Expression] = rule {
+      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypAndEffFragment ~ SP ~> ParsedAst.Expression.Cast)
     }
 
-    def Ascribe: Rule1[ParsedAst.Expression] = {
-      def WildOrType: Rule1[Option[ParsedAst.Type]] = rule {
-        (atomic("_") ~> (() => None)) | (Type ~> ((t: ParsedAst.Type) => Some(t)))
+    def Ascribe: Rule1[ParsedAst.Expression] = rule {
+      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypAndEffFragment ~ SP ~> ParsedAst.Expression.Ascribe)
+    }
+
+    def TypAndEffFragment: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = {
+      def SomeTyp: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
+      }
+
+      def SomeEff: Rule1[Option[ParsedAst.Type]] = rule {
+        Type ~> ((tpe: ParsedAst.Type) => Some(tpe))
+      }
+
+      def TypOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        SomeTyp ~ push(None)
+      }
+
+      def EffOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        push(None) ~ atomic("&") ~ WS ~ SomeEff
+      }
+
+      def TypAndEff: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
+        SomeTyp ~ WS ~ atomic("&") ~ WS ~ SomeEff
       }
 
       rule {
-        FAppend ~ optional(optWS ~ ":" ~ optWS ~ WildOrType ~ optional(WS ~ atomic("@") ~ WS ~ Type) ~ SP ~> ParsedAst.Expression.Ascribe)
+        TypAndEff | TypOnly | EffOnly
       }
     }
 
@@ -1056,9 +1070,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
       Apply ~ optional(
-          (optWS ~ atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPureArrow) |
-          (optWS ~ atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
-          (optWS ~ atomic("->") ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
+          (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
+          (optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
     }
 
@@ -1077,9 +1090,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ TypeList ~ optWS ~ (
-            (atomic("->>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PureArrow) |
-            (atomic("~>>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
-            (atomic("->") ~ optWS ~ EffList ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+            (atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
+            (atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
         )
       }
     }
@@ -1090,15 +1102,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Type] = {
       def Unit: Rule1[ParsedAst.Type] = rule {
-        SP ~ atomic("()") ~ SP ~ optWS ~> ParsedAst.Type.Unit
+        SP ~ atomic("()") ~ SP ~> ParsedAst.Type.Unit
       }
 
       def Singleton: Rule1[ParsedAst.Type] = rule {
-        "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
+        "(" ~ optWS ~ Type ~ optWS ~ ")"
       }
 
       def Tuple: Rule1[ParsedAst.Type] = rule {
-        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Type.Tuple
+        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Tuple
       }
 
       rule {
@@ -1143,17 +1155,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
       "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
-
-    def EffList: Rule1[Option[ParsedAst.Type]] = rule {
-      optional("{" ~ optWS ~ Type ~ optWS ~ "}")
-    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Type and (optional) Effects                                             //
   /////////////////////////////////////////////////////////////////////////////
+  def AndEffSeq: Rule1[ParsedAst.Type] = {
+    def One: Rule1[ParsedAst.Type] = rule {
+      Types.Var | Types.Pure | Types.Impure
+    }
+
+    def Seq: Rule1[ParsedAst.Type] = rule {
+      "{" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~>
+        ((s: Seq[ParsedAst.Type]) => s.reduce(ParsedAst.Type.And.apply))
+    }
+
+    rule {
+      One | Seq
+    }
+  }
+
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional(WS ~ atomic("@") ~ WS ~ Type)
+    Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq)
   }
 
   /////////////////////////////////////////////////////////////////////////////

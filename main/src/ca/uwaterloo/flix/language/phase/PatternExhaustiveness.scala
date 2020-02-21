@@ -167,7 +167,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(_, _) => tast.toSuccess
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
-        case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
+        case Expression.Lambda(_, body, _, _) => checkPats(body, root).map(const(tast))
         case Expression.Apply(exp1, exp2, tpe, _, loc) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
@@ -203,7 +203,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           checkPats(_, root)
         }).map(const(tast))
 
-        case Expression.RecordEmpty(tpe, eff, loc) =>
+        case Expression.RecordEmpty(tpe, loc) =>
           tast.toSuccess
 
         case Expression.RecordSelect(base, label, tpe, eff, loc) =>
@@ -280,8 +280,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
           } yield tast
-        case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Existential(_, exp, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Universal(_, exp, _) => checkPats(exp, root).map(const(tast))
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -353,7 +353,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ProcessPanic(_, _, _, _) =>
           tast.toSuccess
 
-        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) =>
+        case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           for {
             _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
