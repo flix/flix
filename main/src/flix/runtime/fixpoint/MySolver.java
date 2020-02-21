@@ -9,6 +9,19 @@ import flix.runtime.fixpoint.term.Term;
 
 public class MySolver {
     public static void solve(ConstraintSystem cs, Stratification stf, Options o) {
+        Stmt[] factProjections = generateFactProjectionStmts(cs);
+
+        SeqStmt seqStmt = new SeqStmt(factProjections);
+        seqStmt.prettyPrint(System.out, 0);
+    }
+
+    /**
+     * This method turns all Facts in the datalog program into projections into the initial relations
+     *
+     * @param cs Is the constraint system
+     * @return an array of ProjectStmt representing the projection of the facts
+     */
+    private static Stmt[] generateFactProjectionStmts(ConstraintSystem cs) {
         Stmt[] stmts = new Stmt[cs.getFacts().length];
         for (int factI = 0; factI < cs.getFacts().length; factI++) {
             Constraint c = cs.getFacts()[factI];
@@ -30,7 +43,6 @@ public class MySolver {
             stmts[factI] = new ProjectStmt(ramTerms
                     , new TableName(TableClassifier.RESULT, atom.getSym()));
         }
-        SeqStmt seqStmt = new SeqStmt(stmts);
-        seqStmt.prettyPrint(System.out, 0);
+        return stmts;
     }
 }
