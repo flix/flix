@@ -2,6 +2,8 @@
 
 HEAD:
 
+Version 0.11.0:
+
 - Added light-weight polymorphic effects.
 - Defined division by zero to yield zero.
 - Added check for unconditional recursion.
