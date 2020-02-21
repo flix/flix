@@ -244,7 +244,7 @@ namespace Int16 {
     ///
     pub def toString(x: Int16): String =
         import java.lang.Short:toString(Int16);
-        x.toString() as @ Pure
+        x.toString() as & Pure
 
     ///
     /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.
@@ -253,7 +253,7 @@ namespace Int16 {
     pub def fromString(s: String): Result[Int16, String] = try {
         import java.lang.String.strip();
         import java.lang.Short:parseShort(String);
-        Ok(s.strip().parseShort()) as @ Pure
+        Ok(s.strip().parseShort()) as & Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
      }

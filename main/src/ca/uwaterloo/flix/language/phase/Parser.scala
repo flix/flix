@@ -572,11 +572,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def EffOnly: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        push(None) ~ atomic("@") ~ WS ~ SomeEff
+        push(None) ~ atomic("&") ~ WS ~ SomeEff
       }
 
       def TypAndEff: Rule2[Option[ParsedAst.Type], Option[ParsedAst.Type]] = rule {
-        SomeTyp ~ WS ~ atomic("@") ~ WS ~ SomeEff
+        SomeTyp ~ WS ~ atomic("&") ~ WS ~ SomeEff
       }
 
       rule {

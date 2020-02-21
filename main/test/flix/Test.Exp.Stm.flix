@@ -1,4 +1,4 @@
-namespace Test/Exp/Precedence {
+namespace Test/Exp/Stm {
 
     @test
     def testStm01(): Int @ Impure =
@@ -88,10 +88,10 @@ namespace Test/Exp/Precedence {
         h();
         x
 
-    def f(): Unit @ Impure = () as @ Impure
+    def f(): Unit @ Impure = () as & Impure
 
-    def g(): Unit @ Impure = () as @ Impure
+    def g(): Unit @ Impure = () as & Impure
 
-    def h(): Unit @ Impure = () as @ Impure
+    def h(): Unit @ Impure = () as & Impure
 
 }
