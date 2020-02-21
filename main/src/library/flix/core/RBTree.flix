@@ -74,21 +74,16 @@ namespace RBTree {
     }
 
     ///
-    /// Helper function for `toString`.
-    ///
-    def intToString(i: Int32): String = {
-        import java.lang.String:valueOf(Int32);
-        valueOf(i)
-    }
-
-    ///
     /// Returns a rudimentary string representation of `tree`.
     ///
-    pub def toString(tree: RBTree): Str = match tree {
-        case Empty => "Empty"
-        case Node(color, a, x, b) => match color {
-            case Red => "Node(Red, ${toString(a)}, ${intToString(x)}, ${toString(b)})"
-            case Black => "Node(Black, ${toString(a)}, ${intToString(x)}, ${toString(b)})"
+    pub def toString(tree: RBTree): Str = {
+        import java.lang.String:valueOf(Int32);
+        match tree {
+            case Empty => "Empty"
+            case Node(color, a, x, b) => match color {
+                case Red => "Node(Red, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
+                case Black => "Node(Black, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
+            }
         }
     }
 
