@@ -702,8 +702,6 @@ object JvmOps {
       case Expression.HoleError(sym, tpe, loc) => Set.empty
 
       case Expression.MatchError(tpe, loc) => Set.empty
-
-      case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
     /**
@@ -1067,8 +1065,6 @@ object JvmOps {
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
 
       case Expression.MatchError(tpe, loc) => Set(tpe)
-
-      case Expression.SwitchError(tpe, loc) => Set(tpe)
     }
 
     def visitConstraint(c0: Constraint): Set[MonoType] = c0 match {

@@ -45,32 +45,32 @@ namespace Int32 {
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    pub def abs(x: Int32): Int32 = switch {
-        case x >= 0             => x
-        case x == minValue()    => -1
-        case x != minValue()    => -x
+    pub def abs(x: Int32): Int32 = {
+        if      (x >= 0)            x
+        else if (x == minValue())   -1
+        else                        -x
     }
 
     ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    pub def dist(x: Int32, y: Int32): Int32 = switch {
-        case x >= 0 && y >= 0                   => abs(x - y)
-        case x < 0 && y < 0                     => abs(x - y)
-        case x == minValue() || y == minValue() => -1
-        case minValue() + abs(x) + abs(y) >= 0  => -1
-        case minValue() + abs(x) + abs(y) < 0   => abs(x - y)
+    pub def dist(x: Int32, y: Int32): Int32 = {
+        if      (x >= 0 && y >= 0)                      abs(x - y)
+        else if (x < 0 && y < 0)                        abs(x - y)
+        else if (x == minValue() || y == minValue())    -1
+        else if (minValue() + abs(x) + abs(y) >= 0)     -1
+        else                                            abs(x - y)
     }
 
     ///
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    pub def compare(x: Int32, y: Int32): Int32 = switch {
-        case x == y  => 0
-        case x < y   => -1
-        case x > y   => 1
+    pub def compare(x: Int32, y: Int32): Int32 = {
+        if      (x == y)    0
+        else if (x < y)     -1
+        else                1
     }
 
     ///
@@ -94,10 +94,10 @@ namespace Int32 {
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    pub def bitCount(x: Int32): Int32 = switch {
-        case x == 0     => 0
-        case x % 2 != 0 => bitCount(logicalRightShift(x, 1)) + 1
-        case x % 2 == 0 => bitCount(logicalRightShift(x, 1))
+    pub def bitCount(x: Int32): Int32 = {
+        if      (x == 0)        0
+        else if (x % 2 != 0)    bitCount(logicalRightShift(x, 1)) + 1
+        else                    bitCount(logicalRightShift(x, 1))
     }
 
     ///
@@ -158,12 +158,12 @@ namespace Int32 {
     /// If `x` has a one-bit at `position`, return that position.
     /// Otherwise recursively check the next bit in the same way.
     ///
-    def oneBitPositionHelper(x: Int32, position: Int32, delta: Int32): Int32 = switch {
-        case position < 0           => -1
-        case position > size() - 1  => -1
-        case getBit(x, position) == 1  => position
-        case delta == 0             => -1
-        case getBit(x, position) == 0  => oneBitPositionHelper(x, position + delta, delta)
+    def oneBitPositionHelper(x: Int32, position: Int32, delta: Int32): Int32 = {
+        if      (position < 0)              -1
+        else if (position > size() - 1)     -1
+        else if (getBit(x, position) == 1)  position
+        else if (delta == 0)                -1
+        else                                oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///

@@ -497,7 +497,6 @@ object PrettyPrinter {
 
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
-        case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
       }
 
       visitExp(exp0)

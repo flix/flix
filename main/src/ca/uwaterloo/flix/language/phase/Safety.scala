@@ -86,11 +86,6 @@ object Safety extends Phase[Root, Root] {
         case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)
       }
 
-    case Expression.Switch(rules, tpe, eff, loc) =>
-      rules.foldLeft(Nil: List[CompilationError]) {
-        case (acc, (e1, e2)) => acc ::: visitExp(e1) ::: visitExp(e2)
-      }
-
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Tuple(elms, tpe, eff, loc) =>

@@ -466,10 +466,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.MatchError(t, loc)
 
-      case SimplifiedAst.Expression.SwitchError(tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expression.SwitchError(t, loc)
-
       case SimplifiedAst.Expression.Def(sym, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
       case SimplifiedAst.Expression.Lambda(fparams, exp, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
       case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")

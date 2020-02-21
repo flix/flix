@@ -533,15 +533,6 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Switch Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param rules the rules of the switch.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Tag Expression.
       *
       * @param sp1  the position of the first character in the expression.

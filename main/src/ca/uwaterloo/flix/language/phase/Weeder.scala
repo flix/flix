@@ -671,16 +671,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
-      val rulesVal = traverse(rules) {
-        case (cond, body) => mapN(visitExp(cond), visitExp(body)) {
-          case (c, b) => (c, b)
-        }
-      }
-      rulesVal map {
-        case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
       val (enum, tag) = asTag(qname)
 
@@ -1897,7 +1887,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1

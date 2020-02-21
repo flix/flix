@@ -367,9 +367,6 @@ object SimplifiedAstOps {
 
       case Expression.MatchError(tpe, loc) =>
         checkType(tpe)
-
-      case Expression.SwitchError(tpe, loc) =>
-        checkType(tpe)
     }
 
     /**

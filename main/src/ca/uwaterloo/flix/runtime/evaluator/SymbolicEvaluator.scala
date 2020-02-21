@@ -864,11 +864,6 @@ object SymbolicEvaluator {
         */
       case Expression.MatchError(tpe, loc) => throw new MatchError(loc.reified)
 
-      /**
-        * Switch Error
-        */
-      case Expression.SwitchError(tpe, loc) => throw new SwitchError(loc.reified)
-
     }
 
     /**

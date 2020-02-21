@@ -352,15 +352,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Stm(e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(Symbol.freshVarSym(), visitExp(e1), visitExp(e2), tpe, loc)
 
-      case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
-        val zero = SimplifiedAst.Expression.SwitchError(tpe, loc)
-        rules.foldRight(zero: SimplifiedAst.Expression) {
-          case ((e1, e2), acc) =>
-            val cond = visitExp(e1)
-            val body = visitExp(e2)
-            SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
-        }
-
       case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
@@ -1422,8 +1413,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) => e
 
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
-
-      case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
 
       case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
 

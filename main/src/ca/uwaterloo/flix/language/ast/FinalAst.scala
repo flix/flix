@@ -238,8 +238,6 @@ object FinalAst {
 
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class SwitchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)

@@ -279,9 +279,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MatchError(_, _) =>
         Set.empty
 
-      case Expression.SwitchError(_, _) =>
-        Set.empty
-
       case Expression.LambdaClosure(_, _, _, _, _) =>
         throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
 

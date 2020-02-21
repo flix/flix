@@ -365,8 +365,6 @@ object Interpreter {
 
     case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)
 
-    case Expression.SwitchError(_, loc) => throw new SwitchError(loc.reified)
-
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")

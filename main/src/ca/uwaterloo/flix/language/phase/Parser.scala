@@ -571,7 +571,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessPanic | ArrayLit | ArrayNew |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -685,16 +685,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("match") ~ WS ~ Expression ~ optional(WS ~ atomic("with") ~ WS) ~ optWS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
-      }
-    }
-
-    def Switch: Rule1[ParsedAst.Expression.Switch] = {
-      def Rule: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
-        atomic("case") ~ WS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Statement ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
-      }
-
-      rule {
-        SP ~ atomic("switch") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
       }
     }
 

@@ -171,16 +171,6 @@ object Stratifier extends Phase[Root, Root] {
         case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
       }
 
-    case Expression.Switch(rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case (e1, e2) => mapN(visitExp(e1), visitExp(e2)) {
-          case (x, y) => (x, y)
-        }
-      }
-      mapN(rulesVal) {
-        case rs => Expression.Switch(rs, tpe, eff, loc)
-      }
-
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
@@ -496,11 +486,6 @@ object Stratifier extends Phase[Root, Root] {
       val dg = dependencyGraphOfExp(exp)
       rules.foldLeft(dg) {
         case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
-      }
-
-    case Expression.Switch(rules, _, _, _) =>
-      rules.foldLeft(DependencyGraph.empty) {
-        case (acc, (e1, e2)) => acc + dependencyGraphOfExp(e1) + dependencyGraphOfExp(e2)
       }
 
     case Expression.Tag(_, _, exp, _, _, _) =>
