@@ -178,7 +178,7 @@ namespace Path {
     ///
     /// Evaluates the given function `f` trapping any exception and returning a Result.
     ///
-    def tryWithCatch[a, e](f: Unit ->{e} a): Result[a, IOError] @ e = try {
+    def tryWithCatch[a, e](f: Unit -> a & e): Result[a, IOError] @ e = try {
         let res = f();
         Ok(res)
     } catch {

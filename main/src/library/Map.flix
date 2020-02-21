@@ -141,7 +141,7 @@ namespace Map {
     ///
     /// Otherwise, returns `m`.
     ///
-    pub def adjust(f: v ->{e} v, k: k, m: Map[k, v]): Map[k, v] @ e = adjustWithKey((_, v1) -> f(v1), k, m)
+    pub def adjust(f: v -> v & e, k: k, m: Map[k, v]): Map[k, v] @ e = adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
@@ -153,7 +153,7 @@ namespace Map {
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    pub def update(f: v ->{e} Option[v], k: k, m: Map[k, v]): Map[k, v] @ e = updateWithKey((_, v1) -> f(v1), k, m)
+    pub def update(f: v -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] @ e = updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
@@ -253,7 +253,7 @@ namespace Map {
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
     ///
-    pub def map(f: v1 ->{e} v2, m: Map[k, v1]): Map[k, v2] @ e = mapWithKey((_, v) -> f(v), m)
+    pub def map(f: v1 -> v2 & e, m: Map[k, v1]): Map[k, v2] @ e = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.

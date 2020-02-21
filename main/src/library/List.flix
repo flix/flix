@@ -186,7 +186,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a ->{e} b, xs: List[a]): List[b] @ e = match xs {
+    pub def map(f: a -> b & e, xs: List[a]): List[b] @ e = match xs {
         case Nil => Nil
         case x :: rs => f(x) :: map(f, rs)
     }
@@ -209,7 +209,7 @@ namespace List {
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
-    pub def flatMap(f: a ->{e} List[b], xs: List[a]): List[b] @ e = match xs {
+    pub def flatMap(f: a -> List[b] & e, xs: List[a]): List[b] @ e = match xs {
         case Nil => Nil
         case x :: rs => f(x) ::: flatMap(f, rs)
     }
@@ -779,7 +779,7 @@ namespace List {
     ///
     /// Collects the results of applying the partial function `f` to every element in `xs`.
     ///
-    pub def filterMap(f: a ->{e} Option[b], xs: List[a]): List[b] @ e = match xs {
+    pub def filterMap(f: a -> Option[b] & e, xs: List[a]): List[b] @ e = match xs {
         case Nil => Nil
         case x :: rs => match f(x) {
                             case None => filterMap(f, rs)
@@ -792,7 +792,7 @@ namespace List {
     ///
     /// Returns `None` if every element of `xs` is `None`.
     ///
-    pub def findMap(f: a ->{e} Option[b], xs: List[a]): Option[b] @ e = match xs {
+    pub def findMap(f: a -> Option[b] & e, xs: List[a]): Option[b] @ e = match xs {
         case Nil => None
         case x :: rs => match f(x) {
                             case None => findMap(f, rs)

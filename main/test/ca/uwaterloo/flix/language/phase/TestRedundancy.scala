@@ -900,7 +900,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UselessExpression.03") {
     val input =
       s"""
-         |def hof(f: a ->{e} b, x: a): b @ e = f(x)
+         |def hof(f: a -> b & e, x: a): b @ e = f(x)
          |
          |def main(): Unit =
          |    hof(x -> x + 21, 42);

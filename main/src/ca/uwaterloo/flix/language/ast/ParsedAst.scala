@@ -1193,11 +1193,11 @@ object ParsedAst {
       * Unary Polymorphic Arrow Type.
       *
       * @param tpe1 the argument type.
-      * @param eff  the optional effect.
       * @param tpe2 the result type.
+      * @param eff  the optional effect.
       * @param sp2  the position of the last character in the type.
       */
-    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, eff: Option[ParsedAst.Type], tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Impure Arrow Type.

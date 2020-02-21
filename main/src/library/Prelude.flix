@@ -24,13 +24,13 @@ pub def flip(f: (a, b) ->{e} c): (b, a) ->{e} c = (x, y) -> f(y, x)
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
 ///
-pub def curry(f: (a, b) ->{e} c): a -> (b ->{e} c) = x -> y -> f(x, y)
+pub def curry(f: (a, b) ->{e} c): a -> (b -> c & e) = x -> y -> f(x, y)
 
 ///
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
-pub def uncurry(f: a -> (b ->{e} c)): (a, b) ->{e} c = (x, y) -> (y |> f(x))
+pub def uncurry(f: a -> (b -> c & e)): (a, b) ->{e} c = (x, y) -> (y |> f(x))
 
 ///
 /// Returns the first component of `t`.
@@ -59,21 +59,21 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: b -> c` and `g: a -> b` returns a function `a -> c`
 ///
-pub def <<(f: b ->{e1} c, g: a ->{e2} b): a ->{e1, e2} c = x -> f(g(x))
+pub def <<(f: b -> c & e1, g: a -> b & e2): a -> c & {e1, e2} = x -> f(g(x))
 
 ///
 /// Forwards function composition. Applies the function on the left first.
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a ->{e1} b, g: b ->{e2} c): a ->{e1, e2} c = x -> g(f(x))
+pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & {e1, e2} = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
 ///
 /// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
 ///
-pub def |>(x: a, f: a ->{e} b): b @ e = f(x)
+pub def |>(x: a, f: a -> b & e): b @ e = f(x)
 
 ///
 /// Pipes the given pair `p` into the function `f`.
@@ -87,7 +87,7 @@ pub def ||>(x: (a1, a2), f: ((a1, a2)) ->{e} b): b @ e = f(x)
 ///
 /// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
 ///
-pub def <|(f: a ->{e} b, x: a): b @ e = f(x)
+pub def <|(f: a -> b & e, x: a): b @ e = f(x)
 
 ///
 /// Pipes the given pair `p` into the function `f`.

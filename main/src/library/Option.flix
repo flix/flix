@@ -89,7 +89,7 @@ namespace Option {
     ///
     /// Returns `Some(f(v))` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    pub def map(f: a ->{e} b, o: Option[a]): Option[b] @ e = match o {
+    pub def map(f: a -> b & e, o: Option[a]): Option[b] @ e = match o {
         case None => None
         case Some(v) => Some(f(v))
     }
@@ -106,7 +106,7 @@ namespace Option {
     ///
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    pub def flatMap(f: a ->{e} Option[b], o: Option[a]): Option[b] @ e = match o {
+    pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] @ e = match o {
         case None => None
         case Some(v) => f(v)
     }
@@ -176,7 +176,7 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    pub def traverse(f: a ->{e} Option[b], xs: List[a]): Option[List[b]] @ e = match xs {
+    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] @ e = match xs {
         case Nil        => Some(Nil)
         case y :: ys    =>
             let* z = f(y);
