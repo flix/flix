@@ -129,7 +129,7 @@ namespace Set {
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold(f: (b, a) ->{e} b, s: b, xs: Set[a]): b @ e =
+    pub def fold(f: (b, a) -> b & e, s: b, xs: Set[a]): b @ e =
         let Set(es) = xs;
             List.fold(f, s, es)
 
@@ -138,7 +138,7 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) ->{e} b, s: b, xs: Set[a]): b @ e =
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b @ e =
         let Set(es) = xs;
             List.foldLeft(f, s, es)
 
@@ -147,14 +147,14 @@ namespace Set {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) ->{e} b, s: b, xs: Set[a]): b @ e =
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b @ e =
         let Set(es) = xs;
             List.foldRight(f, s, es)
 
     ///
     /// Alias for `reduceLeftOpt`.
     ///
-    pub def reduce(f: (a, a) ->{e} a, xs: Set[a]): Option[a] @ e =
+    pub def reduce(f: (a, a) -> a & e, xs: Set[a]): Option[a] @ e =
         let Set(s) = xs;
             List.reduce(f, s)
 
@@ -163,7 +163,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) ->{e} a, xs: Set[a]): Option[a] @ e =
+    pub def reduceLeft(f: (a, a) -> a & e, xs: Set[a]): Option[a] @ e =
         let Set(s) = xs;
             List.reduceLeft(f, s)
 
@@ -172,7 +172,7 @@ namespace Set {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) ->{e} a, xs: Set[a]): Option[a] @ e =
+    pub def reduceRight(f: (a, a) -> a & e, xs: Set[a]): Option[a] @ e =
         let Set(s) = xs;
             List.reduceRight(f, s)
 

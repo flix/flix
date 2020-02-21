@@ -122,7 +122,7 @@ namespace Result {
     ///
     /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (a, t) ->{f} a, z: a, r: Result[t, e]): a @ f = match r {
+    pub def foldLeft(f: (a, t) -> a & f, z: a, r: Result[t, e]): a @ f = match r {
         case Ok(v) => f(z, v)
         case Err(_) => z
     }
@@ -130,7 +130,7 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (t, a) ->{f} a, r: Result[t, e], z: a): a @ f = match r {
+    pub def foldRight(f: (t, a) -> a & f, r: Result[t, e], z: a): a @ f = match r {
         case Ok(v) => f(v, z)
         case Err(_) => z
     }

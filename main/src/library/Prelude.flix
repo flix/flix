@@ -18,19 +18,19 @@ pub def constant(y: a): b -> a = _ -> y
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
-pub def flip(f: (a, b) ->{e} c): (b, a) ->{e} c = (x, y) -> f(y, x)
+pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
 ///
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
 ///
-pub def curry(f: (a, b) ->{e} c): a -> (b -> c & e) = x -> y -> f(x, y)
+pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 
 ///
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
-pub def uncurry(f: a -> (b -> c & e)): (a, b) ->{e} c = (x, y) -> (y |> f(x))
+pub def uncurry(f: a -> (b -> c & e)): (a, b) -> c & e = (x, y) -> (y |> f(x))
 
 ///
 /// Returns the first component of `t`.
@@ -80,7 +80,7 @@ pub def |>(x: a, f: a -> b & e): b @ e = f(x)
 ///
 /// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
 ///
-pub def ||>(x: (a1, a2), f: ((a1, a2)) ->{e} b): b @ e = f(x)
+pub def ||>(x: (a1, a2), f: ((a1, a2)) -> b & e): b @ e = f(x)
 
 ///
 /// Pipes the given value `x` into the function `f`.
@@ -94,7 +94,7 @@ pub def <|(f: a -> b & e, x: a): b @ e = f(x)
 ///
 /// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
 ///
-pub def <||(f: ((a1, a2)) ->{e} b, x: (a1, a2)): b @ e = f(x)
+pub def <||(f: ((a1, a2)) -> b & e, x: (a1, a2)): b @ e = f(x)
 
 ///
 /// Alias for logical conjunction.

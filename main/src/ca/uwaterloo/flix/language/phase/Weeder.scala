@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -1608,7 +1608,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Impure(loc)
       mkArrow(t1, eff, t2, loc)
 
-    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, effOpt, tpe2, sp2) =>
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOpt, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
@@ -1626,7 +1626,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Impure(loc)
       mkCurriedArrow(ts, eff, tr, loc)
 
-    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, effOpt, tresult, sp2) =>
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOpt, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)

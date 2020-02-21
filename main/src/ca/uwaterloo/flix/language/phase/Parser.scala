@@ -1091,7 +1091,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ TypeList ~ optWS ~ (
             (atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
-            (atomic("->") ~ optional(AndEffSeq) ~ optWS ~ Type ~ SP ~> ParsedAst.Type.PolymorphicArrow)
+            (atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
         )
       }
     }
@@ -1102,15 +1102,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Type] = {
       def Unit: Rule1[ParsedAst.Type] = rule {
-        SP ~ atomic("()") ~ SP ~ optWS ~> ParsedAst.Type.Unit
+        SP ~ atomic("()") ~ SP ~> ParsedAst.Type.Unit
       }
 
       def Singleton: Rule1[ParsedAst.Type] = rule {
-        "(" ~ optWS ~ Type ~ optWS ~ ")" ~ optWS
+        "(" ~ optWS ~ Type ~ optWS ~ ")"
       }
 
       def Tuple: Rule1[ParsedAst.Type] = rule {
-        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~ optWS ~> ParsedAst.Type.Tuple
+        SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Type.Tuple
       }
 
       rule {

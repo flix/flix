@@ -117,7 +117,7 @@ namespace Test/Eff/Polymorphism {
 
     def impure(): Unit @ Impure = () as @ Impure
 
-    def flip(f: (a, b) ->{e} c): (b, a) ->{e} c = (x, y) -> f(y, x)
+    def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
 
 }
