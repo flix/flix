@@ -1576,13 +1576,13 @@ def eq25(): Bool = assert!(Map.__eq(Map#{1 -> 2, 3 -> 4, 5 -> 6, 7 -> 8, 9 -> 10
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool @ Impure =
+def foreach01(): Bool & Impure =
     let r = ref 21;
     Map.foreach((k, _) -> r := k, Map#{});
     21 == deref r
 
 @test
-def foreach02(): Bool @ Impure =
+def foreach02(): Bool & Impure =
     let r = ref 21;
     Map.foreach((k, _) -> r := k, Map#{1 -> "Hello World!"});
     1 == deref r

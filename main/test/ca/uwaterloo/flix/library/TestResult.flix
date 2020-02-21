@@ -222,13 +222,13 @@ def toOption02(): Bool = Result.toOption(Ok(1)) `assertEq!` Some(1)
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def foreach01(): Bool @ Impure =
+def foreach01(): Bool & Impure =
     let r = ref 21;
     Result.foreach(x -> r := x, Ok(42): Result[Int, Int]);
     42 == deref r
 
 @test
-def foreach02(): Bool @ Impure =
+def foreach02(): Bool & Impure =
     let r = ref 21;
     Result.foreach(x -> r := x, Err(42): Result[Int, Int]);
     21 == deref r
