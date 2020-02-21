@@ -10,7 +10,7 @@ enum Color {
 /// The red-black tree type.
 ///
 enum RBTree {
-    case Empty,
+    case Leaf,
     case Node(Color, RBTree, Int32, RBTree)
 }
 
@@ -35,15 +35,15 @@ namespace RBTree {
     /// Returns a new tree identical to `tree` except the root is colored black.
     ///
     def blacken(tree: RBTree): RBTree = match tree {
-        case Empty => Empty
+        case Leaf => Leaf
         case Node(_, a, y, b) => Node(Black, a, y, b)
     }
 
     ///
     /// Helper function for `insert`.
     ///
-    pub def insertHelper(tree: RBTree, x: Int32): RBTree = match tree {
-        case Empty => Node(Red, Empty, x, Empty)
+    def insertHelper(tree: RBTree, x: Int32): RBTree = match tree {
+        case Leaf => Node(Red, Leaf, x, Leaf)
         case Node(color, a, y, b) if x < y => balance(Node(color, insertHelper(a, x), y, b))
         case Node(color, a, y, b) if x > y => balance(Node(color, a, y, insertHelper(b, x)))
         case Node(color, a, y, b) => Node(color, a, y, b)
@@ -59,17 +59,25 @@ namespace RBTree {
     /// Returns true if and only if `tree` contains `x`.
     ///
     pub def contains(tree: RBTree, x: Int32): Bool = match tree {
-        case Empty => false
+        case Leaf => false
         case Node(_, a, y, _) if x < y => contains(a, x)
         case Node(_, _, y, b) if x > y => contains(b, x)
         case _ => true
     }
 
     ///
+    /// Returns the height of `tree`.
+    ///
+    pub def height(tree: RBTree): Int32 = match tree {
+        case Leaf => 0
+        case Node(_, a, _, b) => if (height(a) > height(b)) 1 + height(a) else 1 + height(b)
+    }
+
+    ///
     /// Returns the number of nodes in `tree`.
     ///
     pub def size(tree: RBTree): Int32 = match tree {
-        case Empty => 0
+        case Leaf => 0
         case Node(_, a, _, b) => 1 + size(a) + size(b)
     }
 
@@ -79,7 +87,7 @@ namespace RBTree {
     pub def toString(tree: RBTree): Str = {
         import java.lang.String:valueOf(Int32);
         match tree {
-            case Empty => "Empty"
+            case Leaf => "Leaf"
             case Node(color, a, x, b) => match color {
                 case Red => "Node(Red, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
                 case Black => "Node(Black, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
