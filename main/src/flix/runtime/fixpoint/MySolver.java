@@ -10,8 +10,8 @@ import flix.runtime.fixpoint.term.Term;
 public class MySolver {
     public static void solve(ConstraintSystem cs, Stratification stf, Options o) {
         Stmt[] stmts = new Stmt[cs.getFacts().length];
-        for (int i = 0; i < cs.getFacts().length; i++) {
-            Constraint c = cs.getFacts()[i];
+        for (int factI = 0; factI < cs.getFacts().length; factI++) {
+            Constraint c = cs.getFacts()[factI];
             assert c.getBodyPredicates().length == 0;
 
             Predicate pred = c.getHeadPredicate();
@@ -19,15 +19,15 @@ public class MySolver {
 
             AtomPredicate atom = (AtomPredicate) pred;
             RamTerm[] ramTerms = new RamTerm[atom.getTerms().length];
-            for (int j = 0; j < atom.getTerms().length; j++) {
-                Term term = atom.getTerms()[i];
+            for (int termI = 0; termI < atom.getTerms().length; termI++) {
+                Term term = atom.getTerms()[termI];
                 assert term instanceof LitTerm;
 
                 LitTerm litTerm = (LitTerm) term;
-                ProxyObject proxy = litTerm.getFunction().apply(null);
-                ramTerms[i] = new flix.runtime.fixpoint.ram.LitTerm(proxy);
+                ProxyObject proxy = litTerm.getFunction().apply(new Object[]{null});
+                ramTerms[termI] = new flix.runtime.fixpoint.ram.LitTerm(proxy);
             }
-            stmts[i] = new ProjectStmt(ramTerms
+            stmts[factI] = new ProjectStmt(ramTerms
                     , new TableName(TableClassifier.RESULT, atom.getSym()));
         }
         SeqStmt seqStmt = new SeqStmt(stmts);

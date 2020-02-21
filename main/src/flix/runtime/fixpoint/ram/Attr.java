@@ -1,5 +1,7 @@
 package flix.runtime.fixpoint.ram;
 
+import java.io.PrintStream;
+
 public class Attr implements RamTerm {
     private LocalVariable localVar;
     private int index;
@@ -13,5 +15,11 @@ public class Attr implements RamTerm {
     public String toString() {
         return localVar.getVarName() +
                 "[" + index + ']';
+    }
+
+    @Override
+    public void prettyPrint(PrintStream stream, int indentation) {
+        stream.print(localVar.getVarName() +
+                "[" + index + ']');
     }
 }

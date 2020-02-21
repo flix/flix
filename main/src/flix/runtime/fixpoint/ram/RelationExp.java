@@ -8,8 +8,9 @@ import java.io.PrintStream;
 public interface RelationExp {
     /**
      * A function to print the statements as a program
-     * @param stream The stram to print to
+     *
+     * @param stream      The stram to print to
      * @param indentation The amount of indentation to put before printing
      */
-    public void prettyPrint(PrintStream stream, int indentation);
+    void prettyPrint(PrintStream stream, int indentation);
 }
