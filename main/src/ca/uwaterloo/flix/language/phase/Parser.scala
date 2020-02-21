@@ -1176,7 +1176,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Type]] = rule {
-    Type ~ optional(WS ~ atomic("@") ~ WS ~ AndEffSeq)
+    Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq)
   }
 
   /////////////////////////////////////////////////////////////////////////////

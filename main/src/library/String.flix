@@ -60,7 +60,7 @@ namespace String {
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
     ///
-    pub def split(s: String, r: String): Array[String] @ Impure =
+    pub def split(s: String, r: String): Array[String] & Impure =
         import java.lang.String.split(String);
         s.split(r)
 
