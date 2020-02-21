@@ -14,10 +14,13 @@ public class SeqStmt implements Stmt {
 
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
-        for (Stmt stmt : stmts) {
+        for (int i = 0; i < stmts.length; i++) {
+            Stmt stmt = stmts[i];
             stmt.prettyPrint(stream, indentLevel);
-
-            stream.print(";\n");
+            if (i < stmts.length - 1) {
+                stream.print(";\n");
+            }
         }
+        stream.print('\n');
     }
 }

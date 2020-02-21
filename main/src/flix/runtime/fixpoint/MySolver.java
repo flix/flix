@@ -4,15 +4,40 @@ import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.*;
+import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MySolver {
     public static void solve(ConstraintSystem cs, Stratification stf, Options o) {
         Stmt[] factProjections = generateFactProjectionStmts(cs);
+        Map<PredSym, ArrayList<Constraint>>derived = findRulesForDerived(cs);
+        //Stmt[] main_loop_stmts = generateRuleStmts(cs, stf);
 
         SeqStmt seqStmt = new SeqStmt(factProjections);
         seqStmt.prettyPrint(System.out, 0);
+    }
+
+    private static Map<PredSym, ArrayList<Constraint>> findRulesForDerived(ConstraintSystem cs) {
+        Map<PredSym, ArrayList<Constraint>> result = new HashMap<>();
+        for (Constraint c : cs.getRules()){
+            Predicate hPred = c.getHeadPredicate();
+            assert hPred instanceof AtomPredicate;
+
+            PredSym pred = ((AtomPredicate) hPred).getSym();
+            if (result.containsKey(pred)) {
+                result.get(pred).add(c);
+            } else {
+                ArrayList<Constraint> list = new ArrayList<>();
+                list.add(c);
+                result.put(pred, list);
+            }
+        }
+        return result;
     }
 
     /**
