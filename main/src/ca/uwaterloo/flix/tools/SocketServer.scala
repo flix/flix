@@ -28,6 +28,7 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST._
+import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods._
 
@@ -71,9 +72,87 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     // Log the length and size of the received data.
     log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
 
-    // Parse the request.
-    val (src, opts) = parseRequest(data)(ws)
+    // Parse and process request.
+    for {
+      (src, opts) <- parseRequest(data)(ws)
+    } yield {
+      processRequest(src, opts)(ws)
+    }
+  }
 
+  /**
+    * Invoked when an error occurs.
+    */
+  override def onError(ws: WebSocket, e: Exception): Unit = e match {
+    case ex: InternalCompilerException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex: InternalRuntimeException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex => throw ex
+  }
+
+  /**
+    * Parse the request.
+    */
+  private def parseRequest(s: String)(implicit ws: WebSocket): Option[(String, Options)] = try {
+    // Parse the string into a json object.
+    val json = parse(s)
+
+    // Retrieve the source code.
+    val src = json \\ "src" match {
+      case JString(s) => s
+      case _ => ""
+    }
+
+    // --Xallow-redundancies
+    val xallowredundancies = json \\ "allowRedundancies" match {
+      case JBool(b) => b
+      case _ => true
+    }
+
+    // --Xcore
+    val xcore = json \\ "coreOnly" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    // --Xno-effects
+    val xnoeffects = json \\ "noEffects" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    // --Xno-stratifier
+    val xnostratifier = json \\ "noStratifier" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    // Construct the options object.
+    val opts = Options.Default.copy(
+      core = xcore,
+      writeClassFiles = false,
+      xallowredundancies = xallowredundancies,
+      xnoeffects = xnoeffects,
+      xnostratifier = xnostratifier,
+    )
+
+    // Return the source and options.
+    Some((src, opts))
+  } catch {
+    case ex: ParseException =>
+      val msg = s"Malformed request. Unable to parse JSON: '${ex.getMessage}'."
+      log(msg)
+      ws.closeConnection(5000, msg)
+      None
+  }
+
+  /**
+    * Process the request.
+    */
+  private def processRequest(src: String, opts: Options)(implicit ws: WebSocket): Unit = {
     // Log the string.
     for (line <- src.split("\n")) {
       log("  >  " + line)(ws)
@@ -100,60 +179,6 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
     // And finally send the JSON data.
     ws.send(json)
-  }
-
-  /**
-    * Invoked when an error occurs.
-    */
-  override def onError(ws: WebSocket, e: Exception): Unit = e match {
-    case ex: InternalCompilerException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex: InternalRuntimeException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex => throw ex
-  }
-
-  /**
-    * Parse the request.
-    */
-  private def parseRequest(s: String)(implicit ws: WebSocket): (String, Options) = {
-    // Parse the string into a json object.
-    val json = parse(s)
-
-    // Retrieve the source code.
-    val src = json \\ "src" match {
-      case JString(s) => s
-      case _ =>
-        log("Malformed request. Missing 'src'.")
-        "def main(): Unit = ()"
-    }
-
-    // --Xallow-redundancies
-    val allowRedundancies = json \\ "allowRedundancies" match {
-      case JBool(b) => b
-      case _ => true
-    }
-
-    //  --Xcore
-    val core = json \\ "xcore" match {
-      case JBool(b) => b
-      case _ => false
-    }
-
-    //  --Xno-effects            [experimental] disables effect checking.
-    //    --Xno-stratifier         [experimental] disables computation of stratification.
-
-
-    val opts = Options.Default.copy(
-      writeClassFiles = false,
-      xallowredundancies = allowRedundancies,
-      core = core
-    )
-
-    // Return the source and options.
-    (src, opts)
   }
 
   /**
