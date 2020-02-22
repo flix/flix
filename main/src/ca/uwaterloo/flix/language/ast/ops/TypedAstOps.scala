@@ -21,8 +21,6 @@ object TypedAstOps {
 
       case Expression.Def(sym, tpe, loc) => Map.empty
 
-      case Expression.Eff(sym, tpe, eff, loc) => Map.empty
-
       case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
       case Expression.Unit(loc) => Map.empty
@@ -49,7 +47,7 @@ object TypedAstOps {
 
       case Expression.Str(lit, loc) => Map.empty
 
-      case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
         visitExp(exp, env0 ++ env1)
 
@@ -81,11 +79,6 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
-      case Expression.Switch(rules, tpe, eff, loc) =>
-        rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, (exp1, exp2)) => macc ++ visitExp(exp1, env0) ++ visitExp(exp2, env0)
-        }
-
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
@@ -94,7 +87,7 @@ object TypedAstOps {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
-      case Expression.RecordEmpty(tpe, eff, loc) => Map.empty
+      case Expression.RecordEmpty(tpe, loc) => Map.empty
 
       case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         visitExp(base, env0)
@@ -154,15 +147,10 @@ object TypedAstOps {
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-        bindings.foldLeft(visitExp(exp, env0)) {
-          case (macc, HandlerBinding(sym, handler)) => macc ++ visitExp(handler, env0)
-        }
-
-      case Expression.Existential(fparam, exp, eff, loc) =>
+      case Expression.Existential(fparam, exp, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))
 
-      case Expression.Universal(fparam, exp, eff, loc) =>
+      case Expression.Universal(fparam, exp, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))
 
       case Expression.Ascribe(exp, tpe, eff, loc) =>
@@ -222,7 +210,7 @@ object TypedAstOps {
 
       case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
-      case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
         case (macc, c) => macc ++ visitConstraint(c, env0)
       }
 

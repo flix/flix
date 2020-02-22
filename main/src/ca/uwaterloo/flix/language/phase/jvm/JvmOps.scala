@@ -561,19 +561,11 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ApplyEff(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) => args.foldLeft(visitExp(exp)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -639,8 +631,6 @@ object JvmOps {
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
 
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-
-      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO: HandleWith
 
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
 
@@ -712,8 +702,6 @@ object JvmOps {
       case Expression.HoleError(sym, tpe, loc) => Set.empty
 
       case Expression.MatchError(tpe, loc) => Set.empty
-
-      case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
     /**
@@ -939,19 +927,11 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ApplyEff(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) => args.foldLeft(visitExp(exp) + tpe) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
@@ -1017,10 +997,6 @@ object JvmOps {
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.HandleWith(exp, bindings, tpe, loc) => bindings.foldLeft(visitExp(exp)) {
-        case (sacc, HandlerBinding(sym, handler)) => sacc ++ visitExp(handler)
-      }
 
       case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe
 
@@ -1089,8 +1065,6 @@ object JvmOps {
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
 
       case Expression.MatchError(tpe, loc) => Set(tpe)
-
-      case Expression.SwitchError(tpe, loc) => Set(tpe)
     }
 
     def visitConstraint(c0: Constraint): Set[MonoType] = c0 match {

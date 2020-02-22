@@ -177,11 +177,6 @@ object SymbolicEvaluator {
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
-        * Apply Eff.
-        */
-      case Expression.ApplyEff(sym, args, _, _) => ??? // TODO
-
-      /**
         * Apply Closure Tail.
         */
       case Expression.ApplyCloTail(exp, args, _, _) =>
@@ -192,11 +187,6 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyDefTail(sym, args, _, _) =>
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
-
-      /**
-        * Apply Eff Tail.
-        */
-      case Expression.ApplyEffTail(sym, args, _, _) => ??? // TODO
 
       /**
         * Apply Self Tail.
@@ -819,11 +809,6 @@ object SymbolicEvaluator {
       case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
       /**
-        * HandleWith.
-        */
-      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
-
-      /**
         * Existential Quantifier.
         */
       case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
@@ -878,11 +863,6 @@ object SymbolicEvaluator {
         * Match Error.
         */
       case Expression.MatchError(tpe, loc) => throw new MatchError(loc.reified)
-
-      /**
-        * Switch Error
-        */
-      case Expression.SwitchError(tpe, loc) => throw new SwitchError(loc.reified)
 
     }
 

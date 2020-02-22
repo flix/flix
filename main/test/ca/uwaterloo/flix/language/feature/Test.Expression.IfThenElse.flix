@@ -103,3 +103,18 @@ def testIfThenElse27(): Bool = assertEq!(f12(2, 5), 1234)
 
 @test
 def testIfThenElse28(): Bool = assertEq!(f12(5, 5), 5678)
+
+def f13(x: Int): Int = {
+    if      (x == 1)    10
+    else if (x >= 0)    20
+    else                30
+}
+
+@test
+def testIfThenElse29(): Bool = assertEq!(f13(1), 10)
+
+@test
+def testIfThenElse30(): Bool = assertEq!(f13(0), 20)
+
+@test
+def testIfThenElse31(): Bool = assertEq!(f13(-1), 30)

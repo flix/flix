@@ -88,8 +88,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Def(sym, tpe, loc) => i0
 
-      case Expression.Eff(sym, tpe, loc) => i0
-
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -98,15 +96,11 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.ApplyEff(sym, args, tpe, loc) => visitExps(args, i0)
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args, i0)
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => visitExps(args, i0)
 
       case Expression.ApplySelfTail(sym, formals, args, tpe, loc) => visitExps(args, i0)
 
@@ -207,10 +201,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val i1 = visitExp(exp, i0)
-        visitExps(bindings.map(_.exp), i1)
-
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
 
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
@@ -305,8 +295,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HoleError(sym, tpe, loc) => i0
 
       case Expression.MatchError(tpe, loc) => i0
-
-      case Expression.SwitchError(tpe, loc) => i0
 
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
 

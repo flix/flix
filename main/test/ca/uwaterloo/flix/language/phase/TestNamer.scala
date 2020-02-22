@@ -100,55 +100,6 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateEff.01") {
-    val input =
-      s"""
-         |eff f(): Int
-         |eff f(): Int
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateEff](result)
-  }
-
-  test("DuplicateEff.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  eff f(): Int
-         |}
-         |
-         |namespace A {
-         |  eff f(): Int
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateEff](result)
-  }
-
-  test("DuplicateHandler.01") {
-    val input =
-      s"""
-         |handler f(): Int = 42
-         |handler f(): Int = 21
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateHandler](result)
-  }
-
-  test("DuplicateHandler.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  handler f(): Int = 42
-         |}
-         |
-         |namespace A {
-         |  handler f(): Int = 21
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateHandler](result)
-  }
 
   test("DuplicateTypeAlias.01") {
     val input =

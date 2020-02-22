@@ -44,18 +44,13 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case (sym, decl) => sym -> liftDef(decl, m)
     }
 
-    // Handlers.
-    val handlers = root.handlers.map {
-      case (sym, handler) => sym -> liftHandler(handler, m)
-    }
-
     // Properties.
     val properties = root.properties.map {
       property => liftProperty(property, m)
     }
 
     // Return the updated AST root.
-    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties).toSuccess
+    root.copy(defs = definitions ++ m, properties = properties).toSuccess
   }
 
   /**
@@ -67,17 +62,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Reassemble the definition.
     def0.copy(exp = liftedExp)
-  }
-
-  /**
-    * Performs lambda lifting on the given handler `handler0`.
-    */
-  private def liftHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Handler = {
-    // Lift the closure converted expression.
-    val liftedExp = liftExp(handler0.exp, "handler", m)
-
-    // Reassemble the handler.
-    handler0.copy(exp = liftedExp)
   }
 
   /**
@@ -127,8 +111,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Def(sym, tpe, loc) => e
 
-      case Expression.Eff(sym, tpe, loc) => e
-
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
@@ -164,10 +146,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visitExp
         Expression.ApplyDef(sym, as, tpe, loc)
-
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map visitExp
-        Expression.ApplyEff(sym, as, tpe, loc)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -283,13 +261,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visitExp(exp)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
-        }
-        Expression.HandleWith(e, bs, tpe, loc)
-
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visitExp(exp), loc)
 
@@ -403,12 +374,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.MatchError(tpe, loc) => e
 
-      case Expression.SwitchError(tpe, loc) => e
-
       case Expression.Lambda(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected lambda expression. Every lambda expression should have been converted to a LambdaClosure.")
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
+import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -80,10 +80,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Def => visitDef(d)
 
-    case d: ParsedAst.Declaration.Eff => visitEff(d)
-
-    case d: ParsedAst.Declaration.Handler => visitHandler(d)
-
     case d: ParsedAst.Declaration.Law => visitLaw(d)
 
     case d: ParsedAst.Declaration.Enum => visitEnum(d)
@@ -130,50 +126,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val e = mkCurried(fs.tail, exp, loc)
           val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
           List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
-      }
-  }
-
-  /**
-    * Performs weeding on the given effect declaration `d0`.
-    */
-  private def visitEff(d0: ParsedAst.Declaration.Eff)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Eff], WeederError] = d0 match {
-    case ParsedAst.Declaration.Eff(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
-      val loc = mkSL(ident.sp1, ident.sp2)
-      val doc = visitDoc(doc0)
-      val annVal = visitAnnotationOrProperty(ann)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-      val effVal = visitEff(effOpt)
-
-      mapN(annVal, modVal, formalsVal, effVal) {
-        case (as, mod, fs, eff) =>
-          val ts = fs.map(_.tpe.get)
-          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
-          List(WeededAst.Declaration.Eff(doc, as, mod, ident, tparams, fs, t, eff, loc))
-      }
-  }
-
-  /**
-    * Performs weeding on the given handler declaration `d0`.
-    */
-  private def visitHandler(d0: ParsedAst.Declaration.Handler)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Handler], WeederError] = d0 match {
-    case ParsedAst.Declaration.Handler(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp0, sp2) =>
-      val loc = mkSL(ident.sp1, ident.sp2)
-      val doc = visitDoc(doc0)
-      val annVal = visitAnnotationOrProperty(ann)
-      val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
-      val expVal = visitExp(exp0)
-      val effVal = visitEff(effOpt)
-      val formalsVal = visitFormalParams(fparams0, typeRequired = true)
-
-      mapN(annVal, modVal, formalsVal, expVal, effVal) {
-        case (as, mod, fs, exp, eff) =>
-          val ts = fs.map(_.tpe.get)
-          val e = mkCurried(fs.tail, exp, loc)
-          val t = mkCurriedArrow(ts, eff, visitType(tpe), loc)
-          List(WeededAst.Declaration.Handler(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
       }
   }
 
@@ -719,16 +671,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
-      val rulesVal = traverse(rules) {
-        case (cond, body) => mapN(visitExp(cond), visitExp(body)) {
-          case (c, b) => (c, b)
-        }
-      }
-      rulesVal map {
-        case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
       val (enum, tag) = asTag(qname)
 
@@ -1035,12 +977,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         e1 <- visitExp(exp1)
         e2 <- visitExp(exp2)
       } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
-
-    case ParsedAst.Expression.HandleWith(sp1, exp, handlers, sp2) =>
-      for {
-        e <- visitExp(exp)
-        bs <- visitHandlerBindings(handlers)
-      } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
 
     case ParsedAst.Expression.Existential(sp1, tparams, fparams, exp, sp2) =>
       /*
@@ -1665,13 +1601,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.mkString("."), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.UnaryPureArrow(tpe1, tpe2, sp2) =>
-      val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
-      val t1 = visitType(tpe1)
-      val t2 = visitType(tpe2)
-      val eff = WeededAst.Type.Pure(loc)
-      mkArrow(t1, eff, t2, loc)
-
     case ParsedAst.Type.UnaryImpureArrow(tpe1, tpe2, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
@@ -1679,22 +1608,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Impure(loc)
       mkArrow(t1, eff, t2, loc)
 
-    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, effOpt, tpe2, sp2) =>
+    case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, tpe2, effOpt, sp2) =>
       val loc = mkSL(leftMostSourcePosition(tpe1), sp2)
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
       val eff = effOpt match {
-        case None => WeededAst.Type.Pure(loc) // TODO: Invent a polymorphic variable name?
+        // NB: If there is no explicit effect then the arrow is pure.
+        case None => WeededAst.Type.Pure(loc)
         case Some(f) => visitType(f)
       }
       mkArrow(t1, eff, t2, loc)
-
-    case ParsedAst.Type.PureArrow(sp1, tparams, tresult, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val ts = tparams.map(visitType)
-      val tr = visitType(tresult)
-      val eff = WeededAst.Type.Pure(loc)
-      mkCurriedArrow(ts, eff, tr, loc)
 
     case ParsedAst.Type.ImpureArrow(sp1, tparams, tresult, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1703,12 +1626,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val eff = WeededAst.Type.Impure(loc)
       mkCurriedArrow(ts, eff, tr, loc)
 
-    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, effOpt, tresult, sp2) =>
+    case ParsedAst.Type.PolymorphicArrow(sp1, tparams, tresult, effOpt, sp2) =>
       val loc = mkSL(sp1, sp2)
       val ts = tparams.map(visitType)
       val tr = visitType(tresult)
       val eff = effOpt match {
-        case None => WeededAst.Type.Pure(loc) // TODO: Invent a polymorphic variable name?
+        // NB: If there is no explicit effect then the arrow is pure.
+        case None => WeededAst.Type.Pure(loc)
         case Some(f) => visitType(f)
       }
       mkCurriedArrow(ts, eff, tr, loc)
@@ -1725,6 +1649,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Impure(sp1, sp2) =>
       WeededAst.Type.Impure(mkSL(sp1, sp2))
+
+    case ParsedAst.Type.And(eff1, eff2) =>
+      val t1 = visitType(eff1)
+      val t2 = visitType(eff2)
+      WeededAst.Type.And(t1, t2, SourceLocation.Unknown)
   }
 
   /**
@@ -1800,23 +1729,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given documentation.
     */
   private def visitDoc(doc0: ParsedAst.Doc): Ast.Doc = Ast.Doc(doc0.lines.toList, mkSL(doc0.sp1, doc0.sp2))
-
-  /**
-    * Weeds the given effect handler bindings `bs0`.
-    */
-  private def visitHandlerBindings(bs0: Seq[ParsedAst.HandlerBinding])(implicit flix: Flix): Validation[List[WeededAst.HandlerBinding], WeederError] = {
-    traverse(bs0)(visitHandlerBinding)
-  }
-
-  /**
-    * Weeds the given effect handler binding `b0`.
-    */
-  private def visitHandlerBinding(b0: ParsedAst.HandlerBinding)(implicit flix: Flix): Validation[WeededAst.HandlerBinding, WeederError] = b0 match {
-    case ParsedAst.HandlerBinding(qname, exp) =>
-      for {
-        e <- visitExp(exp)
-      } yield WeededAst.HandlerBinding(qname, e)
-  }
 
   /**
     * Weeds the given type parameters `tparams0`.
@@ -1968,7 +1880,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetImport(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
@@ -1995,7 +1906,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ref(sp1, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.HandleWith(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
@@ -2029,15 +1939,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Schema(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
-    case ParsedAst.Type.UnaryPureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryImpureArrow(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.UnaryPolymorphicArrow(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.PureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.ImpureArrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.PolymorphicArrow(sp1, _, _, _, _) => sp1
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
+    case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
   }
 
   /**

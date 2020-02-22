@@ -36,14 +36,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case (k, v) => k -> visitDef(v, m)
     }
 
-    val effs = root.effs.map {
-      case (k, v) => k -> visitEff(v)
-    }
-
-    val handlers = root.handlers.map {
-      case (k, v) => k -> visitHandler(v, m)
-    }
-
     val enums = root.enums.map {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
@@ -70,7 +62,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -89,19 +81,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       }
       val tpe = visitType(tpe0)
       FinalAst.Enum(mod, sym, cases, tpe, loc)
-  }
-
-  private def visitEff(eff0: SimplifiedAst.Eff): FinalAst.Eff = {
-    val fs = eff0.fparams.map(visitFormalParam)
-    val tpe = visitType(eff0.tpe)
-    FinalAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, tpe, eff0.loc)
-  }
-
-  private def visitHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): FinalAst.Handler = {
-    val fs = handler0.fparams.map(visitFormalParam)
-    val e = visitExp(handler0.exp, m)
-    val tpe = visitType(handler0.tpe)
-    FinalAst.Handler(handler0.ann, handler0.mod, handler0.sym, fs, e, tpe, handler0.loc)
   }
 
   private def visitRelation(relation0: SimplifiedAst.Relation): FinalAst.Relation = relation0 match {
@@ -193,11 +172,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.ApplyDef(name, as, t, loc)
 
-      case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expression.ApplyEff(sym, as, t, loc)
-
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visit(exp)
         val rs = args map visit
@@ -208,11 +182,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val as = args map visit
         val t = visitType(tpe)
         FinalAst.Expression.ApplyDefTail(sym, as, t, loc)
-
-      case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) =>
-        val as = args map visit
-        val t = visitType(tpe)
-        FinalAst.Expression.ApplyEffTail(sym, as, t, loc)
 
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
         val fs = formals.map(visitFormalParam)
@@ -358,14 +327,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.Assign(e1, e2, t, loc)
 
-      case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visit(exp)
-        val bs = bindings map {
-          case SimplifiedAst.HandlerBinding(sym, body) => FinalAst.HandlerBinding(sym, visit(body))
-        }
-        val t = visitType(tpe)
-        FinalAst.Expression.HandleWith(e, bs, t, loc)
-
       case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
         val p = visitFormalParam(fparam)
         val e = visit(exp)
@@ -505,12 +466,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.MatchError(t, loc)
 
-      case SimplifiedAst.Expression.SwitchError(tpe, loc) =>
-        val t = visitType(tpe)
-        FinalAst.Expression.SwitchError(t, loc)
-
       case SimplifiedAst.Expression.Def(sym, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
-      case SimplifiedAst.Expression.Eff(sym, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
       case SimplifiedAst.Expression.Lambda(fparams, exp, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
       case SimplifiedAst.Expression.LambdaClosure(fparams, freeVars, exp, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
       case SimplifiedAst.Expression.Apply(exp, args, t, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")

@@ -63,11 +63,9 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Def(sym, tpe, loc) => Nil
 
-    case Expression.Eff(sym, tpe, eff, loc) => Nil
-
     case Expression.Hole(sym, tpe, eff, loc) => Nil
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Lambda(fparam, exp, tpe, loc) => visitExp(exp)
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
@@ -88,11 +86,6 @@ object Safety extends Phase[Root, Root] {
         case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)
       }
 
-    case Expression.Switch(rules, tpe, eff, loc) =>
-      rules.foldLeft(Nil: List[CompilationError]) {
-        case (acc, (e1, e2)) => acc ::: visitExp(e1) ::: visitExp(e2)
-      }
-
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Tuple(elms, tpe, eff, loc) =>
@@ -100,7 +93,7 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
-    case Expression.RecordEmpty(tpe, eff, loc) => Nil
+    case Expression.RecordEmpty(tpe, loc) => Nil
 
     case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
       visitExp(exp)
@@ -147,14 +140,9 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-      bindings.foldLeft(visitExp(exp)) {
-        case (acc, HandlerBinding(_, e)) => acc ::: visitExp(e)
-      }
+    case Expression.Existential(fparam, exp, loc) => visitExp(exp)
 
-    case Expression.Existential(fparam, exp, eff, loc) => visitExp(exp)
-
-    case Expression.Universal(fparam, exp, eff, loc) => visitExp(exp)
+    case Expression.Universal(fparam, exp, loc) => visitExp(exp)
 
     case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
@@ -211,7 +199,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ProcessPanic(msg, tpe, eff, loc) => Nil
 
-    case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.flatMap(checkConstraint)
+    case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.flatMap(checkConstraint)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 

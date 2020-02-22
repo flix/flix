@@ -49,7 +49,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       s"""
-         |def main(): Int @ Impure =
+         |def main(): Int & Impure =
          |    let c = chan Int 1;
          |    select {
          |        case _x <- c => _x
@@ -275,7 +275,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("ShadowedVar.Select.02") {
     val input =
       """
-        |def main(): Int @ Impure =
+        |def main(): Int & Impure =
         |    let x = 123;
         |    let c = chan Int 1;
         |    c <- 456;
@@ -759,7 +759,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.01") {
     val input =
       s"""
-         |def main(): Int @ Impure =
+         |def main(): Int & Impure =
          |    let c = chan Int 0;
          |    select {
          |        case x <- c => 123
@@ -773,7 +773,7 @@ class TestRedundancy extends FunSuite with TestUtils {
   test("UnusedVarSym.Select.02") {
     val input =
       s"""
-         |def main(): Int @ Impure =
+         |def main(): Int & Impure =
          |    let c = chan Int 0;
          |    select {
          |        case x <- c => x
@@ -874,4 +874,40 @@ class TestRedundancy extends FunSuite with TestUtils {
          |""".stripMargin
     compile(input, DefaultOptions).get
   }
+
+  test("UselessExpression.01") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    123;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.02") {
+    val input =
+      s"""
+         |def main(): Unit =
+         |    21 + 42;
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.03") {
+    val input =
+      s"""
+         |def hof(f: a -> b & e, x: a): b & e = f(x)
+         |
+         |def main(): Unit =
+         |    hof(x -> x + 21, 42);
+         |    ()
+         |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
 }

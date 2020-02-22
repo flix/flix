@@ -66,7 +66,6 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Wild(tpe, loc) => exp0
       case Expression.Var(sym, tpe, loc) => exp0
       case Expression.Def(sym, tpe, loc) => exp0
-      case Expression.Eff(sym, tpe, eff, loc) => exp0
       case Expression.Hole(sym, tpe, eff, loc) => exp0
       case Expression.Unit(loc) => exp0
       case Expression.True(loc) => exp0
@@ -81,9 +80,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.BigInt(lit, loc) => exp0
       case Expression.Str(lit, loc) => exp0
 
-      case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Lambda(fparams, e, tpe, eff, loc)
+        Expression.Lambda(fparams, e, tpe, loc)
 
       case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -143,12 +142,6 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.Switch(rules, tpe, eff, loc) =>
-        val rs = rules map {
-          case (cond, body) => (visitExp(cond), visitExp(body))
-        }
-        Expression.Switch(rs, tpe, eff, loc)
-
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Tag(sym, tag, e, tpe, eff, loc)
@@ -157,8 +150,8 @@ object Synthesize extends Phase[Root, Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
 
-      case Expression.RecordEmpty(tpe, eff, loc) =>
-        Expression.RecordEmpty(tpe, eff, loc)
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
 
       case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
@@ -242,20 +235,13 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
 
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+      case Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
-        }
-        Expression.HandleWith(e, bs, tpe, eff, loc)
+        Expression.Existential(fparam, e, loc)
 
-      case Expression.Existential(fparam, exp, eff, loc) =>
+      case Expression.Universal(fparam, exp, loc) =>
         val e = visitExp(exp)
-        Expression.Existential(fparam, e, eff, loc)
-
-      case Expression.Universal(fparam, exp, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.Universal(fparam, e, eff, loc)
+        Expression.Universal(fparam, e, loc)
 
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -335,9 +321,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.ProcessPanic(msg, tpe, eff, loc) =>
         Expression.ProcessPanic(msg, tpe, eff, loc)
 
-      case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
-        Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -467,7 +453,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), Type.Pure, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)

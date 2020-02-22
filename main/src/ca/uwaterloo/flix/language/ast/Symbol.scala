@@ -39,14 +39,6 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh eff symbol based on the given symbol.
-    */
-  def freshEffSym(sym: EffSym)(implicit flix: Flix): EffSym = {
-    val id = Some(flix.genSym.freshId())
-    new EffSym(id, sym.namespace, sym.text, sym.loc)
-  }
-
-  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -109,13 +101,6 @@ object Symbol {
   def mkDefnSym(fqn: String): DefnSym = split(fqn) match {
     case None => new DefnSym(None, Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new DefnSym(None, ns, name, SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkEffSym(ns: NName, ident: Ident): EffSym = {
-    new EffSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -282,38 +267,6 @@ object Symbol {
       * Returns the hash code of this symbol.
       */
     override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
-  }
-
-  /**
-    * Effect Symbol.
-    */
-  final class EffSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
-
-    /**
-      * Returns the name of `this` symbol.
-      */
-    def name: String = id match {
-      case None => text
-      case Some(i) => text + "$" + i
-    }
-
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EffSym => this.id == that.id && this.namespace == that.namespace && this.name == that.name
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = 5 * this.id.hashCode() + 7 * namespace.hashCode() + 11 * name.hashCode
 
     /**
       * Human readable representation.

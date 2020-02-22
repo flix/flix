@@ -154,7 +154,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Wild(_, _) => tast.toSuccess
         case Expression.Var(_, _, _) => tast.toSuccess
         case Expression.Def(_, _, _) => tast.toSuccess
-        case Expression.Eff(_, _, _, _) => tast.toSuccess
         case Expression.Hole(_, _, _, _) => tast.toSuccess
         case Expression.Unit(_) => tast.toSuccess
         case Expression.True(_) => tast.toSuccess
@@ -168,7 +167,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(_, _) => tast.toSuccess
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
-        case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
+        case Expression.Lambda(_, body, _, _) => checkPats(body, root).map(const(tast))
         case Expression.Apply(exp1, exp2, tpe, _, loc) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
@@ -199,18 +198,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- sequence(rules map { x => checkPats(x.exp, root) })
           _ <- checkRules(exp, rules, root)
         } yield tast
-        case Expression.Switch(rules, _, _, _) => for {
-          _ <- sequence(rules map (x => for {
-            _ <- checkPats(x._1, root)
-            _ <- checkPats(x._2, root)
-          } yield x))
-        } yield tast
         case Expression.Tag(_, _, exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Tuple(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
 
-        case Expression.RecordEmpty(tpe, eff, loc) =>
+        case Expression.RecordEmpty(tpe, loc) =>
           tast.toSuccess
 
         case Expression.RecordSelect(base, label, tpe, eff, loc) =>
@@ -287,13 +280,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
           } yield tast
-        case Expression.HandleWith(exp, bs, _, _, _) =>
-          for {
-            _ <- checkPats(exp, root)
-            _ <- sequence(bs.map(b => checkPats(b.exp, root)))
-          } yield tast
-        case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Existential(_, exp, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Universal(_, exp, _) => checkPats(exp, root).map(const(tast))
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -365,7 +353,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.ProcessPanic(_, _, _, _) =>
           tast.toSuccess
 
-        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) =>
+        case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           for {
             _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast

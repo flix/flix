@@ -104,6 +104,8 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
 
+    flix.addPath("main/test/flix/Test.Exp.Stm.flix")
+
     // A subset of test cases.
     // Over time we should extend this list, but note that this will invalidate historical data.
 

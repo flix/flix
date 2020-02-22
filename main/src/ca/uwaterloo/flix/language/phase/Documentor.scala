@@ -122,7 +122,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns the formal parameters of the lambda expressions in the given expression `exp0`.
       */
     def uncurry(exp0: Expression): List[FormalParam] = exp0 match {
-      case Expression.Lambda(fparam, exp, _, _, _) => fparam :: uncurry(exp)
+      case Expression.Lambda(fparam, exp, _, _) => fparam :: uncurry(exp)
       case _ => Nil
     }
 

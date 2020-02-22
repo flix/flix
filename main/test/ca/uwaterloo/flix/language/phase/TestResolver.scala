@@ -165,36 +165,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
-  test("InaccessibleEff.01") {
-    val input =
-      s"""
-         |namespace A {
-         |  eff f(): Int
-         |}
-         |
-         |namespace B {
-         |  def g(): Int = A.f()
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleEff](result)
-  }
-
-  test("InaccessibleEff.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  def f(): Int = A/B/C.g()
-         |
-         |  namespace B/C {
-         |    eff g(): Int
-         |  }
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleEff](result)
-  }
-
   test("InaccessibleEnum.01") {
     val input =
       s"""
@@ -740,26 +710,6 @@ class TestResolver extends FunSuite with TestUtils {
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("UnhandledEffect.01") {
-    val input =
-      s"""
-         |eff f(): Int
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UnhandledEffect](result)
-  }
-
-  test("UnhandledEffect.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  eff f(): Int
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UnhandledEffect](result)
   }
 
 

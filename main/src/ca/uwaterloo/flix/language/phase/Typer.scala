@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{AsciiTable, InternalCompilerException, ParOps, Result, StatUtils, Validation}
+import ca.uwaterloo.flix.util._
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -36,8 +36,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
     val result = for {
       defs <- typeDefs(program)
-      effs <- typeEffs(program)
-      handlers <- typeHandlers(program)
       enums <- typeEnums(program)
       relations <- typeRelations(program)
       lattices <- typeLattices(program)
@@ -45,7 +43,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       properties <- typeProperties(program)
     } yield {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, program.reachable, program.sources)
+      TypedAst.Root(defs, enums, relations, lattices, latticeComponents, properties, specialOps, program.reachable, program.sources)
     }
 
     result match {
@@ -84,32 +82,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
         m.toMap
     }
-  }
-
-  /**
-    * Infers the types of the effects in the given program.
-    */
-  private def typeEffs(program0: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Eff], TypeError] = {
-    // Typecheck every effect in the program.
-    val effs = program0.effs.toList.map {
-      case (sym, eff0) => typeCheckEff(eff0) map (e => sym -> e)
-    }
-
-    // Sequence the results and convert them back to a map.
-    Result.sequence(effs).map(_.toMap)
-  }
-
-  /**
-    * Infers the types of the handlers in the given program.
-    */
-  private def typeHandlers(program0: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Handler], TypeError] = {
-    // Typecheck every handler in the program.
-    val effs = program0.handlers.toList.map {
-      case (sym, handler0) => typeCheckHandler(handler0, program0) map (e => sym -> e)
-    }
-
-    // Sequence the results and convert them back to a map.
-    Result.sequence(effs).map(_.toMap)
   }
 
   /**
@@ -274,7 +246,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     // TODO: Very ugly hack.
     val expectedEff = defn0.exp match {
-      case ResolvedAst.Expression.Lambda(_, _, _, _, _) => Type.Pure
+      case ResolvedAst.Expression.Lambda(_, _, _, _) => Type.Pure
       case _ => defn0.eff
     }
 
@@ -300,47 +272,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Err(e) => Err(e)
         }
     }
-  }
-
-  /**
-    * Infers the the type of the given handler `handler0`.
-    */
-  private def typeCheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
-    case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff0, loc) =>
-      val eff = program0.effs(sym)
-      val effectType = Scheme.instantiate(eff.sc)
-
-      val declaredType = Scheme.instantiate(sc)
-      val subst0 = getSubstFromParams(fparams0)
-      val tparams = getTypeParams(tparams0)
-      val fparams = getFormalParams(fparams0, subst0)
-      val argumentTypes = fparams.map(_.tpe)
-
-      val result = for {
-        (resultType, resultEff) <- inferExp(exp0, program0)
-        unifiedType <- unifyTypM(declaredType, effectType, Type.mkArrow(argumentTypes, eff0, resultType), loc)
-      } yield unifiedType
-
-      result.run(Substitution.empty) map {
-        case (subst, unifiedType) =>
-          val exp = reassembleExp(exp0, program0, subst)
-          TypedAst.Handler(doc, ann, mod, sym, tparams, fparams, exp, subst(unifiedType), eff0, loc)
-      }
-  }
-
-  /**
-    * Infers the the type of the given effect `eff0`.
-    */
-  private def typeCheckEff(eff0: ResolvedAst.Eff)(implicit flix: Flix): Result[TypedAst.Eff, TypeError] = eff0 match {
-    case ResolvedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc, eff, loc) =>
-      val argumentTypes = fparams0.map(_.tpe)
-      val tpe = Scheme.instantiate(sc)
-
-      val subst = getSubstFromParams(fparams0)
-      val tparams = getTypeParams(tparams0)
-      val fparams = getFormalParams(fparams0, subst)
-
-      Ok(TypedAst.Eff(doc, ann, mod, sym, tparams, fparams, tpe, eff, loc))
   }
 
   /**
@@ -393,12 +324,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc), loc)
         } yield (resultTyp, Type.Pure)
 
-      case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
-        val eff = program.effs(sym)
-        for {
-          resultTyp <- unifyTypM(tvar, Scheme.instantiate(eff.sc), loc)
-        } yield (resultTyp, Type.Pure)
-
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
         liftM((tvar, evar))
 
@@ -438,13 +363,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.Str(lit, loc) =>
         liftM((Type.Str, Type.Pure))
 
-      case ResolvedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val argType = fparam.tpe
         for {
           (bodyType, bodyEff) <- visitExp(exp)
           resultTyp <- unifyTypM(tvar, Type.mkArrow(argType, bodyEff, bodyType), loc)
-          resultEff <- unifyEffM(evar, Type.Pure, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
         val lambdaBodyType = Type.freshTypeVar()
@@ -632,17 +556,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, mkAnd(eff :: guardEffects ::: bodyEffects), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Switch(rules, tvar, evar, loc) =>
-        val condExps = rules.map(_._1)
-        val bodyExps = rules.map(_._2)
-        for {
-          (condTypes, condEffects) <- seqM(condExps map visitExp).map(_.unzip)
-          (bodyTypes, bodyEffects) <- seqM(bodyExps map visitExp).map(_.unzip)
-          condType <- unifyTypM(Type.Bool :: condTypes, loc)
-          resultTyp <- unifyTypM(tvar :: bodyTypes, loc)
-          resultEff <- unifyEffM(evar, mkAnd(condEffects ::: bodyEffects), loc)
-        } yield (resultTyp, resultEff)
-
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, evar, loc) =>
         // TODO: Use a type scheme?
 
@@ -679,15 +592,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, mkAnd(elementEffects), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.RecordEmpty(tvar, evar, loc) =>
+      case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
         //
         //  ---------
         //  { } : { }
         //
         for {
           resultType <- unifyTypM(tvar, Type.RecordEmpty, loc)
-          resultEff <- unifyEffM(evar, Type.Pure, loc)
-        } yield (resultType, resultEff)
+        } yield (resultType, Type.Pure)
 
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
         //
@@ -980,41 +892,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) => // TODO: Effects
-        // TODO: Need to check that the return types are consistent.
-
-        // Typecheck each handler binding.
-        val bs = bindings map {
-          case ResolvedAst.HandlerBinding(sym, handler) =>
-            val eff = program.effs(sym)
-            val declaredType = Scheme.instantiate(eff.sc)
-            for {
-              (actualType, eff) <- visitExp(handler) // TODO: Eff
-            } yield unifyTypM(declaredType, actualType, loc)
-        }
-
-        // Typecheck the expression.
-        for {
-          (tpe, eff) <- visitExp(exp)
-          handlers <- seqM(bs)
-          resultTyp <- unifyTypM(tvar, tpe, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
-        } yield (resultTyp, resultEff)
-
-      case ResolvedAst.Expression.Existential(fparam, exp, evar, loc) =>
+      case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
         // TODO: Check formal parameter type.
         for {
           (typ, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
-          resultEff <- unifyEffM(evar, eff, Type.Pure, loc)
+          resultEff <- unifyEffM(eff, Type.Pure, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
+      case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
         // TODO: Check formal parameter type.
         for {
           (typ, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
-          resultEff <- unifyEffM(evar, eff, Type.Pure, loc)
+          resultEff <- unifyEffM(eff, Type.Pure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, evar, loc) =>
@@ -1215,12 +1106,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // A panic is, by nature, not type safe.
         liftM((tvar, evar))
 
-      case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointConstraintSet(cs, tvar, loc) =>
         for {
           constraintTypes <- seqM(cs.map(visitConstraint))
           resultTyp <- unifyTypAllowEmptyM(tvar :: constraintTypes, loc)
-          resultEff <- unifyEffM(evar, Type.Pure, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, evar, loc) =>
         //
@@ -1340,9 +1230,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         TypedAst.Expression.Def(sym, subst0(tvar), loc)
 
-      case ResolvedAst.Expression.Eff(sym, tvar, evar, loc) =>
-        TypedAst.Expression.Eff(sym, subst0(tvar), subst0(evar), loc)
-
       case ResolvedAst.Expression.Hole(sym, tpe, evar, loc) =>
         TypedAst.Expression.Hole(sym, subst0(tpe), subst0(evar), loc)
 
@@ -1375,11 +1262,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.Apply(e1, e2, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.Lambda(fparam, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
         val p = visitParam(fparam)
         val e = visitExp(exp, subst0)
         val t = subst0(tvar)
-        TypedAst.Expression.Lambda(p, e, t, subst0(evar), loc)
+        TypedAst.Expression.Lambda(p, e, t, loc)
 
       case ResolvedAst.Expression.Unary(op, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1422,12 +1309,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
         TypedAst.Expression.Match(e1, rs, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.Switch(rules, tvar, evar, loc) =>
-        val rs = rules.map {
-          case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
-        }
-        TypedAst.Expression.Switch(rs, subst0(tvar), subst0(evar), loc)
-
       case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
         TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), subst0(evar), loc)
@@ -1436,8 +1317,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val es = elms.map(e => visitExp(e, subst0))
         TypedAst.Expression.Tuple(es, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.RecordEmpty(tvar, evar, loc) =>
-        TypedAst.Expression.RecordEmpty(subst0(tvar), subst0(evar), loc)
+      case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
+        TypedAst.Expression.RecordEmpty(subst0(tvar), loc)
 
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1527,20 +1408,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.Assign(e1, e2, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, evar, loc) =>
+      case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp, subst0)
-        val bs = bindings map {
-          case ResolvedAst.HandlerBinding(sym, handler) => TypedAst.HandlerBinding(sym, visitExp(handler, subst0))
-        }
-        TypedAst.Expression.HandleWith(e, bs, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.Existential(visitParam(fparam), e, loc)
 
-      case ResolvedAst.Expression.Existential(fparam, exp, evar, loc) =>
+      case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.Existential(visitParam(fparam), e, subst0(evar), loc)
-
-      case ResolvedAst.Expression.Universal(fparam, exp, evar, loc) =>
-        val e = visitExp(exp, subst0)
-        TypedAst.Expression.Universal(visitParam(fparam), e, subst0(evar), loc)
+        TypedAst.Expression.Universal(visitParam(fparam), e, loc)
 
       case ResolvedAst.Expression.Ascribe(exp, _, _, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
@@ -1618,9 +1492,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.ProcessPanic(msg, tvar, evar, loc) =>
         TypedAst.Expression.ProcessPanic(msg, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointConstraintSet(cs0, tvar, loc) =>
         val cs = cs0.map(visitConstraint)
-        TypedAst.Expression.FixpointConstraintSet(cs, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointConstraintSet(cs, subst0(tvar), loc)
 
       case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
