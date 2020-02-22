@@ -29,6 +29,7 @@ import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
+import org.json4s.native.JsonMethods._
 
 /**
   * A WebSocket server implementation that receives and evaluates Flix programs.
@@ -66,17 +67,20 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Invoked when a client sends a message.
     */
-  override def onMessage(ws: WebSocket, s: String): Unit = {
+  override def onMessage(ws: WebSocket, data: String): Unit = {
     // Log the length and size of the received data.
-    log(s"Received ${s.length} characters of input (${s.getBytes.length} bytes).")(ws)
+    log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
+
+    // Parse the request.
+    val (src, opts) = parseRequest(data)(ws)
 
     // Log the string.
-    for (line <- s.split("\n")) {
+    for (line <- src.split("\n")) {
       log("  >  " + line)(ws)
     }
 
     // Evaluate the string.
-    val result = eval(s)(ws)
+    val result = eval(src, opts)(ws)
 
     // Log whether evaluation was successful.
     log("")(ws)
@@ -112,12 +116,53 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   }
 
   /**
+    * Parse the request.
+    */
+  private def parseRequest(s: String)(implicit ws: WebSocket): (String, Options) = {
+    // Parse the string into a json object.
+    val json = parse(s)
+
+    // Retrieve the source code.
+    val src = json \\ "src" match {
+      case JString(s) => s
+      case _ =>
+        log("Malformed request. Missing 'src'.")
+        "def main(): Unit = ()"
+    }
+
+    // --Xallow-redundancies
+    val allowRedundancies = json \\ "allowRedundancies" match {
+      case JBool(b) => b
+      case _ => true
+    }
+
+    //  --Xcore
+    val core = json \\ "xcore" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    //  --Xno-effects            [experimental] disables effect checking.
+    //    --Xno-stratifier         [experimental] disables computation of stratification.
+
+
+    val opts = Options.Default.copy(
+      writeClassFiles = false,
+      xallowredundancies = allowRedundancies,
+      core = core
+    )
+
+    // Return the source and options.
+    (src, opts)
+  }
+
+  /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
+  private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
-      mkFlix(input).compile() match {
+      mkFlix(input, opts).compile() match {
         case Success(compilationResult) =>
           // Compilation was successful.
 
@@ -163,9 +208,8 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Returns a fresh Flix object for the given `input` string.
     */
-  private def mkFlix(input: String)(implicit ws: WebSocket): Flix = {
+  private def mkFlix(input: String, opts: Options)(implicit ws: WebSocket): Flix = {
     val flix = new Flix()
-    val opts = Options.Default.copy(writeClassFiles = false, xallowredundancies = true)
     flix.setOptions(opts)
     flix.addStr(input)
   }
