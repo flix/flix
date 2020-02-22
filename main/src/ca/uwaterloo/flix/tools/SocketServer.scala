@@ -107,25 +107,25 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
     }
 
     // --Xallow-redundancies
-    val xallowredundancies = json \\ "allowRedundancies" match {
+    val xallowredundancies = json \\ "xallowredundancies" match {
       case JBool(b) => b
       case _ => true
     }
 
     // --Xcore
-    val xcore = json \\ "coreOnly" match {
+    val xcore = json \\ "xcore" match {
       case JBool(b) => b
       case _ => false
     }
 
     // --Xno-effects
-    val xnoeffects = json \\ "noEffects" match {
+    val xnoeffects = json \\ "xnoeffects" match {
       case JBool(b) => b
       case _ => false
     }
 
     // --Xno-stratifier
-    val xnostratifier = json \\ "noStratifier" match {
+    val xnostratifier = json \\ "xnostratifier" match {
       case JBool(b) => b
       case _ => false
     }
