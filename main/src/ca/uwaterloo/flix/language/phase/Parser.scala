@@ -423,7 +423,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Digits: Rule1[String] = rule {
-      capture(oneOrMore(CharPredicate.Digit))
+      capture(CharPredicate.Digit ~ zeroOrMore(zeroOrMore("_") ~ CharPredicate.Digit))
     }
 
   }

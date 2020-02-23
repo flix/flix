@@ -25,3 +25,6 @@ def testInt64_07(): Int64 = 0i64
 
 @test
 def testInt64_08(): Int64 = 1i64
+
+@test
+def testInt64_09(): Int64 = 1_0i64

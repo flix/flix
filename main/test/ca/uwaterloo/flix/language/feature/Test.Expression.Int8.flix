@@ -20,3 +20,6 @@ def testInt8_05(): Int8 = 127i8
 
 @test
 def testInt8_06(): Int8 = -128i8
+
+@test
+def testInt8_07(): Int8 = 1_0i8

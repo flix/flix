@@ -25,3 +25,6 @@ def testInt07(): Int = 2147483647
 
 @test
 def testInt08(): Int = -2147483648
+
+@test
+def testInt09(): Int = 1_0

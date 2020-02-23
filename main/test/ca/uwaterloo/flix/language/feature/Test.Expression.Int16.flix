@@ -19,3 +19,6 @@ def testInt16_05(): Int16 = 32767i16
 
 @test
 def testInt16_06(): Int16 = -32768i16
+
+@test
+def testInt16_07(): Int16 = 1_0i16

@@ -24,3 +24,6 @@ def testFloat32_08(): Float32 = -999999999999999999999999999999.0f32
 
 @test
 def testFloat32_09(): Float32 = -0.0000000000000000000000000000001f32
+
+@test
+def testFloat32_10(): Float32 = 1_0.0_0f32
