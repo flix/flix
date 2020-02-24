@@ -72,7 +72,8 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
-    addAbstractDomains(flix)
+    //addAbstractDomains(flix)
+    addInterpreter(flix)
 
     flix
   }
@@ -90,6 +91,10 @@ object BenchmarkCompiler {
     flix.addPath("examples/domains/PrefixSuffix.flix")
     flix.addPath("examples/domains/Sign.flix")
     flix.addPath("examples/domains/StrictSign.flix")
+  }
+
+  private def addInterpreter(flix: Flix): Unit = {
+    flix.addPath("main/src/tutorials/interpreter.flix")
   }
 
   private def addTests(flix: Flix): Unit = {
