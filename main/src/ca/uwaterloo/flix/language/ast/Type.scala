@@ -386,7 +386,11 @@ object Type {
       val args = tpe.typeArguments
 
       base match {
-        case Type.Var(id, kind) => m.getOrElse(id, id.toString)
+        case Type.Var(id, kind) => m.get(id) match {
+          case Some(s) => s
+          case None =>
+            if (kind != Kind.Effect) "'" + id.toString else "''" + id.toString
+        }
 
         case Type.Cst(TypeConstructor.Array) =>
           "Array" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
@@ -400,18 +404,54 @@ object Type {
         case Type.Cst(TypeConstructor.Tuple(l)) =>
           "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
+        case Type.Cst(TypeConstructor.Pure) => "Pure"
+
+        case Type.Cst(TypeConstructor.Impure) => "Impure"
+
+        case Type.Cst(TypeConstructor.Not) => args match {
+          case (t1: Type.Var) :: Nil => s"¬${visit(t1, m)}"
+          case t1 :: Nil => s"¬(${visit(t1, m)})"
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+        }
+
+        case Type.Cst(TypeConstructor.And) => args match {
+          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∧ ${visit(t2, m)}"
+          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∧ (${visit(t2, m)})"
+          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∧ ${visit(t2, m)}"
+          case t1 :: t2 :: Nil => s"(${visit(t1, m)} ∧ (${visit(t2, m)})"
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+        }
+
+        case Type.Cst(TypeConstructor.Or) => args match {
+          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∨ ${visit(t2, m)}"
+          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∨ (${visit(t2, m)})"
+          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∨ ${visit(t2, m)}"
+          case t1 :: t2 :: Nil => s"(${visit(t1, m)} ∨ (${visit(t2, m)})"
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+        }
+
         case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
 
         case Type.Zero => "Zero"
+
         case Type.Succ(n, t) => n.toString + " " + t.toString
 
-        case Type.Arrow(l, _) =>
+        case Type.Arrow(l, eff) =>
           val argumentTypes = args.init
           val resultType = args.last
+          val arrowPart = eff match {
+            case Type.Cst(TypeConstructor.Impure) => " ~> "
+            case _ => " -> "
+          }
+          val effPart = eff match {
+            case Type.Cst(TypeConstructor.Pure) => ""
+            case Type.Cst(TypeConstructor.Impure) => " & Impure"
+            case _ => " & (" + visit(eff, m) + ")"
+          }
           if (argumentTypes.length == 1) {
-            visit(argumentTypes.head, m) + " -> " + visit(resultType, m)
+            visit(argumentTypes.head, m) + arrowPart + visit(resultType, m) + effPart
           } else {
-            "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
+            "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ")" + arrowPart + visit(resultType, m) + effPart
           }
 
         case Type.RecordEmpty => "{ }"
