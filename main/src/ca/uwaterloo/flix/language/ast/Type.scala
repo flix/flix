@@ -386,49 +386,25 @@ object Type {
       val args = tpe.typeArguments
 
       base match {
-        //
-        // Type Variable.
-        //
         case Type.Var(id, kind) => m.getOrElse(id, id.toString)
 
-        //
-        // Array
-        //
         case Type.Cst(TypeConstructor.Array) =>
           "Array" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
-        //
-        // Channel
-        //
         case Type.Cst(TypeConstructor.Channel) =>
           "Channel" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
-        //
-        // Enum.
-        //
         case Type.Cst(TypeConstructor.Enum(sym, _)) =>
           if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
-        //
-        // Tuple.
-        //
         case Type.Cst(TypeConstructor.Tuple(l)) =>
           "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
-        //
-        // Type Constructors.
-        //
         case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
 
-        //
-        // Primitive Types.
-        //
         case Type.Zero => "Zero"
         case Type.Succ(n, t) => n.toString + " " + t.toString
 
-        //
-        // Arrow.
-        //
         case Type.Arrow(l, _) =>
           val argumentTypes = args.init
           val resultType = args.last
@@ -438,36 +414,16 @@ object Type {
             "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
           }
 
-        //
-        // RecordEmpty.
-        //
         case Type.RecordEmpty => "{ }"
 
-        //
-        // RecordExtension.
-        //
-        case Type.RecordExtend(label, value, rest) =>
-          "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
+        case Type.RecordExtend(label, value, rest) => "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
 
-        //
-        // SchemaEmpty.
-        //
-        case Type.SchemaEmpty => "Schema { }"
+        case Type.SchemaEmpty => "#{ }"
 
-        //
-        // SchemaExtend.
-        //
-        case Type.SchemaExtend(sym, t, rest) =>
-          "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
+        case Type.SchemaExtend(sym, t, rest) => "#{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
 
-        //
-        // Abstraction.
-        //
         case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
 
-        //
-        // Application.
-        //
         case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"
       }
     }
