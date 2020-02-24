@@ -386,11 +386,14 @@ object Type {
       val args = tpe.typeArguments
 
       base match {
-        case Type.Var(id, kind) => m.get(id) match {
-          case Some(s) => s
-          case None =>
-            if (kind != Kind.Effect) "'" + id.toString else "''" + id.toString
-        }
+        case Type.Var(id, kind) =>
+          // Lookup the human-friendly name in `m`.
+          m.get(id) match {
+            case Some(s) => s
+            case None =>
+              // No human-friendly name. Return the id. Use ' for types and '' for effects.
+              if (kind != Kind.Effect) "'" + id.toString else "''" + id.toString
+          }
 
         case Type.Cst(TypeConstructor.Array) =>
           "Array" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
