@@ -23,17 +23,17 @@ namespace RBTree {
     ///
     def balance(tree: RBTree): RBTree = match tree {
         case Node(Black, Node(Red, Node(Red, a, x, b), y, c), z, d) =>
-        Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case Node(Black, Node(Red, a, x, Node(Red, b, y, c)), z, d) =>
-        Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case Node(Black, a, x, Node(Red, Node(Red, b, y, c), z, d)) =>
-        Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case Node(Black, a, x, Node(Red, b, y, Node(Red, c, z, d))) =>
-        Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case Node(DoubleBlack, a, x, Node(Red, Node(Red, b, y, c), z, d)) =>
-        Node(Black, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Black, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case Node(DoubleBlack, Node(Red, a, x, Node(Red, b, y, c)), z, d) =>
-        Node(Black, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Black, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case _ => tree
     }
 
@@ -67,29 +67,29 @@ namespace RBTree {
     ///
     def rotate(tree: RBTree): RBTree = match tree {
         case Node(Red, Node(DoubleBlack, a, x, b), y, Node(Black, c, z, d)) =>
-        balance(Node(Black, Node(Red, Node(Black, a, x, b), y, c), z, d))
+            balance(Node(Black, Node(Red, Node(Black, a, x, b), y, c), z, d))
         case Node(Red, DoubleLeaf, y, Node(Black, c, z, d)) =>
-        balance(Node(Black, Node(Red, Leaf, y, c), z, d))
+            balance(Node(Black, Node(Red, Leaf, y, c), z, d))
         case Node(Red, Node(Black, a, x, b), y, Node(DoubleBlack, c, z, d)) =>
-        balance(Node(Black, a, x, Node(Red, b, y, Node(Black, c, z, d))))
+            balance(Node(Black, a, x, Node(Red, b, y, Node(Black, c, z, d))))
         case Node(Red, Node(Black, a, x, b), y, DoubleLeaf) =>
-        balance(Node(Black, a, x, Node(Red, b, y, Leaf)))
+            balance(Node(Black, a, x, Node(Red, b, y, Leaf)))
         case Node(Black, Node(DoubleBlack, a, x, b), y, Node(Black, c, z, d)) =>
-        balance(Node(DoubleBlack, Node(Red, Node(Black, a, x, b), y, c), z, d))
+            balance(Node(DoubleBlack, Node(Red, Node(Black, a, x, b), y, c), z, d))
         case Node(Black, DoubleLeaf, y, Node(Black, c, z, d)) =>
-        balance(Node(DoubleBlack, Node(Red, Leaf, y, c), z, d))
+            balance(Node(DoubleBlack, Node(Red, Leaf, y, c), z, d))
         case Node(Black, Node(Black, a, x, b), y, Node(DoubleBlack, c, z, d)) =>
-        balance(Node(DoubleBlack, a, x, Node(Red, b, y, Node(Black, c, z, d))))
+            balance(Node(DoubleBlack, a, x, Node(Red, b, y, Node(Black, c, z, d))))
         case Node(Black, Node(Black, a, x, b), y, DoubleLeaf) =>
-        balance(Node(DoubleBlack, a, x, Node(Red, b, y, Leaf)))
+            balance(Node(DoubleBlack, a, x, Node(Red, b, y, Leaf)))
         case Node(Black, Node(DoubleBlack, a, w, b), x, Node(Red, Node(Black, c, y, d), z, e)) =>
-        Node(Black, balance(Node(Black, Node(Red, Node(Black, a, w, b), x, c), y, d)), z, e)
+            Node(Black, balance(Node(Black, Node(Red, Node(Black, a, w, b), x, c), y, d)), z, e)
         case Node(Black, DoubleLeaf, x, Node(Red, Node(Black, c, y, d), z, e)) =>
-        Node(Black, balance(Node(Black, Node(Red, Leaf, x, c), y, d)), z, e)
+            Node(Black, balance(Node(Black, Node(Red, Leaf, x, c), y, d)), z, e)
         case Node(Black, Node(Red, a, w, Node(Black, b, x, c)), y, Node(DoubleBlack, d, z, e)) =>
-        Node(Black, a, w, balance(Node(Black, b, x, Node(Red, c, y, Node(Black, d, z, e)))))
+            Node(Black, a, w, balance(Node(Black, b, x, Node(Red, c, y, Node(Black, d, z, e)))))
         case Node(Black, Node(Red, a, w, Node(Black, b, x, c)), y, DoubleLeaf) =>
-        Node(Black, a, w, balance(Node(Black, b, x, Node(Red, c, y, Leaf))))
+            Node(Black, a, w, balance(Node(Black, b, x, Node(Red, c, y, Leaf))))
         case _ => tree
     }
 
@@ -124,9 +124,12 @@ namespace RBTree {
         case Node(Red, Leaf, y, Leaf) if x != y => tree
         case Node(Black, Leaf, y, Leaf) if x == y => DoubleLeaf
         case Node(Black, Leaf, y, Leaf) if x != y => tree
-        case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x < z => Node(Black, deleteHelper(Node(Red, Leaf, y, Leaf), x), z, Leaf)
-        case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x == z => Node(Black, Leaf, y, Leaf)
-        case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x > z => Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf)
+        case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x < z =>
+            Node(Black, deleteHelper(Node(Red, Leaf, y, Leaf), x), z, Leaf)
+        case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x == z =>
+            Node(Black, Leaf, y, Leaf)
+        case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x > z =>
+            Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf)
         case Node(c, a, y, b) if x < y => rotate(Node(c, deleteHelper(a, x), y, b))
         case Node(c, a, y, b) if x == y =>
             let (z, e) = minDelete(b);
