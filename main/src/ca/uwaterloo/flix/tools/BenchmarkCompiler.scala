@@ -72,6 +72,27 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
+    addAbstractDomains(flix)
+
+    flix
+  }
+
+  private def addAbstractDomains(flix: Flix): Unit = {
+    flix.addPath("examples/domains/Belnap.flix")
+    flix.addPath("examples/domains/Constant.flix")
+    flix.addPath("examples/domains/ConstantParity.flix")
+    flix.addPath("examples/domains/Interval.flix")
+    flix.addPath("examples/domains/IntervalAlt.flix")
+    //flix.addPath("examples/domains/IntervalInf.flix")
+    flix.addPath("examples/domains/Mod3.flix")
+    flix.addPath("examples/domains/Parity.flix")
+    flix.addPath("examples/domains/ParitySign.flix")
+    flix.addPath("examples/domains/PrefixSuffix.flix")
+    flix.addPath("examples/domains/Sign.flix")
+    flix.addPath("examples/domains/StrictSign.flix")
+  }
+
+  private def addTests(flix: Flix): Unit = {
     flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
