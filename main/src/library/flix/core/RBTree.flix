@@ -98,7 +98,7 @@ namespace RBTree {
     ///
     def redden(tree: RBTree): RBTree = match tree {
         case Node(Black, Node(Black, a, x, b), y, Node(Black, c, z, d)) =>
-        Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
+            Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case _ => tree
     }
 
@@ -172,7 +172,7 @@ namespace RBTree {
     ///
     /// Returns a rudimentary string representation of `tree`.
     ///
-    pub def toString(tree: RBTree): Str = {
+    pub def toString(tree: RBTree): Str & Impure = {
         import java.lang.String:valueOf(Int32);
         match tree {
             case Leaf => "Leaf"
