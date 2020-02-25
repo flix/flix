@@ -13,13 +13,14 @@ opaque type SemVer = { major: SemVerComponent
 opaque type SpecificSemVer = SemVer
 
 opaque type Package = { name: String
+                      , version: SpecificSemVer
                       , authors: List[String]
                       , description: String
                       // This could be an enum. Would only support predefined licenses, or require an `Other` variant
-                      , license: String
+                      , license: Option[String]
                       // Mapping package names to the semver pattern
                       , depends: List[(String, SemVer)]
-                      , homepage: String // Url?
+                      , homepage: Option[String] // Url?
                       }
 
 opaque type LockedPackage = { name: String
@@ -35,3 +36,6 @@ pub def removeDependency(self: Package, package: String): Package = ???
 
 // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
 pub def lockPackage(self: Package): List[LockedPackage] = ???
+
+// Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
+pub def initPackage(name: String): Package = ???
