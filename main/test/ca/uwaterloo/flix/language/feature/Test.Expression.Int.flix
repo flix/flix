@@ -28,3 +28,18 @@ def testInt08(): Int = -2147483648
 
 @test
 def testInt09(): Int = 1_0
+
+@test
+def testInt10(): Int = 1_000
+
+@test
+def testInt11(): Int = 42_000
+
+@test
+def testInt12(): Int = 1_000_000
+
+@test
+def testInt13(): Int = 42_000_000
+
+@test
+def testInt14(): Int = 1_000_000_000

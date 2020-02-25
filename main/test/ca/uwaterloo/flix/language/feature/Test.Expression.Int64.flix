@@ -28,3 +28,30 @@ def testInt64_08(): Int64 = 1i64
 
 @test
 def testInt64_09(): Int64 = 1_0i64
+
+@test
+def testInt64_10(): Int64 = 1_000i64
+
+@test
+def testInt64_11(): Int64 = 42_000i64
+
+@test
+def testInt64_12(): Int64 = 1_000_000i64
+
+@test
+def testInt64_13(): Int64 = 42_000_000i64
+
+@test
+def testInt64_14(): Int64 = 1_000_000_000i64
+
+@test
+def testInt64_15(): Int64 = 42_000_000_000i64
+
+@test
+def testInt64_16(): Int64 = 1_000_000_000_000_000i64
+
+@test
+def testInt64_17(): Int64 = 42_000_000_000_000_000i64
+
+@test
+def testInt64_18(): Int64 = 1_000_000_000_000_000_000i64

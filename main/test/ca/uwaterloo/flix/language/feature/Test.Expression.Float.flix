@@ -28,3 +28,15 @@ def testFloat07(): Float = -0.00000000000000000000000000000000000000000000000000
 
 @test
 def testFloat08(): Float = 1_0.0_0
+
+@test
+def testFloat09(): Float = 1_000.123_456_789
+
+@test
+def testFloat10(): Float = 42_000.0
+
+@test
+def testFloat11(): Float = 1_000_000_000_000_000_000_000_000_000.0
+
+@test
+def testFloat12(): Float = 0.000_000_000_000_000_000_000_000_000_1
