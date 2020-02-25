@@ -421,7 +421,7 @@ object Type {
           case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∧ ${visit(t2, m)}"
           case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∧ (${visit(t2, m)})"
           case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∧ ${visit(t2, m)}"
-          case t1 :: t2 :: Nil => s"(${visit(t1, m)} ∧ (${visit(t2, m)})"
+          case t1 :: t2 :: Nil => s"(${visit(t1, m)}) ∧ (${visit(t2, m)})"
           case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
         }
 
@@ -429,7 +429,7 @@ object Type {
           case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∨ ${visit(t2, m)}"
           case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∨ (${visit(t2, m)})"
           case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∨ ${visit(t2, m)}"
-          case t1 :: t2 :: Nil => s"(${visit(t1, m)} ∨ (${visit(t2, m)})"
+          case t1 :: t2 :: Nil => s"(${visit(t1, m)}) ∨ (${visit(t2, m)})"
           case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
         }
 
