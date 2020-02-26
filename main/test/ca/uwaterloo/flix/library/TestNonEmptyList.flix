@@ -13,6 +13,19 @@ namespace NonEmptyList {
     @test
     def head03(): Bool = head(Nel(123, 1 :: 2 :: Nil)) == 123
 
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool = last(Nel(123, Nil)) == 123
+
+    @test
+    def last02(): Bool = last(Nel(123, 1 :: Nil)) == 1
+
+    @test
+    def last03(): Bool = last(Nel(123, 1 :: 2 :: Nil)) == 2
+
 
 }
 
