@@ -371,15 +371,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FloatDefault: Rule1[ParsedAst.Literal.Float64] = rule {
-      SP ~ Sign ~ Digits ~ "." ~ Digits ~ SP ~> ParsedAst.Literal.Float64
+      SP ~ Sign ~ SeparableDigits ~ "." ~ SeparableDigits ~ SP ~> ParsedAst.Literal.Float64
     }
 
     def Float32: Rule1[ParsedAst.Literal.Float32] = rule {
-      SP ~ Sign ~ Digits ~ "." ~ Digits ~ atomic("f32") ~ SP ~> ParsedAst.Literal.Float32
+      SP ~ Sign ~ SeparableDigits ~ "." ~ SeparableDigits ~ atomic("f32") ~ SP ~> ParsedAst.Literal.Float32
     }
 
     def Float64: Rule1[ParsedAst.Literal.Float64] = rule {
-      SP ~ Sign ~ Digits ~ "." ~ Digits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
+      SP ~ Sign ~ SeparableDigits ~ "." ~ SeparableDigits ~ atomic("f64") ~ SP ~> ParsedAst.Literal.Float64
     }
 
     def Int: Rule1[ParsedAst.Literal] = rule {
@@ -387,27 +387,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def IntDefault: Rule1[ParsedAst.Literal.Int32] = rule {
-      SP ~ Sign ~ Digits ~ SP ~> ParsedAst.Literal.Int32
+      SP ~ Sign ~ SeparableDigits ~ SP ~> ParsedAst.Literal.Int32
     }
 
     def Int8: Rule1[ParsedAst.Literal.Int8] = rule {
-      SP ~ Sign ~ Digits ~ atomic("i8") ~ SP ~> ParsedAst.Literal.Int8
+      SP ~ Sign ~ SeparableDigits ~ atomic("i8") ~ SP ~> ParsedAst.Literal.Int8
     }
 
     def Int16: Rule1[ParsedAst.Literal.Int16] = rule {
-      SP ~ Sign ~ Digits ~ atomic("i16") ~ SP ~> ParsedAst.Literal.Int16
+      SP ~ Sign ~ SeparableDigits ~ atomic("i16") ~ SP ~> ParsedAst.Literal.Int16
     }
 
     def Int32: Rule1[ParsedAst.Literal.Int32] = rule {
-      SP ~ Sign ~ Digits ~ atomic("i32") ~ SP ~> ParsedAst.Literal.Int32
+      SP ~ Sign ~ SeparableDigits ~ atomic("i32") ~ SP ~> ParsedAst.Literal.Int32
     }
 
     def Int64: Rule1[ParsedAst.Literal.Int64] = rule {
-      SP ~ Sign ~ Digits ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
+      SP ~ Sign ~ SeparableDigits ~ atomic("i64") ~ SP ~> ParsedAst.Literal.Int64
     }
 
     def BigInt: Rule1[ParsedAst.Literal.BigInt] = rule {
-      SP ~ Sign ~ Digits ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
+      SP ~ Sign ~ SeparableDigits ~ atomic("ii") ~ SP ~> ParsedAst.Literal.BigInt
     }
 
     def Str: Rule1[ParsedAst.Literal.Str] = {
@@ -422,8 +422,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       optional(capture("-")) ~> ((s: Option[String]) => s.nonEmpty)
     }
 
-    def Digits: Rule1[String] = rule {
-      capture(oneOrMore(CharPredicate.Digit))
+    def SeparableDigits: Rule1[String] = rule {
+      capture(CharPredicate.Digit ~ zeroOrMore(zeroOrMore("_") ~ CharPredicate.Digit))
     }
 
   }

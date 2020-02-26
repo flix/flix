@@ -19,3 +19,21 @@ def testInt32_05(): Int32 = 2147483647i32
 
 @test
 def testInt32_06(): Int32 = -2147483648i32
+
+@test
+def testInt32_07(): Int32 = 1_0i32
+
+@test
+def testInt32_08(): Int32 = 1_000i32
+
+@test
+def testInt32_09(): Int32 = 42_000i32
+
+@test
+def testInt32_10(): Int32 = 1_000_000i32
+
+@test
+def testInt32_11(): Int32 = 42_000_000i32
+
+@test
+def testInt32_12(): Int32 = 1_000_000_000i32

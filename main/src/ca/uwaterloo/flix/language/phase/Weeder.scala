@@ -1783,11 +1783,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Removes underscores from the given string of digits.
+    */
+  private def stripUnderscores(digits: String): String = {
+    digits.filterNot(_ == '_')
+  }
+
+  /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
   private def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
     val s = if (sign) s"-$before.$after" else s"$before.$after"
-    s.toFloat.toSuccess
+    stripUnderscores(s).toFloat.toSuccess
   } catch {
     case e: NumberFormatException => IllegalFloat(loc).toFailure
   }
@@ -1797,7 +1804,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def toFloat64(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
     val s = if (sign) s"-$before.$after" else s"$before.$after"
-    s.toDouble.toSuccess
+    stripUnderscores(s).toDouble.toSuccess
   } catch {
     case e: NumberFormatException => IllegalFloat(loc).toFailure
   }
@@ -1807,7 +1814,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def toInt8(sign: Boolean, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    s.toByte.toSuccess
+    stripUnderscores(s).toByte.toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1817,7 +1824,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def toInt16(sign: Boolean, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    s.toShort.toSuccess
+    stripUnderscores(s).toShort.toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1827,7 +1834,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def toInt32(sign: Boolean, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    s.toInt.toSuccess
+    stripUnderscores(s).toInt.toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1837,7 +1844,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def toInt64(sign: Boolean, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    s.toLong.toSuccess
+    stripUnderscores(s).toLong.toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1847,7 +1854,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def toBigInt(sign: Boolean, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    new BigInteger(s).toSuccess
+    new BigInteger(stripUnderscores(s)).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
