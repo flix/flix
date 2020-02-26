@@ -39,6 +39,19 @@ namespace NonEmptyList {
     @test
     def init03(): Bool = init(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
 
+    /////////////////////////////////////////////////////////////////////////////
+    // tail                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tail01(): Bool = tail(Nel(1, Nil)) == Nil
+
+    @test
+    def tail02(): Bool = tail(Nel(1, 2 :: Nil)) == 2 :: Nil
+
+    @test
+    def tail03(): Bool = tail(Nel(1, 2 :: 3 :: Nil)) == 2 :: 3 :: Nil
+
 
 }
 
