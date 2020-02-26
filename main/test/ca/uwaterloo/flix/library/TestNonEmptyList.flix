@@ -65,6 +65,24 @@ namespace NonEmptyList {
     @test
     def length03(): Bool = length(Nel(1, 2 :: 3 :: Nil)) == 3
 
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def append01(): Bool = Nel(1, Nil) `append` Nel(2, Nil) == Nel(1, 2 :: Nil)
+
+    @test
+    def append02(): Bool = Nel(1, 2 :: Nil) `append` Nel(3, Nil) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def append03(): Bool = Nel(1, Nil) `append` Nel(2, 3 :: Nil) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def append04(): Bool = Nel(1, 2 :: Nil) `append` Nel(3, 4 :: Nil) == Nel(1, 2 :: 3 :: 4 :: Nil)
+
+    @test
+    def append05(): Bool = Nel(1, 2 :: 3 :: Nil) `append` Nel(4, 5 :: 6 :: Nil) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
 
 }
 
