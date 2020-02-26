@@ -288,7 +288,7 @@ object ParsedAst {
       * @param lit  the int8 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int8(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int8(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int16 Literal (signed 16-bit integer).
@@ -298,7 +298,7 @@ object ParsedAst {
       * @param lit  the int16 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int16(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int16(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int32 Literal (signed 32-bit integer).
@@ -308,7 +308,7 @@ object ParsedAst {
       * @param lit  the int32 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int32(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int32(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int64 Literal (signed 64-bit integer).
@@ -318,7 +318,7 @@ object ParsedAst {
       * @param lit  the int64 literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class Int64(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int64(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * BigInt Literal (arbitrary sized integer).
@@ -328,7 +328,7 @@ object ParsedAst {
       * @param lit  the big int literal.
       * @param sp2  the position of the last character in the literal.
       */
-    case class BigInt(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class BigInt(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * String Literal.
