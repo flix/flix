@@ -26,6 +26,19 @@ namespace NonEmptyList {
     @test
     def last03(): Bool = last(Nel(123, 1 :: 2 :: Nil)) == 2
 
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def init01(): Bool = init(Nel(1, Nil)) == Nil
+
+    @test
+    def init02(): Bool = init(Nel(1, 2 :: Nil)) == 1 :: Nil
+
+    @test
+    def init03(): Bool = init(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
+
 
 }
 
