@@ -787,21 +787,6 @@ namespace Int64 {
 }
 
 ///
-/// String Patterns.
-///
-namespace String {
-
-    @lint
-    def leftConcatenateEmptyString(): Bool =
-        forall (s: Str). "" + s == s
-
-    @lint
-    def rightConcatenateEmptyString(): Bool =
-        forall (s: Str). s + "" == s
-
-}
-
-///
 /// Vector Patterns.
 ///
 namespace Vec {
