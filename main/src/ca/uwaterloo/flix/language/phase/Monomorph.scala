@@ -75,9 +75,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Recursively replaces every type variable with the unit type.
         */
       def visit(t: Type): Type = t match {
-        case Type.Var(_, _) => Type.Cst(TypeConstructor.Unit)
+        case Type.Var(_, _) => Type.Unit
         case Type.Cst(tc) => Type.Cst(tc)
-        case Type.Arrow(f, l) => Type.Arrow(f, l)
+        case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
         case Type.RecordEmpty => Type.RecordEmpty
         case Type.RecordExtend(label, value, rest) => rest match {
           case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
@@ -112,7 +112,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
       */
     val defQueue: mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Queue.empty
-    val effQueue: mutable.Queue[(Symbol.EffSym, Handler, StrictSubstitution)] = mutable.Queue.empty
 
     /**
       * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -126,7 +125,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       * -   (fst, (Int, Str) -> Int) -> fst$1
       */
     val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
-    val eff2eff: mutable.Map[(Symbol.EffSym, Type), Symbol.EffSym] = mutable.Map.empty
 
     /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
@@ -144,42 +142,46 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
         */
       def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
-        case Expression.Wild(tpe, eff, loc) => Expression.Wild(subst0(tpe), eff, loc)
-        case Expression.Var(sym, tpe, eff, loc) => Expression.Var(env0(sym), subst0(tpe), eff, loc)
+        case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
+        case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
 
-        case Expression.Def(sym, tpe, eff, loc) =>
+        case Expression.Def(sym, tpe, loc) =>
           /*
            * !! This is where all the magic happens !!
            */
           val newSym = specializeDefSym(sym, subst0(tpe))
-          Expression.Def(newSym, subst0(tpe), eff, loc)
-
-        case Expression.Eff(sym, tpe, eff, loc) =>
-          /*
-           * !! This is where all the magic happens !!
-           */
-          val newSym = specializeEffSym(sym, subst0(tpe))
-          Expression.Eff(newSym, subst0(tpe), eff, loc)
+          Expression.Def(newSym, subst0(tpe), loc)
 
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, subst0(tpe), eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)
+
         case Expression.True(loc) => Expression.True(loc)
+
         case Expression.False(loc) => Expression.False(loc)
+
         case Expression.Char(lit, loc) => Expression.Char(lit, loc)
+
         case Expression.Float32(lit, loc) => Expression.Float32(lit, loc)
+
         case Expression.Float64(lit, loc) => Expression.Float64(lit, loc)
+
         case Expression.Int8(lit, loc) => Expression.Int8(lit, loc)
+
         case Expression.Int16(lit, loc) => Expression.Int16(lit, loc)
+
         case Expression.Int32(lit, loc) => Expression.Int32(lit, loc)
+
         case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
+
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
+
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
-        case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+        case Expression.Lambda(fparam, exp, tpe, loc) =>
           val (p, env1) = specializeFormalParam(fparam, subst0)
           val e = visitExp(exp, env0 ++ env1)
-          Expression.Lambda(p, e, subst0(tpe), eff, loc)
+          Expression.Lambda(p, e, subst0(tpe), loc)
 
         case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -202,7 +204,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val valueType = subst0(exp1.tpe)
 
           // The expected type of an equality function: a -> a -> bool.
-          val eqType = Type.mkArrow(List(valueType, valueType), Type.Cst(TypeConstructor.Bool))
+          val eqType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
 
           // Look for any function named `eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
@@ -210,24 +212,24 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeDefSym(eqSym, eqType)
-              val base = Expression.Def(newSym, eqType, eff, loc)
+              val base = Expression.Def(newSym, eqType, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Cst(TypeConstructor.Bool)), eff, loc)
-              val outer = Expression.Apply(inner, e2, Type.Cst(TypeConstructor.Bool), eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Bool), eff, loc)
+              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
                 outer
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Cst(TypeConstructor.Bool), eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
               }
           }
 
@@ -273,12 +275,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
-        case Expression.Switch(rules, tpe, eff, loc) =>
-          val rs = rules map {
-            case (e1, e2) => (visitExp(e1, env0), visitExp(e2, env0))
-          }
-          Expression.Switch(rs, subst0(tpe), eff, loc)
-
         case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.Tag(sym, tag, e, subst0(tpe), eff, loc)
@@ -287,8 +283,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), eff, loc)
 
-        case Expression.RecordEmpty(tpe, eff, loc) =>
-          Expression.RecordEmpty(subst0(tpe), eff, loc)
+        case Expression.RecordEmpty(tpe, loc) =>
+          Expression.RecordEmpty(subst0(tpe), loc)
 
         case Expression.RecordSelect(base, label, tpe, eff, loc) =>
           val b = visitExp(base, env0)
@@ -372,23 +368,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           Expression.Assign(e1, e2, subst0(tpe), eff, loc)
 
-        case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          val bs = bindings map {
-            case HandlerBinding(sym, handler) =>
-              val specializedSym = specializeEffSym(sym, handler.tpe)
-              val e = visitExp(handler, env0)
-              HandlerBinding(specializedSym, e)
-          }
-          Expression.HandleWith(e, bs, subst0(tpe), eff, loc)
-
-        case Expression.Existential(fparam, exp, eff, loc) =>
+        case Expression.Existential(fparam, exp, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
-          Expression.Existential(param, visitExp(exp, env0 ++ env1), eff, loc)
+          Expression.Existential(param, visitExp(exp, env0 ++ env1), loc)
 
-        case Expression.Universal(fparam, exp, eff, loc) =>
+        case Expression.Universal(fparam, exp, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
-          Expression.Universal(param, visitExp(exp, env0 ++ env1), eff, loc)
+          Expression.Universal(param, visitExp(exp, env0 ++ env1), loc)
 
         case Expression.Ascribe(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -410,16 +396,34 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
           Expression.TryCatch(e, rs, subst0(tpe), eff, loc)
 
-        case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-          val es = args.map(e => visitExp(e, env0))
-          Expression.NativeConstructor(constructor, es, subst0(tpe), eff, loc)
+        case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeConstructor(constructor, as, subst0(tpe), eff, loc)
 
-        case Expression.NativeField(field, tpe, eff, loc) =>
-          Expression.NativeField(field, subst0(tpe), eff, loc)
+        case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeMethod(method, e, as, tpe, eff, loc)
 
-        case Expression.NativeMethod(method, args, tpe, eff, loc) =>
-          val es = args.map(e => visitExp(e, env0))
-          Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
+        case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+          val as = args.map(visitExp(_, env0))
+          Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+
+        case Expression.GetField(field, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.GetField(field, e, tpe, eff, loc)
+
+        case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.PutField(field, e1, e2, tpe, eff, loc)
+
+        case Expression.GetStaticField(field, tpe, eff, loc) =>
+          Expression.GetStaticField(field, tpe, eff, loc)
+
+        case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.PutStaticField(field, e, tpe, eff, loc)
 
         case Expression.NewChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -452,16 +456,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.ProcessSpawn(e, subst0(tpe), eff, loc)
 
-        case Expression.ProcessSleep(exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.ProcessSleep(e, subst0(tpe), eff, loc)
-
         case Expression.ProcessPanic(msg, tpe, eff, loc) =>
           Expression.ProcessPanic(msg, subst0(tpe), eff, loc)
 
-        case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+        case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
           val cs = cs0.map(visitConstraint(_, env0))
-          Expression.FixpointConstraintSet(cs, subst0(tpe), eff, loc)
+          Expression.FixpointConstraintSet(cs, subst0(tpe), loc)
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -578,6 +578,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           case Pattern.Int64(lit, loc) => Pattern.Int64(lit, loc)
           case Pattern.BigInt(lit, loc) => Pattern.BigInt(lit, loc)
           case Pattern.Str(lit, loc) => Pattern.Str(lit, loc)
+          case Pattern.Tag(sym, tag, p, tpe, loc) => Pattern.Tag(sym, tag, visitPatTemporaryToBeRemoved(p), subst0(tpe), loc)
           case _ => throw InternalCompilerException(s"Pattern not allowed here $pat.")
         }
 
@@ -628,44 +629,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           freshSym
         case Some(specializedSym) =>
           // Case 2: The function has already been specialized.
-          // Simply refer to the already existing specialized symbol.
-          specializedSym
-      }
-    }
-
-    /**
-      * Returns the eff symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-      */
-    def specializeEffSym(sym: Symbol.EffSym, tpe: Type): Symbol.EffSym = {
-      // Lookup the eff and its declared type.
-      val eff = root.handlers(sym)
-      val declaredType = eff.tpe
-
-      // Unify the declared and actual type to obtain the substitution map.
-      val subst = StrictSubstitution(Unification.unifyTypes(declaredType, tpe).get)
-
-      // Check if the substitution is empty, if so there is no need for specialization.
-      if (subst.isEmpty) {
-        return sym
-      }
-
-      // Check whether the effect handler has already been specialized.
-      eff2eff.get((sym, tpe)) match {
-        case None =>
-          // Case 1: The handler has not been specialized.
-          // Generate a fresh specialized symbol.
-          val freshSym = Symbol.freshEffSym(sym)
-
-          // Register the fresh symbol (and actual type) in the symbol2symbol map.
-          eff2eff.put((sym, tpe), freshSym)
-
-          // Enqueue the fresh symbol with the definition and substitution.
-          effQueue.enqueue((freshSym, eff, subst))
-
-          // Now simply refer to the freshly generated symbol.
-          freshSym
-        case Some(specializedSym) =>
-          // Case 2: The handler has already been specialized.
           // Simply refer to the already existing specialized symbol.
           specializedSym
       }
@@ -763,7 +726,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * A map used to collect specialized definitions, etc.
      */
     val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
-    val specializedHandlers: mutable.Map[Symbol.EffSym, TypedAst.Handler] = mutable.Map.empty
     val specializedProperties: mutable.ListBuffer[TypedAst.Property] = mutable.ListBuffer.empty
     // TODO: Specialize expressions occurring in other places, e.g facts/rules/properties.
 
@@ -811,7 +773,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     /*
      * Performs function specialization until both queues are empty.
      */
-    while (defQueue.nonEmpty || effQueue.nonEmpty) {
+    while (defQueue.nonEmpty) {
 
       /*
        * Performs function specialization until the queue is empty.
@@ -834,33 +796,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         specializedDefns.put(freshSym, specializedDefn)
       }
 
-      /*
-       * Performs effect handler specialization until the queue is empty.
-       */
-      while (effQueue.nonEmpty) {
-        // Extract an effect from the queue and specializes it w.r.t. its substitution.
-        val (freshSym, handler, subst) = effQueue.dequeue()
-
-        // Specialize the formal parameters and introduce fresh local variable symbols.
-        val (fparams, env0) = specializeFormalParams(handler.fparams, subst)
-
-        // Specialize the body expression.
-        val specializedExp = specialize(handler.exp, env0, subst)
-
-        // Reassemble the definition.
-        // NB: Removes the type parameters as the function is now monomorphic.
-        val specializedHandler = handler.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(handler.tpe), tparams = Nil)
-
-        // Save the specialized handler.
-        specializedHandlers.put(freshSym, specializedHandler)
-      }
-
     }
 
     // Reassemble the AST.
     root.copy(
       defs = specializedDefns.toMap,
-      handlers = specializedHandlers.toMap,
       properties = specializedProperties.toList
     ).toSuccess
   }

@@ -43,11 +43,11 @@ namespace Domain/ConstantSign {
     def lub(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
         case (Bot, x)           => x
         case (x, Bot)           => x
-        case (Cst(n1), Cst(n2)) => switch {
-            case n1 == n2                       => Cst(n1)
-            case n1 >= 0ii && n2 >= 0ii         => Pos
-            case n1 <= 0ii && n2 <= 0ii         => Neg
-            case true                           => Top
+        case (Cst(n1), Cst(n2)) => {
+            if      (n1 == n2)                  Cst(n1)
+            else if (n1 >= 0ii && n2 >= 0ii)    Pos
+            else if (n1 <= 0ii && n2 <= 0ii)    Neg
+            else                                Top
         }
         case (Cst(n), Neg)      => if (n <= 0ii) Neg else Top
         case (Neg, Cst(n))      => if (n <= 0ii) Neg else Top

@@ -2,6 +2,19 @@
 
 HEAD:
 
+Version 0.11.0:
+
+- Added light-weight polymorphic effects.
+- Defined division by zero to yield zero.
+- Added check for unconditional recursion.
+- Reworked array length from `length[x]` to `x.length`.
+- Removed switch expression.
+
+Version 0.10.0:
+
+- Reworked and improved Java interoperability.
+- Added support for folding on Datalog constraints.
+
 Version 0.9.1:
 
 - Fixed several bugs. 

@@ -15,28 +15,39 @@ object TypedAstOps {
       * Finds the holes and hole contexts in the given expression `exp0`.
       */
     def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
-      case Expression.Wild(tpe, eff, loc) => Map.empty
-      case Expression.Var(sym, tpe, eff, loc) => Map.empty
-      case Expression.Def(sym, tpe, eff, loc) => Map.empty
-      case Expression.Eff(sym, tpe, eff, loc) => Map.empty
+      case Expression.Wild(tpe, loc) => Map.empty
 
-      case Expression.Hole(sym, tpe, eff, loc) =>
-        Map(sym -> HoleContext(sym, tpe, env0))
+      case Expression.Var(sym, tpe, loc) => Map.empty
+
+      case Expression.Def(sym, tpe, loc) => Map.empty
+
+      case Expression.Hole(sym, tpe, eff, loc) => Map(sym -> HoleContext(sym, tpe, env0))
 
       case Expression.Unit(loc) => Map.empty
+
       case Expression.True(loc) => Map.empty
+
       case Expression.False(loc) => Map.empty
+
       case Expression.Char(lit, loc) => Map.empty
+
       case Expression.Float32(lit, loc) => Map.empty
+
       case Expression.Float64(lit, loc) => Map.empty
+
       case Expression.Int8(lit, loc) => Map.empty
+
       case Expression.Int16(lit, loc) => Map.empty
+
       case Expression.Int32(lit, loc) => Map.empty
+
       case Expression.Int64(lit, loc) => Map.empty
+
       case Expression.BigInt(lit, loc) => Map.empty
+
       case Expression.Str(lit, loc) => Map.empty
 
-      case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      case Expression.Lambda(fparam, exp, tpe, loc) =>
         val env1 = Map(fparam.sym -> fparam.tpe)
         visitExp(exp, env0 ++ env1)
 
@@ -68,11 +79,6 @@ object TypedAstOps {
             macc ++ visitExp(guard, env0) ++ visitExp(exp, binds(pat) ++ env0)
         }
 
-      case Expression.Switch(rules, tpe, eff, loc) =>
-        rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, (exp1, exp2)) => macc ++ visitExp(exp1, env0) ++ visitExp(exp2, env0)
-        }
-
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
@@ -81,7 +87,7 @@ object TypedAstOps {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
-      case Expression.RecordEmpty(tpe, eff, loc) => Map.empty
+      case Expression.RecordEmpty(tpe, loc) => Map.empty
 
       case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         visitExp(base, env0)
@@ -141,15 +147,10 @@ object TypedAstOps {
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-        bindings.foldLeft(visitExp(exp, env0)) {
-          case (macc, HandlerBinding(sym, handler)) => macc ++ visitExp(handler, env0)
-        }
-
-      case Expression.Existential(fparam, exp, eff, loc) =>
+      case Expression.Existential(fparam, exp, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))
 
-      case Expression.Universal(fparam, exp, eff, loc) =>
+      case Expression.Universal(fparam, exp, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))
 
       case Expression.Ascribe(exp, tpe, eff, loc) =>
@@ -163,17 +164,32 @@ object TypedAstOps {
           case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.Cst(TypeConstructor.Native(null))))
         }
 
-      case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
+      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
-      case Expression.NativeField(field, tpe, eff, loc) => Map.empty
+      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+        args.foldLeft(visitExp(exp, env0)) {
+          case (macc, arg) => macc ++ visitExp(arg, env0)
+        }
 
-      case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
         args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
+
+      case Expression.GetField(field, exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.GetStaticField(field, tpe, eff, loc) =>
+        Map.empty
+
+      case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
 
       case Expression.NewChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
 
@@ -192,11 +208,9 @@ object TypedAstOps {
 
       case Expression.ProcessSpawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.ProcessSleep(exp, tpe, eff, loc) => visitExp(exp, env0)
-
       case Expression.ProcessPanic(msg, tpe, eff, loc) => Map.empty
 
-      case Expression.FixpointConstraintSet(cs, tpe, eff, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+      case Expression.FixpointConstraintSet(cs, tpe, loc) => cs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
         case (macc, c) => macc ++ visitConstraint(c, env0)
       }
 

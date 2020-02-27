@@ -53,7 +53,7 @@ def unusedVarSym09(): Int =
     }
 
 @test
-def unusedVarSym10(): Int =
+def unusedVarSym10(): Int & Impure =
     let c = chan Int 1;
     c <- 0;
     select {
@@ -61,7 +61,7 @@ def unusedVarSym10(): Int =
     }
 
 @test
-def unusedVarSym11(): Int =
+def unusedVarSym11(): Int & Impure =
     let c1 = chan Int 1;
     let c2 = chan Int 1;
     c1 <- 0;

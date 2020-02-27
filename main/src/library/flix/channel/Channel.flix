@@ -21,25 +21,25 @@ namespace Channel {
     ///
     /// An unbuffered channel has an internal capacity of `0`.
     ///
-    pub def new(): Channel[a] = chan a 0
+    pub def new(): Channel[a] & Impure = chan a 0
 
     ///
     /// Returns a fresh buffered channel with internal capacity `c`.
     ///
-    pub def newWithCapacity(c: Int): Channel[a] = chan a c
+    pub def newWithCapacity(c: Int): Channel[a] & Impure = chan a c
 
     ///
     /// Receives an element from the channel `c`.
     ///
     /// Equivalent to the expression `<- c`.
     ///
-    pub def get(c: Channel[a]): a = <- c
+    pub def get(c: Channel[a]): a & Impure = <- c
 
     ///
     /// Sends the element `x` on the channel `c`.
     ///
     /// Equivalent to the expression `c <- x`.
     ///
-    pub def put(c: Channel[a], x: a): Channel[a] = c <- x
+    pub def put(c: Channel[a], x: a): Channel[a] & Impure = c <- x
 
 }

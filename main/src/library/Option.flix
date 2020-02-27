@@ -63,6 +63,8 @@ namespace Option {
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def exists(f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)
 
     ///
@@ -70,10 +72,14 @@ namespace Option {
     ///
     /// Otherwise returns `false`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def forall(f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), true)
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def filter(f: a -> Bool, o: Option[a]): Option[a] = match o {
         case None => None
@@ -83,7 +89,7 @@ namespace Option {
     ///
     /// Returns `Some(f(v))` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    pub def map(f: a -> b, o: Option[a]): Option[b] = match o {
+    pub def map(f: a -> b & e, o: Option[a]): Option[b] & e = match o {
         case None => None
         case Some(v) => Some(f(v))
     }
@@ -91,7 +97,7 @@ namespace Option {
     ///
     /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
-    pub def map2(f: (a, b) -> c, o1: Option[a], o2: Option[b]): Option[c] = match (o1, o2) {
+    pub def map2(f: (a, b) -> c & e, o1: Option[a], o2: Option[b]): Option[c] & e = match (o1, o2) {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => Some(f(v1, v2))
@@ -100,7 +106,7 @@ namespace Option {
     ///
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    pub def flatMap(f: a -> Option[b], o: Option[a]): Option[b] = match o {
+    pub def flatMap(f: a -> Option[b] & e, o: Option[a]): Option[b] & e = match o {
         case None => None
         case Some(v) => f(v)
     }
@@ -108,7 +114,7 @@ namespace Option {
     ///
     /// Returns `f(v1, v2)` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
-    pub def flatMap2(f: (a, b) -> Option[c], o1: Option[a], o2: Option[b]): Option[c] = match (o1, o2) {
+    pub def flatMap2(f: (a, b) -> Option[c] & e, o1: Option[a], o2: Option[b]): Option[c] & e = match (o1, o2) {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => f(v1, v2)
@@ -117,6 +123,8 @@ namespace Option {
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def count(f: a -> Bool, o: Option[a]): Int32 = match o {
         case None => 0
         case Some(v) => if (f(v)) 1 else 0
@@ -124,6 +132,8 @@ namespace Option {
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def find(f: a -> Bool, o: Option[a]): Option[a] = match o {
         case None => None
@@ -141,7 +151,7 @@ namespace Option {
     ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (b, a) -> b, z: b, o: Option[a]): b = match o {
+    pub def foldLeft(f: (b, a) -> b & e, z: b, o: Option[a]): b & e = match o {
         case None => z
         case Some(v) => f(z, v)
     }
@@ -149,7 +159,7 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (a, b) -> b, o: Option[a], z: b): b = match o {
+    pub def foldRight(f: (a, b) -> b & e, o: Option[a], z: b): b & e = match o {
         case None => z
         case Some(v) => f(v, z)
     }
@@ -166,7 +176,7 @@ namespace Option {
     ///
     /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Some(v_i)`. Otherwise returns `None`.
     ///
-    pub def traverse(f: a -> Option[b], xs: List[a]): Option[List[b]] = match xs {
+    pub def traverse(f: a -> Option[b] & e, xs: List[a]): Option[List[b]] & e = match xs {
         case Nil        => Some(Nil)
         case y :: ys    =>
             let* z = f(y);
@@ -213,6 +223,16 @@ namespace Option {
     pub def unzip(o: Option[(a, b)]): (Option[a], Option[b]) = match o {
         case None => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
+    }
+
+    ///
+    /// Applies `f` to `v` if `o` is `Some(v)`. Otherwise does nothing.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~> Unit, o: Option[a]): Unit & Impure = match o {
+        case None    => ()
+        case Some(v) => f(v)
     }
 
     ///

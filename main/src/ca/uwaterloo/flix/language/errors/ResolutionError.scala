@@ -16,13 +16,15 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import java.lang.reflect.{Constructor, Field, Method}
+
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
+import ca.uwaterloo.flix.language.ast.Type._
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
-import ca.uwaterloo.flix.language.ast.Type._
-import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 /**
   * A common super-type for resolution errors.
@@ -136,22 +138,19 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Class Error.
+    * Illegal Type Error.
     *
-    * @param sym the definition symbol.
-    * @param ns  the namespace where the symbol is not accessible.
+    * @param tpe the illegal type.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class IllegalType(tpe: Type, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Class '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << ">> Illegal type: '" << Red(tpe.toString) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "inaccessible class.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Mark the class as public." << NewLine
+      vt << Code(loc, "illegal type.") << NewLine
     }
   }
 
@@ -172,26 +171,6 @@ object ResolutionError {
       vt << Code(loc, "inaccessible definition.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
-  }
-
-  /**
-    * Inaccessible Eff Error.
-    *
-    * @param sym the eff symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
-  case class InaccessibleEff(sym: Symbol.EffSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Effect '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible effect.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Mark the effect as public." << NewLine
     }
   }
 
@@ -289,26 +268,6 @@ object ResolutionError {
       vt << Code(loc, "recursion limit reached.") << NewLine
       vt << NewLine
       vt << "Ensure that there is no cyclic definition of type aliases."
-    }
-  }
-
-  /**
-    * Unresolved Class Error.
-    *
-    * @param qn  the unresolved definition name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined class '" << Red(qn.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "name not found") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
     }
   }
 
@@ -413,30 +372,12 @@ object ResolutionError {
   }
 
   /**
-    * Unhandled Effect Error.
-    *
-    * @param sym the unhandled effect symbol.
-    */
-  case class UnhandledEffect(sym: Symbol.EffSym) extends ResolutionError {
-    val source: Source = sym.loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unhandled effect '" << Red(sym.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(sym.loc, "no default handler.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent effect handler?" << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
     * @param loc  the location of the class name.
     */
-  case class UndefinedNativeClass(name: String, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -446,5 +387,100 @@ object ResolutionError {
       vt << Code(loc, "undefined class.") << NewLine
     }
   }
+
+  /**
+    * An error raised to indicate that a matching constructor was not found.
+    *
+    * @param className    the class name.
+    * @param signature    the signature of the constructor.
+    * @param constructors the constructors in the class.
+    * @param loc          the location of the constructor name.
+    */
+  case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined constructor in class '" << Cyan(className) << "' with the given signature." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined constructor.") << NewLine
+      vt << "No constructor matches the signature:" << NewLine
+      vt << "  " << className << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
+      vt << "Available constructors:" << NewLine
+      for (constructor <- constructors) {
+        vt << "  " << stripAccessModifier(constructor.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that a matching method was not found.
+    *
+    * @param className  the class name.
+    * @param methodName the method name.
+    * @param static     whether the method is static.
+    * @param signature  the signature of the method.
+    * @param methods    the methods of the class.
+    * @param loc        the location of the method name.
+    */
+  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      if (!static) {
+        vt << ">> Undefined " << Magenta("object") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      } else {
+        vt << ">> Undefined " << Magenta("static") << " method '" << Red(methodName) << "' in class '" << Cyan(className) << "." << NewLine
+      }
+      vt << NewLine
+      vt << Code(loc, "undefined method.") << NewLine
+      vt << "No method matches the signature:" << NewLine
+      vt << "  " << methodName << "(" << signature.map(_.toString).mkString(",") << ")" << NewLine << NewLine
+      vt << "Available methods:" << NewLine
+      for (method <- methods) {
+        vt << "  " << stripAccessModifier(method.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * An error raised to indicate that the field name was not found.
+    *
+    * @param className the class name.
+    * @param fieldName the field name.
+    * @param static    whether the field is static.
+    * @param fields    the fields of the class.
+    * @param loc       the location of the method name.
+    */
+  case class UndefinedJvmField(className: String, fieldName: String, static: Boolean, fields: List[Field], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      if (!static) {
+        vt << ">> Undefined " << Magenta("object") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      } else {
+        vt << ">> Undefined " << Magenta("static") << " field '" << Red(fieldName) << "' in class '" << Cyan(className) << "." << NewLine
+      }
+      vt << NewLine
+      vt << Code(loc, "undefined field.") << NewLine
+      vt << "Available fields:" << NewLine
+      for (field <- fields) {
+        vt << "  " << stripAccessModifier(field.toString) << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
+    * Removes all access modifiers from the given string `s`.
+    */
+  private def stripAccessModifier(s: String): String =
+    s.replace("public", "").
+      replace("protected", "").
+      replace("private", "")
 
 }

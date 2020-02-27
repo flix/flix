@@ -14,55 +14,55 @@
  * limitations under the License.
  */
 @test
-def testNew01(): Bool = Array.new(42, 10)[0] == 42
+def testNew01(): Bool & Impure = Array.new(42, 10)[0] == 42
 
 @test
-def testNew02(): Bool = Array.new(42, 10)[5] == 42
+def testNew02(): Bool & Impure = Array.new(42, 10)[5] == 42
 
 @test
-def testNew03(): Bool = Array.new(42, 10)[9] == 42
+def testNew03(): Bool & Impure = Array.new(42, 10)[9] == 42
 
 @test
-def testGet01(): Bool = Array.get([1, 2, 3], 0) == 1
+def testGet01(): Bool & Impure = Array.get([1, 2, 3], 0) == 1
 
 @test
-def testGet02(): Bool = Array.get([1, 2, 3], 1) == 2
+def testGet02(): Bool & Impure = Array.get([1, 2, 3], 1) == 2
 
 @test
-def testGet03(): Bool = Array.get([1, 2, 3], 2) == 3
+def testGet03(): Bool & Impure = Array.get([1, 2, 3], 2) == 3
 
 @test
-def testPut01(): Bool = Array.put([1], 0, 42)[0] == 42
+def testPut01(): Bool & Impure = Array.put([1], 0, 42)[0] == 42
 
 @test
-def testPut02(): Bool = Array.put([1, 2], 1, 42)[1] == 42
+def testPut02(): Bool & Impure = Array.put([1, 2], 1, 42)[1] == 42
 
 @test
-def testPut03(): Bool = Array.put([1, 2, 3], 2, 42)[2] == 42
+def testPut03(): Bool & Impure = Array.put([1, 2, 3], 2, 42)[2] == 42
 
 @test
-def testLength01(): Bool = Array.length([]) == 0
+def testLength01(): Bool & Impure = Array.length([]) == 0
 
 @test
-def testLength02(): Bool = Array.length([1]) == 1
+def testLength02(): Bool & Impure = Array.length([1]) == 1
 
 @test
-def testLength03(): Bool = Array.length([1, 2, 3]) == 3
+def testLength03(): Bool & Impure = Array.length([1, 2, 3]) == 3
 
 @test
-def testSlice01(): Bool = Array.slice([1, 2, 3], 0, 1)[0] == 1
+def testSlice01(): Bool & Impure = Array.slice([1, 2, 3], 0, 1)[0] == 1
 
 @test
-def testSlice02(): Bool = Array.slice([1, 2, 3], 1, 2)[0] == 2
+def testSlice02(): Bool & Impure = Array.slice([1, 2, 3], 1, 2)[0] == 2
 
 @test
-def testSlice03(): Bool = Array.slice([1, 2, 3], 2, 3)[0] == 3
+def testSlice03(): Bool & Impure = Array.slice([1, 2, 3], 2, 3)[0] == 3
 
 @test
-def testToList01(): Bool = Array.toList([]) == Nil
+def testToList01(): Bool & Impure = Array.toList([]) == Nil
 
 @test
-def testToList02(): Bool = Array.toList([1]) == 1 :: Nil
+def testToList02(): Bool & Impure = Array.toList([1]) == 1 :: Nil
 
 @test
-def testToList03(): Bool = Array.toList([1, 2]) == 1 :: 2 :: Nil
+def testToList03(): Bool & Impure = Array.toList([1, 2]) == 1 :: 2 :: Nil

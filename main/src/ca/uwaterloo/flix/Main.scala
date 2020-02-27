@@ -83,7 +83,9 @@ object Main {
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
-      xnostratifier = cmdOpts.xnostratifier
+      xnoeffects = cmdOpts.xnoeffects,
+      xnostratifier = cmdOpts.xnostratifier,
+      xstatistics = cmdOpts.xstatistics
     )
 
     // check if command was passed.
@@ -218,8 +220,10 @@ object Main {
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xnoeffects: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
+                     xstatistics: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -354,6 +358,10 @@ object Main {
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
 
+      // Xno-effects
+      opt[Unit]("Xno-effects").action((_, c) => c.copy(xnoeffects = true)).
+        text("[experimental] disables effect checking.")
+
       // Xno-stratifier
       opt[Unit]("Xno-stratifier").action((_, c) => c.copy(xnostratifier = true)).
         text("[experimental] disables computation of stratification.")
@@ -361,6 +369,10 @@ object Main {
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
         text("[experimental] disables tail call elimination.")
+
+      // Xstatistics
+      opt[Unit]("Xstatistics").action((_, c) => c.copy(xstatistics = true)).
+        text("[experimental] prints statistics about the compilation.")
 
       note("")
 

@@ -44,18 +44,13 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case (sym, decl) => sym -> liftDef(decl, m)
     }
 
-    // Handlers.
-    val handlers = root.handlers.map {
-      case (sym, handler) => sym -> liftHandler(handler, m)
-    }
-
     // Properties.
     val properties = root.properties.map {
       property => liftProperty(property, m)
     }
 
     // Return the updated AST root.
-    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties).toSuccess
+    root.copy(defs = definitions ++ m, properties = properties).toSuccess
   }
 
   /**
@@ -67,17 +62,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Reassemble the definition.
     def0.copy(exp = liftedExp)
-  }
-
-  /**
-    * Performs lambda lifting on the given handler `handler0`.
-    */
-  private def liftHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Handler = {
-    // Lift the closure converted expression.
-    val liftedExp = liftExp(handler0.exp, "handler", m)
-
-    // Reassemble the handler.
-    handler0.copy(exp = liftedExp)
   }
 
   /**
@@ -100,20 +84,32 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
+
       case Expression.True => e
+
       case Expression.False => e
+
       case Expression.Char(lit) => e
+
       case Expression.Float32(lit) => e
+
       case Expression.Float64(lit) => e
+
       case Expression.Int8(lit) => e
+
       case Expression.Int16(lit) => e
+
       case Expression.Int32(lit) => e
+
       case Expression.Int64(lit) => e
+
       case Expression.BigInt(lit) => e
+
       case Expression.Str(lit) => e
+
       case Expression.Var(sym, tpe, loc) => e
+
       case Expression.Def(sym, tpe, loc) => e
-      case Expression.Eff(sym, tpe, loc) => e
 
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
@@ -150,10 +146,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visitExp
         Expression.ApplyDef(sym, as, tpe, loc)
-
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map visitExp
-        Expression.ApplyEff(sym, as, tpe, loc)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -269,18 +261,15 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visitExp(exp)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
-        }
-        Expression.HandleWith(e, bs, tpe, loc)
-
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visitExp(exp), loc)
 
       case Expression.Universal(params, exp, loc) =>
         Expression.Universal(params, visitExp(exp), loc)
+
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Cast(e, tpe, loc)
 
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val e = visitExp(exp)
@@ -291,15 +280,34 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         Expression.TryCatch(e, rs, tpe, loc)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visitExp
-        Expression.NativeConstructor(constructor, es, tpe, loc)
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-      case Expression.NativeField(field, tpe, loc) => e
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = visitExp(exp)
+        val as = args.map(visitExp)
+        Expression.InvokeMethod(method, e, as, tpe, loc)
 
-      case Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args map visitExp
-        Expression.NativeMethod(method, es, tpe, loc)
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args.map(visitExp)
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) =>
+        Expression.GetStaticField(field, tpe, loc)
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.PutStaticField(field, e, tpe, loc)
 
       case Expression.NewChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -329,10 +337,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessSpawn(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.ProcessSpawn(e, tpe, loc)
-
-      case Expression.ProcessSleep(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.ProcessSleep(e, tpe, loc)
 
       case Expression.ProcessPanic(msg, tpe, loc) =>
         Expression.ProcessPanic(msg, tpe, loc)
@@ -370,12 +374,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.MatchError(tpe, loc) => e
 
-      case Expression.SwitchError(tpe, loc) => e
-
       case Expression.Lambda(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected lambda expression. Every lambda expression should have been converted to a LambdaClosure.")
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 

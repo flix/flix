@@ -344,4 +344,20 @@ def unzip01(): Bool = Option.unzip(None) `assertEq!` (None, None)
 @test
 def unzip02(): Bool = Option.unzip(Some((1, true))) `assertEq!` (Some(1), Some(true))
 
+/////////////////////////////////////////////////////////////////////////////
+// foreach                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def foreach01(): Bool & Impure =
+    let r = ref 21;
+    Option.foreach(x -> r := x, None);
+    21 == deref r
+
+@test
+def foreach02(): Bool & Impure =
+    let r = ref 21;
+    Option.foreach(x -> r := x, Some(42));
+    42 == deref r
+
 }

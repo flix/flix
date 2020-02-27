@@ -19,7 +19,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` days.
     ///
-    pub def days(n: Int64): Channel[Unit] =
+    pub def days(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneDay(), c);
         c
@@ -27,7 +27,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` hours.
     ///
-    pub def hours(n: Int64): Channel[Unit] =
+    pub def hours(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneHour(), c);
         c
@@ -35,7 +35,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` minutes.
     ///
-    pub def minutes(n: Int64): Channel[Unit] =
+    pub def minutes(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneMinute(), c);
         c
@@ -43,7 +43,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` seconds.
     ///
-    pub def seconds(n: Int64): Channel[Unit] =
+    pub def seconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneSecond(), c);
         c
@@ -51,7 +51,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` milliseconds.
     ///
-    pub def milliseconds(n: Int64): Channel[Unit] =
+    pub def milliseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneMillisecond(), c);
         c
@@ -59,7 +59,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` microseconds.
     ///
-    pub def microseconds(n: Int64): Channel[Unit] =
+    pub def microseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneMicrosecond(), c);
         c
@@ -67,7 +67,7 @@ namespace Timer {
     ///
     /// Returns a channel that receives the Unit value after `n` nanoseconds.
     ///
-    pub def nanoseconds(n: Int64): Channel[Unit] =
+    pub def nanoseconds(n: Int64): Channel[Unit] & Impure =
         let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneNanosecond(), c);
         c
@@ -75,6 +75,7 @@ namespace Timer {
     ///
     /// Sleeps for `s` nanoseconds and then sends the Unit value to the given channel `c`.
     ///
-    def sleepAndSend(s: Int64, c: Channel[Unit]): Unit =
-        sleep(s); c <- (); ()
+    def sleepAndSend(ns: Int64, c: Channel[Unit]): Unit & Impure =
+        import java.lang.Thread:sleep(Int64);
+        sleep(ns / 1000000i64); c <- (); ()
 }

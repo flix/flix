@@ -14,3 +14,33 @@ def testBigInt04(): BigInt = 9223372036854775808ii
 // One smaller than Long.MinValue
 @test
 def testBigInt05(): BigInt = -9223372036854775809ii
+
+@test
+def testBigInt6(): BigInt = 1_000ii
+
+@test
+def testBigInt7(): BigInt = 42_000ii
+
+@test
+def testBigInt8(): BigInt = 1_000_000ii
+
+@test
+def testBigInt9(): BigInt = 42_000_000ii
+
+@test
+def testBigInt10(): BigInt = 1_000_000_000ii
+
+@test
+def testBigInt11(): BigInt = 42_000_000_000ii
+
+@test
+def testBigInt12(): BigInt = 1_000_000_000_000_000_000ii
+
+@test
+def testBigInt13(): BigInt = 42_000_000_000_000_000_000ii
+
+@test
+def testBigInt14(): BigInt = 1_000_000_000_000_000_000_000ii
+
+@test
+def testBigInt15(): BigInt = 42_000_000_000_000_000_000_000ii

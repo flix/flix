@@ -23,7 +23,7 @@ object Options {
   /**
     * Default options.
     */
-  val Default = Options(
+  val Default: Options = Options(
     core = false,
     debug = false,
     documentor = false,
@@ -42,7 +42,9 @@ object Options {
     loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
-    xnostratifier = false
+    xnoeffects = false,
+    xnostratifier = false,
+    xstatistics = false
   )
 
   /**
@@ -71,7 +73,9 @@ object Options {
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
+  * @param xnoeffects         disables effect checking.
   * @param xnostratifier      disables computation of stratification.
+  * @param xstatistics        prints compiler statistics.
   */
 case class Options(core: Boolean,
                    debug: Boolean,
@@ -91,7 +95,10 @@ case class Options(core: Boolean,
                    loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
-                   xnostratifier: Boolean)
+                   xnoeffects: Boolean,
+                   xnostratifier: Boolean,
+                   xstatistics: Boolean
+                  )
 
 /**
   * An option to control the evaluation strategy.

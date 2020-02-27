@@ -100,10 +100,14 @@ namespace List {
     ///
     /// Alias for `findLeft`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def find(f: a -> Bool, xs: List[a]): Option[a] = findLeft(f, xs)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def findLeft(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
@@ -112,6 +116,8 @@ namespace List {
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def findRight(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
@@ -140,19 +146,19 @@ namespace List {
     ///
     /// Alias for `scanLeft`.
     ///
-    pub def scan(f: (b, a) -> b, s: b, xs: List[a]): List[b] = scanLeft(f, s, xs)
+    pub def scan(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = scanLeft(f, s, xs)
 
     ///
     /// Accumulates the result of applying `f` to `xs` going left to right.
     ///
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
     ///
-    pub def scanLeft(f: (b, a) -> b, s: b, xs: List[a]): List[b] = s :: scanLeftHelper(f, s, xs)
+    pub def scanLeft(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = s :: scanLeftHelper(f, s, xs)
 
     ///
     /// Helper function for `scanLeft`.
     ///
-    def scanLeftHelper(f: (b, a) -> b, s: b, xs: List[a]): List[b] = match xs {
+    def scanLeftHelper(f: (b, a) -> b & e, s: b, xs: List[a]): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => f(s, x) :: scanLeftHelper(f, f(s, x), rs)
     }
@@ -162,7 +168,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
-    pub def scanRight(f: (a, b) -> b, s: b, xs: List[a]): List[b] = match xs {
+    pub def scanRight(f: (a, b) -> b & e, s: b, xs: List[a]): List[b] & e = match xs {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) {
             case y :: ys => f(x, y) :: y :: ys
@@ -180,7 +186,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a -> b, xs: List[a]): List[b] = match xs {
+    pub def map(f: a -> b & e, xs: List[a]): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => f(x) :: map(f, rs)
     }
@@ -190,12 +196,12 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
-    pub def mapWithIndex(f: (a, Int32) -> b, xs: List[a]): List[b] = mapWithIndexHelper(f, xs, 0)
+    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: List[a]): List[b] & e = mapWithIndexHelper(f, xs, 0)
 
     ///
     /// Helper function for `mapWithIndex`.
     ///
-    def mapWithIndexHelper(f: (a, Int32) -> b, xs: List[a], i: Int32): List[b] = match xs {
+    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i+1)
     }
@@ -203,7 +209,7 @@ namespace List {
     ///
     /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
     ///
-    pub def flatMap(f: a -> List[b], xs: List[a]): List[b] = match xs {
+    pub def flatMap(f: a -> List[b] & e, xs: List[a]): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => f(x) ::: flatMap(f, rs)
     }
@@ -423,14 +429,14 @@ namespace List {
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold(f: (b, a) -> b, s: b, xs: List[a]): b = foldLeft(f, s, xs)
+    pub def fold(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = foldLeft(f, s, xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b, s: b, xs: List[a]): b = match xs {
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: List[a]): b & e = match xs {
         case Nil => s
         case x :: rs => foldLeft(f, f(s, x), rs)
     }
@@ -440,7 +446,7 @@ namespace List {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b, s: b, xs: List[a]): b = match xs {
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: List[a]): b & e = match xs {
         case Nil => s
         case x :: rs => f(x, foldRight(f, s, rs))
     }
@@ -448,7 +454,7 @@ namespace List {
     ///
     /// Alias for `reduceLeft`.
     ///
-    pub def reduce(f: (a, a) -> a, xs: List[a]): Option[a] = reduceLeft(f, xs)
+    pub def reduce(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -457,7 +463,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def reduceLeft(f: (a, a) -> a, xs: List[a]): Option[a] = match xs {
+    pub def reduceLeft(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = match xs {
         case Nil => None
         case x :: rs => Some(foldLeft(f, x, rs))
     }
@@ -469,7 +475,7 @@ namespace List {
     ///
     /// Returns `None` if `xs` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a, xs: List[a]): Option[a] = match xs {
+    pub def reduceRight(f: (a, a) -> a & e, xs: List[a]): Option[a] & e = match xs {
         case Nil => None
         case x :: rs => match reduceRight(f, rs) {
             case None => Some(x)
@@ -484,6 +490,8 @@ namespace List {
 
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def count(f: a -> Bool, xs: List[a]): Int32 = match xs {
         case Nil => 0
@@ -505,6 +513,8 @@ namespace List {
     ///
     /// Returns `false` if `xs` is empty.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def exists(f: a -> Bool, xs: List[a]): Bool = match xs {
         case Nil => false
         case x :: rs => if (f(x)) true else exists(f, rs)
@@ -514,6 +524,8 @@ namespace List {
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
     ///
     /// Returns `true` if `xs` is empty.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def forall(f: a -> Bool, xs: List[a]): Bool = match xs {
         case Nil => true
@@ -527,6 +539,8 @@ namespace List {
 
     ///
     /// Returns a list of every element in `xs` that satisfies the predicate `f`.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def filter(f: a -> Bool, xs: List[a]): List[a] = match xs {
         case Nil => Nil
@@ -559,6 +573,8 @@ namespace List {
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def partition(f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs {
         case Nil => (Nil, Nil)
         case x :: rs =>
@@ -572,13 +588,16 @@ namespace List {
     /// `ys` is the longest prefix of `xs` that satisfies the predicate `f`.
     /// `zs` is the remainder of `xs`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def span(f: a -> Bool, xs: List[a]): (List[a], List[a]) = match xs {
         case Nil => (Nil, Nil)
-        case x :: rs => if (f(x))
-                            let (r1, r2) = span(f, rs);
-                                (x :: r1, r2)
-                        else
-                            (Nil, xs)
+        case x :: rs =>
+            if (f(x))
+                let (r1, r2) = span(f, rs);
+                (x :: r1, r2)
+            else
+                (Nil, xs)
     }
 
     ///
@@ -595,7 +614,9 @@ namespace List {
 
     ///
     /// Returns `xs` without the longest prefix that satisfies the predicate `f`.
-    //
+    ///
+    /// The function `f` must be pure.
+    ///
     pub def dropWhile(f: a -> Bool, xs: List[a]): List[a] = match xs {
         case Nil => Nil
         case x :: rs => if (f(x)) dropWhile(f, rs) else xs
@@ -615,7 +636,9 @@ namespace List {
 
     ///
     /// Returns the longest prefix of `xs` that satisfies the predicate `f`.
-    //
+    ///
+    /// The function `f` must be pure.
+    ///
     pub def takeWhile(f: a -> Bool, xs: List[a]): List[a] = match xs {
         case Nil => Nil
         case x :: rs => if (f(x)) x :: takeWhile(f, rs) else Nil
@@ -631,6 +654,8 @@ namespace List {
     ///
     /// A sublist is created by iterating through the remaining elements of `xs` from left to right and adding an
     /// element to the sublist if and only if doing so creates no conflicts with the elements already in the sublist.
+    ///
+    /// The function `f` must be pure.
     ///
     pub def groupBy(f: (a, a) -> Bool, xs: List[a]): List[List[a]] = match xs {
         case Nil => Nil
@@ -677,7 +702,7 @@ namespace List {
     ///
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     ///
-    pub def zipWith(f: (a, b) -> c, xs: List[a], ys: List[b]): List[c] = match (xs, ys) {
+    pub def zipWith(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = match (xs, ys) {
         case (x :: rs, y :: qs) => f(x, y) :: zipWith(f, rs, qs)
         case _ => Nil
     }
@@ -686,7 +711,7 @@ namespace List {
     /// Returns a pair of lists, the first containing all first components in `xs`
     /// and the second containing all second components in `xs`.
     ///
-    pub def unzip(xs: List[(a,b)]): (List[a], List[b]) = match xs {
+    pub def unzip(xs: List[(a, b)]): (List[a], List[b]) = match xs {
         case Nil => (Nil, Nil)
         case (x1, x2) :: rs =>
             let (r1, r2) = unzip(rs);
@@ -705,12 +730,12 @@ namespace List {
     /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
     /// Functionally equivalent to zipWith.
     ///
-    pub def map2(f: (a, b) -> c, xs: List[a], ys: List[b]): List[c] = zipWith(f, xs, ys)
+    pub def map2(f: (a, b) -> c & e, xs: List[a], ys: List[b]): List[c] & e = zipWith(f, xs, ys)
 
     ///
     /// Concatenates the results of applying `f` pairwise to the elements of `xs` and `ys`.
     ///
-    pub def flatMap2(f: (a, b) -> List[c], xs: List[a], ys: List[b]): List[c] = match (xs, ys) {
+    pub def flatMap2(f: (a, b) -> List[c] & e, xs: List[a], ys: List[b]): List[c] & e = match (xs, ys) {
         case (x :: rs, y :: qs) => f(x, y) ::: flatMap2(f, rs, qs)
         case _ => Nil
     }
@@ -718,13 +743,13 @@ namespace List {
     ///
     /// Alias for `foldLeft2`.
     ///
-    pub def fold2(f: (c, a, b) -> c, c: c, xs: List[a], ys: List[b]): c = foldLeft2(f, c, xs, ys)
+    pub def fold2(f: (c, a, b) -> c & e, c: c, xs: List[a], ys: List[b]): c & e = foldLeft2(f, c, xs, ys)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `xs` and `ys`
     /// starting with the initial value `c` and going from left to right.
     ///
-    pub def foldLeft2(f: (c, a, b) -> c, c: c, xs: List[a], ys: List[b]): c = match (xs, ys) {
+    pub def foldLeft2(f: (c, a, b) -> c & e, c: c, xs: List[a], ys: List[b]): c & e = match (xs, ys) {
         case (x :: rs, y :: qs) => foldLeft2(f, f(c, x, y), rs, qs)
         case _ => c
     }
@@ -733,7 +758,7 @@ namespace List {
     /// Accumulates the result of applying `f` pairwise to the elements of `xs` and `ys`
     /// starting with the initial value `c` and going from right to left.
     ///
-    pub def foldRight2(f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c =
+    pub def foldRight2(f: (a, b, c) -> c & e, c: c, xs: List[a], ys: List[b]): c & e =
         let len1 = length(xs);
         let len2 = length(ys);
             foldRight2Helper(f, c, drop(len1-len2, xs), drop(len2-len1, ys))
@@ -741,7 +766,7 @@ namespace List {
     ///
     /// Helper function for `foldRight2`.
     ///
-    def foldRight2Helper(f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c = match (xs, ys) {
+    def foldRight2Helper(f: (a, b, c) -> c & e, c: c, xs: List[a], ys: List[b]): c & e = match (xs, ys) {
         case (x :: rs, y :: qs) => f(x, y, foldRight2(f, c, rs, qs))
         case _ => c
     }
@@ -754,7 +779,7 @@ namespace List {
     ///
     /// Collects the results of applying the partial function `f` to every element in `xs`.
     ///
-    pub def filterMap(f: a -> Option[b], xs: List[a]): List[b] = match xs {
+    pub def filterMap(f: a -> Option[b] & e, xs: List[a]): List[b] & e = match xs {
         case Nil => Nil
         case x :: rs => match f(x) {
                             case None => filterMap(f, rs)
@@ -767,7 +792,7 @@ namespace List {
     ///
     /// Returns `None` if every element of `xs` is `None`.
     ///
-    pub def findMap(f: a -> Option[b], xs: List[a]): Option[b] = match xs {
+    pub def findMap(f: a -> Option[b] & e, xs: List[a]): Option[b] & e = match xs {
         case Nil => None
         case x :: rs => match f(x) {
                             case None => findMap(f, rs)
@@ -797,9 +822,15 @@ namespace List {
     ///
     pub def toMap(xs: List[(a, b)]): Map[a, b] = foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), xs)
 
-
-
-
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~> Unit, xs: List[a]): Unit & Impure = match xs {
+        case Nil => ()
+        case x :: rs => f(x); foreach(f, rs)
+    }
 
 
     ///

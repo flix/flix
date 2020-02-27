@@ -41,7 +41,10 @@ namespace NonEmptyList {
     ///
     /// Returns all elements in `xs` without the last element.
     ///
-    // TODO: init.
+    pub def init(xs: Nel[a]): List[a] = match xs {
+        case Nel(_, Nil) => Nil
+        case Nel(h, l)   => ??? // TODO
+    }
 
     ///
     /// Returns all elements in `xs` without the first element.

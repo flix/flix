@@ -36,36 +36,45 @@ object PrettyPrinter {
         }
         vt << ") = "
         vt << Indent << NewLine
-        fmtExp(defn, vt)
+        fmtDef(defn, vt)
         vt << Dedent << NewLine << NewLine
       }
       vt
     }
 
-    def fmtExp(defn: SimplifiedAst.Def, vt: VirtualTerminal): Unit = {
+    def fmtDef(defn: SimplifiedAst.Def, vt: VirtualTerminal): Unit = {
       fmtExp(defn.exp, vt)
     }
 
     def fmtExp(exp0: Expression, vt: VirtualTerminal): Unit = {
       def visitExp(e0: Expression): Unit = e0 match {
         case Expression.Unit => vt.text("Unit")
+
         case Expression.True => vt.text("true")
+
         case Expression.False => vt.text("false")
+
         case Expression.Char(lit) => vt.text("'").text(lit.toString).text("'")
+
         case Expression.Float32(lit) => vt.text(lit.toString).text("f32")
+
         case Expression.Float64(lit) => vt.text(lit.toString).text("f32")
+
         case Expression.Int8(lit) => vt.text(lit.toString).text("i8")
+
         case Expression.Int16(lit) => vt.text(lit.toString).text("i16")
+
         case Expression.Int32(lit) => vt.text(lit.toString).text("i32")
+
         case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
+
         case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
+
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
 
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
-
-        case Expression.Eff(sym, tpe, loc) => fmtSym(sym, vt)
 
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
@@ -125,15 +134,6 @@ object PrettyPrinter {
           vt.text(")")
           vt.text(")")
 
-        case Expression.ApplyEff(sym, args, tpe, loc) =>
-          fmtSym(sym, vt)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
         case Expression.ApplyCloTail(exp, args, tpe, loc) =>
           visitExp(exp)
           vt.text("*(")
@@ -144,15 +144,6 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-          fmtSym(sym, vt)
-          vt.text("*(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
-        case Expression.ApplyEffTail(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("*(")
           for (arg <- args) {
@@ -341,19 +332,6 @@ object PrettyPrinter {
           vt.text(" := ")
           visitExp(exp2)
 
-        case Expression.HandleWith(exp, bindings, tpe, loc) =>
-          vt << "do" << Indent << NewLine
-          visitExp(exp)
-          vt.text("with {")
-          for (HandlerBinding(sym, handler) <- bindings) {
-            vt << "eff "
-            fmtSym(sym, vt)
-            vt << " = "
-            visitExp(handler)
-          }
-          vt.text("}")
-          vt << Dedent << NewLine
-
         case Expression.Existential(fparam, exp, loc) =>
           vt.text("∃(")
           fmtParam(fparam, vt)
@@ -365,6 +343,11 @@ object PrettyPrinter {
           fmtParam(fparam, vt)
           vt.text("). ")
           visitExp(exp)
+
+        case Expression.Cast(exp, tpe, loc) =>
+          visitExp(exp)
+          vt.text(" as ")
+          vt.text(tpe.toString)
 
         case Expression.TryCatch(exp, rules, tpe, loc) =>
           vt << "try {" << Indent << NewLine
@@ -379,7 +362,7 @@ object PrettyPrinter {
           }
           vt << Dedent << NewLine << "}" << NewLine
 
-        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
           vt.text(constructor.toString)
           vt.text("(")
           for (e <- args) {
@@ -388,9 +371,9 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NativeField(field, tpe, loc) => vt << field.toString
-
-        case Expression.NativeMethod(method, args, tpe, loc) =>
+        case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text(".")
           vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
           vt.text("(")
           for (e <- args) {
@@ -398,6 +381,39 @@ object PrettyPrinter {
             vt.text(", ")
           }
           vt.text(")")
+
+        case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
+          vt.text("(")
+          for (e <- args) {
+            visitExp(e)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.GetField(field, exp, tpe, loc) =>
+          vt.text("get field ")
+          vt.text(field.getName)
+          vt.text(" of ")
+          visitExp(exp)
+
+        case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+          vt.text("put field ")
+          vt.text(field.getName)
+          vt.text(" of ")
+          visitExp(exp1)
+          vt.text(" value ")
+          visitExp(exp2)
+
+        case Expression.GetStaticField(field, tpe, loc) =>
+          vt.text("get static field ")
+          vt.text(field.getName)
+
+        case Expression.PutStaticField(field, exp, tpe, loc) =>
+          vt.text("put static field ")
+          vt.text(field.getName)
+          vt.text(" value ")
+          visitExp(exp)
 
         case Expression.NewChannel(exp, tpe, loc) =>
           vt.text("Channel")
@@ -437,15 +453,17 @@ object PrettyPrinter {
           vt.text("spawn ")
           visitExp(exp)
 
-        case Expression.ProcessSleep(exp, tpe, loc) =>
-          vt.text("sleep ")
-          visitExp(exp)
-
         case Expression.ProcessPanic(msg, tpe, loc) =>
           vt.text("!!! " + msg)
 
-        case Expression.FixpointConstraintSet(c, tpe, loc) =>
-          vt.text("<constraintset>")
+        case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+          vt.text("#{")
+          for (c <- cs) {
+            vt.text(" ")
+            fmtConstraint(c, vt)
+            vt.text(" ")
+          }
+          vt.text("}")
 
         case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
           visitExp(exp1)
@@ -479,10 +497,57 @@ object PrettyPrinter {
 
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
-        case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
       }
 
       visitExp(exp0)
+    }
+
+    def fmtConstraint(c0: Constraint, vt: VirtualTerminal): Unit = {
+      if (c0.body.isEmpty) {
+        fmtHeadAtom(c0.head, vt)
+      } else {
+        fmtHeadAtom(c0.head, vt)
+        vt.text(" :- ")
+        for (b <- c0.body) {
+          fmtBodyAtom(b, vt)
+        }
+      }
+      vt.text(".")
+    }
+
+    def fmtHeadAtom(p0: Predicate.Head, vt: VirtualTerminal): Unit = p0 match {
+      case Predicate.Head.Atom(sym, _, terms, _, _) =>
+        vt.text(sym.toString)
+        vt.text("(")
+        for (term <- terms) {
+          fmtHeadTerm(term, vt)
+          vt.text(", ")
+        }
+        vt.text(")")
+
+      case Predicate.Head.Union(exp, _, _) =>
+        vt.text("union")
+        vt.text(" ")
+        fmtExp(exp, vt)
+
+    }
+
+    def fmtBodyAtom(p0: Predicate.Body, vt: VirtualTerminal): Unit = {
+      vt.text("<body>")
+    }
+
+    def fmtHeadTerm(t0: Term.Head, vt: VirtualTerminal): Unit = t0 match {
+      case Term.Head.QuantVar(sym, _, _) =>
+        fmtSym(sym, vt)
+
+      case Term.Head.CapturedVar(sym, _, _) =>
+        fmtSym(sym, vt)
+
+      case Term.Head.Lit(lit, _, _) =>
+        fmtExp(lit, vt)
+
+      case Term.Head.App(exp, args, _, _) =>
+        vt.text("app")
     }
 
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
@@ -497,10 +562,6 @@ object PrettyPrinter {
 
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
       vt << Blue(sym.toString)
-    }
-
-    def fmtSym(sym: Symbol.EffSym, vt: VirtualTerminal): Unit = {
-      vt << Yellow(sym.toString)
     }
 
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {

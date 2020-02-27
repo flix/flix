@@ -321,16 +321,16 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal native field or method name.
+    * An error raised to indicate an illegal jvm field or method name.
     *
     * @param loc the location of the name.
     */
-  case class IllegalNativeFieldOrMethodName(loc: SourceLocation) extends WeederError {
+  case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Illegal native field or method name." << NewLine
+      vt << ">> Illegal jvm field or method name." << NewLine
       vt << NewLine
       vt << Code(loc, "illegal name.") << NewLine
     }
