@@ -16,6 +16,8 @@ namespace Option {
         forall [a] (f: a -> Bool).
             Option.count(f, None) == 0
 
+    // TODO: Express that count returns a number between 0 and 1.
+
     @lint
     def countSome(): Bool =
         forall [a] (f: a -> Bool, x: a).
