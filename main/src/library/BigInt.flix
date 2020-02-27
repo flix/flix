@@ -108,50 +108,51 @@ namespace BigInt {
     @lint
     def leftAdditionByZero(): Bool =
         forall (x: BigInt).
-            0ii + x === x
+            (0ii + x) === x
 
     @lint
     def rightAdditionByZero(): Bool =
         forall (x: BigInt).
-            x + 0ii === x
+            (x + 0ii) === x
 
     @lint
     def subtractionByZero(): Bool =
         forall (x: BigInt).
-            x - 0ii === 0ii
+            (x - 0ii) === 0ii
 
     @lint
     def subtractionBySelf(): Bool =
         forall (x: BigInt).
-            x - x === 0ii
+            (x - x) === 0ii
 
     @lint
     def leftMultiplicationByZero(): Bool =
         forall (x: BigInt).
-            0ii * x === 0ii
+            (0ii * x) === 0ii
 
     @lint
     def rightMultiplicationByZero(): Bool =
         forall (x: BigInt).
-            x * 0ii === 0ii
+            (x * 0ii) === 0ii
 
     @lint
     def leftMultiplicationByOne(): Bool =
         forall (x: BigInt).
-            1ii * x === x
+            (1ii * x) === x
 
     @lint
     def rightMultiplicationByOne(): Bool =
         forall (x: BigInt).
-            x * 1ii === x
+            (x * 1ii) === x
 
     @lint
     def divisionByOne(): Bool =
         forall (x: BigInt).
-            x / 1ii === x
+            (x / 1ii) === x
 
     @lint
     def divisionBySelf(): Bool =
-        forall (x: BigInt). x / x === 1ii
+        forall (x: BigInt).
+            (x / x) === 1ii
 
 }

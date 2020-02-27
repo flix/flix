@@ -1,7 +1,7 @@
 ///
 /// Asserts that the expression `x` is contextually equivalent to the expression `y`.
 ///
-def ===(x: a, y: b): Bool = ???
+def ===(x: a, y: a): Bool = ???
 
 ///
 /// Option Lints.
@@ -614,10 +614,10 @@ namespace Vec {
         forall [a] (v: mut Vec[a], x: a).
             Vec.insert(v, x, Vec.length(v)) == Vec.push(v, x)
 
-    @lint
-    def removeAtLength(): Bool =
-        forall [a] (v: mut Vec[a]).
-            Vec.remove(v, Vec.length(v)) === Vec.pop(v)
+//    @lint
+//    def removeAtLength(): Bool =
+//        forall [a] (v: mut Vec[a]).
+//            Vec.remove(v, Vec.length(v)) === Vec.pop(v)
 
     @lint
     def appendLeftEmpty(): Bool =
@@ -659,9 +659,6 @@ pub def followedBy(x: a, y: b): b = ???
 
 // TODO: How to define this extra linguistic predicate?
 pub def uselessLeft(x: a, y: b): b = ???
-
-// TODO: How to define this extra linguistic predicate?
-pub def uselessRight(x: a, y: b): b = ???
 
 // TODO: How to define this extra linguistic predicate?
 pub def implies(x: Bool, y: Bool): Bool = ???
