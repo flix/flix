@@ -77,69 +77,6 @@ namespace Option {
         forall [a, b] (f: (a, b) -> b, x: b).
             Option.foldRight(f, x, None) == x
 
-    @lint
-    def forallNone(): Bool =
-        forall [a] (f: a -> Bool).
-            Option.forall(f, None) == true
-
-    @lint
-    def getWithDefaultNone(): Bool =
-        forall [a] (x: a).
-            Option.getWithDefault(None, x) == x
-
-    @lint
-    def isEmptyNone(): Bool =
-        Option.isEmpty(None) == true
-
-    @lint
-    def isEmptySome(): Bool =
-        forall [a] (x: a).
-            Option.isEmpty(Some(x)) == false
-
-    @lint
-    def mapNone(): Bool =
-        forall [a, b] (f: a -> b).
-            Option.map(f, None) == None
-
-    @lint
-    def map2None1(): Bool =
-        forall [a, b] (f: (a, b) -> c, x: Option[a]).
-            Option.map2(f, x, None) == None
-
-    @lint
-    def map2None2(): Bool =
-        forall [a, b] (f: (a, b) -> c, y: Option[a]).
-            Option.map2(f, None, y) == None
-
-    @lint
-    def replaceNone(): Bool =
-        forall [a] (x: a, y: a).
-            Option.replace(x, y, None) == None
-
-    @lint
-    def unzipNone(): Bool =
-        Option.unzip(None) == (None, None)
-
-    @lint
-    def withDefaultNone1(): Bool =
-        forall [a] (x: Option[a]).
-            Option.withDefault(x, None) == x
-
-    @lint
-    def withDefaultNone2(): Bool =
-        forall [a] (y: Option[a]).
-            Option.withDefault(None, y) == y
-
-    @lint
-    def zipNone1(): Bool =
-        forall [a] (x: a).
-            Option.zip(x, None) == None
-
-    @lint
-    def zipNone2(): Bool =
-        forall [a] (y: a).
-            Option.zip(None, y) == None
-
     @lint // TODO: side-effects
     def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
