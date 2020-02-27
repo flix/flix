@@ -293,16 +293,6 @@ namespace List {
         List.isEmpty(xs) `implies` (List.exists(f, xs) == false)        // TODO: Use eq or not?
 
     @lint
-    def filterAlwaysTrue(): Bool =
-      forall [a] (xs: List[a]).
-        List.filter(_ -> true, xs) == xs
-
-    @lint
-    def filterAlwaysFalse(): Bool =
-      forall [a] (xs: List[a]).
-        List.filter(_ -> false, xs) == Nil
-
-    @lint
     def memberOfIsEmpty(): Bool =
       forall [a] (x: a, xs: List[a]).
         List.memberOf(x, xs) `implies` (List.isEmpty(xs) == false)      // TODO: Use eq or not?
