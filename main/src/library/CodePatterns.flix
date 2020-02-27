@@ -907,3 +907,5 @@ pub def implies(x: Bool, y: Bool): Bool = ???
 /// x == x or x != x                    // Problem: x is a variable, not a constant.
 /// (x + 1) / (x + 1)                   // Problem: x is a variable, not a constant.
 /// a[x] = 1; a[x] = 1                  // Problem: x is a variable and the array should not be accessed in between. Maybe too hard?
+
+// TODO MultipMap, MultiSet, EqualityRelation?
