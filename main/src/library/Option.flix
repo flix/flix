@@ -263,4 +263,19 @@ namespace Option {
         forall [a] (f: a -> Bool & e, o: Option[a]).
             Option.flatMap(x -> if (f(x)) Some(x) else None, o) === Option.filter(f, o)
 
+    @lint
+    def useSequence(): Bool =
+        forall [a] (xs: List[Option[a]]).
+            Option.traverse(x -> x, xs) === Option.sequence(xs)
+
+    @lint
+    def useTraverse(): Bool =
+        forall [a, b] (f : a -> Option[b], xs: List[Option[a]]).
+            Option.sequence(List.map(f, xs)) == Option.traverse(f, xs)
+
+    @lint
+    def useZip(): Bool =
+        forall [a, b] (o1: Option[a], o2: Option[b]).
+            Option.flatMap(x -> Option.map(y -> (x, y), o2), o1) === Option.zip(o1, o2)
+
 }
