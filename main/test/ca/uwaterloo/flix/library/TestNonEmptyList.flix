@@ -150,5 +150,18 @@ namespace NonEmptyList {
     @test
     def findRight06(): Bool = findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map01(): Bool = map(x -> x + 1, Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def map02(): Bool = map(x -> x + 1, Nel(1, 2 :: Nil)) == Nel(2, 3 :: Nil)
+
+    @test
+    def map03(): Bool = map(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
+
 }
 
