@@ -84,5 +84,27 @@ namespace NonEmptyList {
     @test
     def append05(): Bool = Nel(1, 2 :: 3 :: Nil) `append` Nel(4, 5 :: 6 :: Nil) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool = memberOf(0, Nel(1, Nil)) == false
+
+    @test
+    def memberOf02(): Bool = memberOf(0, Nel(1, 2 :: Nil)) == false
+
+    @test
+    def memberOf03(): Bool = memberOf(0, Nel(1, 2 :: 3 :: Nil)) == false
+
+    @test
+    def memberOf04(): Bool = memberOf(1, Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def memberOf05(): Bool = memberOf(2, Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def memberOf06(): Bool = memberOf(3, Nel(1, 2 :: 3 :: Nil))
+
 }
 

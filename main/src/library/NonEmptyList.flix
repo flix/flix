@@ -43,7 +43,12 @@ namespace NonEmptyList {
     ///
     pub def init(xs: Nel[a]): List[a] = match xs {
         case Nel(_, Nil) => Nil
-        case Nel(h, l)   => ??? // TODO
+        case Nel(h, l)   => initHelper(h, l)
+    }
+
+    def initHelper(h: a, xs: List[a]): List[a] = match xs {
+        case Nil     => h :: Nil
+        case y :: ys => h :: initHelper(y, ys)
     }
 
     ///
@@ -73,8 +78,6 @@ namespace NonEmptyList {
     pub def memberOf(a: a, xs: Nel[a]): Bool = match xs {
         case Nel(h, l) => h == a || List.memberOf(a, l)
     }
-
-    // TODO: indexOf
 
     ///
     /// Alias for `findLeft`.
