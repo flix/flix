@@ -251,12 +251,12 @@ namespace Option {
     @lint
     def filterFilter1(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            Option.filter(g, Option.filter(f, o)) == Option.filter(f >> g, o)
+            Option.filter(g, Option.filter(f, o)) === Option.filter(f >> g, o)
 
     @lint
     def filterFilter2(): Bool =
         forall [a] (f: a ~> Bool, g: a -> Bool, o: Option[a]).
-            Option.filter(g, Option.filter(f, o)) == Option.filter(f >> g, o)
+            Option.filter(g, Option.filter(f, o)) === Option.filter(f >> g, o)
 
     @lint
     def filterFilter3(): Bool =
