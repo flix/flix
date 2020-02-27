@@ -109,14 +109,14 @@ namespace String {
 
     @lint
     def leftConcatenateEmptyString(): Bool =
-        forall (s: String). "" + s == s
+        forall (s: String). ("" + s) === s
 
     @lint
     def rightConcatenateEmptyString(): Bool =
-        forall (s: String). s + "" == s
+        forall (s: String). (s + "") === s
 
     @lint
     def trimTrim(): Bool =
-        forall (s: String). trim(trim(s)) == trim(s)
+        forall (s: String). trim(trim(s)) === trim(s)
 
 }

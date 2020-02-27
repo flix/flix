@@ -1,4 +1,9 @@
 ///
+/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
+///
+def ===(x: a, y: b): Bool = ???
+
+///
 /// Option Lints.
 ///
 namespace Option {
@@ -829,7 +834,7 @@ namespace Vec {
     @lint
     def removeAtLength(): Bool =
         forall [a] (v: mut Vec[a]).
-            Vec.remove(v, Vec.length(v)) `equiv` Vec.pop(v)
+            Vec.remove(v, Vec.length(v)) === Vec.pop(v)
 
     @lint
     def appendLeftEmpty(): Bool =
@@ -841,10 +846,10 @@ namespace Vec {
         forall [a] (v: mut Vec[a]).
             Vec.append(v, Vec.new()) == ??? // TODO: How to express that this is useless, when append does not return?
 
-    @lint
-    def newFollowedByReserve(): Bool =
-        forall (n: Int32).
-            Vec.reserve(Vec.new(), n) `equiv` Vec.newWithCapacity(n)
+//    @lint
+//    def newFollowedByReserve(): Bool =
+//        forall (n: Int32).
+//            Vec.reserve(Vec.new(), n) == Vec.newWithCapacity(n)
 
     // TODO: removeAll?
     //    @lint
@@ -876,21 +881,15 @@ pub def uselessLeft(x: a, y: b): b = ???
 pub def uselessRight(x: a, y: b): b = ???
 
 // TODO: How to define this extra linguistic predicate?
-pub def equiv(x: a, y: b): Bool = ???
-
-// TODO: How to define this extra linguistic predicate?
 pub def implies(x: Bool, y: Bool): Bool = ???
 
     // TODO: Changing an if to an expression change semantics to be eager.
 
 
+
 // TODO: min, max?
 
 // TODO: List.flatMap(...).toSet -> replace by fold.
-
-///
-/// TODO: Open tasks
-///
 
 // TODO: How should we attach some documentation?
 // TODO: What should the naming convention be?
