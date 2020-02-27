@@ -244,4 +244,23 @@ namespace Option {
         case _ => false
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useExists(): Bool =
+        forall [a] (f: a -> Bool, o: Option[a]).
+            Option.getWithDefault(Option.map(f, o), false) === Option.exists(f, o)
+
+    @lint
+    def useForall(): Bool =
+        forall [a] (f: a -> Bool, o: Option[a]).
+            Option.getWithDefault(Option.map(f, o), true) === Option.forall(f, o)
+
+    @lint
+    def useFilter(): Bool =
+        forall [a] (f: a -> Bool & e, o: Option[a]).
+            Option.flatMap(x -> if (f(x)) Some(x) else None, o) === Option.filter(f, o)
+
 }

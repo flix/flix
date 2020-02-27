@@ -57,25 +57,6 @@ namespace Option {
     ///
     /// Use Cases.
     ///
-    @lint
-    def useExists(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            Option.getWithDefault(Option.map(f, o), false) == Option.exists(f, o)
-
-    @lint
-    def useForall(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            Option.getWithDefault(Option.map(f, o), true) == Option.forall(f, o)
-
-    @lint
-    def useFilter(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            Option.flatMap(x -> if (f(x)) Some(x) else None, o) == Option.filter(f, o)
-
-    @lint
-    def useWithDefault(): Bool =
-        forall [a] (o1: Option[a], o2: Option[a]).
-            (if (Option.isEmpty(o1)) o2 else o1) == Option.withDefault(o1, o2)
 
     @lint
     def useReplace1(): Bool =
@@ -91,15 +72,6 @@ namespace Option {
     def useReplace3(): Bool =
         forall [a] (x: a, y: a, o: Option[a]).
             Option.map(z -> if (z == x) x else y, o) == Option.replace(x, y, o)
-
-    // TODO: Can we allow something like the below? How would we check it efficiently?
-    @lint
-    def useReplace4(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            (match o {
-                case None => o
-                case Some(z) => if (x == z) Some(y) else Some(z)
-            }) == Option.replace(x, y, o)
 
     @lint
     def useZip(): Bool =
