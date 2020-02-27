@@ -562,7 +562,6 @@ namespace Map {
     ///
 
 
-
     // TODO: size etc.
     // TODOL Union and fold.
 
@@ -573,17 +572,6 @@ namespace Map {
     // TODO:        Map.filterWithKey((_, v) -> ???) -> Map.filter(???)
 
 }
-
-
-///
-/// Arithmetic Patterns.
-///
-
-namespace Int64 {
-    // TODO: BigInt
-
-}
-
 
 
 ///
