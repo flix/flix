@@ -24,58 +24,19 @@ namespace Option {
             Option.count(f, Some(x)) == if (f(x)) 1 else 0
 
     @lint
-    def existsNone(): Bool =
-        forall [a] (f: a -> Bool).
-            Option.exists(f, None) == false
-
-    @lint
     def existsSome(): Bool =
-        forall [a] (f: a -> Bool, x: a).
+        forall [a] (f: a -> Bool & e, x: a).
             Option.exists(f, Some(x)) == f(x)
 
     @lint
-    def filterNone(): Bool =
-        forall [a] (f: a -> Bool).
-            Option.filter(f, None) == None
-
-    @lint
-    def findNone(): Bool =
-        forall [a] (f: a -> Bool).
-            Option.find(f, None) == None
-
-    @lint
-    def flatMapNone(): Bool =
-        forall [a, b] (f: a -> Option[b]).
-            Option.flatMap(f, None) == None
-
-    @lint
-    def flatMap2None1(): Bool =
-        forall [a, b, c] (f: (a, b) -> Option[c], x: Option[b]).
-            Option.flatMap2(f, x, None) == None
-
-    @lint
-    def flatMap2None2(): Bool =
-        forall [a, b, c] (f: (a, b) -> Option[c], y: Option[b]).
-            Option.flatMap2(f, None, y) == None
-
-    @lint
-    def flattenNone(): Bool =
-        Option.flatten(None) == None
+    def withDefaultNone2(): Bool =
+        forall [a] (y: Option[a]).
+            Option.withDefault(None, y) == y
 
     @lint
     def flattenSome(): Bool =
         forall [a] (o: Option[a]).
             Option.flatten(Some(o)) == o
-
-    @lint
-    def foldLeftNone(): Bool =
-        forall [a, b] (f: (b, a) -> b, x: b).
-            Option.foldLeft(f, x, None) == x
-
-    @lint
-    def foldRightNone(): Bool =
-        forall [a, b] (f: (a, b) -> b, x: b).
-            Option.foldRight(f, x, None) == x
 
     @lint // TODO: side-effects
     def filterFilter(): Bool =
