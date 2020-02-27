@@ -39,11 +39,6 @@ namespace Option {
             Option.flatten(Some(o)) == o
 
     @lint // TODO: side-effects
-    def filterFilter(): Bool =
-        forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            Option.filter(g, Option.filter(f, o)) == Option.filter(f >> g, o)
-
-    @lint // TODO: side-effects
     def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
             Option.find(g, Option.find(f, o)) == Option.find(f >> g, o)
@@ -384,21 +379,6 @@ namespace Map {
     ///
     /// Use Cases.
     ///
-
-    @lint
-    def useGetWithDefault(): Bool =
-        forall [k, v] (k: k, d: v, m: Map[k, v]).
-            Option.getWithDefault(Map.get(k, m), d) == Map.getWithDefault(k, d, m)
-
-    @lint
-    def useIsSubmapOf(): Bool =
-        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
-            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) == Map.isSubmapOf(m1, m2)
-
-    @lint
-    def useSingleton(): Bool =
-        forall [k, v] (k: k, v: v).
-            Map.insert(k, v, Map.empty()) == Map.singleton(k, v)
 
     @lint
     def useValuesOf(): Bool =

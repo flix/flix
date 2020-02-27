@@ -504,11 +504,29 @@ namespace Map {
         case Map(xs) => List.foreach(p -> f(fst(p), snd(p)), xs)
     }
 
-
-
-
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
     pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) == size(m2)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useGetWithDefault(): Bool =
+        forall [k, v] (k: k, d: v, m: Map[k, v]).
+            Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
+
+    @lint
+    def useSingleton(): Bool =
+        forall [k, v] (k: k, v: v).
+            Map.insert(k, v, Map.empty()) === Map.singleton(k, v)
+
+    @lint
+    def useIsSubmapOf(): Bool =
+        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
+            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
+
+
 }
