@@ -1,4 +1,7 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.stmt;
+
+import flix.runtime.fixpoint.ram.RelationExp;
+import flix.runtime.fixpoint.ram.TableName;
 
 import java.io.PrintStream;
 
@@ -14,6 +17,6 @@ public class AssignStmt implements Stmt {
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
         stream.print("\t".repeat(indentLevel) + name.toString() + " := ");
-        relationExp.prettyPrint(stream, indentLevel);
+        relationExp.prettyPrint(stream);
     }
 }

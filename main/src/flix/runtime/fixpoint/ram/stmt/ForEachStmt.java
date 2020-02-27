@@ -1,4 +1,7 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.stmt;
+
+import flix.runtime.fixpoint.ram.LocalVariable;
+import flix.runtime.fixpoint.ram.TableName;
 
 import java.io.PrintStream;
 

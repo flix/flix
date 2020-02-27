@@ -2,7 +2,9 @@ package flix.runtime.fixpoint.ram;
 
 import flix.runtime.fixpoint.symbol.PredSym;
 
-public class TableName {
+import java.io.PrintStream;
+
+public class TableName implements RelationExp{
     private TableClassifier classifier;
     private PredSym name;
 
@@ -30,5 +32,10 @@ public class TableName {
             result += name.getName();
         }
         return result;
+    }
+
+    @Override
+    public void prettyPrint(PrintStream stream) {
+        stream.print(this);
     }
 }
