@@ -236,7 +236,6 @@ namespace NonEmptyList {
 
     // TODO: Slice
 
-
     // TODO: partition
 
     // TODO: span
@@ -294,7 +293,6 @@ namespace NonEmptyList {
     ///
     pub def map2(f: (a, b) -> c, xs: Nel[a], ys: Nel[b]): Nel[c] = zipWith(f, xs, ys)
 
-
     // TODO: flatMap2
 
     // TODO: fold2
@@ -312,8 +310,6 @@ namespace NonEmptyList {
     // TODO: toSet
 
     // TODO: toMap
-
-    // TOOD: __eq__
 
 }
 

@@ -106,5 +106,49 @@ namespace NonEmptyList {
     @test
     def memberOf06(): Bool = memberOf(3, Nel(1, 2 :: 3 :: Nil))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findLeft01(): Bool = findLeft(x -> x == 0, Nel(1, Nil)) == None
+
+    @test
+    def findLeft02(): Bool = findLeft(x -> x == 0, Nel(1, 2 :: Nil)) == None
+
+    @test
+    def findLeft03(): Bool = findLeft(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
+
+    @test
+    def findLeft04(): Bool = findLeft(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
+
+    @test
+    def findLeft05(): Bool = findLeft(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
+
+    @test
+    def findLeft06(): Bool = findLeft(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findRight01(): Bool = findRight(x -> x == 0, Nel(1, Nil)) == None
+
+    @test
+    def findRight02(): Bool = findRight(x -> x == 0, Nel(1, 2 :: Nil)) == None
+
+    @test
+    def findRight03(): Bool = findRight(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
+
+    @test
+    def findRight04(): Bool = findRight(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
+
+    @test
+    def findRight05(): Bool = findRight(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
+
+    @test
+    def findRight06(): Bool = findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
 }
 
