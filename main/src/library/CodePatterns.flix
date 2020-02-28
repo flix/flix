@@ -359,7 +359,7 @@ namespace Vec {
     @lint
     def clearPop(): Bool =
         forall [a] (v: mut Vec[a]).
-            Vec.clear(v) `followedBy` Vec.pop(v) == None
+            Vec.clear(v) `impliesWith` (Vec.pop(v) === None)
 
     @lint
     def newPop(): Bool =
@@ -431,14 +431,15 @@ namespace Vec {
 
 }
 
-// TODO: How to define this extra linguistic predicate?
-pub def followedBy(x: a, y: b): b = ???
 
 // TODO: How to define this extra linguistic predicate?
 pub def uselessLeft(x: a, y: b): b = ???
 
 // TODO: How to define this extra linguistic predicate?
 pub def implies(x: Bool, y: Bool): Bool = ???
+
+// TODO: How to define this extra linguistic predicate?
+pub def impliesWith(x: a, y: b): Bool = ??? // TODO: Add argument
 
     // TODO: Changing an if to an expression change semantics to be eager.
 
