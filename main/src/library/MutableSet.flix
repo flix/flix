@@ -15,9 +15,7 @@
  */
 
 ///
-/// The Set type.
-///
-/// A set is currently represented internally as a list.
+/// The Mutable Set type.
 ///
 enum MutableSet[t] {
     case MutableSet(Ref[Set[t]])
