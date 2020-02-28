@@ -60,8 +60,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val tparams = Nil
           val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val fparams = List(fparam)
-          val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Type.freshTypeVar()
+          val sc = Scheme(Nil, Type.freshTypeVarXXXDeprecated())
+          val eff = Type.freshTypeVarXXXDeprecated()
           val loc = SourceLocation.Unknown
           val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
           sym -> defn
@@ -403,16 +403,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
                   val freshVar = Symbol.freshVarSym("x")
 
                   // Construct the formal parameter for the fresh symbol.
-                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVarXXXDeprecated(), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
-                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), evar, loc)
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVarXXXDeprecated(), evar, loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVarXXXDeprecated(), loc)
                 }
             }
           case Some(exp) =>

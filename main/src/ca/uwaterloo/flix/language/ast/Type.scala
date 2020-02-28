@@ -322,15 +322,26 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Returns a fresh type variable of kind `Star`.
+    */
+  def freshTypeVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Star)
+
+  /**
+    * Returns a fresh type variable of the given kind `k`.
+    */
+  def freshTypeVarWithKind(k: Kind)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
+
+  /**
+    * Returns a fresh type variable of kind `Effect`.
+    */
+  def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
+
   /**
     * Returns a fresh type variable.
     */
-  def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
-
-  /**
-    * Returns a fresh type variable of effect kind.
-    */
-  def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
+  def freshTypeVarXXXDeprecated(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
 
   /**
     * Constructs an arrow with the given effect type A ->eff B.

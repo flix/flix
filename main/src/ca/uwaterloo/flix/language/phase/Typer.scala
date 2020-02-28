@@ -371,8 +371,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Apply(exp1, exp2, tvar, evar, loc) =>
-        val lambdaBodyType = Type.freshTypeVar()
-        val lambdaBodyEff = Type.freshTypeVar()
+        val lambdaBodyType = Type.freshTypeVarXXXDeprecated()
+        val lambdaBodyEff = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
@@ -564,7 +564,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
-          case param => param.tpe -> Type.freshTypeVar()
+          case param => param.tpe -> Type.freshTypeVarXXXDeprecated()
         }.toMap)
 
         // Retrieve the enum type.
@@ -607,7 +607,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // -------------------------
         // r.label : tpe
         //
-        val freshRowVar = Type.freshTypeVar()
+        val freshRowVar = Type.freshTypeVarXXXDeprecated()
         val expectedType = Type.RecordExtend(label, tvar, freshRowVar)
         for {
           (tpe, eff) <- visitExp(exp)
@@ -633,8 +633,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // ----------------------
         // { -label | r } : { r }
         //
-        val freshFieldType = Type.freshTypeVar()
-        val freshRowVar = Type.freshTypeVar()
+        val freshFieldType = Type.freshTypeVarXXXDeprecated()
+        val freshRowVar = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, Type.RecordExtend(label, freshFieldType, freshRowVar), loc)
@@ -650,7 +650,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         if (elms.isEmpty) {
           for {
-            resultType <- unifyTypM(tvar, mkArray(Type.freshTypeVar()), loc)
+            resultType <- unifyTypM(tvar, mkArray(Type.freshTypeVarXXXDeprecated()), loc)
             resultEff <- unifyEffM(evar, Type.Impure, loc)
           } yield (resultType, evar)
         } else {
@@ -696,7 +696,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  --------------------
         //  exp.length : Int @ e
         //
-        val elementType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe, eff) <- visitExp(exp)
           arrayType <- unifyTypM(tpe, mkArray(elementType), loc)
@@ -726,7 +726,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -----------------------------------------------------
         //  exp1[exp2..exp3] : Array[t] @ Impure
         //
-        val elementType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
@@ -745,7 +745,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         if (elms.isEmpty) {
           for {
-            resultType <- unifyTypM(tvar, mkVector(Type.freshTypeVar(), Type.Succ(0, Type.Zero)), loc)
+            resultType <- unifyTypM(tvar, mkVector(Type.freshTypeVarXXXDeprecated(), Type.Succ(0, Type.Zero)), loc)
           } yield (resultType, evar)
         } else {
           for {
@@ -774,8 +774,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ------------------------------------------------------------------------------
         //  exp[|index|] : t
         //
-        val elementType = Type.freshTypeVar()
-        val indexOffsetType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
+        val indexOffsetType = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe, _) <- visitExp(exp)
           vectorType <- unifyTypM(tpe, mkVector(elementType, Type.Succ(index, indexOffsetType)), loc)
@@ -789,8 +789,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -------------------------------------------------------------------------------------------
         //  exp1[|index|] = exp2 : Unit
         //
-        val elementType = Type.freshTypeVar()
-        val indexOffsetType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
+        val indexOffsetType = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe1, _) <- visitExp(exp1)
           (tpe2, _) <- visitExp(exp2)
@@ -806,8 +806,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // ------------------------------------------------------------------------------
         // exp[|index|] : Int
         //
-        val elementType = Type.freshTypeVar()
-        val indexOffsetType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
+        val indexOffsetType = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe, eff) <- visitExp(exp)
           vectorType <- unifyTypM(tpe, mkVector(elementType, Type.Succ(0, indexOffsetType)), loc)
@@ -830,9 +830,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  --------------------------------------------------------------------------------------
         //  base[startIndex..endIndexOpt] : Vector[t, len1]
         //
-        val freshBeginIndex = Type.freshTypeVar()
-        val freshEndIndex = Type.freshTypeVar()
-        val freshElmType = Type.freshTypeVar()
+        val freshBeginIndex = Type.freshTypeVarXXXDeprecated()
+        val freshEndIndex = Type.freshTypeVarXXXDeprecated()
+        val freshElmType = Type.freshTypeVarXXXDeprecated()
         optEndIndex match {
           case None =>
             for {
@@ -870,7 +870,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -------------------
         //  deref exp : t @ eff
         //
-        val elementType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
         for {
           (typ, eff) <- visitExp(exp)
           refType <- unifyTypM(typ, mkRefType(elementType), loc)
@@ -1021,7 +1021,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -------------------
         //  <- exp : t @ Impure
         //
-        val elementType = Type.freshTypeVar()
+        val elementType = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe, _) <- visitExp(exp)
           channelType <- unifyTypM(tpe, mkChannel(elementType), loc)
@@ -1063,7 +1063,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           rule match {
             case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
               (channelType, _) <- visitExp(chan)
-              _ <- unifyTypM(channelType, mkChannel(Type.freshTypeVar()), loc)
+              _ <- unifyTypM(channelType, mkChannel(Type.freshTypeVarXXXDeprecated()), loc)
             } yield liftM(Type.Unit)
           }
         }
@@ -1143,9 +1143,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  -------------------------------------------
         //  project P exp2 : #{ P : a | c }
         //
-        val freshPredicateTypeVar = Type.freshTypeVar()
-        val freshRestSchemaTypeVar = Type.freshTypeVar()
-        val freshResultSchemaTypeVar = Type.freshTypeVar()
+        val freshPredicateTypeVar = Type.freshTypeVarXXXDeprecated()
+        val freshRestSchemaTypeVar = Type.freshTypeVarXXXDeprecated()
+        val freshResultSchemaTypeVar = Type.freshTypeVarXXXDeprecated()
 
         for {
           (tpe, eff) <- visitExp(exp)
@@ -1175,9 +1175,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // ---------------------------------------------------
         // fold P exp1 exp2 exp3 : b
         //
-        val freshPredicateNameTypeVar = Type.freshTypeVar()
-        val tupleType = Type.freshTypeVar()
-        val freshRestTypeVar = Type.freshTypeVar()
+        val freshPredicateNameTypeVar = Type.freshTypeVarXXXDeprecated()
+        val tupleType = Type.freshTypeVarXXXDeprecated()
+        val freshRestTypeVar = Type.freshTypeVarXXXDeprecated()
         for {
           (initType, eff1) <- visitExp(exp1)
           (fType, eff2) <- visitExp(exp2)
@@ -1581,7 +1581,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         // Generate a fresh type variable for each type parameters.
         val subst = Substitution(decl.tparams.map {
-          case param => param.tpe -> Type.freshTypeVar()
+          case param => param.tpe -> Type.freshTypeVarXXXDeprecated()
         }.toMap)
 
         // Retrieve the enum type.
@@ -1688,11 +1688,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // Lookup the declared type of the relation/lattice (if it exists).
       val declaredType = sym match {
         case x: Symbol.RelSym => program.relations.get(x) match {
-          case None => Type.freshTypeVar()
+          case None => Type.freshTypeVarXXXDeprecated()
           case Some(rel) => Scheme.instantiate(rel.sc)
         }
         case x: Symbol.LatSym => program.lattices.get(x) match {
-          case None => Type.freshTypeVar()
+          case None => Type.freshTypeVarXXXDeprecated()
           case Some(lat) => Scheme.instantiate(lat.sc)
         }
       }
@@ -1701,7 +1701,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
+      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVarXXXDeprecated())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -1751,11 +1751,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // Lookup the declared type of the relation/lattice (if it exists).
       val declaredType = sym match {
         case x: Symbol.RelSym => program.relations.get(x) match {
-          case None => Type.freshTypeVar()
+          case None => Type.freshTypeVarXXXDeprecated()
           case Some(rel) => Scheme.instantiate(rel.sc)
         }
         case x: Symbol.LatSym => program.lattices.get(x) match {
-          case None => Type.freshTypeVar()
+          case None => Type.freshTypeVarXXXDeprecated()
           case Some(lat) => Scheme.instantiate(lat.sc)
         }
       }
@@ -1763,7 +1763,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
+      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVarXXXDeprecated())
 
     //
     //  exp : Bool
@@ -1868,7 +1868,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   // TODO: Open nested schema types?
   // TODO: Replace by a more robust solution once we check type signatures more correctly.
   def openSchemaType(tpe0: Type)(implicit flix: Flix): Type = tpe0 match {
-    case Type.SchemaEmpty => Type.freshTypeVar()
+    case Type.SchemaEmpty => Type.freshTypeVarXXXDeprecated()
     case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, tpe, openSchemaType(rest))
     case Type.Apply(tpe1, tpe2) => Type.Apply(openSchemaType(tpe1), openSchemaType(tpe2))
     case _ => tpe0
@@ -1891,7 +1891,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns an open schema type.
     */
-  private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshTypeVar()
+  private def mkAnySchemaType()(implicit flix: Flix): Type = Type.freshTypeVarXXXDeprecated()
 
   /**
     * Returns the Flix Type of a Java Class
