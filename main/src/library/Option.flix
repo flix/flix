@@ -281,37 +281,37 @@ namespace Option {
     @lint
     def filterFilter3(): Bool =
         forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
-            filter(g, Option.filter(f, o)) === filter(f >> g, o)
+            filter(g, filter(f, o)) === filter(f >> g, o)
 
     @lint
     def findFind1(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            find(g, Option.find(f, o)) === find(f >> g, o)
+            find(g, find(f, o)) === find(f >> g, o)
 
     @lint
     def findFind2(): Bool =
         forall [a] (f: a ~> Bool, g: a -> Bool, o: Option[a]).
-            find(g, Option.find(f, o)) === find(f >> g, o)
+            find(g, find(f, o)) === find(f >> g, o)
 
     @lint
     def findFind3(): Bool =
         forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
-            find(g, Option.find(f, o)) === find(f >> g, o)
+            find(g, find(f, o)) === find(f >> g, o)
 
     @lint
     def mapIdentity(): Bool =
         forall [a] (o: Option[a]).
-            Option.map(x -> x, o) === o
+            map(x -> x, o) === o
 
     @lint
     def mapMap1(): Bool =
         forall [a, b, c] (f: a -> b, g: b -> c, o: Option[a]).
-            map(g, Option.map(f, o)) === map(f >> g, o)
+            map(g, map(f, o)) === map(f >> g, o)
 
     @lint
     def mapMap2(): Bool =
         forall [a, b, c] (f: a ~> b, g: b -> c, o: Option[a]).
-            map(g, Option.map(f, o)) === map(f >> g, o)
+            map(g, map(f, o)) === map(f >> g, o)
 
     @lint
     def mapMap3(): Bool =

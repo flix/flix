@@ -206,16 +206,6 @@ namespace List {
             List.isEmpty(x :: xs) == true
 
     @lint
-    def mapIdentity(): Bool =
-        forall [a] (xs: List[a]).
-            List.map(x -> x, xs) == xs
-
-    @lint
-    def mapMap(): Bool =
-      forall [a, b, c] (f: a -> b, g: b -> c, xs: List[a]).         // TODO: Need to account for effects.
-        List.map(g, List.map(f, xs)) == List.map(f >> g, xs)
-
-    @lint
     def mapZip(): Bool =
       forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
         List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) == List.map2(f, xs, ys)
