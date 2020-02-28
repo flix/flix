@@ -206,16 +206,6 @@ namespace List {
             List.isEmpty(x :: xs) == true
 
     @lint
-    def leftAppendNil(): Bool =
-        forall [a] (xs: List[a]).
-            List.append(xs, Nil) == xs
-
-    @lint
-    def rightAppendNil(): Bool =
-      forall [a] (xs: List[a]).
-        List.append(Nil, xs) == xs
-
-    @lint
     def mapIdentity(): Bool =
         forall [a] (xs: List[a]).
             List.map(x -> x, xs) == xs
