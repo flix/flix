@@ -202,8 +202,7 @@ namespace Result {
 
     @lint
     def useForall(): Bool =
-        forall [a] (f: t -> Bool, r: Result[t, e]).
+        forall [t, e] (f: t -> Bool, r: Result[t, e]).
             getWithDefault(map(f, r), true) === forall(f, r)
-
 
 }
