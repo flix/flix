@@ -298,7 +298,7 @@ namespace Option {
         forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
             Option.find(g, Option.find(f, o)) === Option.find(f >> g, o)
 
-    @lint // TODO: Better to disallow the id function or not?
+    @lint
     def mapIdentity(): Bool =
         forall [a] (o: Option[a]).
             Option.map(x -> x, o) === o
