@@ -3,6 +3,8 @@
 ///
 def ===(x: a, y: a): Bool = ???
 
+// TODO: I am really wondering if we should introduce quasi-quotes and then have === take two Exprs?
+
 ///
 /// Option Lints.
 ///
@@ -29,25 +31,9 @@ namespace Option {
             Option.exists(f, Some(x)) == f(x)
 
     @lint
-    def withDefaultNone2(): Bool =
-        forall [a] (y: Option[a]).
-            Option.withDefault(None, y) == y
-
-    @lint
     def flattenSome(): Bool =
         forall [a] (o: Option[a]).
             Option.flatten(Some(o)) == o
-
-    @lint // TODO: side-effects
-    def findFind(): Bool =
-        forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            Option.find(g, Option.find(f, o)) == Option.find(f >> g, o)
-
-    @lint // TODO: side-effects
-    def mapMap(): Bool =
-        forall [a, b, c] (f: a -> b, g: b -> c, o: Option[a]).
-            Option.map(g, Option.map(f, o)) == Option.map(f >> g, o)
-
 
     ///
     /// Use Cases.
@@ -181,8 +167,6 @@ namespace Option {
     def existsIsEmpty(): Bool =
       forall [a] (f: a -> Bool, o: Option[a]).
         Option.exists(f, o) `implies` (Option.isEmpty(o) == false)
-
-    // TODO: Why do we have both find and filter?
 
 }
 
