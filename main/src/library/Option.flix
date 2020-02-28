@@ -249,6 +249,26 @@ namespace Option {
     /////////////////////////////////////////////////////////////////////////////
 
     @lint
+    def countAtLeastZero(): Bool =
+        forall [a, e] (f: a -> Bool & e, o: Option).
+            Option.count(f, o) >= 0
+
+    @lint
+    def countAtMostOne(): Bool =
+        forall [a, e] (f: a -> Bool & e).
+            Option.count(f, None) <= 1
+
+    @lint
+    def existsSome(): Bool =
+        forall [a] (f: a -> Bool & e, x: a).
+            Option.exists(f, Some(x)) == f(x)
+
+    @lint
+    def flattenSome(): Bool =
+        forall [a] (o: Option[a]).
+            Option.flatten(Some(o)) == o
+
+    @lint
     def filterFilter1(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
             Option.filter(g, Option.filter(f, o)) === Option.filter(f >> g, o)

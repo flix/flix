@@ -11,31 +11,6 @@ def ===(x: a, y: a): Bool = ???
 namespace Option {
 
     ///
-    /// Simplifications.
-    ///
-    @lint
-    def countNone(): Bool =
-        forall [a] (f: a -> Bool).
-            Option.count(f, None) == 0
-
-    // TODO: Express that count returns a number between 0 and 1.
-
-    @lint
-    def countSome(): Bool =
-        forall [a] (f: a -> Bool, x: a).
-            Option.count(f, Some(x)) == if (f(x)) 1 else 0
-
-    @lint
-    def existsSome(): Bool =
-        forall [a] (f: a -> Bool & e, x: a).
-            Option.exists(f, Some(x)) == f(x)
-
-    @lint
-    def flattenSome(): Bool =
-        forall [a] (o: Option[a]).
-            Option.flatten(Some(o)) == o
-
-    ///
     /// Use Cases.
     ///
 
@@ -476,7 +451,6 @@ pub def uselessLeft(x: a, y: b): b = ???
 pub def implies(x: Bool, y: Bool): Bool = ???
 
     // TODO: Changing an if to an expression change semantics to be eager.
-
 
 
 // TODO: min, max?
