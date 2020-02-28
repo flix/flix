@@ -200,5 +200,10 @@ namespace Result {
         forall [t, e] (f: t -> Bool, r: Result[t, e]).
             getWithDefault(map(f, r), false) === exists(f, r)
 
+    @lint
+    def useForall(): Bool =
+        forall [a] (f: t -> Bool, r: Result[t, e]).
+            getWithDefault(map(f, r), true) === forall(f, r)
+
 
 }
