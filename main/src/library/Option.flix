@@ -334,7 +334,7 @@ namespace Option {
 
     @lint
     def useFilter(): Bool =
-        forall [a, e] (f: a -> Bool & e, o: Option[a]).
+        forall [a] (f: a -> Bool, o: Option[a]).
             flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
 
     @lint

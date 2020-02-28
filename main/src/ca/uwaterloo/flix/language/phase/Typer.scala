@@ -868,14 +868,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         //  exp : Ref[t] @ eff
         //  -------------------
-        //  deref exp : t @ eff
+        //  deref exp : t @ Impure
         //
         val elementType = Type.freshTypeVar()
         for {
-          (typ, eff) <- visitExp(exp)
+          (typ, _) <- visitExp(exp)
           refType <- unifyTypM(typ, mkRefType(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
