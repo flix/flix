@@ -250,12 +250,12 @@ namespace Option {
 
     @lint
     def countAtLeastZero(): Bool =
-        forall [a, e] (f: a -> Bool & e, o: Option).
+        forall [a] (f: a -> Bool, o: Option[a]).
             count(f, o) >= 0
 
     @lint
     def countAtMostOne(): Bool =
-        forall [a, e] (f: a -> Bool & e).
+        forall [a] (f: a -> Bool).
             count(f, None) <= 1
 
     @lint
