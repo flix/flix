@@ -12,7 +12,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform before the statistics are collected.
     */
-  val WarmupIterations = 25
+  val WarmupIterations = 30
 
   /**
     * The number of compilations to perform when collecting statistics.
@@ -45,20 +45,20 @@ object BenchmarkCompiler {
   }
 
   /**
-    * Outputs statistics about the throughput of the overall compiler.
+    * Computes the throughput of the compiler.
     */
   def benchmarkThroughput(): Unit = {
     val flix = newFlix();
 
+    // Warmup
     warmup(flix)
 
-    ///
-    /// Measure.
-    ///
+    // Measure
     val results = (0 until BenchmarkIterations).map {
       case _ => flix.compile().get
     }
 
+    // Computes the throughput in lines/sec.
     val totalLines = results.head.getTotalLines().toLong
     val totalTime = StatUtils.median(results.map(_.getTotalTime()).toList)
     val currentTime = System.currentTimeMillis() / 1000
@@ -68,12 +68,12 @@ object BenchmarkCompiler {
   }
 
   /**
-    * Runs the Flix compiler a number of times to warmup the JIT.
+    * Runs the compiler a number of times to warmup the JIT.
     */
   private def warmup(flix: Flix): Unit = {
     for (i <- 0 until WarmupIterations) {
       flix.compile() match {
-        case Validation.Success(compilationResult) => // success
+        case Validation.Success(compilationResult) => // nop
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
@@ -95,6 +95,9 @@ object BenchmarkCompiler {
     flix
   }
 
+  /**
+    * Adds the compiler test cases.
+    */
   private def addCompilerTests(flix: Flix): Unit = {
     flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
@@ -146,14 +149,21 @@ object BenchmarkCompiler {
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorStore.flix")
   }
 
+  /**
+    * Adds the test cases for the standard library.
+    */
   private def addLibraryTests(flix: Flix): Unit = {
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestList.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestMap.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestOption.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
+    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestStr.flix")
   }
 
+  /**
+    * Adds the abstract domains.
+    */
   private def addAbstractDomains(flix: Flix): Unit = {
     flix.addPath("examples/domains/Belnap.flix")
     flix.addPath("examples/domains/Constant.flix")
@@ -166,10 +176,6 @@ object BenchmarkCompiler {
     flix.addPath("examples/domains/PrefixSuffix.flix")
     flix.addPath("examples/domains/Sign.flix")
     flix.addPath("examples/domains/StrictSign.flix")
-  }
-
-  private def addInterpreter(flix: Flix): Unit = {
-    flix.addPath("main/src/tutorials/interpreter.flix")
   }
 
 }
