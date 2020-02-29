@@ -50,24 +50,32 @@ object BenchmarkCompiler {
     */
   def benchmarkThroughput(): Unit = {
     val flix = newFlix();
+
+    ///
+    /// Warmup.
+    ///
     for (i <- 0 until WarmupIterations) {
       flix.compile() match {
-        case Validation.Success(compilationResult) =>
-          // Check if we are in the last iteration.
-          if (i == WarmupIterations - 1) {
-            val currentTime = System.currentTimeMillis() / 1000
-            val totalLines = compilationResult.getTotalLines().toLong
-            val totalTime = compilationResult.getTotalTime()
-            val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
-
-            //println(s"Total Lines of Source Code: $totalLines.")
-            println(s"${currentTime}, ${throughput}")
-          }
+        case Validation.Success(compilationResult) => // success
         case Validation.Failure(errors) =>
           errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
           System.exit(1)
       }
     }
+
+    ///
+    /// Measure.
+    ///
+    val results = (0 until BenchmarkIterations).map {
+      case _ => flix.compile().get
+    }
+
+    val totalLines = results.head.getTotalLines().toLong
+    val totalTime = StatUtils.median(results.map(_.getTotalTime()).toList)
+    val currentTime = System.currentTimeMillis() / 1000
+    val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
+
+    println(s"${currentTime}, ${throughput}")
   }
 
   /**
