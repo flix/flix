@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{StatUtils, Validation}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
 /**
@@ -13,6 +13,11 @@ object BenchmarkCompiler {
     * The number of compilations to perform before the statistics are collected.
     */
   val WarmupIterations = 25
+
+  /**
+    * The number of compilations to perform when collecting statistics.
+    */
+  val BenchmarkIterations = 10
 
   /**
     * Outputs statistics about time spent in each compiler phase.
@@ -72,10 +77,71 @@ object BenchmarkCompiler {
     val flix = new Flix()
     flix.setOptions(opts = flix.options.copy(loadClassFiles = false, writeClassFiles = false))
 
+    addCompilerTests(flix)
+    addLibraryTests(flix)
     //addAbstractDomains(flix)
-    addInterpreter(flix)
+    //addInterpreter(flix)
 
     flix
+  }
+
+  private def addCompilerTests(flix: Flix): Unit = {
+    flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArrayNew.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySlice.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySliceCopy.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
+    flix.addPath("main/test/flix/Test.Exp.ArrayStore.flix")
+    flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
+    flix.addPath("main/test/flix/Test.Exp.Cast.flix")
+    flix.addPath("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
+    flix.addPath("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
+    flix.addPath("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
+    flix.addPath("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.GetField.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.GetStaticField.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeMethod.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.PutField.flix")
+    flix.addPath("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
+    flix.addPath("main/test/flix/Test.Exp.Reference.Assign.flix")
+    flix.addPath("main/test/flix/Test.Exp.Reference.Deref.flix")
+    flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
+    flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
+    flix.addPath("main/test/flix/Test.Exp.Stm.flix")
+
+
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Logic.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Block.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLength.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLit.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLoad.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorNew.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSlice.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorStore.flix")
+  }
+
+  private def addLibraryTests(flix: Flix): Unit = {
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestList.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestMap.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestOption.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
   }
 
   private def addAbstractDomains(flix: Flix): Unit = {
@@ -84,7 +150,6 @@ object BenchmarkCompiler {
     flix.addPath("examples/domains/ConstantParity.flix")
     flix.addPath("examples/domains/Interval.flix")
     flix.addPath("examples/domains/IntervalAlt.flix")
-    //flix.addPath("examples/domains/IntervalInf.flix")
     flix.addPath("examples/domains/Mod3.flix")
     flix.addPath("examples/domains/Parity.flix")
     flix.addPath("examples/domains/ParitySign.flix")
@@ -95,75 +160,6 @@ object BenchmarkCompiler {
 
   private def addInterpreter(flix: Flix): Unit = {
     flix.addPath("main/src/tutorials/interpreter.flix")
-  }
-
-  private def addTests(flix: Flix): Unit = {
-    flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayNew.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySlice.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySliceCopy.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoEndIndex.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
-    flix.addPath("main/test/flix/Test.Exp.ArrayStore.flix")
-
-    flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
-
-    flix.addPath("main/test/flix/Test.Exp.Cast.flix")
-
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.Unbuffered.flix")
-    flix.addPath("main/test/flix/Test.Exp.Concurrency.Spawn.flix")
-
-    flix.addPath("main/test/flix/Test.Exp.Jvm.GetField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.GetStaticField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeConstructor.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeMethod.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.PutField.flix")
-    flix.addPath("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
-
-    flix.addPath("main/test/flix/Test.Exp.Reference.Assign.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Deref.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
-    flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
-
-    flix.addPath("main/test/flix/Test.Exp.Stm.flix")
-
-    // A subset of test cases.
-    // Over time we should extend this list, but note that this will invalidate historical data.
-
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Bitwise.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Logic.flix")
-
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Block.flix")
-
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix")
-
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")
-
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLength.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLit.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLoad.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorNew.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSlice.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorStore.flix")
-
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestList.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestMap.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestOption.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestResult.flix")
-    flix.addPath("main/test/ca/uwaterloo/flix/library/TestSet.flix")
   }
 
 }
