@@ -153,12 +153,12 @@ object BenchmarkCompiler {
     * Adds the test cases for the standard library.
     */
   private def addLibraryTests(flix: Flix): Unit = {
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestBigInt.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestBigInt.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat32.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat64.flix")
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt8.flix")
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt16.flix")
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt32.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt8.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt16.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt32.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt64.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestList.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestMap.flix")
