@@ -10,18 +10,18 @@ enum Color {
 ///
 /// The red-black tree type.
 ///
-enum RBTree {
+enum RedBlackTree[t] {
     case Leaf,
     case DoubleLeaf,
-    case Node(Color, RBTree, Int32, RBTree)
+    case Node(Color, RedBlackTree[t], t, RedBlackTree[t])
 }
 
-namespace RBTree {
+namespace RedBlackTree {
 
     ///
     /// Returns a new, balanced tree identical to `tree`.
     ///
-    def balance(tree: RBTree): RBTree = match tree {
+    def balance(tree: RedBlackTree[a]): RedBlackTree[a] = match tree {
         case Node(Black, Node(Red, Node(Red, a, x, b), y, c), z, d) =>
             Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case Node(Black, Node(Red, a, x, Node(Red, b, y, c)), z, d) =>
@@ -40,7 +40,7 @@ namespace RBTree {
     ///
     /// Returns a new tree identical to `tree` except the root is colored black.
     ///
-    def blacken(tree: RBTree): RBTree = match tree {
+    def blacken(tree: RedBlackTree[a]): RedBlackTree[a] = match tree {
         case Node(Red, Node(Red, a, x, b), y, c) => Node(Black, Node(Red, a, x, b), y, c)
         case Node(Red, a, x, Node(Red, b, y, c)) => Node(Black, a, x, Node(Red, b, y, c))
         case _ => tree
@@ -49,23 +49,23 @@ namespace RBTree {
     ///
     /// Helper function for `insert`.
     ///
-    def insertHelper(tree: RBTree, x: Int32): RBTree = match tree {
+    def insertHelper(x: a, tree: RedBlackTree[a]): RedBlackTree[a] = match tree {
         case Leaf => Node(Red, Leaf, x, Leaf)
-        case Node(color, a, y, b) if x < y => balance(Node(color, insertHelper(a, x), y, b))
+        case Node(color, a, y, b) if x < y => balance(Node(color, insertHelper(x, a), y, b))
         case Node(color, a, y, b) if x == y => Node(color, a, y, b)
-        case Node(color, a, y, b) if x > y => balance(Node(color, a, y, insertHelper(b, x)))
+        case Node(color, a, y, b) if x > y => balance(Node(color, a, y, insertHelper(x, b)))
         case _ => tree
     }
 
     ///
     /// Returns a new, balanced tree containing all elements from `tree` as well as `x`.
     ///
-    pub def insert(tree: RBTree, x: Int32): RBTree = blacken(insertHelper(tree, x))
+    pub def insert(x: a, tree: RedBlackTree[a]): RedBlackTree[a] = blacken(insertHelper(x, tree))
 
     ///
     /// Helper function for `delete`.
     ///
-    def rotate(tree: RBTree): RBTree = match tree {
+    def rotate(tree: RedBlackTree[a]): RedBlackTree[a] = match tree {
         case Node(Red, Node(DoubleBlack, a, x, b), y, Node(Black, c, z, d)) =>
             balance(Node(Black, Node(Red, Node(Black, a, x, b), y, c), z, d))
         case Node(Red, DoubleLeaf, y, Node(Black, c, z, d)) =>
@@ -96,7 +96,7 @@ namespace RBTree {
     ///
     /// Returns a new tree identical to `tree` except the root is colored red.
     ///
-    def redden(tree: RBTree): RBTree = match tree {
+    def redden(tree: RedBlackTree[a]): RedBlackTree[a] = match tree {
         case Node(Black, Node(Black, a, x, b), y, Node(Black, c, z, d)) =>
             Node(Red, Node(Black, a, x, b), y, Node(Black, c, z, d))
         case _ => tree
@@ -105,7 +105,7 @@ namespace RBTree {
     ///
     /// Helper function for `delete`.
     ///
-    def minDelete(tree: RBTree): (Int32, RBTree) = match tree {
+    def minDelete(tree: RedBlackTree[a]): (a, RedBlackTree[a]) = match tree {
         case Node(Red, Leaf, x, Leaf) => (x, Leaf)
         case Node(Black, Leaf, x, Leaf) => (x, DoubleLeaf)
         case Node(Black, Leaf, x, Node(Red, Leaf, y, Leaf)) => (x, Node(Black, Leaf, y, Leaf))
@@ -118,45 +118,45 @@ namespace RBTree {
     ///
     /// Helper function for `delete`.
     ///
-    def deleteHelper(tree: RBTree, x: Int32): RBTree = match tree {
+    def deleteHelper(x: a, tree: RedBlackTree[a]): RedBlackTree[a] = match tree {
         case Leaf => Leaf
         case Node(Red, Leaf, y, Leaf) if x == y => Leaf
         case Node(Red, Leaf, y, Leaf) if x != y => tree
         case Node(Black, Leaf, y, Leaf) if x == y => DoubleLeaf
         case Node(Black, Leaf, y, Leaf) if x != y => tree
         case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x < z =>
-            Node(Black, deleteHelper(Node(Red, Leaf, y, Leaf), x), z, Leaf)
+            Node(Black, deleteHelper(x, Node(Red, Leaf, y, Leaf)), z, Leaf)
         case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x == z =>
             Node(Black, Leaf, y, Leaf)
         case Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf) if x > z =>
             Node(Black, Node(Red, Leaf, y, Leaf), z, Leaf)
-        case Node(c, a, y, b) if x < y => rotate(Node(c, deleteHelper(a, x), y, b))
+        case Node(c, a, y, b) if x < y => rotate(Node(c, deleteHelper(x, a), y, b))
         case Node(c, a, y, b) if x == y =>
             let (z, e) = minDelete(b);
             rotate(Node(c, a, z, e))
-        case Node(c, a, y, b) if x > y => rotate(Node(c, a, y, deleteHelper(b, x)))
+        case Node(c, a, y, b) if x > y => rotate(Node(c, a, y, deleteHelper(x, b)))
         case _ => tree
     }
 
     ///
     /// Returns a new, balanced tree containg all elements of `tree` execept `x`.
     ///
-    pub def delete(tree: RBTree, x: Int32): RBTree = redden(deleteHelper(tree, x))
+    pub def delete(x: a, tree: RedBlackTree[a]): RedBlackTree[a] = redden(deleteHelper(x, tree))
 
     ///
     /// Returns true if and only if `tree` contains `x`.
     ///
-    pub def contains(tree: RBTree, x: Int32): Bool = match tree {
+    pub def contains(x: a, tree: RedBlackTree[a]): Bool = match tree {
         case Leaf => false
-        case Node(_, a, y, _) if x < y => contains(a, x)
-        case Node(_, _, y, b) if x > y => contains(b, x)
+        case Node(_, a, y, _) if x < y => contains(x, a)
+        case Node(_, _, y, b) if x > y => contains(x, b)
         case _ => true
     }
 
     ///
     /// Returns the height of `tree`.
     ///
-    pub def height(tree: RBTree): Int32 = match tree {
+    pub def height(tree: RedBlackTree[a]): Int32 = match tree {
         case Node(_, a, _, b) => if (height(a) > height(b)) 1 + height(a) else 1 + height(b)
         case _ => 0
     }
@@ -164,25 +164,33 @@ namespace RBTree {
     ///
     /// Returns the number of nodes in `tree`.
     ///
-    pub def size(tree: RBTree): Int32 = match tree {
+    pub def size(tree: RedBlackTree[a]): Int32 = match tree {
         case Node(_, a, _, b) => 1 + size(a) + size(b)
         case _ => 0
     }
 
     ///
-    /// Returns a rudimentary string representation of `tree`.
+    /// Applies `f` to a start value `s` and all elements in `tree`.
     ///
-    pub def toString(tree: RBTree): Str & Impure = {
-        import java.lang.String:valueOf(Int32);
-        match tree {
-            case Leaf => "Leaf"
-            case DoubleLeaf => "DoubleLeaf"
-            case Node(color, a, x, b) => match color {
-                case Red => "Node(Red, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
-                case Black => "Node(Black, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
-                case DoubleBlack => "Node(DoubleBlack, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
-            }
-        }
+    pub def fold(f: (b, a) -> b, s: b, tree: RedBlackTree[a]): b = match tree {
+        case Node(_, a, x, b) => fold(f, fold(f, f(s, x), a), b)
+        case _ => s
     }
+
+///    ///
+///    /// Returns a rudimentary string representation of `tree`.
+///    ///
+///    pub def toString(tree: RedBlackTree[a]): Str & Impure = {
+///        import java.lang.String:valueOf(a);
+///        match tree {
+///            case Leaf => "Leaf"
+///            case DoubleLeaf => "DoubleLeaf"
+///            case Node(color, a, x, b) => match color {
+///                case Red => "Node(Red, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
+///                case Black => "Node(Black, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
+///                case DoubleBlack => "Node(DoubleBlack, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
+///            }
+///        }
+///    }
 
 }
