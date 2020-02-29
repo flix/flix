@@ -23,7 +23,7 @@ object BenchmarkCompiler {
     * Outputs statistics about time spent in each compiler phase.
     */
   def benchmarkPhases(): Unit = {
-    val flix = newFlix();
+    val flix = newFlix()
 
     warmup(flix)
 
@@ -48,7 +48,7 @@ object BenchmarkCompiler {
     * Computes the throughput of the compiler.
     */
   def benchmarkThroughput(): Unit = {
-    val flix = newFlix();
+    val flix = newFlix()
 
     // Warmup
     warmup(flix)
@@ -154,8 +154,8 @@ object BenchmarkCompiler {
     */
   private def addLibraryTests(flix: Flix): Unit = {
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestBigInt.flix")
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat32.flix")
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat64.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat32.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestFloat64.flix")
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt8.flix")
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt16.flix")
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt32.flix")
