@@ -12,7 +12,7 @@ object BenchmarkCompiler {
   /**
     * The number of compilations to perform before the statistics are collected.
     */
-  val WarmupIterations = 30
+  val WarmupIterations = 25
 
   /**
     * The number of compilations to perform when collecting statistics.
@@ -36,7 +36,7 @@ object BenchmarkCompiler {
         for (phase <- flix.phaseTimers) {
           val name = phase.phase
           val phaseTimeNanos = phase.time
-          println(s"${name}, ${currentTime}, ${phaseTimeNanos}")
+          println(s"$name, $currentTime, $phaseTimeNanos")
         }
       case Validation.Failure(errors) =>
         errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
@@ -64,7 +64,7 @@ object BenchmarkCompiler {
     val currentTime = System.currentTimeMillis() / 1000
     val throughput = (1_000_000_000L * totalLines) / totalTime // NB: Careful with loss of precision.
 
-    println(s"${currentTime}, ${throughput}")
+    println(s"$currentTime, $throughput")
   }
 
   /**
@@ -159,7 +159,7 @@ object BenchmarkCompiler {
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt8.flix")
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt16.flix")
     //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt32.flix")
-    //flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt64.flix")
+    flix.addPath("main/test/ca/uwaterloo/flix/library/TestInt64.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestList.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestMap.flix")
     flix.addPath("main/test/ca/uwaterloo/flix/library/TestOption.flix")
