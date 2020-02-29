@@ -389,20 +389,23 @@ object Type {
         case Type.Var(id, kind) =>
           // Lookup the human-friendly name in `m`.
           m.get(id) match {
-            case Some(s) => s
             case None =>
               // No human-friendly name. Return the id. Use ' for types and '' for effects.
               if (kind != Kind.Effect) "'" + id.toString else "''" + id.toString
+            case Some(s) => s
           }
 
         case Type.Cst(TypeConstructor.Array) =>
-          "Array" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          s"Array[${args.map(visit(_, m)).mkString(", ")}]"
 
         case Type.Cst(TypeConstructor.Channel) =>
-          "Channel" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          s"Channel[${args.map(visit(_, m)).mkString(", ")}]"
 
         case Type.Cst(TypeConstructor.Enum(sym, _)) =>
-          if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          if (args.isEmpty)
+            sym.toString
+          else
+            sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
         case Type.Cst(TypeConstructor.Tuple(l)) =>
           "(" + args.map(visit(_, m)).mkString(", ") + ")"
@@ -440,22 +443,32 @@ object Type {
         case Type.Succ(n, t) => n.toString + " " + t.toString
 
         case Type.Arrow(l, eff) =>
+          // Retrieve the arguments and result types.
           val argumentTypes = args.init
           val resultType = args.last
+
+          // Format the arguments.
+          val argPart = if (argumentTypes.length == 1) {
+            visit(argumentTypes.head, m)
+          } else {
+            "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ")"
+          }
+          // Format the arrow.
           val arrowPart = eff match {
             case Type.Cst(TypeConstructor.Impure) => " ~> "
             case _ => " -> "
           }
+          // Format the effect.
           val effPart = eff match {
             case Type.Cst(TypeConstructor.Pure) => ""
             case Type.Cst(TypeConstructor.Impure) => " & Impure"
             case _ => " & (" + visit(eff, m) + ")"
           }
-          if (argumentTypes.length == 1) {
-            visit(argumentTypes.head, m) + arrowPart + visit(resultType, m) + effPart
-          } else {
-            "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ")" + arrowPart + visit(resultType, m) + effPart
-          }
+          // Format the result type.
+          val resultPart = visit(resultType, m)
+
+          // Put everything together.
+          argPart + arrowPart + resultPart + effPart
 
         case Type.RecordEmpty => "{ }"
 
