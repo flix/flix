@@ -24,24 +24,23 @@ object BenchmarkCompiler {
     */
   def benchmarkPhases(): Unit = {
     val flix = newFlix();
-    for (i <- 0 until WarmupIterations) {
-      flix.compile() match {
-        case Validation.Success(compilationResult) =>
-          // Check if we are in the last iteration.
-          if (i == WarmupIterations - 1) {
-            val currentTime = System.currentTimeMillis() / 1000
-            val totalLines = compilationResult.getTotalLines()
 
-            for (phase <- flix.phaseTimers) {
-              val name = phase.phase
-              val phaseTimeNanos = phase.time
-              println(s"${name}, ${currentTime}, ${phaseTimeNanos}")
-            }
-          }
-        case Validation.Failure(errors) =>
-          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
-          System.exit(1)
-      }
+    warmup(flix)
+
+    flix.compile() match {
+      case Validation.Success(compilationResult) =>
+        // Check if we are in the last iteration.
+        val currentTime = System.currentTimeMillis() / 1000
+        val totalLines = compilationResult.getTotalLines()
+
+        for (phase <- flix.phaseTimers) {
+          val name = phase.phase
+          val phaseTimeNanos = phase.time
+          println(s"${name}, ${currentTime}, ${phaseTimeNanos}")
+        }
+      case Validation.Failure(errors) =>
+        errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
+        System.exit(1)
     }
   }
 
@@ -51,17 +50,7 @@ object BenchmarkCompiler {
   def benchmarkThroughput(): Unit = {
     val flix = newFlix();
 
-    ///
-    /// Warmup.
-    ///
-    for (i <- 0 until WarmupIterations) {
-      flix.compile() match {
-        case Validation.Success(compilationResult) => // success
-        case Validation.Failure(errors) =>
-          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
-          System.exit(1)
-      }
-    }
+    warmup(flix)
 
     ///
     /// Measure.
@@ -79,6 +68,20 @@ object BenchmarkCompiler {
   }
 
   /**
+    * Runs the Flix compiler a number of times to warmup the JIT.
+    */
+  private def warmup(flix: Flix): Unit = {
+    for (i <- 0 until WarmupIterations) {
+      flix.compile() match {
+        case Validation.Success(compilationResult) => // success
+        case Validation.Failure(errors) =>
+          errors.sortBy(_.source.name).foreach(e => println(e.message.fmt(TerminalContext.AnsiTerminal)))
+          System.exit(1)
+      }
+    }
+  }
+
+  /**
     * Returns a Flix object configured with the benchmark program.
     */
   private def newFlix(): Flix = {
@@ -88,7 +91,6 @@ object BenchmarkCompiler {
     addCompilerTests(flix)
     addLibraryTests(flix)
     //addAbstractDomains(flix)
-    //addInterpreter(flix)
 
     flix
   }
