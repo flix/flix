@@ -153,7 +153,8 @@ namespace RedBlackSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a -> Bool, xs: RedBlackSet[a]): Int32 = ???
+    pub def count(f: a -> Bool, xs: RedBlackSet[a]): Int32 =
+        fold((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
     ///
     /// Returns the union of the elements in `xs`.
@@ -167,7 +168,9 @@ namespace RedBlackSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a -> Bool, xs: RedBlackSet[a]): Bool = ???
+    pub def exists(f: a -> Bool, xs: RedBlackSet[a]): Bool =
+        let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
+            !isEmpty(result)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
@@ -176,22 +179,27 @@ namespace RedBlackSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a -> Bool, xs: RedBlackSet[a]): Bool = ???
+    pub def forall(f: a -> Bool, xs: RedBlackSet[a]): Bool =
+        let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
+            size(xs) == size(result)
 
     ///
     /// Returns the union of `xs` and `ys`.
     ///
-    pub def union(xs: RedBlackSet[a], ys: RedBlackSet[a]): RedBlackSet[a] = ???
+    pub def union(xs: RedBlackSet[a], ys: RedBlackSet[a]): RedBlackSet[a] =
+        foldLeft((acc, x) -> insert(x, acc), ys, xs)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
-    pub def intersection(xs: RedBlackSet[a], ys: RedBlackSet[a]): RedBlackSet[a] = ???
+    pub def intersection(xs: RedBlackSet[a], ys: RedBlackSet[a]): RedBlackSet[a] =
+        foldLeft((acc, x) -> if (memberOf(x, xs) && memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
-    pub def difference(xs: RedBlackSet[a], ys: RedBlackSet[a]): RedBlackSet[a] = ???
+    pub def difference(xs: RedBlackSet[a], ys: RedBlackSet[a]): RedBlackSet[a] =
+        foldLeft((acc, x) -> if (!memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns all subsets of `xs`.
@@ -203,7 +211,8 @@ namespace RedBlackSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def filter(f: a -> Bool, xs: RedBlackSet[a]): RedBlackSet[a] = ???
+    pub def filter(f: a -> Bool, xs: RedBlackSet[a]): RedBlackSet[a] =
+        foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs`.
