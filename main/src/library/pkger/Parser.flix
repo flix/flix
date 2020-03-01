@@ -55,10 +55,11 @@ namespace Parser {
         Some(listToString(l), listToString(r))
     }
 
-    // TODO: Weird name. Also, not sure `bind` is the solution here. We want to inject a failing parser when predicate is `true`.
+    // TODO: Weird name. Also, not sure `bind` is the solution here. We want to inject a failing parser when predicate is `true` on the result type.
     pub def failOn(v: Parser[a], p: a -> Bool): Parser[a] = v >>= (x -> if (p(x)) { _ -> None } else { ??? })
 }
 
+// This is a large amount of namespace pollution. Right now this file is only loaded manually, so it's alright.
 pub def <&>(f: a -> b, parser: Parser[a]): Parser[b] = Parser.fmap(f, parser)
 
 pub def <&(x: a, parser: Parser[b]): Parser[a] = (_ -> x) <&> parser
