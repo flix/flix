@@ -1321,6 +1321,54 @@ namespace Array {
         Array.updateSequenceInPlace(pos, sub, out);
         pos + Array.length(sub)
 
+    ///
+    /// Sort array `a` with the comparing function `f`.
+    ///
+    pub def quicksortBy(f: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
+        let len = Array.length(a);
+        let b = Array.slice(a, 0, len);
+        quicksortByInPlace(f, b);
+        b
 
+    pub def quicksortByInPlace(comparing: (a,a) -> Int32, a: Array[a]): Unit & Impure =
+        let len = Array.length(a);
+        if (len == 0) () else quicksortHelper(comparing, a, 0, len-1)
 
+    def quicksortHelper(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Unit & Impure =
+        if (lo < hi) {
+            let p = quicksortPartition(comparing, a, lo, hi);
+            quicksortHelper(comparing, a, lo, p-1);
+            quicksortHelper(comparing, a, p+1, hi)
+        }
+        else ()
+    ///
+    /// Swap the elements at `i` and `j`.
+    ///
+    /// Precondition: `i` and `j` should be within bounds.
+    ///
+    def swapInPlace(a: Array[Int], i: Int32, j: Int32): Unit & Impure =
+        let x = a[i];
+        let y = a[j];
+        a[i] = y;
+        a[j] = x;
+        ()
+
+    /// precondition: lo <= hi
+    def forLoop(lo: Int32, hi: Int32, ac: a, f: (Int32,a) -> a & e): a & e =
+        if (lo == hi)
+            f(lo,ac)
+        else {
+            let ac1 = f(lo, ac);
+            forLoop(lo+1, hi, ac1, f)
+        }
+
+    def quicksortPartition(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+        let pivot = a[hi];
+        let i = forLoop(lo, hi, lo, (j,ix) ->
+            if (comparing(a[j], pivot) < 0) {
+                swapInPlace(a, ix, j);
+                ix+1
+            } else ix);
+        swapInPlace(a, i, hi);
+        i
 }
