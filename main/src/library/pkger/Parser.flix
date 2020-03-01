@@ -20,7 +20,7 @@ namespace Parser {
 
     def cons(x: a, xs: List[a]): List[a] = x :: xs
 
-    pub def some(v: Parser[a]): Parser[List[a]] = liftA2(cons, v, many(v))
+    pub def some(v: Parser[a]): Parser[List[a]] = cons <&> v <*> many(v)
 
     pub def many(v: Parser[a]): Parser[List[a]] = some(v) <|> Parser.pure(Nil)
 
