@@ -1220,8 +1220,7 @@ namespace Array {
     /// Apply `f` to every element in array `a`. Array `a` is mutated.
     ///
     pub def mapInPlace(f: a -> a, a: Array[a]): Unit & Impure =
-        let len = length(a);
-        mapInPlaceHelper(f, len, a, 0)
+        mapInPlaceHelper(f, length(a), a, 0)
 
     ///
     /// Helper of `mapInPlace`

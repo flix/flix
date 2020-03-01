@@ -2773,663 +2773,659 @@ def init205(): Bool & Impure =
     let (a,b) = Array.init2(x -> (x,true), 50);
     Array.length(a) == 50 && Array.length(b) == 50
 
-// /////////////////////////////////////////////////////////////////////////////
-// // updateSequence                                                          //
-// /////////////////////////////////////////////////////////////////////////////
-
-// @test
-// def updateSequence01(): Bool & Impure = 
-//      let a = Array.updateSequence(0, []: Array[Int32], []: Array[Int32]);
-//      Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def updateSequence02(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [1,2], []);
-//     Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def updateSequence03(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [], [1,2]);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequence04(): Bool & Impure = 
-//     let a = Array.updateSequence(-3, [1,2,4], [1,2]);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequence05(): Bool & Impure = 
-//     let a = Array.updateSequence(2, [1,2,4], [1,2]);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequence06(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [], [1]);
-//     Array.sameElements(a, [1])
-
-// @test
-// def updateSequence07(): Bool & Impure = 
-//     let a = Array.updateSequence(1, [2], [1]);
-//     Array.sameElements(a, [1])
-
-// @test
-// def updateSequence08(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [2], [1]);
-//     Array.sameElements(a, [2])
-
-// @test
-// def updateSequence09(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [2,4], [1]);
-//     Array.sameElements(a, [2])
-
-// @test
-// def updateSequence10(): Bool & Impure = 
-//     let a = Array.updateSequence(-1, [2,4], [1]);
-//     Array.sameElements(a, [4])
-
-// @test
-// def updateSequence11(): Bool & Impure = 
-//     let a = Array.updateSequence(-1, [3,4], [1,2]);
-//     Array.sameElements(a, [4,2])
-
-// @test
-// def updateSequence12(): Bool & Impure = 
-//     let a = Array.updateSequence(1, [3,4], [1,2]);
-//     Array.sameElements(a, [1,3])
-
-// @test
-// def updateSequence13(): Bool & Impure = 
-//     let a = Array.updateSequence(-2, [3,4], [1,2]);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequence14(): Bool & Impure = 
-//     let a = Array.updateSequence(2, [3,4], [1,2]);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequence15(): Bool & Impure = 
-//     let a = Array.updateSequence(1, [3], [1,2]);
-//     Array.sameElements(a, [1,3])
-
-// @test
-// def updateSequence16(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [3,4], [1,2]);
-//     Array.sameElements(a, [3,4])
-
-// @test
-// def updateSequence17(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [4], [1, 2, 3]);
-//     Array.sameElements(a, [4, 2, 3])
-
-// @test
-// def updateSequence18(): Bool & Impure = 
-//     let a = Array.updateSequence(1, [4], [1, 2, 3]);
-//     Array.sameElements(a, [1, 4, 3])
-
-// @test
-// def updateSequence19(): Bool & Impure = 
-//     let a = Array.updateSequence(2, [4], [1, 2, 3]);
-//     Array.sameElements(a, [1, 2, 4])
-
-// @test
-// def updateSequence20(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [4, 5], [1, 2, 3]);
-//     Array.sameElements(a, [4, 5, 3])
-
-// @test
-// def updateSequence21(): Bool & Impure = 
-//     let a = Array.updateSequence(1, [4, 5], [1, 2, 3]);
-//     Array.sameElements(a, [1, 4, 5])
-
-// @test
-// def updateSequence22(): Bool & Impure = 
-//     let a = Array.updateSequence(-1, [4, 5, 6], [1, 2, 3]);
-//     Array.sameElements(a, [5, 6, 3])
-
-// @test
-// def updateSequence23(): Bool & Impure = 
-//     let a = Array.updateSequence(0, [4, 5, 6], [1, 2, 3]);
-//     Array.sameElements(a, [4, 5, 6])
-
-// @test
-// def updateSequence24(): Bool & Impure = 
-//     let a = Array.updateSequence(2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-//     Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
-
-// @test
-// def updateSequence25(): Bool & Impure = 
-//     let a = Array.updateSequence(-2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-//     Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
-
-// @test
-// def updateSequence26(): Bool & Impure = 
-//     let a = Array.updateSequence(4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
-//     Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
-
-// @test
-// def updateSequence27(): Bool & Impure = 
-//     let a = Array.updateSequence(4, [14, 15], [1, 2, 3, 4, 5, 6, 7]);
-//     Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
-
-// @test
-// def updateSequence28(): Bool & Impure = 
-//     let a = Array.updateSequence(-1, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
-//     Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
-
-
-// /////////////////////////////////////////////////////////////////////////////
-// // sameElements                                                            //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def sameElements01(): Bool & Impure = 
-//     let a = []: Array[Int32];
-//     let b = []: Array[Int32];
-//     Array.sameElements(a,b) == true
-
-// @test
-// def sameElements02(): Bool & Impure = 
-//     let a = [1]: Array[Int32];
-//     let b = []: Array[Int32];
-//     Array.sameElements(a,b) == false
-
-// @test
-// def sameElements03(): Bool & Impure = 
-//     let a = []: Array[Int32];
-//     let b = [1]: Array[Int32];
-//     Array.sameElements(a,b) == false
-
-// @test
-// def sameElements04(): Bool & Impure = 
-//     let a = [1]: Array[Int32];
-//     let b = [1]: Array[Int32];
-//     Array.sameElements(a,b) == true
-
-// @test
-// def sameElements05(): Bool & Impure = 
-//     let a = [1]: Array[Int32];
-//     let b = [0]: Array[Int32];
-//     Array.sameElements(a,b) == false
-
-// @test
-// def sameElements06(): Bool & Impure = 
-//     let a = [1,2]: Array[Int32];
-//     let b = [1,2]: Array[Int32];
-//     Array.sameElements(a,b) == true
-
-// @test
-// def sameElements07(): Bool & Impure = 
-//     let a = [1,2]: Array[Int32];
-//     let b = [2,1]: Array[Int32];
-//     Array.sameElements(a,b) == false
-
-// /////////////////////////////////////////////////////////////////////////////
-// // foreach                                                                 //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def foreach01(): Bool & Impure = 
-//     let a = []: Array[Int32];
-//     let sb = StringBuilder.new();
-//     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreach(fn, a);
-//     StringBuilder.toString(sb) == ""
-
-// @test
-// def foreach02(): Bool & Impure = 
-//     let a = [0];
-//     let sb = StringBuilder.new();
-//     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreach(fn, a);
-//     StringBuilder.toString(sb) == "F"
-
-// @test
-// def foreach03(): Bool & Impure = 
-//     let a = [1];
-//     let sb = StringBuilder.new();
-//     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreach(fn, a);
-//     StringBuilder.toString(sb) == "T"
-
-// @test
-// def foreach04(): Bool & Impure = 
-//     let a = [0,1];
-//     let sb = StringBuilder.new();
-//     let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreach(fn, a);
-//     StringBuilder.toString(sb) == "FT"
-
-// /////////////////////////////////////////////////////////////////////////////
-// // foreachWithIndex                                                           //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def foreachWithIndex01(): Bool & Impure = 
-//     let a = []: Array[Float32];
-//     let sb = StringBuilder.new();
-//     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreachWithIndex(fn, a);
-//     StringBuilder.toString(sb) == ""
-
-// @test
-// def foreachWithIndex02(): Bool & Impure = 
-//     let a = [0.0];
-//     let sb = StringBuilder.new();
-//     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreachWithIndex(fn, a);
-//     StringBuilder.toString(sb) == "F"
-
-// @test
-// def foreachWithIndex03(): Bool & Impure = 
-//     let a = [0.0, 0.1];
-//     let sb = StringBuilder.new();
-//     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreachWithIndex(fn, a);
-//     StringBuilder.toString(sb) == "FT"
-
-// @test
-// def foreachWithIndex04(): Bool & Impure = 
-//     let a = [0.0, 0.1, 0.2];
-//     let sb = StringBuilder.new();
-//     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreachWithIndex(fn, a);
-//     StringBuilder.toString(sb) == "FTT"
-
-// @test
-// def foreachWithIndex05(): Bool & Impure = 
-//     let a = [0.0, 0.1, 0.2, 0.3];
-//     let sb = StringBuilder.new();
-//     let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
-//     Array.foreachWithIndex(fn, a);
-//     StringBuilder.toString(sb) == "FTTT"
-
-
-// /////////////////////////////////////////////////////////////////////////////
-// // mapInPlace                                                              //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def mapInPlace01(): Bool & Impure = 
-//     let a: Array[Int32] = [];
-//     Array.mapInPlace(x -> x+1, a);
-//     Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def mapInPlace02(): Bool & Impure = 
-//     let a = [0];
-//     Array.mapInPlace(x -> x+1, a);
-//     Array.sameElements(a, [1])
-
-// @test
-// def mapInPlace03(): Bool & Impure = 
-//     let a = [0,1];
-//     Array.mapInPlace(x -> x+1, a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def mapInPlace04(): Bool & Impure = 
-//     let a = [0,1,2];
-//     Array.mapInPlace(x -> x+1, a);
-//     Array.sameElements(a, [1,2,3])
-
-
-// /////////////////////////////////////////////////////////////////////////////
-// // reverseInPlace                                                          //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def reverseInPlace01(): Bool & Impure = 
-//     let a: Array[Int32] = [];
-//     Array.reverseInPlace(a);
-//     Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def reverseInPlace02(): Bool & Impure = 
-//     let a = [1];
-//     Array.reverseInPlace(a);
-//     Array.sameElements(a, [1])
-
-// @test
-// def reverseInPlace03(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.reverseInPlace(a);
-//     Array.sameElements(a, [2,1])
-
-// @test
-// def reverseInPlace04(): Bool & Impure = 
-//     let a = [1,1];
-//     Array.reverseInPlace(a);
-//     Array.sameElements(a, [1,1])
-
-// @test
-// def reverseInPlace05(): Bool & Impure = 
-//     let a = [1,2,3];
-//     Array.reverseInPlace(a);
-//     Array.sameElements(a, [3,2,1])
-
-// @test
-// def reverseInPlace06(): Bool & Impure = 
-//     let a = [1,2,3,4];
-//     Array.reverseInPlace(a);
-//     Array.sameElements(a, [4,3,2,1])
-
-// /////////////////////////////////////////////////////////////////////////////
-// // updateSequenceInPlace                                                   //
-// /////////////////////////////////////////////////////////////////////////////
-
-// @test
-// def updateSequenceInPlace01(): Bool & Impure = 
-//      let a = []: Array[Int32];
-//      Array.updateSequenceInPlace(0, []: Array[Int32], a);
-//      Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def updateSequenceInPlace02(): Bool & Impure = 
-//     let a = []: Array[Int32];
-//     Array.updateSequenceInPlace(0, [1,2], a);
-//     Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def updateSequenceInPlace03(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(0, [], a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequenceInPlace04(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(-3, [1,2,4], a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequenceInPlace05(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(2, [1,2,4], a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequenceInPlace06(): Bool & Impure = 
-//     let a = [1];
-//     Array.updateSequenceInPlace(0, [], a);
-//     Array.sameElements(a, [1])
-
-// @test
-// def updateSequenceInPlace07(): Bool & Impure = 
-//     let a = [1];
-//     Array.updateSequenceInPlace(1, [2], a);
-//     Array.sameElements(a, [1])
-
-// @test
-// def updateSequenceInPlace08(): Bool & Impure = 
-//     let a = [1];
-//     Array.updateSequenceInPlace(0, [2], a);
-//     Array.sameElements(a, [2])
-
-// @test
-// def updateSequenceInPlace09(): Bool & Impure = 
-//     let a = [1];
-//     Array.updateSequenceInPlace(0, [2,4], a);
-//     Array.sameElements(a, [2])
-
-// @test
-// def updateSequenceInPlace10(): Bool & Impure = 
-//     let a = [1];
-//     Array.updateSequenceInPlace(-1, [2,4], a);
-//     Array.sameElements(a, [4])
-
-// @test
-// def updateSequenceInPlace11(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(-1, [3,4], a);
-//     Array.sameElements(a, [4,2])
-
-// @test
-// def updateSequenceInPlace12(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(1, [3,4], a);
-//     Array.sameElements(a, [1,3])
-
-// @test
-// def updateSequenceInPlace13(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(-2, [3,4], a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequenceInPlace14(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(2, [3,4], a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def updateSequenceInPlace15(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(1, [3], a);
-//     Array.sameElements(a, [1,3])
-
-// @test
-// def updateSequenceInPlace16(): Bool & Impure = 
-//     let a = [1,2];
-//     Array.updateSequenceInPlace(0, [3,4], a);
-//     Array.sameElements(a, [3,4])
-
-// @test
-// def updateSequenceInPlace17(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(0, [4], a);
-//     Array.sameElements(a, [4, 2, 3])
-
-// @test
-// def updateSequenceInPlace18(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(1, [4], a);
-//     Array.sameElements(a, [1, 4, 3])
-
-// @test
-// def updateSequenceInPlace19(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(2, [4], a);
-//     Array.sameElements(a, [1, 2, 4])
-
-// @test
-// def updateSequenceInPlace20(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(0, [4, 5], a);
-//     Array.sameElements(a, [4, 5, 3])
-
-// @test
-// def updateSequenceInPlace21(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(1, [4, 5], a);
-//     Array.sameElements(a, [1, 4, 5])
-
-// @test
-// def updateSequenceInPlace22(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(-1, [4, 5, 6], a);
-//     Array.sameElements(a, [5, 6, 3])
-
-// @test
-// def updateSequenceInPlace23(): Bool & Impure = 
-//     let a = [1, 2, 3];
-//     Array.updateSequenceInPlace(0, [4, 5, 6], a);
-//     Array.sameElements(a, [4, 5, 6])
-
-// @test
-// def updateSequenceInPlace24(): Bool & Impure = 
-//     let a = [1, 2, 3, 4, 5, 6, 7];
-//     Array.updateSequenceInPlace(2, [14, 15, 16, 17], a);
-//     Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
-
-// @test
-// def updateSequenceInPlace25(): Bool & Impure = 
-//     let a = [1, 2, 3, 4, 5, 6, 7];
-//     Array.updateSequenceInPlace(-2, [14, 15, 16, 17], a);
-//     Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
-
-// @test
-// def updateSequenceInPlace26(): Bool & Impure = 
-//     let a = [1, 2, 3, 4, 5, 6, 7];
-//     Array.updateSequenceInPlace(4, [14, 15, 16, 17], a);
-//     Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
-
-// @test
-// def updateSequenceInPlace27(): Bool & Impure = 
-//     let a = [1, 2, 3, 4, 5, 6, 7];
-//     Array.updateSequenceInPlace(4, [14, 15], a);
-//     Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
-
-// @test
-// def updateSequenceInPlace28(): Bool & Impure = 
-//     let a = [1, 2, 3, 4, 5, 6, 7];
-//     Array.updateSequenceInPlace(-1, [-1, -2, -3, -4, -5, -6, -7, -8], a);
-//     Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
-
-// /////////////////////////////////////////////////////////////////////////////
-// // findIndexOf                                                             //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def findIndexOf01(): Bool & Impure = Array.findIndexOf(i -> i > 2, []: Array[Int32]) == None
-
-// @test
-// def findIndexOf02(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1]) == None
-
-// @test
-// def findIndexOf03(): Bool & Impure = Array.findIndexOf(i -> i > 2, [3]) == Some(0)
-
-// @test
-// def findIndexOf04(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1,2]) == None
-
-// @test
-// def findIndexOf05(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
-
-// @test
-// def findIndexOf06(): Bool & Impure = Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
-
-// @test
-// def findIndexOf07(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
-
-// /////////////////////////////////////////////////////////////////////////////
-// // findIndexOfLeft                                                         //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def findIndexOfLeft01(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, []: Array[Int32]) == None
-
-// @test
-// def findIndexOfLeft02(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1]) == None
-
-// @test
-// def findIndexOfLeft03(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
-
-// @test
-// def findIndexOfLeft04(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
-
-// @test
-// def findIndexOfLeft05(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
-
-// @test
-// def findIndexOfLeft06(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
-
-// @test
-// def findIndexOfLeft07(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
-
-// /////////////////////////////////////////////////////////////////////////////
-// // findIndexOfRight                                                        //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def findIndexOfRight01(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, []: Array[Int32]) == None
-
-// @test
-// def findIndexOfRight02(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1]) == None
-
-// @test
-// def findIndexOfRight03(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
-
-// @test
-// def findIndexOfRight04(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1,2]) == None
-
-// @test
-// def findIndexOfRight05(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
-
-// @test
-// def findIndexOfRight06(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
-
-// @test
-// def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
-
-
-
-
-// /////////////////////////////////////////////////////////////////////////////
-// // replaceInPlace                                                          //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def replaceInPlace01(): Bool & Impure = 
-//     let a: Array[Int32] = [];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, []: Array[Int32])
-
-// @test
-// def replaceInPlace02(): Bool & Impure = 
-//     let a = [1];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [1])
-
-// @test
-// def replaceInPlace03(): Bool & Impure = 
-//     let a = [3];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [4])
-
-// @test
-// def replaceInPlace04(): Bool & Impure = 
-//     let a = [4];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [4])
-
-// @test
-// def replaceInPlace05(): Bool & Impure = 
-//     let a = [1, 2];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [1,2])
-
-// @test
-// def replaceInPlace06(): Bool & Impure = 
-//     let a = [1,3];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [1,4])
-
-// @test
-// def replaceInPlace07(): Bool & Impure = 
-//     let a = [3,4];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [4,4])
-
-// @test
-// def replaceInPlace08(): Bool & Impure = 
-//     let a = [3,3];
-//     Array.replaceInPlace(3, 4, a);
-//     Array.sameElements(a, [4,4])
-
-// /////////////////////////////////////////////////////////////////////////////
-// // mkStringBy                                                              //
-// /////////////////////////////////////////////////////////////////////////////
-// @test
-// def mkStringBy01(): Bool & Impure = 
-//     let a: Array[Int32] = [];
-//     let s = Array.mkStringBy(Int32.toString, ",", a);
-//     s == ""
-
-// @test
-// def mkStringBy02(): Bool & Impure = 
-//     let a = [1];
-//     let s = Array.mkStringBy(Int32.toString, ",", a);
-//     s == "1"
-
-// @test
-// def mkStringBy03(): Bool & Impure = 
-//     let a = [1,2];
-//     let s = Array.mkStringBy(Int32.toString, ",", a);
-//     s == "1,2"
-
-// @test
-// def mkStringBy04(): Bool & Impure = 
-//     let a = [1,2,3];
-//     let s = Array.mkStringBy(Int32.toString, ",", a);
-//     s == "1,2,3"
+/////////////////////////////////////////////////////////////////////////////
+// updateSequence                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def updateSequence01(): Bool & Impure = 
+     let a = Array.updateSequence(0, []: Array[Int32], []: Array[Int32]);
+     Array.sameElements(a, []: Array[Int32])
+
+@test
+def updateSequence02(): Bool & Impure = 
+    let a = Array.updateSequence(0, [1,2], []);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def updateSequence03(): Bool & Impure = 
+    let a = Array.updateSequence(0, [], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequence04(): Bool & Impure = 
+    let a = Array.updateSequence(-3, [1,2,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequence05(): Bool & Impure = 
+    let a = Array.updateSequence(2, [1,2,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequence06(): Bool & Impure = 
+    let a = Array.updateSequence(0, [], [1]);
+    Array.sameElements(a, [1])
+
+@test
+def updateSequence07(): Bool & Impure = 
+    let a = Array.updateSequence(1, [2], [1]);
+    Array.sameElements(a, [1])
+
+@test
+def updateSequence08(): Bool & Impure = 
+    let a = Array.updateSequence(0, [2], [1]);
+    Array.sameElements(a, [2])
+
+@test
+def updateSequence09(): Bool & Impure = 
+    let a = Array.updateSequence(0, [2,4], [1]);
+    Array.sameElements(a, [2])
+
+@test
+def updateSequence10(): Bool & Impure = 
+    let a = Array.updateSequence(-1, [2,4], [1]);
+    Array.sameElements(a, [4])
+
+@test
+def updateSequence11(): Bool & Impure = 
+    let a = Array.updateSequence(-1, [3,4], [1,2]);
+    Array.sameElements(a, [4,2])
+
+@test
+def updateSequence12(): Bool & Impure = 
+    let a = Array.updateSequence(1, [3,4], [1,2]);
+    Array.sameElements(a, [1,3])
+
+@test
+def updateSequence13(): Bool & Impure = 
+    let a = Array.updateSequence(-2, [3,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequence14(): Bool & Impure = 
+    let a = Array.updateSequence(2, [3,4], [1,2]);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequence15(): Bool & Impure = 
+    let a = Array.updateSequence(1, [3], [1,2]);
+    Array.sameElements(a, [1,3])
+
+@test
+def updateSequence16(): Bool & Impure = 
+    let a = Array.updateSequence(0, [3,4], [1,2]);
+    Array.sameElements(a, [3,4])
+
+@test
+def updateSequence17(): Bool & Impure = 
+    let a = Array.updateSequence(0, [4], [1, 2, 3]);
+    Array.sameElements(a, [4, 2, 3])
+
+@test
+def updateSequence18(): Bool & Impure = 
+    let a = Array.updateSequence(1, [4], [1, 2, 3]);
+    Array.sameElements(a, [1, 4, 3])
+
+@test
+def updateSequence19(): Bool & Impure = 
+    let a = Array.updateSequence(2, [4], [1, 2, 3]);
+    Array.sameElements(a, [1, 2, 4])
+
+@test
+def updateSequence20(): Bool & Impure = 
+    let a = Array.updateSequence(0, [4, 5], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 3])
+
+@test
+def updateSequence21(): Bool & Impure = 
+    let a = Array.updateSequence(1, [4, 5], [1, 2, 3]);
+    Array.sameElements(a, [1, 4, 5])
+
+@test
+def updateSequence22(): Bool & Impure = 
+    let a = Array.updateSequence(-1, [4, 5, 6], [1, 2, 3]);
+    Array.sameElements(a, [5, 6, 3])
+
+@test
+def updateSequence23(): Bool & Impure = 
+    let a = Array.updateSequence(0, [4, 5, 6], [1, 2, 3]);
+    Array.sameElements(a, [4, 5, 6])
+
+@test
+def updateSequence24(): Bool & Impure = 
+    let a = Array.updateSequence(2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
+
+@test
+def updateSequence25(): Bool & Impure = 
+    let a = Array.updateSequence(-2, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
+
+@test
+def updateSequence26(): Bool & Impure = 
+    let a = Array.updateSequence(4, [14, 15, 16, 17], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
+
+@test
+def updateSequence27(): Bool & Impure = 
+    let a = Array.updateSequence(4, [14, 15], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
+
+@test
+def updateSequence28(): Bool & Impure = 
+    let a = Array.updateSequence(-1, [-1, -2, -3, -4, -5, -6, -7, -8], [1, 2, 3, 4, 5, 6, 7]);
+    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
+
+/////////////////////////////////////////////////////////////////////////////
+// sameElements                                                            //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def sameElements01(): Bool & Impure = 
+    let a = []: Array[Int32];
+    let b = []: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements02(): Bool & Impure = 
+    let a = [1]: Array[Int32];
+    let b = []: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements03(): Bool & Impure = 
+    let a = []: Array[Int32];
+    let b = [1]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements04(): Bool & Impure = 
+    let a = [1]: Array[Int32];
+    let b = [1]: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements05(): Bool & Impure = 
+    let a = [1]: Array[Int32];
+    let b = [0]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+@test
+def sameElements06(): Bool & Impure = 
+    let a = [1,2]: Array[Int32];
+    let b = [1,2]: Array[Int32];
+    Array.sameElements(a,b) == true
+
+@test
+def sameElements07(): Bool & Impure = 
+    let a = [1,2]: Array[Int32];
+    let b = [2,1]: Array[Int32];
+    Array.sameElements(a,b) == false
+
+/////////////////////////////////////////////////////////////////////////////
+// foreach                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foreach01(): Bool & Impure = 
+    let a = []: Array[Int32];
+    let sb = StringBuilder.new();
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreach(fn, a);
+    StringBuilder.toString(sb) == ""
+
+@test
+def foreach02(): Bool & Impure = 
+    let a = [0];
+    let sb = StringBuilder.new();
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreach(fn, a);
+    StringBuilder.toString(sb) == "F"
+
+@test
+def foreach03(): Bool & Impure = 
+    let a = [1];
+    let sb = StringBuilder.new();
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreach(fn, a);
+    StringBuilder.toString(sb) == "T"
+
+@test
+def foreach04(): Bool & Impure = 
+    let a = [0,1];
+    let sb = StringBuilder.new();
+    let fn = x -> if (x > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreach(fn, a);
+    StringBuilder.toString(sb) == "FT"
+
+/////////////////////////////////////////////////////////////////////////////
+// foreachWithIndex                                                           //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def foreachWithIndex01(): Bool & Impure = 
+    let a = []: Array[Float32];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreachWithIndex(fn, a);
+    StringBuilder.toString(sb) == ""
+
+@test
+def foreachWithIndex02(): Bool & Impure = 
+    let a = [0.0];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreachWithIndex(fn, a);
+    StringBuilder.toString(sb) == "F"
+
+@test
+def foreachWithIndex03(): Bool & Impure = 
+    let a = [0.0, 0.1];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreachWithIndex(fn, a);
+    StringBuilder.toString(sb) == "FT"
+
+@test
+def foreachWithIndex04(): Bool & Impure = 
+    let a = [0.0, 0.1, 0.2];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreachWithIndex(fn, a);
+    StringBuilder.toString(sb) == "FTT"
+
+@test
+def foreachWithIndex05(): Bool & Impure = 
+    let a = [0.0, 0.1, 0.2, 0.3];
+    let sb = StringBuilder.new();
+    let fn = (_,ix) -> if (ix > 0) StringBuilder.appendChar(sb, 'T') else StringBuilder.appendChar(sb, 'F');
+    Array.foreachWithIndex(fn, a);
+    StringBuilder.toString(sb) == "FTTT"
+
+
+/////////////////////////////////////////////////////////////////////////////
+// mapInPlace                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def mapInPlace01(): Bool & Impure = 
+    let a: Array[Int32] = [];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def mapInPlace02(): Bool & Impure = 
+    let a = [0];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, [1])
+
+@test
+def mapInPlace03(): Bool & Impure = 
+    let a = [0,1];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, [1,2])
+
+@test
+def mapInPlace04(): Bool & Impure = 
+    let a = [0,1,2];
+    Array.mapInPlace(x -> x+1, a);
+    Array.sameElements(a, [1,2,3])
+
+
+/////////////////////////////////////////////////////////////////////////////
+// reverseInPlace                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def reverseInPlace01(): Bool & Impure = 
+    let a: Array[Int32] = [];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def reverseInPlace02(): Bool & Impure = 
+    let a = [1];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [1])
+
+@test
+def reverseInPlace03(): Bool & Impure = 
+    let a = [1,2];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [2,1])
+
+@test
+def reverseInPlace04(): Bool & Impure = 
+    let a = [1,1];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [1,1])
+
+@test
+def reverseInPlace05(): Bool & Impure = 
+    let a = [1,2,3];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [3,2,1])
+
+@test
+def reverseInPlace06(): Bool & Impure = 
+    let a = [1,2,3,4];
+    Array.reverseInPlace(a);
+    Array.sameElements(a, [4,3,2,1])
+
+/////////////////////////////////////////////////////////////////////////////
+// updateSequenceInPlace                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def updateSequenceInPlace01(): Bool & Impure = 
+     let a = []: Array[Int32];
+     Array.updateSequenceInPlace(0, []: Array[Int32], a);
+     Array.sameElements(a, []: Array[Int32])
+
+@test
+def updateSequenceInPlace02(): Bool & Impure = 
+    let a = []: Array[Int32];
+    Array.updateSequenceInPlace(0, [1,2], a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def updateSequenceInPlace03(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(0, [], a);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequenceInPlace04(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(-3, [1,2,4], a);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequenceInPlace05(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(2, [1,2,4], a);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequenceInPlace06(): Bool & Impure = 
+    let a = [1];
+    Array.updateSequenceInPlace(0, [], a);
+    Array.sameElements(a, [1])
+
+@test
+def updateSequenceInPlace07(): Bool & Impure = 
+    let a = [1];
+    Array.updateSequenceInPlace(1, [2], a);
+    Array.sameElements(a, [1])
+
+@test
+def updateSequenceInPlace08(): Bool & Impure = 
+    let a = [1];
+    Array.updateSequenceInPlace(0, [2], a);
+    Array.sameElements(a, [2])
+
+@test
+def updateSequenceInPlace09(): Bool & Impure = 
+    let a = [1];
+    Array.updateSequenceInPlace(0, [2,4], a);
+    Array.sameElements(a, [2])
+
+@test
+def updateSequenceInPlace10(): Bool & Impure = 
+    let a = [1];
+    Array.updateSequenceInPlace(-1, [2,4], a);
+    Array.sameElements(a, [4])
+
+@test
+def updateSequenceInPlace11(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(-1, [3,4], a);
+    Array.sameElements(a, [4,2])
+
+@test
+def updateSequenceInPlace12(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(1, [3,4], a);
+    Array.sameElements(a, [1,3])
+
+@test
+def updateSequenceInPlace13(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(-2, [3,4], a);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequenceInPlace14(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(2, [3,4], a);
+    Array.sameElements(a, [1,2])
+
+@test
+def updateSequenceInPlace15(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(1, [3], a);
+    Array.sameElements(a, [1,3])
+
+@test
+def updateSequenceInPlace16(): Bool & Impure = 
+    let a = [1,2];
+    Array.updateSequenceInPlace(0, [3,4], a);
+    Array.sameElements(a, [3,4])
+
+@test
+def updateSequenceInPlace17(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(0, [4], a);
+    Array.sameElements(a, [4, 2, 3])
+
+@test
+def updateSequenceInPlace18(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(1, [4], a);
+    Array.sameElements(a, [1, 4, 3])
+
+@test
+def updateSequenceInPlace19(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(2, [4], a);
+    Array.sameElements(a, [1, 2, 4])
+
+@test
+def updateSequenceInPlace20(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(0, [4, 5], a);
+    Array.sameElements(a, [4, 5, 3])
+
+@test
+def updateSequenceInPlace21(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(1, [4, 5], a);
+    Array.sameElements(a, [1, 4, 5])
+
+@test
+def updateSequenceInPlace22(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(-1, [4, 5, 6], a);
+    Array.sameElements(a, [5, 6, 3])
+
+@test
+def updateSequenceInPlace23(): Bool & Impure = 
+    let a = [1, 2, 3];
+    Array.updateSequenceInPlace(0, [4, 5, 6], a);
+    Array.sameElements(a, [4, 5, 6])
+
+@test
+def updateSequenceInPlace24(): Bool & Impure = 
+    let a = [1, 2, 3, 4, 5, 6, 7];
+    Array.updateSequenceInPlace(2, [14, 15, 16, 17], a);
+    Array.sameElements(a, [1, 2, 14, 15, 16, 17, 7])
+
+@test
+def updateSequenceInPlace25(): Bool & Impure = 
+    let a = [1, 2, 3, 4, 5, 6, 7];
+    Array.updateSequenceInPlace(-2, [14, 15, 16, 17], a);
+    Array.sameElements(a, [16, 17, 3, 4, 5, 6, 7])
+
+@test
+def updateSequenceInPlace26(): Bool & Impure = 
+    let a = [1, 2, 3, 4, 5, 6, 7];
+    Array.updateSequenceInPlace(4, [14, 15, 16, 17], a);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 16])
+
+@test
+def updateSequenceInPlace27(): Bool & Impure = 
+    let a = [1, 2, 3, 4, 5, 6, 7];
+    Array.updateSequenceInPlace(4, [14, 15], a);
+    Array.sameElements(a, [1, 2, 3, 4, 14, 15, 7])
+
+@test
+def updateSequenceInPlace28(): Bool & Impure = 
+    let a = [1, 2, 3, 4, 5, 6, 7];
+    Array.updateSequenceInPlace(-1, [-1, -2, -3, -4, -5, -6, -7, -8], a);
+    Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
+
+/////////////////////////////////////////////////////////////////////////////
+// findIndexOf                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findIndexOf01(): Bool & Impure = Array.findIndexOf(i -> i > 2, []: Array[Int32]) == None
+
+@test
+def findIndexOf02(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1]) == None
+
+@test
+def findIndexOf03(): Bool & Impure = Array.findIndexOf(i -> i > 2, [3]) == Some(0)
+
+@test
+def findIndexOf04(): Bool & Impure = Array.findIndexOf(i -> i > 2, [1,2]) == None
+
+@test
+def findIndexOf05(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,-6]) == Some(0)
+
+@test
+def findIndexOf06(): Bool & Impure = Array.findIndexOf(i -> i > 2, [-6,6]) == Some(1)
+
+@test
+def findIndexOf07(): Bool & Impure = Array.findIndexOf(i -> i > 2, [6,7]) == Some(0)
+
+/////////////////////////////////////////////////////////////////////////////
+// findIndexOfLeft                                                         //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findIndexOfLeft01(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, []: Array[Int32]) == None
+
+@test
+def findIndexOfLeft02(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1]) == None
+
+@test
+def findIndexOfLeft03(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [3]) == Some(0)
+
+@test
+def findIndexOfLeft04(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [1,2]) == None
+
+@test
+def findIndexOfLeft05(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,-6]) == Some(0)
+
+@test
+def findIndexOfLeft06(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [-6,6]) == Some(1)
+
+@test
+def findIndexOfLeft07(): Bool & Impure = Array.findIndexOfLeft(i -> i > 2, [6,7]) == Some(0)
+
+/////////////////////////////////////////////////////////////////////////////
+// findIndexOfRight                                                        //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findIndexOfRight01(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, []: Array[Int32]) == None
+
+@test
+def findIndexOfRight02(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1]) == None
+
+@test
+def findIndexOfRight03(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [3]) == Some(0)
+
+@test
+def findIndexOfRight04(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [1,2]) == None
+
+@test
+def findIndexOfRight05(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,-6]) == Some(0)
+
+@test
+def findIndexOfRight06(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [-6,6]) == Some(1)
+
+@test
+def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
+
+/////////////////////////////////////////////////////////////////////////////
+// replaceInPlace                                                          //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def replaceInPlace01(): Bool & Impure = 
+    let a: Array[Int32] = [];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def replaceInPlace02(): Bool & Impure = 
+    let a = [1];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [1])
+
+@test
+def replaceInPlace03(): Bool & Impure = 
+    let a = [3];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4])
+
+@test
+def replaceInPlace04(): Bool & Impure = 
+    let a = [4];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4])
+
+@test
+def replaceInPlace05(): Bool & Impure = 
+    let a = [1, 2];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [1,2])
+
+@test
+def replaceInPlace06(): Bool & Impure = 
+    let a = [1,3];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [1,4])
+
+@test
+def replaceInPlace07(): Bool & Impure = 
+    let a = [3,4];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4,4])
+
+@test
+def replaceInPlace08(): Bool & Impure = 
+    let a = [3,3];
+    Array.replaceInPlace(3, 4, a);
+    Array.sameElements(a, [4,4])
+
+/////////////////////////////////////////////////////////////////////////////
+// mkStringBy                                                              //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def mkStringBy01(): Bool & Impure = 
+    let a: Array[Int32] = [];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == ""
+
+@test
+def mkStringBy02(): Bool & Impure = 
+    let a = [1];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == "1"
+
+@test
+def mkStringBy03(): Bool & Impure = 
+    let a = [1,2];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == "1,2"
+
+@test
+def mkStringBy04(): Bool & Impure = 
+    let a = [1,2,3];
+    let s = Array.mkStringBy(Int32.toString, ",", a);
+    s == "1,2,3"
