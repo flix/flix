@@ -40,4 +40,4 @@ pub def lockPackage(self: Package): List[LockedPackage] = ???
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
 pub def initPackage(name: String): Array[String] & Impure = [name]
 
-pub def main(): Option[(String, char)] = Parser.runParser(Parser.char('h'), "hello")
+pub def main(): Option[(String, Char)] = Parser.runParser(Parser.char('h'), "hello")

@@ -28,10 +28,7 @@ namespace Parser {
 
     // Parser
     pub def char(x: char): Parser[char] = input -> match String.toList(input) {
-        case Cons(y, ys) => match (y == x) {
-            case true => Some((listToString(ys), x))
-            case _ => None
-        }
+        case Cons(y, ys) => if (y == x) { Some((listToString(ys), x)) } else { None }
         case Nil => None
     }
 }
