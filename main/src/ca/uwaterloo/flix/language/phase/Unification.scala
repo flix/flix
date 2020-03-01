@@ -825,6 +825,12 @@ object Unification {
     case (x, OR(NOT(y), _)) if x == y =>
       Type.Pure
 
+    // x ∨ (y ∧ x) => x
+    case (x1, AND(_, x2)) if x1 == x2 => x1
+
+    // (y ∧ x) ∨ x => x
+    case (AND(_, x1), x2) if x1 == x2 => x1
+
     // x ∨ x => x
     case _ if eff1 == eff2 =>
       eff1
