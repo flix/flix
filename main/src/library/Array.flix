@@ -225,12 +225,12 @@ namespace Array {
     ///
     /// Helper for `scanLeft`.
     ///
-    def scanLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], b: array[b], len: Int32, i: Int32) : Unit & e =
+    def scanLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], b: array[b], len: Int32, i: Int32) : Unit & Impure =
         if (i >= len)
             ()
         else {
-            let s1 = f(s, a[i-1] as a & e);
-            b[i] = s1 as a & e;
+            let s1 = f(s, a[i-1]);
+            b[i] = s1;
             scanLeftHelper(f, s1, a, b, len, i+1)
         }
 
@@ -248,12 +248,12 @@ namespace Array {
     ///
     /// Helper for `scanRight`.
     ///
-    def scanRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], b: array[b], i: Int32) : Unit & e =
+    def scanRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], b: array[b], i: Int32) : Unit & Impure =
         if (i < 0)
             ()
         else {
-            let s1 = f(a[i] as a & e, s);
-            b[i] = s1 as Unit & e ;
+            let s1 = f(a[i], s);
+            b[i] = s1;
             scanRightHelper(f, s1, a, b, i-1)
         }
 
@@ -264,7 +264,7 @@ namespace Array {
     ///
     pub def map(f: a -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i] as a & e), len)
+        init(i -> f(a[i]), len)
 
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
@@ -273,14 +273,14 @@ namespace Array {
     ///
     pub def mapWithIndex(f: (a, Int32) -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i] as a & e, i), len)
+        init(i -> f(a[i], i), len)
 
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
     pub def flatMap(f: a -> Array[b] & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
-        init(i -> f(a[i] as a & e), len) |> flatten
+        init(i -> f(a[i]), len) |> flatten
 
     ///
     /// Returns the reverse of `a`.
@@ -288,14 +288,14 @@ namespace Array {
     pub def reverse(a: Array[a]): Array[a] & Impure=
         let len = length(a);
         let end = len - 1;
-        init(i -> a[end - i] as a & Pure, len)
+        init(i -> a[end - i], len)
 
     ///
     /// Rotate the contents of array `a` by `n` steps to the left.
     ///
     pub def rotateLeft(n: Int32, a: Array[a]): Array[a] & Impure =
         if (length(a) < 1)
-            [] as Array[a] & Pure
+            []
         else {
             if (n < 0)
                 rotateRightHelper(Int32.abs(n), a)
@@ -316,7 +316,7 @@ namespace Array {
     ///
     pub def rotateRight(n: Int32, a: Array[a]): Array[a] & Impure =
         if (length(a) < 1)
-            [] as Array[a] & Pure
+            []
         else {
             if (n < 0)
                 rotateLeftHelper(Int32.abs(n), a)
@@ -340,7 +340,7 @@ namespace Array {
     /// Returns a shallow copy of `a` if `i < 0` or `i > length(xs)-1`.
     ///
     pub def update(i: Int32, x: a, a: Array[a]): Array[a] & Impure =
-        let f = ix -> if (ix == i) x else a[ix] as a & Pure;
+        let f = ix -> if (ix == i) x else a[ix];
         init(f, length(a))
 
     ///
@@ -351,7 +351,7 @@ namespace Array {
 
     ///
     ///
-    /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
+    /// Returns `b` with the `n` elements start ing at index `i` replaced with the elements of `a`.
     ///
     /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
     /// If `a` becomes depleted then no further patching is done.
@@ -1195,12 +1195,12 @@ namespace Array {
     ///
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
         let end = i + length(sub);
-        let f: Int32 -> a =
+        let f: Int32 -> a & Impure =
             { ix ->
-                if (ix >= i && ix < end)
-                    sub[ix - i] as a & Pure
-                else
-                    a[ix] as a & Pure
+                if (ix >= i && ix < end) {
+                    sub[ix - i]
+                } else
+                    a[ix]
              };
         init(f, length(a))
 
