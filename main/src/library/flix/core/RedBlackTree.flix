@@ -187,6 +187,28 @@ namespace RedBlackTree {
     }
 
     ///
+    /// Optionally returns the left most element of `tree`.
+    ///
+    pub def leftMost(tree: RedBlackTree[a]): Option[a] = match tree {
+        case Node(_, a, x, _) => match leftMost(a) {
+            case None => Some(x)
+            case _ => leftMost(a)
+        }
+        case _ => None
+    }
+
+    ///
+    /// Optionally returns the right most element of `tree`.
+    ///
+    pub def rightMost(tree: RedBlackTree[a]): Option[a] = match tree {
+        case Node(_, _, x, b) => match rightMost(b) {
+            case None => Some(x)
+            case _ => rightMost(b)
+        }
+        case _ => None
+    }
+
+    ///
     /// Returns a rudimentary string representation of `tree`.
     ///
     /// Note: Currently only supports RedBlackTree[Int32].
