@@ -4,7 +4,11 @@ pub type alias Parsec[s, a] = s -> Option[(s, a)]
 pub type alias Parser[a] = Parsec[String, a]
 
 namespace Parser {
-    pub def runParser(parser: Parser[a], s: String): Option[(String, a)] = parser(s)
+    pub def runParser(v: Parser[a], s: String): Option[(String, a)] = v(s)
+
+    pub def mapOption(v: Parser[a], f: a -> Option[b]): Parser[b] = input -> {
+        Option.flatMap(tup -> match tup { case (inputx, x) => Option.map(y -> (inputx, y), f(x)) }, runParser(v, input))
+    }
 
     // Functor
     pub def fmap(f: a -> b, parser: Parser[a]): Parser[b] = input -> Option.flatMap(tup -> match tup { case (inputx, x) => Some((inputx, f(x))) }, runParser(parser, input))
@@ -52,11 +56,11 @@ namespace Parser {
     // Made easier if 1) `Parsec` was used 2) `String` was `List[Char]`
     pub def span(p: Char -> Bool): Parser[String] = input -> {
         let (l, r) = List.span(p, String.toList(input));
-        Some(listToString(l), listToString(r))
+        Some(listToString(r), listToString(l))
     }
 
-    // TODO: Weird name. Also, not sure `bind` is the solution here. We want to inject a failing parser when predicate is `true` on the result type.
-    pub def failOn(v: Parser[a], p: a -> Bool): Parser[a] = v >>= (x -> if (p(x)) { _ -> None } else { ??? })
+    // TODO: Weird name.
+    pub def failOn(v: Parser[a], p: a -> Bool): Parser[a] = mapOption(v, x -> if (p(x)) { None } else { Some(x) })
 }
 
 // This is a large amount of namespace pollution. Right now this file is only loaded manually, so it's alright.
@@ -79,6 +83,7 @@ pub def >>=(v: Parser[a], f: a -> Parser[b]): Parser[b] = Parser.bind(v, f)
 pub enum JsonValue {
     case JsonNull
     case JsonBool(Bool)
+    case JsonNumber(Int)
 }
 
 namespace JsonParser {
@@ -92,4 +97,12 @@ namespace JsonParser {
     }
 
     pub def jsonBool(): Parser[JsonValue] = jsonBoolHelper <&> (Parser.string("true") <|> Parser.string("false"))
+
+    pub def jsonNumberHelper(s: String): JsonValue = JsonNumber(match Int32.fromString(s) {
+        case Ok(i) => i,
+        // TODO: Unreachable?
+        case _ => ???
+    })
+
+    pub def jsonNumber(): Parser[JsonValue] = jsonNumberHelper <&> Parser.failOn(Parser.span(Char.isDigit), String.isEmpty)
 }
