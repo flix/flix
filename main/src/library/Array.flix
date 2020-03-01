@@ -852,33 +852,39 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    /// TODO - this is HAskell's groupBy, in Flix List.groupBy is Scala's groupBy. Change to Scala style.
-    ///
-    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
-        groupByHelper(f, a, length(a), 0) |> List.toArray
+    pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure = 
+        let xs = Array.toList(a);
+        groupByHelper(f, xs) |> List.toArray
 
     ///
-    /// Helper for `groupBy`.
+    /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, a: Array[a], len: Int32, i: Int32): List[Array[a]]  & Impure =
-        if (i >= len)
-            Nil
-        else {
-            let x = a[i];
-            let end = forwardSpan(f(x), a, len, i+1);
-            let group1 = slice(a, i, end);
-            group1 :: groupByHelper(f, a, len, end)
-        }
+    pub def groupByHelper(f: (a, a) -> Bool, xs: List[a]): List[Array[a]] & Impure = match xs {
+        case Nil => Nil
+        case x :: rs =>
+            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
+            r1 :: groupByHelper(f, r2)
+    }
 
     ///
-    /// Helper for `groupBy`.
+    /// Helper function for `groupBy`.
     ///
-    def forwardSpan(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Int32 & Pure =
-        if (i >= len)
-            len
-        else {
-            if (!f(a[i] as a & Pure)) i else forwardSpan(f, a, len, i+1)
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
+        case Nil => { 
+            let a = List.toArray(ps);
+            reverseInPlace(a);
+            (a, List.reverse(ns))
         }
+        case x :: rs => if (agreeHelper(f, x, ps)) extractHelper(f, rs, x :: ps, ns) else extractHelper(f, rs, ps, x :: ns)
+    }
+
+    ///
+    /// Helper function for `groupBy`.
+    ///
+    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
+        case Nil => true
+        case x :: rs => if (f(x, a) && f(a, x)) agreeHelper(f, a, rs) else false
+    }
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1097,13 +1103,10 @@ namespace Array {
             initHelper(a, f, len, i+1)
         }
 
-    /// TODO - this is a hack, Flix's parser seems not to like adding effect annos to pairs `(a, b) & e`
-    type alias PairOfArrays[a,b] = (Array[a], Array[b])
-
     ///
     /// Build a pair of arrays of length `len` by applying `f` to the successive indices.
     ///
-    pub def init2(f: Int32 -> (a,b) & e, len: Int32): PairOfArrays[a,b] & Impure =
+    pub def init2(f: Int32 -> (a,b) & e, len: Int32): (Array[a], Array[b]) & Impure =
         if (len <= 0)
             ([], [])
         else {
