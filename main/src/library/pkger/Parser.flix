@@ -1,4 +1,7 @@
-pub type alias Parser[a] = String -> Option[(String, a)]
+// Could be generic in monad with type classes
+pub type alias Parsec[s, a] = s -> Option[(s, a)]
+
+pub type alias Parser[a] = Parsec[String, a]
 
 namespace Parser {
     pub def runParser(parser: Parser[a], s: String): Option[(String, a)] = parser(s)
@@ -13,6 +16,14 @@ namespace Parser {
 
     pub def liftA2(f: a -> b -> c, x: Parser[a], y: Parser[b]): Parser[c] = ap(fmap(f, x), y)
 
+    // Monad
+    pub def return(x: a): Parser[a] = pure(x)
+
+    // TODO: `flatMap` instead?
+    pub def bind(v: Parser[a], f: a -> Parser[b]): Parser[b] = input -> {
+        Option.flatMap(tup -> match tup { case (inputx, x) => runParser(f(x), inputx) }, runParser(v, input))
+    }
+
     // Alternative
     pub def empty(): Parser[a] = _ -> None
 
@@ -20,17 +31,32 @@ namespace Parser {
 
     def cons(x: a, xs: List[a]): List[a] = x :: xs
 
+    def flipCons(xs: List[a], x: a): List[a] = x :: xs
+
     pub def some(v: Parser[a]): Parser[List[a]] = cons <&> v <*> many(v)
 
     pub def many(v: Parser[a]): Parser[List[a]] = some(v) <|> Parser.pure(Nil)
 
-    def listToString(xs: List[char]): String = List.foldLeft((s, x) -> String.concat(s, Char.toString(x)), "", xs)
+    def listToString(xs: List[Char]): String = List.foldLeft((s, x) -> String.concat(s, Char.toString(x)), "", xs)
 
     // Parser
-    pub def char(x: char): Parser[char] = input -> match String.toList(input) {
+    pub def char(x: Char): Parser[char] = input -> match String.toList(input) {
         case Cons(y, ys) => if (y == x) { Some((listToString(ys), x)) } else { None }
         case Nil => None
     }
+
+    def sequenceA(xs: List[Parser[a]]): Parser[List[a]] = List.reverse <&> List.foldLeft(liftA2(flipCons), pure(Nil), xs)
+
+    pub def string(s: String): Parser[String] = listToString <&> List.map(char,  String.toList(s)).sequenceA()
+
+    // Made easier if 1) `Parsec` was used 2) `String` was `List[Char]`
+    pub def span(p: Char -> Bool): Parser[String] = input -> {
+        let (l, r) = List.span(p, String.toList(input));
+        Some(listToString(l), listToString(r))
+    }
+
+    // TODO: Weird name. Also, not sure `bind` is the solution here. We want to inject a failing parser when predicate is `true`.
+    pub def failOn(v: Parser[a], p: a -> Bool): Parser[a] = v >>= (x -> if (p(x)) { _ -> None } else { ??? })
 }
 
 pub def <&>(f: a -> b, parser: Parser[a]): Parser[b] = Parser.fmap(f, parser)
@@ -41,6 +67,28 @@ pub def &>(parser: Parser[a], x: b): Parser[b] = x <& parser
 
 pub def <*>(l: Parser[a -> b], r: Parser[a]): Parser[b] = Parser.ap(l, r)
 
-pub def <*(l: Parser[a], r: Parser[b]): Parser[a] = Parser.liftA2((x, _) -> x, l, r)
+pub def <*(l: Parser[a], r: Parser[b]): Parser[a] = ((x, _) -> x) <&> l <*> r
+
+pub def *>(l: Parser[a], r: Parser[b]): Parser[b] = ((x -> x) <& l) <*> r
 
 pub def <|>(l: Parser[a], r: Parser[a]): Parser[a] = Parser.choose(l, r)
+
+pub def >>=(v: Parser[a], f: a -> Parser[b]): Parser[b] = Parser.bind(v, f)
+
+pub enum JsonValue {
+    case JsonNull
+    case JsonBool(Bool)
+}
+
+namespace JsonParser {
+    pub def jsonNull(): Parser[JsonValue] = (_ -> JsonNull) <&> Parser.string("null")
+
+    def jsonBoolHelper(s: String): JsonValue = match s {
+        case "true" => JsonBool(true),
+        case "false" => JsonBool(false)
+        // TODO: Is there something akin to `unreachable!()` from Rust?
+        case _ => ???
+    }
+
+    pub def jsonBool(): Parser[JsonValue] = jsonBoolHelper <&> (Parser.string("true") <|> Parser.string("false"))
+}
