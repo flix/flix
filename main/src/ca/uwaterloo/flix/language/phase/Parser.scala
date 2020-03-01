@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Polarity, Source}
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
 
 import scala.collection.immutable.Seq

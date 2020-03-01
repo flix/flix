@@ -285,6 +285,7 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the literal.
       * @param sign the sign (true if signed).
+      * @param radix the radix of the literal.
       * @param lit  the int8 literal.
       * @param sp2  the position of the last character in the literal.
       */
@@ -295,6 +296,7 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the literal.
       * @param sign the sign (true if signed).
+      * @param radix the radix of the literal.
       * @param lit  the int16 literal.
       * @param sp2  the position of the last character in the literal.
       */
@@ -305,6 +307,7 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the literal.
       * @param sign the sign (true if signed).
+      * @param radix the radix of the literal.
       * @param lit  the int32 literal.
       * @param sp2  the position of the last character in the literal.
       */
@@ -315,6 +318,7 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the literal.
       * @param sign the sign (true if signed).
+      * @param radix the radix of the literal.
       * @param lit  the int64 literal.
       * @param sp2  the position of the last character in the literal.
       */
@@ -325,6 +329,7 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the literal.
       * @param sign the sign (true if signed).
+      * @param radix the radix of the literal.
       * @param lit  the big int literal.
       * @param sp2  the position of the last character in the literal.
       */
