@@ -1731,25 +1731,25 @@ def foreach02(): Bool & Impure =
 // toArray                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toArray01(): Bool @ Pure =
+def toArray01(): Bool & Impure =
     let xs: List[Int32] = Nil;
     let a: Array[Int32] = List.toArray(xs);
-    Array.sameElements(a, [] as Array[Int32] @ Pure)
+    Array.sameElements(a, []: Array[Int32])
     
 
 @test
-def toArray02(): Bool @ Pure =
+def toArray02(): Bool & Impure =
     let a = List.toArray(1 :: Nil);
-    Array.sameElements(a, [1] as Array[Int32] @ Pure)
+    Array.sameElements(a, [1])
 
 @test
-def toArray03(): Bool @ Pure =
+def toArray03(): Bool & Impure =
     let a = List.toArray(1 :: 2 :: Nil);
-    Array.sameElements(a, [1,2] as Array[Int32] @ Pure)
+    Array.sameElements(a, [1,2])
 
 @test
-def toArray04(): Bool @ Pure =
+def toArray04(): Bool & Impure =
     let a = List.toArray(1 :: 2 :: 3 :: Nil);
-    Array.sameElements(a, [1,2,3] as Array[Int32] @ Pure)
+    Array.sameElements(a, [1,2,3])
 
 }
