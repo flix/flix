@@ -583,7 +583,7 @@ namespace Array {
         if (length(a) == 0)
             None
         else
-            Some(reduceLeftHelper(f, a, a[0] : a & e, 1))
+            Some(reduceLeftHelper(f, a, a[0] as a & e, 1))
 
     ///
     /// Helper function for `reduceLeft`.
@@ -592,7 +592,7 @@ namespace Array {
         if (i >= length(a))
             x
         else
-            reduceLeftHelper(f, a, f(x, a[i] : a & e), i+1)
+            reduceLeftHelper(f, a, f(x, a[i] as a & e), i+1)
 
     ///
     /// Applies `f` to all elements in `a` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -604,7 +604,7 @@ namespace Array {
             None
         else {
             let end = length(a) - 1;
-            let ac = a[end];
+            let ac = a[end] as a & e;
             Some(reduceRightHelper(f, a, ac, end-1))
         }
 
@@ -632,7 +632,7 @@ namespace Array {
             case None => []
             case Some(x) => {
                 let out = Array.new(x, len);
-                foreachAccum((pos,a) -> arrayWrites(pos, a, out) as Int32 & Impure, 0, arrs);
+                foreachAccum((pos,a) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -645,19 +645,19 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     pub def exists(f: a -> Bool, a: Array[a]): Bool =
-        existsHelper(f, a, 0)
+        existsHelper(f, a, length(a), 0)
 
     ///
     /// Helper function for `exists`.
     ///
-    def existsHelper(f: a -> Bool, a: Array[a], i: Int): Bool =
-        if (i >= length(a))
+    def existsHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool =
+        if (i >= len)
             false
         else
             if (f(a[i] as a & Pure) == true)
                 true
             else
-                existsHelper(f, a, i+1)
+                existsHelper(f, a, len, i+1)
 
     ///
     /// Returns `true` if and only if all elements in `a` satisfy the predicate `f`.
@@ -852,6 +852,8 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
+    /// TODO - this is HAskell's groupBy, in Flix List.groupBy is Scala's groupBy. Change to Scala style.
+    ///
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
         groupByHelper(f, a, length(a), 0) |> List.toArray
 
@@ -862,7 +864,7 @@ namespace Array {
         if (i >= len)
             Nil
         else {
-            let x = a[i] as a & Pure;
+            let x = a[i];
             let end = forwardSpan(f(x), a, len, i+1);
             let group1 = slice(a, i, end);
             group1 :: groupByHelper(f, a, len, end)
@@ -897,7 +899,6 @@ namespace Array {
     pub def zipWith(f: (a, b) -> c & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
         init(i -> f(a[i] as a & e, b[i] as b & e), len) as Array[c] & Impure
-
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -938,22 +939,28 @@ namespace Array {
     ///
     /// Helper function for `foldLeft2`.
     ///
-    def foldLeft2Helper(f: (c, a, b) ->  c & e , s: c, a: Array[a], b: Array[b], i: Int): c & e=
+    /// TODO make lengths static argument(s)
+    ///
+    def foldLeft2Helper(f: (c, a, b) ->  c & e , s: c, a: Array[a], b: Array[b], i: Int32): c & e =
         if (i >= length(a) || i >= length(b))
             s
-        else
-            let s1 = f(s, a[i] : a & e, b[i] : a & e);
+        else {
+            let x = a[i] as a & e;
+            let y = b[i] as b & e;
+            let s1 = f(s, x, y);
             foldLeft2Helper(f, s1, a, b, i + 1)
-
+        }
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from right to left.
     ///
-    pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c  & e =
+    /// TODO - better guard the calls to drop...
+    ///
+    pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c & e =
         let len1 = length(a);
         let len2 = length(b);
         let i = Int32.min(len1, len2) - 1;
-        foldRight2Helper(f, c, drop(len1-len2, a), drop(len2-len1, b), i)
+        foldRight2Helper(f, c, drop(len1-len2, a) as Array[a] & e, drop(len2-len1, b) as Array[b] & e, i)
 
     ///
     /// Helper function for `foldRight2`.
@@ -961,14 +968,19 @@ namespace Array {
     def foldRight2Helper(f: (a, b, c) -> c & e , s: c, a: Array[a], b: Array[b], i: Int): c & e =
         if (i < 0)
             s
-        else
-            let s1 = f(a[i] as a & e, b[i] as b & e, s);
+        else {
+            let x = a[i] as a & e;
+            let y = b[i] as b & e;
+            let s1 = f(x, y, s);
             foldRight2Helper(f, s1, a, b, i - 1)
+        }
 
     ///
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
-    pub def filterMap(f: a -> Option[b] & e, a: Array[a]): Array[b] & e =
+    /// TODO `f` should probably be pure as otherwise this leaks information about the orer of traversal
+    ///
+    pub def filterMap(f: a -> Option[b] & e, a: Array[a]): Array[b] & Impure =
         foldRight((x,xs) -> match f(x) {
             case None => xs
             case Some(b) => b :: xs }, Nil, a) |> List.toArray
@@ -984,19 +996,20 @@ namespace Array {
     ///
     /// Helper function for `findMap`.
     ///
-    def findMapHelper(f: a -> Option[b] & e, a: Array[a], len: Int32, i: Int32): Option[b] & e=
+    def findMapHelper(f: a -> Option[b] & e, a: Array[a], len: Int32, i: Int32): Option[b] & e =
         if (i >= len)
             None
-        else
-            match (f(a[i] : a & e)) {
+        else {
+            let x = f(a[i] as a & e);
+            match x {
                 case Some(v) => Some(v)
                 case None => findMapHelper(f, a, len, i+1)
             }
-
+        }
     ///
     /// Returns the array `a` as a set.
     ///
-    pub def toSet(a: Array[a]): Set[a] & Pure = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet(a: Array[a]): Set[a] = foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1006,7 +1019,6 @@ namespace Array {
     ///
     pub def toMap(a: Array[(a, b)]): Map[a, b] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
-
 
     ///
     /// Alias for `findIndexOfLeft`.
