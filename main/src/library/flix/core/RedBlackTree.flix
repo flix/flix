@@ -170,27 +170,36 @@ namespace RedBlackTree {
     }
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `tree`.
+    /// Applies `f` to a start value `s` and all elements in `tree` going from left to right, i.e. inorder.
     ///
-    pub def fold(f: (b, a) -> b, s: b, tree: RedBlackTree[a]): b = match tree {
-        case Node(_, a, x, b) => fold(f, fold(f, f(s, x), a), b)
+    ///
+    pub def foldLeft(f: (b, a) -> b, s: b, tree: RedBlackTree[a]): b = match tree {
+        case Node(_, a, x, b) => foldLeft(f, f(foldLeft(f, s, a), x), b)
         case _ => s
     }
 
-///    ///
-///    /// Returns a rudimentary string representation of `tree`.
-///    ///
-///    pub def toString(tree: RedBlackTree[a]): Str & Impure = {
-///        import java.lang.String:valueOf(a);
-///        match tree {
-///            case Leaf => "Leaf"
-///            case DoubleLeaf => "DoubleLeaf"
-///            case Node(color, a, x, b) => match color {
-///                case Red => "Node(Red, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
-///                case Black => "Node(Black, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
-///                case DoubleBlack => "Node(DoubleBlack, ${toString(a)}, ${valueOf(x)}, ${toString(b)})"
-///            }
-///        }
-///    }
+    ///
+    /// Applies `f` to a start value `s` and all elements in `tree` going from right to left, i.e. reverse inorder
+    ///
+    pub def foldRight(f: (b, a) -> b, s: b, tree: RedBlackTree[a]): b = match tree {
+        case Node(_, a, x, b) => foldRight(f, f(foldRight(f, s, b), x), a)
+        case _ => s
+    }
+
+    ///
+    /// Returns a rudimentary string representation of `tree`.
+    ///
+    /// Note: Currently only supports RedBlackTree[Int32].
+    pub def toString(tree: RedBlackTree[Int32]): Str = {
+        match tree {
+            case Leaf => "Leaf"
+            case DoubleLeaf => "DoubleLeaf"
+            case Node(color, a, x, b) => match color {
+                case Red => "Node(Red, ${toString(a)}, ${Int32.toString(x)}, ${toString(b)})"
+                case Black => "Node(Black, ${toString(a)}, ${Int32.toString(x)}, ${toString(b)})"
+                case DoubleBlack => "Node(DoubleBlack, ${toString(a)}, ${Int32.toString(x)}, ${toString(b)})"
+            }
+        }
+    }
 
 }
