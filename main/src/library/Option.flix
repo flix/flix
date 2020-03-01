@@ -241,6 +241,11 @@ namespace Option {
         case Some(v) => f(v)
     }
 
+    pub def choose(l: Option[a], r: Option[a]): Option[a] = match l {
+        case None => r
+        case Some(v) => Some(v)
+    }
+
     ///
     /// Returns `true` if and only if `o1` and `o2` and equal.
     ///
