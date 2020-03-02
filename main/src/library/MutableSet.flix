@@ -17,6 +17,7 @@
 ///
 /// The Mutable Set type.
 ///
+// TODO: Rename to MutSet
 enum MutableSet[t] {
     case MutableSet(Ref[Set[t]])
 }
@@ -284,18 +285,16 @@ namespace MutableSet {
         let Set(s) = xs;
         let (ys, zs) = List.partition(f, s);
             (Set(ys), Set(zs))
+    */
 
-
-
-
-
+    // TODO: toImmutable and toMutable?
 
     ///
     /// Returns the set `xs` as a list.
     ///
-    pub def toList(xs: Set[a]): List[a] =
-        let Set(s) = xs;
-            s
+    pub def toList(xs: MutableSet[a]): List[a] & Impure =
+        let MutableSet(s) = xs;
+        Set.toList(deref s)
 
     ///
     /// Returns the association set `xs` as a map.
@@ -303,27 +302,24 @@ namespace MutableSet {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(xs: Set[(a, b)]): Map[a, b] =
-        let Set(s) = xs;
-            List.toMap(s)
+    pub def toMap(xs: MutableSet[(a, b)]): Map[a, b] & Impure =
+        let MutableSet(s) = xs;
+        Set.toMap(deref s)
 
     ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure = match xs {
-        case Set(l) => List.foreach(f, l)
-    }
-
-
-
+    pub def foreach(f: a ~> Unit, xs: MutableSet[a]): Unit & Impure =
+        let MutableSet(s) = xs;
+        Set.foreach(f, deref s)
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
     ///
-    pub def __eq(xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
-    */
+    pub def __eq(xs: MutableSet[a], ys: MutableSet[a]): Bool & Impure =
+        isSubsetOf(xs, ys) && size(xs) == size(ys)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
