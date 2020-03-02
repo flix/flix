@@ -201,6 +201,130 @@ namespace MutableSet {
         let MutableSet(s) = xs;
             Set.forall(f, deref s)
 
+/*
+
+
+
+    ///
+    /// Returns the union of `xs` and `ys`.
+    ///
+    pub def union(xs: Set[a], ys: Set[a]): Set[a] =
+        let Set(s) = xs;
+            List.foldRight(insert, ys, s)
+
+    ///
+    /// Returns the intersection of `xs` and `ys`.
+    ///
+    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] =
+        let Set(s) = xs;
+            List.foldRight((x, y) -> if (memberOf(x, ys)) insert(x, y) else y, empty(), s)
+
+    ///
+    /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
+    ///
+    pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
+        let Set(s) = xs;
+            List.foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
+
+    ///
+    /// Returns all subsets of `xs`.
+    ///
+    pub def subsets(xs: Set[a]): Set[Set[a]] =
+        let Set(s) = xs;
+            Set(List.map(x -> Set(x), List.subsequences(s)))
+
+
+
+
+
+
+    ///
+    /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
+        let Set(s) = xs;
+            Set(List.filter(f, s))
+
+    ///
+    /// Returns the result of applying `f` to every element in `xs`.
+    ///
+    /// Note: The returned set may be smaller than `xs`.
+    ///
+    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e = match xs {
+        case Set(Nil) => Set(Nil)
+        case Set(x :: rs) => insert(f(x), map(f, Set(rs)))
+    }
+
+    ///
+    /// Returns the result of applying `f` to every element in `xs` and taking the union.
+    ///
+    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e = match xs {
+        case Set(Nil) => Set(Nil)
+        case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
+    }
+
+    ///
+    /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
+    ///
+    /// Note: The returned set may be smaller than `xs`.
+    ///
+    pub def replace(x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
+
+    ///
+    /// Returns a pair of sets `(ys, zs)`.
+    //
+    /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
+    /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
+        let Set(s) = xs;
+        let (ys, zs) = List.partition(f, s);
+            (Set(ys), Set(zs))
+
+
+
+
+
+
+    ///
+    /// Returns the set `xs` as a list.
+    ///
+    pub def toList(xs: Set[a]): List[a] =
+        let Set(s) = xs;
+            s
+
+    ///
+    /// Returns the association set `xs` as a map.
+    ///
+    /// If `xs` contains multiple mappings with the same key, `toMap` does not
+    /// make any guarantees about which mapping will be in the resulting map.
+    ///
+    pub def toMap(xs: Set[(a, b)]): Map[a, b] =
+        let Set(s) = xs;
+            List.toMap(s)
+
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure = match xs {
+        case Set(l) => List.foreach(f, l)
+    }
+
+
+
+
+    ///
+    /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
+    ///
+    pub def __eq(xs: Set[a], ys: Set[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
+    */
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
