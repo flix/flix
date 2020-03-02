@@ -171,7 +171,9 @@ namespace MutSet {
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
+
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
+
     /// Returns `None` if `xs` is the empty set.
     ///
     pub def reduceLeft(f: (a, a) -> a & e, xs: MutSet[a]): Option[a] & Impure =
@@ -180,7 +182,9 @@ namespace MutSet {
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+
     /// Returns `None` if `xs` is the empty set.
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: MutSet[a]): Option[a] & Impure =
