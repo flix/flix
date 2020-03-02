@@ -23,7 +23,7 @@ enum MutSet[t] {
 
 namespace MutSet {
 
-    // TODO: Extra ops: copy, removeAll, containsAll, retainAll, removeIf, filterInPlace,
+    // TODO: Extra ops: removeAll, retainAll, removeIf, filterInPlace,
 
     ///
     /// Returns a fresh empty set.
@@ -59,11 +59,23 @@ namespace MutSet {
         ms := Set.empty()
 
     ///
+    /// Returns a shallow copy of `xs`.
+    ///
+    pub def copy(xs: mut MutSet[a]): MutSet[a] & Impure =
+        let MutSet(ms) = xs;
+        MutSet(ref (deref ms))
+
+    ///
     /// Removes `x` from `xs`.
     ///
-    pub def delete(x: a, xs: mut MutSet[a]): Unit & Impure =
+    pub def remove(x: a, xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.delete(x, deref ms)
+
+    ///
+    ///
+    ///
+    // TODO: RemoveAll
 
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
