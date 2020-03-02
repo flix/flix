@@ -33,8 +33,8 @@ namespace MutableSet {
     /// Returns the size of `xs`.
     ///
     pub def size(xs: MutableSet[a]): Int32 & Impure =
-        let MutableSet(s) = xs;
-        Set.size(deref s)
+        let MutableSet(ms) = xs;
+        Set.size(deref ms)
 
     ///
     /// Returns a fresh empty set.
@@ -52,29 +52,29 @@ namespace MutableSet {
     /// Adds `x` to `xs`.
     ///
     pub def insert(x: a, xs: mut MutableSet[a]): Unit & Impure =
-        let MutableSet(s) = xs;
-        s := Set.insert(x, deref s)
+        let MutableSet(ms) = xs;
+        ms := Set.insert(x, deref ms)
 
     ///
     /// Removes `x` from `xs`.
     ///
     pub def delete(x: a, xs: mut MutableSet[a]): Unit & Impure =
-        let MutableSet(s) = xs;
-        s := Set.delete(x, deref s)
+        let MutableSet(ms) = xs;
+        ms := Set.delete(x, deref ms)
 
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
     ///
     pub def isEmpty(xs: MutableSet[a]): Bool & Impure =
-        let MutableSet(s) = xs;
-        Set.isEmpty(deref s)
+        let MutableSet(ms) = xs;
+        Set.isEmpty(deref ms)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     pub def memberOf(x: a, xs: MutableSet[a]): Bool & Impure =
-        let MutableSet(s) = xs;
-        Set.memberOf(x, deref s)
+        let MutableSet(ms) = xs;
+        Set.memberOf(x, deref ms)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
@@ -101,8 +101,8 @@ namespace MutableSet {
     /// The function `f` must be pure.
     ///
     pub def findLeft(f: a -> Bool, xs: MutableSet[a]): Option[a] & Impure =
-        let MutableSet(s) = xs;
-            Set.findLeft(f, deref s)
+        let MutableSet(ms) = xs;
+            Set.findLeft(f, deref ms)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
@@ -110,8 +110,8 @@ namespace MutableSet {
     /// The function `f` must be pure.
     ///
     pub def findRight(f: a -> Bool, xs: MutableSet[a]): Option[a] & Impure =
-        let MutableSet(s) = xs;
-            Set.findRight(f, deref s)
+        let MutableSet(ms) = xs;
+            Set.findRight(f, deref ms)
 
     ///
     /// Alias for `foldLeft`.
@@ -125,7 +125,7 @@ namespace MutableSet {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, xs: MutableSet[a]): b & Impure =
-        let MutableSet(ms) = xs;        // TODO: rename here or everywhere?
+        let MutableSet(ms) = xs;
         Set.foldLeft(f, s, deref ms)
 
     ///
@@ -149,8 +149,8 @@ namespace MutableSet {
     /// Returns `None` if `xs` is the empty set.
     ///
     pub def reduceLeft(f: (a, a) -> a & e, xs: MutableSet[a]): Option[a] & Impure =
-        let MutableSet(s) = xs;
-        Set.reduceLeft(f, deref s)
+        let MutableSet(ms) = xs;
+        Set.reduceLeft(f, deref ms)
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -158,8 +158,8 @@ namespace MutableSet {
     /// Returns `None` if `xs` is the empty set.
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: MutableSet[a]): Option[a] & Impure =
-        let MutableSet(s) = xs;
-        Set.reduceRight(f, deref s)
+        let MutableSet(ms) = xs;
+        Set.reduceRight(f, deref ms)
 
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
@@ -167,8 +167,8 @@ namespace MutableSet {
     /// The function `f` must be pure.
     ///
     pub def count(f: a -> Bool, xs: MutableSet[a]): Int32 & Impure =
-        let MutableSet(s) = xs;
-        Set.count(f, deref s)
+        let MutableSet(ms) = xs;
+        Set.count(f, deref ms)
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
@@ -178,8 +178,8 @@ namespace MutableSet {
     /// The function `f` must be pure.
     ///
     pub def exists(f: a -> Bool, xs: MutableSet[a]): Bool & Impure =
-        let MutableSet(s) = xs;
-            Set.exists(f, deref s)
+        let MutableSet(ms) = xs;
+            Set.exists(f, deref ms)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
@@ -189,8 +189,8 @@ namespace MutableSet {
     /// The function `f` must be pure.
     ///
     pub def forall(f: a -> Bool, xs: MutableSet[a]): Bool & Impure =
-        let MutableSet(s) = xs;
-            Set.forall(f, deref s)
+        let MutableSet(ms) = xs;
+            Set.forall(f, deref ms)
 
 /*
 
@@ -234,22 +234,22 @@ namespace MutableSet {
     /// Applies the function `f` to every element in `xs`.
     ///
     pub def transform(f: a -> a & e, xs: mut MutableSet[a]): Unit & Impure =
-        let MutableSet(s) = xs;
-        s := Set.map(f, deref s)
+        let MutableSet(ms) = xs;
+        ms := Set.map(f, deref ms)
 
     ///
     /// Applies the function `f` to every element in `xs` merging the results into `xs`.
     ///
     pub def flatTransform(f: a -> Set[a] & e, xs: mut MutableSet[a]): Unit & Impure =
-        let MutableSet(s) = xs;
-        s := Set.flatMap(f, deref s)
+        let MutableSet(ms) = xs;
+        ms := Set.flatMap(f, deref ms)
 
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
     pub def replace(x: a, y: a, xs: mut MutableSet[a]): Unit & Impure =
-        let MutableSet(s) = xs;
-        s := Set.replace(x, y, deref s)
+        let MutableSet(ms) = xs;
+        ms := Set.replace(x, y, deref ms)
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
@@ -260,23 +260,23 @@ namespace MutableSet {
     /// The function `f` must be pure.
     ///
     pub def partition(f: a -> Bool, xs: MutableSet[a]): (MutableSet[a], MutableSet[a]) & Impure =
-        let MutableSet(s) = xs;
-        let (ys, zs) = Set.partition(f, deref s);
+        let MutableSet(ms) = xs;
+        let (ys, zs) = Set.partition(f, deref ms);
             (MutableSet(ref ys), MutableSet(ref zs))
 
     ///
     /// Returns the set `xs` as an immutable set.
     ///
     pub def toImmutable(xs: MutableSet[a]): Set[a] & Impure =
-        let MutableSet(s) = xs;
-        deref s
+        let MutableSet(ms) = xs;
+        deref ms
 
     ///
     /// Returns the set `xs` as a list.
     ///
     pub def toList(xs: MutableSet[a]): List[a] & Impure =
-        let MutableSet(s) = xs;
-        Set.toList(deref s)
+        let MutableSet(ms) = xs;
+        Set.toList(deref ms)
 
     ///
     /// Returns the association set `xs` as a map.
@@ -285,8 +285,8 @@ namespace MutableSet {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(xs: MutableSet[(a, b)]): Map[a, b] & Impure =
-        let MutableSet(s) = xs;
-        Set.toMap(deref s)
+        let MutableSet(ms) = xs;
+        Set.toMap(deref ms)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -294,8 +294,8 @@ namespace MutableSet {
     /// The function `f` must be impure.
     ///
     pub def foreach(f: a ~> Unit, xs: MutableSet[a]): Unit & Impure =
-        let MutableSet(s) = xs;
-        Set.foreach(f, deref s)
+        let MutableSet(ms) = xs;
+        Set.foreach(f, deref ms)
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
