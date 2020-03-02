@@ -26,6 +26,9 @@ enum MutableSet[t] {
 
 namespace MutableSet {
 
+    // TODO: Extra ops:
+    // TODO: add, clear, copy, removeAll, addAll, containsAll, retainAll, removeIf, filterInPlace,
+
     ///
     /// Returns the size of `xs`.
     ///
@@ -215,9 +218,6 @@ namespace MutableSet {
         let Set(s) = xs;
             List.foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
 
-
-
-
 // TODO
     ///
     /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
@@ -248,17 +248,14 @@ namespace MutableSet {
         case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
     }
 
-    // TODO
+    */
+
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
-    /// Note: The returned set may be smaller than `xs`.
-    ///
-    pub def replace(x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
-
-    // TODO
-
-    */
+    pub def replace(x: a, y: a, xs: mut MutableSet[a]): Unit & Impure =
+        let MutableSet(s) = xs;
+        s := Set.replace(x, y, deref s)
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
