@@ -134,7 +134,7 @@ namespace MutableSet {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b & e, s: b, xs: MutableSet[a]): b & Impure =
-        let MutableSet(ms) = xs;        // TODO: rename here or everywhere?
+        let MutableSet(ms) = xs;
         Set.foldRight(f, s, deref ms)
 
     ///
