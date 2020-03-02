@@ -99,37 +99,31 @@ namespace MutableSet {
         let MutableSet(s) = xs;
             Set.findLeft(f, deref s)
 
-/*
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
-        let Set(s) = xs;
-            List.findRight(f, s)
-
-
-
-
-
+    pub def findRight(f: a -> Bool, xs: MutableSet[a]): Option[a] & Impure =
+        let MutableSet(s) = xs;
+            Set.findRight(f, deref s)
 
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
-        let Set(es) = xs;
-            List.fold(f, s, es)
+    pub def fold(f: (b, a) -> b & e, s: b, xs: MutableSet[a]): b & Impure =
+        foldLeft(f, s, xs)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
-        let Set(es) = xs;
-            List.foldLeft(f, s, es)
+    pub def foldLeft(f: (b, a) -> b & e, s: b, xs: MutableSet[a]): b & Impure =
+        let MutableSet(ms) = xs;        // TODO: rename here or everywhere?
+        Set.foldLeft(f, s, deref ms)
 
+/*
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
     ///
