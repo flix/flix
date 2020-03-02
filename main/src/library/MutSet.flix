@@ -23,8 +23,7 @@ enum MutSet[t] {
 
 namespace MutSet {
 
-    // TODO: Extra ops:
-    // TODO: add, clear, copy, removeAll, addAll, containsAll, retainAll, removeIf, filterInPlace,
+    // TODO: Extra ops: copy, removeAll, containsAll, retainAll, removeIf, filterInPlace,
 
     ///
     /// Returns a fresh empty set.
@@ -51,6 +50,13 @@ namespace MutSet {
     pub def addAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.union(deref ms, ys)
+
+    ///
+    /// Removes all elements from `xs`.
+    ///
+    pub def clear(xs: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms) = xs;
+        ms := Set.empty()
 
     ///
     /// Removes `x` from `xs`.
