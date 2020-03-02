@@ -123,16 +123,18 @@ namespace MutableSet {
         let MutableSet(ms) = xs;        // TODO: rename here or everywhere?
         Set.foldLeft(f, s, deref ms)
 
-/*
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
-        let Set(es) = xs;
-            List.foldRight(f, s, es)
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: MutableSet[a]): b & e =
+        let MutableSet(ms) = xs;        // TODO: rename here or everywhere?
+        Set.foldRight(f, s, deref ms)
 
+/*
+
+// TODO
     ///
     /// Alias for `reduceLeftOpt`.
     ///
@@ -140,6 +142,7 @@ namespace MutableSet {
         let Set(s) = xs;
             List.reduce(f, s)
 
+// TODO
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
@@ -149,6 +152,7 @@ namespace MutableSet {
         let Set(s) = xs;
             List.reduceLeft(f, s)
 
+// TODO
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
@@ -158,6 +162,7 @@ namespace MutableSet {
         let Set(s) = xs;
             List.reduceRight(f, s)
 
+// TODO
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
@@ -167,6 +172,7 @@ namespace MutableSet {
         let Set(s) = xs;
             List.count(f, s)
 
+// TODO
     ///
     /// Returns the union of the elements in `xs`.
     ///
@@ -201,7 +207,7 @@ namespace MutableSet {
 /*
 
 
-
+// TODO
     ///
     /// Returns the union of `xs` and `ys`.
     ///
@@ -209,6 +215,7 @@ namespace MutableSet {
         let Set(s) = xs;
             List.foldRight(insert, ys, s)
 
+// TODO
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
@@ -216,6 +223,7 @@ namespace MutableSet {
         let Set(s) = xs;
             List.foldRight((x, y) -> if (memberOf(x, ys)) insert(x, y) else y, empty(), s)
 
+// TODO
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
     ///
@@ -223,18 +231,10 @@ namespace MutableSet {
         let Set(s) = xs;
             List.foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
 
-    ///
-    /// Returns all subsets of `xs`.
-    ///
-    pub def subsets(xs: Set[a]): Set[Set[a]] =
-        let Set(s) = xs;
-            Set(List.map(x -> Set(x), List.subsequences(s)))
 
 
 
-
-
-
+// TODO
     ///
     /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
     ///
@@ -244,6 +244,7 @@ namespace MutableSet {
         let Set(s) = xs;
             Set(List.filter(f, s))
 
+// TODO
     ///
     /// Returns the result of applying `f` to every element in `xs`.
     ///
@@ -254,6 +255,7 @@ namespace MutableSet {
         case Set(x :: rs) => insert(f(x), map(f, Set(rs)))
     }
 
+// TODO
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
@@ -262,6 +264,7 @@ namespace MutableSet {
         case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
     }
 
+    // TODO
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
@@ -269,6 +272,7 @@ namespace MutableSet {
     ///
     pub def replace(x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
 
+    // TODO
     ///
     /// Returns a pair of sets `(ys, zs)`.
     //
