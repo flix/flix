@@ -17,8 +17,6 @@
 ///
 /// The Mutable Set type.
 ///
-    // TODO: toMutable in Set??
-
 enum MutSet[t] {
     case MutSet(Ref[Set[t]])
 }
@@ -27,13 +25,6 @@ namespace MutSet {
 
     // TODO: Extra ops:
     // TODO: add, clear, copy, removeAll, addAll, containsAll, retainAll, removeIf, filterInPlace,
-
-    ///
-    /// Returns the size of `xs`.
-    ///
-    pub def size(xs: MutSet[a]): Int32 & Impure =
-        let MutSet(ms) = xs;
-        Set.size(deref ms)
 
     ///
     /// Returns a fresh empty set.
@@ -50,9 +41,16 @@ namespace MutSet {
     ///
     /// Adds `x` to `xs`.
     ///
-    pub def insert(x: a, xs: mut MutSet[a]): Unit & Impure =
+    pub def add(x: a, xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.insert(x, deref ms)
+
+    ///
+    /// Adds all elements in `ys` to `xs`.
+    ///
+    pub def addAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms) = xs;
+        ms := Set.union(deref ms, ys)
 
     ///
     /// Removes `x` from `xs`.
@@ -74,6 +72,13 @@ namespace MutSet {
     pub def memberOf(x: a, xs: MutSet[a]): Bool & Impure =
         let MutSet(ms) = xs;
         Set.memberOf(x, deref ms)
+
+    ///
+    /// Returns the size of `xs`.
+    ///
+    pub def size(xs: MutSet[a]): Int32 & Impure =
+        let MutSet(ms) = xs;
+        Set.size(deref ms)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
@@ -196,14 +201,6 @@ namespace MutSet {
             Set.forall(f, deref ms)
 
 /*
-
-// TODO
-    ///
-    /// Returns the union of `xs` and `ys`.
-    ///
-    pub def union(xs: Set[a], ys: Set[a]): Set[a] =
-        let Set(s) = xs;
-            List.foldRight(insert, ys, s)
 
 // TODO
     ///
