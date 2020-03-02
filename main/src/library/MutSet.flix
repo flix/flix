@@ -59,7 +59,7 @@ namespace MutSet {
     ///
     /// Returns a shallow copy of `xs`.
     ///
-    pub def copy(xs: mut MutSet[a]): MutSet[a] & Impure =
+    pub def copy(xs: MutSet[a]): MutSet[a] & Impure =
         let MutSet(ms) = xs;
         MutSet(ref (deref ms))
 
@@ -235,36 +235,6 @@ namespace MutSet {
     pub def forall(f: a -> Bool, xs: MutSet[a]): Bool & Impure =
         let MutSet(ms) = xs;
             Set.forall(f, deref ms)
-
-/*
-
-// TODO
-    ///
-    /// Returns the intersection of `xs` and `ys`.
-    ///
-    pub def intersection(xs: Set[a], ys: Set[a]): Set[a] =
-        let Set(s) = xs;
-            List.foldRight((x, y) -> if (memberOf(x, ys)) insert(x, y) else y, empty(), s)
-
-// TODO
-    ///
-    /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
-    ///
-    pub def difference(xs: Set[a], ys: Set[a]): Set[a] =
-        let Set(s) = xs;
-            List.foldRight((x, y) -> if (memberOf(x, ys)) y else insert(x, y), empty(), s)
-
-// TODO
-    ///
-    /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
-    ///
-    /// The function `f` must be pure.
-    ///
-    pub def filter(f: a -> Bool, xs: Set[a]): Set[a] =
-        let Set(s) = xs;
-            Set(List.filter(f, s))
-
-*/
 
     ///
     /// Applies the function `f` to every element in `xs`.
