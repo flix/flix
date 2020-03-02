@@ -34,12 +34,14 @@ namespace MutableSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def empty(): MutableSet[a] & Impure = MutableSet(ref Set.empty())
+    pub def empty(): MutableSet[a] & Impure =
+        MutableSet(ref Set.empty())
 
     ///
     /// Returns the singleton set containing `x`.
     ///
-    pub def singleton(x: a): MutableSet[a] & Impure = MutableSet(ref Set.singleton(x))
+    pub def singleton(x: a): MutableSet[a] & Impure =
+        MutableSet(ref Set.singleton(x))
 
     ///
     /// Adds `x` to `xs`.
@@ -287,7 +289,14 @@ namespace MutableSet {
             (Set(ys), Set(zs))
     */
 
-    // TODO: toImmutable and toMutable?
+    // TODO: toMutable in Set??
+
+    ///
+    /// Returns the set `xs` as an immutable set.
+    ///
+    pub def toImmutable(xs: MutableSet[a]): Set[a] & Impure =
+        let MutableSet(s) = xs;
+        deref s
 
     ///
     /// Returns the set `xs` as a list.
