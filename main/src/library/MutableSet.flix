@@ -128,40 +128,35 @@ namespace MutableSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, xs: MutableSet[a]): b & e =
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: MutableSet[a]): b & Impure =
         let MutableSet(ms) = xs;        // TODO: rename here or everywhere?
         Set.foldRight(f, s, deref ms)
 
-/*
-
-// TODO
     ///
     /// Alias for `reduceLeftOpt`.
     ///
-    pub def reduce(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
-        let Set(s) = xs;
-            List.reduce(f, s)
+    pub def reduce(f: (a, a) -> a & e, xs: MutableSet[a]): Option[a] & Impure =
+        reduceLeft(f, xs)
 
-// TODO
     ///
-    /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceLeft(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
-        let Set(s) = xs;
-            List.reduceLeft(f, s)
+    pub def reduceLeft(f: (a, a) -> a & e, xs: MutableSet[a]): Option[a] & Impure =
+        let MutableSet(s) = xs;
+        Set.reduceLeft(f, deref s)
 
-// TODO
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
-        let Set(s) = xs;
-            List.reduceRight(f, s)
+    pub def reduceRight(f: (a, a) -> a & e, xs: MutableSet[a]): Option[a] & Impure =
+        let MutableSet(s) = xs;
+        Set.reduceRight(f, deref s)
 
+/*
 // TODO
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
