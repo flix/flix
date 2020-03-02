@@ -228,17 +228,16 @@ namespace MutableSet {
         let Set(s) = xs;
             Set(List.filter(f, s))
 
-// TODO
-    ///
-    /// Returns the result of applying `f` to every element in `xs`.
-    ///
-    /// Note: The returned set may be smaller than `xs`.
-    ///
-    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e = match xs {
-        case Set(Nil) => Set(Nil)
-        case Set(x :: rs) => insert(f(x), map(f, Set(rs)))
-    }
+*/
 
+    ///
+    /// Applies the function `f` to every element in `xs`.
+    ///
+    pub def transform(f: a -> a & e, xs: mut MutableSet[a]): Unit & Impure =
+        let MutableSet(s) = xs;
+        s := Set.map(f, deref s)
+
+/*
 // TODO
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
