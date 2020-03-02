@@ -44,7 +44,7 @@ namespace Parser {
     def listToString(xs: List[Char]): String = List.foldLeft((s, x) -> String.concat(s, Char.toString(x)), "", xs)
 
     // Parser
-    pub def char(x: Char): Parser[char] = input -> match String.toList(input) {
+    pub def char(x: Char): Parser[Char] = input -> match String.toList(input) {
         case Cons(y, ys) => if (y == x) { Some((listToString(ys), x)) } else { None }
         case Nil => None
     }
@@ -61,6 +61,10 @@ namespace Parser {
 
     // TODO: Weird name.
     pub def failOn(v: Parser[a], p: a -> Bool): Parser[a] = mapOption(v, x -> if (p(x)) { None } else { Some(x) })
+
+    pub def separatedBy(separator: Parser[a], element: Parser[b]): Parser[List[b]] = cons <&> element <*> many(separator *> element) <|> pure(Nil)
+
+    pub def whitespace(): Parser[String] = span(c -> Char.isWhiteSpace(c))
 }
 
 // This is a large amount of namespace pollution. Right now this file is only loaded manually, so it's alright.
@@ -83,7 +87,10 @@ pub def >>=(v: Parser[a], f: a -> Parser[b]): Parser[b] = Parser.bind(v, f)
 pub enum JsonValue {
     case JsonNull
     case JsonBool(Bool)
+    // Json spec allows for parser-defined limits on integer sizes
     case JsonNumber(Int)
+    case JsonString(String)
+    case JsonArray(List[JsonValue])
 }
 
 namespace JsonParser {
@@ -98,11 +105,16 @@ namespace JsonParser {
 
     pub def jsonBool(): Parser[JsonValue] = jsonBoolHelper <&> (Parser.string("true") <|> Parser.string("false"))
 
-    pub def jsonNumberHelper(s: String): JsonValue = JsonNumber(match Int32.fromString(s) {
-        case Ok(i) => i,
-        // TODO: Unreachable?
-        case _ => ???
-    })
+    def jsonNumberHelper(s: String): Option[JsonValue] = Option.map(i -> JsonNumber(i),  Result.toOption(Int32.fromString(s)))
 
-    pub def jsonNumber(): Parser[JsonValue] = jsonNumberHelper <&> Parser.failOn(Parser.span(Char.isDigit), String.isEmpty)
+    pub def jsonNumber(): Parser[JsonValue] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), jsonNumberHelper)
+
+    pub def jsonString(): Parser[JsonValue] = (s -> JsonString(s)) <&> (Parser.char('"') *> Parser.span(c -> c != '"') <* Parser.char('"'))
+
+    // TODO: Tried to be smart in the `many` and `some` parsers and it backfired. Results in a stack overflow exception here
+    pub def jsonArrayElementHelper(): Parser[List[JsonValue]] = Parser.separatedBy(Parser.whitespace() *> Parser.char(',') <* Parser.whitespace(), jsonValue())
+
+    pub def jsonArray(): Parser[JsonValue] = (xs -> JsonArray(xs)) <&> (Parser.char('[') *> Parser.whitespace() *> jsonArrayElementHelper() <* Parser.whitespace() <* Parser.whitespace())
+
+    pub def jsonValue(): Parser[JsonValue] = jsonBool() <|> jsonNumber() <|> jsonString()
 }
