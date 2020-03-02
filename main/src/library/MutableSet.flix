@@ -18,6 +18,8 @@
 /// The Mutable Set type.
 ///
 // TODO: Rename to MutSet
+    // TODO: toMutable in Set??
+
 enum MutableSet[t] {
     case MutableSet(Ref[Set[t]])
 }
@@ -156,26 +158,14 @@ namespace MutableSet {
         let MutableSet(s) = xs;
         Set.reduceRight(f, deref s)
 
-/*
-// TODO
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a -> Bool, xs: Set[a]): Int32 =
-        let Set(s) = xs;
-            List.count(f, s)
-
-// TODO
-    ///
-    /// Returns the union of the elements in `xs`.
-    ///
-    pub def flatten(xs: Set[Set[a]]): Set[a] = match xs {
-        case Set(Nil) => empty()
-        case Set(x :: rs) => union(x, flatten(Set(rs)))
-    }
-*/
+    pub def count(f: a -> Bool, xs: MutableSet[a]): Int32 & Impure =
+        let MutableSet(s) = xs;
+        Set.count(f, deref s)
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
@@ -200,7 +190,6 @@ namespace MutableSet {
             Set.forall(f, deref s)
 
 /*
-
 
 // TODO
     ///
@@ -268,6 +257,9 @@ namespace MutableSet {
     pub def replace(x: a, y: a, xs: Set[a]): Set[a] = map(e -> if (e == x) y else e, xs)
 
     // TODO
+
+    */
+
     ///
     /// Returns a pair of sets `(ys, zs)`.
     //
@@ -276,13 +268,10 @@ namespace MutableSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
-        let Set(s) = xs;
-        let (ys, zs) = List.partition(f, s);
-            (Set(ys), Set(zs))
-    */
-
-    // TODO: toMutable in Set??
+    pub def partition(f: a -> Bool, xs: MutableSet[a]): (MutableSet[a], MutableSet[a]) & Impure =
+        let MutableSet(s) = xs;
+        let (ys, zs) = Set.partition(f, deref s);
+            (MutableSet(ref ys), MutableSet(ref zs))
 
     ///
     /// Returns the set `xs` as an immutable set.
