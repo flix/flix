@@ -79,13 +79,17 @@ namespace MutSet {
     /// Returns true if and only if every element in `xs` appears in `ys`.
     ///
     pub def isSubsetOf(xs: MutSet[a], ys: MutSet[a]): Bool & Impure =
-        forall(x -> memberOf(x, ys) as & Pure, xs) // TODO: MemberOf is impure so not safe to use here..
+        let MutSet(s1) = xs;
+        let MutSet(s2) = ys;
+        Set.isSubsetOf(deref s1, deref s2)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
     pub def isProperSubsetOf(xs: MutSet[a], ys: MutSet[a]): Bool & Impure =
-        if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false // TODO: Weird definition?
+        let MutSet(s1) = xs;
+        let MutSet(s2) = ys;
+        Set.isProperSubsetOf(deref s1, deref s2)
 
     ///
     /// Alias for `findLeft`.
