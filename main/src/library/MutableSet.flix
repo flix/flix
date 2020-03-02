@@ -237,17 +237,12 @@ namespace MutableSet {
         let MutableSet(s) = xs;
         s := Set.map(f, deref s)
 
-/*
-// TODO
     ///
-    /// Returns the result of applying `f` to every element in `xs` and taking the union.
+    /// Applies the function `f` to every element in `xs` merging the results into `xs`.
     ///
-    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e = match xs {
-        case Set(Nil) => Set(Nil)
-        case Set(x :: rs) => union(f(x), flatMap(f, Set(rs)))
-    }
-
-    */
+    pub def flatTransform(f: a -> Set[a] & e, xs: mut MutableSet[a]): Unit & Impure =
+        let MutableSet(s) = xs;
+        s := Set.flatMap(f, deref s)
 
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
