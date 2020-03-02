@@ -84,7 +84,7 @@ class Flix {
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
     "String.flix" -> LocalResource.get("/library/String.flix"),
 
-    "MutableSet.flix" -> LocalResource.get("/library/MutableSet.flix"),
+    "MutSet.flix" -> LocalResource.get("/library/MutSet.flix"),
 
     "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
