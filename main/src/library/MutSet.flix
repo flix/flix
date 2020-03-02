@@ -23,8 +23,6 @@ enum MutSet[t] {
 
 namespace MutSet {
 
-    // TODO: Extra ops: retainAll, removeIf, filterInPlace,
-
     ///
     /// Returns a fresh empty set.
     ///
@@ -78,6 +76,20 @@ namespace MutSet {
     pub def removeAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.difference(deref ms, ys)
+
+    ///
+    /// Removes all elements from `xs` that are not in `ys`.
+    ///
+    pub def retainAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms) = xs;
+        ms := Set.intersection(deref ms, ys)
+
+    ///
+    /// Removes all elements from `xs` that do not satisfy the given boolean function `f`.
+    ///
+    pub def refine(f: a -> Bool, xs: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms) = xs;
+        ms := Set.filter(f, deref ms)
 
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
