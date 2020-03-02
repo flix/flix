@@ -299,6 +299,11 @@ namespace Int32 {
             (x * 1i32) === x
 
     @lint
+    def divisionByZero(): Bool =
+        forall (x: Int32).
+            (x / 0i32) === 0i32
+
+    @lint
     def divisionByOne(): Bool =
         forall (x: Int32).
             (x / 1i32) === x

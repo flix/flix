@@ -142,6 +142,11 @@ namespace BigInt {
             (x * 1ii) === x
 
     @lint
+    def divisionByZero(): Bool =
+        forall (x: BigInt).
+            (x / 0ii) === 0ii
+
+    @lint
     def divisionByOne(): Bool =
         forall (x: BigInt).
             (x / 1ii) === x

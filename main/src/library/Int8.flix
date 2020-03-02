@@ -303,6 +303,11 @@ namespace Int8 {
             (x * 1i8) === x
 
     @lint
+    def divisionByZero(): Bool =
+        forall (x: Int8).
+            (x / 0i8) === 0i8
+
+    @lint
     def divisionByOne(): Bool =
         forall (x: Int8).
             (x / 1i8) === x

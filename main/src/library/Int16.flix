@@ -303,6 +303,11 @@ namespace Int16 {
             (x * 1i16) === x
 
     @lint
+    def divisionByZero(): Bool =
+        forall (x: Int16).
+            (x / 0i16) === 0i16
+
+    @lint
     def divisionByOne(): Bool =
         forall (x: Int16).
             (x / 1i16) === x

@@ -299,6 +299,11 @@ namespace Int64 {
             (x * 1i64) === x
 
     @lint
+    def divisionByZero(): Bool =
+        forall (x: Int64).
+            (x / 0i64) === 0i64
+
+    @lint
     def divisionByOne(): Bool =
         forall (x: Int64).
             (x / 1i64) === x
