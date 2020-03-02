@@ -752,7 +752,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
       case (acc, (_, defn)) => visitExp(acc, defn.exp)
     }
 
-    def inlineClosApp(lExp: LabeledExpression, tpe: Type, loc: SourceLocation): Option[Symbol.DefnSym] = {
+    def inlineClosApp(lExp: LabeledExpression): Option[Symbol.DefnSym] = {
       val closures = lExp.exp match {
         case Expression.Var(sym, tpe, loc) => varFlow.getOrElse(sym, Set())
         case _ => expFlow.getOrElse(lExp, Set())
@@ -797,7 +797,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.ApplyClo(exp, args, tpe, loc) =>
           val as = args map inliner
-          inlineClosApp(exp, tpe, loc) match {
+          inlineClosApp(exp) match {
             case Some(inlined) => Expression.ApplyDef(inlined, as, tpe, loc)
             case None =>
               val e = inliner(exp)
@@ -814,7 +814,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.ApplyCloTail(exp, args, tpe, loc) =>
           val as = args map inliner
-          inlineClosApp(exp, tpe, loc) match {
+          inlineClosApp(exp) match {
             case Some(inlined) => Expression.ApplyDefTail(inlined, as, tpe, loc)
             case None =>
               val e = inliner(exp)
