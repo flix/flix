@@ -94,6 +94,7 @@ namespace MutMap {
     ///
     /// Updates `m` with `k -> v`.
     ///
+    /// TODO
     pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] =
         insertWithKey((_, v1, _) -> v1, k, v, m)
 
@@ -102,6 +103,7 @@ namespace MutMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
+    /// TODO
     pub def insertWith(f: (v, v) -> v & e, k: k, v: v, m: Map[k, v]): Map[k, v] & e =
         insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
 
@@ -110,6 +112,7 @@ namespace MutMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
+    /// TODO
     pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: Map[k, v]): Map[k, v] & e =
         if (memberOf(k, m)) adjustWithKey((a, b) -> f(a, v, b), k, m)
         else
@@ -126,11 +129,13 @@ namespace MutMap {
     ///
     /// Otherwise, returns `m`.
     ///
+    /// TODO
     pub def adjust(f: v -> v & e, k: k, m: Map[k, v]): Map[k, v] & e = adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
     ///
+    /// TODO
     pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: Map[k, v]): Map[k, v] & e =
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, f(k, v)) else (key, v), xs))
@@ -138,11 +143,13 @@ namespace MutMap {
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
+    /// TODO
     pub def update(f: v -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e = updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
+    /// TODO
     pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
@@ -152,6 +159,7 @@ namespace MutMap {
     ///
     /// Note: The returned map may be smaller than `m`.
     ///
+    /// TODO
     pub def replace(x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
         let (k, v) = x;
             match get(k, m) {
@@ -167,6 +175,7 @@ namespace MutMap {
     ///
     /// Removes the mapping `k` from the map `m`.
     ///
+    /// TODO
     pub def delete(k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
             Map(List.filter(match (key, _) -> key != k, xs))
@@ -222,6 +231,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
+    /// TODO
     pub def filter(f: v -> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((_, v) -> f(v), m)
 
     ///
@@ -229,6 +239,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
+    /// TODO
     pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
             Map(List.filter(x -> f(fst(x), snd(x)), xs))
@@ -236,11 +247,13 @@ namespace MutMap {
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
     ///
+    /// TODO
     pub def map(f: v1 -> v2 & e, m: Map[k, v1]): Map[k, v2] & e = mapWithKey((_, v) -> f(v), m)
 
     ///
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
+    /// TODO
     pub def mapWithKey(f: (k, v1) -> v2 & e, m: Map[k, v1]): Map[k, v2] & e =
         let Map(xs) = m;
             Map(List.map(match (k, v) -> (k, f(k, v)), xs))
@@ -253,11 +266,13 @@ namespace MutMap {
     ///
     /// Alias for `foldLeft`.
     ///
+    /// TODO
     pub def fold(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeft(f, s, m)
 
     ///
     /// Alias for `foldLeftWithKey`.
     ///
+    /// TODO
     pub def foldWithKey(f: (k, b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey(f, s, m)
 
     ///
@@ -265,6 +280,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
+    /// TODO
     pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey((_, b, v) -> f(b, v), s, m)
 
     ///
@@ -272,6 +288,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
     ///
+    /// TODO
     pub def foldLeftWithKey(f: (k, b, v) -> b & e, s: b, m: Map[k, v]): b & e =
         let Map(xs) = m;
             List.foldLeft((y, kv) -> f(fst(kv), y, snd(kv)), s, xs)
@@ -281,6 +298,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
+    /// TODO
     pub def foldRight(f: (v, b) -> b & e, s: b, m: Map[k, v]): b & e =
         foldRightWithKey((_, v, b) -> f(v, b), s, m)
 
@@ -289,6 +307,7 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
+    /// TODO
     pub def foldRightWithKey(f: (k, v, b) -> b & e, s: b, m: Map[k, v]): b & e =
         let Map(xs) = m;
             List.foldRight((kv, y) -> f(fst(kv), snd(kv), y), s, xs)
@@ -296,11 +315,13 @@ namespace MutMap {
     ///
     /// Alias for `reduceLeft`.
     ///
+    /// TODO
     pub def reduce(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e = reduceLeft(f, m)
 
     ///
     /// Alias for `reduceLeftWithKey`.
     ///
+    /// TODO
     pub def reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] = reduceLeftWithKey(f, m)
 
     ///
@@ -310,6 +331,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
+    /// TODO
     pub def reduceLeft(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e = List.reduceLeft(f, m.valuesOf())
 
     ///
@@ -319,6 +341,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
+    /// TODO
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
             List.reduceLeft((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
@@ -330,6 +353,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
+    /// TODO
     pub def reduceRight(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e =
         let Map(xs) = m;
             List.reduceRight(f, List.map(kv -> snd(kv), xs))
@@ -341,6 +365,7 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
+    /// TODO
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
         let Map(xs) = m;
             List.reduceRight((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
@@ -377,6 +402,7 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
+    /// TODO
     pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
         let Map(xs) = m;
             List.forall(x -> f(fst(x), snd(x)), xs)
@@ -391,16 +417,19 @@ namespace MutMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
+    /// TODO
     pub def union(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
+    /// TODO
     pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
+    /// TODO
     pub def unionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         foldRightWithKey((k, v, m) -> insertWithKey((key, v1, v2) -> f(key, v1, v2), k, v, m) , m2, m1)
 
@@ -409,16 +438,19 @@ namespace MutMap {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
+    /// TODO
     pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
+    /// TODO
     pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
+    /// TODO
     pub def intersectionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
         foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
@@ -428,6 +460,7 @@ namespace MutMap {
     ///
     /// That is, returns the map `m1` with the keys removed that are in `m2`.
     ///
+    /// TODO
     pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
 
     ///
@@ -437,6 +470,7 @@ namespace MutMap {
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
+    /// TODO
     pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
@@ -446,6 +480,7 @@ namespace MutMap {
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
+    /// TODO
     pub def differenceWithKey(f: (k, v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
         let diff = filterWithKey((k, _) -> !memberOf(k, m2), m1);
         let g = (k, v, m) -> if (memberOf(k, m1))
@@ -467,6 +502,7 @@ namespace MutMap {
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
+    /// TODO
     pub def toList(m: Map[k, v]): List[(k, v)] =
         let Map(xs) = m;
             xs
@@ -474,6 +510,7 @@ namespace MutMap {
     ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
+    /// TODO
     pub def toSet(m: Map[k, v]): Set[(k, v)] =
         let Map(xs) = m;
             List.toSet(xs)
