@@ -21,6 +21,8 @@ opaque type MutSet[t] = Ref[Set[t]]
 
 namespace MutSet {
 
+    // TODO: rename xs to s.
+
     ///
     /// Returns a fresh empty set.
     ///
@@ -41,12 +43,12 @@ namespace MutSet {
         ms := Set.insert(x, deref ms)
 
     ///
-    /// Adds all elements in `ys` to `xs`.
+    /// Adds all elements in `xs` to `ys`.
     ///
-    // TODO: Both arguments should be mutSet.
-    pub def addAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
-        let MutSet(ms) = xs;
-        ms := Set.union(deref ms, ys)
+    pub def addAll(xs: MutSet[a], ys: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms1) = xs;
+        let MutSet(ms2) = ys;
+        ms2 := Set.union(deref ms1, deref ms2)
 
     ///
     /// Removes all elements from `xs`.
@@ -70,22 +72,20 @@ namespace MutSet {
         ms := Set.delete(x, deref ms)
 
     ///
-    /// Removes all `ys` from `xs`.
+    /// Removes all elements in `xs` from `ys`.
     ///
-        // TODO: Both arguments should be mutSet.
-
-    pub def removeAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
-        let MutSet(ms) = xs;
-        ms := Set.difference(deref ms, ys)
+    pub def removeAll(xs: MutSet[a], ys: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms1) = xs;
+        let MutSet(ms2) = ys;
+        ms2 := Set.difference(deref ms2, deref ms1)
 
     ///
-    /// Removes all elements from `xs` that are not in `ys`.
+    /// Removes all elements from `ys` that are not in `xs`.
     ///
-        // TODO: Both arguments should be mutSet.
-
-    pub def retainAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
-        let MutSet(ms) = xs;
-        ms := Set.intersection(deref ms, ys)
+    pub def retainAll(xs: MutSet[a], ys: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms1) = xs;
+        let MutSet(ms2) = ys;
+        ms2 := Set.intersection(deref ms1, deref ms2)
 
     ///
     /// Removes all elements from `xs` that do not satisfy the given predicate `f`.
@@ -97,7 +97,7 @@ namespace MutSet {
         ms := Set.filter(f, deref ms)
 
     ///
-    /// Returns true if and only if `xs` is the empty set, i.e. `Set(Nil)`.
+    /// Returns true if and only if `xs` is the empty set.
     ///
     pub def isEmpty(xs: MutSet[a]): Bool & Impure =
         let MutSet(ms) = xs;
@@ -190,9 +190,9 @@ namespace MutSet {
 
     ///
     /// Applies `f` to all elements in `xs` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
-
+    ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-
+    ///
     /// Returns `None` if `xs` is the empty set.
     ///
     pub def reduceLeft(f: (a, a) -> a & e, xs: MutSet[a]): Option[a] & Impure =
@@ -201,9 +201,9 @@ namespace MutSet {
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
-
+    ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-
+    ///
     /// Returns `None` if `xs` is the empty set.
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: MutSet[a]): Option[a] & Impure =
@@ -249,14 +249,16 @@ namespace MutSet {
         ms := Set.map(f, deref ms)
 
     ///
-    /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
+    /// Replaces the element `x` with `y` if `x` is in `xs`.
+    ///
+    /// Otherwise the mutable set is unchanged.
     ///
     pub def replace(x: a, y: a, xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.replace(x, y, deref ms)
 
     ///
-    /// Returns a pair of sets `(ys, zs)`.
+    /// Returns a pair of sets `(ys, zs)` such that:
     //
     /// `ys` contains all elements of `xs` that satisfy the predicate `f`.
     /// `zs` contains all elements of `xs` that do not satisfy the predicate `f`.
