@@ -253,9 +253,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           }
 
         /*
-         * Comparison Check.
+         * Spaceship
          */
-        case Expression.Binary(op@BinaryOperator.LessEqual, exp1, exp2, tpe, eff, loc) =>
+        case Expression.Binary(BinaryOperator.Spaceship, exp1, exp2, tpe, eff, loc) =>
           // Perform specialization on the left and right sub-expressions.
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -263,15 +263,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // The type of the values of exp1 and exp2. NB: The typer guarantees that exp1 and exp2 have the same type.
           val valueType = subst0(exp1.tpe)
 
-          // The expected type of a comparator function: a -> a -> bool.
-          val cmpType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
+          // The expected type of a comparator function: a -> a -> int.
+          val cmpType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Int32)
 
           // Look for any function named `__cmp` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
           lookupCmp(cmpType) match {
             case None =>
               // No comparator function found. Return the same expression.
-              Expression.Binary(BinaryOperator.LessEqual, e1, e2, Type.Bool, eff, loc)
+              Expression.Binary(BinaryOperator.Spaceship, e1, e2, Type.Int32, eff, loc)
 
             case Some(cmpSym) =>
               // Equality function found. Specialize and generate a call to it.
@@ -279,8 +279,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, cmpType, loc)
 
               // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Bool), eff, loc)
-              Expression.Apply(inner, e2, Type.Bool, eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Int32), eff, loc)
+              Expression.Apply(inner, e2, Type.Int32, eff, loc)
           }
 
         /*
