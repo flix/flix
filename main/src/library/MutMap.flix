@@ -21,12 +21,6 @@ opaque type MutMap[k, v] = Ref[Map[k, v]]
 
 namespace MutMap {
 
-    // TODO: Add vs. insert. vs. put.
-
-    // TODO: intersect, and difference.
-
-    // TODO: More operations?
-
     ///
     /// Returns `true` if and only if `m` is the empty map.
     ///
