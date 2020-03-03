@@ -21,6 +21,8 @@ opaque type MutMap[k, v] = Ref[Map[k, v]]
 
 namespace MutMap {
 
+    // TODO: Extra operations: clear.
+
     ///
     /// Returns a fresh empty map.
     ///
@@ -56,15 +58,16 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.get(k, deref mm)
 
-
-/*
     ///
     /// Returns `v` if `k -> v` is in `m`.
     ///
     /// Otherwise, returns `d`.
     ///
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v = Option.getWithDefault(get(k, m), d)
+    pub def getWithDefault(k: k, d: v, m: MutMap[k, v]): v & Impure =
+        let MutMap(mm) = m;
+        Map.getWithDefault(k, d, deref mm)
 
+/*
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
