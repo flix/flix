@@ -43,6 +43,7 @@ namespace MutSet {
     ///
     /// Adds all elements in `ys` to `xs`.
     ///
+    // TODO: Both arguments should be mutSet.
     pub def addAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.union(deref ms, ys)
@@ -71,6 +72,8 @@ namespace MutSet {
     ///
     /// Removes all `ys` from `xs`.
     ///
+        // TODO: Both arguments should be mutSet.
+
     pub def removeAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.difference(deref ms, ys)
@@ -78,6 +81,8 @@ namespace MutSet {
     ///
     /// Removes all elements from `xs` that are not in `ys`.
     ///
+        // TODO: Both arguments should be mutSet.
+
     pub def retainAll(ys: Set[a], xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.intersection(deref ms, ys)
