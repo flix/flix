@@ -28,17 +28,17 @@ namespace MutMap {
     // TODO: More operations?
 
     ///
+    /// Returns `true` if and only if `m` is the empty map.
+    ///
+    pub def isEmpty(m: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm) = m;
+        Map.isEmpty(deref mm)
+
+    ///
     /// Returns a fresh empty map.
     ///
     pub def empty(): MutMap[k, v] & Impure =
         MutMap(ref Map.empty())
-
-    ///
-    /// Returns the size of `m`.
-    ///
-    pub def size(m: MutMap[k, v]): Int32 & Impure =
-        let MutMap(mm) = m;
-        Map.size(deref mm)
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
@@ -46,12 +46,32 @@ namespace MutMap {
     pub def singleton(k: k, v: v): MutMap[k, v] & Impure =
         MutMap(ref Map.singleton(k, v))
 
+    /// Returns `true` if and only if `m` contains the key `k`.
     ///
-    /// Returns `true` if and only if `m` is the empty map.
-    ///
-    pub def isEmpty(m: MutMap[k, v]): Bool & Impure =
+    pub def memberOf(k: k, m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
-        Map.isEmpty(deref mm)
+        Map.memberOf(k, deref mm)
+
+    ///
+    /// Returns the keys of `m`.
+    ///
+    pub def keysOf(m: MutMap[k, v]): Set[k] & Impure =
+        let MutMap(mm) = m;
+        Map.keysOf(deref mm)
+
+    ///
+    /// Returns the values of `m`.
+    ///
+    pub def valuesOf(m: MutMap[k, v]): List[v] & Impure =
+        let MutMap(mm) = m;
+        Map.valuesOf(deref mm)
+
+    ///
+    /// Returns the size of `m`.
+    ///
+    pub def size(m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.size(deref mm)
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
@@ -83,26 +103,6 @@ namespace MutMap {
             case Some(v) => v
         }
 
-    ///
-    /// Returns `true` if and only if `m` contains the key `k`.
-    ///
-    pub def memberOf(k: k, m: MutMap[k, v]): Bool & Impure =
-        let MutMap(mm) = m;
-        Map.memberOf(k, deref mm)
-
-    ///
-    /// Returns the keys of `m`.
-    ///
-    pub def keysOf(m: MutMap[k, v]): Set[k] & Impure =
-        let MutMap(mm) = m;
-        Map.keysOf(deref mm)
-
-    ///
-    /// Returns the values of `m`.
-    ///
-    pub def valuesOf(m: MutMap[k, v]): List[v] & Impure =
-        let MutMap(mm) = m;
-        Map.valuesOf(deref mm)
 
     ///
     /// Updates `m` with `k -> v`.
