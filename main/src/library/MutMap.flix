@@ -23,7 +23,7 @@ namespace MutMap {
 
     // TODO: Extra operations: clear.
 
-    // TODO: Add vs. insert.
+    // TODO: Add vs. insert. vs. put.
 
     ///
     /// Returns a fresh empty map.
