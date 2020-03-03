@@ -392,9 +392,6 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.exists(f, deref mm)
 
-
-
-/*
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
     ///
@@ -402,16 +399,12 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    /// TODO
-    pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
-        let Map(xs) = m;
-            List.forall(x -> f(fst(x), snd(x)), xs)
+    pub def forall(f: (k, v) -> Bool, m: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm) = m;
+        Map.forall(f, deref mm)
 
 
-
-
-
-
+/*
     ///
     /// Returns the left-biased union of `m1` and `m2`.
     ///
@@ -493,28 +486,21 @@ namespace MutMap {
                                 }
                              else m;
         foldRightWithKey(g, diff, m2)
-
-
-
-
-
+*/
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
-    /// TODO
-    pub def toList(m: Map[k, v]): List[(k, v)] =
-        let Map(xs) = m;
-            xs
+    pub def toList(m: MutMap[k, v]): List[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.toList(deref mm)
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
-    /// TODO
-    pub def toSet(m: Map[k, v]): Set[(k, v)] =
-        let Map(xs) = m;
-            List.toSet(xs)
-*/
+    pub def toSet(m: MutMap[k, v]): Set[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.toSet(deref mm)
 
     ///
     /// Applies `f` to every element of `xs`.
