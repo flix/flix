@@ -21,7 +21,7 @@ opaque type MutMap[k, v] = Ref[Map[k, v]]
 
 namespace MutMap {
 
-    // TODO: Extra operations: clear, copy, getOrElseUpdate,
+    // TODO:  getOrElseUpdate,
 
     // TODO: Add vs. insert. vs. put.
 
@@ -115,6 +115,20 @@ namespace MutMap {
     pub def addWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insertWithKey(f, k, v, deref mm)
+
+    ///
+    /// Removes all mappings from `m`.
+    ///
+    pub def clear(m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.empty()
+
+    ///
+    /// Returns a shallow copy of `m`.
+    ///
+    pub def copy(m: mut MutMap[k, v]): MutMap[k, v] & Impure =
+        let MutMap(mm) = m;
+        MutMap(ref (deref mm))
 
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
