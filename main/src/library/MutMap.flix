@@ -80,7 +80,7 @@ namespace MutMap {
     ///
     /// Returns `v` if `k -> v` is in the mutable map `m`.
     ///
-    /// Otherwise, returns `d`.
+    /// Otherwise returns `d`.
     ///
     pub def getWithDefault(k: k, d: v, m: MutMap[k, v]): v & Impure =
         let MutMap(mm) = m;
