@@ -103,11 +103,10 @@ namespace MutMap {
             case Some(v) => v
         }
 
-
     ///
     /// Updates `m` with `k -> v`.
     ///
-    pub def add(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+    pub def put(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insert(k, v, deref mm)
 
@@ -116,7 +115,7 @@ namespace MutMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    pub def addWith(f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+    pub def putWith(f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insertWith(f, k, v, deref mm)
 
@@ -125,7 +124,7 @@ namespace MutMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    pub def addWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+    pub def putWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insertWithKey(f, k, v, deref mm)
 
