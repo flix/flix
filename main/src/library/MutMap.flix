@@ -250,48 +250,44 @@ namespace MutMap {
         let Map(xs) = m;
             Map(List.map(match (k, v) -> (k, f(k, v)), xs))
 
-
-
-
-
+*/
 
     ///
     /// Alias for `foldLeft`.
     ///
-    /// TODO
-    pub def fold(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeft(f, s, m)
+    pub def fold(f: (b, v) -> b & e, s: b, m: MutMap[k, v]): b & Impure =
+        foldLeft(f, s, m)
 
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    /// TODO
-    pub def foldWithKey(f: (k, b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey(f, s, m)
+    pub def foldWithKey(f: (k, b, v) -> b & e, s: b, m: MutMap[k, v]): b & Impure  =
+        foldLeftWithKey(f, s, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
-    /// TODO
-    pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey((_, b, v) -> f(b, v), s, m)
+    pub def foldLeft(f: (b, v) -> b & e, s: b, m: MutMap[k, v]): b & Impure =
+        let MutMap(mm) = m;
+        Map.foldLeft(f, s, deref mm)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
     ///
-    /// TODO
-    pub def foldLeftWithKey(f: (k, b, v) -> b & e, s: b, m: Map[k, v]): b & e =
-        let Map(xs) = m;
-            List.foldLeft((y, kv) -> f(fst(kv), y, snd(kv)), s, xs)
+    pub def foldLeftWithKey(f: (k, b, v) -> b & e, s: b, m: MutMap[k, v]): b & Impure =
+        let MutMap(mm) = m;
+        Map.foldLeftWithKey(f, s, deref mm)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    /// TODO
-    pub def foldRight(f: (v, b) -> b & e, s: b, m: Map[k, v]): b & e =
+    pub def foldRight(f: (v, b) -> b & e, s: b, m: MutMap[k, v]): b & Impure =
         foldRightWithKey((_, v, b) -> f(v, b), s, m)
 
     ///
@@ -299,11 +295,11 @@ namespace MutMap {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    /// TODO
-    pub def foldRightWithKey(f: (k, v, b) -> b & e, s: b, m: Map[k, v]): b & e =
-        let Map(xs) = m;
-            List.foldRight((kv, y) -> f(fst(kv), snd(kv), y), s, xs)
+    pub def foldRightWithKey(f: (k, v, b) -> b & e, s: b, m: MutMap[k, v]): b & Impure =
+        let MutMap(mm) = m;
+        Map.foldRightWithKey(f, s, deref mm)
 
+/*
     ///
     /// Alias for `reduceLeft`.
     ///
