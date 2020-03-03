@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -227,7 +227,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           // Look for any function named `__eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
-          lookup("__eq", eqType) match {
+          lookupEq(eqType) match {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
@@ -268,7 +268,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           // Look for any function named `__cmp` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
-          lookup("__cmp", cmpType) match {
+          lookupCmp(cmpType) match {
             case None =>
               // No comparator function found. Return the same expression.
               Expression.Binary(BinaryOperator.LessEqual, e1, e2, Type.Bool, eff, loc)
@@ -740,22 +740,35 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Optionally returns the symbol of a function with the given `name` whose declared types unifies with the given type `tpe`.
+      * Optionally returns the symbol of a function with the `__eq` name whose declared types unifies with the given type `tpe`.
       *
       * Returns `None` if no such function exists or more than one such function exist.
       */
-    def lookup(name: String, tpe: Type): Option[Symbol.DefnSym] = {
+    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = {
+      lookupIn("__eq", tpe, eqDefs)
+    }
+
+    /**
+      * Optionally returns the symbol of a function with the `__cmp` name whose declared types unifies with the given type `tpe`.
+      *
+      * Returns `None` if no such function exists or more than one such function exist.
+      */
+    def lookupCmp(tpe: Type): Option[Symbol.DefnSym] = {
+      lookupIn("__cmp", tpe, cmpDefs)
+    }
+
+    /**
+      * Optionally returns the symbol a function with `name` whose declared types unifies with the given type `tpe` in the `defns`.
+      */
+    def lookupIn(name: String, tpe: Type, defns: mutable.Iterable[Def]): Option[Symbol.DefnSym] = {
       // A set of matching symbols.
       val matches = mutable.Set.empty[Symbol.DefnSym]
 
       // Iterate through each definition and collect the matching symbols.
-      for (defn <- eqDefs ++ cmpDefs) {
+      for (defn <- cmpDefs) {
         val sym = defn.sym
-        // Check the function name.
-        if (name == sym.name) {
-          // Check whether the type unifies.
+        if (sym.name == "__cmp") {
           if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
-            // Match found!
             matches += sym
           }
         }
@@ -766,8 +779,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         return Some(matches.head)
       }
 
-      // Otherwise return None.
-      return None
+      None
     }
 
     /*

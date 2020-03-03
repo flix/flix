@@ -478,6 +478,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
+        case BinaryOperator.Spaceship =>
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
+            valueType <- unifyTypM(tpe1, tpe2, loc)
+            resultTyp <- unifyTypM(tvar, Type.Int32, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          } yield (resultTyp, resultEff)
+
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
           for {
             (tpe1, eff1) <- visitExp(exp1)

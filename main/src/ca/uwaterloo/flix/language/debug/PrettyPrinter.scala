@@ -588,6 +588,7 @@ object PrettyPrinter {
       case BinaryOperator.GreaterEqual => vt.text(">=")
       case BinaryOperator.Equal => vt.text("==")
       case BinaryOperator.NotEqual => vt.text("!=")
+      case BinaryOperator.Spaceship => vt.text("<=>")
       case BinaryOperator.LogicalAnd => vt.text("&&")
       case BinaryOperator.LogicalOr => vt.text("||")
       case BinaryOperator.BitwiseAnd => vt.text("&&&")

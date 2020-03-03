@@ -476,6 +476,8 @@ object SymbolicEvaluator {
               case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value:'$v'.")
             }
 
+            case BinaryOperator.Spaceship => throw InternalCompilerException(s"Unexpected operator.")
+
             /**
               * Logical And.
               */
