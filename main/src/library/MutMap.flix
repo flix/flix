@@ -117,23 +117,24 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.insertWithKey(f, k, v, deref mm)
 
-/*
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
     ///
-    /// Otherwise, has no effect.
+    /// Otherwise, the map is unchanged.
     ///
-    /// TODO
-    pub def adjust(f: v -> v & e, k: k, m: Map[k, v]): Map[k, v] & e = adjustWithKey((_, v1) -> f(v1), k, m)
+    pub def adjust(f: v -> v & e, k: k, m: MutMap[k, v]): Unit & Impure =
+        adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
+    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`.
     ///
-    /// TODO
-    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: Map[k, v]): Map[k, v] & e =
-        let Map(xs) = m;
-            Map(List.map(match (key, v) -> if (key == k) (k, f(k, v)) else (key, v), xs))
+    /// Otherwise, the map is unchanged.
+    ///
+    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.adjustWithKey(f, k, deref mm)
 
+/*
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
