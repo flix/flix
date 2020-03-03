@@ -393,6 +393,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
           case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
           case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
+          case "<=>" => WeededAst.Expression.Binary(BinaryOperator.Spaceship, e1, e2, loc)
           case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
           case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
           case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
