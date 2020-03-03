@@ -85,6 +85,8 @@ namespace MutSet {
     ///
     /// Removes all elements from `xs` that do not satisfy the given predicate `f`.
     ///
+    /// The function `f` must be pure.
+    ///
     pub def refine(f: a -> Bool, xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;
         ms := Set.filter(f, deref ms)

@@ -167,6 +167,23 @@ namespace MutMap {
         mm := Map.delete(k, deref mm)
 
     ///
+    /// Removes all mappings `k -> v` from `m` where `v` does not satisfy the predicate `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def refine(f: v -> Bool, m: mut MutMap[k, v]): Unit & Impure =
+        refineWithKey((_, v) -> f(v), m)
+
+    ///
+    /// Removes all mappings `k -> v` from `m` where `(k, v)` does not satisfy the predicate `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def refineWithKey(f: (k, v) -> Bool, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.filterWithKey(f, deref mm)
+
+    ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
     pub def isSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
@@ -207,28 +224,6 @@ namespace MutMap {
     pub def findRight(f: (k, v) -> Bool, m: MutMap[k, v]): Option[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.findRight(f, deref mm)
-
-  /*
-    ///
-    /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
-    ///
-    /// TODO
-    pub def filter(f: v -> Bool, m: Map[k, v]): Map[k, v] = filterWithKey((_, v) -> f(v), m)
-
-    ///
-    /// Returns a map of all mappings `k -> v` in `m` where `(k, v)` satisfies the predicate `f`.
-    ///
-    /// The function `f` must be pure.
-    ///
-    /// TODO
-    pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(List.filter(x -> f(fst(x), snd(x)), xs))
-
-
-*/
 
     ///
     /// Applies the function `f` to every value in the map `m`.
