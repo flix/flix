@@ -122,7 +122,7 @@ namespace MutMap {
     ///
     /// Otherwise, the map is unchanged.
     ///
-    pub def adjust(f: v -> v & e, k: k, m: MutMap[k, v]): Unit & Impure =
+    pub def adjust(f: v -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
@@ -130,29 +130,32 @@ namespace MutMap {
     ///
     /// Otherwise, the map is unchanged.
     ///
-    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: MutMap[k, v]): Unit & Impure =
+    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.adjustWithKey(f, k, deref mm)
 
+    ///
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`.
+    ///
+    /// Otherwise, the map is unchanged.
+    ///
+    pub def update(f: v -> Option[v] & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
+        updateWithKey((_, v1) -> f(v1), k, m)
+
+    ///
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`.
+    ///
+    /// Otherwise, the map is unchanged.
+    ///
+    pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.updateWithKey(f, k, deref mm)
+
 /*
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
+    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`.
     ///
-    /// TODO
-    pub def update(f: v -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e = updateWithKey((_, v1) -> f(v1), k, m)
-
-    ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
-    ///
-    /// TODO
-    pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
-        let Map(xs) = m;
-            Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
-
-    ///
-    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`. Otherwise, returns `m`.
-    ///
-    /// Note: The returned map may be smaller than `m`.
+    /// Otherwise, the map is unchanged.
     ///
     /// TODO
     pub def replace(x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
@@ -161,11 +164,6 @@ namespace MutMap {
                 case None => m
                 case Some(w) => if (v == w) insert(fst(y), snd(y), delete(k, m)) else m
             }
-
-
-
-
-
 
 */
 
