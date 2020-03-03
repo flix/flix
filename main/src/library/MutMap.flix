@@ -344,10 +344,7 @@ namespace MutMap {
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
         let Map(xs) = m;
             List.reduceRight((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
-
-
-
-
+*/
 
 
     ///
@@ -355,9 +352,9 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
-        let Map(xs) = m;
-            List.count(x -> f(fst(x), snd(x)), xs)
+    pub def count(f: (k, v) -> Bool, m: MutMap[k, v]): Int32 & Impure =
+        let MutMap(mm) = m;
+        Map.count(f, deref mm)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
@@ -366,10 +363,13 @@ namespace MutMap {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
-        let Map(xs) = m;
-            List.exists(x -> f(fst(x), snd(x)), xs)
+    pub def exists(f: (k, v) -> Bool, m: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm) = m;
+        Map.exists(f, deref mm)
 
+
+
+/*
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
     ///
@@ -477,20 +477,21 @@ namespace MutMap {
     pub def toSet(m: Map[k, v]): Set[(k, v)] =
         let Map(xs) = m;
             List.toSet(xs)
+*/
 
     ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure = match m {
-        case Map(xs) => List.foreach(p -> f(fst(p), snd(p)), xs)
-    }
+    pub def foreach(f: (k, v) ~> Unit, m: MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        Map.foreach(f, deref mm)
 
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
-    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) == size(m2)
-*/
+    pub def __eq(m1: MutMap[k, v], m2: MutMap[k, v]): Bool =
+        (isSubmapOf(m1, m2) && isSubmapOf(m2, m1)) as & Pure
 
 }

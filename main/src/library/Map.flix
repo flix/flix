@@ -507,7 +507,7 @@ namespace Map {
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
-    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) == size(m2)
+    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && isSubmapOf(m2, m1)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //
