@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.{CompilationError, ast}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -94,8 +94,8 @@ object Synthesize extends Phase[Root, Root] {
         Expression.Unary(op, e, tpe, eff, loc)
 
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
-        // Return the expression unchanged if it only compares primitive values.
-        if (isPrimitive(exp1.tpe) && isPrimitive(exp2.tpe)) {
+        // Return the expression unchanged if it only compares primitive values and the operator is not spaceship.
+        if (isPrimitive(exp1.tpe) && isPrimitive(exp2.tpe) && op != BinaryOperator.Spaceship) {
           return exp0
         }
 
@@ -111,6 +111,7 @@ object Synthesize extends Phase[Root, Root] {
         op match {
           case BinaryOperator.Equal => mkApplyEq(e1, e2)
           case BinaryOperator.NotEqual => mkApplyNeq(e1, e2)
+          case BinaryOperator.Spaceship => mkSpaceship(e1, e2)
           case _ => Expression.Binary(op, e1, e2, tpe, eff, loc)
         }
 
@@ -415,6 +416,15 @@ object Synthesize extends Phase[Root, Root] {
 
       // Negate the result.
       Expression.Unary(UnaryOperator.LogicalNot, e, Type.Bool, Type.Pure, sl)
+    }
+
+    /**
+      * Returns an expression that performs a three-way comparison between `e1` and `e2`.
+      */
+    def mkSpaceship(exp1: Expression, exp2: Expression): Expression = exp1.tpe match {
+      // TODO: Instead of generating code here, we could also just let the spaceship operator through?
+
+      case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
     /**
