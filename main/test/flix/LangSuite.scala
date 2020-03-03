@@ -39,6 +39,11 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix"),
 
+  //
+  // Compare.
+  //
+  new FlixTest("Test.Exp.Compare.Poly", "main/test/flix/Test.Exp.Compare.Poly.flix"),
+
   ///
   /// Concurrency.
   ///
