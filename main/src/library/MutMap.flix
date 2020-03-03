@@ -299,18 +299,17 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.foldRightWithKey(f, s, deref mm)
 
-/*
     ///
     /// Alias for `reduceLeft`.
     ///
-    /// TODO
-    pub def reduce(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e = reduceLeft(f, m)
+    pub def reduce(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
+        reduceLeft(f, m)
 
     ///
     /// Alias for `reduceLeftWithKey`.
     ///
-    /// TODO
-    pub def reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] = reduceLeftWithKey(f, m)
+    pub def reduceWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        reduceLeftWithKey(f, m)
 
     ///
     /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
@@ -319,8 +318,9 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    /// TODO
-    pub def reduceLeft(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e = List.reduceLeft(f, m.valuesOf())
+    pub def reduceLeft(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
+        let MutMap(mm) = m;
+        Map.reduceLeft(f, deref mm)
 
     ///
     /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
@@ -329,10 +329,13 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    /// TODO
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-            List.reduceLeft((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.reduceLeftWithKey(f, deref mm)
+
+
+
+/*
 
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
