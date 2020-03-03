@@ -67,15 +67,15 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.getWithDefault(k, d, deref mm)
 
-/*
+
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
     ///
-    pub def memberOf(k: k, m: Map[k, v]): Bool = match m {
-        case Map(Nil) => false
-        case Map((a, _) :: rs) => if (a == k) true else memberOf(k, Map(rs))
-    }
+    pub def memberOf(k: k, m: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm) = m;
+        Map.memberOf(k, deref mm)
 
+/*
     ///
     /// Returns the keys of `m`.
     ///
