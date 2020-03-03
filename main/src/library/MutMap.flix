@@ -23,6 +23,8 @@ namespace MutMap {
 
     // TODO: Extra operations: clear.
 
+    // TODO: Add vs. insert.
+
     ///
     /// Returns a fresh empty map.
     ///
@@ -89,24 +91,24 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.valuesOf(deref mm)
 
-/*
-
     ///
     /// Updates `m` with `k -> v`.
     ///
-    /// TODO
-    pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] =
-        insertWithKey((_, v1, _) -> v1, k, v, m)
+    pub def add(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.insert(k, v, deref mm)
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    /// TODO
-    pub def insertWith(f: (v, v) -> v & e, k: k, v: v, m: Map[k, v]): Map[k, v] & e =
-        insertWithKey((_, v1, v2) -> f(v1, v2), k, v, m)
+    pub def addWith(f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.insertWith(f, k, v, deref mm)
 
+
+/*
     ///
     /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
     ///
@@ -172,16 +174,14 @@ namespace MutMap {
 
 
 
+*/
+
     ///
     /// Removes the mapping `k` from the map `m`.
     ///
-    /// TODO
-    pub def delete(k: k, m: Map[k, v]): Map[k, v] =
-        let Map(xs) = m;
-            Map(List.filter(match (key, _) -> key != k, xs))
-
-
-*/
+    pub def delete(k: k, m: MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.delete(k, deref mm)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
