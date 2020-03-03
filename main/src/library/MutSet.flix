@@ -17,9 +17,7 @@
 ///
 /// The Mutable Set type.
 ///
-enum MutSet[t] {
-    case MutSet(Ref[Set[t]])
-}
+opaque type MutSet[t] = Ref[Set[t]]
 
 namespace MutSet {
 
