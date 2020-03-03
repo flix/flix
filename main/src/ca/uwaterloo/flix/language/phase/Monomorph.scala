@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -744,8 +744,20 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * Returns `None` if no such function exists or more than one such function exist.
       */
-    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = {
-      lookupIn("__eq", tpe, eqDefs)
+    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = tpe match {
+      // Equality cannot be overriden for primitive types.
+      case Type.Cst(TypeConstructor.Unit) => None
+      case Type.Cst(TypeConstructor.Bool) => None
+      case Type.Cst(TypeConstructor.Char) => None
+      case Type.Cst(TypeConstructor.Float32) => None
+      case Type.Cst(TypeConstructor.Float64) => None
+      case Type.Cst(TypeConstructor.Int8) => None
+      case Type.Cst(TypeConstructor.Int16) => None
+      case Type.Cst(TypeConstructor.Int32) => None
+      case Type.Cst(TypeConstructor.Int64) => None
+      case Type.Cst(TypeConstructor.BigInt) => None
+      case Type.Cst(TypeConstructor.Str) => None
+      case _ => lookupIn("__eq", tpe, eqDefs)
     }
 
     /**
