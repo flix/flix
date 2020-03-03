@@ -206,7 +206,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // The expected type of an equality function: a -> a -> bool.
           val eqType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
 
-          // Look for any function named `eq` with the expected type.
+          // Look for any function named `__eq` with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
           lookup("__eq", eqType) match {
             case None =>
@@ -231,6 +231,37 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               } else {
                 Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
               }
+          }
+
+        /*
+         * Comparison Check.
+         */
+        case Expression.Binary(op@BinaryOperator.LessEqual, exp1, exp2, tpe, eff, loc) =>
+          // Perform specialization on the left and right sub-expressions.
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+
+          // The type of the values of exp1 and exp2. NB: The typer guarantees that exp1 and exp2 have the same type.
+          val valueType = subst0(exp1.tpe)
+
+          // The expected type of a comparator function: a -> a -> bool.
+          val cmpType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
+
+          // Look for any function named `__cmp` with the expected type.
+          // Returns `Some(sym)` if there is exactly one such function.
+          lookup("__cmp", cmpType) match {
+            case None =>
+              // No comparator function found. Return the same expression.
+              Expression.Binary(BinaryOperator.LessEqual, e1, e2, Type.Bool, eff, loc)
+
+            case Some(cmpSym) =>
+              // Equality function found. Specialize and generate a call to it.
+              val newSym = specializeDefSym(cmpSym, cmpType)
+              val base = Expression.Def(newSym, cmpType, loc)
+
+              // Call the equality function.
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Bool), eff, loc)
+              Expression.Apply(inner, e2, Type.Bool, eff, loc)
           }
 
         /*
