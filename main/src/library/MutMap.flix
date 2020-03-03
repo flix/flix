@@ -29,7 +29,7 @@ namespace MutMap {
         Map.isEmpty(deref mm)
 
     ///
-    /// Returns a fresh empty map.
+    /// Returns a fresh empty mutable map.
     ///
     pub def empty(): MutMap[k, v] & Impure =
         MutMap(ref Map.empty())
@@ -40,35 +40,35 @@ namespace MutMap {
     pub def singleton(k: k, v: v): MutMap[k, v] & Impure =
         MutMap(ref Map.singleton(k, v))
 
-    /// Returns `true` if and only if `m` contains the key `k`.
+    /// Returns `true` if and only if the mutable map `m` contains the key `k`.
     ///
     pub def memberOf(k: k, m: MutMap[k, v]): Bool & Impure =
         let MutMap(mm) = m;
         Map.memberOf(k, deref mm)
 
     ///
-    /// Returns the keys of `m`.
+    /// Returns the keys of the mutable map `m`.
     ///
     pub def keysOf(m: MutMap[k, v]): Set[k] & Impure =
         let MutMap(mm) = m;
         Map.keysOf(deref mm)
 
     ///
-    /// Returns the values of `m`.
+    /// Returns the values of the mutable map `m`.
     ///
     pub def valuesOf(m: MutMap[k, v]): List[v] & Impure =
         let MutMap(mm) = m;
         Map.valuesOf(deref mm)
 
     ///
-    /// Returns the size of `m`.
+    /// Returns the size of the mutable map `m`.
     ///
     pub def size(m: MutMap[k, v]): Int32 & Impure =
         let MutMap(mm) = m;
         Map.size(deref mm)
 
     ///
-    /// Returns `Some(v)` if `k -> v` is in `m`.
+    /// Returns `Some(v)` if `k -> v` is in the mutable map `m`.
     ///
     /// Otherwise returns `None`.
     ///
@@ -77,7 +77,7 @@ namespace MutMap {
         Map.get(k, deref mm)
 
     ///
-    /// Returns `v` if `k -> v` is in `m`.
+    /// Returns `v` if `k -> v` is in the mutable map `m`.
     ///
     /// Otherwise, returns `d`.
     ///
@@ -86,7 +86,7 @@ namespace MutMap {
         Map.getWithDefault(k, d, deref mm)
 
     ///
-    /// Returns `v` if `k -> v` is in `m`.
+    /// Returns `v` if `k -> v` is in the mutable map `m`.
     ///
     /// Otherwise updates the map `m` with a new mapping `k -> d` and returns d.
     ///
@@ -98,14 +98,14 @@ namespace MutMap {
         }
 
     ///
-    /// Updates `m` with `k -> v`.
+    /// Updates the mutable map `m` with `k -> v`.
     ///
     pub def put(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insert(k, v, deref mm)
 
     ///
-    /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
+    /// Updates the mutable map `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
@@ -114,7 +114,7 @@ namespace MutMap {
         mm := Map.insertWith(f, k, v, deref mm)
 
     ///
-    /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
+    /// Updates the mutable map `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
@@ -123,21 +123,21 @@ namespace MutMap {
         mm := Map.insertWithKey(f, k, v, deref mm)
 
     ///
-    /// Removes all mappings from `m`.
+    /// Removes all mappings from the mutable map `m`.
     ///
     pub def clear(m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.empty()
 
     ///
-    /// Returns a shallow copy of `m`.
+    /// Returns a shallow copy of the mutable map `m`.
     ///
     pub def copy(m: mut MutMap[k, v]): MutMap[k, v] & Impure =
         let MutMap(mm) = m;
         MutMap(ref (deref mm))
 
     ///
-    /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
+    /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
     ///
     /// Otherwise, the map is unchanged.
     ///
@@ -145,7 +145,7 @@ namespace MutMap {
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`.
+    /// Updates the mutable map `m` with `k -> f(k, v)` if `k -> v` is in `m`.
     ///
     /// Otherwise, the map is unchanged.
     ///
@@ -154,7 +154,7 @@ namespace MutMap {
         mm := Map.adjustWithKey(f, k, deref mm)
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`.
+    /// Updates the mutable map `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`.
     ///
     /// Otherwise, the map is unchanged.
     ///
@@ -162,7 +162,7 @@ namespace MutMap {
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`.
+    /// Updates the mutable map `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`.
     ///
     /// Otherwise, the map is unchanged.
     ///
@@ -171,7 +171,7 @@ namespace MutMap {
         mm := Map.updateWithKey(f, k, deref mm)
 
     ///
-    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`.
+    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in the mutable map `m`.
     ///
     /// Otherwise, the map is unchanged.
     ///
@@ -180,14 +180,14 @@ namespace MutMap {
         mm := Map.replace(x, y, deref mm)
 
     ///
-    /// Removes the mapping `k` from the map `m`.
+    /// Removes the mapping `k` from the mutable map `m`.
     ///
     pub def delete(k: k, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.delete(k, deref mm)
 
     ///
-    /// Removes all mappings `k -> v` from `m` where `v` does not satisfy the predicate `f`.
+    /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
@@ -195,7 +195,7 @@ namespace MutMap {
         refineWithKey((_, v) -> f(v), m)
 
     ///
-    /// Removes all mappings `k -> v` from `m` where `(k, v)` does not satisfy the predicate `f`.
+    /// Removes all mappings `k -> v` from the mutable map `m` where `(k, v)` does not satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
@@ -312,7 +312,7 @@ namespace MutMap {
         findLeft(f, m)
 
     ///
-    /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
+    /// Optionally returns the first mapping of the mutable map `m` that satisfies the predicate function `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
@@ -321,7 +321,7 @@ namespace MutMap {
         Map.findLeft(f, deref mm)
 
     ///
-    /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
+    /// Optionally returns the first mapping of the mutable map `m` that satisfies the predicate function `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
@@ -330,14 +330,14 @@ namespace MutMap {
         Map.findRight(f, deref mm)
 
     ///
-    /// Applies the function `f` to every value in the map `m`.
+    /// Applies the function `f` to every value in the mutable map `m`.
     ///
     pub def transform(f: v1 -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.map(f, deref mm)
 
     ///
-    /// Applies the function `f` to every value in the map `m`.
+    /// Applies the function `f` to every value in the mutable map `m`.
     ///
     pub def transformWithKey(f: (k, v1) -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
         let MutMap(mm) = m;
@@ -356,7 +356,7 @@ namespace MutMap {
         foldLeftWithKey(f, s, m)
 
     ///
-    /// Applies `f` to a start value `s` and all values in `m` going from left to right.
+    /// Applies `f` to a start value `s` and all values in the mutable map `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
@@ -365,7 +365,7 @@ namespace MutMap {
         Map.foldLeft(f, s, deref mm)
 
     ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
+    /// Applies `f` to a start value `s` and all key-value pairs in the mutable map `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
     ///
@@ -374,7 +374,7 @@ namespace MutMap {
         Map.foldLeftWithKey(f, s, deref mm)
 
     ///
-    /// Applies `f` to a start value `s` and all values in `m` going from right to left.
+    /// Applies `f` to a start value `s` and all values in the mutable map `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
@@ -382,7 +382,7 @@ namespace MutMap {
         foldRightWithKey((_, v, b) -> f(v, b), s, m)
 
     ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
+    /// Applies `f` to a start value `s` and all key-value pairs in the mutable map `m` going from right to left.
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
@@ -403,7 +403,7 @@ namespace MutMap {
         reduceLeftWithKey(f, m)
 
     ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -414,7 +414,7 @@ namespace MutMap {
         Map.reduceLeft(f, deref mm)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in the mutable map `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -425,7 +425,7 @@ namespace MutMap {
         Map.reduceLeftWithKey(f, deref mm)
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in the mutable map `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -436,7 +436,7 @@ namespace MutMap {
         Map.reduceRight(f, deref mm)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in the mutable map `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
@@ -447,7 +447,7 @@ namespace MutMap {
         Map.reduceRightWithKey(f, deref mm)
 
     ///
-    /// Returns the number of mappings in `m` that satisfy the predicate `f`.
+    /// Returns the number of mappings in the mutable map `m` that satisfy the predicate function `f`.
     ///
     /// The function `f` must be pure.
     ///
@@ -456,7 +456,7 @@ namespace MutMap {
         Map.count(f, deref mm)
 
     ///
-    /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `m` is the empty map.
     ///
@@ -467,7 +467,7 @@ namespace MutMap {
         Map.exists(f, deref mm)
 
     ///
-    /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
+    /// Returns `true` if and only if all mappings in the mutable map `m` satisfy the predicate function `f`.
     ///
     /// Returns `true` if `m` is the empty map.
     ///
@@ -478,28 +478,28 @@ namespace MutMap {
         Map.forall(f, deref mm)
 
     ///
-    /// Returns the map `m` as an immutable map.
+    /// Returns the mutable map `m` as an immutable map.
     ///
     pub def toImmutable(m: MutMap[k, v]): Map[k, v] & Impure =
         let MutMap(mm) = m;
         deref mm
 
     ///
-    /// Returns the map `m` as a list of key-value pairs.
+    /// Returns the mutable map `m` as a list of key-value pairs.
     ///
     pub def toList(m: MutMap[k, v]): List[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.toList(deref mm)
 
     ///
-    /// Returns the map `m` as a set of key-value pairs.
+    /// Returns the mutable map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: MutMap[k, v]): Set[(k, v)] & Impure =
         let MutMap(mm) = m;
         Map.toSet(deref mm)
 
     ///
-    /// Applies `f` to every element of `xs`.
+    /// Applies `f` to every element of the mutable map `m`.
     ///
     /// The function `f` must be impure.
     ///
