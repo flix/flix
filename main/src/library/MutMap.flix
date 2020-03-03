@@ -333,10 +333,6 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.reduceLeftWithKey(f, deref mm)
 
-
-
-/*
-
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     ///
@@ -344,10 +340,9 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    /// TODO
-    pub def reduceRight(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e =
-        let Map(xs) = m;
-            List.reduceRight(f, List.map(kv -> snd(kv), xs))
+    pub def reduceRight(f: (v, v) -> v & e, m: MutMap[k, v]): Option[v] & Impure =
+        let MutMap(mm) = m;
+        Map.reduceRight(f, deref mm)
 
     ///
     /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
@@ -356,12 +351,9 @@ namespace MutMap {
     ///
     /// Returns `None` if `m` is the empty map.
     ///
-    /// TODO
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
-        let Map(xs) = m;
-            List.reduceRight((kv1, kv2) -> f(fst(kv1), snd(kv1), fst(kv2), snd(kv2)), xs)
-*/
-
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.reduceRightWithKey(f, deref mm)
 
     ///
     /// Returns the number of mappings in `m` that satisfy the predicate `f`.
