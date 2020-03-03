@@ -183,28 +183,28 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.filterWithKey(f, deref mm)
 
-/*
     ///
-    /// Returns the left-biased union of `m1` and `m2`.
+    /// Merges the map `m1` into the map `m2` in a right-biased manner.
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    /// TODO
-    pub def union(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
+    pub def merge(m1: Map[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+        mergeWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
-    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
+    /// Merges the map `m1` into the map `m2` where key collisions are resolved with the merge function `f`.
     ///
-    /// TODO
-    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def mergeWith(f: (v, v) -> v & e, m1: Map[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+        mergeWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
-    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    /// Merges the map `m1` into the map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
-    /// TODO
-    pub def unionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        foldRightWithKey((k, v, m) -> insertWithKey((key, v1, v2) -> f(key, v1, v2), k, v, m) , m2, m1)
+    pub def mergeWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm2) = m2;
+        mm2 := Map.unionWithKey(f, m1, deref mm2)
 
+/*
     ///
     /// Returns the left-biased intersection of `m1` and `m2`.
     ///
