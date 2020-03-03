@@ -21,9 +21,11 @@ opaque type MutMap[k, v] = Ref[Map[k, v]]
 
 namespace MutMap {
 
-    // TODO:  getOrElseUpdate,
-
     // TODO: Add vs. insert. vs. put.
+
+    // TODO: intersect, and difference.
+
+    // TODO: More operations?
 
     ///
     /// Returns a fresh empty map.
@@ -69,6 +71,7 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.getWithDefault(k, d, deref mm)
 
+    // TODO:  getOrElseUpdate,
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
