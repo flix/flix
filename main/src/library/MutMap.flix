@@ -183,6 +183,90 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.filterWithKey(f, deref mm)
 
+/*
+    ///
+    /// Returns the left-biased union of `m1` and `m2`.
+    ///
+    /// That is, key collisions are resolved by taking the mapping from `m1`.
+    ///
+    /// TODO
+    pub def union(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
+
+    ///
+    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
+    ///
+    /// TODO
+    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+
+    ///
+    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    ///
+    /// TODO
+    pub def unionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+        foldRightWithKey((k, v, m) -> insertWithKey((key, v1, v2) -> f(key, v1, v2), k, v, m) , m2, m1)
+
+    ///
+    /// Returns the left-biased intersection of `m1` and `m2`.
+    ///
+    /// That is, key collisions are resolved by taking the mapping from `m1`.
+    ///
+    /// TODO
+    pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, _) -> v1, m1, m2)
+
+    ///
+    /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
+    ///
+    /// TODO
+    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+
+    ///
+    /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
+    ///
+    /// TODO
+    pub def intersectionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+        let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
+        foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
+
+    ///
+    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    ///
+    /// That is, returns the map `m1` with the keys removed that are in `m2`.
+    ///
+    /// TODO
+    pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
+
+    ///
+    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    ///
+    /// When a key `k` is in both `m1` and `m2`, the associated values are passed to the merge function `f`.
+    /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
+    /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
+    ///
+    /// TODO
+    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+
+    ///
+    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
+    ///
+    /// When a key `k` is in both `m1` and `m2`, `k` and the associated values are passed to the merge function `f`.
+    /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
+    /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
+    ///
+    /// TODO
+    pub def differenceWithKey(f: (k, v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+        let diff = filterWithKey((k, _) -> !memberOf(k, m2), m1);
+        let g = (k, v, m) -> if (memberOf(k, m1))
+                                match get(k, m1) {
+                                    case Some(v1) => match f(k, v1, v) {
+                                        case None => m
+                                        case Some(w) => insert(k, w, m)
+                                    }
+                                    case None => panic "unreachable"
+                                }
+                             else m;
+        foldRightWithKey(g, diff, m2)
+*/
+
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
@@ -373,90 +457,6 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.forall(f, deref mm)
 
-
-/*
-    ///
-    /// Returns the left-biased union of `m1` and `m2`.
-    ///
-    /// That is, key collisions are resolved by taking the mapping from `m1`.
-    ///
-    /// TODO
-    pub def union(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
-
-    ///
-    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
-    ///
-    /// TODO
-    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
-
-    ///
-    /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
-    ///
-    /// TODO
-    pub def unionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        foldRightWithKey((k, v, m) -> insertWithKey((key, v1, v2) -> f(key, v1, v2), k, v, m) , m2, m1)
-
-    ///
-    /// Returns the left-biased intersection of `m1` and `m2`.
-    ///
-    /// That is, key collisions are resolved by taking the mapping from `m1`.
-    ///
-    /// TODO
-    pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, _) -> v1, m1, m2)
-
-    ///
-    /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
-    ///
-    /// TODO
-    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
-
-    ///
-    /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
-    ///
-    /// TODO
-    pub def intersectionWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        let intersect = filterWithKey((k, _) -> memberOf(k, m1), m2);
-        foldRightWithKey((k, v, m) -> adjustWithKey((key, v1) -> f(key, v, v1), k, m), intersect, m1)
-
-    ///
-    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
-    ///
-    /// That is, returns the map `m1` with the keys removed that are in `m2`.
-    ///
-    /// TODO
-    pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
-
-    ///
-    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
-    ///
-    /// When a key `k` is in both `m1` and `m2`, the associated values are passed to the merge function `f`.
-    /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
-    /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
-    ///
-    /// TODO
-    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
-
-    ///
-    /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
-    ///
-    /// When a key `k` is in both `m1` and `m2`, `k` and the associated values are passed to the merge function `f`.
-    /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
-    /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
-    ///
-    /// TODO
-    pub def differenceWithKey(f: (k, v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        let diff = filterWithKey((k, _) -> !memberOf(k, m2), m1);
-        let g = (k, v, m) -> if (memberOf(k, m1))
-                                match get(k, m1) {
-                                    case Some(v1) => match f(k, v1, v) {
-                                        case None => m
-                                        case Some(w) => insert(k, w, m)
-                                    }
-                                    case None => panic "unreachable"
-                                }
-                             else m;
-        foldRightWithKey(g, diff, m2)
-*/
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
