@@ -34,36 +34,30 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.size(deref mm)
 
-
-/*
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
-    /// `Map#{k -> v}` is syntactic sugar for `singleton` (`Map#{k -> v} = singleton(k, v)`).
-    ///
-    pub def singleton(k: k, v: v): Map[k, v] = Map((k, v) :: Nil)
-
-
-
-
-
+    pub def singleton(k: k, v: v): MutMap[k, v] & Impure =
+        MutMap(ref Map.singleton(k, v))
 
     ///
-    /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
+    /// Returns `true` if and only if `m` is the empty map.
     ///
-    pub def isEmpty(m: Map[k, v]): Bool =
-        let Map(xs) = m;
-            List.isEmpty(xs)
+    pub def isEmpty(m: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm) = m;
+        Map.isEmpty(deref mm)
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
     ///
     /// Otherwise returns `None`.
     ///
-    pub def get(k: k, m: Map[k, v]): Option[v] =
-        let Map(xs) = m;
-            List.findMap(match (key, v) -> if (key != k) None else Some(v), xs)
+    pub def get(k: k, m: MutMap[k, v]): Option[v] & Impure =
+        let MutMap(mm) = m;
+        Map.get(k, deref mm)
 
+
+/*
     ///
     /// Returns `v` if `k -> v` is in `m`.
     ///
