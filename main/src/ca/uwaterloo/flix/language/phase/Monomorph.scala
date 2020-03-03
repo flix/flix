@@ -127,6 +127,25 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
     /**
+      * A function-local set of all equality functions (all functions named `__eq`).
+      */
+    val eqDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty
+
+    /**
+      * A function-local set of all comparator functions (all functions named `__cmp`).
+      */
+    val cmpDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty
+
+    for ((sym, defn) <- root.defs) {
+      if (sym.name == "__eq") {
+        eqDefs += defn
+      }
+      if (sym.name == "__cmp") {
+        cmpDefs += defn
+      }
+    }
+
+    /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
       *
       * Replaces every reference to a parametric function with a reference to its specialized version.
@@ -730,7 +749,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val matches = mutable.Set.empty[Symbol.DefnSym]
 
       // Iterate through each definition and collect the matching symbols.
-      for ((sym, defn) <- root.defs) {
+      for (defn <- eqDefs ++ cmpDefs) {
+        val sym = defn.sym
         // Check the function name.
         if (name == sym.name) {
           // Check whether the type unifies.
@@ -745,6 +765,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       if (matches.size == 1) {
         return Some(matches.head)
       }
+
       // Otherwise return None.
       return None
     }
