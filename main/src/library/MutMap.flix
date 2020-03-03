@@ -21,7 +21,7 @@ opaque type MutMap[k, v] = Ref[Map[k, v]]
 
 namespace MutMap {
 
-    // TODO: Extra operations: clear.
+    // TODO: Extra operations: clear, copy, getOrElseUpdate,
 
     // TODO: Add vs. insert. vs. put.
 
