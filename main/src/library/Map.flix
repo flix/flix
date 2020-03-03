@@ -480,6 +480,11 @@ namespace Map {
 
 
 
+    ///
+    /// Returns `m` as a mutable set.
+    ///
+    pub def toMutable(m: Map[k, v]): MutMap[k, v] & Impure =
+        MutMap(ref m)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.

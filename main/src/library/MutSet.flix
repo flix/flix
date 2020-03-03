@@ -264,7 +264,7 @@ namespace MutSet {
             (MutSet(ref ys), MutSet(ref zs))
 
     ///
-    /// Returns the set `xs` as an immutable set.
+    /// Returns `xs` as an immutable set.
     ///
     pub def toImmutable(xs: MutSet[a]): Set[a] & Impure =
         let MutSet(ms) = xs;

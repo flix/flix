@@ -483,6 +483,12 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.forall(f, deref mm)
 
+    ///
+    /// Returns the map `m` as an immutable map.
+    ///
+    pub def toImmutable(m: MutMap[k, v]): Map[k, v] & Impure =
+        let MutMap(mm) = m;
+        deref mm
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
