@@ -75,25 +75,21 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.memberOf(k, deref mm)
 
-/*
     ///
     /// Returns the keys of `m`.
     ///
-    pub def keysOf(m: Map[k, v]): Set[k] =
-        let Map(xs) = m;
-            List.toSet(fst(List.unzip(xs)))
+    pub def keysOf(m: MutMap[k, v]): Set[k] & Impure =
+        let MutMap(mm) = m;
+        Map.keysOf(deref mm)
 
     ///
     /// Returns the values of `m`.
     ///
-    pub def valuesOf(m: Map[k, v]): List[v] =
-        let Map(xs) = m;
-            snd(List.unzip(xs))
+    pub def valuesOf(m: MutMap[k, v]): List[v] & Impure =
+        let MutMap(mm) = m;
+        Map.valuesOf(deref mm)
 
-
-
-
-
+/*
 
     ///
     /// Updates `m` with `k -> v`.
@@ -176,53 +172,51 @@ namespace MutMap {
             Map(List.filter(match (key, _) -> key != k, xs))
 
 
-
-
-
+*/
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
-    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool =
-        let Map(xs) = m1;
-        let Map(ys) = m2;
-            List.forall(kv -> List.memberOf(kv, ys), xs)
+    pub def isSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm1) = m1;
+        let MutMap(mm2) = m2;
+        Map.isSubmapOf(deref mm1, deref mm2)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
     ///
-    pub def isProperSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) != size(m2)
+    pub def isProperSubmapOf(m1: MutMap[k, v], m2: MutMap[k, v]): Bool & Impure =
+        let MutMap(mm1) = m1;
+        let MutMap(mm2) = m2;
+        Map.isProperSubmapOf(deref mm1, deref mm2)
 
     ///
     /// Alias for `findLeft`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] = findLeft(f, m)
+    pub def find(f: (k, v) -> Bool, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        findLeft(f, m)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-            List.findLeft(x -> f(fst(x), snd(x)), xs)
+    pub def findLeft(f: (k, v) -> Bool, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.findLeft(f, deref mm)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
-        let Map(xs) = m;
-            List.findRight(x -> f(fst(x), snd(x)), xs)
+    pub def findRight(f: (k, v) -> Bool, m: MutMap[k, v]): Option[(k, v)] & Impure =
+        let MutMap(mm) = m;
+        Map.findRight(f, deref mm)
 
-
-
-
-
-
+  /*
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
     ///
