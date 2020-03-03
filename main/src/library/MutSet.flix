@@ -83,7 +83,7 @@ namespace MutSet {
         ms := Set.intersection(deref ms, ys)
 
     ///
-    /// Removes all elements from `xs` that do not satisfy the given boolean function `f`.
+    /// Removes all elements from `xs` that do not satisfy the given predicate `f`.
     ///
     pub def refine(f: a -> Bool, xs: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = xs;

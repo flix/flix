@@ -107,7 +107,6 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.insertWith(f, k, v, deref mm)
 
-
     ///
     /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
     ///
@@ -151,21 +150,14 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.updateWithKey(f, k, deref mm)
 
-/*
     ///
     /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`.
     ///
     /// Otherwise, the map is unchanged.
     ///
-    /// TODO
-    pub def replace(x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
-        let (k, v) = x;
-            match get(k, m) {
-                case None => m
-                case Some(w) => if (v == w) insert(fst(y), snd(y), delete(k, m)) else m
-            }
-
-*/
+    pub def replace(x: (k, v), y: (k, v), m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.replace(x, y, deref mm)
 
     ///
     /// Removes the mapping `k` from the map `m`.
