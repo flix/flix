@@ -108,28 +108,20 @@ namespace MutMap {
         mm := Map.insertWith(f, k, v, deref mm)
 
 
-/*
     ///
     /// Updates `m` with `k -> f(k, v, v1)` if `k -> v1` is in `m`.
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    /// TODO
-    pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: Map[k, v]): Map[k, v] & e =
-        if (memberOf(k, m)) adjustWithKey((a, b) -> f(a, v, b), k, m)
-        else
-            let Map(xs) = m;
-                Map((k, v) :: xs)
+    pub def addWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.insertWithKey(f, k, v, deref mm)
 
-
-
-
-
-
+/*
     ///
     /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
     ///
-    /// Otherwise, returns `m`.
+    /// Otherwise, has no effect.
     ///
     /// TODO
     pub def adjust(f: v -> v & e, k: k, m: Map[k, v]): Map[k, v] & e = adjustWithKey((_, v1) -> f(v1), k, m)
