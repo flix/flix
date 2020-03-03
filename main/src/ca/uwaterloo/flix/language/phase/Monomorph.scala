@@ -765,21 +765,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val matches = mutable.Set.empty[Symbol.DefnSym]
 
       // Iterate through each definition and collect the matching symbols.
-      for (defn <- cmpDefs) {
+      for (defn <- defns) {
         val sym = defn.sym
-        if (sym.name == "__cmp") {
+        if (name == sym.name) {
           if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
             matches += sym
           }
         }
       }
 
-      // Returns the result if there is exactly one match.
-      if (matches.size == 1) {
-        return Some(matches.head)
-      }
-
-      None
+      if (matches.size != 1) None else Some(matches.head)
     }
 
     /*
