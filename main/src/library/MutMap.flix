@@ -235,21 +235,22 @@ namespace MutMap {
         let Map(xs) = m;
             Map(List.filter(x -> f(fst(x), snd(x)), xs))
 
-    ///
-    /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
-    ///
-    /// TODO
-    pub def map(f: v1 -> v2 & e, m: Map[k, v1]): Map[k, v2] & e = mapWithKey((_, v) -> f(v), m)
-
-    ///
-    /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
-    ///
-    /// TODO
-    pub def mapWithKey(f: (k, v1) -> v2 & e, m: Map[k, v1]): Map[k, v2] & e =
-        let Map(xs) = m;
-            Map(List.map(match (k, v) -> (k, f(k, v)), xs))
 
 */
+
+    ///
+    /// Applies the function `f` to every value in the map `m`.
+    ///
+    pub def transform(f: v1 -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.map(f, deref mm)
+
+    ///
+    /// Applies the function `f` to every value in the map `m`.
+    ///
+    pub def transformWithKey(f: (k, v1) -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.mapWithKey(f, deref mm)
 
     ///
     /// Alias for `foldLeft`.

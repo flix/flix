@@ -242,13 +242,6 @@ namespace MutSet {
         ms := Set.map(f, deref ms)
 
     ///
-    /// Applies the function `f` to every element in `xs` merging the results into `xs`.
-    ///
-    pub def flatTransform(f: a -> Set[a] & e, xs: mut MutSet[a]): Unit & Impure =
-        let MutSet(ms) = xs;
-        ms := Set.flatMap(f, deref ms)
-
-    ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
     pub def replace(x: a, y: a, xs: mut MutSet[a]): Unit & Impure =
