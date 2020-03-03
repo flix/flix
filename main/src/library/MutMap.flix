@@ -71,7 +71,17 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.getWithDefault(k, d, deref mm)
 
-    // TODO:  getOrElseUpdate,
+    ///
+    /// Returns `v` if `k -> v` is in `m`.
+    ///
+    /// Otherwise updates the map `m` with a new mapping `k -> d` and returns d.
+    ///
+    pub def getOrElseUpdate(k: k, d: v, m: mut MutMap[k, v]): v & impure =
+        let MutMap(mm) = m;
+        match Map.get(k, deref mm) {
+            case None    => mm := Map.insert(k, d, deref mm); d
+            case Some(v) => v
+        }
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
