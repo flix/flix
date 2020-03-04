@@ -109,6 +109,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.ArraySliceNoStartIndex.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayStore.flix")
     flix.addPath("main/test/flix/Test.Exp.Ascribe.flix")
+    flix.addPath("main/test/flix/Test.Exp.Binary.Spaceship.flix")
     flix.addPath("main/test/flix/Test.Exp.Cast.flix")
     flix.addPath("main/test/flix/Test.Exp.Concurrency.Buffered.flix")
     flix.addPath("main/test/flix/Test.Exp.Concurrency.NewChannel.flix")

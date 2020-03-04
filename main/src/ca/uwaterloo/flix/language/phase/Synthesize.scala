@@ -111,7 +111,7 @@ object Synthesize extends Phase[Root, Root] {
         op match {
           case BinaryOperator.Equal => mkApplyEq(e1, e2)
           case BinaryOperator.NotEqual => mkApplyNeq(e1, e2)
-          case BinaryOperator.Spaceship => mkSpaceship(e1, e2)
+          case BinaryOperator.Spaceship => mkSpaceship(e1, e2, loc)
           case _ => Expression.Binary(op, e1, e2, tpe, eff, loc)
         }
 
@@ -421,8 +421,48 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns an expression that performs a three-way comparison between `e1` and `e2`.
       */
-    def mkSpaceship(exp1: Expression, exp2: Expression): Expression = exp1.tpe match {
-      // TODO: Instead of generating code here, we could also just let the spaceship operator through?
+    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe match {
+      case Type.Cst(TypeConstructor.Unit) => Expression.Int32(0, loc)
+
+      case Type.Cst(TypeConstructor.Bool) =>
+        val method = classOf[java.lang.Boolean].getMethod("compare", classOf[Boolean], classOf[Boolean])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Char) =>
+        val method = classOf[java.lang.Character].getMethod("compare", classOf[Char], classOf[Char])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Float32) =>
+        val method = classOf[java.lang.Float].getMethod("compare", classOf[Float], classOf[Float])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Float64) =>
+        val method = classOf[java.lang.Double].getMethod("compare", classOf[Double], classOf[Double])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int8) =>
+        val method = classOf[java.lang.Byte].getMethod("compare", classOf[Byte], classOf[Byte])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int16) =>
+        val method = classOf[java.lang.Short].getMethod("compare", classOf[Short], classOf[Short])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int32) =>
+        val method = classOf[java.lang.Integer].getMethod("compare", classOf[Int], classOf[Int])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int64) =>
+        val method = classOf[java.lang.Long].getMethod("compare", classOf[Long], classOf[Long])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.BigInt) =>
+        val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger], classOf[java.math.BigInteger])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Str) =>
+        val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String], classOf[java.lang.String])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
       case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
