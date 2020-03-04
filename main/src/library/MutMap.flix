@@ -91,6 +91,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
+    // TODO: Right name for update?
     pub def getOrElseUpdate(k: k, d: v, m: mut MutMap[k, v]): v & impure =
         let MutMap(mm) = m;
         match Map.get(k, deref mm) {
@@ -110,6 +111,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with `k -> v`.
     ///
+    // TODO: Remove?
     pub def upsertWith(f: (v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insertWith(f, k, v, deref mm)
@@ -119,6 +121,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with `k -> v`.
     ///
+    // TODO: Remove?
     pub def upsertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.insertWithKey(f, k, v, deref mm)
@@ -159,6 +162,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
+    // TODO: Remove?
     pub def update(f: v -> Option[v] & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
         updateWithKey((_, v1) -> f(v1), k, m)
 
@@ -167,6 +171,7 @@ namespace MutMap {
     ///
     /// Otherwise leaves the map is unchanged.
     ///
+    // TODO: Remove?
     pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.updateWithKey(f, k, deref mm)
@@ -205,22 +210,25 @@ namespace MutMap {
         mm := Map.filterWithKey(f, deref mm)
 
     ///
-    /// Merges the mutable map `m1` into the mutable map `m2` in a right-biased manner.
+    /// Merges the mutable map `m1` into the mutable map `m2` in a left-biased manner. // TODO: left or right biased?
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
+    // TODO: mutable map for both args?
     pub def merge(m1: Map[k, v], m2: mut MutMap[k, v]): Unit & Impure =
         mergeWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`.
     ///
+    // TODO: mutable map for both args?
     pub def mergeWith(f: (v, v) -> v & e, m1: Map[k, v], m2: mut MutMap[k, v]): Unit & Impure =
         mergeWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
+    // TODO: mutable map for both args?
     pub def mergeWithKey(f: (k, v, v) -> v & e, m1: Map[k, v], m2: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm2) = m2;
         mm2 := Map.unionWithKey(f, m1, deref mm2)
