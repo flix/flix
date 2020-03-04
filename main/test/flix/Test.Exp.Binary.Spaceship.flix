@@ -153,4 +153,13 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship51(): Bool = Some(Err("hello")) <=> Some(Ok(123)) > 0
 
+    @test
+    def testBinarySpaceship52(): Bool = Some(Ok(None)) <=> Some(Ok(None)) == 0
+
+    @test
+    def testBinarySpaceship53(): Bool = Some(Ok(None)) <=> Some(Ok(Some(123))) < 0
+
+    @test
+    def testBinarySpaceship54(): Bool = Some(Ok(Some(123))) <=> Some(Ok(None)) > 0
+
 }

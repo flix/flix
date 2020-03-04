@@ -197,3 +197,48 @@ law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 /// the height assigned to `x` is stricty greater than the height assigned to `y`.
 ///
 law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). (x ⊑ y && !equ(x, y)) → (h(x) > h(y))
+
+
+namespace Tuple2 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq[a, b](t1: (a, b), t2: (a, b)): Bool =
+        let (a1, b1) = t1;
+        let (a2, b2) = t2;
+            a1 == a2 && b1 == b2
+}
+
+namespace Tuple3 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq[a, b, c](t1: (a, b, c), t2: (a, b, c)): Bool =
+        let (a1, b1, c1) = t1;
+        let (a2, b2, c2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2
+}
+
+namespace Tuple4 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq[a, b, c, d](t1: (a, b, c, d), t2: (a, b, c, d)): Bool =
+        let (a1, b1, c1, d1) = t1;
+        let (a2, b2, c2, d2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2 && d1 == d2
+}
+
+namespace Tuple5 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq[a, b, c, d, e](t1: (a, b, c, d, e), t2: (a, b, c, d, e)): Bool =
+        let (a1, b1, c1, d1, e1) = t1;
+        let (a2, b2, c2, d2, e2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2 && d1 == d2 && e1 == e2
+}

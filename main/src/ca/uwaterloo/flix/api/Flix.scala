@@ -88,7 +88,6 @@ class Flix {
     "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
     "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
     "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
-    "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
 
     "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
