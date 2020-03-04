@@ -459,7 +459,7 @@ object Synthesize extends Phase[Root, Root] {
         val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
         Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
-      case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case tpe => throw InternalCompilerException(s"No comparator function '__cmp' found for the type: '$tpe'.")
     }
 
     /**

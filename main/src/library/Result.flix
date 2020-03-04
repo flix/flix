@@ -185,4 +185,19 @@ namespace Result {
         case (Err(w1), Err(w2)) => w1 == w2
         case _ => false
     }
+
+    ///
+    /// Returns the result of a three-way comparison between `r1` and `r2`.
+    ///
+    /// Returns n < 0 if `r1` is smaller than `r2`.
+    /// Returns n = 0 if `r1` is equal to `r2`.
+    /// Returns n > 0 if `r1` is greater than `r2`.
+    ///
+    def __cmp(r1: Result[t, e], r2: Result[t, e]): Int32 = match (r1, r2) {
+        case (Ok(v1), Ok(v2))   =>  v1 <=> v2
+        case (Err(v1), Err(v2)) =>  v1 <=> v2
+        case (Ok(_), Err(_))    =>  -1
+        case (Err(_), Ok(_))    =>  +1
+    }
+
 }

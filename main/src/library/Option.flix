@@ -239,8 +239,8 @@ namespace Option {
     /// Returns `true` if and only if `o1` and `o2` and equal.
     ///
     def __eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-        case (None, None) => true
-        case (Some(v1), Some(v2)) => v1 == v2
+        case (None, None)           => true
+        case (Some(v1), Some(v2))   => v1 == v2
         case _ => false
     }
 
