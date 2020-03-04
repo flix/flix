@@ -338,6 +338,11 @@ namespace Option {
             flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
 
     @lint
+    def useReplace(): Bool =
+        forall [a] (x: a, y: a, o: Option[a]).
+            Option.map(z -> if (z == x) x else y, o) === Option.replace(x, y, o)
+
+    @lint
     def useSequence(): Bool =
         forall [a] (xs: List[Option[a]]).
             traverse(x -> x, xs) === sequence(xs)

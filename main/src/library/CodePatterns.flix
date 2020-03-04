@@ -3,36 +3,8 @@
 ///
 def ===(x: a, y: a): Bool = ???
 
-// TODO: I am really wondering if we should introduce quasi-quotes and then have === take two Exprs?
-
-///
-/// Option Lints.
-///
 namespace Option {
 
-    ///
-    /// Use Cases.
-    ///
-
-    @lint
-    def useReplace1(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            (if (o == Some(x)) Some(y) else Some(x)) == Option.replace(x, y, o)
-
-    @lint
-    def useReplace2(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            (if (o == Some(x)) Some(y) else o) == Option.replace(x, y, o)
-
-    @lint
-    def useReplace3(): Bool =
-        forall [a] (x: a, y: a, o: Option[a]).
-            Option.map(z -> if (z == x) x else y, o) == Option.replace(x, y, o)
-
-
-    ///
-    /// Beliefs.
-    ///
     @lint
     def isEmptyCount(): Bool =
       forall [a] (o: Option[a], f: a -> Bool).
@@ -145,86 +117,13 @@ namespace Option {
 
 }
 
-
-///
-/// Result Patterns.
-///
-namespace Result {
-
-    ///
-    /// Simplifications.
-    ///
-
-    ///
-    /// Use Cases.
-    ///
-
-    ///
-    /// Beliefs.
-    ///
-
-    // TODO: Remove isOk, isErr
-    // TODO: Add sequence and traverse.
-
-    @lint
-    def countOk(): Bool =
-        forall [t, e] (f: t -> Bool, t: t).
-            Result.count(f, Ok(t)) == if (f(t)) 1 else 0
-
-    @lint
-    def countErr(): Bool =
-        forall [t, e] (f: t -> Bool, e: e).
-            Result.count(f, Err(e)) == 0
-
-    @lint
-    def existsOk(): Bool =
-        forall [t, e] (f: t -> Bool, t: t).
-            Result.exists(f, Ok(t)) == f(t)
-
-    @lint
-    def existsErr(): Bool =
-        forall [t, e] (f: t -> Bool, e: e).
-            Result.exists(f, Err(e)) == false
-
-    @lint
-    def getWithDefaultMap(): Bool =
-        forall [t, e] (f: t -> Bool, r: Result[t, e]).
-            Result.getWithDefault(Result.map(f, r), false) == Result.exists(f, r)
-
-}
-
-// TODO: Add Validation data type?
-
-///
-/// List Patterns.
-///
 namespace List {
-
-    @lint
-    def isEmptyCons(): Bool =
-        forall [a] (x: a, xs: List[a]).
-            List.isEmpty(x :: xs) == true
-
-    @lint
-    def mapZip(): Bool =
-      forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
-        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) == List.map2(f, xs, ys)
 
     // TODO: Bug: Why does this not type check?
     //@lint
     //def mapZip2(): Bool =
     //  forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
     //    List.map(f, List.zip(xs, ys)) == List.zipWith(f, xs, ys)
-
-    @lint
-    def isEmptyFilter(): Bool =
-      forall [a] (xs: List[a], f: a -> Bool).
-        List.isEmpty(xs) `implies` (List.filter(f, xs) == Nil)          // TODO: What symbol to use here...
-
-    @lint
-    def isEmptyExists(): Bool =
-      forall [a] (xs: List[a], f: a -> Bool).
-        List.isEmpty(xs) `implies` (List.exists(f, xs) == false)        // TODO: Use eq or not?
 
     @lint
     def memberOfIsEmpty(): Bool =
@@ -456,3 +355,5 @@ pub def impliesWith(x: a, y: b): Bool = ??? // TODO: Add argument
 /// a[x] = 1; a[x] = 1                  // Problem: x is a variable and the array should not be accessed in between. Maybe too hard?
 
 // TODO MultipMap, MultiSet, EqualityRelation?
+
+// TODO: Add sequence and traverse to Result.

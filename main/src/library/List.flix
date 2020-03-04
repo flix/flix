@@ -896,6 +896,11 @@ namespace List {
         forall [a, b, c] (f: a -> b, g: b ~> c, xs: List[a]).
             map(g, map(f, xs)) === map(f >> g, xs)
 
+    @lint
+    def mapZip(): Bool =
+      forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
+        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === List.map2(f, xs, ys)
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Use Cases                                                        //
     /////////////////////////////////////////////////////////////////////////////
