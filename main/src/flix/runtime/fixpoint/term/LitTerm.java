@@ -18,6 +18,7 @@ package flix.runtime.fixpoint.term;
 
 import flix.runtime.ProxyObject;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -26,6 +27,19 @@ import java.util.function.Function;
  * The literal value is not directly accessible, but instead returned by invocation of the supplied function.
  */
 public final class LitTerm implements Term {
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LitTerm litTerm = (LitTerm) o;
+        return function.equals(litTerm.function);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(function);
+    }
 
     /**
      * Construct a literal term for the given function.

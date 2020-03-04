@@ -16,6 +16,8 @@
 
 package flix.runtime.fixpoint.symbol;
 
+import java.util.Objects;
+
 /**
  * Represents a variable symbol.
  */
@@ -49,6 +51,20 @@ public final class VarSym {
     private VarSym(String name, int index) {
         this.name = name;
         this.index = index;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VarSym varSym = (VarSym) o;
+        return index == varSym.index &&
+                name.equals(varSym.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, index);
     }
 
     /**

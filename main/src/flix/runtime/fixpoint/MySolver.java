@@ -34,10 +34,14 @@ public class MySolver {
                 factRelSyms.add(relSym);
             }
         }
+        Stmt[][] ramRules = new Stmt[derived.keySet().size()][];
+        int i = 0;
         for (RelSym relSym : derived.keySet()) {
-            Stmt[] ramRule = eval(relSym, derived);
+            ramRules[i] = eval(relSym, derived);
+            i++;
         }
-        SeqStmt seqStmt = new SeqStmt(factProjections);
+        Stmt[] ramRulesFlat = Stream.of(ramRules).flatMap(Stream::of).toArray(Stmt[]::new);
+        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat).flatMap(Stream::of).toArray(Stmt[]::new));
         seqStmt.prettyPrint(System.out, 0);
     }
 
@@ -110,16 +114,17 @@ public class MySolver {
             Term term = headTerms[i];
             headRamTerms[i] = termToRamAttr.get(term).iterator().next();
         }
-        new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
+        Stmt project = new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
         // I can then generate the list of if statements
 
         // I can now generate all the for each statements
 
-        return new Stmt[0];
+        return new Stmt[]{project};
     }
-
+    private static int variableCounter = 0;
     private static LocalVariable genNewLocalVariable(String name) {
-        throw new UnsupportedOperationException("Make actual new variables");
+        variableCounter++;
+        return new LocalVariable(name + "_" + (variableCounter));
     }
 
     private static Map<RelSym, ArrayList<Constraint>> findRulesForDerived(ConstraintSystem cs) {

@@ -18,6 +18,8 @@ package flix.runtime.fixpoint.term;
 
 import flix.runtime.fixpoint.symbol.VarSym;
 
+import java.util.Objects;
+
 /**
  * Represents a variable term.
  */
@@ -37,6 +39,19 @@ public final class VarTerm implements Term {
      * The variable symbol.
      */
     private final VarSym sym;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        VarTerm varTerm = (VarTerm) o;
+        return sym.equals(varTerm.sym);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sym);
+    }
 
     /**
      * Private constructor.

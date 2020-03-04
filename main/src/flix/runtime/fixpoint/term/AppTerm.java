@@ -19,6 +19,8 @@ package flix.runtime.fixpoint.term;
 import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.symbol.VarSym;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -36,6 +38,22 @@ public final class AppTerm implements Term {
             throw new IllegalArgumentException("'arguments' must be non-null.");
 
         return new AppTerm(function, arguments);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AppTerm appTerm = (AppTerm) o;
+        return function.equals(appTerm.function) &&
+                Arrays.equals(arguments, appTerm.arguments);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(function);
+        result = 31 * result + Arrays.hashCode(arguments);
+        return result;
     }
 
     /**
