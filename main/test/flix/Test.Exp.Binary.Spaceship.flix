@@ -162,4 +162,40 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship54(): Bool = Some(Ok(Some(123))) <=> Some(Ok(None)) > 0
 
+    @test
+    def testBinarySpaceship55(): Bool = (111, 222) <=> (111, 222) == 0
+
+    @test
+    def testBinarySpaceship56(): Bool = (111, 111) <=> (111, 222) < 0
+
+    @test
+    def testBinarySpaceship57(): Bool = (111, 222) <=> (111, 111) > 0
+
+    @test
+    def testBinarySpaceship58(): Bool = (111, 111) <=> (222, 111) < 0
+
+    @test
+    def testBinarySpaceship59(): Bool = (222, 111) <=> (111, 111) > 0
+
+    @test
+    def testBinarySpaceship60(): Bool = (1, 2, 3) <=> (1, 2, 3) == 0
+
+    @test
+    def testBinarySpaceship61(): Bool = (1, 2, 3) <=> (1, 2, 4) < 0
+
+    @test
+    def testBinarySpaceship62(): Bool = (1, 2, 4) <=> (1, 2, 3) > 0
+
+    @test
+    def testBinarySpaceship63(): Bool = (1, 0, 3) <=> (1, 2, 3) < 0
+
+    @test
+    def testBinarySpaceship64(): Bool = (1, 2, 3) <=> (1, 0, 3) > 0
+
+    @test
+    def testBinarySpaceship65(): Bool = (1, 2, 3) <=> (4, 2, 3) < 0
+
+    @test
+    def testBinarySpaceship66(): Bool = (4, 2, 3) <=> (1, 2, 3) > 0
+
 }
