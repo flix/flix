@@ -478,6 +478,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
+        case BinaryOperator.Spaceship =>
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
+            valueType <- unifyTypM(tpe1, tpe2, loc)
+            resultTyp <- unifyTypM(tvar, Type.Int32, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          } yield (resultTyp, resultEff)
+
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
           for {
             (tpe1, eff1) <- visitExp(exp1)
@@ -868,14 +877,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         //  exp : Ref[t] @ eff
         //  -------------------
-        //  deref exp : t @ eff
+        //  deref exp : t @ Impure
         //
         val elementType = Type.freshTypeVar()
         for {
-          (typ, eff) <- visitExp(exp)
+          (typ, _) <- visitExp(exp)
           refType <- unifyTypM(typ, mkRefType(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>

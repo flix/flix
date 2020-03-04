@@ -144,6 +144,11 @@ object BinaryOperator {
   case object NotEqual extends EqualityOperator
 
   /**
+    * Spaceship.
+    */
+  case object Spaceship extends EqualityOperator
+
+  /**
     * Logical conjunction.
     */
   case object LogicalAnd extends LogicalOperator
