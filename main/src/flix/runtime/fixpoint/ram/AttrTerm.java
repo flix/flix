@@ -19,7 +19,7 @@ public class AttrTerm implements RamTerm {
     }
 
     @Override
-    public void prettyPrint(PrintStream stream, int indentation) {
+    public void prettyPrint(PrintStream stream) {
         stream.print(localVar.getVarName() +
                 "[" + index + ']');
     }

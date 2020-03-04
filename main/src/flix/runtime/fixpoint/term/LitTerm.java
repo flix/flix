@@ -38,7 +38,7 @@ public final class LitTerm implements Term {
 
     @Override
     public int hashCode() {
-        return Objects.hash(function);
+        return Objects.hash(function.apply(new Object[]{null}));
     }
 
     /**

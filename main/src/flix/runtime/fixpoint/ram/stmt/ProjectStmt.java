@@ -20,7 +20,7 @@ public class ProjectStmt implements Stmt {
                 "project (");
         for (int i = 0; i < facts.length; i++) {
             RamTerm fact = facts[i];
-            fact.prettyPrint(stream, indentLevel);
+            fact.prettyPrint(stream);
             if (i < facts.length - 1){
                 stream.print(", ");
             }

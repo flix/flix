@@ -113,24 +113,27 @@ public class MySolver {
         RamTerm[] headRamTerms = new RamTerm[headTerms.length];
         for (int i = 0; i < headTerms.length; i++) {
             Term term = headTerms[i];
+            Set<AttrTerm> a = termToRamAttr.get(term);
             headRamTerms[i] = termToRamAttr.get(term).iterator().next();
         }
         Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
         // Now I need to check that this element does not exist already
-        BoolExp bool = new UnaryBoolExp(UnaryBoolOperator.NOT, new TubleInRelBoolExp(headRamTerms, new TableName(TableClassifier.RESULT, headSym)));
-        resultStmt = new IfStmt(bool, resultStmt);
+        BoolExp checkBool = new UnaryBoolExp(UnaryBoolOperator.NOT, new TubleInRelBoolExp(headRamTerms, new TableName(TableClassifier.RESULT, headSym)));
+        resultStmt = new IfStmt(checkBool, resultStmt);
 
         // I can then generate the list of if statements
-        /*for (Term t : termToRamAttr.keySet()){
+        for (Term t : termToRamAttr.keySet()){
             Set<AttrTerm> attrs = termToRamAttr.get(t);
             if (attrs.size() == 1){
                 AttrTerm attr = attrs.iterator().next();
                 if (t instanceof LitTerm){
-                    BoolExp bool = new BinaryRelationExp()
-                    resultStmt = new IfStmt()
+                    BoolExp equalsBool = new EqualsBoolExp(attr, new flix.runtime.fixpoint.ram.LitTerm(((LitTerm) t).getFunction().apply(new Object[]{null})));
+                    resultStmt = new IfStmt(equalsBool, resultStmt);
                 }
+            } else {
+
             }
-        }*/
+        }
 
         // I can now generate all the for each statements
 
