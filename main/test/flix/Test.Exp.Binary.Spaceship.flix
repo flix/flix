@@ -198,4 +198,34 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship66(): Bool = (4, 2, 3) <=> (1, 2, 3) > 0
 
+    @test
+    def testBinarySpaceship67(): Bool = Red <=> Red == 0
+
+    @test
+    def testBinarySpaceship68(): Bool = Blu <=> Blu == 0
+
+    @test
+    def testBinarySpaceship69(): Bool = Red <=> Blu < 0
+
+    @test
+    def testBinarySpaceship70(): Bool = Blu <=> Red > 0
+
+    @test
+    def testBinarySpaceship71(): Bool = Some(Red) <=> Some(Blu) < 0
+
+    @test
+    def testBinarySpaceship72(): Bool = Some(Blu) <=> Some(Red) > 0
+
+    enum Color {
+        case Red,
+        case Blu
+    }
+
+    def __cmp(c1: Color, c2: Color): Int32 = match (c1, c2) {
+        case (Red, Red) =>  0
+        case (Blu, Blu) =>  0
+        case (Red, Blu) => -1
+        case (Blu, Red) => +1
+    }
+
 }
