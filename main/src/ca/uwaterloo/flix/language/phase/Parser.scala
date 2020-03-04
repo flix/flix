@@ -493,7 +493,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Equality: Rule1[ParsedAst.Expression] = rule {
-      Relational ~ optional(optWS ~ capture(atomic("==") | atomic("!=")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
+      Relational ~ optional(optWS ~ capture(atomic("==") | atomic("!=") | atomic("<=>")) ~ optWS ~ Relational ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Relational: Rule1[ParsedAst.Expression] = rule {

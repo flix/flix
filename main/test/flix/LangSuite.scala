@@ -35,6 +35,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Ascribe", "main/test/flix/Test.Exp.Ascribe.flix"),
 
   //
+  // Binary.Spaceship.
+  //
+  new FlixTest("Test.Exp.Binary.Spaceship", "main/test/flix/Test.Exp.Binary.Spaceship.flix"),
+
+  //
   // Cast.
   //
   new FlixTest("Test.Exp.Cast", "main/test/flix/Test.Exp.Cast.flix"),

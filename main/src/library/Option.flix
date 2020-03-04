@@ -239,9 +239,23 @@ namespace Option {
     /// Returns `true` if and only if `o1` and `o2` and equal.
     ///
     def __eq(o1: Option[a], o2: Option[a]): Bool = match (o1, o2) {
-        case (None, None) => true
-        case (Some(v1), Some(v2)) => v1 == v2
+        case (None, None)           => true
+        case (Some(v1), Some(v2))   => v1 == v2
         case _ => false
+    }
+
+    ///
+    /// Returns the result of a three-way comparison between `o1` and `o2`.
+    ///
+    /// Returns n < 0 if `o1` is smaller than `o2`.
+    /// Returns n = 0 if `o1` is equal to `o2`.
+    /// Returns n > 0 if `o1` is greater than `o2`.
+    ///
+    def __cmp(o1: Option[a], o2: Option[a]): Int32 = match (o1, o2) {
+        case (None, None)           =>  0
+        case (None, _)              => -1
+        case (Some(v1), Some(v2))   => v1 <=> v2
+        case _                      => +1
     }
 
 }

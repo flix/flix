@@ -1738,6 +1738,7 @@ object GenExpression {
       case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
       case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
       case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
+      case BinaryOperator.Spaceship => throw InternalCompilerException("Unexpected operator.")
     }
     sop match {
       case StringOp.Eq | StringOp.Neq =>
