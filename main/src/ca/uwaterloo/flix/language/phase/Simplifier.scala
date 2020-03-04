@@ -294,7 +294,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Cst(TypeConstructor.Str) => SemanticOperator.StringOp.Neq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
-          case BinaryOperator.Spaceship => throw InternalCompilerException(s"Unexpected operator.")
+          case BinaryOperator.Spaceship =>
+            throw InternalCompilerException(s"Unexpected operator.")
           case BinaryOperator.LogicalAnd => e1.tpe match {
             case Type.Cst(TypeConstructor.Bool) => SemanticOperator.BoolOp.And
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")

@@ -94,11 +94,6 @@ object Synthesize extends Phase[Root, Root] {
         Expression.Unary(op, e, tpe, eff, loc)
 
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
-        // Return the expression unchanged if it only compares primitive values and the operator is not spaceship.
-        if (isPrimitive(exp1.tpe) && isPrimitive(exp2.tpe) && op != BinaryOperator.Spaceship) {
-          return exp0
-        }
-
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
 
