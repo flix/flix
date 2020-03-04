@@ -15,5 +15,13 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship05(): Bool = true <=> true == 0
 
+    @test
+    def testBinarySpaceship06(): Bool = 'a' <=> 'a' == 0
+
+    @test
+    def testBinarySpaceship07(): Bool = 'a' <=> 'z' < 0
+
+    @test
+    def testBinarySpaceship08(): Bool = 'z' <=> 'a' > 0
 
 }
