@@ -99,7 +99,7 @@ namespace MutMap {
         }
 
     ///
-    /// Updates the mutable map `m` with the binding `k -> v`. Replace any existing binding.
+    /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
     ///
     pub def put(k: k, v: v, m: mut MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
@@ -137,18 +137,11 @@ namespace MutMap {
         mm := Map.adjustWithKey(f, k, deref mm)
 
     ///
-    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in the mutable map `m`.
-    ///
-    /// Otherwise leaves the map is unchanged.
-    ///
-    pub def replace(x: (k, v), y: (k, v), m: mut MutMap[k, v]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.replace(x, y, deref mm)
-
-    ///
     /// Removes the mapping `k` from the mutable map `m`.
     ///
-    pub def delete(k: k, m: MutMap[k, v]): Unit & Impure =
+    /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
+    ///
+    pub def remove(k: k, m: MutMap[k, v]): Unit & Impure =
         let MutMap(mm) = m;
         mm := Map.delete(k, deref mm)
 
