@@ -8,7 +8,17 @@ enum Color {
 }
 
 ///
-/// The red-black tree type.
+/// The red-black tree used by `Set` and `Map`.
+///
+/// A red-black tree is a balanced binary tree.
+/// Each node is either red or black, although a
+/// transitory color double-black is allowed during deletion.
+/// Furthermore, the red-black tree satisfy the following
+/// two balance invariants.
+///
+/// 1. No red node has a red parent.
+/// 2. Every path from the root to a leaf contains the same
+/// number of black nodes.
 ///
 enum RedBlackTree[t] {
     case Leaf,
