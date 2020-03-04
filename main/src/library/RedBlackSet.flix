@@ -1,9 +1,8 @@
 ///
 /// An experimental RedBlackSet type represented internally as a red-black tree.
 ///
-///
 enum RedBlackSet[t] {
-    case RedBlackSet(RedBlackTree[t])
+    case RedBlackSet(RedBlackTree.RedBlackTree[t])
 }
 
 namespace RedBlackSet {
@@ -15,20 +14,15 @@ namespace RedBlackSet {
         let RedBlackSet(es) = xs;
         RedBlackTree.size(es)
 
-/// TODO: Reintroduce when Set is replaced by RedBlackSet
-///    ///
-///    /// Returns the empty set.
-///    ///
-///    /// `RedBlackSet#{}` is syntactic sugar for `empty` (`RedBlackSet#{} = empty()`).
-///    ///
-///    pub def empty(): RedBlackSet[a] = RedBlackSet(Leaf)
-///
-///    ///
-///    /// Returns the singleton set containing `x`.
-///    ///
-///    /// `RedBlackSet#{x}` is syntactic sugar for `singleton` (`RedBlackSet#{x} = singleton(x)`).
-///    ///
-///    pub def singleton(x: a): RedBlackSet[a] = insert(x, empty())
+    ///
+    /// Returns the empty set.
+    ///
+    pub def empty(): RedBlackSet[a] = RedBlackSet(RedBlackTree.Leaf)
+
+    ///
+    /// Returns the singleton set containing `x`.
+    ///
+    pub def singleton(x: a): RedBlackSet[a] = insert(x, empty())
 
     ///
     /// Adds `x` to `xs`.
@@ -48,11 +42,8 @@ namespace RedBlackSet {
     /// Returns true if and only if `xs` is the empty set, i.e. `RedBlackSet(Leaf)`.
     ///
     pub def isEmpty(xs: RedBlackSet[a]): Bool =
-        let RedBlackSet(s) = xs;
-        match s {
-            case Leaf => true
-            case _ => false
-        }
+        let RedBlackSet(es) = xs;
+        RedBlackTree.isEmpty(es)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
