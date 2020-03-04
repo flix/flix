@@ -3,10 +3,7 @@ package flix.runtime.fixpoint;
 import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
-import flix.runtime.fixpoint.ram.LocalVariable;
-import flix.runtime.fixpoint.ram.RamTerm;
-import flix.runtime.fixpoint.ram.TableClassifier;
-import flix.runtime.fixpoint.ram.TableName;
+import flix.runtime.fixpoint.ram.*;
 import flix.runtime.fixpoint.ram.stmt.ProjectStmt;
 import flix.runtime.fixpoint.ram.stmt.SeqStmt;
 import flix.runtime.fixpoint.ram.stmt.Stmt;
@@ -15,9 +12,7 @@ import flix.runtime.fixpoint.symbol.RelSym;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class MySolver {
@@ -82,16 +77,44 @@ public class MySolver {
         assert head instanceof AtomPredicate;
         PredSym headSym = ((AtomPredicate) head).getSym();
         Term[] headTerms = ((AtomPredicate) head).getTerms();
+
         // Map from AtomPredicate to the localvar used to get values to that recursion
         Map<AtomPredicate, LocalVariable> atomToLocal = new HashMap<>();
+        // Map from terms to the set of AttrTerms they will be instantiated as
+        Map<Term, Set<AttrTerm>> termToRamAttr = new HashMap<>();
+        // Define all variables needed and define what the variables are instantiated as
         for (Predicate bodyPred : c.getBodyPredicates()) {
             if (bodyPred instanceof AtomPredicate) {
                 LocalVariable localVar = genNewLocalVariable(((AtomPredicate) bodyPred).getSym().getName());
                 atomToLocal.put((AtomPredicate) bodyPred, localVar);
+                Term[] terms = ((AtomPredicate) bodyPred).getTerms();
+                for (int i = 0; i < terms.length; i++) {
+                    Term currentTerm = terms[i];
+                    AttrTerm attrTerm = new AttrTerm(localVar, i);
+                    if (termToRamAttr.containsKey(currentTerm)){
+                        termToRamAttr.get(currentTerm).add(attrTerm);
+                    } else {
+                        HashSet<AttrTerm> attrSet = new HashSet<>();
+                        attrSet.add(attrTerm);
+                        termToRamAttr.put(currentTerm, attrSet);
+                    }
+
+                }
             } else {
                 throw new UnsupportedOperationException("We only support AtomPredicates");
             }
         }
+        // I can now generate the project statement since the values of each term is known
+        RamTerm[] headRamTerms = new RamTerm[headTerms.length];
+        for (int i = 0; i < headTerms.length; i++) {
+            Term term = headTerms[i];
+            headRamTerms[i] = termToRamAttr.get(term).iterator().next();
+        }
+        new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
+        // I can then generate the list of if statements
+
+        // I can now generate all the for each statements
+
         return new Stmt[0];
     }
 
