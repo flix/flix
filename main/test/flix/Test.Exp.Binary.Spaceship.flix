@@ -87,4 +87,25 @@ namespace Test/Exp/Binary/Spaceship {
     @test
     def testBinarySpaceship29(): Bool = 42ii <=> 21ii > 0
 
+    @test
+    def testBinarySpaceship30(): Bool = "hello" <=> "hello" == 0
+
+    @test
+    def testBinarySpaceship31(): Bool = "hello" <=> "world" < 0
+
+    @test
+    def testBinarySpaceship32(): Bool = "world" <=> "hello" > 0
+
+    @test
+    def testBinarySpaceship33(): Bool = None <=> None == 0
+
+    @test
+    def testBinarySpaceship34(): Bool = Some(123) <=> Some(123) == 0
+
+    @test
+    def testBinarySpaceship35(): Bool = None <=> Some(123) < 0
+
+    @test
+    def testBinarySpaceship36(): Bool = Some(123) <=> None > 0
+
 }

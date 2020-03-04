@@ -457,7 +457,7 @@ object Synthesize extends Phase[Root, Root] {
 
       case Type.Cst(TypeConstructor.Str) =>
         val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
-        Expression.InvokeMethod(method, exp2, List(exp2), Type.Int32, Type.Pure, loc)
+        Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
       case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
