@@ -417,7 +417,9 @@ object Synthesize extends Phase[Root, Root] {
       * Returns an expression that performs a three-way comparison between `e1` and `e2`.
       */
     def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe match {
-      case Type.Cst(TypeConstructor.Unit) => Expression.Int32(0, loc)
+      case Type.Cst(TypeConstructor.Unit) =>
+        // There Unit value is equal to itself.
+        Expression.Int32(0, loc)
 
       case Type.Cst(TypeConstructor.Bool) =>
         val method = classOf[java.lang.Boolean].getMethod("compare", classOf[Boolean], classOf[Boolean])
