@@ -452,12 +452,12 @@ object Synthesize extends Phase[Root, Root] {
         Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
 
       case Type.Cst(TypeConstructor.BigInt) =>
-        val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger], classOf[java.math.BigInteger])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+        val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger])
+        Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
 
       case Type.Cst(TypeConstructor.Str) =>
-        val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String], classOf[java.lang.String])
-        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+        val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
+        Expression.InvokeMethod(method, exp2, List(exp2), Type.Int32, Type.Pure, loc)
 
       case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
