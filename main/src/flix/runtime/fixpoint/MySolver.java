@@ -124,14 +124,19 @@ public class MySolver {
         // I can then generate the list of if statements
         for (Term t : termToRamAttr.keySet()){
             Set<AttrTerm> attrs = termToRamAttr.get(t);
-            if (attrs.size() == 1){
-                AttrTerm attr = attrs.iterator().next();
-                if (t instanceof LitTerm){
+            if (t instanceof LitTerm){
+                for (AttrTerm attr : attrs){
                     BoolExp equalsBool = new EqualsBoolExp(attr, new flix.runtime.fixpoint.ram.LitTerm(((LitTerm) t).getFunction().apply(new Object[]{null})));
                     resultStmt = new IfStmt(equalsBool, resultStmt);
                 }
             } else {
-
+                Iterator<AttrTerm> it = attrs.iterator();
+                AttrTerm first = it.next();
+                while (it.hasNext()){
+                    AttrTerm attr = it.next();
+                    BoolExp equalsBool = new EqualsBoolExp(first, attr);
+                    resultStmt = new IfStmt(equalsBool, resultStmt);
+                }
             }
         }
 
