@@ -2,6 +2,8 @@
 
 HEAD:
 
+- Added mutable sets and maps (backed by immutable sets and maps for now).
+
 Version 0.11.0:
 
 - Added light-weight polymorphic effects.
