@@ -13,54 +13,53 @@ namespace RedBlackSet {
     ///
     pub def size(xs: RedBlackSet[a]): Int32 =
         let RedBlackSet(es) = xs;
-            RedBlackTree.size(es)
+        RedBlackTree.size(es)
 
-    ///
-    /// Returns the empty set.
-    ///
-    /// `RedBlackSet#{}` is syntactic sugar for `empty` (`RedBlackSet#{} = empty()`).
-    ///
-    /// TODO: Investigate how to activate the RedBlackSet#{} syntax
-    pub def empty(): RedBlackSet[a] = RedBlackSet(Leaf)
-
-    ///
-    /// Returns the singleton set containing `x`.
-    ///
-    /// `RedBlackSet#{x}` is syntactic sugar for `singleton` (`RedBlackSet#{x} = singleton(x)`).
-    ///
-    /// TODO: Investigate how to activate the RedBlackSet#{x} syntax
-    pub def singleton(x: a): RedBlackSet[a] = insert(x, empty())
+/// TODO: Reintroduce when Set is replaced by RedBlackSet
+///    ///
+///    /// Returns the empty set.
+///    ///
+///    /// `RedBlackSet#{}` is syntactic sugar for `empty` (`RedBlackSet#{} = empty()`).
+///    ///
+///    pub def empty(): RedBlackSet[a] = RedBlackSet(Leaf)
+///
+///    ///
+///    /// Returns the singleton set containing `x`.
+///    ///
+///    /// `RedBlackSet#{x}` is syntactic sugar for `singleton` (`RedBlackSet#{x} = singleton(x)`).
+///    ///
+///    pub def singleton(x: a): RedBlackSet[a] = insert(x, empty())
 
     ///
     /// Adds `x` to `xs`.
     ///
     pub def insert(x: a, xs: RedBlackSet[a]): RedBlackSet[a] =
         let RedBlackSet(es) = xs;
-            RedBlackSet(RedBlackTree.insert(x, es))
+        RedBlackSet(RedBlackTree.insert(x, es))
 
     ///
     /// Removes `x` from `xs`.
     ///
     pub def delete(x: a, xs: RedBlackSet[a]): RedBlackSet[a] =
         let RedBlackSet(es) = xs;
-            RedBlackSet(RedBlackTree.delete(x, es))
+        RedBlackSet(RedBlackTree.delete(x, es))
 
     ///
     /// Returns true if and only if `xs` is the empty set, i.e. `RedBlackSet(Leaf)`.
     ///
     pub def isEmpty(xs: RedBlackSet[a]): Bool =
         let RedBlackSet(s) = xs;
-            match s {
-                case Leaf => true
-                case _ => false
-            }
+        match s {
+            case Leaf => true
+            case _ => false
+        }
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     pub def memberOf(x: a, xs: RedBlackSet[a]): Bool =
         let RedBlackSet(es) = xs;
-            RedBlackTree.contains(x, es)
+        RedBlackTree.contains(x, es)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
@@ -70,7 +69,8 @@ namespace RedBlackSet {
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
-    pub def isProperSubsetOf(xs: RedBlackSet[a], ys: RedBlackSet[a]): Bool = if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false
+    pub def isProperSubsetOf(xs: RedBlackSet[a], ys: RedBlackSet[a]): Bool =
+        if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false
 
     ///
     /// Alias for `findLeft`.
@@ -86,10 +86,9 @@ namespace RedBlackSet {
     ///
     pub def findLeft(f: a -> Bool, xs: RedBlackSet[a]): Option[a] =
         let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-            if (isEmpty(result)) None
-            else
-                let RedBlackSet(es) = result;
-                RedBlackTree.leftMost(es)
+        if (isEmpty(result)) None
+        else let RedBlackSet(es) = result;
+        RedBlackTree.leftMost(es)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
@@ -98,10 +97,9 @@ namespace RedBlackSet {
     ///
     pub def findRight(f: a -> Bool, xs: RedBlackSet[a]): Option[a] =
         let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-            if (isEmpty(result)) None
-            else
-                let RedBlackSet(es) = result;
-                RedBlackTree.rightMost(es)
+        if (isEmpty(result)) None
+        else let RedBlackSet(es) = result;
+        RedBlackTree.rightMost(es)
 
     ///
     /// Alias for `foldLeft`.
@@ -115,7 +113,7 @@ namespace RedBlackSet {
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, xs: RedBlackSet[a]): b & e =
         let RedBlackSet(es) = xs;
-            RedBlackTree.foldLeft(f, s, es)
+        RedBlackTree.foldLeft(f, s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
@@ -124,7 +122,7 @@ namespace RedBlackSet {
     ///
     pub def foldRight(f: (b, a) -> b & e, s: b, xs: RedBlackSet[a]): b & e =
         let RedBlackSet(es) = xs;
-            RedBlackTree.foldRight(f, s, es)
+        RedBlackTree.foldRight(f, s, es)
 
     ///
     /// Alias for `reduceLeft`.
@@ -138,8 +136,7 @@ namespace RedBlackSet {
     ///
     /// TODO: Fix, how to get first value as initial?
     pub def reduceLeft(f: (a, a) -> a & e, xs: RedBlackSet[a]): Option[a] & e =
-        if (isEmpty(xs)) None
-        else Some(foldLeft(f, empty(), xs))
+        if (isEmpty(xs)) None else Some(foldLeft(f, empty(), xs))
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -153,8 +150,7 @@ namespace RedBlackSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a -> Bool, xs: RedBlackSet[a]): Int32 =
-        fold((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
+    pub def count(f: a -> Bool, xs: RedBlackSet[a]): Int32 = fold((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
     ///
     /// Returns the union of the elements in `xs`.
@@ -170,7 +166,7 @@ namespace RedBlackSet {
     ///
     pub def exists(f: a -> Bool, xs: RedBlackSet[a]): Bool =
         let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-            !isEmpty(result)
+        !isEmpty(result)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
@@ -181,7 +177,7 @@ namespace RedBlackSet {
     ///
     pub def forall(f: a -> Bool, xs: RedBlackSet[a]): Bool =
         let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-            size(xs) == size(result)
+        size(xs) == size(result)
 
     ///
     /// Returns the union of `xs` and `ys`.
@@ -219,7 +215,8 @@ namespace RedBlackSet {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def map(f: a -> b & e, xs: RedBlackSet[a]): RedBlackSet[b] & e = foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
+    pub def map(f: a -> b & e, xs: RedBlackSet[a]): RedBlackSet[b] & e =
+        foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
@@ -246,7 +243,7 @@ namespace RedBlackSet {
     ///
     /// Returns the set `xs` as a list.
     ///
-    pub def toList(xs: RedBlackSet[a]): List[a] = ???
+    pub def toList(xs: RedBlackSet[a]): List[a] = foldRight((acc, x) -> x :: acc, Nil, xs)
 
     ///
     /// Returns the association set `xs` as a map.
