@@ -179,6 +179,11 @@ namespace RedBlackTree {
         case _ => 0
     }
 
+    pub def isLeaf(tree: RedBlackTree[a]): Bool = match tree {
+        case Leaf => true
+        case _ => false
+    }
+
     ///
     /// Applies `f` to a start value `s` and all elements in `tree` going from left to right, i.e. inorder.
     ///
@@ -200,22 +205,16 @@ namespace RedBlackTree {
     /// Optionally returns the left most element of `tree`.
     ///
     pub def leftMost(tree: RedBlackTree[a]): Option[a] = match tree {
-        case Node(_, a, x, _) => match leftMost(a) {
-            case None => Some(x)
-            case _ => leftMost(a)
-        }
-        case _ => None
+        case Leaf => None
+        case Node(_, a, x, _) => if (isLeaf(a)) Some(x) else leftMost(a)
     }
 
     ///
     /// Optionally returns the right most element of `tree`.
     ///
     pub def rightMost(tree: RedBlackTree[a]): Option[a] = match tree {
-        case Node(_, _, x, b) => match rightMost(b) {
-            case None => Some(x)
-            case _ => rightMost(b)
-        }
-        case _ => None
+        case Leaf => None
+        case Node(_, b, x, _) => if (isLeaf(b)) Some(x) else rightMost(b)
     }
 
     ///
