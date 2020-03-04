@@ -93,7 +93,67 @@ namespace BigInt {
         import java.lang.String.strip();
         import new java.math.BigInteger(String) as parseBigInt;
         Ok(s.strip().parseBigInt()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: BigInt).
+            (0ii + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: BigInt).
+            (x + 0ii) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: BigInt).
+            (x - 0ii) === 0ii
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: BigInt).
+            (x - x) === 0ii
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: BigInt).
+            (0ii * x) === 0ii
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: BigInt).
+            (x * 0ii) === 0ii
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: BigInt).
+            (1ii * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: BigInt).
+            (x * 1ii) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: BigInt).
+            (x / 0ii) === 0ii
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: BigInt).
+            (x / 1ii) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: BigInt).
+            (x / x) === 1ii
+
 }

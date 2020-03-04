@@ -258,4 +258,117 @@ namespace Option {
         case _                      => +1
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def countAtLeastZero(): Bool =
+        forall [a] (f: a -> Bool, o: Option[a]).
+            count(f, o) >= 0
+
+    @lint
+    def countAtMostOne(): Bool =
+        forall [a] (f: a -> Bool).
+            count(f, None) <= 1
+
+    @lint
+    def existsSome(): Bool =
+        forall [a] (f: a -> Bool & e, x: a).
+            exists(f, Some(x)) == f(x)
+
+    @lint
+    def flattenSome(): Bool =
+        forall [a] (o: Option[a]).
+            flatten(Some(o)) == o
+
+    @lint
+    def filterFilter1(): Bool =
+        forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
+            filter(g, filter(f, o)) === filter(f >> g, o)
+
+    @lint
+    def filterFilter2(): Bool =
+        forall [a] (f: a ~> Bool, g: a -> Bool, o: Option[a]).
+            filter(g, filter(f, o)) === filter(f >> g, o)
+
+    @lint
+    def filterFilter3(): Bool =
+        forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
+            filter(g, filter(f, o)) === filter(f >> g, o)
+
+    @lint
+    def findFind1(): Bool =
+        forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
+            find(g, find(f, o)) === find(f >> g, o)
+
+    @lint
+    def findFind2(): Bool =
+        forall [a] (f: a ~> Bool, g: a -> Bool, o: Option[a]).
+            find(g, find(f, o)) === find(f >> g, o)
+
+    @lint
+    def findFind3(): Bool =
+        forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
+            find(g, find(f, o)) === find(f >> g, o)
+
+    @lint
+    def mapIdentity(): Bool =
+        forall [a] (o: Option[a]).
+            map(x -> x, o) === o
+
+    @lint
+    def mapMap1(): Bool =
+        forall [a, b, c] (f: a -> b, g: b -> c, o: Option[a]).
+            map(g, map(f, o)) === map(f >> g, o)
+
+    @lint
+    def mapMap2(): Bool =
+        forall [a, b, c] (f: a ~> b, g: b -> c, o: Option[a]).
+            map(g, map(f, o)) === map(f >> g, o)
+
+    @lint
+    def mapMap3(): Bool =
+        forall [a, b, c] (f: a -> b, g: b ~> c, o: Option[a]).
+            map(g, map(f, o)) === map(f >> g, o)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useExists(): Bool =
+        forall [a] (f: a -> Bool, o: Option[a]).
+            getWithDefault(map(f, o), false) === exists(f, o)
+
+    @lint
+    def useForall(): Bool =
+        forall [a] (f: a -> Bool, o: Option[a]).
+            getWithDefault(map(f, o), true) === forall(f, o)
+
+    @lint
+    def useFilter(): Bool =
+        forall [a] (f: a -> Bool, o: Option[a]).
+            flatMap(x -> if (f(x)) Some(x) else None, o) === filter(f, o)
+
+    @lint
+    def useReplace(): Bool =
+        forall [a] (x: a, y: a, o: Option[a]).
+            Option.map(z -> if (z == x) x else y, o) === Option.replace(x, y, o)
+
+    @lint
+    def useSequence(): Bool =
+        forall [a] (xs: List[Option[a]]).
+            traverse(x -> x, xs) === sequence(xs)
+
+    @lint
+    def useTraverse(): Bool =
+        forall [a, b, e] (f : a -> Option[b] & e, xs: List[Option[a]]).
+            sequence(List.map(f, xs)) === traverse(f, xs)
+
+    @lint
+    def useZip(): Bool =
+        forall [a, b] (o1: Option[a], o2: Option[b]).
+            flatMap(x -> map(y -> (x, y), o2), o1) === zip(o1, o2)
+
 }

@@ -254,7 +254,67 @@ namespace Int16 {
         import java.lang.String.strip();
         import java.lang.Short:parseShort(String);
         Ok(s.strip().parseShort()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: Int16).
+            (0i16 + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: Int16).
+            (x + 0i16) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: Int16).
+            (x - 0i16) === 0i16
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: Int16).
+            (x - x) === 0i16
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: Int16).
+            (0i16 * x) === 0i16
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: Int16).
+            (x * 0i16) === 0i16
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: Int16).
+            (1i16 * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: Int16).
+            (x * 1i16) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: Int16).
+            (x / 0i16) === 0i16
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: Int16).
+            (x / 1i16) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: Int16).
+            (x / x) === 1i16
+
 }

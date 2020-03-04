@@ -250,7 +250,67 @@ namespace Int32 {
         import java.lang.String.strip();
         import java.lang.Integer:parseInt(String);
         Ok(s.strip().parseInt()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Int32.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: Int32).
+            (0i32 + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: Int32).
+            (x + 0i32) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: Int32).
+            (x - 0i32) === 0i32
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: Int32).
+            (x - x) === 0i32
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: Int32).
+            (0i32 * x) === 0i32
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: Int32).
+            (x * 0i32) === 0i32
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: Int32).
+            (1i32 * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: Int32).
+            (x * 1i32) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: Int32).
+            (x / 0i32) === 0i32
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: Int32).
+            (x / 1i32) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: Int32).
+            (x / x) === 1i32
+
 }

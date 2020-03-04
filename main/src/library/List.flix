@@ -841,4 +841,69 @@ namespace List {
         case (x :: rs, y :: qs) => x == y && __eq(rs, qs)
         case _ => false
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def filterFilter1(): Bool =
+        forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
+            filter(g, filter(f, xs)) === filter(f >> g, xs)
+
+    @lint
+    def filterFilter2(): Bool =
+        forall [a] (f: a ~> Bool, g: a -> Bool, xs: List[a]).
+            filter(g, filter(f, xs)) === filter(f >> g, xs)
+
+    @lint
+    def filterFilter3(): Bool =
+        forall [a] (f: a -> Bool, g: a ~> Bool, xs: List[a]).
+            filter(g, filter(f, xs)) === filter(f >> g, xs)
+
+    @lint
+    def findFind1(): Bool =
+        forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
+            Option.find(g, List.find(f, xs)) === find(f >> g, xs)
+
+    @lint
+    def findFind2(): Bool =
+        forall [a] (f: a ~> Bool, g: a -> Bool, xs: List[a]).
+            Option.find(g, List.find(f, xs)) === find(f >> g, xs)
+
+    @lint
+    def findFind3(): Bool =
+        forall [a] (f: a -> Bool, g: a ~> Bool, xs: List[a]).
+            Option.find(g, List.find(f, xs)) === find(f >> g, xs)
+
+    @lint
+    def mapIdentity(): Bool =
+        forall [a] (xs: List[a]).
+            map(x -> x, xs) === xs
+
+    @lint
+    def mapMap1(): Bool =
+        forall [a, b, c] (f: a -> b, g: b -> c, xs: List[a]).
+            map(g, map(f, xs)) === map(f >> g, xs)
+
+    @lint
+    def mapMap2(): Bool =
+        forall [a, b, c] (f: a ~> b, g: b -> c, xs: List[a]).
+            map(g, map(f, xs)) === map(f >> g, xs)
+
+    @lint
+    def mapMap3(): Bool =
+        forall [a, b, c] (f: a -> b, g: b ~> c, xs: List[a]).
+            map(g, map(f, xs)) === map(f >> g, xs)
+
+    @lint
+    def mapZip(): Bool =
+      forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
+        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === List.map2(f, xs, ys)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+
 }

@@ -250,7 +250,67 @@ namespace Int64 {
         import java.lang.String.strip();
         import java.lang.Long:parseLong(String);
         Ok(s.strip().parseLong()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: Int64).
+            (0i64 + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: Int64).
+            (x + 0i64) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: Int64).
+            (x - 0i64) === 0i64
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: Int64).
+            (x - x) === 0i64
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: Int64).
+            (0i64 * x) === 0i64
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: Int64).
+            (x * 0i64) === 0i64
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: Int64).
+            (1i64 * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: Int64).
+            (x * 1i64) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: Int64).
+            (x / 0i64) === 0i64
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: Int64).
+            (x / 1i64) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: Int64).
+            (x / x) === 1i64
+
 }
