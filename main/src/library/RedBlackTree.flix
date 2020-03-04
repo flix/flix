@@ -1,32 +1,32 @@
-///
-/// The color of a red-black tree node.
-///
-enum Color {
-    case Red
-    case Black
-    case DoubleBlack
-}
-
-///
-/// The red-black tree used by `Set` and `Map`.
-///
-/// A red-black tree is a balanced binary tree.
-/// Each node is either red or black, although a
-/// transitory color double-black is allowed during deletion.
-/// Furthermore, the red-black tree satisfy the following
-/// two balance invariants.
-///
-/// 1. No red node has a red parent.
-/// 2. Every path from the root to a leaf contains the same
-/// number of black nodes.
-///
-enum RedBlackTree[t] {
-    case Leaf,
-    case DoubleLeaf,
-    case Node(Color, RedBlackTree[t], t, RedBlackTree[t])
-}
-
 namespace RedBlackTree {
+
+    ///
+    /// The red-black tree used by `Set` and `Map`.
+    ///
+    /// A red-black tree is a balanced binary tree.
+    /// Each node is either red or black, although a
+    /// transitory color double-black is allowed during deletion.
+    /// Furthermore, the red-black tree satisfy the following
+    /// two balance invariants.
+    ///
+    /// 1. No red node has a red parent.
+    /// 2. Every path from the root to a leaf contains the same
+    /// number of black nodes.
+    ///
+    pub enum RedBlackTree[t] {
+        case Leaf,
+        case DoubleLeaf,
+        case Node(Color, RedBlackTree[t], t, RedBlackTree[t])
+    }
+
+    ///
+    /// The color of a red-black tree node.
+    ///
+    enum Color {
+        case Red
+        case Black
+        case DoubleBlack
+    }
 
     ///
     /// Returns a new, balanced tree identical to `tree`.
@@ -179,9 +179,12 @@ namespace RedBlackTree {
         case _ => 0
     }
 
-    pub def isLeaf(tree: RedBlackTree[a]): Bool = match tree {
-        case Leaf => true
-        case _ => false
+    ///
+    /// Returns true if and only if `tree` is the empty tree, i.e. `Leaf`.
+    ///
+    pub def isEmpty(tree: RedBlackTree[a]): Bool = match tree {
+        case Node(_, _, _, _) => false
+        case _ => true
     }
 
     ///
@@ -205,16 +208,16 @@ namespace RedBlackTree {
     /// Optionally returns the left most element of `tree`.
     ///
     pub def leftMost(tree: RedBlackTree[a]): Option[a] = match tree {
-        case Leaf => None
-        case Node(_, a, x, _) => if (isLeaf(a)) Some(x) else leftMost(a)
+        case Node(_, a, x, _) => if (isEmpty(a)) Some(x) else leftMost(a)
+        case _ => None
     }
 
     ///
     /// Optionally returns the right most element of `tree`.
     ///
     pub def rightMost(tree: RedBlackTree[a]): Option[a] = match tree {
-        case Leaf => None
-        case Node(_, b, x, _) => if (isLeaf(b)) Some(x) else rightMost(b)
+        case Node(_, b, x, _) => if (isEmpty(b)) Some(x) else rightMost(b)
+        case _ => None
     }
 
     ///
