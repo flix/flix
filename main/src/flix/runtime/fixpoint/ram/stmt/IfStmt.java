@@ -20,6 +20,6 @@ public class IfStmt implements Stmt {
         boolExp.prettyPrint(stream);
         stream.print(") then {\n");
         stmt.prettyPrint(stream, indentLevel + 1);
-        stream.print("\t".repeat(indentLevel) + "}\n");
+        stream.print("\n" + "\t".repeat(indentLevel) + "}");
     }
 }

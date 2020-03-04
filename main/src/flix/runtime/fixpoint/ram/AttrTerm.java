@@ -24,6 +24,14 @@ public class AttrTerm implements RamTerm {
                 "[" + index + ']');
     }
 
+    public LocalVariable getLocalVar() {
+        return localVar;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

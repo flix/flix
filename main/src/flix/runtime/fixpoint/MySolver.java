@@ -4,6 +4,7 @@ import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.*;
+import flix.runtime.fixpoint.ram.stmt.IfStmt;
 import flix.runtime.fixpoint.ram.stmt.ProjectStmt;
 import flix.runtime.fixpoint.ram.stmt.SeqStmt;
 import flix.runtime.fixpoint.ram.stmt.Stmt;
@@ -51,7 +52,7 @@ public class MySolver {
      */
     private static Stmt[] eval(RelSym relSym, Map<RelSym, ArrayList<Constraint>> derived) {
         // Generate facts for each rule for the fact
-        Stmt[][] acc = new Stmt[derived.get(relSym).size()][];
+        Stmt[] result = new Stmt[derived.get(relSym).size()];
         ArrayList<Constraint> get = derived.get(relSym);
         for (int i = 0; i < get.size(); i++) {
             Constraint c = get.get(i);
@@ -71,12 +72,12 @@ public class MySolver {
                 }
             }
             // Evaluate each rule individually
-            acc[i] = evalRule(c, relTableMap);
+            result[i] = evalRule(c, relTableMap);
         }
-        return Stream.of(acc).flatMap(Stream::of).toArray(Stmt[]::new);
+        return result;
     }
 
-    private static Stmt[] evalRule(Constraint c, Map<PredSym, TableName> relTableMap) {
+    private static Stmt evalRule(Constraint c, Map<PredSym, TableName> relTableMap) {
         Predicate head = c.getHeadPredicate();
         assert head instanceof AtomPredicate;
         PredSym headSym = ((AtomPredicate) head).getSym();
@@ -114,12 +115,26 @@ public class MySolver {
             Term term = headTerms[i];
             headRamTerms[i] = termToRamAttr.get(term).iterator().next();
         }
-        Stmt project = new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
+        Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
+        // Now I need to check that this element does not exist already
+        BoolExp bool = new UnaryBoolExp(UnaryBoolOperator.NOT, new TubleInRelBoolExp(headRamTerms, new TableName(TableClassifier.RESULT, headSym)));
+        resultStmt = new IfStmt(bool, resultStmt);
+
         // I can then generate the list of if statements
+        /*for (Term t : termToRamAttr.keySet()){
+            Set<AttrTerm> attrs = termToRamAttr.get(t);
+            if (attrs.size() == 1){
+                AttrTerm attr = attrs.iterator().next();
+                if (t instanceof LitTerm){
+                    BoolExp bool = new BinaryRelationExp()
+                    resultStmt = new IfStmt()
+                }
+            }
+        }*/
 
         // I can now generate all the for each statements
 
-        return new Stmt[]{project};
+        return resultStmt;
     }
     private static int variableCounter = 0;
     private static LocalVariable genNewLocalVariable(String name) {
