@@ -22,7 +22,7 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
-namespace NonEmptyList {
+namespace Nel {
 
     ///
     /// Returns the first element of `xs`.
@@ -43,12 +43,10 @@ namespace NonEmptyList {
     ///
     pub def init(xs: Nel[a]): List[a] = match xs {
         case Nel(_, Nil) => Nil
-        case Nel(h, l)   => initHelper(h, l)
-    }
-
-    def initHelper(h: a, xs: List[a]): List[a] = match xs {
-        case Nil     => h :: Nil
-        case y :: ys => h :: initHelper(y, ys)
+        case Nel(h, l)   => match List.reverse(l) {
+            case Nil     => h :: Nil
+            case _ :: xs => h :: List.reverse(xs)
+        }
     }
 
     ///
@@ -122,7 +120,7 @@ namespace NonEmptyList {
 
     // TODO: rotateRight
 
-    // TODO: Update
+    // TODO: update
 
     ///
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
@@ -218,11 +216,6 @@ namespace NonEmptyList {
         case Nel(h, l) => f(h) && List.forall(f, l)
     }
 
-
-
-
-
-
     ///
     /// Returns a list of every element in `xs` that satisfies the predicate `f`.
     ///
@@ -234,7 +227,7 @@ namespace NonEmptyList {
                 List.filter(f, l)
     }
 
-    // TODO: Slice
+    // TODO: slice
 
     // TODO: partition
 
@@ -279,10 +272,6 @@ namespace NonEmptyList {
             let (l1, l2) = List.unzip(l);
             (Nel(a, l1), Nel(b, l2))
     }
-
-
-
-
 
     ///
     /// Returns a non-empty list where the element at index `i` is `f(a, b)` where

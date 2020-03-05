@@ -26,7 +26,7 @@ namespace Validation {
 
     // TODO: app
     // TODO: combine
-    // TODO: ensure?
+    // TODO: ensure
 
     ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
@@ -54,7 +54,8 @@ namespace Validation {
         case Failure(_) => true
     }
 
-    // TODO: foldLeft, foldRight
+    // TODO: foldLeft
+    // TODO: foldRight
     // TODO: getOrElse
     // TODO: leftMap
 
@@ -68,8 +69,9 @@ namespace Validation {
 
     // TODO: orElse
 
-    // TODO: traverse
+    // TODO: sequence
 
+    // TODO: traverse
 
     ///
     /// Swaps the success and failure values.
