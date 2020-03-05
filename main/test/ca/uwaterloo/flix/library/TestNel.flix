@@ -163,5 +163,18 @@ namespace Nel {
     @test
     def map03(): Bool = map(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intersperse01(): Bool = intersperse(7, Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def intersperse02(): Bool = intersperse(7, Nel(1, 2 :: Nil)) == Nel(1, 7 :: 2 :: Nil)
+
+    @test
+    def intersperse03(): Bool = intersperse(7, Nel(1, 2 :: 3 :: Nil)) == Nel(1, 7 :: 2 :: 7 :: 3 :: Nil)
+
 }
 

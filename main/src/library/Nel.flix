@@ -136,6 +136,13 @@ namespace Nel {
     // TODO: subsequences
 
     // TODO: intersperse
+    ///
+    /// Returns `xs` with `a` inserted between every two adjacent elements.
+    ///
+    pub def intersperse(a: a, xs: Nel[a]): Nel[a] = match xs {
+        case Nel(h, Nil) => Nel(h, Nil)
+        case Nel(h, l)   => Nel(h, a :: List.intersperse(a, l))
+    }
 
     // TODO: intercalate
 
