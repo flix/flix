@@ -51,7 +51,7 @@ object SimplifiedAst {
 
   case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
 
-  sealed trait Expression {
+  trait Expression {
     def tpe: Type
 
     def loc: SourceLocation
@@ -263,22 +263,6 @@ object SimplifiedAst {
     case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
   }
-
-  case class LabeledExpression(label: Int, exp : Expression) extends Expression {
-    override def tpe: Type = exp.tpe
-
-    override def loc: SourceLocation = exp.loc
-
-    override def equals(obj: Any): Boolean =
-      obj match {
-        case that: LabeledExpression => this.label == that.label
-        case _ => false
-      }
-
-    override def hashCode(): Int = label.hashCode()
-  }
-
-  implicit def expToLabeled(exp: Expression): LabeledExpression = exp.asInstanceOf[LabeledExpression]
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
 
