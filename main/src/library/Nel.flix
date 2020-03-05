@@ -121,13 +121,21 @@ namespace Nel {
     /// Helper function for `mapWithIndex`.
     ///
     def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32): List[b] & e = match xs {
-        case Nil => Nil
+        case Nil     => Nil
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
     }
 
     // TODO: flatMap
 
-    // TODO: reverse
+    ///
+    /// Returns the reverse of `xs`.
+    ///
+    pub def reverse(xs: Nel[a]): Nel[a] = match xs {
+        case Nel(h, l) => match List.reverse(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case _       => panic "unreachable"
+        }
+    }
 
     ///
     /// Returns `xs` with every occurrence of `x` replaced by `y`.

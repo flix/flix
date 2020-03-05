@@ -177,6 +177,19 @@ namespace Nel {
     def mapWithIndex03(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def reverse01(): Bool = reverse(Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def reverse02(): Bool = reverse(Nel(1, 2 :: Nil)) == Nel(2, 1 :: Nil)
+
+    @test
+    def reverse03(): Bool = reverse(Nel(1, 2 :: 3 :: Nil)) == Nel(3, 2 :: 1 :: Nil)
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -190,4 +203,3 @@ namespace Nel {
     def intersperse03(): Bool = intersperse(7, Nel(1, 2 :: 3 :: Nil)) == Nel(1, 7 :: 2 :: 7 :: 3 :: Nil)
 
 }
-
