@@ -99,8 +99,6 @@ namespace Nel {
         }
     }
 
-    // TODO: scan, scanLeft, scanRight
-
     ///
     /// Returns the result of applying `f` to every element in `xs`.
     ///
@@ -110,17 +108,26 @@ namespace Nel {
         case Nel(h, l) => Nel(f(h), List.map(f, l))
     }
 
-    // TODO: mapWithIndex
+    ///
+    /// Returns the result of applying `f` to every element in `xs` along with that element's index.
+    ///
+    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    ///
+    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: Nel[a]): Nel[b] & e = match xs {
+        case Nel(h, l) => Nel(f(h, 0), mapWithIndexHelper(f, l, 1))
+    }
+
+    ///
+    /// Helper function for `mapWithIndex`.
+    ///
+    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32): List[b] & e = match xs {
+        case Nil => Nil
+        case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
+    }
 
     // TODO: flatMap
 
     // TODO: reverse
-
-    // TODO: rotateLeft
-
-    // TODO: rotateRight
-
-    // TODO: update
 
     ///
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
@@ -135,7 +142,6 @@ namespace Nel {
 
     // TODO: subsequences
 
-    // TODO: intersperse
     ///
     /// Returns `xs` with `a` inserted between every two adjacent elements.
     ///
@@ -145,14 +151,6 @@ namespace Nel {
     }
 
     // TODO: intercalate
-
-    // TODO: transpose
-
-    // TODO: isPrefixOf
-
-    // TODO: isInfixOf
-
-    // TODO: isSuffixOf
 
     ///
     /// Alias for `foldLeft`.
@@ -234,22 +232,6 @@ namespace Nel {
                 List.filter(f, l)
     }
 
-    // TODO: slice
-
-    // TODO: partition
-
-    // TODO: span
-
-    // TODO: drop
-
-    // TODO: dropWhile
-
-    // TODO: take
-
-    // TODO: takeWhile
-
-    // TODO: groupBy
-
     ///
     /// Returns a non-empty list where the element at index `i` is `(a, b)` where
     /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
@@ -292,20 +274,6 @@ namespace Nel {
     // TODO: flatMap2
 
     // TODO: fold2
-
-    // TODO: foldLeft2
-
-    // TODO: foldRight2
-
-    // TODO: filterMap
-
-    // TODO: findMap
-
-    // TODO: toString
-
-    // TODO: toSet
-
-    // TODO: toMap
 
 }
 

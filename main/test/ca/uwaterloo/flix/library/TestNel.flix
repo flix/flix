@@ -164,6 +164,19 @@ namespace Nel {
     def map03(): Bool = map(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndex01(): Bool = mapWithIndex((_, i) -> i, Nel(21, Nil)) == Nel(0, Nil)
+
+    @test
+    def mapWithIndex02(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: Nil)) == Nel(0, 1 :: Nil)
+
+    @test
+    def mapWithIndex03(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
