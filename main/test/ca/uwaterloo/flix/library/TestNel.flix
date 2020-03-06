@@ -179,6 +179,7 @@ namespace Nel {
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
+
     @test
     def reverse01(): Bool = reverse(Nel(1, Nil)) == Nel(1, Nil)
 
@@ -188,6 +189,21 @@ namespace Nel {
     @test
     def reverse03(): Bool = reverse(Nel(1, 2 :: 3 :: Nil)) == Nel(3, 2 :: 1 :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def replace01(): Bool = replace(1, 42, Nel(1, Nil)) == Nel(42, Nil)
+
+    @test
+    def replace02(): Bool = replace(7, 42, Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def replace03(): Bool = replace(2, 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
+
+    @test
+    def replace04(): Bool = replace(7, 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
@@ -201,5 +217,57 @@ namespace Nel {
 
     @test
     def intersperse03(): Bool = intersperse(7, Nel(1, 2 :: 3 :: Nil)) == Nel(1, 7 :: 2 :: 7 :: 3 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool = foldLeft((acc, x) -> acc - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldLeft02(): Bool = foldLeft((acc, x) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldLeft03(): Bool = foldLeft((acc, x) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldRight02(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceLeft01(): Bool = reduceLeft((acc, x) -> acc - x, Nel(1, Nil)) == 1
+
+    @test
+    def reduceLeft02(): Bool = reduceLeft((acc, x) -> acc - x, Nel(1, 2 :: Nil)) == -1
+
+    @test
+    def reduceLeft03(): Bool = reduceLeft((acc, x) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == -4
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceRight01(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, Nil)) == 1
+
+    @test
+    def reduceRight02(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, 2 :: Nil)) == 1
+
+    @test
+    def reduceRight03(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == 0
 
 }

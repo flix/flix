@@ -171,7 +171,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b, s: b, xs: Nel[a]): b = match xs {
-        case Nel(h, l) => List.foldLeft(f, f(h, s), l)
+        case Nel(h, l) => List.foldLeft(f, f(s, h), l)
     }
 
     ///
@@ -180,7 +180,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b, s: b, xs: Nel[a]): b = match xs {
-        case Nel(h, l) => f(h, List.foldLeft(f, s, l))
+        case Nel(h, l) => f(h, List.foldRight(f, s, l))
     }
 
     ///
@@ -203,7 +203,10 @@ namespace Nel {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
     pub def reduceRight(f: (a, a) -> a, xs: Nel[a]): a = match xs {
-        case Nel(h, l) => List.foldRight(f, h, l)
+        case Nel(h, l) => match List.reduceRight(f, h :: l) {
+            case None    => panic "unreachable"
+            case Some(v) => v
+        }
     }
 
     ///
