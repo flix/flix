@@ -24,9 +24,15 @@ pub enum Validation[t, e] {
 
 namespace Validation {
 
-    // TODO: app
-    // TODO: combine
-    // TODO: ensure
+    ///
+    /// Applies the function in `v1` to the value in `v2`.
+    ///
+    pub def ap(v1: Validation[a -> b, e], v2: Validation[a, e]): Validation[b, e] = match (v1, v2) {
+        case (Success(f), Success(v))   => Success(f(v))
+        case (_,          Failure(e))   => Failure(e)
+        case (Failure(e), _         )   => Failure(e)
+        case (Failure(e1), Failure(e2)) => Failure(Nel.append(e1, e2))
+    }
 
     ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
@@ -53,11 +59,6 @@ namespace Validation {
         case Success(t) => f(t)
         case Failure(_) => true
     }
-
-    // TODO: foldLeft
-    // TODO: foldRight
-    // TODO: getOrElse
-    // TODO: leftMap
 
     ///
     /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.

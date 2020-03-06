@@ -1,6 +1,22 @@
 namespace Validation {
 
     /////////////////////////////////////////////////////////////////////////////
+    // ap                                                                      //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def ap01(): Bool = ap(Success(x -> x + 1), Success(123)) == Success(124)
+
+    @test
+    def ap02(): Bool = ap(Success(x -> x + 1), Failure(Nel(42, Nil))) == Failure(Nel(42, Nil))
+
+    @test
+    def ap03(): Bool = ap(Failure(Nel(42, Nil)), Success(123)) == Failure(Nel(42, Nil))
+
+    @test
+    def ap04(): Bool = ap(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))) == Failure(Nel(123, 456 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
