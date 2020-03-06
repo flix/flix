@@ -31,6 +31,22 @@ namespace Validation {
     def forall02(): Bool = exists(x -> x != 123, (Success(123))) == false
 
     /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map01(): Bool = map(x -> x, Success(123)) == Success(123)
+
+    @test
+    def map02(): Bool = map(x -> x + 1, Success(123)) == Success(124)
+
+    @test
+    def map03(): Bool = map(x -> x, Failure(Nel(123, Nil))) == Failure(Nel(123, Nil))
+
+    @test
+    def map04(): Bool = Success(123) |> map(x -> x + 1) |> map(x -> x * 2) == Success(248)
+
+    /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
