@@ -74,17 +74,6 @@ namespace Validation {
     // TODO: traverse
 
     ///
-    /// Swaps the success and failure values.
-    ///
-    /// Returns `Success(e)` if `v` is `Failure(e)`.
-    /// Returns `Failure(t)` if `v` is `Success(t)`.
-    ///
-    pub def swap(v: Validation[t, e]): Validation[Nel[e], v] = match v {
-        case Success(t) => Failure(Nel(t, Nil))
-        case Failure(e) => Success(e)
-    }
-
-    ///
     /// Converts a Validation to an Option.
     ///
     /// Returns `Some(t)` if `v` is `Success(t)`.
