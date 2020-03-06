@@ -76,8 +76,6 @@ namespace Validation {
         case Failure(e) => Failure(e)
     }
 
-    // TODO: orElse
-
     ///
     /// Returns `Success(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Success(v_i)`.
     ///
@@ -85,7 +83,7 @@ namespace Validation {
     ///
     pub def sequence(xs: List[Validation[t, e]]): Validation[List[t], e] = match xs {
         case Nil     => Success(Nil)
-        case v :: ys => match (v, sequence(ys)) {
+        case v :: vs => match (v, sequence(vs)) {
             case (Success(x), Success(rs)) => Success(x :: rs)
             case (Success(_), Failure(e))  => Failure(e)
             case (Failure(e), Success(_))  => Failure(e)
@@ -93,7 +91,24 @@ namespace Validation {
         }
     }
 
-    // TODO: traverse
+    ///
+    /// Returns `Success(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Success(v_i)`.
+    ///
+    /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
+    ///
+    pub def traverse(f: a -> Validation[b, e] & f, xs: List[a]): Validation[List[b], e] & f = match xs {
+        case Nil        => Success(Nil)
+        case v :: vs    => match f(v) {
+            case Success(x) => match traverse(f, vs) {
+                case Success(rs) => Success(x :: rs)
+                case Failure(e)  => Failure(e)
+            }
+            case Failure(x) => match traverse(f, vs) {
+               case Success(_) => Failure(x)
+               case Failure(y) => Failure(Nel.append(x, y))
+           }
+        }
+    }
 
     ///
     /// Converts a Validation to an Option.

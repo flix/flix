@@ -113,6 +113,31 @@ namespace Validation {
     def sequence07(): Bool = sequence(Failure(Nel(42, Nil)) :: Success(1) :: Nil) == Failure(Nel(42, Nil))
 
     /////////////////////////////////////////////////////////////////////////////
+    // traverse                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def traverse01(): Bool = traverse(x -> Success(x + 1), 1 :: Nil) == Success(2 :: Nil)
+
+    @test
+    def traverse02(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: Nil) == Success(2 :: 3 :: Nil)
+
+    @test
+    def traverse03(): Bool = traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil) == Success(2 :: 3 :: 4 :: Nil)
+
+    @test
+    def traverse04(): Bool = traverse(x -> Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def traverse05(): Bool = traverse(x -> Failure(Nel(x, x :: Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil))
+
+    @test
+    def traverse06(): Bool = traverse(x -> if (x != 2) Success(x + 1) else Failure(Nel(42, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(42, Nil))
+
+    @test
+    def traverse07(): Bool = traverse(x -> if (x == 2) Success(x + 1) else Failure(Nel(x, Nil)), 1 :: 2 :: 3 :: Nil) == Failure(Nel(1, 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
