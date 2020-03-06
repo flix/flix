@@ -353,4 +353,20 @@ namespace Nel {
     @test
     def zip04(): Bool = zip(Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), (2, 2) :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWith01(): Bool = zipWith((x, y) -> x + y, Nel(1, Nil), Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def zipWith02(): Bool = zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def zipWith03(): Bool = zipWith((x, y) -> x + y, Nel(1, Nil), Nel(1, 2 :: Nil)) == Nel(2, Nil)
+
+    @test
+    def zipWith04(): Bool = zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel(2, 4 :: Nil)
+
 }
