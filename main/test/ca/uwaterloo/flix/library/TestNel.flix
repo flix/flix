@@ -321,4 +321,36 @@ namespace Nel {
     @test
     def forall05(): Bool = forall(x -> x == 1, Nel(2, 1 :: Nil)) == false
 
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filter01(): Bool = filter(x -> x > 0, Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def filter02(): Bool = filter(x -> x > 1, Nel(1, Nil)) == Nil
+
+    @test
+    def filter03(): Bool = filter(x -> x > 0, Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
+
+    @test
+    def filter04(): Bool = filter(x -> x > 1, Nel(1, 2 :: Nil)) == 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zip01(): Bool = zip(Nel(1, Nil), Nel(1, Nil)) == Nel((1, 1), Nil)
+
+    @test
+    def zip02(): Bool = zip(Nel(1, 2 :: Nil), Nel(1, Nil)) == Nel((1, 1), Nil)
+
+    @test
+    def zip03(): Bool = zip(Nel(1, Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), Nil)
+
+    @test
+    def zip04(): Bool = zip(Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), (2, 2) :: Nil)
+
 }
