@@ -18,6 +18,9 @@ package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
+
+import scala.collection.mutable
 
 object SimplifiedAstOps {
 
@@ -674,4 +677,179 @@ object SimplifiedAstOps {
     root
   }
 
+  /**
+   * Returns the free variables in the given expression `exp`.
+   * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
+   */
+  // TODO: Use immutable, but sorted data structure?
+  def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
+    case Expression.Unit => mutable.LinkedHashSet.empty
+    case Expression.True => mutable.LinkedHashSet.empty
+    case Expression.False => mutable.LinkedHashSet.empty
+    case Expression.Char(lit) => mutable.LinkedHashSet.empty
+    case Expression.Float32(lit) => mutable.LinkedHashSet.empty
+    case Expression.Float64(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int8(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int16(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int32(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int64(lit) => mutable.LinkedHashSet.empty
+    case Expression.BigInt(lit) => mutable.LinkedHashSet.empty
+    case Expression.Str(lit) => mutable.LinkedHashSet.empty
+    case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Expression.Def(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Eff(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Lambda(args, body, tpe, loc) =>
+      val bound = args.map(_.sym)
+      freeVars(body).filterNot { v => bound.contains(v._1) }
+    case Expression.Apply(exp, args, tpe, loc) =>
+      freeVars(exp) ++ args.flatMap(freeVars)
+    case Expression.Unary(sop, op, exp, tpe, loc) => freeVars(exp)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+      freeVars(exp1) ++ freeVars(exp2)
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      mutable.LinkedHashSet.empty ++ freeVars(exp) ++ (branches flatMap {
+        case (sym, br) => freeVars(br)
+      })
+    case Expression.JumpTo(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      val bound = sym
+      freeVars(exp1) ++ freeVars(exp2).filterNot { v => bound == v._1 }
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+      val bound = sym
+      (freeVars(exp1) ++ freeVars(exp2)).filterNot { v => bound == v._1 }
+    case Expression.Is(sym, tag, exp, loc) => freeVars(exp)
+    case Expression.Untag(sym, tag, exp, tpe, loc) => freeVars(exp)
+    case Expression.Tag(enum, tag, exp, tpe, loc) => freeVars(exp)
+    case Expression.Index(base, offset, tpe, loc) => freeVars(base)
+    case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
+    case Expression.RecordEmpty(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.RecordSelect(exp, label, tpe, loc) => freeVars(exp)
+    case Expression.RecordExtend(label, value, rest, tpe, loc) => freeVars(value) ++ freeVars(rest)
+    case Expression.RecordRestrict(label, rest, tpe, loc) => freeVars(rest)
+    case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
+    case Expression.ArrayNew(elm, len, tpe, loc) => freeVars(elm) ++ freeVars(len)
+    case Expression.ArrayLoad(base, index, tpe, loc) => freeVars(base) ++ freeVars(index)
+    case Expression.ArrayStore(base, index, elm, tpe, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+    case Expression.ArrayLength(base, tpe, loc) => freeVars(base)
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+    case Expression.Ref(exp, tpe, loc) => freeVars(exp)
+    case Expression.Deref(exp, tpe, loc) => freeVars(exp)
+    case Expression.Assign(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.HandleWith(exp, bindings, tpe, loc) => freeVars(exp) ++ bindings.flatMap(b => freeVars(b.exp))
+    case Expression.Existential(fparam, exp, loc) =>
+      freeVars(exp).filterNot { v => v._1 == fparam.sym }
+    case Expression.Universal(fparam, exp, loc) =>
+      freeVars(exp).filterNot { v => v._1 == fparam.sym }
+
+    case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+    case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      val rs = mutable.LinkedHashSet.empty ++ rules.flatMap {
+        case SelectChannelRule(sym, chan, exp) => (freeVars(chan) ++ freeVars(exp)).filter(p => p._1 != sym)
+      }
+
+      val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
+
+      rs ++ d
+
+    case Expression.ProcessSpawn(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessSleep(exp, tpe, loc) => freeVars(exp)
+
+    case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+      cs.foldLeft(mutable.LinkedHashSet.empty[(Symbol.VarSym, Type)]) {
+        case (m, c) => m ++ freeVars(c)
+      }
+
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.FixpointSolve(exp, stf, tpe, loc) => freeVars(exp)
+    case Expression.FixpointProject(sym, exp, tpe, loc) => freeVars(exp)
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+
+    case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyCloTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+  }
+
+  /**
+   * Returns the free variables in the given constraint `c0`.
+   */
+  private def freeVars(c0: Constraint): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = {
+    val Constraint(cparams, head, body) = c0
+    freeVars(head) ++ body.flatMap(freeVars)
+  }
+
+  /**
+   * Returns the free variables in the given head predicate `head0`.
+   */
+  private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
+    case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+
+    case Predicate.Head.Union(exp, tpe, loc) =>
+      freeVars(exp)
+  }
+
+  /**
+   * Returns the free variables in the given body predicate `body0`.
+   */
+  private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
+    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+
+    case Predicate.Body.Guard(exp, loc) =>
+      freeVars(exp)
+  }
+
+  /**
+   * Returns the free variables in the given body term `term0`.
+   */
+  private def freeVars(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
+    case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Body.QuantVar(sym, tpe, loc) =>
+      // Quantified variables are never free.
+      mutable.LinkedHashSet.empty
+    case Term.Body.CapturedVar(sym, tpe, loc) =>
+      // Captured variables are by definition free.
+      mutable.LinkedHashSet((sym, tpe))
+    case Term.Body.Lit(exp, tpe, loc) => freeVars(exp)
+  }
+
+  /**
+   * Returns the free variables in the given head term `term0`.
+   */
+  private def freeVars(term0: Term.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
+    case Term.Head.QuantVar(sym, tpe, loc) =>
+      // Quantified variables are never free.
+      mutable.LinkedHashSet.empty
+    case Term.Head.CapturedVar(sym, tpe, loc) =>
+      // Captured variables are by definition free.
+      mutable.LinkedHashSet((sym, tpe))
+    case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Head.App(exp, args, tpe, loc) => freeVars(exp)
+  }
 }

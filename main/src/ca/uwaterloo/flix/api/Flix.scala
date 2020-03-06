@@ -257,12 +257,12 @@ class Flix {
       Synthesize |>
       Simplifier |>
       Uncurrier |>
+      ControlFlowAnalysis |>
       ClosureConv |>
       LambdaLift |>
       Tailrec |>
       Inliner |>
       Optimizer |>
-      ControlFlowAnalysis |>
       TreeShaker |>
       VarNumbering |>
       Finalize |>
