@@ -36,6 +36,22 @@ namespace Validation {
     def getWithDefault02(): Bool = (Failure(Nel(42, Nil))).getWithDefault(456) == 456
 
     /////////////////////////////////////////////////////////////////////////////
+    // withDefault                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def withDefault01(): Bool = withDefault(Success(1), Success(2)) == Success(1)
+
+    @test
+    def withDefault02(): Bool = withDefault(Success(1), Failure(Nel(1, Nil))) == Success(1)
+
+    @test
+    def withDefault03(): Bool = withDefault(Failure(Nel(1, Nil)), Success(2)) == Success(2)
+
+    @test
+    def withDefault04(): Bool = withDefault(Failure(Nel(1, Nil)), Failure(Nel(2, Nil))) == Failure(Nel(2, Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

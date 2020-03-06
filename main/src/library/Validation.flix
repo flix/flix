@@ -43,6 +43,14 @@ namespace Validation {
     }
 
     ///
+    /// Returns `v1` if it is `Success(v)`. Otherwise returns `v2`.
+    ///
+    pub def withDefault(v1: Validation[t, e], v2: Validation[t, e]): Validation[t, e] = match v1 {
+        case Success(_) => v1
+        case Failure(_) => v2
+    }
+
+    ///
     /// Returns `true` if and only if `v` is `Success(t)` and `f(t)` is true.
     ///
     /// Returns `false` if `v` is `Failure`.
