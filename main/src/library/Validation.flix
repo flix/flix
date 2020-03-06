@@ -70,7 +70,20 @@ namespace Validation {
 
     // TODO: orElse
 
-    // TODO: sequence
+    ///
+    /// Returns `Success(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Success(v_i)`.
+    ///
+    /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
+    ///
+    pub def sequence(xs: List[Validation[t, e]]): Validation[List[t], e] = match xs {
+        case Nil     => Success(Nil)
+        case v :: ys => match (v, sequence(ys)) {
+            case (Success(x), Success(rs)) => Success(x :: rs)
+            case (Success(_), Failure(e))  => Failure(e)
+            case (Failure(e), Success(_))  => Failure(e)
+            case (Failure(x), Failure(y))  => Failure(Nel.append(x, y))
+        }
+    }
 
     // TODO: traverse
 

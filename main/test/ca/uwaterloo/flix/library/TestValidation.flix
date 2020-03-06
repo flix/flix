@@ -72,6 +72,31 @@ namespace Validation {
     def map04(): Bool = Success(123) |> map(x -> x + 1) |> map(x -> x * 2) == Success(248)
 
     /////////////////////////////////////////////////////////////////////////////
+    // sequence                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def sequence01(): Bool = sequence(Success(1) :: Nil) == Success(1 :: Nil)
+
+    @test
+    def sequence02(): Bool = sequence(Success(1) :: Success(2) :: Nil) == Success(1 :: 2 :: Nil)
+
+    @test
+    def sequence03(): Bool = sequence(Success(1) :: Success(2) :: Success(3) :: Nil) == Success(1 :: 2 :: 3 :: Nil)
+
+    @test
+    def sequence04(): Bool = sequence(Failure(Nel(1, Nil)) :: Nil) == Failure(Nel(1, Nil))
+
+    @test
+    def sequence05(): Bool = sequence(Failure(Nel(1, Nil)) :: Failure(Nel(2, Nil)) :: Nil) == Failure(Nel(1, 2 :: Nil))
+
+    @test
+    def sequence06(): Bool = sequence(Success(1) :: Failure(Nel(42, Nil)) :: Nil) == Failure(Nel(42, Nil))
+
+    @test
+    def sequence07(): Bool = sequence(Failure(Nel(42, Nil)) :: Success(1) :: Nil) == Failure(Nel(42, Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // toOption                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
