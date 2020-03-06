@@ -87,6 +87,58 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the type of records.
+    */
+  case object Record extends TypeConstructor {
+    /**
+      * The shape of a record is Record[r] where r is of kind RecordRow.
+      */
+    def kind: Kind = Kind.RecordRowSet -> Kind.Star
+  }
+
+  /**
+    * A type constructor that represents the type of empty record row sets.
+    */
+  case object EmptyRecordRowSet extends TypeConstructor {
+    def kind: Kind = Kind.RecordRowSet
+  }
+
+  /**
+    * A type constructor that represents the type of extended record row sets.
+    */
+  case object ExpandedRecordRowSet extends TypeConstructor {
+    def kind: Kind = Kind.Star -> Kind.RecordRowSet -> Kind.RecordRowSet
+  }
+
+  /**
+    * A type constructor that represents the type of schemas.
+    */
+  case object Schema extends TypeConstructor {
+    def kind: Kind = Kind.PredicateSet -> Kind.Star
+  }
+
+  /**
+    * A type constructor that represents the type of predicate sets.
+    */
+  case object EmptyPredicateSet extends TypeConstructor {
+    def kind: Kind = Kind.PredicateSet
+  }
+
+  /**
+    * A type constructor that represents the type of expanded predicate sets.
+    */
+  case object ExpandedPredicateSet extends TypeConstructor {
+    def kind: Kind = Kind.Predicate -> Kind.PredicateSet -> Kind.PredicateSet
+  }
+
+  /**
+    * A type constructor that represents the type of predicates.
+    */
+  case object Predicate extends TypeConstructor {
+    def kind: Kind = Kind.Predicate
+  }
+
+  /**
     * A type constructor that represent the type of arrays.
     */
   case object Array extends TypeConstructor {

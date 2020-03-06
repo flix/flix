@@ -255,34 +255,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents the empty record type.
-    */
-  case object RecordEmpty extends Type {
-    def kind: Kind = Kind.Record
-  }
-
-  /**
-    * A type constructor that represents a record extension type.
-    */
-  case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Record
-  }
-
-  /**
-    * A type constructor that represents the empty schema type.
-    */
-  case object SchemaEmpty extends Type {
-    def kind: Kind = Kind.Schema
-  }
-
-  /**
-    * A type constructor that represents a schema extension type.
-    */
-  case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Schema
-  }
-
-  /**
     * A type constructor that represents zero.
     */
   case object Zero extends Type {

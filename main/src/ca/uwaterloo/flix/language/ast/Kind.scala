@@ -43,14 +43,19 @@ object Kind {
   case object Star extends Kind
 
   /**
-    * The kind of records.
+    * The kind of records row sets.
     */
-  case object Record extends Kind
+  case object RecordRowSet extends Kind
 
   /**
-    * The kind of schemas.
+    * The kind of predicate sets.
     */
-  case object Schema extends Kind
+  case object PredicateSet extends Kind
+
+  /**
+    * The kind of predicates.
+    */
+  case object Predicate extends Kind
 
   /**
     * The kind of natural number expressions.
