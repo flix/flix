@@ -228,6 +228,24 @@ namespace Nel {
     def replace04(): Bool = replace(7, 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // permutations                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def permutations01(): Bool = permutations(Nel(1, Nil)) == Nel(1 :: Nil, Nil)
+
+    @test
+    def permutations02(): Bool = permutations(Nel(1, 2 :: Nil)) == Nel(1 :: 2 :: Nil, (2 :: 1 :: Nil) :: Nil)
+
+    @test
+    def permutations03(): Bool = permutations(Nel(1, 2 :: 3 :: Nil)) == Nel(1 :: 2 :: 3 :: Nil,
+                                                                           (1 :: 3 :: 2 :: Nil) ::
+                                                                           (2 :: 1 :: 3 :: Nil) ::
+                                                                           (2 :: 3 :: 1 :: Nil) ::
+                                                                           (3 :: 1 :: 2 :: Nil) ::
+                                                                           (3 :: 2 :: 1 :: Nil) :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 

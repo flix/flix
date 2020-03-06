@@ -149,7 +149,17 @@ namespace Nel {
     ///
     pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
 
-    // TODO: permutations
+    ///
+    /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
+    ///
+    /// That is, `xs` is the first permutation and `reverse(xs)` is the last permutation.
+    ///
+    pub def permutations(xs: Nel[a]): Nel[List[a]] = match xs {
+        case Nel(h, l) => match List.permutations(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case Nil => panic "unreachable"
+        }
+    }
 
     // TODO: subsequences
 
@@ -160,8 +170,6 @@ namespace Nel {
         case Nel(h, Nil) => Nel(h, Nil)
         case Nel(h, l)   => Nel(h, a :: List.intersperse(a, l))
     }
-
-    // TODO: intercalate
 
     ///
     /// Alias for `foldLeft`.
