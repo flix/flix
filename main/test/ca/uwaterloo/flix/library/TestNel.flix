@@ -287,6 +287,25 @@ namespace Nel {
     def count04(): Bool = count(x -> x == 2, Nel(2, 2 :: 1 :: 2 :: Nil)) == 3
 
     /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatten01(): Bool = flatten(Nel(Nel(1, Nil), Nil)) == Nel(1, Nil)
+
+    @test
+    def flatten02(): Bool = flatten(Nel(Nel(1, Nil), Nel(2, Nil) :: Nil)) == Nel(1, 2 :: Nil)
+
+    @test
+    def flatten03(): Bool = flatten(Nel(Nel(1, Nil), Nel(2, Nil) :: Nel(3, Nil) :: Nil)) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def flatten04(): Bool = flatten(Nel(Nel(1, Nil), Nel(2, 3 :: Nil) :: Nel(4, 5 :: Nil) :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)
+
+    @test
+    def flatten05(): Bool = flatten(Nel(Nel(1, 2 :: 3 :: Nil), Nel(4, 5 :: Nil) :: Nel(6, 7 :: Nil) :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

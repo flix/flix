@@ -160,6 +160,8 @@ namespace Nel {
 
     // TODO: intercalate
 
+    // TODO: flatMap
+
     ///
     /// Alias for `foldLeft`.
     ///
@@ -220,7 +222,7 @@ namespace Nel {
     /// Returns the concatenation of the elements in `xs`.
     ///
     pub def flatten(xs: Nel[Nel[a]]): Nel[a] = match xs {
-        case Nel(Nel(h, ys), zs) => ??? // TODO: need to toList
+        case Nel(Nel(h, ys), zs) => Nel(h, ys ::: List.flatMap(toList, zs))
     }
 
     ///
