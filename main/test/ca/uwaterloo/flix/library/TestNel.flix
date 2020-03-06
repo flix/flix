@@ -270,4 +270,55 @@ namespace Nel {
     @test
     def reduceRight03(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == 0
 
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool = count(x -> x == 1, Nel(1, Nil)) == 1
+
+    @test
+    def count02(): Bool = count(x -> x == 2, Nel(1, Nil)) == 0
+
+    @test
+    def count03(): Bool = count(x -> x == 2, Nel(1, 2 :: 1 :: 2 :: Nil)) == 2
+
+    @test
+    def count04(): Bool = count(x -> x == 2, Nel(2, 2 :: 1 :: 2 :: Nil)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool = exists(x -> x == 1, Nel(1, Nil)) == true
+
+    @test
+    def exists02(): Bool = exists(x -> x == 2, Nel(1, Nil)) == false
+
+    @test
+    def exists03(): Bool = exists(x -> x == 1, Nel(1, 2 :: Nil)) == true
+
+    @test
+    def exists04(): Bool = exists(x -> x == 2, Nel(1, 2 :: Nil)) == true
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool = forall(x -> x == 1, Nel(1, Nil)) == true
+
+    @test
+    def forall02(): Bool = forall(x -> x == 2, Nel(1, Nil)) == false
+
+    @test
+    def forall03(): Bool = forall(x -> x == 1, Nel(1, 1 :: Nil)) == true
+
+    @test
+    def forall04(): Bool = forall(x -> x == 1, Nel(1, 2 :: Nil)) == false
+
+    @test
+    def forall05(): Bool = forall(x -> x == 1, Nel(2, 1 :: Nil)) == false
+
 }
