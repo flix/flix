@@ -28,10 +28,10 @@ namespace Validation {
     /// Applies the function in `v1` to the value in `v2`.
     ///
     pub def ap(v1: Validation[a -> b, e], v2: Validation[a, e]): Validation[b, e] = match (v1, v2) {
-        case (Success(f), Success(v))   => Success(f(v))
-        case (_,          Failure(e))   => Failure(e)
-        case (Failure(e), _         )   => Failure(e)
-        case (Failure(e1), Failure(e2)) => Failure(Nel.append(e1, e2))
+        case (Success(f), Success(v)) => Success(f(v))
+        case (Success(_), Failure(e)) => Failure(e)
+        case (Failure(e), Success(_)) => Failure(e)
+        case (Failure(x), Failure(y)) => Failure(Nel.append(x, y))
     }
 
     ///

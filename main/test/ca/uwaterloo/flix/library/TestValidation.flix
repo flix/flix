@@ -16,6 +16,15 @@ namespace Validation {
     @test
     def ap04(): Bool = ap(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))) == Failure(Nel(123, 456 :: Nil))
 
+    @test
+    def ap05(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def ap06(): Bool = ap(Failure(Nel(1, Nil)), (Failure(Nel(2, 3 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def ap07(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, 4 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: 4 :: Nil))
+
     /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
