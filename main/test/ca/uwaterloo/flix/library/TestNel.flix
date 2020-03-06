@@ -369,4 +369,17 @@ namespace Nel {
     @test
     def zipWith04(): Bool = zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel(2, 4 :: Nil)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // unzip                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unzip01(): Bool = unzip(Nel((1, 1), Nil)) == (Nel(1, Nil), Nel(1, Nil))
+
+    @test
+    def unzip02(): Bool = unzip(Nel((1, 1), (2, 2) :: Nil)) == (Nel(1, 2 :: Nil), Nel(1, 2 :: Nil))
+
+    @test
+    def unzip03(): Bool = unzip(Nel((1, 1), (2, 2) :: (3, 3) :: Nil)) == (Nel(1, 2 :: 3 :: Nil), Nel(1, 2 :: 3 :: Nil))
+
 }
