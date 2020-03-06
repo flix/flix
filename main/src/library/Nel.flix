@@ -151,8 +151,6 @@ namespace Nel {
 
     // TODO: permutations
 
-    // TODO: removeIndex
-
     // TODO: subsequences
 
     ///
