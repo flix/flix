@@ -177,6 +177,28 @@ namespace Nel {
     def mapWithIndex03(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatMap01(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def flatMap02(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: Nil)) == Nel(2, 3 :: Nil)
+
+    @test
+    def flatMap03(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
+
+    @test
+    def flatMap04(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, Nil)) == Nel(1, 1 :: Nil)
+
+    @test
+    def flatMap05(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: Nil)
+
+    @test
+    def flatMap06(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

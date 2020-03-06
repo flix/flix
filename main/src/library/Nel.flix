@@ -125,7 +125,14 @@ namespace Nel {
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
     }
 
-    // TODO: flatMap
+    ///
+    /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
+    ///
+    pub def flatMap(f: a -> Nel[b] & e, xs: Nel[a]): Nel[b] & e = match xs {
+        case Nel(h, l) => match f(h) {
+            case Nel(h1, l1) => Nel(h1, l1 ::: List.flatMap(x -> toList(f(x)), l))
+        }
+    }
 
     ///
     /// Returns the reverse of `xs`.
@@ -142,8 +149,6 @@ namespace Nel {
     ///
     pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
 
-    // TODO: patch
-
     // TODO: permutations
 
     // TODO: removeIndex
@@ -159,8 +164,6 @@ namespace Nel {
     }
 
     // TODO: intercalate
-
-    // TODO: flatMap
 
     ///
     /// Alias for `foldLeft`.
