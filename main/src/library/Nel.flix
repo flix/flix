@@ -216,7 +216,12 @@ namespace Nel {
         case Nel(h, l) => (if (f(h)) 1 else 0) + List.count(f, l)
     }
 
-    // TODO: Flatten
+    ///
+    /// Returns the concatenation of the elements in `xs`.
+    ///
+    pub def flatten(xs: Nel[Nel[a]]): Nel[a] = match xs {
+        case Nel(Nel(h, ys), zs) => ??? // TODO: need to toList
+    }
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
@@ -271,6 +276,13 @@ namespace Nel {
         case Nel((a, b), l) =>
             let (l1, l2) = List.unzip(l);
             (Nel(a, l1), Nel(b, l2))
+    }
+
+    ///
+    /// Returns `xs` as a normal list.
+    ///
+    pub def toList(xs: Nel[a]): List[a] = match xs {
+        case Nel(h, l) => h :: l
     }
 
 }

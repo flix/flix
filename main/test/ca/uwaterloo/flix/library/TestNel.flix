@@ -382,4 +382,17 @@ namespace Nel {
     @test
     def unzip03(): Bool = unzip(Nel((1, 1), (2, 2) :: (3, 3) :: Nil)) == (Nel(1, 2 :: 3 :: Nil), Nel(1, 2 :: 3 :: Nil))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool = toList(Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def toList02(): Bool = toList(Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
+
+    @test
+    def toList03(): Bool = toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
 }
