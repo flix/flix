@@ -35,8 +35,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.Var(sym, tpe, loc) => State.ret(Expression.Var(sym, tpe, loc))
 
-        case Expression.Eff(sym, tpe, loc) => State.ret(Expression.Eff(sym, tpe, loc))
-
         case Expression.Lambda(args, body, tpe, loc) => for {
           b <- labelExp(body)
         } yield Expression.Lambda(args, b, tpe, loc)
@@ -160,15 +158,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           e2 <- labelExp(exp2)
         } yield Expression.Assign(e1, e2, tpe, loc)
 
-        case Expression.HandleWith(exp, bindings, tpe, loc) => for {
-          e <- labelExp(exp)
-          bs <- State.sequence(bindings map {
-            case HandlerBinding(sym, handler) => for {
-              h <- labelExp(handler)
-            } yield HandlerBinding(sym, h)
-          })
-        } yield Expression.HandleWith(e, bs, tpe, loc)
-
         case Expression.Existential(fparam, exp, loc) => for {
           e <- labelExp(exp)
         } yield Expression.Existential(fparam, e, loc)
@@ -185,16 +174,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
             } yield CatchRule(sym, clazz, b)
           })
         } yield Expression.TryCatch(e, rs, tpe, loc)
-
-        case Expression.NativeConstructor(constructor, args, tpe, loc) => for {
-          as <- State.sequence(args map labelExp)
-        } yield Expression.NativeConstructor(constructor, as, tpe, loc)
-
-        case Expression.NativeField(field, tpe, loc) => State.ret(Expression.NativeField(field, tpe, loc))
-
-        case Expression.NativeMethod(method, args, tpe, loc) => for {
-          as <- State.sequence(args map labelExp)
-        } yield Expression.NativeMethod(method, as, tpe, loc)
 
         case Expression.NewChannel(exp, tpe, loc) => for {
           e <- labelExp(exp)
@@ -222,10 +201,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.ProcessSpawn(exp, tpe, loc) => for {
           e <- labelExp(exp)
         } yield Expression.ProcessSpawn(e, tpe, loc)
-
-        case Expression.ProcessSleep(exp, tpe, loc) => for {
-          e <- labelExp(exp)
-        } yield Expression.ProcessSleep(e, tpe, loc)
 
         case Expression.ProcessPanic(msg, tpe, loc) => State.ret(Expression.ProcessPanic(msg, tpe, loc))
 
@@ -257,16 +232,13 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.HoleError(sym, tpe, loc) => State.ret(Expression.HoleError(sym, tpe, loc))
         case Expression.MatchError(tpe, loc) => State.ret(Expression.MatchError(tpe, loc))
-        case Expression.SwitchError(tpe, loc) => State.ret(Expression.SwitchError(tpe, loc))
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-        case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-        case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case LabeledExpression(label, exp) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       }
@@ -303,8 +275,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.Def(sym, tpe, loc) => State.ret()
 
         case Expression.Var(sym, tpe, loc) => State.ret()
-
-        case Expression.Eff(sym, tpe, loc) => State.ret()
 
         case Expression.Lambda(args, body, tpe, loc) => lam =>
           val (_, lam_) = (for {
@@ -433,15 +403,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- lambdasExp(exp2)
         } yield ()
 
-        case Expression.HandleWith(exp, bindings, tpe, loc) => for {
-          _ <- lambdasExp(exp)
-          _ <- State.sequence(bindings map {
-            case HandlerBinding(sym, handler) => for {
-              _ <- lambdasExp(handler)
-            } yield ()
-          })
-        } yield ()
-
         case Expression.Existential(fparam, exp, loc) => for {
           _ <- lambdasExp(exp)
         } yield ()
@@ -457,16 +418,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
               _ <- lambdasExp(body)
             } yield ()
           })
-        } yield ()
-
-        case Expression.NativeConstructor(constructor, args, tpe, loc) => for {
-          _ <- State.sequence(args map lambdasExp)
-        } yield ()
-
-        case Expression.NativeField(field, tpe, loc) => State.ret()
-
-        case Expression.NativeMethod(method, args, tpe, loc) => for {
-          _ <- State.sequence(args map lambdasExp)
         } yield ()
 
         case Expression.NewChannel(exp, tpe, loc) => for {
@@ -493,10 +444,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         } yield ()
 
         case Expression.ProcessSpawn(exp, tpe, loc) => for {
-          _ <- lambdasExp(exp)
-        } yield ()
-
-        case Expression.ProcessSleep(exp, tpe, loc) => for {
           _ <- lambdasExp(exp)
         } yield ()
 
@@ -530,16 +477,13 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.HoleError(sym, tpe, loc) => State.ret()
         case Expression.MatchError(tpe, loc) => State.ret()
-        case Expression.SwitchError(tpe, loc) => State.ret()
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-        case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-        case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       }
 
@@ -565,8 +509,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.Def(sym, tpe, loc) => State.ret()
 
         case Expression.Var(sym, tpe, loc) => State.ret()
-
-        case Expression.Eff(sym, tpe, loc) => State.ret()
 
         case Expression.Lambda(args, body, tpe, loc) => for {
           _ <- visitExp(body)
@@ -691,15 +633,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- visitExp(exp2)
         } yield ()
 
-        case Expression.HandleWith(exp, bindings, tpe, loc) => for {
-          _ <- visitExp(exp)
-          _ <- State.sequence(bindings map {
-            case HandlerBinding(sym, handler) => for {
-              _ <- visitExp(handler)
-            } yield ()
-          })
-        } yield ()
-
         case Expression.Existential(fparam, exp, loc) => for {
           _ <- visitExp(exp)
         } yield ()
@@ -715,16 +648,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
               _ <- visitExp(body)
             } yield ()
           })
-        } yield ()
-
-        case Expression.NativeConstructor(constructor, args, tpe, loc) => for {
-          _ <- State.sequence(args map (e => visitExp(e)))
-        } yield ()
-
-        case Expression.NativeField(field, tpe, loc) => State.ret()
-
-        case Expression.NativeMethod(method, args, tpe, loc) => for {
-          _ <- State.sequence(args map (e => visitExp(e)))
         } yield ()
 
         case Expression.NewChannel(exp, tpe, loc) => for {
@@ -751,10 +674,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         } yield ()
 
         case Expression.ProcessSpawn(exp, tpe, loc) => for {
-          _ <- visitExp(exp)
-        } yield ()
-
-        case Expression.ProcessSleep(exp, tpe, loc) => for {
           _ <- visitExp(exp)
         } yield ()
 
@@ -788,16 +707,13 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.HoleError(sym, tpe, loc) => State.ret()
         case Expression.MatchError(tpe, loc) => State.ret()
-        case Expression.SwitchError(tpe, loc) => State.ret()
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
-        case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
-        case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case LabeledExpression(label, exp) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
       }
@@ -845,8 +761,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
         case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc)
-
-        case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
 
         case Expression.Lambda(args, body, tpe, loc) =>
           val b = inliner(body)
@@ -982,15 +896,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           val e2 = inliner(exp2)
           Expression.Assign(e1, e2, tpe, loc)
 
-        case Expression.HandleWith(exp, bindings, tpe, loc) =>
-          val e = inliner(exp)
-          val bs = bindings map {
-            case HandlerBinding(sym, handler) =>
-              val h = inliner(handler)
-              HandlerBinding(sym, h)
-          }
-          Expression.HandleWith(e, bs, tpe, loc)
-
         case Expression.Existential(fparam, exp, loc) =>
           val e = inliner(exp)
           Expression.Existential(fparam, e, loc)
@@ -1007,16 +912,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
               CatchRule(sym, clazz, b)
           }
           Expression.TryCatch(e, rs, tpe, loc)
-
-        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-          val as = args map inliner
-          Expression.NativeConstructor(constructor, as, tpe, loc)
-
-        case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, tpe, loc)
-
-        case Expression.NativeMethod(method, args, tpe, loc) =>
-          val as = args map inliner
-          Expression.NativeMethod(method, as, tpe, loc)
 
         case Expression.NewChannel(exp, tpe, loc) =>
           val e = inliner(exp)
@@ -1044,10 +939,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.ProcessSpawn(exp, tpe, loc) =>
           val e = inliner(exp)
           Expression.ProcessSpawn(e, tpe, loc)
-
-        case Expression.ProcessSleep(exp, tpe, loc) =>
-          val e = inliner(exp)
-          Expression.ProcessSleep(e, tpe, loc)
 
         case Expression.ProcessPanic(msg, tpe, loc) => Expression.ProcessPanic(msg, tpe, loc)
 
@@ -1079,16 +970,13 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
         case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
-        case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-        case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-        case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       }
 

@@ -556,7 +556,6 @@ object SimplifiedAstOps {
     case Expression.Str(lit) => mutable.LinkedHashSet.empty
     case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
     case Expression.Def(sym, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.Eff(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
       freeVars(body).filterNot { v => bound.contains(v._1) }
@@ -596,16 +595,12 @@ object SimplifiedAstOps {
     case Expression.Ref(exp, tpe, loc) => freeVars(exp)
     case Expression.Deref(exp, tpe, loc) => freeVars(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.HandleWith(exp, bindings, tpe, loc) => freeVars(exp) ++ bindings.flatMap(b => freeVars(b.exp))
     case Expression.Existential(fparam, exp, loc) =>
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
     case Expression.Universal(fparam, exp, loc) =>
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
     case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
-    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
-    case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
     case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
 
@@ -624,8 +619,6 @@ object SimplifiedAstOps {
 
     case Expression.ProcessSpawn(exp, tpe, loc) => freeVars(exp)
 
-    case Expression.ProcessSleep(exp, tpe, loc) => freeVars(exp)
-
     case Expression.ProcessPanic(msg, tpe, loc) => mutable.LinkedHashSet.empty
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
@@ -641,16 +634,13 @@ object SimplifiedAstOps {
 
     case Expression.HoleError(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
 
     case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyCloTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
