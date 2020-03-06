@@ -104,7 +104,7 @@ namespace Nel {
     ///
     /// That is, the result is of the form: `f(x1) :: f(x2) :: ...`.
     ///
-    pub def map(f: a -> b, xs: Nel[a]): Nel[b] = match xs {
+    pub def map(f: a -> b & e, xs: Nel[a]): Nel[b] & e = match xs {
         case Nel(h, l) => Nel(f(h), List.map(f, l))
     }
 
@@ -304,6 +304,15 @@ namespace Nel {
     ///
     pub def toList(xs: Nel[a]): List[a] = match xs {
         case Nel(h, l) => h :: l
+    }
+
+    ///
+    /// Applies `f` to every element of `xs`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~> Unit, xs: Nel[a]): Unit & Impure = match xs {
+        case Nel(h, l) => f(h); List.foreach(f, l)
     }
 
     ///

@@ -24,9 +24,15 @@ pub enum Validation[t, e] {
 
 namespace Validation {
 
-    // TODO: app
-    // TODO: combine
-    // TODO: ensure
+    ///
+    /// Applies the function in `v1` to the value in `v2`.
+    ///
+    pub def ap(v1: Validation[t -> u & f, e], v2: Validation[t, e]): Validation[u, e] & f = match (v1, v2) {
+        case (Success(f), Success(v)) => Success(f(v))
+        case (Success(_), Failure(e)) => Failure(e)
+        case (Failure(e), Success(_)) => Failure(e)
+        case (Failure(x), Failure(y)) => Failure(Nel.append(x, y))
+    }
 
     ///
     /// Returns `t` if `v` is `Success(t).` Otherwise returns `d`.
@@ -34,6 +40,14 @@ namespace Validation {
     pub def getWithDefault(v: Validation[t, e], d: t): t = match v {
         case Success(t) => t
         case Failure(_) => d
+    }
+
+    ///
+    /// Returns `v1` if it is `Success(v)`. Otherwise returns `v2`.
+    ///
+    pub def withDefault(v1: Validation[t, e], v2: Validation[t, e]): Validation[t, e] = match v1 {
+        case Success(_) => v1
+        case Failure(_) => v2
     }
 
     ///
@@ -54,34 +68,46 @@ namespace Validation {
         case Failure(_) => true
     }
 
-    // TODO: foldLeft
-    // TODO: foldRight
-    // TODO: getOrElse
-    // TODO: leftMap
-
     ///
     /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.
     ///
-    pub def map(f: t -> u, v: Validation[t, e]): Validation[u, e] = match v {
+    pub def map(f: t -> u & f, v: Validation[t, e]): Validation[u, e] & f = match v {
         case Success(t) => Success(f(t))
         case Failure(e) => Failure(e)
     }
 
-    // TODO: orElse
-
-    // TODO: sequence
-
-    // TODO: traverse
+    ///
+    /// Returns `Success(v1 :: v2 :: ... :: vn)` if each of `xs_i` is `Success(v_i)`.
+    ///
+    /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
+    ///
+    pub def sequence(xs: List[Validation[t, e]]): Validation[List[t], e] = match xs {
+        case Nil     => Success(Nil)
+        case v :: vs => match (v, sequence(vs)) {
+            case (Success(x), Success(rs)) => Success(x :: rs)
+            case (Success(_), Failure(e))  => Failure(e)
+            case (Failure(e), Success(_))  => Failure(e)
+            case (Failure(x), Failure(y))  => Failure(Nel.append(x, y))
+        }
+    }
 
     ///
-    /// Swaps the success and failure values.
+    /// Returns `Success(v1 :: v2 :: ... v :: vn)` if each of `f(xs_i)` is `Success(v_i)`.
     ///
-    /// Returns `Success(e)` if `v` is `Failure(e)`.
-    /// Returns `Failure(t)` if `v` is `Success(t)`.
+    /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
-    pub def swap(v: Validation[t, e]): Validation[Nel[e], v] = match v {
-        case Success(t) => Failure(Nel(t, Nil))
-        case Failure(e) => Success(e)
+    pub def traverse(f: a -> Validation[b, e] & f, xs: List[a]): Validation[List[b], e] & f = match xs {
+        case Nil        => Success(Nil)
+        case v :: vs    => match f(v) {
+            case Success(x) => match traverse(f, vs) {
+                case Success(rs) => Success(x :: rs)
+                case Failure(e)  => Failure(e)
+            }
+            case Failure(x) => match traverse(f, vs) {
+               case Success(_) => Failure(x)
+               case Failure(y) => Failure(Nel.append(x, y))
+           }
+        }
     }
 
     ///
