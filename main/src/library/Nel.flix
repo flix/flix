@@ -99,8 +99,6 @@ namespace Nel {
         }
     }
 
-    // TODO: scan, scanLeft, scanRight
-
     ///
     /// Returns the result of applying `f` to every element in `xs`.
     ///
@@ -110,42 +108,78 @@ namespace Nel {
         case Nel(h, l) => Nel(f(h), List.map(f, l))
     }
 
-    // TODO: mapWithIndex
+    ///
+    /// Returns the result of applying `f` to every element in `xs` along with that element's index.
+    ///
+    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    ///
+    pub def mapWithIndex(f: (a, Int32) -> b & e, xs: Nel[a]): Nel[b] & e = match xs {
+        case Nel(h, l) => Nel(f(h, 0), mapWithIndexHelper(f, l, 1))
+    }
 
-    // TODO: flatMap
+    ///
+    /// Helper function for `mapWithIndex`.
+    ///
+    def mapWithIndexHelper(f: (a, Int32) -> b & e, xs: List[a], i: Int32): List[b] & e = match xs {
+        case Nil     => Nil
+        case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i + 1)
+    }
 
-    // TODO: reverse
+    ///
+    /// Returns the result of applying `f` to every element in `xs` and concatenating the results.
+    ///
+    pub def flatMap(f: a -> Nel[b] & e, xs: Nel[a]): Nel[b] & e = match xs {
+        case Nel(h, l) => match f(h) {
+            case Nel(h1, l1) => Nel(h1, l1 ::: List.flatMap(x -> toList(f(x)), l))
+        }
+    }
 
-    // TODO: rotateLeft
-
-    // TODO: rotateRight
-
-    // TODO: update
+    ///
+    /// Returns the reverse of `xs`.
+    ///
+    pub def reverse(xs: Nel[a]): Nel[a] = match xs {
+        case Nel(h, l) => match List.reverse(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case _       => panic "unreachable"
+        }
+    }
 
     ///
     /// Returns `xs` with every occurrence of `x` replaced by `y`.
     ///
     pub def replace(x: a, y: a, xs: Nel[a]): Nel[a] = map(e -> if (e == x) y else e, xs)
 
-    // TODO: patch
+    ///
+    /// Returns all permutations of `xs` in lexicographical order by element indices in `xs`.
+    ///
+    /// That is, `xs` is the first permutation and `reverse(xs)` is the last permutation.
+    ///
+    pub def permutations(xs: Nel[a]): Nel[List[a]] = match xs {
+        case Nel(h, l) => match List.permutations(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case Nil => panic "unreachable"
+        }
+    }
 
-    // TODO: permutations
+    ///
+    /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
+    ///
+    /// That is, `xs` is the first subsequence and `Nil` is the last subsequence.
+    ///
+    pub def subsequences(xs: Nel[a]): Nel[List[a]] = match xs {
+        case Nel(h, l) => match List.subsequences(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case Nil => panic "unreachable"
+        }
+    }
 
-    // TODO: removeIndex
-
-    // TODO: subsequences
-
-    // TODO: intersperse
-
-    // TODO: intercalate
-
-    // TODO: transpose
-
-    // TODO: isPrefixOf
-
-    // TODO: isInfixOf
-
-    // TODO: isSuffixOf
+    ///
+    /// Returns `xs` with `a` inserted between every two adjacent elements.
+    ///
+    pub def intersperse(a: a, xs: Nel[a]): Nel[a] = match xs {
+        case Nel(h, Nil) => Nel(h, Nil)
+        case Nel(h, l)   => Nel(h, a :: List.intersperse(a, l))
+    }
 
     ///
     /// Alias for `foldLeft`.
@@ -158,7 +192,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b, s: b, xs: Nel[a]): b = match xs {
-        case Nel(h, l) => List.foldLeft(f, f(h, s), l)
+        case Nel(h, l) => List.foldLeft(f, f(s, h), l)
     }
 
     ///
@@ -167,7 +201,7 @@ namespace Nel {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b, s: b, xs: Nel[a]): b = match xs {
-        case Nel(h, l) => f(h, List.foldLeft(f, s, l))
+        case Nel(h, l) => f(h, List.foldRight(f, s, l))
     }
 
     ///
@@ -190,7 +224,10 @@ namespace Nel {
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///
     pub def reduceRight(f: (a, a) -> a, xs: Nel[a]): a = match xs {
-        case Nel(h, l) => List.foldRight(f, h, l)
+        case Nel(h, l) => match List.reduceRight(f, h :: l) {
+            case None    => panic "unreachable"
+            case Some(v) => v
+        }
     }
 
     ///
@@ -200,7 +237,12 @@ namespace Nel {
         case Nel(h, l) => (if (f(h)) 1 else 0) + List.count(f, l)
     }
 
-    // TODO: Flatten
+    ///
+    /// Returns the concatenation of the elements in `xs`.
+    ///
+    pub def flatten(xs: Nel[Nel[a]]): Nel[a] = match xs {
+        case Nel(Nel(h, ys), zs) => Nel(h, ys ::: List.flatMap(toList, zs))
+    }
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
@@ -226,22 +268,6 @@ namespace Nel {
             else
                 List.filter(f, l)
     }
-
-    // TODO: slice
-
-    // TODO: partition
-
-    // TODO: span
-
-    // TODO: drop
-
-    // TODO: dropWhile
-
-    // TODO: take
-
-    // TODO: takeWhile
-
-    // TODO: groupBy
 
     ///
     /// Returns a non-empty list where the element at index `i` is `(a, b)` where
@@ -274,31 +300,18 @@ namespace Nel {
     }
 
     ///
-    /// Returns a non-empty list where the element at index `i` is `f(a, b)` where
-    /// `a` is the element at index `i` in `xs` and `b` is the element at index `i` in `ys`.
+    /// Returns `xs` as a normal list.
     ///
-    /// If either `xs` or `ys` becomes depleted, then no further elements are added to the resulting list.
-    /// Functionally equivalent to zipWith.
+    pub def toList(xs: Nel[a]): List[a] = match xs {
+        case Nel(h, l) => h :: l
+    }
+
     ///
-    pub def map2(f: (a, b) -> c, xs: Nel[a], ys: Nel[b]): Nel[c] = zipWith(f, xs, ys)
-
-    // TODO: flatMap2
-
-    // TODO: fold2
-
-    // TODO: foldLeft2
-
-    // TODO: foldRight2
-
-    // TODO: filterMap
-
-    // TODO: findMap
-
-    // TODO: toString
-
-    // TODO: toSet
-
-    // TODO: toMap
+    /// Returns `true` if and only if `xs` and `ys` and equal.
+    ///
+    pub def __eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) => x == y && l1 == l2
+    }
 
 }
 
