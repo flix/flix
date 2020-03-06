@@ -161,7 +161,17 @@ namespace Nel {
         }
     }
 
-    // TODO: subsequences
+    ///
+    /// Returns all subsequences of `xs` in lexicographical order by element indices in `xs`.
+    ///
+    /// That is, `xs` is the first subsequence and `Nil` is the last subsequence.
+    ///
+    pub def subsequences(xs: Nel[a]): Nel[List[a]] = match xs {
+        case Nel(h, l) => match List.subsequences(h :: l) {
+            case y :: ys => Nel(y, ys)
+            case Nil => panic "unreachable"
+        }
+    }
 
     ///
     /// Returns `xs` with `a` inserted between every two adjacent elements.
