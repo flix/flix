@@ -75,13 +75,12 @@ namespace Domain/Mod3 {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    pub def alpha(i: BigInt): Mod3 =
+    pub def alpha(i: BigInt): Mod3 = {
     // TODO: The verifier must handle errors so it never enters a Switch/MatchError.
-        switch {
-            case (i % 3ii == 1ii) || (i % 3ii == -1ii)  => One
-            case (i % 3ii == 2ii) || (i % 3ii == -2ii)  => Two
-            case true                                   => Zer
-        }
+        if      ((i % 3ii == 1ii) || (i % 3ii == -1ii)) One
+        else if ((i % 3ii == 2ii) || (i % 3ii == -2ii)) Two
+        else                                            Zer
+    }
 
     ///
     /// Over-approximates integer `increment`.

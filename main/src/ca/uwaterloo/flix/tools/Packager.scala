@@ -97,13 +97,13 @@ object Packager {
 
     newFile(mainSourceFile) {
       """// The main entry point.
-        |def main(): Unit = Console.printLine("Hello World!")
+        |def main(): Unit & Impure = Console.printLine("Hello World!")
         |""".stripMargin
     }
 
     newFile(mainTestFile) {
       """@test
-        |def testMain01(): Bool = main() == ()
+        |def testMain01(): Bool & Impure = main() == ()
         |""".stripMargin
     }
   }

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import org.scalatest.{ParallelTestExecution, Suites}
 
 class PhaseSuite extends Suites(
+  new TestParser,
   new TestNamer,
   new TestPatExhaustiveness,
   new TestRedundancy,

@@ -93,10 +93,10 @@ namespace Domain/Sign {
     ///
     /// Abstracts a concrete number into the sign domain.
     ///
-    pub def alpha(i: BigInt): Sign = switch {
-        case i < 0ii    => Neg
-        case i > 0ii    => Pos
-        case true       => Zer
+    pub def alpha(i: BigInt): Sign = {
+        if      (i < 0ii)   Neg
+        else if (i > 0ii)   Pos
+        else                Zer
     }
 
     ///

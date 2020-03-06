@@ -2,6 +2,26 @@
 
 HEAD:
 
+- Added mutable sets and maps (backed by immutable sets and maps for now).
+- Added NonEmptyList.
+- Added spaceship operator.
+- Added binary, octal, and hex literals.
+- Added support for underscores in number literals.
+- Improved the performance of the compiler.
+
+Version 0.11.0:
+
+- Added light-weight polymorphic effects.
+- Defined division by zero to yield zero.
+- Added check for unconditional recursion.
+- Reworked array length from `length[x]` to `x.length`.
+- Removed switch expression.
+
+Version 0.10.0:
+
+- Reworked and improved Java interoperability.
+- Added support for folding on Datalog constraints.
+
 Version 0.9.1:
 
 - Fixed several bugs. 

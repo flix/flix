@@ -89,16 +89,18 @@ namespace Float64 {
     ///
     /// Return a string representation of `x`.
     ///
-    pub def toString(x: Float64): Str =
-        native method flix.runtime.library.InterimReadShow.doubleToString(x) as Str
+    pub def toString(x: Float64): String =
+        import java.lang.Double:toString(Float64);
+        x.toString() as & Pure
 
     ///
     /// Parse the string `s` as a Float64, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def fromString(s: Str): Result[Float64, Str] = try {
-         let i = native method java.lang.Double.parseDouble(s) as Float64;
-         Ok(i)
+    pub def fromString(s: String): Result[Float64, String] = try {
+        import java.lang.String.strip();
+        import java.lang.Double:parseDouble(String);
+        Ok(s.strip().parseDouble()) as & Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
      }

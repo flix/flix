@@ -72,24 +72,6 @@ object Benchmarker {
   }
 
   /**
-    * Returns the median of the given list of longs.
-    */
-  private def median(xs: List[Long]): Long = {
-    if (xs.isEmpty) throw new IllegalArgumentException("Empty list.")
-    if (xs.length == 1) return xs.head
-
-    val l = xs.sorted
-    val n = xs.length
-    if (n % 2 == 0) {
-      val index = n / 2
-      l(index)
-    } else {
-      val index = n / 2
-      (l(index) + l(index + 1)) / 2
-    }
-  }
-
-  /**
     * Sleeps for a little while and tries to run the garbage collector.
     */
   private def sleepAndGC(): Unit = {

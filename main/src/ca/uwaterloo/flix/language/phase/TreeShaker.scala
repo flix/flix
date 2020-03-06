@@ -105,9 +105,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, _, _) =>
         Set(sym)
 
-      case Expression.Eff(_, _, _) =>
-        Set.empty
-
       case Expression.Lambda(_, exp, _, _) =>
         visitExp(exp)
 
@@ -120,17 +117,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDef(sym, args, _, _) =>
         Set(sym) ++ visitExps(args)
 
-      case Expression.ApplyEff(_, args, _, _) =>
-        visitExps(args)
-
       case Expression.ApplyCloTail(exp, args, _, _) =>
         visitExp(exp) ++ visitExps(args)
 
       case Expression.ApplyDefTail(sym, args, _, _) =>
         Set(sym) ++ visitExps(args)
-
-      case Expression.ApplyEffTail(_, args, _, _) =>
-        visitExps(args)
 
       case Expression.ApplySelfTail(sym, _, args, _, _) =>
         Set(sym) ++ visitExps(args)
@@ -210,26 +201,38 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Assign(exp1, exp2, tpe, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.HandleWith(exp, bindings, _, _) =>
-        visitExp(exp) ++ visitExps(bindings.map(_.exp))
-
       case Expression.Existential(_, exp, _) =>
         visitExp(exp)
 
       case Expression.Universal(_, exp, _) =>
         visitExp(exp)
 
+      case Expression.Cast(exp, _, _) =>
+        visitExp(exp)
+
       case Expression.TryCatch(exp, rules, _, _) =>
         visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-      case Expression.NativeConstructor(_, args, _, _) =>
+      case Expression.InvokeConstructor(_, args, _, _) =>
         visitExps(args)
 
-      case Expression.NativeField(_, _, _) =>
+      case Expression.InvokeMethod(_, exp, args, _, _) =>
+        visitExp(exp) ++ visitExps(args)
+
+      case Expression.InvokeStaticMethod(_, args, _, _) =>
+        visitExps(args)
+
+      case Expression.GetField(_, exp, _, _) =>
+        visitExp(exp)
+
+      case Expression.PutField(_, exp1, exp2, _, _) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.GetStaticField(_, _, _) =>
         Set.empty
 
-      case Expression.NativeMethod(_, args, _, _) =>
-        visitExps(args)
+      case Expression.PutStaticField(_, exp, _, _) =>
+        visitExp(exp)
 
       case Expression.NewChannel(exp, _, _) =>
         visitExp(exp)
@@ -246,9 +249,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         rs ++ d
 
       case Expression.ProcessSpawn(exp, _, _) =>
-        visitExp(exp)
-
-      case Expression.ProcessSleep(exp, _, _) =>
         visitExp(exp)
 
       case Expression.ProcessPanic(_, _, _) =>
@@ -277,9 +277,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Set.empty
 
       case Expression.MatchError(_, _) =>
-        Set.empty
-
-      case Expression.SwitchError(_, _) =>
         Set.empty
 
       case Expression.LambdaClosure(_, _, _, _, _) =>

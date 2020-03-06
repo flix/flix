@@ -172,10 +172,10 @@ namespace Domain/IntervalInf {
     def eq(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)                                           => Belnap/Belnap.Bot
         case (_, Bot)                                           => Belnap/Belnap.Bot
-        case (Range(b1, e1), Range(b2, e2))   => switch {
-            case (b1 == e1) && ((e1 == b2) && (b2 == e2))       => Belnap/Belnap.True
-            case (e1 < b2) || (e2 < b1)                         => Belnap/Belnap.False
-            case true                                           => Belnap/Belnap.Top
+        case (Range(b1, e1), Range(b2, e2)) => {
+            if      ((b1 == e1) && ((e1 == b2) && (b2 == e2)))     Belnap/Belnap.True
+            else if ((e1 < b2) || (e2 < b1))                       Belnap/Belnap.False
+            else                                                   Belnap/Belnap.Top
         }
         case (Range(b1, e1), Upper(e2))                         => if (b1 > e2) Belnap/Belnap.False else Belnap/Belnap.Top
         case (Upper(e1), Range(b2, e2))                         => if (b2 > e1) Belnap/Belnap.False else Belnap/Belnap.Top
@@ -224,8 +224,6 @@ namespace Domain/IntervalInf {
     //#Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot) #monotoneBelnap2 // TODO
     def lessEqual(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-
-    let IntervalInf<> = (Bot, Top, leq, lub, glb)
 
     // ------------------------------------------------------------------------
     // Specialized Laws

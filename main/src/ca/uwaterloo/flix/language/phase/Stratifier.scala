@@ -112,19 +112,17 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => exp0.toSuccess
 
-    case Expression.Wild(_, _, _) => exp0.toSuccess
+    case Expression.Wild(_, _) => exp0.toSuccess
 
-    case Expression.Var(_, _, _, _) => exp0.toSuccess
+    case Expression.Var(_, _, _) => exp0.toSuccess
 
-    case Expression.Def(_, _, _, _) => exp0.toSuccess
-
-    case Expression.Eff(_, _, _, _) => exp0.toSuccess
+    case Expression.Def(_, _, _) => exp0.toSuccess
 
     case Expression.Hole(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lambda(fparam, e, tpe, eff, loc)
+        case e => Expression.Lambda(fparam, e, tpe, loc)
       }
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
@@ -173,16 +171,6 @@ object Stratifier extends Phase[Root, Root] {
         case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
       }
 
-    case Expression.Switch(rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case (e1, e2) => mapN(visitExp(e1), visitExp(e2)) {
-          case (x, y) => (x, y)
-        }
-      }
-      mapN(rulesVal) {
-        case rs => Expression.Switch(rs, tpe, eff, loc)
-      }
-
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
@@ -193,8 +181,8 @@ object Stratifier extends Phase[Root, Root] {
         case es => Expression.Tuple(es, tpe, eff, loc)
       }
 
-    case Expression.RecordEmpty(tpe, eff, loc) =>
-      Expression.RecordEmpty(tpe, eff, loc).toSuccess
+    case Expression.RecordEmpty(tpe, loc) =>
+      Expression.RecordEmpty(tpe, loc).toSuccess
 
     case Expression.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
@@ -286,22 +274,14 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-      val bindingsVal = traverse(bindings) {
-        case HandlerBinding(sym, b) => visitExp(exp).map(HandlerBinding(sym, _))
-      }
-      mapN(visitExp(exp), bindingsVal) {
-        case (e, bs) => Expression.HandleWith(e, bs, tpe, eff, loc)
+    case Expression.Existential(fparam, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Existential(fparam, e, loc)
       }
 
-    case Expression.Existential(fparam, exp, eff, loc) =>
+    case Expression.Universal(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, eff, loc)
-      }
-
-    case Expression.Universal(fparam, exp, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, eff, loc)
+        case e => Expression.Universal(fparam, e, loc)
       }
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
@@ -314,11 +294,6 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.Cast(e, tpe, eff, loc)
       }
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
-      mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeConstructor(constructor, as, tpe, eff, loc)
-      }
-
     case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
@@ -327,12 +302,37 @@ object Stratifier extends Phase[Root, Root] {
         case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
       }
 
-    case Expression.NativeField(field, tpe, eff, loc) =>
-      Expression.NativeField(field, tpe, eff, loc).toSuccess
-
-    case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeMethod(method, as, tpe, eff, loc)
+        case as => Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+      }
+
+    case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+      mapN(visitExp(exp), traverse(args)(visitExp)) {
+        case (e, as) => Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+      }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+      }
+
+    case Expression.GetField(field, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.GetField(field, e, tpe, eff, loc)
+      }
+
+    case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.PutField(field, e1, e2, tpe, eff, loc)
+      }
+
+    case Expression.GetStaticField(field, tpe, eff, loc) =>
+      Expression.GetStaticField(field, tpe, eff, loc).toSuccess
+
+    case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.PutStaticField(field, e, tpe, eff, loc)
       }
 
     case Expression.NewChannel(exp, tpe, eff, loc) =>
@@ -373,22 +373,17 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.ProcessSpawn(e, tpe, eff, loc)
       }
 
-    case Expression.ProcessSleep(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.ProcessSleep(e, tpe, eff, loc)
-      }
-
     case Expression.ProcessPanic(msg, tpe, eff, loc) =>
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
-    case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
         case _ =>
           val cs = cs0.map(reorder)
-          Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+          Expression.FixpointConstraintSet(cs, tpe, loc)
       }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
@@ -455,17 +450,15 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Str(_, _) => DependencyGraph.empty
 
-    case Expression.Wild(_, _, _) => DependencyGraph.empty
+    case Expression.Wild(_, _) => DependencyGraph.empty
 
-    case Expression.Var(_, _, _, _) => DependencyGraph.empty
+    case Expression.Var(_, _, _) => DependencyGraph.empty
 
-    case Expression.Def(_, _, _, _) => DependencyGraph.empty
-
-    case Expression.Eff(_, _, _, _) => DependencyGraph.empty
+    case Expression.Def(_, _, _) => DependencyGraph.empty
 
     case Expression.Hole(_, _, _, _) => DependencyGraph.empty
 
-    case Expression.Lambda(_, exp, _, _, _) =>
+    case Expression.Lambda(_, exp, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
@@ -495,11 +488,6 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
       }
 
-    case Expression.Switch(rules, _, _, _) =>
-      rules.foldLeft(DependencyGraph.empty) {
-        case (acc, (e1, e2)) => acc + dependencyGraphOfExp(e1) + dependencyGraphOfExp(e2)
-      }
-
     case Expression.Tag(_, _, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
@@ -508,7 +496,7 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
-    case Expression.RecordEmpty(_, _, _) =>
+    case Expression.RecordEmpty(_, _) =>
       DependencyGraph.empty
 
     case Expression.RecordSelect(base, _, _, _, _) =>
@@ -569,15 +557,10 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
-    case Expression.HandleWith(exp, bindings, _, _, _) =>
-      bindings.foldLeft(dependencyGraphOfExp(exp)) {
-        case (acc, HandlerBinding(_, e)) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.Existential(_, exp, _, _) =>
+    case Expression.Existential(_, exp, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.Universal(_, exp, _, _) =>
+    case Expression.Universal(_, exp, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Ascribe(exp, _, _, _) =>
@@ -586,23 +569,37 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Cast(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.NativeConstructor(_, args, _, _, _) =>
-      args.foldLeft(DependencyGraph.empty) {
-        case (acc, e) => acc + dependencyGraphOfExp(e)
-      }
-
     case Expression.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(dependencyGraphOfExp(exp)) {
         case (acc, CatchRule(_, _, e)) => acc + dependencyGraphOfExp(e)
       }
 
-    case Expression.NativeField(_, _, _, _) =>
-      DependencyGraph.empty
-
-    case Expression.NativeMethod(_, args, _, _, _) =>
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(DependencyGraph.empty) {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      args.foldLeft(dependencyGraphOfExp(exp)) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      args.foldLeft(DependencyGraph.empty) {
+        case (acc, e) => acc + dependencyGraphOfExp(e)
+      }
+
+    case Expression.GetField(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
+
+    case Expression.PutField(_, exp1, exp2, _, _, _) =>
+      dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
+
+    case Expression.GetStaticField(_, _, _, _) =>
+      DependencyGraph.empty
+
+    case Expression.PutStaticField(_, exp, _, _, _) =>
+      dependencyGraphOfExp(exp)
 
     case Expression.NewChannel(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
@@ -626,13 +623,10 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ProcessSpawn(exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.ProcessSleep(exp, _, _, _) =>
-      dependencyGraphOfExp(exp)
-
     case Expression.ProcessPanic(_, _, _, _) =>
       DependencyGraph.empty
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {
         case (dg, c) => dg + dependencyGraphOfConstraint(c)
       }

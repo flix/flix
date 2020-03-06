@@ -76,6 +76,7 @@ class Flix {
     "Int64.flix" -> LocalResource.get("/library/Int64.flix"),
     "List.flix" -> LocalResource.get("/library/List.flix"),
     "Map.flix" -> LocalResource.get("/library/Map.flix"),
+    "Nel.flix" -> LocalResource.get("/library/Nel.flix"),
     "Option.flix" -> LocalResource.get("/library/Option.flix"),
     "Path.flix" -> LocalResource.get("/library/Path.flix"),
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
@@ -84,25 +85,27 @@ class Flix {
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
     "String.flix" -> LocalResource.get("/library/String.flix"),
 
+    "MutSet.flix" -> LocalResource.get("/library/MutSet.flix"),
+    "MutMap.flix" -> LocalResource.get("/library/MutMap.flix"),
+
     "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
     "MeetLattice.flix" -> LocalResource.get("/library/MeetLattice.flix"),
     "PartialOrder.flix" -> LocalResource.get("/library/PartialOrder.flix"),
-    "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
+    "Validation.flix" -> LocalResource.get("/library/Validation.flix"),
 
     "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
     "flix/time/Duration.flix" -> LocalResource.get("/library/flix/time/Duration.flix"),
+    "flix/time/Instant.flix" -> LocalResource.get("/library/flix/time/Instant.flix"),
 
 
     "StringBuilder.flix" -> LocalResource.get("/library/StringBuilder.flix"),
 
     //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
     //"Vec.flix" -> LocalResource.get("/library/Vec.flix"),
-
-    //"flix/actor/Actor.flix" -> LocalResource.get("/library/flix/actor/Actor.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),

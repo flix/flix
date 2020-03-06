@@ -82,7 +82,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case class Tuple(args: List[TyCon]) extends TyCon
 
-    case object Array  extends TyCon
+    case object Array extends TyCon
 
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TyCon]) extends TyCon
 
@@ -151,10 +151,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
-        case Expression.Wild(_, _, _) => tast.toSuccess
-        case Expression.Var(_, _, _, _) => tast.toSuccess
-        case Expression.Def(_, _, _, _) => tast.toSuccess
-        case Expression.Eff(_, _, _, _) => tast.toSuccess
+        case Expression.Wild(_, _) => tast.toSuccess
+        case Expression.Var(_, _, _) => tast.toSuccess
+        case Expression.Def(_, _, _) => tast.toSuccess
         case Expression.Hole(_, _, _, _) => tast.toSuccess
         case Expression.Unit(_) => tast.toSuccess
         case Expression.True(_) => tast.toSuccess
@@ -168,7 +167,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(_, _) => tast.toSuccess
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
-        case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
+        case Expression.Lambda(_, body, _, _) => checkPats(body, root).map(const(tast))
         case Expression.Apply(exp1, exp2, tpe, _, loc) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
@@ -199,18 +198,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- sequence(rules map { x => checkPats(x.exp, root) })
           _ <- checkRules(exp, rules, root)
         } yield tast
-        case Expression.Switch(rules, _, _, _) => for {
-          _ <- sequence(rules map (x => for {
-            _ <- checkPats(x._1, root)
-            _ <- checkPats(x._2, root)
-          } yield x))
-        } yield tast
         case Expression.Tag(_, _, exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Tuple(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
 
-        case Expression.RecordEmpty(tpe, eff, loc) =>
+        case Expression.RecordEmpty(tpe, loc) =>
           tast.toSuccess
 
         case Expression.RecordSelect(base, label, tpe, eff, loc) =>
@@ -287,13 +280,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp1, root)
             _ <- checkPats(exp2, root)
           } yield tast
-        case Expression.HandleWith(exp, bs, _, _, _) =>
-          for {
-            _ <- checkPats(exp, root)
-            _ <- sequence(bs.map(b => checkPats(b.exp, root)))
-          } yield tast
-        case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Existential(_, exp, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Universal(_, exp, _) => checkPats(exp, root).map(const(tast))
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
@@ -301,13 +289,38 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp, root)
             _ <- sequence(rules.map(r => checkPats(r.exp, root)))
           } yield tast
-        case Expression.NativeConstructor(_, args, _, _, _) => sequence(args map {
+
+        case Expression.InvokeConstructor(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
-        case Expression.NativeField(_, _, _, _) => tast.toSuccess
-        case Expression.NativeMethod(_, args, _, _, _) => sequence(args map {
-          checkPats(_, root)
-        }).map(const(tast))
+
+        case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+            _ <- sequence(args.map(checkPats(_, root)))
+          } yield tast
+
+        case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+          for {
+            _ <- sequence(args.map(checkPats(_, root)))
+          } yield tast
+
+        case Expression.GetField(_, exp, _, _, _) =>
+          checkPats(exp, root)
+
+        case Expression.PutField(_, exp1, exp2, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
+
+        case Expression.GetStaticField(_, _, _, _) =>
+          tast.toSuccess
+
+        case Expression.PutStaticField(_, exp, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
 
         case Expression.NewChannel(exp, _, _, _) => for {
           _ <- checkPats(exp, root)
@@ -337,14 +350,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp, root)
         } yield tast
 
-        case Expression.ProcessSleep(exp, _, _, _) => for {
-          _ <- checkPats(exp, root)
-        } yield tast
-
         case Expression.ProcessPanic(_, _, _, _) =>
           tast.toSuccess
 
-        case Expression.FixpointConstraintSet(cs, tpe, eff, loc) =>
+        case Expression.FixpointConstraintSet(cs, tpe, loc) =>
           for {
             _ <- traverse(cs)(visitConstraint(_, root))
           } yield tast
@@ -723,7 +732,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Ref) => 0
       case Type.Cst(TypeConstructor.Relation(_)) => 0
       case Type.Cst(TypeConstructor.Lattice(_)) => 0
-      case Type.Arrow(_, length) => length
+      case Type.Arrow(length, _) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1
       case Type.Cst(TypeConstructor.Enum(sym, kind)) => 0 // TODO: Correct?
@@ -737,6 +746,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
+      case Type.Cst(TypeConstructor.Pure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Impure) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Not) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.And) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      case Type.Cst(TypeConstructor.Or) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
       case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
@@ -812,8 +826,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       }
       case Pattern.Tuple(elms, _, _) => TyCon.Tuple(elms.map(patToCtor))
       case Pattern.Array(elm, _, _) => TyCon.Array
-      case Pattern.ArrayTailSpread (elm, _, _, _) => TyCon.Array
-      case Pattern.ArrayHeadSpread (_, elm ,_ ,_) => TyCon.Array
+      case Pattern.ArrayTailSpread(elm, _, _, _) => TyCon.Array
+      case Pattern.ArrayHeadSpread(_, elm, _, _) => TyCon.Array
     }
 
     /**

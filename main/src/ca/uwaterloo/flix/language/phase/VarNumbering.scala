@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.annotation.tailrec
+
 /**
   * Assigns stack offsets to each variable symbol in the program.
   *
@@ -59,33 +61,51 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitExp(e0: Expression, i0: Int): Int = e0 match {
       case Expression.Unit => i0
+
       case Expression.True => i0
+
       case Expression.False => i0
+
       case Expression.Char(lit) => i0
+
       case Expression.Float32(lit) => i0
+
       case Expression.Float64(lit) => i0
+
       case Expression.Int8(lit) => i0
+
       case Expression.Int16(lit) => i0
+
       case Expression.Int32(lit) => i0
+
       case Expression.Int64(lit) => i0
+
       case Expression.BigInt(lit) => i0
+
       case Expression.Str(lit) => i0
+
       case Expression.Var(sym, tpe, loc) => i0
+
       case Expression.Def(sym, tpe, loc) => i0
-      case Expression.Eff(sym, tpe, loc) => i0
+
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
+
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
+
       case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args, i0)
-      case Expression.ApplyEff(sym, args, tpe, loc) => visitExps(args, i0)
+
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
+
       case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args, i0)
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => visitExps(args, i0)
+
       case Expression.ApplySelfTail(sym, formals, args, tpe, loc) => visitExps(args, i0)
+
       case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
@@ -129,9 +149,13 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(exp2, i2)
 
       case Expression.Is(sym, tag, exp, loc) => visitExp(exp, i0)
+
       case Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
+
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
 
       case Expression.RecordEmpty(tpe, loc) => i0
@@ -170,15 +194,18 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(endIndex, i2)
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.Deref(exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val i1 = visitExp(exp, i0)
-        visitExps(bindings.map(_.exp), i1)
+
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
+
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
+
+      case Expression.Cast(exp, tpe, loc) => visitExp(exp, i0)
 
       case Expression.TryCatch(exp, rules, tpe, loc) =>
         val i1 = visitExp(exp, i0)
@@ -189,9 +216,23 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         visitExps(rules.map(_.exp), i2)
 
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
-      case Expression.NativeField(field, tpe, loc) => i0
-      case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
+
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(args, i1)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) => visitExps(args, i0)
+
+      case Expression.GetField(field, exp, tpe, loc) => visitExp(exp, i0)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
+
+      case Expression.GetStaticField(field, tpe, loc) => i0
+
+      case Expression.PutStaticField(field, exp, tpe, loc) => visitExp(exp, i0)
 
       case Expression.NewChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
@@ -224,9 +265,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ProcessSpawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.ProcessSleep(exp, tpe, loc) =>
-        visitExp(exp, i0)
-
       case Expression.ProcessPanic(msg, tpe, loc) =>
         i0
 
@@ -255,17 +293,20 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(exp3, i2)
 
       case Expression.HoleError(sym, tpe, loc) => i0
+
       case Expression.MatchError(tpe, loc) => i0
-      case Expression.SwitchError(tpe, loc) => i0
 
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+
       case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**
       * Returns the next available stack offset.
       */
+    @tailrec
     def visitExps(es: List[Expression], i: Int): Int = es match {
       case Nil => i
       case x :: xs =>

@@ -61,17 +61,17 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
     case Abs(x, e) =>
         // An abstraction cannot be reduced.
         (Abs(x, e), Hole)
-    case App(e1, e2) => switch {
-        case isValue(e1) && isValue(e2) =>
+    case App(e1, e2) => {
+        if (isValue(e1) && isValue(e2))
             // An application where both arguments are values can be reduced.
             // Return the expression and the hole evaluation context.
             (e0, Hole)
-        case nonValue(e1) =>
+        else if (nonValue(e1))
             // An application where the first argument is *NOT* a value.
             // Reduction should continue in the first argument.
             let (rdx, ec) = redex(e1);
                 (rdx, EApp1(ec, e2))
-        case isValue(e1) =>
+        else
             // An application where the first argument is a value.
             // Reduction should continue in the second argument.
             let (rdx, ec) = redex(e1);

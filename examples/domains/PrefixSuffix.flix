@@ -43,11 +43,11 @@ namespace Domain/PrefixSuffix {
     def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
         case (Bot, x)                           => x
         case (x, Bot)                           => x
-        case (PreSuf(p1, s1), PreSuf(p2, s2))   => switch {
-            case (p1 == p2) && (s1 == s2)       => PreSuf(p1, s1)
-            case (p1 == p2) && (s1 != s2)       => Pre(p1)
-            case (p1 != p2) && (s1 == s2)       => Suf(s1)
-            case true                           => Top
+        case (PreSuf(p1, s1), PreSuf(p2, s2))   => {
+            if      ((p1 == p2) && (s1 == s2))  PreSuf(p1, s1)
+            else if ((p1 == p2) && (s1 != s2))  Pre(p1)
+            else if ((p1 != p2) && (s1 == s2))  Suf(s1)
+            else                                Top
         }
         case (PreSuf(p1, _), Pre(p2))           => if (p1 == p2) Pre(p1) else Top
         case (Pre(p1), PreSuf(p2, _))           => if (p1 == p2) Pre(p1) else Top
@@ -121,10 +121,10 @@ namespace Domain/PrefixSuffix {
     pub def eq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = match (e1, e2) with {
         case (Bot, _)            => Belnap/Belnap.Bot
         case (_, Bot)            => Belnap/Belnap.Bot
-        case (PreSuf(p1, s1), PreSuf(p2, s2)) => switch {
-            case (p1 != p2) => Belnap/Belnap.False
-            case (s1 != s2) => Belnap/Belnap.False
-            case true       => Belnap/Belnap.Top
+        case (PreSuf(p1, s1), PreSuf(p2, s2)) => {
+            if      (p1 != p2)      Belnap/Belnap.False
+            else if (s1 != s2)      Belnap/Belnap.False
+            else                    Belnap/Belnap.Top
         }
         case (Pre(p1), Pre(p2))           => if (p1 != p2) Belnap/Belnap.False else Belnap/Belnap.Top
         case (Suf(s1), Suf(s2))           => if (s1 != s2) Belnap/Belnap.False else Belnap/Belnap.Top

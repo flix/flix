@@ -177,11 +177,6 @@ object SymbolicEvaluator {
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
-        * Apply Eff.
-        */
-      case Expression.ApplyEff(sym, args, _, _) => ??? // TODO
-
-      /**
         * Apply Closure Tail.
         */
       case Expression.ApplyCloTail(exp, args, _, _) =>
@@ -192,11 +187,6 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyDefTail(sym, args, _, _) =>
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
-
-      /**
-        * Apply Eff Tail.
-        */
-      case Expression.ApplyEffTail(sym, args, _, _) => ??? // TODO
 
       /**
         * Apply Self Tail.
@@ -485,6 +475,8 @@ object SymbolicEvaluator {
               case (pc1, qua1, SymVal.False) => lift(pc1, qua1, SymVal.True)
               case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value:'$v'.")
             }
+
+            case BinaryOperator.Spaceship => throw InternalCompilerException(s"Unexpected operator.")
 
             /**
               * Logical And.
@@ -819,11 +811,6 @@ object SymbolicEvaluator {
       case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
       /**
-        * HandleWith.
-        */
-      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
-
-      /**
         * Existential Quantifier.
         */
       case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
@@ -837,32 +824,29 @@ object SymbolicEvaluator {
           case value => eval(pc0, exp, env0 + (fparam.sym -> value), lenv0, qua0 + (fparam.sym -> value))
         }
 
-      /**
-        * Try Catch.
-        */
+      case Expression.Cast(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
       case Expression.TryCatch(exp, rules, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Native Constructor.
-        */
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Native Field.
-        */
-      case Expression.NativeField(field, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
-      /**
-        * Native Method.
-        */
-      case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.GetField(field, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.GetStaticField(field, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      case Expression.PutStaticField(field, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.NewChannel(tpe, exp, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.GetChannel(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.PutChannel(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.SelectChannel(rules, default, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.ProcessSpawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.ProcessSleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.ProcessPanic(msg, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
@@ -881,11 +865,6 @@ object SymbolicEvaluator {
         * Match Error.
         */
       case Expression.MatchError(tpe, loc) => throw new MatchError(loc.reified)
-
-      /**
-        * Switch Error
-        */
-      case Expression.SwitchError(tpe, loc) => throw new SwitchError(loc.reified)
 
     }
 

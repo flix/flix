@@ -27,3 +27,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Quentin Stiévenart](https://github.com/acieroid)
 - [Stephen Tetley](https://github.com/stephentetley)
 - [Benjamin Dahse](https://github.com/bdahse)
+- [Matthew Lutze](https://github.com/mlutze)

@@ -39,10 +39,10 @@ namespace BigInt {
     ///
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
-    pub def compare(x: BigInt, y: BigInt): Int32 = switch {
-        case x == y  => 0
-        case x < y   => -1
-        case x > y   => 1
+    pub def compare(x: BigInt, y: BigInt): Int32 = {
+        if (x == y)     0
+        else if (x < y) -1
+        else            1
     }
 
     ///
@@ -81,16 +81,18 @@ namespace BigInt {
     ///
     /// Return a string representation of `x`.
     ///
-    pub def toString(x: BigInt): Str =
-        native method flix.runtime.library.InterimReadShow.bigIntegerToString(x) as Str
+    pub def toString(x: BigInt): String =
+        import java.math.BigInteger.toString();
+        x.toString() as & Pure
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
     /// A successful parse is wrapped with `OK(x)`, a parse failure is indicated by `Err(_)`.
     ///
-    pub def fromString(s: Str): Result[BigInt, Str] = try {
-         let i = native method flix.runtime.library.InterimReadShow.bigIntegerFromString(s) as BigInt;
-         Ok(i)
+    pub def fromString(s: String): Result[BigInt, String] = try {
+        import java.lang.String.strip();
+        import new java.math.BigInteger(String) as parseBigInt;
+        Ok(s.strip().parseBigInt()) as & Pure
      } catch {
          case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
      }

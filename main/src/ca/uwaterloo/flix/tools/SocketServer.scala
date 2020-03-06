@@ -28,7 +28,9 @@ import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json4s.JsonAST._
+import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
+import org.json4s.native.JsonMethods._
 
 /**
   * A WebSocket server implementation that receives and evaluates Flix programs.
@@ -66,17 +68,98 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Invoked when a client sends a message.
     */
-  override def onMessage(ws: WebSocket, s: String): Unit = {
+  override def onMessage(ws: WebSocket, data: String): Unit = {
     // Log the length and size of the received data.
-    log(s"Received ${s.length} characters of input (${s.getBytes.length} bytes).")(ws)
+    log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
 
+    // Parse and process request.
+    for {
+      (src, opts) <- parseRequest(data)(ws)
+    } yield {
+      processRequest(src, opts)(ws)
+    }
+  }
+
+  /**
+    * Invoked when an error occurs.
+    */
+  override def onError(ws: WebSocket, e: Exception): Unit = e match {
+    case ex: InternalCompilerException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex: InternalRuntimeException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex => throw ex
+  }
+
+  /**
+    * Parse the request.
+    */
+  private def parseRequest(s: String)(implicit ws: WebSocket): Option[(String, Options)] = try {
+    // Parse the string into a json object.
+    val json = parse(s)
+
+    // Retrieve the source code.
+    val src = json \\ "src" match {
+      case JString(s) => s
+      case _ => ""
+    }
+
+    // --Xallow-redundancies
+    val xallowredundancies = json \\ "xallowredundancies" match {
+      case JBool(b) => b
+      case _ => true
+    }
+
+    // --Xcore
+    val xcore = json \\ "xcore" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    // --Xno-effects
+    val xnoeffects = json \\ "xnoeffects" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    // --Xno-stratifier
+    val xnostratifier = json \\ "xnostratifier" match {
+      case JBool(b) => b
+      case _ => false
+    }
+
+    // Construct the options object.
+    val opts = Options.Default.copy(
+      core = xcore,
+      writeClassFiles = false,
+      xallowredundancies = xallowredundancies,
+      xnoeffects = xnoeffects,
+      xnostratifier = xnostratifier,
+    )
+
+    // Return the source and options.
+    Some((src, opts))
+  } catch {
+    case ex: ParseException =>
+      val msg = s"Malformed request. Unable to parse JSON: '${ex.getMessage}'."
+      log(msg)
+      ws.closeConnection(5000, msg)
+      None
+  }
+
+  /**
+    * Process the request.
+    */
+  private def processRequest(src: String, opts: Options)(implicit ws: WebSocket): Unit = {
     // Log the string.
-    for (line <- s.split("\n")) {
+    for (line <- src.split("\n")) {
       log("  >  " + line)(ws)
     }
 
     // Evaluate the string.
-    val result = eval(s)(ws)
+    val result = eval(src, opts)(ws)
 
     // Log whether evaluation was successful.
     log("")(ws)
@@ -99,25 +182,12 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   }
 
   /**
-    * Invoked when an error occurs.
-    */
-  override def onError(ws: WebSocket, e: Exception): Unit = e match {
-    case ex: InternalCompilerException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex: InternalRuntimeException =>
-      log(s"Unexpected error: ${e.getMessage}")(ws)
-      e.printStackTrace()
-    case ex => throw ex
-  }
-
-  /**
     * Evaluates the given string `input` as a Flix program.
     */
-  private def eval(input: String)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
+  private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
-      mkFlix(input).compile() match {
+      mkFlix(input, opts).compile() match {
         case Success(compilationResult) =>
           // Compilation was successful.
 
@@ -163,9 +233,8 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   /**
     * Returns a fresh Flix object for the given `input` string.
     */
-  private def mkFlix(input: String)(implicit ws: WebSocket): Flix = {
+  private def mkFlix(input: String, opts: Options)(implicit ws: WebSocket): Flix = {
     val flix = new Flix()
-    val opts = Options.Default.copy(writeClassFiles = false, xallowredundancies = true)
     flix.setOptions(opts)
     flix.addStr(input)
   }

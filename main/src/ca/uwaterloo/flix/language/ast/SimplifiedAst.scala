@@ -24,8 +24,6 @@ import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
 object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
-                  effs: Map[Symbol.EffSym, SimplifiedAst.Eff],
-                  handlers: Map[Symbol.EffSym, SimplifiedAst.Handler],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
                   relations: Map[Symbol.RelSym, SimplifiedAst.Relation],
                   lattices: Map[Symbol.LatSym, SimplifiedAst.Lattice],
@@ -36,10 +34,6 @@ object SimplifiedAst {
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation)
-
-  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], tpe: Type, loc: SourceLocation)
-
-  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation)
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation)
 
@@ -60,70 +54,80 @@ object SimplifiedAst {
   object Expression {
 
     case object Unit extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Unit)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Unit
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case object True extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Bool)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Bool
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case object False extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Bool)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Bool
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Char(lit: scala.Char) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Char)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Char
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Float32(lit: scala.Float) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Float32)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Float32
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Float64(lit: scala.Double) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Float64)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Float64
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Int8(lit: scala.Byte) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Int8)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Int8
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Int16(lit: scala.Short) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Int16)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Int16
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Int32(lit: scala.Int) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Int32)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Int32
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Int64(lit: scala.Long) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Int64)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Int64
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class BigInt(lit: java.math.BigInteger) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.BigInt)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.BigInt
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
-      final val tpe = Type.Cst(TypeConstructor.Str)
-      final val loc = SourceLocation.Unknown
+      def tpe: Type = Type.Str
+
+      def loc: SourceLocation = SourceLocation.Unknown
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class Eff(sym: Symbol.EffSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @EliminatedBy(LambdaLift.getClass)
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -144,17 +148,11 @@ object SimplifiedAst {
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @IntroducedBy(ClosureConv.getClass)
-    case class ApplyEff(sym: Symbol.EffSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     @IntroducedBy(Tailrec.getClass)
     case class ApplyCloTail(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    @IntroducedBy(Tailrec.getClass)
-    case class ApplyEffTail(sym: Symbol.EffSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -175,7 +173,7 @@ object SimplifiedAst {
     case class LetRec(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      final val tpe: Type = Type.Cst(TypeConstructor.Bool)
+      def tpe: Type = Type.Bool
     }
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -212,23 +210,31 @@ object SimplifiedAst {
 
     case class Assign(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class HandleWith(exp: SimplifiedAst.Expression, bindings: List[SimplifiedAst.HandlerBinding], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class Existential(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Bool)
+      def tpe: Type = Type.Bool
     }
 
     case class Universal(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
-      def tpe: Type = Type.Cst(TypeConstructor.Bool)
+      def tpe: Type = Type.Bool
     }
+
+    case class Cast(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NativeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class InvokeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class InvokeMethod(method: Method, exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class InvokeStaticMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class GetField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class PutField(field: Field, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class GetStaticField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class PutStaticField(field: Field, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -239,8 +245,6 @@ object SimplifiedAst {
     case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ProcessSpawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class ProcessSleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ProcessPanic(msg: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -259,8 +263,6 @@ object SimplifiedAst {
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
   }
 
@@ -353,7 +355,5 @@ object SimplifiedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type)
-
-  case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression)
 
 }

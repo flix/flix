@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.lang.reflect.Modifier
-
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -161,9 +159,6 @@ object GenExpression {
       visitor.visitInsn(POP)
       AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
 
-    case Expression.ApplyEff(sym, args, tpe, loc) =>
-      throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
-
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
@@ -261,8 +256,6 @@ object GenExpression {
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
       pushDummyValue(visitor, tpe)
-
-    case Expression.ApplyEffTail(sym, args, tpe, loc) => ??? // TODO
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
@@ -484,6 +477,9 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getField",
         AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tpe)), false)
 
+      // Cast the field value to the expected type.
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
     case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -537,12 +533,13 @@ object GenExpression {
       // We push the 'length' of the array on top of stack
       compileInt(visitor, elms.length, isLong = false)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
+      val jvmType = JvmOps.getJvmType(tpe.asInstanceOf[MonoType.Array].tpe)
       // Instantiating a new array of type jvmType
-      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
-        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else { // Happens if the inner type is a primitive type
-        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+      jvmType match {
+        case ref: JvmType.Reference => // Happens if the inner type is an object type
+          visitor.visitTypeInsn(ANEWARRAY, ref.name.toInternalName)
+        case _ => // Happens if the inner type is a primitive type
+          visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // For each element we generate code to store it into the array
       for (i <- 0 until elms.length) {
@@ -726,8 +723,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
-
     case Expression.Existential(params, exp, loc) =>
       // TODO: Better exception.
       addSourceLine(visitor, loc)
@@ -737,6 +732,11 @@ object GenExpression {
       // TODO: Better exception.
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
+
+    case Expression.Cast(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
@@ -785,7 +785,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       visitor.visitLabel(afterTryAndCatch)
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val descriptor = asm.Type.getConstructorDescriptor(constructor)
@@ -808,40 +808,84 @@ object GenExpression {
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.NativeField(field, tpe, loc) =>
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // Fetch a field from an object
-      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
-      val name = field.getName
-      // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
-      val getInsn = if (Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
-      visitor.visitFieldInsn(getInsn, declaration, name, JvmOps.getJvmType(tpe).toDescriptor)
 
-    case Expression.NativeMethod(method, args, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
+      // Evaluate the receiver object.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val thisType = asm.Type.getInternalName(method.getDeclaringClass)
+      visitor.visitTypeInsn(CHECKCAST, thisType)
+
+      // Retrieve the signature.
+      val signature = method.getParameterTypes
+
       // Evaluate arguments left-to-right and push them onto the stack.
-      for ((arg, index) <- args.zipWithIndex) {
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
         compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
-
-        // Cast the this parameter.
-        if (index == 0 && !Modifier.isStatic(method.getModifiers)) {
-          val thisType = asm.Type.getInternalName(method.getDeclaringClass)
-          visitor.visitTypeInsn(CHECKCAST, thisType)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
         }
       }
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
-      // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
-      val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
-      visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, declaration, name, descriptor, false)
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      val signature = method.getParameterTypes
+      for (((arg, argType), index) <- args.zip(signature).zipWithIndex) {
+        compileExpression(arg, visitor, currentClass, lenv0, entryPoint)
+        if (!argType.isPrimitive) {
+          // NB: Really just a hack because the backend does not support array JVM types properly.
+          visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
+        }
+      }
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+      visitor.visitMethodInsn(INVOKESTATIC, declaration, name, descriptor, false)
+      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+          AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
+      }
+
+    case Expression.GetField(field, exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(GETFIELD, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(PUTFIELD, declaration, field.getName, JvmOps.getJvmType(exp2.tpe).toDescriptor)
+
+      // Push Unit on the stack.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+    case Expression.GetStaticField(field, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(GETSTATIC, declaration, field.getName, JvmOps.getJvmType(tpe).toDescriptor)
+
+    case Expression.PutStaticField(field, exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      visitor.visitFieldInsn(PUTSTATIC, declaration, field.getName, JvmOps.getJvmType(exp.tpe).toDescriptor)
+
+      // Push Unit on the stack.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.NewChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -982,35 +1026,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.ProcessSleep(exp, tpe, loc) =>
-      addSourceLine(visitor, loc)
-      // Compile the expression, putting the time to sleep in ns (as a long) on top of the stack
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-
-      // Convert the time into ms and ns
-      // Dup the time
-      visitor.visitInsn(DUP2)
-
-      // Calculate the ns (time % 1.000.000)
-      visitor.visitLdcInsn(1000000L)
-      visitor.visitInsn(LREM)
-      // Cast to int and store for later
-      visitor.visitInsn(L2I)
-      visitor.visitVarInsn(ISTORE, 2)
-
-      // Calculate the ms (time / 1.000.000)
-      visitor.visitLdcInsn(1000000L)
-      visitor.visitInsn(LDIV)
-
-      // Load the ns, putting ns on top of the stack
-      visitor.visitVarInsn(ILOAD, 2)
-
-      // Call Thread.Sleep with the calculated duration in (ms, ns)
-      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(JI)V", false)
-      // Put a Unit value on the stack
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
-        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
-
     case Expression.ProcessPanic(msg, tpe, loc) =>
       // TODO: Throw a more specific exception?
       addSourceLine(visitor, loc)
@@ -1130,86 +1145,143 @@ object GenExpression {
       // stack: [index, acc+, fact]
 
       // Start constructing the tuple
-      // Extract the type of elements that are in the tuple
-      val tupleElmsTypes = f.tpe match {
-        case MonoType.Arrow(List(MonoType.Tuple(ts)), _) => ts
-        case _ => ??? // should not happen because f has been type-checked
-      }
-      // Create a new tuple object
-      val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
-      visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
-      // stack: [index, acc+, fact, tupleType]
-      visitor.visitInsn(DUP_X1)
-      // stack: [index, acc+, tupleType, fact, tupleType]
-      visitor.visitInsn(SWAP)
-      // stack: [index, acc+, tupleType, tupleType, fact]
-
-      // call getHeadPredicate on the fact
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
-        "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
-      // stack: [index, acc+, tupleType, tupleType, headpred]
-      // cast the head predicate to an atom predicate
-      visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName)
-      // call getTerms on the atom predicate
-      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "getTerms",
-        "()[Lflix/runtime/fixpoint/term/Term;", false)
-      // stack: [index, acc+, tupleType, tupleType, terms]
-
-      // this is equivalent to the following, where tupleElements* is empty
-      // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
-
-      for ((tpe, idx) <- tupleElmsTypes.zipWithIndex.reverse) {
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
-        visitor.visitInsn(DUP)
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms]
-        visitor.visitIntInsn(BIPUSH, idx)
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms, index]
-        // get terms[index]
-        visitor.visitInsn(AALOAD)
-
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms[index]]
-        // cast it to a LitTerm
-        visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName)
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, litterm]
-        // call getFunction on it
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
-          "()Ljava/util/function/Function;", false)
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function]
-        // call the function with a new object as argument
-        visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
-        // stack: [index, acc+, tupleType,  tupleType, tupleElements*, terms, function, object]
-        visitor.visitInsn(DUP)
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object, object]
-        // first initialize the object
-        visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
-        // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object]
-        visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
-          "(Ljava/lang/Object;)Ljava/lang/Object;", true)
-        visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
-        // Cast the proxy object into an unboxed value if necessary
-        // call Object ProxyObject.getValue()
-        visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
-        // Cast it, and unbox it if necessary
-        AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
-
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement+]
-        if (AsmOps.getStackSize(JvmOps.getErasedJvmType(tpe)) == 1) {
+      // Extract the type of elements that are in the tuple (if needed)
+      val factType = f.tpe match {
+        case MonoType.Arrow(List(MonoType.Unit), _) =>
+          // stack: [index, acc+, fact]
+          // Remove the fact
+          visitor.visitInsn(POP)
+          // Put a Unit value on the stack
+          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+            AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+          // stack: [index, acc+, "tuple"] (tuple is actually unit here)
+          MonoType.Unit
+        case MonoType.Arrow(List(MonoType.Tuple(tupleElmsTypes)), _) =>
+          // Create a new tuple object
+          val tupleType = JvmOps.getTupleClassType(MonoType.Tuple(tupleElmsTypes))
+          visitor.visitTypeInsn(NEW, tupleType.name.toInternalName)
+          // stack: [index, acc+, fact, tupleType]
+          visitor.visitInsn(DUP_X1)
+          // stack: [index, acc+, tupleType, fact, tupleType]
           visitor.visitInsn(SWAP)
-        } else {
-          visitor.visitInsn(DUP2_X1)
-          visitor.visitInsn(POP2)
-        }
-        // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement+, terms]
+          // stack: [index, acc+, tupleType, tupleType, fact]
+
+          // call getHeadPredicate on the fact
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
+            "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
+          // stack: [index, acc+, tupleType, tupleType, headpred]
+          // cast the head predicate to an atom predicate
+          visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName)
+          // call getTerms on the atom predicate
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "getTerms",
+            "()[Lflix/runtime/fixpoint/term/Term;", false)
+          // stack: [index, acc+, tupleType, tupleType, terms]
+
+          // this is equivalent to the following, where tupleElements* is empty
+          // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
+
+          for ((tpe, idx) <- tupleElmsTypes.zipWithIndex) {
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
+            visitor.visitInsn(DUP)
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms]
+            visitor.visitIntInsn(BIPUSH, idx)
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms, index]
+            // get terms[index]
+            visitor.visitInsn(AALOAD)
+
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, terms[index]]
+            // cast it to a LitTerm
+            visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName)
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, litterm]
+            // call getFunction on it
+            visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
+              "()Ljava/util/function/Function;", false)
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function]
+            // call the function with a new object as argument
+            visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
+            // stack: [index, acc+, tupleType,  tupleType, tupleElements*, terms, function, object]
+            visitor.visitInsn(DUP)
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object, object]
+            // first initialize the object
+            visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
+            // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms, function, object]
+            visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
+              "(Ljava/lang/Object;)Ljava/lang/Object;", true)
+            visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
+            // Cast the proxy object into an unboxed value if necessary
+            // call Object ProxyObject.getValue()
+            visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
+            // Cast it, and unbox it if necessary
+            AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
+
+            // stack: [index, acc, tupleType, tupleType, tupleElements*, terms, tupleElement+]
+            if (AsmOps.getStackSize(JvmOps.getErasedJvmType(tpe)) == 1) {
+              visitor.visitInsn(SWAP)
+            } else {
+              visitor.visitInsn(DUP2_X1)
+              visitor.visitInsn(POP2)
+            }
+            // stack: [index, acc, tupleType, tupleType, tupleElements*, tupleElement+, terms]
+          }
+
+          // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
+          // we can forget terms now
+          visitor.visitInsn(POP)
+
+          // stack: [index, acc+, tupleType, tupleType, tupleElement*]
+          val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getErasedJvmType), JvmType.Void)
+          visitor.visitMethodInsn(INVOKESPECIAL, tupleType.name.toInternalName, "<init>", constructorDescriptor, false)
+          // stack: [index, acc+, tuple] (tupleType is actually the constructed tuple)
+          MonoType.Tuple(tupleElmsTypes)
+
+        case MonoType.Arrow(List(tpe), _) =>
+          // stack: [index, acc+, fact]
+
+          // call getHeadPredicate on the fact
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "getHeadPredicate",
+            "()Lflix/runtime/fixpoint/predicate/Predicate;", false)
+          // stack: [index, acc+, headpred]
+          // cast the head predicate to an atom predicate
+          visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName)
+          // call getTerms on the atom predicate
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "getTerms",
+            "()[Lflix/runtime/fixpoint/term/Term;", false)
+          // stack: [index, acc+, terms]
+
+          // At this point, we now that terms has only one field (because of its type)
+          // So we can safely access terms[0]
+          visitor.visitIntInsn(BIPUSH, 0)
+          visitor.visitInsn(AALOAD)
+
+          // stack: [index, acc+, terms[0]]
+          // cast it to a LitTerm
+          visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName)
+          // stack: [index, acc+, litterm]
+          // call getFunction on it
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "getFunction",
+            "()Ljava/util/function/Function;", false)
+          // stack: [index, acc+, function]
+          // call the function with a new object as argument
+          visitor.visitTypeInsn(NEW, JvmType.Object.name.toInternalName)
+          // stack: [index, acc+, function, object]
+          visitor.visitInsn(DUP)
+          // stack: [index, acc+, function, object, object]
+          // first initialize the object
+          visitor.visitMethodInsn(INVOKESPECIAL, JvmType.Object.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
+          // stack: [index, acc+, function, object]
+          visitor.visitMethodInsn(INVOKEINTERFACE, JvmName.Function.toInternalName, "apply",
+            "(Ljava/lang/Object;)Ljava/lang/Object;", true)
+          visitor.visitTypeInsn(CHECKCAST, JvmName.Runtime.ProxyObject.toInternalName)
+          // Cast the proxy object into an unboxed value if necessary
+          // call Object ProxyObject.getValue()
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.ProxyObject.toInternalName, "getValue", "()Ljava/lang/Object;", false)
+          // Cast it, and unbox it if necessary
+          AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
+          // stack: [index, acc+, "tuple"]
+          tpe
+
+        // Other cases than arrow should not happen due to type-checking phase
       }
-
-      // stack: [index, acc+, tupleType, tupleType, tupleElements*, terms]
-      // we can forget terms now
-      visitor.visitInsn(POP)
-
-      // stack: [index, acc+, tupleType, tupleType, tupleElement*]
-      val constructorDescriptor = AsmOps.getMethodDescriptor(tupleElmsTypes.map(JvmOps.getErasedJvmType), JvmType.Void)
-      visitor.visitMethodInsn(INVOKESPECIAL, tupleType.name.toInternalName, "<init>", constructorDescriptor, false)
-      // stack: [index, acc+, tuple] (tupleType is actually the constructed tuple)
 
       // Now we have the tuple on the top of the stack
       // stack: [index, acc+, tuple]
@@ -1234,7 +1306,7 @@ object GenExpression {
       // stack: [index, acc+, Context, f, tuple, f]
       visitor.visitInsn(SWAP)
       // stack: [index, acc+, Context, f, f, tuple]
-      AsmOps.compileClosureApplication(visitor, f.tpe, List(MonoType.Tuple(tupleElmsTypes)), MonoType.Arrow(List(init.tpe), init.tpe))
+      AsmOps.compileClosureApplication(visitor, f.tpe, List(factType), MonoType.Arrow(List(init.tpe), init.tpe))
       // stack: [index, acc+, f(tuple)]
 
       visitor.visitVarInsn(ALOAD, 1)
@@ -1307,10 +1379,6 @@ object GenExpression {
     case Expression.MatchError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.MatchError, loc)
-
-    case Expression.SwitchError(_, loc) =>
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.SwitchError, loc)
   }
 
   /*
@@ -1475,6 +1543,10 @@ object GenExpression {
    * Exponentiation takes a separate codepath. Values must be cast to doubles (F2D, I2D, L2D; note that bytes and shorts
    * are represented as ints and so we use I2D), then we invoke the static method `math.pow`, and then we have to cast
    * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
+   *
+   * Division also takes a separate codepath in order to implement the defined integer division by zero: n / 0 == 0.
+   * Float types divide normally, but for integer division, divisors are checked for equality with zero. If the divisor
+   * is equal to zero, operands are popped off and zero is pushed onto the stack. Otherwise division occurs normally.
    */
   private def compileArithmeticExpr(e1: Expression,
                                     e2: Expression,
@@ -1506,6 +1578,72 @@ object GenExpression {
         case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
+    } else if (o == BinaryOperator.Divide) {
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+      val div = new Label()
+      val endDiv = new Label()
+      sop match {
+        case Float32Op.Div => visitor.visitInsn(FDIV)
+        case Float64Op.Div => visitor.visitInsn(DDIV)
+        case Int8Op.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(IDIV)
+          visitor.visitLabel(endDiv)
+          visitor.visitInsn(I2B)
+        case Int16Op.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(IDIV)
+          visitor.visitLabel(endDiv)
+          visitor.visitInsn(I2S)
+        case Int32Op.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(IDIV)
+          visitor.visitLabel(endDiv)
+        case Int64Op.Div =>
+          visitor.visitInsn(DUP2)
+          visitor.visitInsn(LCONST_0)
+          visitor.visitInsn(LCMP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(LCONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(LDIV)
+          visitor.visitLabel(endDiv)
+        case BigIntOp.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitFieldInsn(GETSTATIC, JvmName.BigInteger.toInternalName, "ZERO",
+            JvmType.BigInteger.toDescriptor)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "equals",
+            AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+          visitor.visitJumpInsn(IFEQ, div)
+          visitor.visitInsn(POP2)
+          visitor.visitFieldInsn(GETSTATIC, JvmName.BigInteger.toInternalName, "ZERO",
+            JvmType.BigInteger.toDescriptor)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "divide",
+            AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
+          visitor.visitLabel(endDiv)
+        case _ => InternalCompilerException(s"Unexpected sematic operator: $sop.")
+      }
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
@@ -1513,8 +1651,8 @@ object GenExpression {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
         case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
+        case BinaryOperator.Divide => throw InternalCompilerException("BinaryOperator.Divide already handled.")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       sop match {
@@ -1600,6 +1738,7 @@ object GenExpression {
       case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
       case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
       case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
+      case BinaryOperator.Spaceship => throw InternalCompilerException("Unexpected operator.")
     }
     sop match {
       case StringOp.Eq | StringOp.Neq =>

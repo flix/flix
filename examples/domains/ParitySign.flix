@@ -81,10 +81,10 @@ namespace Domain/ParitySign {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    pub def alpha(i: Int): ParitySign = switch {
-        case (i == 0) => Zer
-        case (i <= 0) => if (i % 2 != 0) ONeg else ENeg
-        case (i >= 0) => if (i % 2 != 0) OPos else EPos
+    pub def alpha(i: Int): ParitySign = {
+        if      (i == 0)    Zer
+        else if (i <= 0)    if (i % 2 != 0) ONeg else ENeg
+        else                if (i % 2 != 0) OPos else EPos
     }
 
     ///
