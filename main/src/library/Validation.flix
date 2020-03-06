@@ -27,7 +27,7 @@ namespace Validation {
     ///
     /// Applies the function in `v1` to the value in `v2`.
     ///
-    pub def ap(v1: Validation[a -> b, e], v2: Validation[a, e]): Validation[b, e] = match (v1, v2) {
+    pub def ap(v1: Validation[a -> b & f, e], v2: Validation[a, e]): Validation[b, e] & f = match (v1, v2) {
         case (Success(f), Success(v)) => Success(f(v))
         case (Success(_), Failure(e)) => Failure(e)
         case (Failure(e), Success(_)) => Failure(e)
@@ -71,7 +71,7 @@ namespace Validation {
     ///
     /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.
     ///
-    pub def map(f: t -> u, v: Validation[t, e]): Validation[u, e] = match v {
+    pub def map(f: t -> u & f, v: Validation[t, e]): Validation[u, e] & f = match v {
         case Success(t) => Success(f(t))
         case Failure(e) => Failure(e)
     }
