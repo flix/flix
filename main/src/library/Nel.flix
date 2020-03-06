@@ -306,5 +306,12 @@ namespace Nel {
         case Nel(h, l) => h :: l
     }
 
+    ///
+    /// Returns `true` if and only if `xs` and `ys` and equal.
+    ///
+    pub def __eq(xs: Nel[a], ys: Nel[a]): Bool = match (xs, ys) {
+        case (Nel(x, l1), Nel(y, l2)) => x == y && l1 == l2
+    }
+
 }
 
