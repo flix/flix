@@ -276,11 +276,12 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
         case Expression.Var(sym, tpe, loc) => State.ret(())
 
-        case Expression.Lambda(args, body, tpe, loc) => lam =>
+        case Expression.Lambda(args, body, tpe, loc) => State { lam =>
           val (_, lam_) = lambdasExp(body).map(_ => ())(lam)
           val lams = lam_.getOrElse(tpe, Set())
           val result = lam_ + (tpe -> (lams + Expression.Lambda(args, body, tpe, loc)))
           ((), result)
+        }
 
         case Expression.Apply(exp, args, tpe, loc) => for {
           _ <- lambdasExp(exp)
