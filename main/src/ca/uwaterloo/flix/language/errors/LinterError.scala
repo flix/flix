@@ -10,30 +10,31 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * A common super-type for trivial errors.
   */
 sealed trait LinterError extends CompilationError {
-  val kind = "Trivial Error"
+  val kind = "Lint"
 }
 
 object LinterError {
 
   /**
-    * An error raised to indicate that an expression is trivial.
+    * An error raised to indicate that an expression can be simplified.
     *
     * @param loc the location of the expression.
     */
-  case class TrivialExpression(loc: SourceLocation) extends LinterError {
+  case class Simplify(msg: String, loc: SourceLocation) extends LinterError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Trivial expression: It performs a suspicious computation." << NewLine
+      vt << ">> Lint: " << NewLine
       vt << NewLine
-      vt << Code(loc, "trivial expression.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Ensure that there is not a typo in the expression." << NewLine
-      vt << "  (2)  Simplify the expression to remove the redundancy." << NewLine
-      vt << NewLine
+      vt << s" __" << NewLine
+      vt << s"/  \\        _____________ " << NewLine
+      vt << s"|  |       /             \\" << NewLine
+      vt << s"@  @       | $msg    |" << NewLine
+      vt << s"|| |/      |              |" << NewLine
+      vt << s"|| ||   <--|              |" << NewLine
+      vt << s"|\\_/|      |              |" << NewLine
+      vt << s"\\___/      \\_____________/" << NewLine
       vt
     }
   }

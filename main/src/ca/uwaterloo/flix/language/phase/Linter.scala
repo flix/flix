@@ -53,7 +53,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
     if (lint.sym.name == "leftAdditionByZero") // TODO
-      Some(LinterError.TrivialExpression(SourceLocation.Unknown))
+      Some(LinterError.Simplify("hello", SourceLocation.Unknown))
     else
       None
   }
