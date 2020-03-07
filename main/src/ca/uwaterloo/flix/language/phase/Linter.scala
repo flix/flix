@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
@@ -28,8 +29,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     // Compute all lints in the AST root.
     val lints = lintsOf(root)
 
-    // Compute a list of all definitions in the program.
-    val defs = root.defs.values.toList
+    // Compute a list of all non-lint definitions in the program.
+    val defs = nonLintsOf(root)
 
     // Searches for applicable lints.
     val results = ParOps.parMap(visitDef(_, lints), defs)
@@ -37,7 +38,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check if there were any applicable lints.
     results.flatten match {
       case Nil => root.toSuccess
-      case xs => Failure(LazyList.from(xs.take(10))) // TODO: Only returns the first 10 instances.
+      case xs => Failure(LazyList.from(xs.take(100))) // TODO: Only returns the first 100 instances.
     }
   }
 
@@ -50,16 +51,31 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Computes whether the given lint `l0` is applicable to the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] =
-    Some(LinterError.TrivialExpression(SourceLocation.Unknown))
+  private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
+    if (lint.sym.name == "leftAdditionByZero") // TODO
+      Some(LinterError.TrivialExpression(SourceLocation.Unknown))
+    else
+      None
+  }
+
+  private def unify(exp1: Expression, exp2: Expression): Option[Subst] = ???
 
   /**
     * Returns all lints in the given AST `root`.
     */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
-    case (acc, (sym, defn)) => if (defn.ann.isLint) Lint(defn.exp) :: acc else acc
+    case (acc, (sym, defn)) => if (defn.ann.isLint) Lint(defn.sym, defn.exp) :: acc else acc
   }
 
-  case class Lint(exp: Expression)
+  /**
+    * Returns all non-lints definitions in the given AST `root`.
+    */
+  private def nonLintsOf(root: Root): List[Def] = root.defs.foldLeft(Nil: List[Def]) {
+    case (acc, (sym, defn)) => if (!defn.ann.isLint) defn :: acc else acc
+  }
+
+  case class Lint(sym: Symbol.DefnSym, exp: Expression)
+
+  case class Subst()
 
 }
