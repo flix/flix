@@ -84,6 +84,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     val empty: Subst = Subst()
   }
 
-  case class Subst()
+  case class Subst() {
+
+    def apply(exp0: Expression): Expression = exp0 match {
+      case Expression.Unit(_) => exp0
+
+      case Expression.True(_) => exp0
+
+    }
+
+  }
 
 }
