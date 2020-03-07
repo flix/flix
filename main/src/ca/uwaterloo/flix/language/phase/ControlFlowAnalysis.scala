@@ -17,7 +17,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("CFA") {
     def labelExp(exp0: Expression): State[Int, LabeledExpression] = State { label =>
-      val labeler: State[Int, LabeledExpression] = exp0 match {
+      val labeler: State[Int, Expression] = exp0 match {
         case Expression.Unit => State.ret(exp0)
         case Expression.True => State.ret(exp0)
         case Expression.False => State.ret(exp0)
@@ -277,9 +277,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.Var(sym, tpe, loc) => State.ret()
 
         case Expression.Lambda(args, body, tpe, loc) => lam =>
-          val (_, lam_) = (for {
-            _ <- lambdasExp(body)
-          } yield ())(lam)
+          val (_, lam_) = lambdasExp(body).map(_ => ())(lam)
           val lams = lam_.getOrElse(tpe, Set())
           val result = lam_ + (tpe -> (lams + Expression.Lambda(args, body, tpe, loc)))
           ((), result)
