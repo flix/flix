@@ -17,34 +17,45 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.debug.FormatExpression
+import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
-import ca.uwaterloo.flix.util.{ParOps, Result, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
   def run(root: Root)(implicit flix: Flix): Validation[Root, LinterError] = flix.phase("Linter") {
-    // Finds all lints the in the ast.
+    // Compute all lints in the AST root.
     val lints = lintsOf(root)
 
-    // Every definition in the program.
+    // Compute a list of all definitions in the program.
     val defs = root.defs.values.toList
 
-    // Visit every definition in parallel.
+    // Searches for applicable lints.
     val results = ParOps.parMap(visitDef(_, lints), defs)
 
-    // Collect all the results.
+    // Check if there were any applicable lints.
     results.flatten match {
       case Nil => root.toSuccess
       case xs => Failure(LazyList.from(xs))
     }
   }
 
+  /**
+    * Searches for applicable lints in the given definition `defn0`.
+    */
   private def visitDef(defn: Def, lints: List[Lint]): List[LinterError] =
-    LinterError.TrivialExpression(SourceLocation.Unknown) :: Nil
+    lints.flatMap(visitExp(defn.exp, _))
 
+  /**
+    * Computes whether the given lint `l0` is applicable to the given expression `exp0`.
+    */
+  private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] =
+    Some(LinterError.TrivialExpression(SourceLocation.Unknown))
+
+  /**
+    * Returns all lints in the given AST `root`.
+    */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
     case (acc, (sym, defn)) => if (defn.ann.isLint) Lint(defn.exp) :: acc else acc
   }
