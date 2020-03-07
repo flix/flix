@@ -58,7 +58,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       None
   }
 
-  private def unify(exp1: Expression, exp2: Expression): Option[Subst] = ???
+  private def unify(exp1: Expression, exp2: Expression): Option[Subst] = (exp1, exp2) match {
+    case (Expression.Unit(_), Expression.Unit(_)) => Some(Subst.empty)
+
+
+  }
 
   /**
     * Returns all lints in the given AST `root`.
@@ -75,6 +79,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   case class Lint(sym: Symbol.DefnSym, exp: Expression)
+
+  object Subst {
+    val empty: Subst = Subst()
+  }
 
   case class Subst()
 
