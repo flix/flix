@@ -37,7 +37,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check if there were any applicable lints.
     results.flatten match {
       case Nil => root.toSuccess
-      case xs => Failure(LazyList.from(xs))
+      case xs => Failure(LazyList.from(xs.take(10))) // TODO: Only returns the first 10 instances.
     }
   }
 
