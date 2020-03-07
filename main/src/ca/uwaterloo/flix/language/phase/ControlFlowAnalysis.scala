@@ -772,7 +772,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           if (lams.size == 1) {
             val lam = lams.head
             if (SimplifiedAstOps.freeVars(lam).isEmpty) {
-              Expression.Apply(lam, args, tpe, loc)
+              Expression.Apply(inliner(lam), args, tpe, loc)
             } else {
               Expression.Apply(inliner(lExp), args, tpe, loc)
             }
