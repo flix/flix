@@ -53,7 +53,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
     if (lint.sym.name == "leftAdditionByZero") // TODO
-      Some(LinterError.Simplify("hello", SourceLocation.Unknown))
+      unify(exp0, lint.exp) match {
+        case None => None
+        case Some(_) => Some(LinterError.Simplify("hello", SourceLocation.Unknown))
+      }
     else
       None
   }
@@ -61,14 +64,43 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   private def unify(exp1: Expression, exp2: Expression): Option[Subst] = (exp1, exp2) match {
     case (Expression.Unit(_), Expression.Unit(_)) => Some(Subst.empty)
 
+    case (Expression.True(_), Expression.True(_)) => Some(Subst.empty)
 
+    case (Expression.False(_), Expression.False(_)) => Some(Subst.empty)
+
+    case (Expression.Char(lit1, _), Expression.Char(lit2, _)) if lit1 == lit2 => Some(Subst.empty)
+
+    case (Expression.Float32(lit1, _), Expression.Float32(lit2, _)) if lit1 == lit2 => Some(Subst.empty)
+
+    case (Expression.Float64(lit1, _), Expression.Float64(lit2, _)) if lit1 == lit2 => Some(Subst.empty)
+
+    case (Expression.Int8(lit1, _), Expression.Int8(lit2, _)) if lit1 == lit2 => Some(Subst.empty)
+
+    case (Expression.Int16(lit1, _), Expression.Int16(lit2, _)) if lit1 == lit2 => Some(Subst.empty)
+
+    case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) if lit1 == lit2 => Some(Subst.empty)
+
+    case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
+      unify(exp1, exp2)
+
+    case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
+      for {
+        s1 <- unify(exp11, exp21)
+        s2 <- unify(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
+
+    case _ => None
   }
 
   /**
     * Returns all lints in the given AST `root`.
     */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
-    case (acc, (sym, defn)) => if (defn.ann.isLint) Lint(defn.sym, defn.exp) :: acc else acc
+    case (acc, (sym, defn)) if (defn.ann.isLint) => defn.exp match {
+      case Expression.Universal(_, exp, _) => Lint(defn.sym, exp) :: acc // TODO
+      case _ => Lint(defn.sym, defn.exp) :: acc
+    }
+    case (acc, (sym, defn)) => acc
   }
 
   /**
@@ -92,6 +124,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.True(_) => exp0
 
     }
+
+    def @@(that: Subst): Subst = ??? // TODO
 
   }
 
