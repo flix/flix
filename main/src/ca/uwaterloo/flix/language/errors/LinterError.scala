@@ -25,16 +25,14 @@ object LinterError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Lint: " << NewLine
-      vt << NewLine
-      vt << s" __" << NewLine
-      vt << s"/  \\        _____________ " << NewLine
-      vt << s"|  |       /             \\" << NewLine
-      vt << s"@  @       | $msg    |" << NewLine
-      vt << s"|| |/      |              |" << NewLine
-      vt << s"|| ||   <--|              |" << NewLine
-      vt << s"|\\_/|      |              |" << NewLine
-      vt << s"\\___/      \\_____________/" << NewLine
+      vt << s"   __" << NewLine
+      vt << s"  /  \\        _____________ " << NewLine
+      vt << s"  |  |       /             \\" << NewLine
+      vt << s"  @  @       | Hello!       |" << NewLine
+      vt << s"  || |/      | $msg         |" << NewLine
+      vt << s"  || ||   <--|              |" << NewLine
+      vt << s"  |\\_/|      |              |" << NewLine
+      vt << s"  \\___/      \\_____________/" << NewLine
       vt
     }
   }
