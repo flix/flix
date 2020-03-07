@@ -259,22 +259,22 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- lambdasExp(exp)
         } yield ()
 
-        case Expression.Unit => State.ret()
-        case Expression.True => State.ret()
-        case Expression.False => State.ret()
-        case Expression.Char(lit) => State.ret()
-        case Expression.Float32(lit) => State.ret()
-        case Expression.Float64(lit) => State.ret()
-        case Expression.Int8(lit) => State.ret()
-        case Expression.Int16(lit) => State.ret()
-        case Expression.Int32(lit) => State.ret()
-        case Expression.Int64(lit) => State.ret()
-        case Expression.BigInt(lit) => State.ret()
-        case Expression.Str(lit) => State.ret()
+        case Expression.Unit => State.ret(())
+        case Expression.True => State.ret(())
+        case Expression.False => State.ret(())
+        case Expression.Char(lit) => State.ret(())
+        case Expression.Float32(lit) => State.ret(())
+        case Expression.Float64(lit) => State.ret(())
+        case Expression.Int8(lit) => State.ret(())
+        case Expression.Int16(lit) => State.ret(())
+        case Expression.Int32(lit) => State.ret(())
+        case Expression.Int64(lit) => State.ret(())
+        case Expression.BigInt(lit) => State.ret(())
+        case Expression.Str(lit) => State.ret(())
 
-        case Expression.Def(sym, tpe, loc) => State.ret()
+        case Expression.Def(sym, tpe, loc) => State.ret(())
 
-        case Expression.Var(sym, tpe, loc) => State.ret()
+        case Expression.Var(sym, tpe, loc) => State.ret(())
 
         case Expression.Lambda(args, body, tpe, loc) => lam =>
           val (_, lam_) = lambdasExp(body).map(_ => ())(lam)
@@ -311,7 +311,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           })
         } yield ()
 
-        case Expression.JumpTo(sym, tpe, loc) => State.ret()
+        case Expression.JumpTo(sym, tpe, loc) => State.ret(())
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) => for {
           _ <- lambdasExp(exp1)
@@ -343,7 +343,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- State.sequence(elms map lambdasExp)
         } yield ()
 
-        case Expression.RecordEmpty(tpe, loc) => State.ret()
+        case Expression.RecordEmpty(tpe, loc) => State.ret(())
 
         case Expression.RecordSelect(exp, label, tpe, loc) => for {
           _ <- lambdasExp(exp)
@@ -445,9 +445,9 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- lambdasExp(exp)
         } yield ()
 
-        case Expression.ProcessPanic(msg, tpe, loc) => State.ret()
+        case Expression.ProcessPanic(msg, tpe, loc) => State.ret(())
 
-        case Expression.FixpointConstraintSet(cs0, tpe, loc) => State.ret()
+        case Expression.FixpointConstraintSet(cs0, tpe, loc) => State.ret(())
 
         case Expression.FixpointCompose(exp1, exp2, tpe, loc) => for {
           _ <- lambdasExp(exp1)
@@ -473,8 +473,8 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- lambdasExp(exp3)
         } yield ()
 
-        case Expression.HoleError(sym, tpe, loc) => State.ret()
-        case Expression.MatchError(tpe, loc) => State.ret()
+        case Expression.HoleError(sym, tpe, loc) => State.ret(())
+        case Expression.MatchError(tpe, loc) => State.ret(())
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
@@ -491,22 +491,22 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
     def visitExp(lExp: LabeledExpression): State[(AbstractEnvironment, AbstractCache), Unit] = State { acc =>
       val visitor: State[(AbstractEnvironment, AbstractCache), Unit] = lExp.exp match {
-        case Expression.Unit => State.ret()
-        case Expression.True => State.ret()
-        case Expression.False => State.ret()
-        case Expression.Char(lit) => State.ret()
-        case Expression.Float32(lit) => State.ret()
-        case Expression.Float64(lit) => State.ret()
-        case Expression.Int8(lit) => State.ret()
-        case Expression.Int16(lit) => State.ret()
-        case Expression.Int32(lit) => State.ret()
-        case Expression.Int64(lit) => State.ret()
-        case Expression.BigInt(lit) => State.ret()
-        case Expression.Str(lit) => State.ret()
+        case Expression.Unit => State.ret(())
+        case Expression.True => State.ret(())
+        case Expression.False => State.ret(())
+        case Expression.Char(lit) => State.ret(())
+        case Expression.Float32(lit) => State.ret(())
+        case Expression.Float64(lit) => State.ret(())
+        case Expression.Int8(lit) => State.ret(())
+        case Expression.Int16(lit) => State.ret(())
+        case Expression.Int32(lit) => State.ret(())
+        case Expression.Int64(lit) => State.ret(())
+        case Expression.BigInt(lit) => State.ret(())
+        case Expression.Str(lit) => State.ret(())
 
-        case Expression.Def(sym, tpe, loc) => State.ret()
+        case Expression.Def(sym, tpe, loc) => State.ret(())
 
-        case Expression.Var(sym, tpe, loc) => State.ret()
+        case Expression.Var(sym, tpe, loc) => State.ret(())
 
         case Expression.Lambda(args, body, tpe, loc) => for {
           _ <- visitExp(body)
@@ -541,7 +541,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           })
         } yield ()
 
-        case Expression.JumpTo(sym, tpe, loc) => State.ret()
+        case Expression.JumpTo(sym, tpe, loc) => State.ret(())
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) => for {
           _ <- visitExp(exp1)
@@ -573,7 +573,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- State.sequence(elms map (e => visitExp(e)))
         } yield ()
 
-        case Expression.RecordEmpty(tpe, loc) => State.ret()
+        case Expression.RecordEmpty(tpe, loc) => State.ret(())
 
         case Expression.RecordSelect(exp, label, tpe, loc) => for {
           _ <- visitExp(exp)
@@ -675,9 +675,9 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- visitExp(exp)
         } yield ()
 
-        case Expression.ProcessPanic(msg, tpe, loc) => State.ret()
+        case Expression.ProcessPanic(msg, tpe, loc) => State.ret(())
 
-        case Expression.FixpointConstraintSet(cs0, tpe, loc) => State.ret()
+        case Expression.FixpointConstraintSet(cs0, tpe, loc) => State.ret(())
 
         case Expression.FixpointCompose(exp1, exp2, tpe, loc) => for {
           _ <- visitExp(exp1)
@@ -703,8 +703,8 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
           _ <- visitExp(exp3)
         } yield ()
 
-        case Expression.HoleError(sym, tpe, loc) => State.ret()
-        case Expression.MatchError(tpe, loc) => State.ret()
+        case Expression.HoleError(sym, tpe, loc) => State.ret(())
+        case Expression.MatchError(tpe, loc) => State.ret(())
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${lExp.exp.getClass}'.")
