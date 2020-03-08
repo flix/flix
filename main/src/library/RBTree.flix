@@ -3,7 +3,7 @@ namespace RBTree {
     ///
     /// The red-black tree used by `Set` and `Map`.
     ///
-    /// A red-black tree is a balanced binary tree.
+    /// A red-black tree is a balanced binary search tree.
     /// Each node is either red or black, although a
     /// transitory color double-black is allowed during deletion.
     /// The red-black tree satisfy the following invariants.
@@ -63,9 +63,11 @@ namespace RBTree {
     ///
     def insertHelper(x: a, tree: RBTree[a]): RBTree[a] = match tree {
         case RBLeaf => RBNode(Red, RBLeaf, x, RBLeaf)
-        case RBNode(color, a, y, b) if x < y => balance(RBNode(color, insertHelper(x, a), y, b))
-        case RBNode(color, a, y, b) if x == y => RBNode(color, a, y, b)
-        case RBNode(color, a, y, b) if x > y => balance(RBNode(color, a, y, insertHelper(x, b)))
+        case RBNode(color, a, y, b) =>
+            let cmp = x <=> y;
+            if (cmp < 0) balance(RBNode(color, insertHelper(x, a), y, b))
+            else if (cmp == 0) RBNode(color, a, y, b)
+            else  balance(RBNode(color, a, y, insertHelper(x, b)))
         case _ => tree
     }
 
@@ -132,21 +134,19 @@ namespace RBTree {
     ///
     def deleteHelper(x: a, tree: RBTree[a]): RBTree[a] = match tree {
         case RBLeaf => RBLeaf
-        case RBNode(Red, RBLeaf, y, RBLeaf) if x == y => RBLeaf
-        case RBNode(Red, RBLeaf, y, RBLeaf) if x != y => tree
-        case RBNode(Black, RBLeaf, y, RBLeaf) if x == y => RBBLeaf
-        case RBNode(Black, RBLeaf, y, RBLeaf) if x != y => tree
-        case RBNode(Black, RBNode(Red, RBLeaf, y, RBLeaf), z, RBLeaf) if x < z =>
-            RBNode(Black, deleteHelper(x, RBNode(Red, RBLeaf, y, RBLeaf)), z, RBLeaf)
-        case RBNode(Black, RBNode(Red, RBLeaf, y, RBLeaf), z, RBLeaf) if x == z =>
-            RBNode(Black, RBLeaf, y, RBLeaf)
-        case RBNode(Black, RBNode(Red, RBLeaf, y, RBLeaf), z, RBLeaf) if x > z =>
-            RBNode(Black, RBNode(Red, RBLeaf, y, RBLeaf), z, RBLeaf)
-        case RBNode(c, a, y, b) if x < y => rotate(RBNode(c, deleteHelper(x, a), y, b))
-        case RBNode(c, a, y, b) if x == y =>
-            let (z, e) = minDelete(b);
-            rotate(RBNode(c, a, z, e))
-        case RBNode(c, a, y, b) if x > y => rotate(RBNode(c, a, y, deleteHelper(x, b)))
+        case RBNode(Red, RBLeaf, y, RBLeaf) => if (x <=> y == 0) RBLeaf else tree
+        case RBNode(Black, RBLeaf, y, RBLeaf) => if (x <=> y == 0) RBBLeaf else tree
+        case RBNode(Black, RBNode(Red, RBLeaf, y, RBLeaf), z, RBLeaf) =>
+            let cmp = x <=> z;
+            if (cmp < 0) RBNode(Black, deleteHelper(x, RBNode(Red, RBLeaf, y, RBLeaf)), z, RBLeaf)
+            else if (cmp == 0) RBNode(Black, RBLeaf, y, RBLeaf)
+            else RBNode(Black, RBNode(Red, RBLeaf, y, RBLeaf), z, RBLeaf)
+        case RBNode(c, a, y, b) =>
+            let cmp = x <=> y;
+            if (cmp < 0) rotate(RBNode(c, deleteHelper(x, a), y, b))
+            else if (cmp == 0) let (z, e) = minDelete(b);
+                               rotate(RBNode(c, a, z, e))
+            else rotate(RBNode(c, a, y, deleteHelper(x, b)))
         case _ => tree
     }
 
@@ -159,10 +159,10 @@ namespace RBTree {
     /// Returns true if and only if `tree` contains `x`.
     ///
     pub def contains(x: a, tree: RBTree[a]): Bool = match tree {
-        case RBLeaf => false
-        case RBNode(_, a, y, _) if x < y => contains(x, a)
-        case RBNode(_, _, y, b) if x > y => contains(x, b)
-        case _ => true
+        case RBNode(_, a, y, _) if x <=> y < 0 => contains(x, a)
+        case RBNode(_, _, y, _) if x <=> y == 0 => true
+        case RBNode(_, _, y, b) if x <=> y > 0 => contains(x, b)
+        case _ => false
     }
 
     ///
@@ -181,14 +181,43 @@ namespace RBTree {
         case _ => 0
     }
 
+    ///
+    /// Returns the empty tree.
+    ///
     pub def empty(): RBTree[a] = RBLeaf
 
     ///
-    /// Returns true if and only if `tree` is the empty tree, i.e. `RBLeaf`.
+    /// Returns true if and only if `tree` is the empty tree.
     ///
     pub def isEmpty(tree: RBTree[a]): Bool = match tree {
         case RBNode(_, _, _, _) => false
         case _ => true
+    }
+
+    ///
+    /// Optionally returns the first element of `tree` that satisfies the predicate `f` when searching from left to right.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def findLeft(f: a -> Bool, tree: RBTree[a]): Option[a] = match tree {
+        case RBNode(_, a, x, b) => match findLeft(f, a) {
+            case Some(y) => Some(y)
+            case _ => if (f(x)) Some(x) else findLeft(f, b)
+        }
+        case _ => None
+    }
+
+    ///
+    /// Optionally returns the first element of `tree` that satisfies the predicate `f` when searching from right to left.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def findRight(f: a -> Bool, tree: RBTree[a]): Option[a] = match tree {
+        case RBNode(_, a, x, b) => match findRight(f, b) {
+            case Some(y) => Some(y)
+            case _ => if (f(x)) Some(x) else findRight(f, a)
+        }
+        case _ => None
     }
 
     ///
@@ -209,6 +238,32 @@ namespace RBTree {
     }
 
     ///
+    /// Helper function for `reduceLeft` and `reduceRight`.
+    ///
+    pub def reduceHelper(f: (a, a) -> a, this: a, that: Option[a]): a = match that {
+        case Some(c) => f(c, this)
+        case _ => this
+    }
+
+    ///
+    /// Applies `f` to all elements in `tree` going from left to right, , i.e. inorder until a single value `v` is obtained. Returns `Some(v)`.
+    /// Returns `None` if `tree` is the empty tree.
+    ///
+    pub def reduceLeft(f: (a, a) -> a, tree: RBTree[a]): Option[a] = match tree {
+        case RBNode(_, a, x, b) => Some(reduceHelper(f, reduceHelper(f, x, reduceLeft(f, a)), reduceLeft(f, b)))
+        case _ => None
+    }
+
+    ///
+    /// Applies `f` to all elements in `tree` going from right to left, , i.e. reverse inorder until a single value `v` is obtained. Returns `Some(v)`.
+    /// Returns `None` if `tree` is the empty tree.
+    ///
+    pub def reduceRight(f: (a, a) -> a, tree: RBTree[a]): Option[a] = match tree {
+        case RBNode(_, a, x, b) => Some(reduceHelper(f, reduceHelper(f, x, reduceRight(f, b)), reduceRight(f, a)))
+        case _ => None
+    }
+
+    ///
     /// Optionally returns the left most element of `tree`.
     ///
     pub def leftMost(tree: RBTree[a]): Option[a] = match tree {
@@ -223,6 +278,65 @@ namespace RBTree {
         case RBNode(_, b, x, _) => if (isEmpty(b)) Some(x) else rightMost(b)
         case _ => None
     }
+
+    ///
+    /// Returns `true` if and only if at least one element in `tree` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `xs` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def exists(f: a -> Bool, tree: RBTree[a]): Bool = match tree {
+        case RBNode(_, a, x, b) => f(x) || exists(f, a) || exists(f, b)
+        case _ => false
+    }
+
+    ///
+    /// Returns `true` if and only if all elements in `tree` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `xs` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def forall(f: a -> Bool, tree: RBTree[a]): Bool = match tree {
+        case RBNode(_, a, x, b) => forall(f, a) && f(x) && forall(f, b)
+        case _ => false
+    }
+
+    ///
+    /// Applies `f` to every element of `tree`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: a ~> Unit, tree: RBTree[a]): Unit & Impure = match tree {
+        case RBNode(_, a, x, b) => foreach(f, a); f(x); foreach(f, b)
+        case _ => ()
+    }
+
+    ///
+    /// Helper function for `cmp`.
+    ///
+    def cmpHelper(this: RBTree[a], that: RBTree[a], a: Option[a], b: Option[a]): Int32 = match a {
+        case Some(x) => match b {
+            case Some(y) =>
+                let cmp = x <=> y;
+                if (cmp < 0) -1
+                else if (cmp == 0) cmpHelper(this, that, findLeft(m -> m <=> x > 0, this), findLeft(n -> n <=> y > 0, that))
+                else 1
+            case None => 1
+        }
+        case None => -1
+    }
+
+    ///
+    /// Returns the result of a three-way comparison between `this` and `that`.
+    ///
+    /// Returns n < 0 if `this` is lexicographically smaller than `that`.
+    /// Returns n = 0 if `this` is equal to `that`.
+    /// Returns n > 0 if `this` is lexicographically greater than `that`.
+    ///
+    pub def __cmp(this: RBTree[a], that: RBTree[a]): Int32 =
+        if (isEmpty(this) && isEmpty(that)) 0 else cmpHelper(this, that, leftMost(this), leftMost(that))
 
     ///
     /// Returns a rudimentary string representation of `tree`.

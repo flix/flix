@@ -39,7 +39,7 @@ namespace RBSet {
         RBSet(RBTree.delete(x, es))
 
     ///
-    /// Returns true if and only if `xs` is the empty set, i.e. `RBSet(Leaf)`.
+    /// Returns true if and only if `xs` is the empty set.
     ///
     pub def isEmpty(xs: RBSet[a]): Bool =
         let RBSet(es) = xs;
@@ -76,10 +76,8 @@ namespace RBSet {
     /// The function `f` must be pure.
     ///
     pub def findLeft(f: a -> Bool, xs: RBSet[a]): Option[a] =
-        let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-        if (isEmpty(result)) None
-        else let RBSet(es) = result;
-        RBTree.leftMost(es)
+        let RBSet(es) = xs;
+        RBTree.findLeft(f, es)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
@@ -87,10 +85,8 @@ namespace RBSet {
     /// The function `f` must be pure.
     ///
     pub def findRight(f: a -> Bool, xs: RBSet[a]): Option[a] =
-        let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-        if (isEmpty(result)) None
-        else let RBSet(es) = result;
-        RBTree.rightMost(es)
+        let RBSet(es) = xs;
+        RBTree.findRight(f, es)
 
     ///
     /// Alias for `foldLeft`.
@@ -125,28 +121,31 @@ namespace RBSet {
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    /// TODO: Fix, how to get first value as initial?
     pub def reduceLeft(f: (a, a) -> a & e, xs: RBSet[a]): Option[a] & e =
-        if (isEmpty(xs)) None else Some(foldLeft(f, empty(), xs))
+        let RBSet(es) = xs;
+        RBTree.reduceLeft(f, es)
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `xs` is the empty set.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, xs: RBSet[a]): Option[a] & e = ???
+    pub def reduceRight(f: (a, a) -> a & e, xs: RBSet[a]): Option[a] & e =
+        let RBSet(es) = xs;
+        RBTree.reduceRight(f, es)
 
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a -> Bool, xs: RBSet[a]): Int32 = fold((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
+    pub def count(f: a -> Bool, xs: RBSet[a]): Int32 = foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
     ///
     /// Returns the union of the elements in `xs`.
     ///
-    pub def flatten(xs: RBSet[RBSet[a]]): RBSet[a] = ???
+    pub def flatten(xs: RBSet[RBSet[a]]): RBSet[a] =
+        foldLeft((acc, x) -> union(acc, x), empty(), xs)
 
     ///
     /// Returns `true` if and only if at least one element in `xs` satisfies the predicate `f`.
@@ -156,8 +155,8 @@ namespace RBSet {
     /// The function `f` must be pure.
     ///
     pub def exists(f: a -> Bool, xs: RBSet[a]): Bool =
-        let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-        !isEmpty(result)
+        let RBSet(es) = xs;
+        RBTree.exists(f, es)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
@@ -167,20 +166,22 @@ namespace RBSet {
     /// The function `f` must be pure.
     ///
     pub def forall(f: a -> Bool, xs: RBSet[a]): Bool =
-        let result = foldLeft((acc, x) -> if (f(x)) insert(x, acc) else acc, empty(), xs);
-        size(xs) == size(result)
+        let RBSet(es) = xs;
+        RBTree.forall(f, es)
 
     ///
     /// Returns the union of `xs` and `ys`.
     ///
     pub def union(xs: RBSet[a], ys: RBSet[a]): RBSet[a] =
-        foldLeft((acc, x) -> insert(x, acc), ys, xs)
+        if (size(xs) > size(ys)) foldLeft((acc, x) -> insert(x, acc), xs, ys) else union(ys, xs)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
     pub def intersection(xs: RBSet[a], ys: RBSet[a]): RBSet[a] =
-        foldLeft((acc, x) -> if (memberOf(x, xs) && memberOf(x, ys)) insert(x, acc) else acc, empty(), xs)
+        if (size(xs) > size(ys))
+        foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
+        else intersection(ys, xs)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.
@@ -191,7 +192,9 @@ namespace RBSet {
     ///
     /// Returns all subsets of `xs`.
     ///
-    pub def subsets(xs: RBSet[a]): RBSet[RBSet[a]] = ???
+    /// TODO: Make compiler agree that this should work
+    pub def subsets(xs: RBSet[a]): RBSet[RBSet[a]] =
+        foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
     ///
     /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
@@ -212,14 +215,16 @@ namespace RBSet {
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
-    pub def flatMap(f: a -> RBSet[b] & e, xs: RBSet[a]): RBSet[b] & e = ???
+    pub def flatMap(f: a -> RBSet[b] & e, xs: RBSet[a]): RBSet[b] & e =
+        foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def replace(x: a, y: a, xs: RBSet[a]): RBSet[a] = map(e -> if (e == x) y else e, xs)
+    pub def replace(x: a, y: a, xs: RBSet[a]): RBSet[a] =
+        if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
@@ -229,7 +234,8 @@ namespace RBSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def partition(f: a -> Bool, xs: RBSet[a]): (RBSet[a], RBSet[a]) = ???
+    pub def partition(f: a -> Bool, xs: RBSet[a]): (RBSet[a], RBSet[a]) =
+        foldLeft((acc, x) -> let (a, b) = acc; if (f(x)) (insert(x, a), b) else (a, insert(x, b)), (empty(), empty()), xs)
 
     ///
     /// Returns the set `xs` as a list.
@@ -242,19 +248,34 @@ namespace RBSet {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(xs: RBSet[(a, b)]): Map[a, b] = ???
+    /// TODO: Optimize
+    pub def toMap(xs: RBSet[(a, b)]): Map[a, b] = List.toMap(toList(xs))
 
     ///
     /// Applies `f` to every element of `xs`.
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~> Unit, xs: RBSet[a]): Unit & Impure = ???
+    pub def foreach(f: a ~> Unit, xs: RBSet[a]): Unit & Impure =
+        let RBSet(es) = xs;
+        RBTree.foreach(f, es)
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
     ///
     pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
+
+    ///
+    /// Returns the result of a three-way comparison between `xs` and `ys`.
+    ///
+    /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
+    /// Returns n = 0 if `xs` is equal to `ys`.
+    /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
+    ///
+    pub def __cmp(xs: RBSet[a], ys: RBSet[a]): Int32 =
+        let RBSet(a) = xs;
+        let RBSet(b) = ys;
+        RBTree.__cmp(a, b)
 
     ///
     /// Helper function for `range`.
@@ -276,7 +297,7 @@ namespace RBSet {
     /// Note: Currently only supports RBSet[Int32].
     pub def toString(xs: RBSet[Int32]): Str =
         "RBSet(" +
-            fold((acc: Str, x: Int32) ->
+            foldLeft((acc: Str, x: Int32) ->
                 if (String.isEmpty(acc)) Int32.toString(x)
                 else acc + ", " + Int32.toString(x), "", xs)
          + ")"
