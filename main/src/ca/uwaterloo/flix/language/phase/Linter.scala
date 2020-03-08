@@ -116,10 +116,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty substitution.
       */
-    val empty: Substitution = Substitution()
+    val empty: Substitution = Substitution(Map.empty)
   }
 
-  case class Substitution() {
+  case class Substitution(m: Map[Symbol.VarSym, Expression]) {
 
     /**
       * Applies the substitution to the given expression.
@@ -145,48 +145,46 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Int64(_, _) => exp0
 
+      case Expression.BigInt(_, _) => exp0
 
+      case Expression.Str(_, _) => exp0
 
-      //        case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
-      //          def tpe: Type = Type.BigInt
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
-      //          def tpe: Type = Type.Str
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+      case Expression.Wild(_, _) => exp0
+
+      case Expression.Var(sym, _, _) => m.get(sym) match {
+        case None => exp0
+        case Some(e) => e
+      }
+
+      case Expression.Def(_, _, _) => exp0
+
+      case Expression.Hole(_, _, _, _) => exp0
+
       //        case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       //          def eff: Type = Type.Pure
       //        }
       //
-      //        case class Apply(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.Apply(e1, e2, tpe, eff, loc)
+
+      case Expression.Unary(op, exp, tpe, eff, loc) =>
+        val e = apply(e)
+        Expression.Unary(op, e, tpe, eff, loc)
+
+      case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.Binary(op, e1, e2, tpe, eff, loc)
+
       //        case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+
+
       //        case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -295,6 +293,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       //        case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
+
+      case _ => ???
 
     }
 
