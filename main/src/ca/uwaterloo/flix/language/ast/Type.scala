@@ -196,6 +196,11 @@ object Type {
     */
   val Impure: Type = Type.Cst(TypeConstructor.Impure)
 
+  /**
+    * Represents the empty record row.
+    */
+  val EmptyRecordRow: Type = Type.Cst(TypeConstructor.EmptyRecordRow)
+
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -368,6 +373,15 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
   }
+
+  /**
+    * Extends the record row `rest` with the given type and label.
+    */
+  def mkExtendRecordRow(label: String, tpe: Type, rest: Type): Type = {
+    val extendedRow = mkApply(Type.Cst(TypeConstructor.ExtendedRecordRow(label)), List(tpe, rest))
+    Type.Apply(Type.Cst(TypeConstructor.Record), extendedRow)
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Type Class Instances                                                    //

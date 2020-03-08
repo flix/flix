@@ -93,21 +93,24 @@ object TypeConstructor {
     /**
       * The shape of a record is Record[r] where r is of kind RecordRow.
       */
-    def kind: Kind = Kind.RecordRowSet -> Kind.Star
+    def kind: Kind = Kind.RecordRow -> Kind.Star
   }
 
   /**
-    * A type constructor that represents the type of empty record row sets.
+    * A type constructor that represents the type of empty record rows.
     */
-  case object EmptyRecordRowSet extends TypeConstructor {
-    def kind: Kind = Kind.RecordRowSet
+  case object EmptyRecordRow extends TypeConstructor {
+    def kind: Kind = Kind.RecordRow
   }
 
   /**
-    * A type constructor that represents the type of extended record row sets.
+    * A type constructor that represents the type of extended record rows.
     */
-  case object ExpandedRecordRowSet extends TypeConstructor {
-    def kind: Kind = Kind.Star -> Kind.RecordRowSet -> Kind.RecordRowSet
+  case class ExtendedRecordRow(label: String) extends TypeConstructor {
+    /**
+      * The shape of an extended record row is ExtendedRecordRow[t,r] where r is of kind RecordRow.
+      */
+    def kind: Kind = Kind.Star -> Kind.RecordRow -> Kind.RecordRow
   }
 
   /**

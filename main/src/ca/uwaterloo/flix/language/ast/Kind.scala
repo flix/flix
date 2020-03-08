@@ -45,7 +45,7 @@ object Kind {
   /**
     * The kind of records row sets.
     */
-  case object RecordRowSet extends Kind
+  case object RecordRow extends Kind
 
   /**
     * The kind of predicate sets.
@@ -84,7 +84,7 @@ object Kind {
   implicit object ShowInstance extends Show[Kind] {
     def show(a: Kind): String = a match {
       case Kind.Star => "*"
-      case Kind.Record => "Record"
+      case Kind.RecordRow => "RecordRow"
       case Kind.Schema => "Schema"
       case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"

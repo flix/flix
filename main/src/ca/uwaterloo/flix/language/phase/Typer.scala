@@ -598,7 +598,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  { } : { }
         //
         for {
-          resultType <- unifyTypM(tvar, Type.RecordEmpty, loc)
+          resultType <- unifyTypM(tvar, Type.Apply(Type.Cst(TypeConstructor.Record), Type.EmptyRecordRow), loc)
         } yield (resultType, Type.Pure)
 
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
@@ -607,8 +607,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // -------------------------
         // r.label : tpe
         //
-        val freshRowVar = Type.freshTypeVarXXXDeprecated()
-        val expectedType = Type.RecordExtend(label, tvar, freshRowVar)
+        val freshRowVar = Type.freshTypeVarWithKind(Kind.RecordRow)
+        val expectedType = Type.mkExtendRecordRow(label, tvar, freshRowVar)
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, expectedType, loc)
@@ -624,7 +624,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
-          resultTyp <- unifyTypM(tvar, Type.RecordExtend(label, tpe1, tpe2), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkExtendRecordRow(label, tpe1, tpe2), loc)
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (resultTyp, resultEff)
 
@@ -637,7 +637,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val freshRowVar = Type.freshTypeVarXXXDeprecated()
         for {
           (tpe, eff) <- visitExp(exp)
-          recordType <- unifyTypM(tpe, Type.RecordExtend(label, freshFieldType, freshRowVar), loc)
+          recordType <- unifyTypM(tpe, Type.mkExtendRecordRow(label, freshFieldType, freshRowVar), loc)
           resultTyp <- unifyTypM(tvar, freshRowVar, loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
