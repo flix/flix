@@ -22,6 +22,34 @@ namespace Path {
         import new java.io.File(String) as newFile;
         Path(newFile(s))
 
+    pub def combine(xs: List[String]): Path & Impure = {
+        import new java.util.StringJoiner(##java.lang.CharSequence) as newStringJoiner;
+        import java.util.StringJoiner.add(##java.lang.CharSequence);
+        import java.util.StringJoiner.toString();
+
+        let joiner = newStringJoiner("/" as ##java.lang.CharSequence);
+        let joined = List.foldLeft((j, s) -> j.add(s as ##java.lang.CharSequence), joiner, xs);
+        new(joined.toString())
+    }
+
+    pub def add(p: Path, s: String): Path & Impure = {
+        import java.io.File.toPath();
+        import java.nio.file.Path.resolve(String);
+        import java.nio.file.Path.toFile();
+        import java.nio.file.Path.normalize();
+
+        let Path(javaFile) = p;
+        let path = javaFile.toPath();
+        let combined = path.resolve(s).normalize();
+        Path(combined.toFile())
+    }
+
+    pub def workingDirectory(): Result[Path, IOError] & Impure = tryWithCatch(_ -> {
+        import java.io.File.getAbsoluteFile();
+        let Path(javaFile) = new("");
+        Path(javaFile.getAbsoluteFile())
+    })
+
     ///
     /// Returns `true` if the given path `p` exists.
     ///

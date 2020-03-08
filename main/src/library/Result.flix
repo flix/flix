@@ -97,6 +97,11 @@ namespace Result {
         case Err(w) => Err(w)
     }
 
+    pub def mapErr(f: e1 -> e2 & f, r: Result[t, e1]): Result[t, e2] & f = match r {
+        case Ok(v) => Ok(v)
+        case Err(w) => Err(f(w))
+    }
+
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
