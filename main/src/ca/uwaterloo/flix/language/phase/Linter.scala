@@ -253,12 +253,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       //        case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
-      //        case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.Ref(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.Ref(e, tpe, eff, loc)
+
+      case Expression.Deref(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.Deref(e, tpe, eff, loc)
+
+      case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.Assign(e1, e2, tpe, eff, loc)
+
       //        case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
       //          def tpe: Type = Type.Bool
       //
