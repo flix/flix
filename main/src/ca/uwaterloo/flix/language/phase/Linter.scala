@@ -200,30 +200,45 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.Tag(sym, tag, e, tpe, eff, loc)
 
-
-
       //        case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.RecordEmpty(_, _) => exp0
+
+      case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.RecordSelect(e, label, tpe, eff, loc)
+
+      case Expression.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.RecordExtend(label, e1, e2, tpe, eff, loc)
+
+      case Expression.RecordRestrict(label, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.RecordRestrict(label, e, tpe, eff, loc)
+
       //        case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.ArrayNew(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.ArrayNew(e1, e2, tpe, eff, loc)
+
+      case Expression.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.ArrayLoad(e1, e2, tpe, eff, loc)
+
+      case Expression.ArrayLength(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.ArrayLength(e, tpe, eff, loc)
+
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        val e3 = apply(exp3)
+        Expression.ArrayStore(e1, e2, e3, tpe, eff, loc)
+
       //        case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
