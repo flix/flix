@@ -173,13 +173,13 @@ namespace RBSet {
     /// Returns the union of `xs` and `ys`.
     ///
     pub def union(xs: RBSet[a], ys: RBSet[a]): RBSet[a] =
-        if (size(xs) > size(ys)) foldLeft((acc, x) -> insert(x, acc), xs, ys) else union(ys, xs)
+        if (size(xs) >= size(ys)) foldLeft((acc, x) -> insert(x, acc), xs, ys) else union(ys, xs)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
     pub def intersection(xs: RBSet[a], ys: RBSet[a]): RBSet[a] =
-        if (size(xs) > size(ys))
+        if (size(xs) >= size(ys))
         foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
         else intersection(ys, xs)
 
@@ -261,11 +261,6 @@ namespace RBSet {
         RBTree.foreach(f, es)
 
     ///
-    /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
-    ///
-    pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = isSubsetOf(xs, ys) && size(xs) == size(ys)
-
-    ///
     /// Returns the result of a three-way comparison between `xs` and `ys`.
     ///
     /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
@@ -276,6 +271,11 @@ namespace RBSet {
         let RBSet(a) = xs;
         let RBSet(b) = ys;
         RBTree.__cmp(a, b)
+
+    ///
+    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
+    ///
+    pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = __cmp(xs, ys) == 0
 
     ///
     /// Helper function for `range`.

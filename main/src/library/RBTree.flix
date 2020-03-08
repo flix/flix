@@ -338,6 +338,12 @@ namespace RBTree {
     pub def __cmp(this: RBTree[a], that: RBTree[a]): Int32 =
         if (isEmpty(this) && isEmpty(that)) 0 else cmpHelper(this, that, leftMost(this), leftMost(that))
 
+
+    ///
+    /// Returns `true` if and only if `this` and `that` are equal, i.e. they have the same elements.
+    ///
+    pub def __eq(this: RBTree[a], that: RBTree[a]): Bool = __cmp(this, that) == 0
+
     ///
     /// Returns a rudimentary string representation of `tree`.
     ///
