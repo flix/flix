@@ -132,24 +132,21 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ArrayLength(exp, _, _, _) => visitExp(exp, lint)
 
+      case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
 
+      case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
 
-      //      case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.VectorLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+
+      case Expression.VectorNew(exp, _, _, _, _) => visitExp(exp, lint)
+
+      case Expression.VectorLoad(exp, _, _, _, _) => visitExp(exp, lint)
+
+      case Expression.VectorStore(exp1, _, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.VectorLength(exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.VectorStore(exp1, _, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
       case Expression.Ref(exp, _, _, _) => visitExp(exp, lint)
 
