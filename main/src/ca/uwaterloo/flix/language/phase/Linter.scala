@@ -59,25 +59,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Unit(_) => Nil
 
+      case Expression.True(_) => Nil
 
-      //      case class True(loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Bool
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class False(loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Bool
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Char
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
+      case Expression.False(_) => Nil
+
+      case Expression.Char(_, _) => Nil
+
+
+
       //      case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression { // TODO
       //    def tpe: Type = Type.Float32
       //
