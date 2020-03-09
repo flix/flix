@@ -42,27 +42,34 @@ pub def removeDependency(self: Package, package: String): Package = ???
 // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
 pub def lockPackage(self: Package): List[LockedPackage] = ???
 
+def getProjectDir(name: String): Path -> Path = base -> Path.add(base, name)
+
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
-pub def initPackage(name: String): /* Package */ Result[Path, Error] & Impure = {
-    let getProjectDir = base -> Path.add(base, name);
+pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impure = {
+    let getProjectDir = getProjectDir(name);
 
     let flatMap = Result.flatMap;
     let mapErr = Result.mapErr;
     let map = Result.map;
 
+    // Can't type annotate with `IOError` because it's defined in the `Path` namespace
     let workingDir = Path.workingDirectory(); // Result[Path, IOError]
-    let projectDir = map(d -> getProjectDir(d), workingDir); // Result[Path, IOError]
+    let projectDir = map(getProjectDir, workingDir); // Result[Path, IOError]
     let projectDirExists = flatMap(Path.exists, projectDir); // Result[Bool, IOError]
-    let mapErred = mapErr(_ -> GenericIoError, projectDirExists); // Result[Bool, Error]
 
-    flatMap(b -> if (!b) mapErr(_ -> GenericIoError, projectDir) else {Err(ProjectDirExists) as & Impure}, mapErred) // Result[Path, Error]
+    let test = (b: Path) -> { projectDir as & Impure }; // Path -> Result[Path, IOError]
+
+    // `test` should take a bool, since `projectDirExists` can contain an `Ok(Bool)`. Why does it insist on taking a `Path`?
+    let x = flatMap(test, projectDirExists); // Result[Path, IOError]
+
+    mapErr(_ -> GenericIoError, x) // Result[Path, ErrorFull]
 }
 
-pub enum Error {
+pub enum ErrorFull {
     case ProjectDirExists
     case GenericIoError
 }
 
 def const(a: a): b -> a = _ -> a
 
-pub def main(): Result[Path, Error] & Impure = initPackage("test")
+pub def main(): Result[Path, ErrorFull] & Impure = initPackage("test")
