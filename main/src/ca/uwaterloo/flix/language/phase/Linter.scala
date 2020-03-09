@@ -139,13 +139,21 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def lintOf(sym: Symbol.DefnSym, exp0: Expression): Option[Lint] = {
     val ctxEquiv = Symbol.mkDefnSym("===")
+    val implies = Symbol.mkDefnSym("implies")
     val popped = popForall(exp0)
 
     popped match {
-      case Expression.Apply(Expression.Apply(Expression.Def(someSym, _, _), left, _, _, _), right, _, _, _) if someSym == ctxEquiv =>
-        Some(Lint(sym, left, right))
+      case Expression.Apply(Expression.Apply(Expression.Def(someSym, _, _), left, _, _, _), right, _, _, _) =>
+        if (someSym == ctxEquiv) {
+          Some(Lint(sym, left, right))
+        } else if (someSym == implies) {
+          None // TODO
+        } else {
+          println(s"Malformed lint: $sym ") // TODO
+          None
+        }
       case _ =>
-        println("Malformed lint") // TODO
+        println(s"Malformed lint: $sym ") // TODO
         None
     }
   }

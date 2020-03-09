@@ -138,27 +138,27 @@ namespace List {
     @lint
     def toSetFlatten(): Bool =
         forall [a] (xs: List[Set[a]]).
-            Set.flatten(List.toSet(xs)) == List.foldLeft((x, y) -> Set.union(x, y), Set.empty(), xs)
+            Set.flatten(List.toSet(xs)) === List.foldLeft((x, y) -> Set.union(x, y), Set.empty(), xs)
 
     @lint
     def foldConjFalse(): Bool =
         forall [a] (xs: List[a]).
-            List.foldLeft((x, y) -> x && y, false, xs) == false
+            List.foldLeft((x, y) -> x && y, false, xs) === false
 
     @lint
     def foldDisjTrue(): Bool =
         forall [a] (xs: List[a]).
-            List.foldLeft((x, y) -> x || y, true, xs) == true
+            List.foldLeft((x, y) -> x || y, true, xs) === true
 
     @lint
     def foldForall(): Bool =
         forall [a] (f: x -> Bool, xs: List[a]).
-            List.foldLeft((x, y) -> x && y, true, List.map(f, xs)) == List.forall(f, xs)
+            List.foldLeft((x, y) -> x && y, true, List.map(f, xs)) === List.forall(f, xs)
 
     @lint
     def foldExists(): Bool =
         forall [a] (f: x -> Bool, xs: List[a]).
-            List.foldLeft((x, y) -> x || y, false, List.map(f, xs)) == List.exists(f, xs)
+            List.foldLeft((x, y) -> x || y, false, List.map(f, xs)) === List.exists(f, xs)
 
     @lint
     def mapAndToSet(): Bool =

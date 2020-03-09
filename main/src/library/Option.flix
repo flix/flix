@@ -275,12 +275,12 @@ namespace Option {
     @lint
     def existsSome(): Bool =
         forall [a] (f: a -> Bool & e, x: a).
-            exists(f, Some(x)) == f(x)
+            exists(f, Some(x)) === f(x)
 
     @lint
     def flattenSome(): Bool =
         forall [a] (o: Option[a]).
-            flatten(Some(o)) == o
+            flatten(Some(o)) === o
 
     @lint
     def filterFilter1(): Bool =
