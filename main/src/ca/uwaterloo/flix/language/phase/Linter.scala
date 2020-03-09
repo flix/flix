@@ -31,6 +31,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     // Compute a list of all non-lint definitions in the program.
     val defs = nonLintsOf(root)
 
+    // TODO: Debug
+    println(s"I found: ${lints.length} to match against ${defs.length} definitions.")
+
+
     // Searches for applicable lints.
     val results = ParOps.parMap(visitDef(_, lints), defs)
 
@@ -353,16 +357,25 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
-      //        case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class ProcessPanic(msg: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.ProcessSpawn(e, tpe, eff, loc)
+
+      case Expression.ProcessPanic(msg, tpe, eff, loc) => exp0
+
       //        case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       //          def eff: Type = Type.Pure
       //        }
       //
-      //        case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.FixpointCompose(e1, e2, tpe, eff, loc)
+
+
+
       //        case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class FixpointProject(sym: Symbol.PredSym, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
