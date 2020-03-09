@@ -58,7 +58,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: DOC
   private def visitExp(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
-    tryLint(exp0, lint) ::: (exp0 match {
+    val recursiveErrors = exp0 match {
 
       case Expression.Unit(_) => Nil
 
@@ -100,17 +100,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
-      //      case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.Let(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.LetRec(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
       case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
 
       case Expression.Stm(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
       //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
 
       case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint)
 
@@ -146,7 +144,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.VectorLength(exp, _, _, _) => visitExp(exp, lint)
 
-      case Expression.VectorStore(exp1, _, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.VectorSlice(exp, _, _, _, _, _) => visitExp(exp, lint)
 
       case Expression.Ref(exp, _, _, _) => visitExp(exp, lint)
 
@@ -163,7 +161,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Cast(exp, _, _, _) => visitExp(exp, lint)
 
       //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
 
       case Expression.InvokeConstructor(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint))
 
@@ -183,31 +180,33 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.GetChannel(exp, _, _, _) => visitExp(exp, lint)
 
-      //      case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
       //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class ProcessPanic(msg: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+
+      case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.ProcessPanic(_, _, _, _) => Nil
+
       //      case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
       //    def eff: Type = Type.Pure
       //    }
       //
-      //      case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class FixpointProject(sym: Symbol.PredSym, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
 
+      case Expression.FixpointCompose(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, lint)
+
+      case Expression.FixpointProject(_, exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
 
       case _ => Nil
-    })
+    }
+
+    tryLint(exp0, lint) ::: recursiveErrors
   }
 
   // TODO: DOC
