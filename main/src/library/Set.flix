@@ -340,8 +340,12 @@ namespace Set {
         case Set(l) => List.foreach(f, l)
     }
 
-
-
+    ///
+    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns `empty()` if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): Set[Int32] = List.toSet(List.range(b, e))
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal, i.e. they have the same elements.
