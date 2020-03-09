@@ -109,7 +109,7 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a -> Bool, xs: List[a]): Option[a] = match xs {
+    pub def findLeft(f: a -> Bool & e, xs: List[a]): Option[a] & e = match xs {
         case Nil => None
         case x :: rs => if (f(x)) Some(x) else findLeft(f, rs)
     }

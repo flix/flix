@@ -42,45 +42,78 @@ pub def removeDependency(self: Package, package: String): Package = ???
 // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
 pub def lockPackage(self: Package): List[LockedPackage] = ???
 
-def _newDirectory(p: Path): Unit = ???
-
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
 pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impure = {
     let getProjectDir = (base) -> Path.add(base, name);
 
+    // Project directories
     let getBuildDir = (base) -> Path.add(getProjectDir(base), "build");
     let getSourceDir = (base) -> Path.add(getProjectDir(base), "src");
     let getTestDir = (base) -> Path.add(getProjectDir(base), "test");
 
+    // Top-level files
     let getPackageFile = (base) -> Path.add(getProjectDir(base), "package.sn");
     let getHistoryFile = (base) -> Path.add(getProjectDir(base), "HISTORY.md");
     let getLicenseFile = (base) -> Path.add(getProjectDir(base), "LICENSE.md");
     let getReadmeFile = (base) -> Path.add(getProjectDir(base), "README.md");
 
+    // Source files
     let getMainSourceFile = (base) -> Path.add(getSourceDir(base), "Main.flix");
     let getMainTestFile = (base) -> Path.add(getTestDir(base), "TestMain.flix");
+
+    let newFile = (content) -> (path) -> {
+        Path.writeLines(path, Array.toList(content))
+    };
 
     let workingDir = Path.workingDirectory();
 
     let files = Array.toList([getPackageFile, getHistoryFile, getLicenseFile, getReadmeFile, getMainSourceFile, getMainTestFile]);
     let dirs = Array.toList([getBuildDir, getSourceDir, getTestDir]);
 
-    let combined: List[Path -> Path] = List.flatten(Array.toList([files, dirs]));
-    let _pathExists = List.find(f -> {
+    // Ensure that none of the path the init process creates are currently present on the system
+    let combined = List.flatten(Array.toList([files, dirs]));
+    let pathExists = List.find(f -> {
         let dir = Result.map(f, workingDir);
         match Result.flatMap(Path.exists, dir) {
             case Ok(exists) => exists
-            case _ => false
+            // Error occurred, detect error as file being present for now
+            case _ => true
         }
     }, combined);
 
-    let _test = List.map(f -> {
-        let dir = Result.map(f, workingDir);
-        Result.flatMap(Path.mkdirs, dir)
-    }, dirs);
+    if (Option.isEmpty(pathExists)) {
+        // Create all directories required for the package
+        List.map(f -> {
+            let dir = Result.map(f, workingDir);
+            Result.flatMap(Path.mkdirs, dir)
+        }, dirs);
 
+        let quote = Char.toString('"');
 
-    Result.mapErr(_ -> GenericIoError, Result.map(getSourceDir, workingDir))
+        // TODO: Abstract this
+        let newPackageFile = newFile(["(package", "  (name " + name + ")", "  (version " + quote + "0.1.0" + quote + ")", ")"]);
+        Result.flatMap(newPackageFile, Result.map(getPackageFile, workingDir));
+
+        let newHistoryFile = newFile(["### v0.1.0", "  Initial Release"]);
+        Result.flatMap(newHistoryFile, Result.map(getHistoryFile, workingDir));
+
+        let newLicenseFile = newFile(["<<ENTER LICENSE INFORMATION>>"]);
+        Result.flatMap(newLicenseFile, Result.map(getLicenseFile, workingDir));
+
+        let newReadmeFile = newFile(["# " + name, "", "Enter some useful information", ""]);
+        Result.flatMap(newReadmeFile, Result.map(getReadmeFile, workingDir));
+
+        let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote + "Hello, World" + quote + ")"]);
+        Result.flatMap(newMainSourceFile, Result.map(getMainSourceFile, workingDir));
+
+        let newMainTestFile = newFile(["@test", "def testMain01(): Bool & Impure = main() == ()"]);
+        Result.flatMap(newMainTestFile, Result.map(getMainTestFile, workingDir));
+
+        // Output something that can be distinguished easily
+        Result.mapErr(_ -> GenericIoError, Result.map(getSourceDir, workingDir))
+    } else {
+        Err(GenericIoError)
+    }
 }
 
 pub enum ErrorFull {
