@@ -25,8 +25,10 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.annotation.tailrec
 
+// TODO: DOC
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  // TODO: DOC
   def run(root: Root)(implicit flix: Flix): Validation[Root, LinterError] = flix.phase("Linter") {
     // Compute all lints in the AST root.
     val lints = lintsOf(root)
@@ -54,6 +56,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     lints.flatMap(visitExp(defn.exp, _))
 
 
+  // TODO: DOC
   private def visitExp(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
     tryLint(exp0, lint) ::: (exp0 match {
 
@@ -65,32 +68,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Char(_, _) => Nil
 
+      case Expression.Float32(_, _) => Nil
 
+      case Expression.Float64(_, _) => Nil
 
-      //      case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Float32
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Float64
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Int8
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Int16
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
+      case Expression.Int8(_, _) => Nil
+
+      case Expression.Int16(_, _) => Nil
+
       //      case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression { // TODO
       //    def tpe: Type = Type.Int32
       //
@@ -256,6 +241,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     })
   }
 
+  // TODO: DOC
   private def tryLint(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
     unify(lint.leftExp, exp0) match {
       case None => Nil
