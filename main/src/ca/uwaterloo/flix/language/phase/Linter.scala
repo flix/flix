@@ -279,6 +279,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //      }
 
     case (Expression.Var(sym, varTyp, _), _) =>
+      if (exp0.isInstanceOf[Expression.Var]) {
+        return None // TODO
+      }
+
       val expTyp = exp0.tpe
       //println(s"canUnify($expTyp, $varTyp)")
       if (canUnify(varTyp, expTyp))
