@@ -309,20 +309,34 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
-      //        case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class InvokeMethod(method: Method, exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class GetField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class PutField(field: Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
+        val as = args.map(apply)
+        Expression.InvokeConstructor(constructor, as, tpe, eff, loc)
+
+      case Expression.InvokeMethod(method, exp, args, tpe, eff, loc) =>
+        val e = apply(exp)
+        val as = args.map(apply)
+        Expression.InvokeMethod(method, e, as, tpe, eff, loc)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, eff, loc) =>
+        val as = args.map(apply)
+        Expression.InvokeStaticMethod(method, as, tpe, eff, loc)
+
+      case Expression.GetField(field, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.GetField(field, e, tpe, eff, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.PutField(field, e1, e2, tpe, eff, loc)
+
+      case Expression.GetStaticField(field, tpe, eff, loc) => exp0
+
+      case Expression.PutStaticField(field, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.PutStaticField(field, e, tpe, eff, loc)
 
       case Expression.NewChannel(exp, tpe, eff, loc) =>
         val e = apply(exp)
