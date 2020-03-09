@@ -163,7 +163,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Hole(_, _, _, _) => exp0
 
-      //        case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      //        case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  TODO
       //          def eff: Type = Type.Pure
       //        }
       //
@@ -182,9 +182,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Binary(op, e1, e2, tpe, eff, loc)
 
-      //        case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      //        case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
       //
-      //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)
@@ -197,7 +197,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Stm(e1, e2, tpe, eff, loc)
 
-      //        case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      //        case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = apply(exp)
@@ -290,13 +290,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
 
-      //        case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      //        case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {  TODO
       //          def tpe: Type = Type.Bool
       //
       //          def eff: Type = Type.Pure
       //        }
       //
-      //        case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
+      //        case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {  TODO
       //          def tpe: Type = Type.Bool
       //
       //          def eff: Type = Type.Pure
@@ -311,7 +311,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         Expression.Cast(e, tpe, eff, loc)
 
 
-      //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
       //
 
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
@@ -355,7 +355,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.PutChannel(e1, e2, tpe, eff, loc)
 
-      //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
       //
 
       case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
@@ -364,7 +364,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ProcessPanic(msg, tpe, eff, loc) => exp0
 
-      //        case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
+      //        case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  TODO
       //          def eff: Type = Type.Pure
       //        }
       //
@@ -374,16 +374,24 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
+      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.FixpointProject(sym, e, tpe, eff, loc)
 
-      //        case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class FixpointProject(sym: Symbol.PredSym, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        val e3 = apply(exp3)
+        Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
 
       case _ => ???
 
