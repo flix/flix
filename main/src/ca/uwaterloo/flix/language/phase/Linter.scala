@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.annotation.tailrec
 
@@ -56,16 +56,18 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Computes whether the given lint `l0` is applicable to the given expression `exp0`.
     */
   private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
-    unify(exp0, lint.leftExp) match {
+    unify(lint.leftExp, exp0) match {
       case None => None
       case Some(subst) => Some(LinterError.Simplify(lint.sym, subst(lint.replacement), exp0.loc))
     }
   }
 
   /**
-    * Optionally return a substitution that makes `exp1` and `exp2` equal.
+    * Optionally return a substitution that makes `lint0` and `exp0` equal.
+    *
+    * NB: Unification is left-biased: variables in the expression are not unified against the lint.
     */
-  private def unify(exp1: Expression, exp2: Expression): Option[Substitution] = (exp1, exp2) match {
+  private def unify(lint0: Expression, exp0: Expression): Option[Substitution] = (lint0, exp0) match {
     case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
 
     case (Expression.True(_), Expression.True(_)) => Some(Substitution.empty)
@@ -84,9 +86,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
 
-    case (Expression.Var(sym, _, _), _) => ???
+    case (Expression.Var(sym, _, _), _) => Some(Substitution.singleton(sym, lint0))
 
-    case (_, Expression.Var(sym, _, _)) => Some(Substitution.singleton(sym, exp1))
+    // NB: Unification is left-biased so there is no case for a variable on the rhs.
 
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unify(exp1, exp2)
@@ -104,7 +106,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns all lints in the given AST `root`.
     */
   private def lintsOf(root: Root): List[Lint] = root.defs.foldLeft(Nil: List[Lint]) {
-    case (acc, (sym, defn)) if defn.ann.isLint => lintOf(sym, defn.exp) :: acc
+    case (acc, (sym, defn)) if defn.ann.isLint => lintOf(sym, defn.exp) match {
+      case None => acc
+      case Some(l) => l :: acc
+    }
     case (acc, (sym, defn)) => acc
   }
 
@@ -127,15 +132,16 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * TODO: DOC
     */
-  private def lintOf(sym: Symbol.DefnSym, exp0: Expression): Lint = {
+  private def lintOf(sym: Symbol.DefnSym, exp0: Expression): Option[Lint] = {
     val ctxEquiv = Symbol.mkDefnSym("===")
     val popped = popForall(exp0)
 
     popped match {
       case Expression.Apply(Expression.Apply(Expression.Def(someSym, _, _), left, _, _, _), right, _, _, _) if someSym == ctxEquiv =>
-        Lint(sym, left, right)
+        Some(Lint(sym, left, right))
       case _ =>
-        throw InternalCompilerException(s"Unexpected lint structure: ${sym}.")
+        println("Malformed lint") // TODO
+        None
     }
   }
 
