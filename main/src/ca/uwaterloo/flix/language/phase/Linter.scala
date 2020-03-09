@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Magnus Madsen
+ *  Copyright 2020 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check if there were any applicable lints.
     results.flatten match {
       case Nil => root.toSuccess
-      case xs => Failure(LazyList.from(xs.take(100))) // TODO: Only returns the first 100 instances.
+      case xs => Failure(LazyList.from(xs))
     }
   }
 
@@ -163,7 +163,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Cast(exp, _, _, _) => visitExp(exp, lint)
 
-      //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
+      case Expression.TryCatch(exp, rules, _, _, _) =>
+        rules.foldLeft(visitExp(exp, lint)) {
+          case (acc, CatchRule(_, _, body)) => visitExp(body, lint) ::: acc
+        }
 
       case Expression.InvokeConstructor(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint))
 
@@ -185,7 +188,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
-      //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        rules.foldLeft(default.map(visitExp(_, lint)).getOrElse(Nil)) {
+          case (acc, SelectChannelRule(_, chan, body)) => visitExp(chan, lint) ::: visitExp(body, lint) ::: acc
+        }
 
       case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, lint)
 
