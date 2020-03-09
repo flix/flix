@@ -42,11 +42,9 @@ pub def removeDependency(self: Package, package: String): Package = ???
 // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
 pub def lockPackage(self: Package): List[LockedPackage] = ???
 
-def getProjectDir(name: String): Path -> Path = base -> Path.add(base, name)
-
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
 pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impure = {
-    let getProjectDir = getProjectDir(name);
+    let getProjectDir = (base) -> Path.add(base, name);
 
     let flatMap = Result.flatMap;
     let mapErr = Result.mapErr;
@@ -57,9 +55,8 @@ pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impur
     let projectDir = map(getProjectDir, workingDir); // Result[Path, IOError]
     let projectDirExists = flatMap(Path.exists, projectDir); // Result[Bool, IOError]
 
-    let test = (b: Path) -> { projectDir as & Impure }; // Path -> Result[Path, IOError]
+    let test = (_) -> { projectDir as & Impure }; // a -> Result[Path, E]
 
-    // `test` should take a bool, since `projectDirExists` can contain an `Ok(Bool)`. Why does it insist on taking a `Path`?
     let x = flatMap(test, projectDirExists); // Result[Path, IOError]
 
     mapErr(_ -> GenericIoError, x) // Result[Path, ErrorFull]
