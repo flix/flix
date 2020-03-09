@@ -511,11 +511,6 @@ namespace Map {
             Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
 
     @lint
-    def useSingleton(): Bool =
-        forall [k, v] (k: k, v: v).
-            Map.insert(k, v, Map.empty()) === Map.singleton(k, v)
-
-    @lint
     def useIsSubmapOf(): Bool =
         forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
             Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
