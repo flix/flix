@@ -104,8 +104,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       //      case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
-      //      case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
 
       case Expression.Stm(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
@@ -128,12 +128,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ArrayNew(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
+      case Expression.ArrayLoad(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.ArrayLength(exp, _, _, _) => visitExp(exp, lint)
 
 
-      //      case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+
       //      case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
@@ -150,6 +150,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       //      case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
+
+      case Expression.Ref(exp, _, _, _) => visitExp(exp, lint)
+
       //      case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
