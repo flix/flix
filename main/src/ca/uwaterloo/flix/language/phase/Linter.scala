@@ -86,7 +86,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Var(sym, _, _), _) => ???
 
-    case (_, Expression.Var(sym, _, _)) => ???
+    case (_, Expression.Var(sym, _, _)) => Some(Substitution.singleton(sym, exp1))
 
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unify(exp1, exp2)
@@ -149,6 +149,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Represents the empty substitution.
       */
     val empty: Substitution = Substitution(Map.empty)
+
+    /**
+      * Returns a singleton substitution with a mapping from `sym` to `exp0`.
+      */
+    def singleton(sym: Symbol.VarSym, exp0: Expression): Substitution = Substitution(Map(sym -> exp0))
   }
 
   case class Substitution(m: Map[Symbol.VarSym, Expression]) {
