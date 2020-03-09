@@ -112,18 +112,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Var(sym, varTyp, _), _) =>
       val expTyp = exp0.tpe
+      println(s"canUnify($expTyp, $varTyp)")
       if (canUnify(varTyp, expTyp))
         Some(Substitution.singleton(sym, exp0))
       else None
 
     // NB: Unification is left-biased so there is no case for a variable on the rhs.
 
-    //
-    //
-    //      case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
-    //        def eff: Type = Type.Pure
-    //      }
-    //
+    case (Expression.Def(sym1, _, _), Expression.Def(sym2, _, _)) if sym1 == sym2 => Some(Substitution.empty)
+
     //      case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
     //
     //      case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
