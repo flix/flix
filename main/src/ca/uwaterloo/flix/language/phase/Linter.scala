@@ -222,8 +222,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
+  // TODO: DOC
   private def visitHead(head0: Predicate.Head, lint0: Lint): List[LinterError] = ???
 
+  // TODO: DOC
   private def visitBody(body0: Predicate.Body, lint0: Lint): List[LinterError] = ???
 
   // TODO: DOC
@@ -260,25 +262,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Int64(lit1, _), Expression.Int64(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
 
-    //
-    //      case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression { // TODO
-    //        def tpe: Type = Type.Int64
-    //
-    //        def eff: Type = Type.Pure
-    //      }
-    //
-    //      case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {  // TODO
-    //        def tpe: Type = Type.BigInt
-    //
-    //        def eff: Type = Type.Pure
-    //      }
-    //
-    //      case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {  // TODO
-    //        def tpe: Type = Type.Str
-    //
-    //        def eff: Type = Type.Pure
-    //      }
-    //
+    case (Expression.BigInt(lit1, _), Expression.BigInt(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
+
+    case (Expression.Str(lit1, _), Expression.Str(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
+
     //      case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
     //        def eff: Type = Type.Pure
     //      }
