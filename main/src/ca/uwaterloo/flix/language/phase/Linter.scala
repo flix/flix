@@ -266,9 +266,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Str(lit1, _), Expression.Str(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
 
-    //      case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
-    //        def eff: Type = Type.Pure
-    //      }
+    case (Expression.Wild(_, _), Expression.Wild(_, _)) => Some(Substitution.empty)
 
     case (Expression.Var(sym, varTyp, _), _) =>
       if (exp0.isInstanceOf[Expression.Var]) {
