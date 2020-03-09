@@ -16,12 +16,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
-import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -53,12 +52,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
     if (lint.sym.name == "leftAdditionByZero") // TODO
-      unify(exp0, lint.exp) match {
-        case None => None
-        case Some(_) => Some(LinterError.Simplify("hello", SourceLocation.Unknown))
-      }
+    unify(exp0, lint.exp) match {
+      case None => None
+      case Some(_) => Some(LinterError.Simplify("hello", SourceLocation.Unknown))
+    }
     else
-      None
+    None
   }
 
   private def unify(exp1: Expression, exp2: Expression): Option[Substitution] = (exp1, exp2) match {
@@ -171,7 +170,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         Expression.Apply(e1, e2, tpe, eff, loc)
 
       case Expression.Unary(op, exp, tpe, eff, loc) =>
-        val e = apply(e)
+        val e = apply(exp)
         Expression.Unary(op, e, tpe, eff, loc)
 
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
@@ -217,7 +216,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.RecordRestrict(label, e, tpe, eff, loc)
 
-      //        case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      case Expression.ArrayLit(elms, tpe, eff, loc) =>
+        val es = elms.map(apply)
+        Expression.ArrayLit(es, tpe, eff, loc)
 
       case Expression.ArrayNew(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
@@ -278,11 +279,16 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       //          def eff: Type = Type.Pure
       //        }
-      //
-      //        case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class Cast(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.Ascribe(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.Ascribe(e, tpe, eff, loc)
+
+      case Expression.Cast(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.Cast(e, tpe, eff, loc)
+
+
       //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -299,12 +305,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //
       //        case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
-      //        case class NewChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+
+      case Expression.NewChannel(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.NewChannel(e, tpe, eff, loc)
+
+      case Expression.GetChannel(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.GetChannel(e, tpe, eff, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.PutChannel(e1, e2, tpe, eff, loc)
+
       //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
