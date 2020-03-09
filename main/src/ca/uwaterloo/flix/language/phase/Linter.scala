@@ -111,20 +111,21 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
-      //      case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+
+      case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.Tuple(exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+
+      case Expression.RecordEmpty(_, _) => Nil
+
+      case Expression.RecordSelect(exp, _, _, _, _) => visitExp(exp, lint)
+
+      case Expression.RecordExtend(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.RecordRestrict(_, exp, _, _, _) => visitExp(exp, lint)
+
+
+
       //      case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
