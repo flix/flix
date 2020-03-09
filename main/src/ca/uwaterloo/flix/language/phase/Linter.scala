@@ -163,6 +163,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   case class Lint(sym: Symbol.DefnSym, leftExp: Expression, replacement: Expression)
 
+  // TODO: DOC
   object Substitution {
     /**
       * Represents the empty substitution.
@@ -175,6 +176,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     def singleton(sym: Symbol.VarSym, exp0: Expression): Substitution = Substitution(Map(sym -> exp0))
   }
 
+  // TODO: DOC
   case class Substitution(m: Map[Symbol.VarSym, Expression]) {
 
     /**
