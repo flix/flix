@@ -43,21 +43,19 @@ pub def removeDependency(self: Package, package: String): Package = ???
 pub def lockPackage(self: Package): List[LockedPackage] = ???
 
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
-pub def initPackage(name: String): /* Package */ Result[Bool, Error] & Impure = {
+pub def initPackage(name: String): /* Package */ Result[Path, Error] & Impure = {
     let getProjectDir = base -> Path.add(base, name);
 
     let flatMap = Result.flatMap;
     let mapErr = Result.mapErr;
     let map = Result.map;
 
-    let workingDir = Path.workingDirectory();
-    let projectDir = map(d -> getProjectDir(d), workingDir);
-    let projectDirExists = flatMap(Path.exists, projectDir);
-    let mapErred = mapErr(_ -> GenericIoError, projectDirExists);
+    let workingDir = Path.workingDirectory(); // Result[Path, IOError]
+    let projectDir = map(d -> getProjectDir(d), workingDir); // Result[Path, IOError]
+    let projectDirExists = flatMap(Path.exists, projectDir); // Result[Bool, IOError]
+    let mapErred = mapErr(_ -> GenericIoError, projectDirExists); // Result[Bool, Error]
 
-    // let flattened = flatMap((p) -> projectDir as & Impure, workingDirIsDir);
-
-    flatMap(b -> if (!b) Ok(b) else {Err(ProjectDirExists) as & Impure}, mapErred)
+    flatMap(b -> if (!b) mapErr(_ -> GenericIoError, projectDir) else {Err(ProjectDirExists) as & Impure}, mapErred) // Result[Path, Error]
 }
 
 pub enum Error {
@@ -67,4 +65,4 @@ pub enum Error {
 
 def const(a: a): b -> a = _ -> a
 
-pub def main(): Result[Bool, Error] & Impure = initPackage("test")
+pub def main(): Result[Path, Error] & Impure = initPackage("test")
