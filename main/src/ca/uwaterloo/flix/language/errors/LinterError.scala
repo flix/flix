@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.debug.PrettyExpression
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -41,7 +42,7 @@ object LinterError {
       vt << Code(loc, s"matches ${sym.name}.") << NewLine
       vt << "The lint suggests that this code can be replaced by: " << NewLine
       vt << NewLine
-      vt << "  " << Green(replacement.toString) << NewLine
+      vt << "  " << Green(PrettyExpression.pretty(replacement)) << NewLine
       vt << NewLine
       vt << "The lint was declared at: '" << Cyan(sym.loc.format) << "'." << NewLine
     }
