@@ -96,20 +96,19 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Apply(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
-      //      case class Apply(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.Unary(_, exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
       //      case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
-      //      case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+
+      case Expression.Stm(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
       //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
