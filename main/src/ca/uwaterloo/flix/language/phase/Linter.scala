@@ -124,12 +124,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.RecordRestrict(_, exp, _, _, _) => visitExp(exp, lint)
 
+      case Expression.ArrayLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+
+      case Expression.ArrayNew(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
 
-      //      case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+
       //      case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
