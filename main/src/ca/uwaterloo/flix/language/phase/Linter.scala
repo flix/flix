@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -58,7 +58,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
     unify(exp0, lint.leftExp) match {
       case None => None
-      case Some(_) => Some(LinterError.Simplify("hello", SourceLocation.Unknown))
+      case Some(subst) => Some(LinterError.Simplify(lint.sym, subst(lint.replacement), exp0.loc))
     }
   }
 
@@ -142,7 +142,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * TODO: DOC
     */
-  case class Lint(sym: Symbol.DefnSym, leftExp: Expression, rightExp: Expression)
+  case class Lint(sym: Symbol.DefnSym, leftExp: Expression, replacement: Expression)
 
   object Substitution {
     /**
