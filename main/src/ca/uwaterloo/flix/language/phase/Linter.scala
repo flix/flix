@@ -76,44 +76,24 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Int16(_, _) => Nil
 
-      //      case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Int32
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Int64
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.BigInt
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Str
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.Int32(_, _) => Nil
+
+      case Expression.Int64(_, _) => Nil
+
+      case Expression.BigInt(_, _) => Nil
+
+      case Expression.Str(_, _) => Nil
+
+      case Expression.Wild(_, _) => Nil
+
+      case Expression.Var(_, _, _) => Nil
+
+      case Expression.Def(_, _, _) => Nil
+
+      case Expression.Hole(_, _, _, _) => Nil
+
+      case Expression.Lambda(_, exp, _, _) => visitExp(exp, lint)
+
       //      case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
       //    def eff: Type = Type.Pure
       //    }
