@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -49,13 +50,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Searches for applicable lints in the given definition `defn0`.
     */
-  private def visitDef(defn: Def, lints: List[Lint]): List[LinterError] =
+  private def visitDef(defn: Def, lints: List[Lint])(implicit flix: Flix): List[LinterError] =
     lints.flatMap(visitExp(defn.exp, _))
 
   /**
     * Computes whether the given lint `l0` is applicable to the given expression `exp0`.
     */
-  private def visitExp(exp0: Expression, lint: Lint): Option[LinterError] = {
+  private def visitExp(exp0: Expression, lint: Lint)(implicit flix: Flix): Option[LinterError] = {
     unify(lint.leftExp, exp0) match {
       case None => None
       case Some(subst) => Some(LinterError.Simplify(lint.sym, subst(lint.replacement), exp0.loc))
@@ -67,7 +68,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * NB: Unification is left-biased: variables in the expression are not unified against the lint.
     */
-  private def unify(lint0: Expression, exp0: Expression): Option[Substitution] = (lint0, exp0) match {
+  private def unify(lint0: Expression, exp0: Expression)(implicit flix: Flix): Option[Substitution] = (lint0, exp0) match {
     case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
 
     case (Expression.True(_), Expression.True(_)) => Some(Substitution.empty)
@@ -86,7 +87,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
 
-    case (Expression.Var(sym, _, _), _) => Some(Substitution.singleton(sym, exp0))
+    case (Expression.Var(sym, varTyp, _), _) =>
+      val expTyp = exp0.tpe
+      if (canUnify(varTyp, expTyp))
+        Some(Substitution.singleton(sym, exp0))
+      else None
 
     // NB: Unification is left-biased so there is no case for a variable on the rhs.
 
@@ -483,6 +488,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
+  }
+
+  /**
+    * TODO: DOC
+    */
+  // TODO: Move somewhere better?
+  private def canUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = Unification.unifyTypes(tpe1, tpe2) match {
+    case Ok(_) => true
+    case Err(_) => false
   }
 
 }
