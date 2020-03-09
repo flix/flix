@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
+import java.lang.{Byte => JByte, Short => JShort, Integer => JInt, Long => JLong}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
@@ -392,6 +393,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
           case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
           case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
+          case "<=>" => WeededAst.Expression.Binary(BinaryOperator.Spaceship, e1, e2, loc)
           case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
           case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
           case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
@@ -1163,28 +1165,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case lit => WeededAst.Expression.Float64(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
-      toInt8(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
+      toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.Int8(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
-      toInt16(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int16(sp1, sign, radix, digits, sp2) =>
+      toInt16(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.Int16(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
-      toInt32(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int32(sp1, sign, radix, digits, sp2) =>
+      toInt32(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.Int32(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
-      toInt64(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int64(sp1, sign, radix, digits, sp2) =>
+      toInt64(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.Int64(lit, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Literal.BigInt(sp1, sign, digits, sp2) =>
-      toBigInt(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.BigInt(sp1, sign, radix, digits, sp2) =>
+      toBigInt(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Expression.BigInt(lit, mkSL(sp1, sp2))
       }
 
@@ -1194,7 +1196,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   // TODO: Comment
   private def getVectorLength(elm: ParsedAst.Literal, sp1: SourcePosition, sp2: SourcePosition): Validation[Int, WeederError] = elm match {
-    case ParsedAst.Literal.Int32(_, sign, digits, _) => toInt32(sign, digits, mkSL(sp1, sp2)) flatMap {
+    case ParsedAst.Literal.Int32(_, sign, radix, digits, _) => toInt32(sign, radix, digits, mkSL(sp1, sp2)) flatMap {
       case l if l >= 0 => l.toSuccess
       case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
     }
@@ -1222,24 +1224,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       toFloat64(sign, before, after, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Float64(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Int8(sp1, sign, digits, sp2) =>
-      toInt8(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int8(sp1, sign, radix, digits, sp2) =>
+      toInt8(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Int8(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Int16(sp1, sign, digits, sp2) =>
-      toInt16(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int16(sp1, sign, radix, digits, sp2) =>
+      toInt16(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Int16(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
-      toInt32(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int32(sp1, sign, radix, digits, sp2) =>
+      toInt32(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Int32(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.Int64(sp1, sign, digits, sp2) =>
-      toInt64(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.Int64(sp1, sign, radix, digits, sp2) =>
+      toInt64(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.Int64(lit, mkSL(sp1, sp2))
       }
-    case ParsedAst.Literal.BigInt(sp1, sign, digits, sp2) =>
-      toBigInt(sign, digits, mkSL(sp1, sp2)) map {
+    case ParsedAst.Literal.BigInt(sp1, sign, radix, digits, sp2) =>
+      toBigInt(sign, radix, digits, mkSL(sp1, sp2)) map {
         case lit => WeededAst.Pattern.BigInt(lit, mkSL(sp1, sp2))
       }
     case ParsedAst.Literal.Str(sp1, lit, sp2) =>
@@ -1812,9 +1814,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
-  private def toInt8(sign: Boolean, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
+  private def toInt8(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    stripUnderscores(s).toByte.toSuccess
+    JByte.parseByte(stripUnderscores(s), radix).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1822,9 +1824,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int16 with `sign` and `digits`.
     */
-  private def toInt16(sign: Boolean, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
+  private def toInt16(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    stripUnderscores(s).toShort.toSuccess
+    JShort.parseShort(stripUnderscores(s), radix).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1832,9 +1834,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int32 with `sign` and `digits`.
     */
-  private def toInt32(sign: Boolean, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
+  private def toInt32(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    stripUnderscores(s).toInt.toSuccess
+    JInt.parseInt(stripUnderscores(s), radix).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1842,9 +1844,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int64 with `sign` and `digits`.
     */
-  private def toInt64(sign: Boolean, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
+  private def toInt64(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    stripUnderscores(s).toLong.toSuccess
+    JLong.parseLong(stripUnderscores(s), radix).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1852,9 +1854,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given BigInt with `sign` and `digits`.
     */
-  private def toBigInt(sign: Boolean, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
+  private def toBigInt(sign: Boolean, radix: Int, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
     val s = if (sign) "-" + digits else digits
-    new BigInteger(stripUnderscores(s)).toSuccess
+    new BigInteger(stripUnderscores(s), radix).toSuccess
   } catch {
     case ex: NumberFormatException => IllegalInt(loc).toFailure
   }
@@ -1981,7 +1983,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * TODO make type handling for vertification.
     */
   private def checkNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition): Int = {
-    toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) match {
+    toInt32(elm.sign, elm.radix, elm.lit, mkSL(sp1, sp2)) match {
       case Validation.Success(l) if l >= 0 => l
       // TODO Make Types.weed handle validation.
       case _ => throw InternalCompilerException("Vector length must be an integer of minimum 0.")

@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypeConstructor, TypedAst, UnaryOperator}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.collection.mutable
 
@@ -127,6 +127,26 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
     /**
+      * A function-local set of all equality functions (all functions named `__eq`).
+      */
+    val eqDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty
+
+    /**
+      * A function-local set of all comparator functions (all functions named `__cmp`).
+      */
+    val cmpDefs: mutable.ListBuffer[Def] = mutable.ListBuffer.empty
+
+    // Populate eqDefs and cmpDefs.
+    for ((sym, defn) <- root.defs) {
+      if (sym.name == "__eq") {
+        eqDefs += defn
+      }
+      if (sym.name == "__cmp") {
+        cmpDefs += defn
+      }
+    }
+
+    /**
       * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst0`.
       *
       * Replaces every reference to a parametric function with a reference to its specialized version.
@@ -206,9 +226,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           // The expected type of an equality function: a -> a -> bool.
           val eqType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Bool)
 
-          // Look for any function named `eq` with the expected type.
+          // Look for an equality function with the expected type.
           // Returns `Some(sym)` if there is exactly one such function.
-          lookup("__eq", eqType) match {
+          lookupEq(eqType) match {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
@@ -231,6 +251,37 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               } else {
                 Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
               }
+          }
+
+        /*
+         * Spaceship
+         */
+        case Expression.Binary(BinaryOperator.Spaceship, exp1, exp2, tpe, eff, loc) =>
+          // Perform specialization on the left and right sub-expressions.
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+
+          // The type of the values of exp1 and exp2. NB: The typer guarantees that exp1 and exp2 have the same type.
+          val valueType = subst0(exp1.tpe)
+
+          // The expected type of a comparator function: a -> a -> int.
+          val cmpType = Type.mkArrow(List(valueType, valueType), Type.Pure, Type.Int32)
+
+          // Look for a comparator function with the expected type.
+          // Returns `Some(sym)` if there is exactly one such function.
+          lookupCmp(cmpType) match {
+            case None =>
+              // No comparator function found. Return the same expression.
+              Expression.Binary(BinaryOperator.Spaceship, e1, e2, Type.Int32, eff, loc)
+
+            case Some(cmpSym) =>
+              // Comparator function found. Specialize and generate a call to it.
+              val newSym = specializeDefSym(cmpSym, cmpType)
+              val base = Expression.Def(newSym, cmpType, loc)
+
+              // Call the equality function.
+              val inner = Expression.Apply(base, e1, Type.mkPureArrow(valueType, Type.Int32), eff, loc)
+              Expression.Apply(inner, e2, Type.Int32, eff, loc)
           }
 
         /*
@@ -690,32 +741,65 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /**
-      * Optionally returns the symbol of a function with the given `name` whose declared types unifies with the given type `tpe`.
+      * Optionally returns the symbol of a function with the `__eq` name whose declared types unifies with the given type `tpe`.
       *
       * Returns `None` if no such function exists or more than one such function exist.
       */
-    def lookup(name: String, tpe: Type): Option[Symbol.DefnSym] = {
+    def lookupEq(tpe: Type): Option[Symbol.DefnSym] = tpe match {
+      // Equality cannot be overriden for primitive types.
+      case Type.Cst(TypeConstructor.Unit) => None
+      case Type.Cst(TypeConstructor.Bool) => None
+      case Type.Cst(TypeConstructor.Char) => None
+      case Type.Cst(TypeConstructor.Float32) => None
+      case Type.Cst(TypeConstructor.Float64) => None
+      case Type.Cst(TypeConstructor.Int8) => None
+      case Type.Cst(TypeConstructor.Int16) => None
+      case Type.Cst(TypeConstructor.Int32) => None
+      case Type.Cst(TypeConstructor.Int64) => None
+      case Type.Cst(TypeConstructor.BigInt) => None
+      case Type.Cst(TypeConstructor.Str) => None
+      case _ => lookupIn("__eq", tpe, eqDefs)
+    }
+
+    /**
+      * Optionally returns the symbol of a function with the `__cmp` name whose declared types unifies with the given type `tpe`.
+      *
+      * Returns `None` if no such function exists or more than one such function exist.
+      */
+    def lookupCmp(tpe: Type): Option[Symbol.DefnSym] = tpe match {
+      // Ordering cannot be overriden for primitive types.
+      case Type.Cst(TypeConstructor.Unit) => None
+      case Type.Cst(TypeConstructor.Bool) => None
+      case Type.Cst(TypeConstructor.Char) => None
+      case Type.Cst(TypeConstructor.Float32) => None
+      case Type.Cst(TypeConstructor.Float64) => None
+      case Type.Cst(TypeConstructor.Int8) => None
+      case Type.Cst(TypeConstructor.Int16) => None
+      case Type.Cst(TypeConstructor.Int32) => None
+      case Type.Cst(TypeConstructor.Int64) => None
+      case Type.Cst(TypeConstructor.BigInt) => None
+      case Type.Cst(TypeConstructor.Str) => None
+      case _ => lookupIn("__cmp", tpe, cmpDefs)
+    }
+
+    /**
+      * Optionally returns the symbol of the function with `name` whose declared types unifies with the given type `tpe` and appears in `defns`.
+      */
+    def lookupIn(name: String, tpe: Type, defns: mutable.Iterable[Def]): Option[Symbol.DefnSym] = {
       // A set of matching symbols.
       val matches = mutable.Set.empty[Symbol.DefnSym]
 
       // Iterate through each definition and collect the matching symbols.
-      for ((sym, defn) <- root.defs) {
-        // Check the function name.
+      for (defn <- defns) {
+        val sym = defn.sym
         if (name == sym.name) {
-          // Check whether the type unifies.
           if (Unification.unifyTypes(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
-            // Match found!
             matches += sym
           }
         }
       }
 
-      // Returns the result if there is exactly one match.
-      if (matches.size == 1) {
-        return Some(matches.head)
-      }
-      // Otherwise return None.
-      return None
+      if (matches.size != 1) None else Some(matches.head)
     }
 
     /*

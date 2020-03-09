@@ -158,14 +158,14 @@ object Ast {
     def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
 
     /**
+      * Returns `true` if `this` sequence contains the `@lint` annotation.
+      */
+    def isLint: Boolean = annotations exists (_.isInstanceOf[Annotation.Lint])
+
+    /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@theorem` annotation.
-      */
-    def isTheorem: Boolean = annotations exists (_.isInstanceOf[Annotation.Lint])
 
     /**
       * Returns `true` if `this` sequence contains the `@unchecked` annotation.

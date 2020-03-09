@@ -225,8 +225,6 @@ namespace Domain/IntervalInf {
     def lessEqual(e1: IntervalInf, e2: IntervalInf): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
 
-    let IntervalInf<> = (Bot, Top, leq, lub, glb)
-
     // ------------------------------------------------------------------------
     // Specialized Laws
     // ------------------------------------------------------------------------

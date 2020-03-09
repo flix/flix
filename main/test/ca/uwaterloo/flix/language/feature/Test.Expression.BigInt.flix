@@ -44,3 +44,33 @@ def testBigInt14(): BigInt = 1_000_000_000_000_000_000_000ii
 
 @test
 def testBigInt15(): BigInt = 42_000_000_000_000_000_000_000ii
+
+@test
+def testBigInt16(): BigInt = 0b01010101010101010101010101010101010101010101010101010101010101010101010101010101ii
+
+@test
+def testBigInt17(): BigInt = 0b01010101_01010101_01010101_01010101_01010101_01010101_01010101_01010101_01010101_01010101ii
+
+@test
+def testBigInt18(): BigInt = 0b0ii
+
+@test
+def testBigInt19(): BigInt = 0b1ii
+
+@test
+def testBigInt20(): BigInt = 0x1ABCDEF9876543201ABCii
+
+@test
+def testBigInt21(): BigInt = 0x1A_BC_DE_F9_87_65_43_20_1A_BCii
+
+@test
+def testBigInt22(): BigInt = 0x0ii
+
+@test
+def testBigInt23(): BigInt = 0x1ii
+
+@test
+def testBigInt24(): BigInt = 0x1abcdef9876543201abcii
+
+@test
+def testBigInt25(): BigInt = 0x1a_bc_de_f9_87_65_43_20_1a_bcii
