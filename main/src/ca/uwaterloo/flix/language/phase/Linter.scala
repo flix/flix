@@ -197,10 +197,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ProcessPanic(_, _, _, _) => Nil
 
-      //      case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def eff: Type = Type.Pure
-      //    }
-      //
+      case Expression.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, lint))
 
       case Expression.FixpointCompose(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
@@ -217,6 +214,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     tryLint(exp0, lint) ::: recursiveErrors
   }
+
+  // TODO: DOC
+  private def visitConstraint(c0: Constraint, lint0: Lint): List[LinterError] = c0 match {
+    case Constraint(_, head, body, loc) => body.foldLeft(visitHead(head, lint0)) {
+      case (acc, body0) => visitBody(body0, lint0) ::: acc
+    }
+  }
+
+  private def visitHead(head0: Predicate.Head, lint0: Lint): List[LinterError] = ???
+
+  private def visitBody(body0: Predicate.Body, lint0: Lint): List[LinterError] = ???
 
   // TODO: DOC
   private def tryLint(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
