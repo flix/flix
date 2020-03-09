@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
@@ -216,17 +217,23 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   // TODO: DOC
-  private def visitConstraint(c0: Constraint, lint0: Lint): List[LinterError] = c0 match {
+  private def visitConstraint(c0: Constraint, lint0: Lint)(implicit flix: Flix): List[LinterError] = c0 match {
     case Constraint(_, head, body, loc) => body.foldLeft(visitHead(head, lint0)) {
       case (acc, body0) => visitBody(body0, lint0) ::: acc
     }
   }
 
   // TODO: DOC
-  private def visitHead(head0: Predicate.Head, lint0: Lint): List[LinterError] = ???
+  private def visitHead(head0: Predicate.Head, lint0: Lint)(implicit flix: Flix): List[LinterError] = head0 match {
+    case Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp(_, lint0))
+    case Head.Union(exp, _, _) => visitExp(exp, lint0)
+  }
 
   // TODO: DOC
-  private def visitBody(body0: Predicate.Body, lint0: Lint): List[LinterError] = ???
+  private def visitBody(body0: Predicate.Body, lint0: Lint)(implicit flix: Flix): List[LinterError] = body0 match {
+    case Body.Atom(_, _, _, _, _, _) => Nil
+    case Body.Guard(exp, _) => visitExp(exp, lint0)
+  }
 
   // TODO: DOC
   private def tryLint(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
