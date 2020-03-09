@@ -43,16 +43,7 @@ pub def removeDependency(self: Package, package: String): Package = ???
 pub def lockPackage(self: Package): List[LockedPackage] = ???
 
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
-pub def initPackage(_name: String): /* Package */ /*Result[Bool, Error] */ String & Impure = {
-    let test = Path.new("");
-    // TODO: ARGH! Can't consume interfaces in Flix?
-    let test2 = Path.add(test, "main");
-    match Path.exists(test2) {
-        case Ok(_) => Console.printLine("yes")
-        case Err(_) => Console.printLine("no")
-    };
-    /*
-
+pub def initPackage(name: String): /* Package */ Result[Bool, Error] & Impure = {
     let getProjectDir = base -> Path.add(base, name);
 
     let flatMap = Result.flatMap;
@@ -60,15 +51,13 @@ pub def initPackage(_name: String): /* Package */ /*Result[Bool, Error] */ Strin
     let map = Result.map;
 
     let workingDir = Path.workingDirectory();
-    let workingDirIsDir = flatMap(x -> Path.isDirectory(x), workingDir);
     let projectDir = map(d -> getProjectDir(d), workingDir);
+    let projectDirExists = flatMap(Path.exists, projectDir);
+    let mapErred = mapErr(_ -> GenericIoError, projectDirExists);
 
-    let flattened = flatMap(b -> projectDir as & Impure, workingDirIsDir);
+    // let flattened = flatMap((p) -> projectDir as & Impure, workingDirIsDir);
 
-    flattened
-    */
-
-    "ok"
+    flatMap(b -> if (!b) Ok(b) else {Err(ProjectDirExists) as & Impure}, mapErred)
 }
 
 pub enum Error {
@@ -76,6 +65,6 @@ pub enum Error {
     case GenericIoError
 }
 
-pub def const(a: a): b -> a = _ -> a
+def const(a: a): b -> a = _ -> a
 
-pub def main(): String & Impure = initPackage("test")
+pub def main(): Result[Bool, Error] & Impure = initPackage("test")
