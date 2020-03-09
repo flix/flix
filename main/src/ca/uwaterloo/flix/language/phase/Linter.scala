@@ -178,16 +178,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.PutField(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
+      case Expression.GetStaticField(_, _, _, _) => Nil
 
+      case Expression.PutStaticField(_, exp, _, _, _) => visitExp(exp, lint)
 
-      //      case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class NewChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.NewChannel(exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.GetChannel(exp, _, _, _) => visitExp(exp, lint)
+
       //      case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
