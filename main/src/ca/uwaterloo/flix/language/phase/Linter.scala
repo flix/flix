@@ -199,7 +199,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.Tag(sym, tag, e, tpe, eff, loc)
 
-      //        case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+      case Expression.Tuple(elms, tpe, eff, loc) =>
+        val es = elms.map(apply)
+        Expression.Tuple(es, tpe, eff, loc)
 
       case Expression.RecordEmpty(_, _) => exp0
 
@@ -240,20 +242,36 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e3 = apply(exp3)
         Expression.ArrayStore(e1, e2, e3, tpe, eff, loc)
 
-      //        case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
-      //        case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-      //
+      case Expression.ArraySlice(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        val e3 = apply(exp3)
+        Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+
+      case Expression.VectorLit(elms, tpe, eff, loc) =>
+        val es = elms.map(apply)
+        Expression.VectorLit(es, tpe, eff, loc)
+
+      case Expression.VectorNew(exp, len, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.VectorNew(e, len, tpe, eff, loc)
+
+      case Expression.VectorLoad(exp, index, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.VectorLoad(e, index, tpe, eff, loc)
+
+      case Expression.VectorStore(exp1, index, exp2, tpe, eff, loc) =>
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.VectorStore(e1, index, e2, tpe, eff, loc)
+
+      case Expression.VectorLength(exp, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.VectorLength(e, tpe, eff, loc)
+
+      case Expression.VectorSlice(exp, begin, end, tpe, eff, loc) =>
+        val e = apply(exp)
+        Expression.VectorSlice(e, begin, end, tpe, eff, loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = apply(exp)
