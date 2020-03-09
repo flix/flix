@@ -4,123 +4,201 @@ namespace BenchmarkSet {
     /// create a set of integers and compute the size of the result.
     ///
     @benchmark
-    pub def benchmark01(): Bool = Set.size(List.toSet(List.range(0, 75))) == 75
+    pub def benchmark01(): Bool = Set.size(Set.range(0, 100)) == 100
 
     ///
-    /// create a set of integers and count the numbers divisible by 5.
+    /// create a set of integers and check if it contains a low-valued element.
     ///
     @benchmark
-    pub def benchmark02(): Bool = Set.count(x -> x % 5 == 0, List.toSet(List.range(0, 75))) == 15
+    pub def benchmark02(): Bool = Set.memberOf(0, Set.range(0, 100))
 
     ///
-    /// create a set of integers, delete half of the elements, and compute the size.
+    /// create a set of integers and check if it contains a mid-valued element.
     ///
     @benchmark
-    pub def benchmark03(): Bool = Set.size(Set.fold((x, y) -> Set.delete(y, x), List.toSet(List.range(0, 30)), List.toSet(List.range(0, 15)))) == 15
+    pub def benchmark03(): Bool = Set.memberOf(49, Set.range(0, 100))
 
     ///
-    /// create two sets of integers, find their difference, and compute the size.
+    /// create a set of integers and check if it contains a high-valued element.
     ///
     @benchmark
-    pub def benchmark04(): Bool = Set.size(Set.difference(List.toSet(List.range(0, 25)), List.toSet(List.range(25, 50)))) == 25
+    pub def benchmark04(): Bool = Set.memberOf(99, Set.range(0, 100))
+
+    ///
+    /// create a set of integers and check if it contains a non-existent element.
+    ///
+    @benchmark
+    pub def benchmark05(): Bool = !Set.memberOf(100, Set.range(0, 100))
+
+    ///
+    /// create a set of integers, delete the lower half of the elements and compute the size.
+    ///
+    @benchmark
+    pub def benchmark06(): Bool = Set.size(Set.fold((x, y) -> Set.delete(y, x), Set.range(0, 100), Set.range(0, 50))) == 50
+
+    ///
+    /// create a set of integers, delete the upper half of the elements and compute the size.
+    ///
+    @benchmark
+    pub def benchmark07(): Bool = Set.size(Set.fold((x, y) -> Set.delete(y, x), Set.range(0, 100), Set.range(49, 100))) == 50
+
+    ///
+    /// create two sets of integers, find their difference and compute the size.
+    ///
+    @benchmark
+    pub def benchmark08(): Bool = Set.size(Set.difference(Set.range(0, 100), Set.range(49, 100))) == 50
 
     ///
     /// create a set of integers and check if at least one element satisfies a predicate.
     ///
     @benchmark
-    pub def benchmark05(): Bool = Set.exists(x -> x > 76, List.toSet(List.range(0, 75)))
+    pub def benchmark09(): Bool = Set.exists(x -> x > 0, Set.range(0, 100))
 
     ///
-    /// create a set of integers, filter out half of the elements, and compute the size.
+    /// create a set of integers and check if at least one element satisfies a predicate.
     ///
     @benchmark
-    pub def benchmark06(): Bool = Set.size(Set.filter(x -> x >= 25, List.toSet(List.range(0, 50)))) == 25
+    pub def benchmark10(): Bool = Set.exists(x -> x > 49, Set.range(0, 100))
 
     ///
-    /// create a set of integers and find the first element that satifies a predicate.
+    /// create a set of integers and check if at least one element satisfies a predicate.
     ///
     @benchmark
-    pub def benchmark07(): Bool = Set.find(x -> x > 73, List.toSet(List.range(0, 75))) == Some(74)
+    pub def benchmark11(): Bool = !Set.exists(x -> x > 99, Set.range(0, 100))
+
+    ///
+    /// create a set of integers, filter out the even values and compute the size.
+    ///
+    @benchmark
+    pub def benchmark12(): Bool = Set.size(Set.filter(x -> x % 2 == 0, Set.range(0, 100))) == 50
+
+    ///
+    /// create a set of integers and find the first element that satifies a predicate, searching left to right.
+    ///
+    @benchmark
+    pub def benchmark13(): Bool = Set.findLeft(x -> x == 99, Set.range(0, 100)) == Some(99)
+
+    ///
+    /// create a set of integers and find the first element that satifies a predicate, searching right to left.
+    ///
+    @benchmark
+    pub def benchmark14(): Bool = Set.findRight(x -> x == 0, Set.range(0, 100)) == Some(0)
 
     ///
     /// create a set of integers and compute its sum via foldLeft.
     ///
     @benchmark
-    pub def benchmark08(): Bool = Set.foldLeft((x, y) -> x + y, 0, List.toSet(List.range(0, 75))) == 2775
+    pub def benchmark15(): Bool = Set.foldLeft((x, y) -> x + y, 0, Set.range(0, 100)) == 4950
 
     ///
     /// create a set of integers and compute its sum via foldRight.
     ///
     @benchmark
-    pub def benchmark09(): Bool = Set.foldRight((x, y) -> x + y, 0, List.toSet(List.range(0, 75))) == 2775
+    pub def benchmark16(): Bool = Set.foldRight((x, y) -> x + y, 0, Set.range(0, 100)) == 4950
 
     ///
     /// create a set of integers and check if all elements satisfy a predicate.
     ///
     @benchmark
-    pub def benchmark10(): Bool = Set.forall(x -> x < 74, List.toSet(List.range(0, 75)))
+    pub def benchmark17(): Bool = Set.forall(x -> x < 100, Set.range(0, 100))
 
     ///
-    /// create two sets of integers, find their intersection, and compute the size.
+    /// create two sets of integers, find their intersection and compute the size.
     ///
     @benchmark
-    pub def benchmark11(): Bool = Set.size(Set.intersection(List.toSet(List.range(0, 30)), List.toSet(List.range(15, 45)))) == 15
+    pub def benchmark18(): Bool = Set.size(Set.intersection(Set.range(0, 100), Set.range(49, 100))) == 50
 
     ///
     /// create two sets of integers and check if the first is a subset of the second.
     ///
     @benchmark
-    pub def benchmark12(): Bool = Set.isSubsetOf(List.toSet(List.range(0, 25)), List.toSet(List.range(0, 50)))
+    pub def benchmark19(): Bool = Set.isSubsetOf(Set.range(0, 100), Set.range(0, 100))
 
     ///
-    /// create a set of integers, increment each integer by one, and compute the size.
+    /// create two sets of integers and check if the first is a proper subset of the second.
     ///
     @benchmark
-    pub def benchmark13(): Bool = Set.size(Set.map(x -> x + 1, List.toSet(List.range(0, 50)))) == 50
+    pub def benchmark20(): Bool = Set.isSubsetOf(Set.range(0, 99), Set.range(0, 100))
 
     ///
-    /// create a set of integers, partition it, and compute the size of the first partition.
+    /// create a set of integers, increment each integer by one and compute the size.
     ///
     @benchmark
-    pub def benchmark14(): Bool =
-        let partition = Set.partition(x -> x >= 25, List.toSet(List.range(0, 50)));
+    pub def benchmark21(): Bool = Set.size(Set.map(x -> x + 1, Set.range(0, 100))) == 100
+
+    ///
+    /// create a set of integers, partition it into even and odd numbers and compute the size of the first partition.
+    ///
+    @benchmark
+    pub def benchmark22(): Bool =
+        let partition = Set.partition(x -> x % 2 == 0, Set.range(0, 100));
         let (fst, _) = partition;
-            Set.size(fst) == 25
+        Set.size(fst) == 50
 
     ///
     /// create a set of integers and compute its sum via reduceLeft.
     ///
     @benchmark
-    pub def benchmark15(): Bool = Set.reduceLeft((x, y) -> x + y, List.toSet(List.range(0, 50))) == Some(1225)
+    pub def benchmark23(): Bool = Set.reduceLeft((x, y) -> x + y, Set.range(0, 100)) == Some(4950)
 
     ///
     /// create a set of integers and compute its sum via reduceRight.
     ///
     @benchmark
-    pub def benchmark16(): Bool = Set.reduceRight((x, y) -> x + y, List.toSet(List.range(0, 50))) == Some(1225)
+    pub def benchmark24(): Bool = Set.reduceRight((x, y) -> x + y, Set.range(0, 100)) == Some(4950)
 
     ///
-    /// create a set of integers and replace an element.
+    /// create a set of integers and replace a low-valued element with a high-valued element.
     ///
     @benchmark
-    pub def benchmark17(): Bool = Set.memberOf(50, Set.replace(49, 50, List.toSet(List.range(0, 50))))
+    pub def benchmark25(): Bool = Set.memberOf(100, Set.replace(0, 100, Set.range(0, 100)))
 
     ///
-    /// create a set of integers and compute the size of all its subsets.
+    /// create a set of integers and replace a mid-valued element with a high-valued element.
     ///
     @benchmark
-    pub def benchmark18(): Bool = Set.size(Set.subsets(List.toSet(List.range(0, 7)))) == 128
+    pub def benchmark26(): Bool = Set.memberOf(100, Set.replace(50, 100, Set.range(0, 100)))
+
+    ///
+    /// create a set of integers and replace a high-valued element with a low valued-element.
+    ///
+    @benchmark
+    pub def benchmark27(): Bool = Set.memberOf(-1, Set.replace(99, -1, Set.range(0, 100)))
+
+    ///
+    /// create a set of 4 integers and compute the size of its subsets.
+    ///
+    @benchmark
+    pub def benchmark28(): Bool = Set.size(Set.subsets(Set.range(0, 4))) == 16
+
+    ///
+    /// create a set of 6 integers and compute the size of its subsets.
+    ///
+    @benchmark
+    pub def benchmark29(): Bool = Set.size(Set.subsets(Set.range(0, 6))) == 64
 
     ///
     /// create two sets of integers and compute the size of their union.
     ///
     @benchmark
-    pub def benchmark19(): Bool = Set.size(Set.union(List.toSet(List.range(0, 30)), List.toSet(List.range(20, 40)))) == 40
+    pub def benchmark30(): Bool = Set.size(Set.union(Set.range(0, 50), Set.range(25, 50))) == 50
 
     ///
-    /// create a set of integers, compute all its subsets, flatten (union) them, and compute the size of the resulting set.
+    /// create two sets of integers and compute the size of their union.
     ///
     @benchmark
-    pub def benchmark20(): Bool = Set.size(Set.flatten(Set.subsets(List.toSet(List.range(0, 6))))) == 6
+    pub def benchmark31(): Bool = Set.size(Set.union(Set.range(0, 75), Set.range(50, 100))) == 100
+
+    ///
+    /// create a set of integers, compute all its subsets, flatten (union) them and compute the size of the resulting set.
+    ///
+    @benchmark
+    pub def benchmark32(): Bool = Set.size(Set.flatten(Set.subsets(Set.range(0, 4)))) == 4
+
+    ///
+    /// create a set of integers, convert it to a list and compute the length of the list.
+    ///
+    @benchmark
+    pub def benchmark33(): Bool = List.length(Set.toList(Set.range(0, 100))) == 100
 
 }
