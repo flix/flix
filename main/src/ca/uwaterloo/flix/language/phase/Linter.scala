@@ -389,8 +389,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //      case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
-    //      case class GetField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.GetField(field1, exp1, _, _, _), Expression.GetField(field2, exp2, _, _, _)) if field1 == field2 =>
+      unify(exp1, exp2)
+
     //      case class PutField(field: Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
