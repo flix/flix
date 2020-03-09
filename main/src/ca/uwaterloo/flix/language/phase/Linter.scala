@@ -86,7 +86,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Int32(lit1, _), Expression.Int32(lit2, _)) if lit1 == lit2 => Some(Substitution.empty)
 
-    case (Expression.Var(sym, _, _), _) => Some(Substitution.singleton(sym, lint0))
+    case (Expression.Var(sym, _, _), _) => Some(Substitution.singleton(sym, exp0))
 
     // NB: Unification is left-biased so there is no case for a variable on the rhs.
 
