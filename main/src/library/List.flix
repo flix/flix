@@ -847,33 +847,13 @@ namespace List {
     /////////////////////////////////////////////////////////////////////////////
 
     @lint
-    def filterFilter1(): Bool =
+    def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
             filter(g, filter(f, xs)) === filter(f >> g, xs)
 
     @lint
-    def filterFilter2(): Bool =
-        forall [a] (f: a ~> Bool, g: a -> Bool, xs: List[a]).
-            filter(g, filter(f, xs)) === filter(f >> g, xs)
-
-    @lint
-    def filterFilter3(): Bool =
-        forall [a] (f: a -> Bool, g: a ~> Bool, xs: List[a]).
-            filter(g, filter(f, xs)) === filter(f >> g, xs)
-
-    @lint
-    def findFind1(): Bool =
+    def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
-            Option.find(g, List.find(f, xs)) === find(f >> g, xs)
-
-    @lint
-    def findFind2(): Bool =
-        forall [a] (f: a ~> Bool, g: a -> Bool, xs: List[a]).
-            Option.find(g, List.find(f, xs)) === find(f >> g, xs)
-
-    @lint
-    def findFind3(): Bool =
-        forall [a] (f: a -> Bool, g: a ~> Bool, xs: List[a]).
             Option.find(g, List.find(f, xs)) === find(f >> g, xs)
 
     @lint

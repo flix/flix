@@ -50,10 +50,10 @@ namespace Option {
       forall [a, b] (o: Option[a], f: (b, a) -> b, i: b).
         Option.isEmpty(o) `implies` (Option.foldLeft(f, i, o) == i)
 
-    @lint
-    def isEmptyFoldRight(): Bool =
-      forall [a, b] (o: Option[a], f: (a, b) -> b, i: b).
-        Option.isEmpty(o) `implies` (Option.foldLeft(f, o, i) == i)
+//    @lint
+//    def isEmptyFoldRight(): Bool =
+//      forall [a, b] (o: Option[a], f: (a, b) -> b, i: b).
+//        Option.isEmpty(o) `implies` (Option.foldLeft(f, o, i) == i)
 
     @lint
     def isEmptyForall(): Bool =

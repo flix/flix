@@ -283,18 +283,8 @@ namespace Option {
             flatten(Some(o)) === o
 
     @lint
-    def filterFilter1(): Bool =
+    def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            filter(g, filter(f, o)) === filter(f >> g, o)
-
-    @lint
-    def filterFilter2(): Bool =
-        forall [a] (f: a ~> Bool, g: a -> Bool, o: Option[a]).
-            filter(g, filter(f, o)) === filter(f >> g, o)
-
-    @lint
-    def filterFilter3(): Bool =
-        forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
             filter(g, filter(f, o)) === filter(f >> g, o)
 
     @lint
