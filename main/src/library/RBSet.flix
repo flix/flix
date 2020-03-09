@@ -192,7 +192,7 @@ namespace RBSet {
     ///
     /// Returns all subsets of `xs`.
     ///
-    /// TODO: Make compiler agree that this should work
+    /// TODO: Optimize (possibly caused by slow __cmp in RBTree)
     pub def subsets(xs: RBSet[a]): RBSet[RBSet[a]] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
@@ -234,6 +234,7 @@ namespace RBSet {
     ///
     /// The function `f` must be pure.
     ///
+    /// TODO: Optimize
     pub def partition(f: a -> Bool, xs: RBSet[a]): (RBSet[a], RBSet[a]) =
         foldLeft((acc, x) -> let (a, b) = acc; if (f(x)) (insert(x, a), b) else (a, insert(x, b)), (empty(), empty()), xs)
 
