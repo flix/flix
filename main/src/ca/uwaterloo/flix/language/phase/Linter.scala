@@ -168,17 +168,18 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
 
+      case Expression.InvokeConstructor(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint))
 
-      //      case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class InvokeMethod(method: Method, exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class GetField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class PutField(field: Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.InvokeMethod(_, exp, exps, _, _, _) => visitExp(exp, lint) ::: exps.flatMap(visitExp(_, lint))
+
+      case Expression.InvokeStaticMethod(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+
+      case Expression.GetField(_, exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.PutField(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+
+
       //      case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
