@@ -153,30 +153,22 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Ref(exp, _, _, _) => visitExp(exp, lint)
 
-      //      case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Bool
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
-      //    def tpe: Type = Type.Bool
-      //
-      //    def eff: Type = Type.Pure
-      //    }
-      //
-      //      case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
-      //      case class Cast(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-      //
+      case Expression.Deref(exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.Assign(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+
+      case Expression.Existential(_, exp, _) => visitExp(exp, lint)
+
+      case Expression.Universal(_, exp, _) => visitExp(exp, lint)
+
+      case Expression.Ascribe(exp, _, _, _) => visitExp(exp, lint)
+
+      case Expression.Cast(exp, _, _, _) => visitExp(exp, lint)
+
       //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
+
+
       //      case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
       //
       //      case class InvokeMethod(method: Method, exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
