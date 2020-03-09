@@ -42,7 +42,7 @@ object LinterError {
       vt << Code(loc, s"matches ${sym.name}.") << NewLine
       vt << "The lint suggests that this code can be replaced by: " << NewLine
       vt << NewLine
-      vt << "  " << Green(PrettyExpression.pretty(replacement)) << NewLine
+      vt << "  " << Magenta(PrettyExpression.pretty(replacement)) << NewLine
       vt << NewLine
       vt << "The lint was declared at: '" << Cyan(sym.loc.format) << "'." << NewLine
     }

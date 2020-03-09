@@ -62,6 +62,8 @@ object PrettyExpression {
     //  def eff: Type = Type.Pure
     //  }
     //
+    case Expression.Int32(lit, _) => lit.toString
+
     //    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
     //  def tpe: Type = Type.Int32
     //
@@ -107,8 +109,7 @@ object PrettyExpression {
     //  }
     //
     case Expression.Lambda(fparam, exp, _, _) =>
-      s"${fparam.sym.text} -> { ${pretty(exp)} }"
-
+      s"${fparam.sym.text} -> ${pretty(exp)}"
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       s"${pretty(exp1)}(${pretty(exp2)})"
@@ -116,7 +117,7 @@ object PrettyExpression {
     //    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     case Expression.Binary(op, exp1, exp2, _, _, _) => op match {
-      case BinaryOperator.Plus => s"(${pretty(exp1)}) + (${pretty(exp2)})"
+      case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
       case _ => e0.toString
     }
 
@@ -129,10 +130,18 @@ object PrettyExpression {
     //    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      s"${pretty(exp1); pretty(exp2)}"
+
     //
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+
+    case Expression.Tag(_, tag, exp, _, _, _) =>
+      s"$tag${pretty(exp)}"
+
     //
     //    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //

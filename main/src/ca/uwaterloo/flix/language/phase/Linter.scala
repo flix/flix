@@ -112,7 +112,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Var(sym, varTyp, _), _) =>
       val expTyp = exp0.tpe
-      println(s"canUnify($expTyp, $varTyp)")
+      //println(s"canUnify($expTyp, $varTyp)")
       if (canUnify(varTyp, expTyp))
         Some(Substitution.singleton(sym, exp0))
       else None

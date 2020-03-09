@@ -298,18 +298,8 @@ namespace Option {
             filter(g, filter(f, o)) === filter(f >> g, o)
 
     @lint
-    def findFind1(): Bool =
+    def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
-            find(g, find(f, o)) === find(f >> g, o)
-
-    @lint
-    def findFind2(): Bool =
-        forall [a] (f: a ~> Bool, g: a -> Bool, o: Option[a]).
-            find(g, find(f, o)) === find(f >> g, o)
-
-    @lint
-    def findFind3(): Bool =
-        forall [a] (f: a -> Bool, g: a ~> Bool, o: Option[a]).
             find(g, find(f, o)) === find(f >> g, o)
 
     @lint
