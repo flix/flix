@@ -108,7 +108,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Stm(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
 
-      //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
+      case Expression.Match(exp, rules, _, _, _) =>
+        rules.foldLeft(visitExp(exp, lint)) {
+          case (acc, MatchRule(_, guard, body)) => visitExp(guard, lint) ::: visitExp(body, lint) ::: acc
+        }
 
       case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint)
 
@@ -770,8 +773,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e3 = apply(exp3)
         Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
 
-      case _ => ???
-
+      case _ => exp0 // TODO
     }
 
     /**
