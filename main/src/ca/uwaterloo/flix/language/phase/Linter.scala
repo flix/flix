@@ -125,7 +125,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   case class Substitution(m: Map[Symbol.VarSym, Expression]) {
 
     /**
-      * Applies the substitution to the given expression.
+      * Returns `true` if `this` is the empty substitution.
+      */
+    val isEmpty: Boolean = m.isEmpty
+
+    /**
+      * Applies the substitution to the expression `exp0`.
       */
     def apply(exp0: Expression): Expression = exp0 match {
       case Expression.Unit(_) => exp0
@@ -163,10 +168,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Hole(_, _, _, _) => exp0
 
-      //        case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  TODO
-      //          def eff: Type = Type.Pure
-      //        }
-      //
+      case Expression.Lambda(fparam, exp, tpe, loc) =>
+        val f = apply(fparam)
+        val e = apply(exp)
+        Expression.Lambda(f, e, tpe, loc)
 
       case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
@@ -397,7 +402,46 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     }
 
-    def @@(that: Substitution): Substitution = ??? // TODO
+    /**
+      * Applies the substitution to the formal parameter `fparam0`.
+      */
+    def apply(fparam0: FormalParam): FormalParam = fparam0 match {
+      case FormalParam(sym, mod, tpe, loc) => m.get(sym) match {
+        case None => fparam0
+        case Some(otherSym) => FormalParam(???, mod, tpe, loc) // TODO: The subst. need to contain more than just expressions?
+      }
+    }
+
+    /**
+      * Returns the left-biased composition of `this` substitution with `that` substitution.
+      */
+    def ++(that: Substitution): Substitution = {
+      if (this.isEmpty) {
+        that
+      } else if (that.isEmpty) {
+        this
+      } else {
+        Substitution(
+          this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
+        )
+      }
+    }
+
+    /**
+      * Returns the composition of `this` substitution with `that` substitution.
+      */
+    def @@(that: Substitution): Substitution = {
+      if (this.isEmpty) {
+        that
+      } else if (that.isEmpty) {
+        this
+      } else {
+        val newMap = that.m.foldLeft(Map.empty[Symbol.VarSym, Expression]) {
+          case (macc, (x, t)) => macc.updated(x, this.apply(t))
+        }
+        Substitution(newMap) ++ this
+      }
+    }
 
   }
 
