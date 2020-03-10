@@ -17,10 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.{ConstraintParam, _}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -838,9 +837,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.Cast(e, tpe, eff, loc)
 
-
-      //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
-      //
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = apply(exp)
+        val rs = rules.map {
+          case CatchRule(sym, clazz, body) => CatchRule(apply(sym), clazz, apply(body))
+        }
+        Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case Expression.InvokeConstructor(constructor, args, tpe, eff, loc) =>
         val as = args.map(apply)
@@ -883,8 +885,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.PutChannel(e1, e2, tpe, eff, loc)
 
-      //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
-      //
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val d = default.map(apply)
+        val rs = rules.map {
+          case SelectChannelRule(sym, chan, body) => SelectChannelRule(apply(sym), apply(chan), apply(body))
+        }
+        Expression.SelectChannel(rs, d, tpe, eff, loc)
 
       case Expression.ProcessSpawn(exp, tpe, eff, loc) =>
         val e = apply(exp)
@@ -892,10 +898,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.ProcessPanic(msg, tpe, eff, loc) => exp0
 
-      //        case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  TODO
-      //          def eff: Type = Type.Pure
-      //        }
-      //
+      case Expression.FixpointConstraintSet(cs, tpe, loc) =>
+        Expression.FixpointConstraintSet(cs.map(apply), tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
@@ -924,15 +928,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case Expression.Universal(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
-
-      case _ => exp0 // TODO
-    }
-
-    /**
-      * Applies the substitution to the formal parameter `fparam0`.
-      */
-    def apply(fparam0: FormalParam): FormalParam = fparam0 match {
-      case FormalParam(sym, mod, tpe, loc) => FormalParam(apply(sym), mod, tpe, loc)
     }
 
     /**
@@ -947,16 +942,27 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       case Pattern.Unit(_) => pat0
+
       case Pattern.True(_) => pat0
+
       case Pattern.False(_) => pat0
+
       case Pattern.Char(_, _) => pat0
+
       case Pattern.Float32(_, _) => pat0
+
       case Pattern.Float64(_, _) => pat0
+
       case Pattern.Int8(_, _) => pat0
+
       case Pattern.Int16(_, _) => pat0
+
       case Pattern.Int32(_, _) => pat0
+
       case Pattern.Int64(_, _) => pat0
+
       case Pattern.BigInt(_, _) => pat0
+
       case Pattern.Str(_, _) => pat0
 
       case Pattern.Tag(sym, tag, pat, tpe, loc) =>
@@ -980,6 +986,44 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val ps = elms.map(apply)
         val newSym = apply(sym)
         Pattern.ArrayHeadSpread(newSym, ps, tpe, loc)
+    }
+
+    /**
+      * Applies the substitution to the constraint `c0`.
+      */
+    private def apply(c0: Constraint): Constraint = c0 match {
+      case Constraint(cparams, head, body, loc) => Constraint(cparams.map(apply), apply(head), body.map(apply), loc)
+    }
+
+    /**
+      * Applies the substitution to the head predicate `head0`.
+      */
+    private def apply(head0: Predicate.Head): Predicate.Head = head0 match {
+      case Head.Atom(sym, den, terms, tpe, loc) => Head.Atom(sym, den, terms.map(apply), tpe, loc)
+      case Head.Union(exp, tpe, loc) => Head.Union(apply(exp), tpe, loc)
+    }
+
+    /**
+      * Applies the substitution to the body predicate `body0`.
+      */
+    private def apply(body0: Predicate.Body): Predicate.Body = body0 match {
+      case Body.Atom(sym, den, polarity, terms, tpe, loc) => Body.Atom(sym, den, polarity, terms.map(apply), tpe, loc)
+      case Body.Guard(exp, loc) => Body.Guard(apply(exp), loc)
+    }
+
+    /**
+      * Applies the substitution to the constraint parameter `cparam0`.
+      */
+    def apply(cparam0: ConstraintParam): ConstraintParam = cparam0 match {
+      case ConstraintParam.HeadParam(sym, tpe, loc) => ConstraintParam.HeadParam(apply(sym), tpe, loc)
+      case ConstraintParam.RuleParam(sym, tpe, loc) => ConstraintParam.RuleParam(apply(sym), tpe, loc)
+    }
+
+    /**
+      * Applies the substitution to the formal parameter `fparam0`.
+      */
+    def apply(fparam0: FormalParam): FormalParam = fparam0 match {
+      case FormalParam(sym, mod, tpe, loc) => FormalParam(apply(sym), mod, tpe, loc)
     }
 
     /**
