@@ -339,9 +339,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
-    //      case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
-    //        def eff: Type = Type.Pure
-    //      }
+    case (Expression.Lambda(fparam1, exp1, _, _), Expression.Lambda(fparam2, exp2, _, _)) if fparam1.sym == fparam2.sym =>
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
@@ -352,10 +351,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    //      case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
-    //      case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.Let(sym1, exp11, exp12, _, _, _), Expression.Let(sym2, exp21, exp22, _, _, _)) if sym1 == sym2 =>
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
+
+    case (Expression.LetRec(sym1, exp11, exp12, _, _, _), Expression.LetRec(sym2, exp21, exp22, _, _, _)) if sym1 == sym2 =>
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.IfThenElse(exp11, exp12, exp13, _, _, _), Expression.IfThenElse(exp21, exp22, exp23, _, _, _)) =>
       for {
@@ -440,19 +440,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.Existential(_, _, _), _) =>
-      // An existential never unifies with anything.
+      // An existentially quantified expression never unifies with anything.
       None
 
     case (_, Expression.Existential(_, _, _)) =>
-      // An existential never unifies with anything.
+      // An existentially quantified expression never unifies with anything.
       None
 
-    //      case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
-    //        def tpe: Type = Type.Bool
-    //
-    //        def eff: Type = Type.Pure
-    //      }
-    //
+    case (Expression.Universal(_, _, _), _) =>
+      // A universally quantified expression never unifies with anything.
+      None
+
+    case (_, Expression.Universal(_, _, _)) =>
+      // A universally quantified expression never unifies with anything.
+      None
 
     case (Expression.Ascribe(exp1, _, _, _), Expression.Ascribe(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
