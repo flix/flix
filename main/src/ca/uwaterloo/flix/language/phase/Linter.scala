@@ -422,8 +422,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //      case class InvokeMethod(method: Method, exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
-    //      case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+
+    case (Expression.InvokeMethod(method1, exp1, exps1, _, _, _), Expression.InvokeMethod(method2, exp2, exps2, _, _, _)) if method1 == method2 =>
+      for {
+        s1 <- unifyExp(exp1, exp2)
+        s2 <- unifyExps(exps1.map(s1.apply), exps2.map(s1.apply))
+      } yield s2 @@ s1
 
     case (Expression.InvokeStaticMethod(method1, exps1, _, _, _), Expression.InvokeStaticMethod(method2, exps2, _, _, _)) if method1 == method2 =>
       unifyExps(exps1, exps2)
@@ -509,7 +513,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns all non-lints definitions in the given AST `root`.
     */
   private def targetsOf(root: Root): List[Def] = root.defs.foldLeft(Nil: List[Def]) {
-    case (acc, (sym, defn)) => if (!defn.ann.isLint) defn :: acc else acc
+    case (acc, (sym, defn)) => if (!defn.ann.isLint && !defn.ann.isTest) defn :: acc else acc // TODO: Criteria?
   }
 
   /**
