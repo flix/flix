@@ -23,7 +23,7 @@ object LinterError {
     * @param sym the symbol of the lint.
     * @param loc the location of the expression.
     */
-  case class Simplify(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
+  case class Lint(sym: Symbol.DefnSym, replacement: Expression, loc: SourceLocation) extends LinterError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal

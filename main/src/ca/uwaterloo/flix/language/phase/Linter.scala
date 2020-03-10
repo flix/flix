@@ -26,24 +26,27 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import scala.annotation.tailrec
 
-// TODO: DOC
+/**
+  * The Linter phase checks for any applicable lints within the ast.
+  */
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
-  // TODO: DOC
+  /**
+    * Checks the given AST `root` for lints.
+    */
   def run(root: Root)(implicit flix: Flix): Validation[Root, LinterError] = flix.phase("Linter") {
-    // Compute all lints in the AST root.
+    // Find all the lints in the ast.
     val lints = lintsOf(root)
 
-    // Compute a list of all non-lint definitions in the program.
-    val defs = nonLintsOf(root)
+    // Find all the targets the lints should be applied to.
+    val targets = targetsOf(root)
 
-    // TODO: Debug
-    println(s"I found: ${lints.length} lints to match against ${defs.length} defs.")
+    println(s"I found: ${lints.length} lints to match against ${targets.length} defs.") // TODO: Debug
 
-    // Searches for applicable lints.
-    val results = ParOps.parMap(visitDef(_, lints), defs)
+    // Searches for applicable lints in the targets.
+    val results = ParOps.parMap(visitDef(_, lints), targets)
 
-    // Check if there were any applicable lints.
+    // Report linter errors (if any).
     results.flatten match {
       case Nil => root.toSuccess
       case xs => Failure(LazyList.from(xs))
@@ -51,14 +54,19 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * Searches for applicable lints in the given definition `defn0`.
+    * Searches for lint instances in the given definition `defn0`.
+    *
+    * Returns [[Nil]] if no lint instances are found.
     */
   private def visitDef(defn: Def, lints: List[Lint])(implicit flix: Flix): List[LinterError] =
     lints.flatMap(visitExp(defn.exp, _))
 
-
-  // TODO: DOC
-  private def visitExp(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
+  /**
+    * Searches for instances of the given `lint0` in the given expression `exp0`.
+    *
+    * Returns [[Nil]] if no lint instances are found.
+    */
+  private def visitExp(exp0: Expression, lint0: Lint)(implicit flix: Flix): List[LinterError] = {
     val recursiveErrors = exp0 match {
 
       case Expression.Unit(_) => Nil
@@ -93,162 +101,177 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
       case Expression.Hole(_, _, _, _) => Nil
 
-      case Expression.Lambda(_, exp, _, _) => visitExp(exp, lint)
+      case Expression.Lambda(_, exp, _, _) => visitExp(exp, lint0)
 
-      case Expression.Apply(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.Apply(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.Unary(_, exp, _, _, _) => visitExp(exp, lint)
+      case Expression.Unary(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.Binary(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.Let(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.Let(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.LetRec(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.LetRec(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
-      case Expression.Stm(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.Stm(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.Match(exp, rules, _, _, _) =>
-        rules.foldLeft(visitExp(exp, lint)) {
-          case (acc, MatchRule(_, guard, body)) => visitExp(guard, lint) ::: visitExp(body, lint) ::: acc
+        rules.foldLeft(visitExp(exp, lint0)) {
+          case (acc, MatchRule(_, guard, body)) => visitExp(guard, lint0) ::: visitExp(body, lint0) ::: acc
         }
 
-      case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint)
+      case Expression.Tag(_, _, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.Tuple(exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+      case Expression.Tuple(exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
 
       case Expression.RecordEmpty(_, _) => Nil
 
-      case Expression.RecordSelect(exp, _, _, _, _) => visitExp(exp, lint)
+      case Expression.RecordSelect(exp, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.RecordExtend(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.RecordExtend(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.RecordRestrict(_, exp, _, _, _) => visitExp(exp, lint)
+      case Expression.RecordRestrict(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.ArrayLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+      case Expression.ArrayLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
 
-      case Expression.ArrayNew(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.ArrayNew(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.ArrayLoad(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.ArrayLoad(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.ArrayLength(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.ArrayLength(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
+      case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
-      case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
+      case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
-      case Expression.VectorLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+      case Expression.VectorLit(exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
 
-      case Expression.VectorNew(exp, _, _, _, _) => visitExp(exp, lint)
+      case Expression.VectorNew(exp, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.VectorLoad(exp, _, _, _, _) => visitExp(exp, lint)
+      case Expression.VectorLoad(exp, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.VectorStore(exp1, _, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.VectorStore(exp1, _, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.VectorLength(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.VectorLength(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.VectorSlice(exp, _, _, _, _, _) => visitExp(exp, lint)
+      case Expression.VectorSlice(exp, _, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.Ref(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.Ref(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.Deref(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.Deref(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.Assign(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.Assign(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.Existential(_, exp, _) => visitExp(exp, lint)
+      case Expression.Existential(_, exp, _) => visitExp(exp, lint0)
 
-      case Expression.Universal(_, exp, _) => visitExp(exp, lint)
+      case Expression.Universal(_, exp, _) => visitExp(exp, lint0)
 
-      case Expression.Ascribe(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.Ascribe(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.Cast(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.Cast(exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.TryCatch(exp, rules, _, _, _) =>
-        rules.foldLeft(visitExp(exp, lint)) {
-          case (acc, CatchRule(_, _, body)) => visitExp(body, lint) ::: acc
+        rules.foldLeft(visitExp(exp, lint0)) {
+          case (acc, CatchRule(_, _, body)) => visitExp(body, lint0) ::: acc
         }
 
-      case Expression.InvokeConstructor(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+      case Expression.InvokeConstructor(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
 
-      case Expression.InvokeMethod(_, exp, exps, _, _, _) => visitExp(exp, lint) ::: exps.flatMap(visitExp(_, lint))
+      case Expression.InvokeMethod(_, exp, exps, _, _, _) => visitExp(exp, lint0) ::: exps.flatMap(visitExp(_, lint0))
 
-      case Expression.InvokeStaticMethod(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint))
+      case Expression.InvokeStaticMethod(_, exps, _, _, _) => exps.flatMap(visitExp(_, lint0))
 
-      case Expression.GetField(_, exp, _, _, _) => visitExp(exp, lint)
+      case Expression.GetField(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.PutField(_, exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.PutField(_, exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.GetStaticField(_, _, _, _) => Nil
 
-      case Expression.PutStaticField(_, exp, _, _, _) => visitExp(exp, lint)
+      case Expression.PutStaticField(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.NewChannel(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.NewChannel(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.GetChannel(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.GetChannel(exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.PutChannel(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
       case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
-        rules.foldLeft(default.map(visitExp(_, lint)).getOrElse(Nil)) {
-          case (acc, SelectChannelRule(_, chan, body)) => visitExp(chan, lint) ::: visitExp(body, lint) ::: acc
+        rules.foldLeft(default.map(visitExp(_, lint0)).getOrElse(Nil)) {
+          case (acc, SelectChannelRule(_, chan, body)) => visitExp(chan, lint0) ::: visitExp(body, lint0) ::: acc
         }
 
-      case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, lint)
+      case Expression.ProcessSpawn(exp, _, _, _) => visitExp(exp, lint0)
 
       case Expression.ProcessPanic(_, _, _, _) => Nil
 
-      case Expression.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, lint))
+      case Expression.FixpointConstraintSet(cs, _, _) => cs.flatMap(visitConstraint(_, lint0))
 
-      case Expression.FixpointCompose(exp1, exp2, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.FixpointCompose(exp1, exp2, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, lint)
+      case Expression.FixpointSolve(exp, _, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.FixpointProject(_, exp, _, _, _) => visitExp(exp, lint)
+      case Expression.FixpointProject(_, exp, _, _, _) => visitExp(exp, lint0)
 
-      case Expression.FixpointEntails(exp1, exp2, tpe, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint)
+      case Expression.FixpointEntails(exp1, exp2, tpe, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0)
 
-      case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint) ::: visitExp(exp2, lint) ::: visitExp(exp3, lint)
+      case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) => visitExp(exp1, lint0) ::: visitExp(exp2, lint0) ::: visitExp(exp3, lint0)
 
       case _ => Nil
     }
 
-    tryLint(exp0, lint) ::: recursiveErrors
+    tryLint(exp0, lint0) ::: recursiveErrors
   }
 
-  // TODO: DOC
+  /**
+    * Searches for instances of the given `lint0` in the given constraint `c0`.
+    *
+    * Returns [[Nil]] if no lint instances are found.
+    */
   private def visitConstraint(c0: Constraint, lint0: Lint)(implicit flix: Flix): List[LinterError] = c0 match {
     case Constraint(_, head, body, loc) => body.foldLeft(visitHead(head, lint0)) {
       case (acc, body0) => visitBody(body0, lint0) ::: acc
     }
   }
 
-  // TODO: DOC
+  /**
+    * Searches for instances of the given `lint0` in the given head predicate `head0`.
+    *
+    * Returns [[Nil]] if no lint instances are found.
+    */
   private def visitHead(head0: Predicate.Head, lint0: Lint)(implicit flix: Flix): List[LinterError] = head0 match {
     case Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp(_, lint0))
     case Head.Union(exp, _, _) => visitExp(exp, lint0)
   }
 
-  // TODO: DOC
+  /**
+    * Searches for instances of the given `lint0` in the given body predicate `body0`.
+    *
+    * Returns [[Nil]] if no lint instances are found.
+    */
   private def visitBody(body0: Predicate.Body, lint0: Lint)(implicit flix: Flix): List[LinterError] = body0 match {
     case Body.Atom(_, _, _, _, _, _) => Nil
     case Body.Guard(exp, _) => visitExp(exp, lint0)
   }
 
-  // TODO: DOC
-  private def tryLint(exp0: Expression, lint: Lint)(implicit flix: Flix): List[LinterError] = {
-    unify(lint.leftExp, exp0) match {
+  /**
+    * Attempts to apply the given `lint0` to the given expression `exp0`.
+    *
+    * Returns [[Nil]] if the lint is not applicable.
+    */
+  private def tryLint(exp0: Expression, lint0: Lint)(implicit flix: Flix): List[LinterError] =
+    unifyExp(lint0.pattern, exp0) match {
       case None => Nil
-      case Some(subst) => LinterError.Simplify(lint.sym, subst(lint.replacement), exp0.loc) :: Nil
+      case Some(subst) => LinterError.Lint(lint0.sym, subst(lint0.replacement), exp0.loc) :: Nil
     }
-  }
 
   /**
-    * Optionally return a substitution that makes `lint0` and `exp0` equal.
+    * Optionally returns a substitution that makes `lint0` and `exp0` equal.
     *
     * NB: Unification is left-biased: variables in the expression are not unified against the lint.
     */
-  private def unify(lint0: Expression, exp0: Expression)(implicit flix: Flix): Option[Substitution] = (lint0, exp0) match {
+  private def unifyExp(lint0: Expression, exp0: Expression)(implicit flix: Flix): Option[Substitution] = (lint0, exp0) match {
     case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
 
     case (Expression.True(_), Expression.True(_)) => Some(Substitution.empty)
@@ -298,17 +321,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unify(exp11, exp21)
-        s2 <- unify(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
       } yield s2 @@ s1
 
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
-      unify(exp1, exp2)
+      unifyExp(exp1, exp2)
 
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       for {
-        s1 <- unify(exp11, exp21)
-        s2 <- unify(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
       } yield s2 @@ s1
 
     //      case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
@@ -320,8 +343,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Stm(exp11, exp12, _, _, _), Expression.Stm(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unify(exp11, exp21)
-        s2 <- unify(s1(exp21), s1(exp22))
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp21), s1(exp22))
       } yield s2 @@ s1
 
     //      case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
@@ -397,7 +420,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //      case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     case (Expression.GetField(field1, exp1, _, _, _), Expression.GetField(field2, exp2, _, _, _)) if field1 == field2 =>
-      unify(exp1, exp2)
+      unifyExp(exp1, exp2)
 
     //      case class PutField(field: Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
@@ -457,7 +480,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns all non-lints definitions in the given AST `root`.
     */
-  private def nonLintsOf(root: Root): List[Def] = root.defs.foldLeft(Nil: List[Def]) {
+  private def targetsOf(root: Root): List[Def] = root.defs.foldLeft(Nil: List[Def]) {
     case (acc, (sym, defn)) => if (!defn.ann.isLint) defn :: acc else acc
   }
 
@@ -488,7 +511,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * TODO: DOC
     */
-  case class Lint(sym: Symbol.DefnSym, leftExp: Expression, replacement: Expression)
+  case class Lint(sym: Symbol.DefnSym, pattern: Expression, replacement: Expression)
 
   // TODO: DOC
   object Substitution {
