@@ -477,8 +477,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2)
 
-    //      case class FixpointProject(sym: Symbol.PredSym, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.FixpointProject(sym1, exp1, _, _, _), Expression.FixpointProject(sym2, exp2, _, _, _)) if sym1 == sym2 =>
+      unifyExp(exp1, exp2)
+
+
+
     //      case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
@@ -499,6 +502,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExps(xs.map(s1.apply), ys.map(s1.apply))
       } yield s2 @@ s1
   }
+
+  // TODO: DOC
+  private def unifyConstraint(c1: Constraint, c2: Constraint)(implicit flix: Flix): Option[Substitution] = (c1, c2) match {
+    case (Constraint(_, head1, body1, _), Constraint(_, head2, body2, _)) =>
+      ??? // TODO
+  }
+
+
 
   /**
     * Returns all lints in the given AST `root`.
