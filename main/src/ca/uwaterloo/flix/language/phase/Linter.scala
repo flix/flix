@@ -458,6 +458,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
+
+    case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
     //      case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class ProcessPanic(msg: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
