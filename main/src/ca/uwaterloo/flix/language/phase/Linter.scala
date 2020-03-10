@@ -306,18 +306,33 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Wild(_, _), Expression.Wild(_, _)) => Some(Substitution.empty)
 
     case (Expression.Var(sym, varTyp, _), _) =>
+      // The type of the expression.
       val expTyp = exp0.tpe
 
-      if (exp0.isInstanceOf[Expression.Var]) {
-        return None // TODO
+      // Determine if we are unifying a meta-variable.
+      if (metaVars.contains(sym)) {
+        // Case 1: We are unifying a meta-variable.
+        // Determine if we can unify the type of meta-variable and the expression.
+        if (canUnify(varTyp, expTyp))
+          Some(Substitution.singleton(sym, exp0))
+        else
+          None
+      } else {
+        // Case 2: We are unifying a program variable.
+        // We can only unify one program variable with another program variable.
+        exp0 match {
+          case Expression.Var(otherSym, _, _) =>
+            // TODO: Type check?
+            // TODO: How to make the unification work with program variables?
+            // Some(Substitution.singleton(sym, exp0))
+            None
+          case _ => None
+        }
       }
 
-      if (canUnify(varTyp, expTyp))
-        Some(Substitution.singleton(sym, exp0))
-      else
-        None
-
-    // NB: Unification is left-biased so there is no case for a variable on the rhs.
+    case (_, Expression.Var(sym, varTyp, _)) =>
+      // NB: Unification is left-biased so there is no case for a variable on the rhs.
+      None
 
     case (Expression.Def(sym1, _, _), Expression.Def(sym2, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
