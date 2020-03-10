@@ -241,7 +241,7 @@ namespace RBSet {
     ///
     /// Returns the set `xs` as a list.
     ///
-    pub def toList(xs: RBSet[a]): List[a] = foldRight((acc, x) -> x :: acc, Nil, xs)
+    pub def toList(xs: RBSet[a]): List[a] = foldLeft((acc, x) -> x :: acc, Nil, xs)
 
     ///
     /// Returns the association set `xs` as a map.
@@ -279,18 +279,11 @@ namespace RBSet {
     pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = __cmp(xs, ys) == 0
 
     ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, n: Int32, acc: RBSet[Int32]): RBSet[Int32] =
-        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
-
-    ///
     /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns `empty()` if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): RBSet[Int32] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
+    pub def range(b: Int32, e: Int32): RBSet[Int32] = RBSet(RBTree.range(b, e))
 
     ///
     /// Returns a rudimentary string representation of `xs`.
