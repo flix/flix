@@ -321,9 +321,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         // We can only unify one program variable with another program variable.
         exp0 match {
           case Expression.Var(otherSym, _, _) =>
-            // TODO: Type check?
-            // TODO: How to make the unification work with program variables?
-            // TODO: This does not work
+            // TODO: What should be done here?
             // Some(Substitution.singleton(sym, exp0))
             None
           case _ => None
@@ -588,18 +586,24 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * TODO: DOC
+    * Return the lint from the given symbol `sym` and expression `exp0`.
     */
   private def lintOf(sym: Symbol.DefnSym, exp0: Expression): Option[Lint] = {
-    val ctxEquiv = Symbol.mkDefnSym("===")
-    val implies = Symbol.mkDefnSym("implies")
-    val (quantifiers, popped) = popForall(exp0)
+    // The contextual equivalence symbol.
+    val contextEqSym = Symbol.mkDefnSym("===")
 
-    popped match {
-      case Expression.Apply(Expression.Apply(Expression.Def(someSym, _, _), left, _, _, _), right, _, _, _) =>
-        if (someSym == ctxEquiv) {
+    // The implication symbol.
+    val implies = Symbol.mkDefnSym("implies")
+
+    // Split the expression into its parts.
+    val (quantifiers, base) = popForall(exp0)
+
+    // Determine the type of lint.
+    base match {
+      case Expression.Apply(Expression.Apply(Expression.Def(lintSym, _, _), left, _, _, _), right, _, _, _) =>
+        if (lintSym == contextEqSym) {
           Some(Lint(sym, quantifiers, left, right))
-        } else if (someSym == implies) {
+        } else if (lintSym == implies) {
           None // TODO
         } else {
           println(s"Malformed lint: $sym ") // TODO
@@ -612,7 +616,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * TODO: DOC
+    * Represents a lint.
+    *
+    * @param sym         the symbol of the lint.
+    * @param quantifiers the quantifiers of the lint.
+    * @param pattern     the pattern of the lint.
+    * @param replacement the suggested replacement for the pattern.
     */
   case class Lint(sym: Symbol.DefnSym, quantifiers: List[FormalParam], pattern: Expression, replacement: Expression)
 
