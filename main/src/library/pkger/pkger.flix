@@ -1,5 +1,5 @@
-// Same type as `SemVer`, but all `Option` chaining is gone
-pub type alias SemVer = (Int, Int, Int, Option[String])
+// SemVer has to be a fully qualified version.
+pub type alias SemVer = (Int, Int, Int, Option[List[String]])
 
 // TODO: Temp public
 pub def isWithinBounds(specific: SemVer, bound: SemVer): Bool = {
@@ -26,6 +26,43 @@ pub def isWithinBounds(specific: SemVer, bound: SemVer): Bool = {
     }
 }
 
+enum Ord {
+    case Gt
+    case Eq
+    case Lt
+}
+
+pub def ppOrd(o: Ord): String = match o {
+    case Gt => "Gt",
+    case Eq => "Eq",
+    case Lt => "Lt"
+}
+
+pub def cmpSemVer(left: SemVer, right: SemVer): Ord = match (left, right) {
+    case ((lMajor, lMinor, lPatch, _lTag), (rMajor, rMinor, rPatch, _rTag)) => {
+        if (lMajor == rMajor) {
+            if (lMinor == rMinor) {
+                if (lPatch == rPatch) {
+                    // TODO: check tags too!!
+                    Eq
+                } else if (lPatch > rPatch) {
+                    Gt
+                } else {
+                    Lt
+                }
+            } else if (lMajor > rMajor) {
+                Gt
+            } else {
+                Lt
+            }
+        } else if (lMajor > rMajor) {
+            Gt
+        } else {
+            Lt
+        }
+    }
+}
+
 pub enum License {
     case MIT,
     case GPLv3
@@ -47,7 +84,7 @@ pub opaque type Package = { name: String
                           , license: Option[License]
                           // Mapping package dependency names to the semver pattern
                           , depends: List[(String, SemVer)]
-                          , homepage: Option[String] // Url?
+                          , home: Option[String] // Url?
                           }
 
 pub opaque type LockedPackage = { name: String
@@ -110,10 +147,22 @@ pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impur
             Result.flatMap(Path.mkdirs, dir)
         }, dirs);
 
-        let quote = Char.toString('"');
+        let quote = (s) -> Char.toString('"') + s + Char.toString('"');
 
         // TODO: Abstract this
-        let newPackageFile = newFile(["(package", "  (name " + name + ")", "  (version " + quote + "0.1.0" + quote + ")", ")"]);
+        let newPackageFile = newFile([
+            "(package",
+            "  (name " + name + ")",
+            "  (version " + quote("0.1.0") + ")",
+            // Empty list/empty value?
+            "  (authors )",
+            // Should description be quoted?
+            "  (description " + quote(name) + ")",
+            "  (license )",
+            "  (depends (package_one " + quote("1.2.3") + "))",
+            "  (home )",
+            ")"
+        ]);
         Result.flatMap(newPackageFile, Result.map(getPackageFile, workingDir));
 
         let newHistoryFile = newFile(["### v0.1.0", "  Initial Release"]);
@@ -125,7 +174,7 @@ pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impur
         let newReadmeFile = newFile(["# " + name, "", "Enter some useful information", ""]);
         Result.flatMap(newReadmeFile, Result.map(getReadmeFile, workingDir));
 
-        let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote + "Hello, World" + quote + ")"]);
+        let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
         Result.flatMap(newMainSourceFile, Result.map(getMainSourceFile, workingDir));
 
         let newMainTestFile = newFile(["@test", "def testMain01(): Bool & Impure = main() == ()"]);
@@ -145,7 +194,13 @@ pub enum ErrorFull {
 
 pub def main(): Result[Path, ErrorFull] & Impure = initPackage("package_test")
 
-pub def parser_main(): Bool = match Parser.runParser(SemVerParser.semVer(), "1.2.3") {
+pub def semver_main(): Bool = match Parser.runParser(SemVerParser.parseSemVer(), "1.2.3") {
     case Some(_) => true
     case None => false
 }
+
+pub def package_main(): Option[(String, Atom)] = Parser.runParser(PackageParser.parsePackage(), "hi")
+
+pub def json_main(): Bool = Option.isEmpty(Parser.runParser(JsonParser.jsonValue(), "[42]"))
+
+pub def test_main(): Int = 0

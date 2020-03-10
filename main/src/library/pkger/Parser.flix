@@ -31,7 +31,14 @@ namespace Parser {
     // Alternative
     pub def empty(): Parser[a] = _ -> None
 
-    pub def choose(l: Parser[a], r: Parser[a]): Parser[a] = input -> Option.choose(runParser(l, input), runParser(r, input))
+    pub def choose(l: Parser[a], r: Parser[a]): Parser[a] = input -> {
+        let resL = runParser(l, input);
+        if (Option.isEmpty(resL)) {
+            runParser(r, input)
+        } else {
+            resL
+        }
+    }
 
     def cons(x: a, xs: List[a]): List[a] = x :: xs
 
@@ -39,7 +46,7 @@ namespace Parser {
 
     pub def some(v: Parser[a]): Parser[List[a]] = cons <&> v <*> many(v)
 
-    pub def many(v: Parser[a]): Parser[List[a]] = some(v) <|> Parser.pure(Nil)
+    pub def many(v: Parser[a]): Parser[List[a]] = some(v) <|> pure(Nil)
 
     def listToString(xs: List[Char]): String = List.foldLeft((s, x) -> String.concat(s, Char.toString(x)), "", xs)
 
@@ -111,22 +118,45 @@ namespace JsonParser {
 
     pub def jsonString(): Parser[JsonValue] = (s -> JsonString(s)) <&> (Parser.char('"') *> Parser.span(c -> c != '"') <* Parser.char('"'))
 
-    // TODO: Tried to be smart in the `many` and `some` parsers and it backfired. Results in a stack overflow exception here
+    // TODO: Because `jsonValue` is called here, we recurse infinitely
     pub def jsonArrayElementHelper(): Parser[List[JsonValue]] = Parser.separatedBy(Parser.whitespace() *> Parser.char(',') <* Parser.whitespace(), jsonValue())
 
     pub def jsonArray(): Parser[JsonValue] = (xs -> JsonArray(xs)) <&> (Parser.char('[') *> Parser.whitespace() *> jsonArrayElementHelper() <* Parser.whitespace() <* Parser.whitespace())
 
-    pub def jsonValue(): Parser[JsonValue] = jsonBool() <|> jsonNumber() <|> jsonString()
+    pub def jsonValue(): Parser[JsonValue] = jsonBool() <|> jsonNumber() <|> jsonString() <|> jsonArray()
 }
 
 namespace SemVerParser {
     def parseNumber(): Parser[Int] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), s -> Result.toOption(Int32.fromString(s)))
 
-    pub def semVer(): Parser[SemVer] = Parser.bind(parseNumber(), major -> {
+    pub def parseSemVer(): Parser[SemVer] = Parser.bind(parseNumber(), major -> {
         Parser.bind(Parser.char('.') *> parseNumber(), minor -> {
             Parser.bind(Parser.char('.') *> parseNumber(), patch -> {
                 Parser.return((major, minor, patch, None))
             })
         })
     })
+}
+
+pub enum Atom {
+    case AtomIdentifier(String),
+    case AtomString(String),
+    case AtomList(List[Atom])
+}
+
+namespace PackageParser {
+    /*
+        TODO: S-expression plan
+        List of atoms (name?) that can be either an identifier, string, or another list (do we need strings? longer text?)
+        Parse into atom, and pick out values from that structure
+    */
+
+    def parseIdentifier(): Parser[Atom] = (s -> AtomIdentifier(s)) <&> Parser.span(c -> c != ' ')
+
+    def parseString(): Parser[Atom] = (s -> AtomString(s)) <&> (Parser.char('"') *> Parser.span(c -> c != '"') <* Parser.char('"'))
+
+    // TODO: Still bound by `some` and `many` mutual recursion issue
+    pub def parseAtomList(): Parser[Atom] = (xs -> AtomList(xs)) <&> (Parser.char('(') *> (Parser.separatedBy(Parser.whitespace(), parsePackage())) <* Parser.char(')'))
+
+    pub def parsePackage(): Parser[Atom] = parseIdentifier() <|> parseString()
 }
