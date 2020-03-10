@@ -431,16 +431,21 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.VectorLength(exp1, _, _, _), Expression.VectorLength(exp2, _, _, _)) =>
       unifyExp(exp1, exp2)
 
+    case (Expression.VectorSlice(exp1, start1, end1, _, _, _), Expression.VectorSlice(exp2, start2, end2, _, _, _)) if start1 == start2 && end1 == end2 =>
+      unifyExp(exp1, exp2)
 
+    case (Expression.Ref(exp1, _, _, _), Expression.Ref(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
 
-    //      case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.Deref(exp1, _, _, _), Expression.Deref(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
+    case (Expression.Assign(exp11, exp12, _, _, _), Expression.Assign(exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
+
     //      case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
     //        def tpe: Type = Type.Bool
     //
@@ -453,8 +458,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //        def eff: Type = Type.Pure
     //      }
     //
-    //      case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+
+    case (Expression.Ascribe(exp1, _, _, _), Expression.Ascribe(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
     //      case class Cast(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
