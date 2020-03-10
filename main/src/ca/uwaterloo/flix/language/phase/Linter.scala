@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.annotation.tailrec
 
@@ -406,14 +406,24 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: What about s32?
       } yield s3 @@ s2 @@ s1
 
-    //      case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.ArraySlice(exp11, exp12, exp13, _, _, _), Expression.ArraySlice(exp21, exp22, exp23, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: What about s32?
+      } yield s3 @@ s2 @@ s1
+
+    case (Expression.VectorLit(exps1, _, _, _), Expression.VectorLit(exps2, _, _, _)) =>
+      unifyExps(exps1, exps2)
+
+    case (Expression.VectorNew(exp1, len1, _, _, _), Expression.VectorNew(exp2, len2, _, _, _)) if len1 == len2 =>
+      unifyExp(exp1, exp2)
+
+    case (Expression.VectorLoad(exp1, index1, _, _, _), Expression.VectorLoad(exp2, index2, _, _, _)) if index1 == index2 =>
+      unifyExp(exp1, exp2)
+
+
+
     //      case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
@@ -891,7 +901,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     def apply(fparam0: FormalParam): FormalParam = fparam0 match {
       case FormalParam(sym, mod, tpe, loc) => m.get(sym) match {
         case None => fparam0
-        case Some(otherSym) => FormalParam(???, mod, tpe, loc) // TODO: The subst. need to contain more than just expressions?
+        case Some(Expression.Var(otherSym, _, _)) => FormalParam(otherSym, mod, tpe, loc)
+        case Some(exp) => throw InternalCompilerException(s"Unexpected expression in substitution: '$exp'.")
       }
     }
 
