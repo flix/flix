@@ -433,12 +433,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExp(s1(exp12), s1(exp22))
       } yield s2 @@ s1
 
+    case (Expression.GetStaticField(field1, _, _, _), Expression.GetStaticField(field2, _, _, _)) if field1 == field2 => Some(Substitution.empty)
 
+    case (Expression.PutStaticField(field1, exp1, _, _, _), Expression.PutStaticField(field2, exp2, _, _, _)) if field1 == field2 =>
+      unifyExp(exp1, exp2)
 
-    //      case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
     //      case class NewChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
