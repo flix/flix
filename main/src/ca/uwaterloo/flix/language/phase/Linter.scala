@@ -226,7 +226,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case _ => Nil
     }
 
-    tryLint(exp0, lint0, Nil) ::: recursiveErrors // TODO: metaVars
+    tryLint(exp0, lint0) ::: recursiveErrors // TODO: metaVars
   }
 
   /**
@@ -265,11 +265,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns [[Nil]] if the lint is not applicable.
     */
-  private def tryLint(exp0: Expression, lint0: Lint, metaVars: List[Symbol.VarSym])(implicit flix: Flix): List[LinterError] =
+  private def tryLint(exp0: Expression, lint0: Lint)(implicit flix: Flix): List[LinterError] = {
+    val metaVars = lint0.quantifiers.map(_.sym)
     unifyExp(lint0.pattern, exp0, metaVars) match {
       case None => Nil
       case Some(subst) => LinterError.Lint(lint0.sym, subst(lint0.replacement), exp0.loc) :: Nil
     }
+  }
 
   /**
     * Optionally returns a substitution that makes `lint0` and `exp0` equal.
@@ -577,13 +579,18 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
-    * TODO: DOC
+    * Returns the quantifiers and inner expression of the given (optionally) quantified expression `exp0`.
     */
-  @tailrec
-  private def popForall(exp0: Expression): Expression = exp0 match {
-    case Expression.Universal(fparam, exp, loc) => popForall(exp)
-    case _ => exp0
+  private def popForall(exp0: Expression): (List[FormalParam], Expression) = {
+    @tailrec
+    def visit(exp0: Expression, acc: List[FormalParam]): (List[FormalParam], Expression) = exp0 match {
+      case Expression.Universal(fparam, exp, loc) => visit(exp, fparam :: acc)
+      case _ => (acc, exp0)
+    }
+
+    visit(exp0, Nil)
   }
+
 
   /**
     * Returns all non-lints definitions in the given AST `root`.
@@ -598,12 +605,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   private def lintOf(sym: Symbol.DefnSym, exp0: Expression): Option[Lint] = {
     val ctxEquiv = Symbol.mkDefnSym("===")
     val implies = Symbol.mkDefnSym("implies")
-    val popped = popForall(exp0)
+    val (quantifiers, popped) = popForall(exp0)
 
     popped match {
       case Expression.Apply(Expression.Apply(Expression.Def(someSym, _, _), left, _, _, _), right, _, _, _) =>
         if (someSym == ctxEquiv) {
-          Some(Lint(sym, left, right))
+          Some(Lint(sym, quantifiers, left, right))
         } else if (someSym == implies) {
           None // TODO
         } else {
@@ -619,7 +626,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * TODO: DOC
     */
-  case class Lint(sym: Symbol.DefnSym, pattern: Expression, replacement: Expression)
+  case class Lint(sym: Symbol.DefnSym, quantifiers: List[FormalParam], pattern: Expression, replacement: Expression)
 
   /**
     * Companion object for the [[Substitution]] class.
