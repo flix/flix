@@ -358,11 +358,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.IfThenElse(exp11, exp12, exp13, _, _, _), Expression.IfThenElse(exp21, exp22, exp23, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-        s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: Also apply s1?
-      } yield s3 @@ s2 @@ s1
+      unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case (Expression.Stm(exp11, exp12, _, _, _), Expression.Stm(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
@@ -399,18 +395,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.ArrayStore(exp11, exp12, exp13, _, _, _), Expression.ArrayStore(exp21, exp22, exp23, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-        s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: What about s32?
-      } yield s3 @@ s2 @@ s1
+      unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case (Expression.ArraySlice(exp11, exp12, exp13, _, _, _), Expression.ArraySlice(exp21, exp22, exp23, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-        s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: What about s32?
-      } yield s3 @@ s2 @@ s1
+      unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case (Expression.VectorLit(exps1, _, _, _), Expression.VectorLit(exps2, _, _, _)) =>
       unifyExps(exps1, exps2, metaVars)
@@ -464,6 +452,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
+
     case (Expression.InvokeConstructor(constructor1, exps1, _, _, _), Expression.InvokeConstructor(constructor2, exps2, _, _, _)) =>
       unifyExps(exps1, exps2, metaVars)
 
@@ -535,7 +524,16 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     } yield s2 @@ s1
   }
 
-  //  TODO: add unify3.
+  /**
+    * Optionally returns a substitution that makes `exp11` equal to `exp21`, `exp12` equal to `exp22`, and `exp13` equal to `exp23`.
+    */
+  private def unifyExp(exp11: Expression, exp12: Expression, exp13: Expression, exp21: Expression, exp22: Expression, exp23: Expression, metaVars: List[Symbol.VarSym])(implicit flix: Flix): Option[Substitution] = {
+    for {
+      s1 <- unifyExp(exp11, exp21, metaVars)
+      s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+      s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: What about s32?
+    } yield s3 @@ s2 @@ s1
+  }
 
   /**
     * Optionally returns a substitution that makes `l1` and `l2` equal.
