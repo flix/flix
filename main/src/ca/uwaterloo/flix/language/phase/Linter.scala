@@ -324,8 +324,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
           case Expression.Var(otherSym, _, _) =>
             // TODO: Type check?
             // TODO: How to make the unification work with program variables?
-            // Some(Substitution.singleton(sym, exp0))
-            None
+            Some(Substitution.singleton(sym, exp0))
           case _ => None
         }
       }
@@ -735,8 +734,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Binary(op, e1, e2, tpe, eff, loc)
 
-      //        case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
-      //
+      case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+        val newSym = apply(sym)
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.Let(newSym, e1, e2, tpe, eff, loc)
+
       //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
