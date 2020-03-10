@@ -384,14 +384,21 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.ArrayLit(exps1, _, _, _), Expression.ArrayLit(exps2, _, _, _)) =>
       unifyExps(exps1, exps2)
 
+    case (Expression.ArrayNew(exp11, exp12, _, _, _), Expression.ArrayNew(exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
 
+    case (Expression.ArrayLoad(exp11, exp12, _, _, _), Expression.ArrayLoad(exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
 
-    //      case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.ArrayLength(exp1, _, _, _), Expression.ArrayLength(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
     //      case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
