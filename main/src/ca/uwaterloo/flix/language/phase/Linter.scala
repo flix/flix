@@ -422,12 +422,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.VectorLoad(exp1, index1, _, _, _), Expression.VectorLoad(exp2, index2, _, _, _)) if index1 == index2 =>
       unifyExp(exp1, exp2)
 
+    case (Expression.VectorStore(exp11, index1, exp12, _, _, _), Expression.VectorStore(exp21, index2, exp22, _, _, _)) if index1 == index2 =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
+
+    case (Expression.VectorLength(exp1, _, _, _), Expression.VectorLength(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
 
 
-    //      case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+
     //      case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
