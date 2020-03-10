@@ -79,8 +79,6 @@ object Unification {
             }
           case Type.Cst(tc) => Type.Cst(tc)
           case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-          case Type.RecordEmpty => Type.RecordEmpty
-          case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, visit(field), visit(rest))
           case Type.SchemaEmpty => Type.SchemaEmpty
           case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
           case Type.Zero => Type.Zero
@@ -311,8 +309,6 @@ object Unification {
           Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
 
       case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => unifyEffects(eff1, eff2)
-
-      case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
       case (Type.SchemaEmpty, Type.SchemaEmpty) => Result.Ok(Substitution.empty)
 

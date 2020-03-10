@@ -78,11 +78,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Var(_, _) => Type.Unit
         case Type.Cst(tc) => Type.Cst(tc)
         case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-        case Type.RecordEmpty => Type.RecordEmpty
-        case Type.RecordExtend(label, value, rest) => rest match {
-          case Type.Var(_, _) => Type.RecordExtend(label, visit(value), Type.RecordEmpty)
-          case _ => Type.RecordExtend(label, visit(value), visit(rest))
-        }
         case Type.SchemaEmpty => Type.SchemaEmpty
         case Type.SchemaExtend(sym, tt, rest) => rest match {
           case Type.Var(_, _) => Type.SchemaExtend(sym, visit(tt), Type.SchemaEmpty)

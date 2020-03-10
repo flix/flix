@@ -41,8 +41,6 @@ sealed trait Type {
     case Type.Zero => SortedSet.empty
     case Type.Succ(n, t) => t.typeVars
     case Type.Arrow(_, eff) => eff.typeVars
-    case Type.RecordEmpty => SortedSet.empty
-    case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => SortedSet.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
@@ -96,8 +94,6 @@ sealed trait Type {
     case Type.Var(_, _) => 1
     case Type.Cst(tc) => 1
     case Type.Arrow(_, eff) => eff.size + 1
-    case Type.RecordEmpty => 1
-    case Type.RecordExtend(_, value, rest) => value.size + rest.size
     case Type.SchemaEmpty => 1
     case Type.SchemaExtend(_, tpe, rest) => tpe.size + rest.size
     case Type.Zero => 1
@@ -115,8 +111,6 @@ sealed trait Type {
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Arrow(l, eff) => s"Arrow($l, $eff)"
-    case Type.RecordEmpty => "{ }"
-    case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.SchemaEmpty => "Schema { }"
     case Type.SchemaExtend(sym, tpe, rest) => "Schema { " + sym + " : " + tpe + " | " + rest + " }"
     case Type.Lambda(tvar, tpe) => s"$tvar => $tpe"
@@ -280,6 +274,21 @@ object Type {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 
+  // MATT remove these schema types in favor of type constructors
+  /**
+    * A type constructor that represents the empty schema type.
+    */
+  case object SchemaEmpty extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represents a schema extension type.
+    */
+  case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
+    def kind: Kind = Kind.Star -> Kind.Star
+  }
+
   /**
     * A type expression that a represents a type application tpe1[tpe2].
     */
@@ -430,6 +439,10 @@ object Type {
           case Type.Cst(TypeConstructor.Tuple(l)) =>
             "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
+          case Type.Cst(TypeConstructor.EmptyRecordRow) => "{ }"
+
+          case Type.Cst(TypeConstructor.ExtendedRecordRow(label)) =>
+            "{" + label + " = " + visit(args(0), m) + " | " + visit(args(1), m) + "}"
           //
           // Type Constructors.
           //
@@ -452,17 +465,6 @@ object Type {
             } else {
               "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
             }
-
-          //
-          // RecordEmpty.
-          //
-          case Type.RecordEmpty => "{ }"
-
-          //
-          // RecordExtension.
-          //
-          case Type.RecordExtend(label, value, rest) =>
-            "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
 
           //
           // SchemaEmpty.

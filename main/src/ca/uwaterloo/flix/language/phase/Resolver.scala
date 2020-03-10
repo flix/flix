@@ -1143,13 +1143,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       ) yield Type.mkTuple(elms)
 
     case NamedAst.Type.RecordEmpty(loc) =>
-      Type.RecordEmpty.toSuccess
+      Type.Apply(Type.Cst(TypeConstructor.Record), Type.Cst(TypeConstructor.EmptyRecordRow)).toSuccess
 
     case NamedAst.Type.RecordExtend(label, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.RecordExtend(label.name, v, r)
+      } yield Type.mkExtendRecordRow(label, v, r)
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
@@ -1506,13 +1506,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       case Type.Arrow(l, eff) => Type.Arrow(l, eval(eff, subst))
 
-      case Type.RecordEmpty => t
-
-      case Type.RecordExtend(label, value, rest) =>
-        val t1 = eval(value, subst)
-        val t2 = eval(rest, subst)
-        Type.RecordExtend(label, t1, t2)
-
       case Type.SchemaEmpty => t
 
       case Type.SchemaExtend(sym, tpe, rest) =>
@@ -1674,10 +1667,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
 
     case Type.Cst(TypeConstructor.Native(clazz)) => clazz.toSuccess
-
-    case Type.RecordEmpty => Class.forName("java.lang.Object").toSuccess
-
-    case Type.RecordExtend(_, _, _) => Class.forName("java.lang.Object").toSuccess
 
     case Type.SchemaEmpty => Class.forName("java.lang.Object").toSuccess
 

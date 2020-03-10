@@ -50,12 +50,7 @@ object Kind {
   /**
     * The kind of predicate sets.
     */
-  case object PredicateSet extends Kind
-
-  /**
-    * The kind of predicates.
-    */
-  case object Predicate extends Kind
+  case object SchemaRow extends Kind
 
   /**
     * The kind of natural number expressions.
@@ -85,7 +80,7 @@ object Kind {
     def show(a: Kind): String = a match {
       case Kind.Star => "*"
       case Kind.RecordRow => "RecordRow"
-      case Kind.Schema => "Schema"
+      case Kind.SchemaRow => "SchemaRow"
       case Kind.Nat => "Nat"
       case Kind.Effect => "Effect"
       case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"

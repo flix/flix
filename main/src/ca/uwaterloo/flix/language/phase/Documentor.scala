@@ -208,11 +208,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           "(" + argumentTypes.map(format).mkString(", ") + ") -> " + format(resultType)
         }
 
-      case Type.RecordEmpty => "{ }"
-
-      case Type.RecordExtend(label, value, rest) =>
-        "{" + label + " = " + format(value) + " | " + format(rest) + "}"
-
       case Type.SchemaEmpty => "Schema { }"
 
       case Type.SchemaExtend(sym, t, rest) =>

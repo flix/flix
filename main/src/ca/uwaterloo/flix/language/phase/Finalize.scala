@@ -593,10 +593,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case Type.Arrow(l, _) => MonoType.Arrow(args.init, args.last)
 
-      case Type.RecordEmpty => MonoType.RecordEmpty()
-
-      case Type.RecordExtend(label, value, rest) => MonoType.RecordExtend(label, visitType(value), visitType(rest))
-
       case Type.SchemaEmpty => MonoType.SchemaEmpty()
 
       case Type.SchemaExtend(sym, tpe, rest) => MonoType.SchemaExtend(sym, visitType(tpe), visitType(rest))

@@ -117,28 +117,21 @@ object TypeConstructor {
     * A type constructor that represents the type of schemas.
     */
   case object Schema extends TypeConstructor {
-    def kind: Kind = Kind.PredicateSet -> Kind.Star
+    def kind: Kind = Kind.SchemaRow -> Kind.Star
   }
 
   /**
-    * A type constructor that represents the type of predicate sets.
+    * A type constructor that represents the type of schema rows.
     */
-  case object EmptyPredicateSet extends TypeConstructor {
-    def kind: Kind = Kind.PredicateSet
+  case object EmptySchemaRow extends TypeConstructor {
+    def kind: Kind = Kind.SchemaRow
   }
 
   /**
-    * A type constructor that represents the type of expanded predicate sets.
+    * A type constructor that represents the type of extended schema rows.
     */
-  case object ExpandedPredicateSet extends TypeConstructor {
-    def kind: Kind = Kind.Predicate -> Kind.PredicateSet -> Kind.PredicateSet
-  }
-
-  /**
-    * A type constructor that represents the type of predicates.
-    */
-  case object Predicate extends TypeConstructor {
-    def kind: Kind = Kind.Predicate
+  case class ExtendedSchemaRow(sym: Symbol.PredSym) extends TypeConstructor {
+    def kind: Kind = Kind.SchemaRow -> Kind.SchemaRow
   }
 
   /**
