@@ -462,18 +462,21 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
       unifyExp(exp1, exp2)
 
-    //      case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class ProcessPanic(msg: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.ProcessPanic(msg1, _, _, _), Expression.ProcessPanic(msg2, _, _, _)) if msg1 == msg2 => Some(Substitution.empty)
+
     //      case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
     //        def eff: Type = Type.Pure
     //      }
     //
-    //      case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.FixpointCompose(exp11, exp12, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp21), s1(exp22))
+      } yield s2 @@ s1
+
+    case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
     //      case class FixpointProject(sym: Symbol.PredSym, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
