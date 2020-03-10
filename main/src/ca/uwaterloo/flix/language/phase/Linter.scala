@@ -359,19 +359,28 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) if sym1 == sym2 && tag1 == tag2 =>
       unifyExp(exp1, exp2)
 
-    //      case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
+    case (Expression.Tuple(exps1, _, _, _), Expression.Tuple(exps2, _, _, _)) =>
+      unifyExps(exps1, exps2)
 
     case (Expression.RecordEmpty(_, _), Expression.RecordEmpty(_, _)) => Some(Substitution.empty)
 
     case (Expression.RecordSelect(exp1, _, _, _, _), Expression.RecordSelect(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2)
 
-    //      case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.RecordExtend(_, exp11, exp12, _, _, _), Expression.RecordExtend(_, exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
+
+    case (Expression.RecordRestrict(_, exp1, _, _, _), Expression.RecordRestrict(_, exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
+    case (Expression.ArrayLit(exps1, _, _, _), Expression.ArrayLit(exps2, _, _, _)) =>
+      unifyExps(exps1, exps2)
+
+
+
     //      case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
@@ -508,7 +517,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Constraint(_, head1, body1, _), Constraint(_, head2, body2, _)) =>
       ??? // TODO
   }
-
 
 
   /**
