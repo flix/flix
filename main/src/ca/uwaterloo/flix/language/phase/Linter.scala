@@ -226,7 +226,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case _ => Nil
     }
 
-    tryLint(exp0, lint0) ::: recursiveErrors
+    tryLint(exp0, lint0, Nil) ::: recursiveErrors // TODO: metaVars
   }
 
   /**
@@ -265,8 +265,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * Returns [[Nil]] if the lint is not applicable.
     */
-  private def tryLint(exp0: Expression, lint0: Lint)(implicit flix: Flix): List[LinterError] =
-    unifyExp(lint0.pattern, exp0) match {
+  private def tryLint(exp0: Expression, lint0: Lint, metaVars: List[Symbol.VarSym])(implicit flix: Flix): List[LinterError] =
+    unifyExp(lint0.pattern, exp0, metaVars) match {
       case None => Nil
       case Some(subst) => LinterError.Lint(lint0.sym, subst(lint0.replacement), exp0.loc) :: Nil
     }
@@ -276,8 +276,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * NB: Unification is left-biased: variables in the expression are not unified against the lint.
     */
-  // TODO: Introduce meta variables argument and also in the lint class.
-  private def unifyExp(lint0: Expression, exp0: Expression)(implicit flix: Flix): Option[Substitution] = (lint0, exp0) match {
+  private def unifyExp(lint0: Expression, exp0: Expression, metaVars: List[Symbol.VarSym])(implicit flix: Flix): Option[Substitution] = (lint0, exp0) match {
     case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
 
     case (Expression.True(_), Expression.True(_)) => Some(Substitution.empty)
@@ -328,17 +327,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     //      case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
@@ -348,102 +347,102 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.IfThenElse(exp11, exp12, exp13, _, _, _), Expression.IfThenElse(exp21, exp22, exp23, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
-        s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: Also apply s1?
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+        s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: Also apply s1?
       } yield s3 @@ s2 @@ s1
 
     case (Expression.Stm(exp11, exp12, _, _, _), Expression.Stm(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp21), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp21), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
 
     case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) if sym1 == sym2 && tag1 == tag2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Tuple(exps1, _, _, _), Expression.Tuple(exps2, _, _, _)) =>
-      unifyExps(exps1, exps2)
+      unifyExps(exps1, exps2, metaVars)
 
     case (Expression.RecordEmpty(_, _), Expression.RecordEmpty(_, _)) => Some(Substitution.empty)
 
     case (Expression.RecordSelect(exp1, _, _, _, _), Expression.RecordSelect(exp2, _, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.RecordExtend(_, exp11, exp12, _, _, _), Expression.RecordExtend(_, exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.RecordRestrict(_, exp1, _, _, _), Expression.RecordRestrict(_, exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.ArrayLit(exps1, _, _, _), Expression.ArrayLit(exps2, _, _, _)) =>
-      unifyExps(exps1, exps2)
+      unifyExps(exps1, exps2, metaVars)
 
     case (Expression.ArrayNew(exp11, exp12, _, _, _), Expression.ArrayNew(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.ArrayLoad(exp11, exp12, _, _, _), Expression.ArrayLoad(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.ArrayLength(exp1, _, _, _), Expression.ArrayLength(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.ArrayStore(exp11, exp12, exp13, _, _, _), Expression.ArrayStore(exp21, exp22, exp23, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
-        s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: What about s32?
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+        s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: What about s32?
       } yield s3 @@ s2 @@ s1
 
     case (Expression.ArraySlice(exp11, exp12, exp13, _, _, _), Expression.ArraySlice(exp21, exp22, exp23, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
-        s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: What about s32?
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+        s3 <- unifyExp(s2(exp13), s2(exp23), metaVars) // TODO: What about s32?
       } yield s3 @@ s2 @@ s1
 
     case (Expression.VectorLit(exps1, _, _, _), Expression.VectorLit(exps2, _, _, _)) =>
-      unifyExps(exps1, exps2)
+      unifyExps(exps1, exps2, metaVars)
 
     case (Expression.VectorNew(exp1, len1, _, _, _), Expression.VectorNew(exp2, len2, _, _, _)) if len1 == len2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.VectorLoad(exp1, index1, _, _, _), Expression.VectorLoad(exp2, index2, _, _, _)) if index1 == index2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.VectorStore(exp11, index1, exp12, _, _, _), Expression.VectorStore(exp21, index2, exp22, _, _, _)) if index1 == index2 =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.VectorLength(exp1, _, _, _), Expression.VectorLength(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.VectorSlice(exp1, start1, end1, _, _, _), Expression.VectorSlice(exp2, start2, end2, _, _, _)) if start1 == start2 && end1 == end2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Ref(exp1, _, _, _), Expression.Ref(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Deref(exp1, _, _, _), Expression.Deref(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Assign(exp11, exp12, _, _, _), Expression.Assign(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     //      case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
@@ -460,57 +459,57 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
 
     case (Expression.Ascribe(exp1, _, _, _), Expression.Ascribe(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Cast(exp1, _, _, _), Expression.Cast(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     //
     //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     case (Expression.InvokeConstructor(constructor1, exps1, _, _, _), Expression.InvokeConstructor(constructor2, exps2, _, _, _)) =>
-      unifyExps(exps1, exps2)
+      unifyExps(exps1, exps2, metaVars)
 
     case (Expression.InvokeMethod(method1, exp1, exps1, _, _, _), Expression.InvokeMethod(method2, exp2, exps2, _, _, _)) if method1 == method2 =>
       for {
-        s1 <- unifyExp(exp1, exp2)
-        s2 <- unifyExps(exps1.map(s1.apply), exps2.map(s1.apply))
+        s1 <- unifyExp(exp1, exp2, metaVars)
+        s2 <- unifyExps(exps1.map(s1.apply), exps2.map(s1.apply), metaVars)
       } yield s2 @@ s1
 
     case (Expression.InvokeStaticMethod(method1, exps1, _, _, _), Expression.InvokeStaticMethod(method2, exps2, _, _, _)) if method1 == method2 =>
-      unifyExps(exps1, exps2)
+      unifyExps(exps1, exps2, metaVars)
 
     case (Expression.GetField(field1, exp1, _, _, _), Expression.GetField(field2, exp2, _, _, _)) if field1 == field2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.PutField(field1, exp11, exp12, _, _, _), Expression.PutField(field2, exp21, exp22, _, _, _)) if field1 == field2 =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.GetStaticField(field1, _, _, _), Expression.GetStaticField(field2, _, _, _)) if field1 == field2 => Some(Substitution.empty)
 
     case (Expression.PutStaticField(field1, exp1, _, _, _), Expression.PutStaticField(field2, exp2, _, _, _)) if field1 == field2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.NewChannel(exp1, _, _, _), Expression.NewChannel(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.GetChannel(exp1, _, _, _), Expression.GetChannel(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.PutChannel(exp11, exp12, _, _, _), Expression.PutChannel(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
 
     case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.ProcessPanic(msg1, _, _, _), Expression.ProcessPanic(msg2, _, _, _)) if msg1 == msg2 => Some(Substitution.empty)
 
@@ -520,20 +519,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     case (Expression.FixpointCompose(exp11, exp12, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp21), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp21), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointProject(sym1, exp1, _, _, _), Expression.FixpointProject(sym2, exp2, _, _, _)) if sym1 == sym2 =>
-      unifyExp(exp1, exp2)
+      unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       for {
-        s1 <- unifyExp(exp11, exp21)
-        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s1 <- unifyExp(exp11, exp21, metaVars)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
       } yield s2 @@ s1
 
     //
@@ -548,19 +547,19 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Optionally returns a substitution that makes `l1` and `l2` equal.
     */
-  private def unifyExps(l1: List[Expression], l2: List[Expression])(implicit flix: Flix): Option[Substitution] = (l1, l2) match {
+  private def unifyExps(l1: List[Expression], l2: List[Expression], metaVars: List[Symbol.VarSym])(implicit flix: Flix): Option[Substitution] = (l1, l2) match {
     case (Nil, Nil) => Some(Substitution.empty)
     case (Nil, _) => None
     case (_, Nil) => None
     case (x :: xs, y :: ys) =>
       for {
-        s1 <- unifyExp(x, y)
-        s2 <- unifyExps(xs.map(s1.apply), ys.map(s1.apply))
+        s1 <- unifyExp(x, y, metaVars)
+        s2 <- unifyExps(xs.map(s1.apply), ys.map(s1.apply), metaVars)
       } yield s2 @@ s1
   }
 
   // TODO: DOC
-  private def unifyConstraint(c1: Constraint, c2: Constraint)(implicit flix: Flix): Option[Substitution] = (c1, c2) match {
+  private def unifyConstraint(c1: Constraint, c2: Constraint, metaVars: List[Symbol.VarSym])(implicit flix: Flix): Option[Substitution] = (c1, c2) match {
     case (Constraint(_, head1, body1, _), Constraint(_, head2, body2, _)) =>
       ??? // TODO
   }
