@@ -226,7 +226,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case _ => Nil
     }
 
-    tryLint(exp0, lint0) ::: recursiveErrors // TODO: metaVars
+    tryLint(exp0, lint0) ::: recursiveErrors
   }
 
   /**
@@ -740,7 +740,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Let(newSym, e1, e2, tpe, eff, loc)
 
-      //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
+      case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
+        val newSym = apply(sym)
+        val e1 = apply(exp1)
+        val e2 = apply(exp2)
+        Expression.LetRec(newSym, e1, e2, tpe, eff, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)
@@ -753,7 +757,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Stm(e1, e2, tpe, eff, loc)
 
-      //        case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  TODO
+      case Expression.Match(exp, rules, tpe, eff, loc) =>
+        val e = apply(exp)
+        val rs = rules map {
+          case MatchRule(pat, guard, exp) => MatchRule(apply(pat), apply(guard), apply(exp))
+        }
+        Expression.Match(e, rs, tpe, eff, loc)
 
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = apply(exp)
@@ -957,6 +966,53 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def apply(fparam0: FormalParam): FormalParam = fparam0 match {
       case FormalParam(sym, mod, tpe, loc) => FormalParam(apply(sym), mod, tpe, loc)
+    }
+
+    /**
+      * Applies the substitution to the pattern `pat0`.
+      */
+    def apply(pat0: Pattern): Pattern = pat0 match {
+      case Pattern.Wild(_, _) => pat0
+      case Pattern.Var(sym, _, _) => m.get(sym) match {
+        case None => pat0
+        case Some(Expression.Var(otherSym, tpe, loc)) => Pattern.Var(otherSym, tpe, loc)
+        case Some(exp) => throw InternalCompilerException(s"Unexpected non-variable expression: $exp.")
+      }
+
+      case Pattern.Unit(_) => pat0
+      case Pattern.True(_) => pat0
+      case Pattern.False(_) => pat0
+      case Pattern.Char(_, _) => pat0
+      case Pattern.Float32(_, _) => pat0
+      case Pattern.Float64(_, _) => pat0
+      case Pattern.Int8(_, _) => pat0
+      case Pattern.Int16(_, _) => pat0
+      case Pattern.Int32(_, _) => pat0
+      case Pattern.Int64(_, _) => pat0
+      case Pattern.BigInt(_, _) => pat0
+      case Pattern.Str(_, _) => pat0
+
+      case Pattern.Tag(sym, tag, pat, tpe, loc) =>
+        val p = apply(pat)
+        Pattern.Tag(sym, tag, p, tpe, loc)
+
+      case Pattern.Tuple(elms, tpe, loc) =>
+        val ps = elms.map(apply)
+        Pattern.Tuple(ps, tpe, loc)
+
+      case Pattern.Array(elms, tpe, loc) =>
+        val ps = elms.map(apply)
+        Pattern.Array(ps, tpe, loc)
+
+      case Pattern.ArrayTailSpread(elms, sym, tpe, loc) =>
+        val ps = elms.map(apply)
+        val newSym = apply(sym)
+        Pattern.ArrayTailSpread(ps, newSym, tpe, loc)
+
+      case Pattern.ArrayHeadSpread(sym, elms, tpe, loc) =>
+        val ps = elms.map(apply)
+        val newSym = apply(sym)
+        Pattern.ArrayHeadSpread(newSym, ps, tpe, loc)
     }
 
     /**
