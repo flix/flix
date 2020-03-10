@@ -35,6 +35,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     * Checks the given AST `root` for lints.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, LinterError] = flix.phase("Linter") {
+    // Check if the linter is enabled.
+    if (!flix.options.xlint) {
+      return root.toSuccess
+    }
+
     // Find all the lints in the ast.
     val lints = lintsOf(root)
 
