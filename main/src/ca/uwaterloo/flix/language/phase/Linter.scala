@@ -362,10 +362,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.RecordEmpty(_, _), Expression.RecordEmpty(_, _)) => Some(Substitution.empty)
 
+    case (Expression.RecordSelect(exp1, _, _, _, _), Expression.RecordSelect(exp2, _, _, _, _)) =>
+      unifyExp(exp1, exp2)
 
-
-    //      case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
     //      case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
@@ -418,10 +417,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
-    //      case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class InvokeMethod(method: Method, exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.InvokeConstructor(constructor1, exps1, _, _, _), Expression.InvokeConstructor(constructor2, exps2, _, _, _)) =>
+      unifyExps(exps1, exps2)
 
     case (Expression.InvokeMethod(method1, exp1, exps1, _, _, _), Expression.InvokeMethod(method2, exp2, exps2, _, _, _)) if method1 == method2 =>
       for {
@@ -446,8 +443,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.PutStaticField(field1, exp1, _, _, _), Expression.PutStaticField(field2, exp2, _, _, _)) if field1 == field2 =>
       unifyExp(exp1, exp2)
 
-    //      case class NewChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.NewChannel(exp1, _, _, _), Expression.NewChannel(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
+
+
     //      case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
