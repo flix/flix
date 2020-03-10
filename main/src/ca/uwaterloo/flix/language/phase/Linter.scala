@@ -424,6 +424,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //      case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
+
+    case (Expression.InvokeStaticMethod(method1, exps1, _, _, _), Expression.InvokeStaticMethod(method2, exps2, _, _, _)) if method1 == method2 =>
+      unifyExps(exps1, exps2)
+
     case (Expression.GetField(field1, exp1, _, _, _), Expression.GetField(field2, exp2, _, _, _)) if field1 == field2 =>
       unifyExp(exp1, exp2)
 
@@ -465,6 +469,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //      case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
 
     case _ => None
+  }
+
+  /**
+    * Optionally returns a substitution that makes `l1` and `l2` equal.
+    */
+  private def unifyExps(l1: List[Expression], l2: List[Expression])(implicit flix: Flix): Option[Substitution] = (l1, l2) match {
+    case (Nil, Nil) => Some(Substitution.empty)
+    case (Nil, _) => None
+    case (_, Nil) => None
+    case (x :: xs, y :: ys) =>
+      for {
+        s1 <- unifyExp(x, y)
+        s2 <- unifyExps(xs.map(s1.apply), ys.map(s1.apply))
+      } yield s2 @@ s1
   }
 
   /**
