@@ -622,7 +622,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   case class Lint(sym: Symbol.DefnSym, pattern: Expression, replacement: Expression)
 
-  // TODO: DOC
+  /**
+    * Companion object for the [[Substitution]] class.
+    */
   object Substitution {
     /**
       * Represents the empty substitution.
@@ -635,13 +637,24 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     def singleton(sym: Symbol.VarSym, exp0: Expression): Substitution = Substitution(Map(sym -> exp0))
   }
 
-  // TODO: DOC
+  /**
+    * A substitution is a map from variable symbols to expressions.
+    */
   case class Substitution(m: Map[Symbol.VarSym, Expression]) {
 
     /**
       * Returns `true` if `this` is the empty substitution.
       */
     val isEmpty: Boolean = m.isEmpty
+
+    /**
+      * Applies the substitution to the variable symbol `sym`.
+      */
+    def apply(sym: Symbol.VarSym): Symbol.VarSym = m.get(sym) match {
+      case None => sym
+      case Some(Expression.Var(otherSym, _, _)) => otherSym
+      case Some(exp) => throw InternalCompilerException(s"Unexpected non-variable expression: $exp.")
+    }
 
     /**
       * Applies the substitution to the expression `exp0`.
@@ -919,11 +932,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the formal parameter `fparam0`.
       */
     def apply(fparam0: FormalParam): FormalParam = fparam0 match {
-      case FormalParam(sym, mod, tpe, loc) => m.get(sym) match {
-        case None => fparam0
-        case Some(Expression.Var(otherSym, _, _)) => FormalParam(otherSym, mod, tpe, loc)
-        case Some(exp) => throw InternalCompilerException(s"Unexpected expression in substitution: '$exp'.")
-      }
+      case FormalParam(sym, mod, tpe, loc) => FormalParam(apply(sym), mod, tpe, loc)
     }
 
     /**
