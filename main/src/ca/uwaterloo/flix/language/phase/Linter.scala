@@ -324,7 +324,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
           case Expression.Var(otherSym, _, _) =>
             // TODO: Type check?
             // TODO: How to make the unification work with program variables?
-            Some(Substitution.singleton(sym, exp0))
+            // TODO: This does not work
+            // Some(Substitution.singleton(sym, exp0))
+            None
           case _ => None
         }
       }
