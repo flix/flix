@@ -271,6 +271,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     *
     * NB: Unification is left-biased: variables in the expression are not unified against the lint.
     */
+  // TODO: Introduce meta variables argument and also in the lint class.
   private def unifyExp(lint0: Expression, exp0: Expression)(implicit flix: Flix): Option[Substitution] = (lint0, exp0) match {
     case (Expression.Unit(_), Expression.Unit(_)) => Some(Substitution.empty)
 
@@ -446,11 +447,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.NewChannel(exp1, _, _, _), Expression.NewChannel(exp2, _, _, _)) =>
       unifyExp(exp1, exp2)
 
+    case (Expression.GetChannel(exp1, _, _, _), Expression.GetChannel(exp2, _, _, _)) =>
+      unifyExp(exp1, exp2)
 
-    //      case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    //      case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.PutChannel(exp11, exp12, _, _, _), Expression.PutChannel(exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
+
     //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
