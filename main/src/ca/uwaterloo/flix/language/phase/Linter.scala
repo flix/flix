@@ -437,12 +437,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Assign(exp11, exp12, _, _, _), Expression.Assign(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    //      case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
-    //        def tpe: Type = Type.Bool
-    //
-    //        def eff: Type = Type.Pure
-    //      }
-    //
+    case (Expression.Existential(_, _, _), _) =>
+      // An existential never unifies with anything.
+      None
+
+    case (_, Expression.Existential(_, _, _)) =>
+      // An existential never unifies with anything.
+      None
+
     //      case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
     //        def tpe: Type = Type.Bool
     //
