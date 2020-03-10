@@ -1,8 +1,28 @@
 // Could add an enum specifying which component can be updated safely (e.g. `^` and `~` in NPM)
-pub opaque type SemVer = (Int, Option[(Int, Option[Int])], String)
+pub type alias SemVer = (Int, Option[(Int, Option[Int])], Option[String])
 
 // Same type as `SemVer`, but all `Option` chaining is gone
-pub opaque type SpecificSemVer = (Int, Int, Int, String)
+pub type alias SpecificSemVer = (Int, Int, Int, Option[String])
+
+// TODO: Temp public
+pub def isWithinBounds(specific: SpecificSemVer, bound: SemVer): Bool = {
+    let (postFirstMajor, boundMajor) = match bound {
+        case (major, _, _) => (major > 0, major)
+    };
+
+    if (postFirstMajor) {
+        match specific {
+            case (major, minor, patch, Some(tag)) => match bound {
+                case (boundMajor, Some((boundMinor, Some(boundPatch))), Some(boundTag)) => major == boundMajor && minor == boundMinor && patch == boundPatch && tag == boundTag
+                case _ => false
+            }
+            case (major, _, _, None) => boundMajor == major
+        }
+    } else {
+        // TODO
+        false
+    }
+}
 
 pub enum License {
     case MIT,
