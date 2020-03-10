@@ -829,18 +829,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
 
-      //        case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {  TODO
-      //          def tpe: Type = Type.Bool
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {  TODO
-      //          def tpe: Type = Type.Bool
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         val e = apply(exp)
         Expression.Ascribe(e, tpe, eff, loc)
@@ -931,6 +919,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         val e3 = apply(exp3)
         Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+
+      case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
+
+      case Expression.Universal(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
       case _ => exp0 // TODO
     }
