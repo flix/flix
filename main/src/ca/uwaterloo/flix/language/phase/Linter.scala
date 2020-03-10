@@ -337,6 +337,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
     case (Expression.Lambda(fparam1, exp1, _, _), Expression.Lambda(fparam2, exp2, _, _)) if fparam1.sym == fparam2.sym =>
+      // TODO: Allow special unification here and in other bindings????
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
