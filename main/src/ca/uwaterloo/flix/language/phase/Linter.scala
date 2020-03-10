@@ -313,7 +313,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       if (metaVars.contains(sym)) {
         // Case 1: We are unifying a meta-variable.
         // Determine if we can unify the type of meta-variable and the expression.
-        if (canUnify(varTyp, expTyp))
+        if (Unification.isInstance(varTyp, expTyp))
           Some(Substitution.singleton(sym, exp0))
         else
           None
@@ -1014,13 +1014,5 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
-  /**
-    * TODO: DOC
-    */
-  // TODO: Move somewhere better?
-  private def canUnify(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean = Unification.unifyTypes(tpe1, tpe2) match {
-    case Ok(_) => true
-    case Err(_) => false
-  }
 
 }

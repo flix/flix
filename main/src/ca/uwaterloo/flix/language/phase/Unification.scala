@@ -460,7 +460,7 @@ object Unification {
       */
     def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
       case Nil => (Substitution.empty, eff)
-        // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
+      // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
       case x :: xs =>
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)
@@ -498,6 +498,15 @@ object Unification {
     else
       Err(UnificationError.MismatchedEffects(eff1, eff2))
   }
+
+  /**
+    * Returns `true` if `tpe1` is an instance of `tpe2`.
+    */
+  def isInstance(tpe1: Type, tpe2: Type)(implicit flix: Flix): Boolean =
+    Unification.unifyTypes(tpe1, tpe2) match {
+      case Ok(_) => true
+      case Err(_) => false
+    }
 
   /**
     * Lifts the given value `a` into the type inference monad
