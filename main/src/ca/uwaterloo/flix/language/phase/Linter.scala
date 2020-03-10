@@ -299,22 +299,23 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Wild(_, _), Expression.Wild(_, _)) => Some(Substitution.empty)
 
     case (Expression.Var(sym, varTyp, _), _) =>
+      val expTyp = exp0.tpe
+
       if (exp0.isInstanceOf[Expression.Var]) {
         return None // TODO
       }
 
-      val expTyp = exp0.tpe
-      //println(s"canUnify($expTyp, $varTyp)")
       if (canUnify(varTyp, expTyp))
         Some(Substitution.singleton(sym, exp0))
-      else None
+      else
+        None
 
     // NB: Unification is left-biased so there is no case for a variable on the rhs.
 
     case (Expression.Def(sym1, _, _), Expression.Def(sym2, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
-    //      case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
+    case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Some(Substitution.empty)
+
     //      case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
     //        def eff: Type = Type.Pure
     //      }
@@ -338,8 +339,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //
     //      case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
-    //      case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
+
+    case (Expression.IfThenElse(exp11, exp12, exp13, _, _, _), Expression.IfThenElse(exp21, exp22, exp23, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: Also apply s1?
+      } yield s3 @@ s2 @@ s1
 
     case (Expression.Stm(exp11, exp12, _, _, _), Expression.Stm(exp21, exp22, _, _, _)) =>
       for {
@@ -347,18 +353,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         s2 <- unifyExp(s1(exp21), s1(exp22))
       } yield s2 @@ s1
 
-    //      case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
     //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
-    //      case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
+
+    case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) if sym1 == sym2 && tag1 == tag2 =>
+      unifyExp(exp1, exp2)
+
     //      case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
-    //
-    //      case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {  // TODO
-    //        def eff: Type = Type.Pure
-    //      }
-    //
+
+    case (Expression.RecordEmpty(_, _), Expression.RecordEmpty(_, _)) => Some(Substitution.empty)
+
+
+
     //      case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
@@ -422,8 +427,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.GetField(field1, exp1, _, _, _), Expression.GetField(field2, exp2, _, _, _)) if field1 == field2 =>
       unifyExp(exp1, exp2)
 
-    //      case class PutField(field: Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.PutField(field1, exp11, exp12, _, _, _), Expression.PutField(field2, exp21, exp22, _, _, _)) if field1 == field2 =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+      } yield s2 @@ s1
+
+
+
     //      case class GetStaticField(field: Field, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class PutStaticField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
