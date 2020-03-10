@@ -65,7 +65,10 @@ namespace Option {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)
+    pub def exists(f: a -> Bool, o: Option[a]): Bool = match o {
+        case None    => false
+        case Some(v) => f(v)
+    }
 
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true` or if `o` is `None`.
@@ -74,7 +77,10 @@ namespace Option {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), true)
+    pub def forall(f: a -> Bool, o: Option[a]): Bool = match o {
+        case None    => true
+        case Some(v) => f(v)
+    }
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
