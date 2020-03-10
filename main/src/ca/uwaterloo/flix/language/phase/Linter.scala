@@ -399,8 +399,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.ArrayLength(exp1, _, _, _), Expression.ArrayLength(exp2, _, _, _)) =>
       unifyExp(exp1, exp2)
 
-    //      case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.ArrayStore(exp11, exp12, exp13, _, _, _), Expression.ArrayStore(exp21, exp22, exp23, _, _, _)) =>
+      for {
+        s1 <- unifyExp(exp11, exp21)
+        s2 <- unifyExp(s1(exp12), s1(exp22))
+        s3 <- unifyExp(s2(exp13), s2(exp23)) // TODO: What about s32?
+      } yield s3 @@ s2 @@ s1
+
     //      case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
     //      case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
