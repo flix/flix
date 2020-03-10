@@ -299,7 +299,7 @@ namespace RBTree {
     /// The function `f` must be pure.
     ///
     pub def forall(f: a -> Bool, tree: RBTree[a]): Bool = match tree {
-        case RBNode(_, a, x, b) => forall(f, a) && f(x) && forall(f, b)
+        case RBNode(_, a, x, b) => if (!f(x)) false else forall(f, a) && forall(f, b)
         case _ => false
     }
 
@@ -338,11 +338,50 @@ namespace RBTree {
     pub def __cmp(this: RBTree[a], that: RBTree[a]): Int32 =
         if (isEmpty(this) && isEmpty(that)) 0 else cmpHelper(this, that, leftMost(this), leftMost(that))
 
-
     ///
     /// Returns `true` if and only if `this` and `that` are equal, i.e. they have the same elements.
     ///
     pub def __eq(this: RBTree[a], that: RBTree[a]): Bool = __cmp(this, that) == 0
+
+    ///
+    /// Helper function for `range`.
+    ///
+    def rangeHelper(b: Int32, n: Int32, acc: RBTree[Int32]): RBTree[Int32] =
+        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
+
+    ///
+    /// Returns a tree of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns `empty()` if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): RBTree[Int32] =
+        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
+
+    ///
+    /// Returns `true` if and only if the binary search tree invariant holds.
+    ///
+    pub def binarySearchTreeInvariantHolds(tree: RBTree[a]): Bool = match tree {
+        case RBNode(_, a, x, b) =>
+        if (exists(y -> y <=> x > 0, a) || exists(z -> z <=> x < 0, b)) false
+        else binarySearchTreeInvariantHolds(a) && binarySearchTreeInvariantHolds(b)
+        case _ => true
+    }
+
+    ///
+    /// Helper function for `redParentInvariantHolds`.
+    ///
+    pub def redParentInvariantHoldsHelper(tree: RBTree[a], parentColor: RBColor): Bool = match tree {
+        case RBNode(Red, a, _, b) =>
+            if (parentColor == Red) false else redParentInvariantHoldsHelper(a, Red) && redParentInvariantHoldsHelper(b, Red)
+        case RBNode(Black, a, _, b) =>
+            redParentInvariantHoldsHelper(a, Black) && redParentInvariantHoldsHelper(b, Black)
+        case _ => true
+    }
+
+    ///
+    /// Returns `true` if and only if no red node has a red parent.
+    ///
+    pub def redParentInvariantHolds(tree: RBTree[a]): Bool = redParentInvariantHoldsHelper(tree, Black)
 
     ///
     /// Returns a rudimentary string representation of `tree`.
