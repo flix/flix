@@ -342,19 +342,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //      }
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.Unary(op1, exp1, _, _, _), Expression.Unary(op2, exp2, _, _, _)) if op1 == op2 =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     //      case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
     //
@@ -369,10 +363,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       } yield s3 @@ s2 @@ s1
 
     case (Expression.Stm(exp11, exp12, _, _, _), Expression.Stm(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp21), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
 
@@ -388,10 +379,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.RecordExtend(_, exp11, exp12, _, _, _), Expression.RecordExtend(_, exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.RecordRestrict(_, exp1, _, _, _), Expression.RecordRestrict(_, exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
@@ -400,16 +388,10 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExps(exps1, exps2, metaVars)
 
     case (Expression.ArrayNew(exp11, exp12, _, _, _), Expression.ArrayNew(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.ArrayLoad(exp11, exp12, _, _, _), Expression.ArrayLoad(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.ArrayLength(exp1, _, _, _), Expression.ArrayLength(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
@@ -438,10 +420,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.VectorStore(exp11, index1, exp12, _, _, _), Expression.VectorStore(exp21, index2, exp22, _, _, _)) if index1 == index2 =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.VectorLength(exp1, _, _, _), Expression.VectorLength(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
@@ -456,10 +435,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.Assign(exp11, exp12, _, _, _), Expression.Assign(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     //      case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression { // TODO
     //        def tpe: Type = Type.Bool
@@ -499,10 +475,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.PutField(field1, exp11, exp12, _, _, _), Expression.PutField(field2, exp21, exp22, _, _, _)) if field1 == field2 =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.GetStaticField(field1, _, _, _), Expression.GetStaticField(field2, _, _, _)) if field1 == field2 => Some(Substitution.empty)
 
@@ -516,10 +489,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.PutChannel(exp11, exp12, _, _, _), Expression.PutChannel(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
@@ -534,10 +504,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     //      }
     //
     case (Expression.FixpointCompose(exp11, exp12, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp21), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
@@ -546,18 +513,23 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
-      for {
-        s1 <- unifyExp(exp11, exp21, metaVars)
-        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
-      } yield s2 @@ s1
+      unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    //
     //      case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
 
     case _ => None
   }
 
-  // TODO: add unify2
+  /**
+    * Optionally returns a substitution that makes `exp11` equal to `exp21` and `exp12` equal to `exp22`.
+    */
+  private def unifyExp(exp11: Expression, exp12: Expression, exp21: Expression, exp22: Expression, metaVars: List[Symbol.VarSym])(implicit flix: Flix): Option[Substitution] = {
+    for {
+      s1 <- unifyExp(exp11, exp21, metaVars)
+      s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+    } yield s2 @@ s1
+  }
+
   //  TODO: add unify3.
 
   /**
