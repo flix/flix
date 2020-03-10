@@ -370,7 +370,7 @@ namespace RBTree {
     ///
     /// Helper function for `redParentInvariantHolds`.
     ///
-    pub def redParentInvariantHoldsHelper(tree: RBTree[a], parentColor: RBColor): Bool = match tree {
+    def redParentInvariantHoldsHelper(tree: RBTree[a], parentColor: RBColor): Bool = match tree {
         case RBNode(Red, a, _, b) =>
             if (parentColor == Red) false else redParentInvariantHoldsHelper(a, Red) && redParentInvariantHoldsHelper(b, Red)
         case RBNode(Black, a, _, b) =>
