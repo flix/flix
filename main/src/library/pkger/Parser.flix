@@ -118,3 +118,15 @@ namespace JsonParser {
 
     pub def jsonValue(): Parser[JsonValue] = jsonBool() <|> jsonNumber() <|> jsonString()
 }
+
+namespace SemVerParser {
+    def parseNumber(): Parser[Int] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), s -> Result.toOption(Int32.fromString(s)))
+
+    pub def semVer(): Parser[SemVer] = Parser.bind(parseNumber(), major -> {
+        Parser.bind(Parser.char('.') *> parseNumber(), minor -> {
+            Parser.bind(Parser.char('.') *> parseNumber(), patch -> {
+                Parser.return((major, minor, patch, None))
+            })
+        })
+    })
+}

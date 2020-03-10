@@ -1,26 +1,28 @@
-// Could add an enum specifying which component can be updated safely (e.g. `^` and `~` in NPM)
-pub type alias SemVer = (Int, Option[(Int, Option[Int])], Option[String])
-
 // Same type as `SemVer`, but all `Option` chaining is gone
-pub type alias SpecificSemVer = (Int, Int, Int, Option[String])
+pub type alias SemVer = (Int, Int, Int, Option[String])
 
 // TODO: Temp public
-pub def isWithinBounds(specific: SpecificSemVer, bound: SemVer): Bool = {
-    let (postFirstMajor, boundMajor) = match bound {
-        case (major, _, _) => (major > 0, major)
+pub def isWithinBounds(specific: SemVer, bound: SemVer): Bool = {
+    let (majorZero, boundMajor) = match bound {
+        case (major, _, _, _) => (major == 0, major)
     };
 
-    if (postFirstMajor) {
+    if (!majorZero) {
         match specific {
+            // SemVer has a tag, and thus all releases are considered breaking
             case (major, minor, patch, Some(tag)) => match bound {
-                case (boundMajor, Some((boundMinor, Some(boundPatch))), Some(boundTag)) => major == boundMajor && minor == boundMinor && patch == boundPatch && tag == boundTag
+                case (boundMajor, boundMinor, boundPatch, Some(boundTag)) => major == boundMajor && minor == boundMinor && patch == boundPatch && tag == boundTag
                 case _ => false
             }
+            // Only major versions allow backwards incompatibility
             case (major, _, _, None) => boundMajor == major
         }
     } else {
-        // TODO
-        false
+        // TODO: Look only for specific version, or allow patch releases? Only specific for now!
+        match (specific, bound) {
+            case ((major, minor, patch, tag), (_, boundMinor, boundPatch, boundTag)) => major == boundMajor && minor == boundMinor && patch == boundPatch && tag == boundTag
+            case _ => false
+        }
     }
 }
 
@@ -38,7 +40,7 @@ pub opaque type Author = { name: String
                          }
 
 pub opaque type Package = { name: String
-                          , version: SpecificSemVer
+                          , version: SemVer
                           , authors: List[Author]
                           , description: String
                           // This could be mandatory
@@ -50,7 +52,7 @@ pub opaque type Package = { name: String
 
 pub opaque type LockedPackage = { name: String
                                 // All transitive dependencies, their specific version, and where they were retrieved from.
-                                , transitive: List[(String, List[SpecificSemVer])]
+                                , transitive: List[(String, List[SemVer])]
                                 }
 
 // Add a new package to the package. Handle superseding old versions
@@ -142,3 +144,8 @@ pub enum ErrorFull {
 }
 
 pub def main(): Result[Path, ErrorFull] & Impure = initPackage("package_test")
+
+pub def parser_main(): Bool = match Parser.runParser(SemVerParser.semVer(), "1.2.3") {
+    case Some(_) => true
+    case None => false
+}
