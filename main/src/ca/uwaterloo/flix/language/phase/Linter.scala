@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{ConstraintParam, _}
-import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
+import ca.uwaterloo.flix.language.phase.Linter.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -272,6 +273,14 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
+  // TODO: DOC
+  private def unifyVar(sym1: Symbol.VarSym, tpe1: Type, sym2: Symbol.VarSym, tpe2: Type)(implicit flix: Flix): Option[Substitution] = {
+    if (Unification.isInstance(tpe2, tpe1))
+      Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, SourceLocation.Unknown)))
+    else
+      None
+  }
+
   /**
     * Optionally returns a substitution that makes `lint0` and `exp0` equal.
     *
@@ -317,13 +326,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         else
           None
       } else {
+        // TODO: Cleanup
         // Case 2: We are unifying a program variable.
-        // We can only unify one program variable with another program variable.
         exp0 match {
-          case Expression.Var(otherSym, _, _) =>
-            // TODO: What should be done here?
-            // Some(Substitution.singleton(sym, exp0))
-            None
+          case Expression.Var(otherSym, _, _) if sym == otherSym =>
+            // Two programs variables only unify if they are exactly the same.
+            Some(Substitution.singleton(sym, exp0))
           case _ => None
         }
       }
@@ -336,9 +344,12 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
-    case (Expression.Lambda(fparam1, exp1, _, _), Expression.Lambda(fparam2, exp2, _, _)) if fparam1.sym == fparam2.sym =>
+    case (Expression.Lambda(fparam1, exp1, _, _), Expression.Lambda(fparam2, exp2, _, _)) =>
       // TODO: Allow special unification here and in other bindings????
-      unifyExp(exp1, exp2, metaVars)
+      for {
+        s1 <- unifyVar(fparam1.sym, fparam1.tpe, fparam2.sym, fparam2.tpe)
+        s2 <- unifyExp(s1(exp1), s1(exp2), metaVars)
+      } yield s2 @@ s1
 
     case (Expression.Apply(exp11, exp12, _, _, _), Expression.Apply(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
