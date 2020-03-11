@@ -1,8 +1,3 @@
-///
-/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
-///
-def ===(x: a, y: a): Bool = ???
-
 namespace Option {
 
     @lint
