@@ -28,8 +28,21 @@ class TestLinter extends FunSuite with TestUtils {
     val input =
       s"""
          |def main(): Option[List[Int]] =
-         |    let xs = List.map(x -> if (x % 2 == 0) Some(x) else None, 1 :: 2 :: 3 :: Nil);
+         |    let f = x -> if (x % 2 == 0) Some(x) else None;
+         |    let xs = List.map(f, 1 :: 2 :: 3 :: Nil);
          |    Option.traverse(x -> x, xs)
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Option.useTraverse") {
+    val input =
+      s"""
+         |def main(): Option[List[Int]] =
+         |    let f = x -> if (x % 2 == 0) Some(x) else None;
+         |    Option.sequence(List.map(f, 1 :: 2 :: 3 :: Nil))
          |
        """.stripMargin
     val result = run(input)

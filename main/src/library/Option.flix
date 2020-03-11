@@ -349,7 +349,7 @@ namespace Option {
 
     @lint
     def useTraverse(): Bool =
-        forall [a, b, e] (f : a -> Option[b] & e, xs: List[Option[a]]).
+        forall [a, b, e] (f : a -> Option[b] & e, xs: List[a]).
             sequence(List.map(f, xs)) === traverse(f, xs)
 
     @lint
