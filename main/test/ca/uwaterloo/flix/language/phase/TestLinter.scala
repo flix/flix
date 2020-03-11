@@ -10,7 +10,7 @@ import org.scalatest.FunSuite
 
 class TestLinter extends FunSuite with TestUtils {
 
-  val DefaultOptions: Options = Options.Default.copy(xlint = true)
+  val DefaultOptions: Options = Options.Default.copy(xlinter = true)
 
   test("List.mapMap01") {
     val input =

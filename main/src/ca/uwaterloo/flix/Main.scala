@@ -83,7 +83,7 @@ object Main {
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
-      xlint = cmdOpts.xlint,
+      xlinter = cmdOpts.xlinter,
       xnoeffects = cmdOpts.xnoeffects,
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics
@@ -222,7 +222,7 @@ object Main {
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
                      xnoeffects: Boolean = false,
-                     xlint: Boolean = false,
+                     xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
                      xstatistics: Boolean = false,
@@ -360,8 +360,8 @@ object Main {
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
 
-      // Xlint.
-      opt[Unit]("Xlint").action((_, c) => c.copy(xlint = true)).
+      // Xlinter.
+      opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
         text("[experimental] enables the semantic linter.")
 
       // Xno-effects

@@ -41,7 +41,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, LinterError] = flix.phase("Linter") {
     // Check if the linter is enabled.
-    if (!flix.options.xlint) {
+    if (!flix.options.xlinter) {
       return root.toSuccess
     }
 
