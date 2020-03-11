@@ -81,6 +81,39 @@ class TestLinter extends FunSuite with TestUtils {
     expectError[LinterError.Lint](result)
   }
 
+  test("String.leftConcatenateEmptyString") {
+    val input =
+      s"""
+         |def main(): String =
+         |    "" + "hello world"
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("String.rightConcatenateEmptyString") {
+    val input =
+      s"""
+         |def main(): String =
+         |    "hello world" + ""
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("String.trimTrim") {
+    val input =
+      s"""
+         |def main(): String =
+         |    String.trim(String.trim("hello world"))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
   private def run(s: String): Validation[CompilationResult, CompilationError] = new Flix().setOptions(DefaultOptions).addStr(s).compile()
 
 }
