@@ -51,8 +51,8 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapMap01") {
     val input =
       s"""
-         |def main(): Int =
-         |    List.length(List.map(x -> x + 1, List.map(y -> y + 2, Nil)))
+         |def main(): List[Int] =
+         |    List.map(x -> x + 1, List.map(y -> y + 2, Nil))
          |
        """.stripMargin
     val result = run(input)
@@ -62,8 +62,8 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapMap02") {
     val input =
       s"""
-         |def main(): Int & Impure =
-         |    List.length(List.map(x -> x + 1, List.map(y -> {[1, 2, 3]; y + 2}, Nil)))
+         |def main(): List[Int] & Impure =
+         |    List.map(x -> x + 1, List.map(y -> {[1, 2, 3]; y + 2}, Nil))
          |
        """.stripMargin
     val result = run(input)
@@ -73,8 +73,8 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.mapMap03") {
     val input =
       s"""
-         |def main(): Int & Impure =
-         |    List.length(List.map(x -> {[1, 2, 3]; x + 1}, List.map(y -> y + 2, Nil)))
+         |def main(): List[Int] & Impure =
+         |    List.map(x -> {[1, 2, 3]; x + 1}, List.map(y -> y + 2, Nil))
          |
        """.stripMargin
     val result = run(input)
