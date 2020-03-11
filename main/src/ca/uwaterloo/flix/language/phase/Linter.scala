@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{ConstraintParam, _}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.LinterError
-import ca.uwaterloo.flix.language.phase.Linter.Substitution
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -28,6 +27,11 @@ import scala.annotation.tailrec
 
 /**
   * The Linter phase checks for any applicable lints within the ast.
+  *
+  * Possible improvements:
+  *
+  * - Add support for unification of complex binding constructs such as Match and Select.
+  * - Add support for the `implies` meta-predicate.
   */
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -273,7 +277,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  // TODO: DOC
+  /**
+    * Unifies the given symbol `sym1` of type `tpe1` with the symbol `sym2` of type `tpe2` if the `tpe2` is an instance of `tpe1`.
+    *
+    * NB: Only intended for program variables.
+    */
   private def unifyVar(sym1: Symbol.VarSym, tpe1: Type, sym2: Symbol.VarSym, tpe2: Type)(implicit flix: Flix): Option[Substitution] = {
     if (Unification.isInstance(tpe2, tpe1))
       Some(Substitution.singleton(sym1, Expression.Var(sym2, tpe2, SourceLocation.Unknown)))
@@ -320,19 +328,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       // Determine if we are unifying a meta-variable.
       if (metaVars.contains(sym)) {
         // Case 1: We are unifying a meta-variable.
-        // Determine if we can unify the type of meta-variable and the expression.
+        // Determine if we can unify the type of the meta-variable and the expression.
         if (Unification.isInstance(varTyp, expTyp))
           Some(Substitution.singleton(sym, exp0))
         else
           None
       } else {
-        // TODO: Cleanup
-        // Case 2: We are unifying a program variable.
+        // Case 2: We are unifying a program variable. The variable must be exactly the same.
         exp0 match {
           case Expression.Var(otherSym, _, _) if sym == otherSym =>
-            // Two programs variables only unify if they are exactly the same.
-            Some(Substitution.singleton(sym, exp0))
-          case _ => None
+            // Case 2.1: The two variables are the same. Unification succeeds.
+            Some(Substitution.empty)
+          case _ =>
+            // Case 2.2: The two variables are different or one is an expression. Unification fails.
+            None
         }
       }
 
@@ -345,7 +354,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Hole(sym1, _, _, _), Expression.Hole(sym2, _, _, _)) if sym1 == sym2 => Some(Substitution.empty)
 
     case (Expression.Lambda(fparam1, exp1, _, _), Expression.Lambda(fparam2, exp2, _, _)) =>
-      // TODO: Allow special unification here and in other bindings????
       for {
         s1 <- unifyVar(fparam1.sym, fparam1.tpe, fparam2.sym, fparam2.tpe)
         s2 <- unifyExp(s1(exp1), s1(exp2), metaVars)
@@ -360,11 +368,17 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Binary(op1, exp11, exp12, _, _, _), Expression.Binary(op2, exp21, exp22, _, _, _)) if op1 == op2 =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.Let(sym1, exp11, exp12, _, _, _), Expression.Let(sym2, exp21, exp22, _, _, _)) if sym1 == sym2 =>
-      unifyExp(exp11, exp12, exp21, exp22, metaVars)
+    case (Expression.Let(sym1, exp11, exp12, _, _, _), Expression.Let(sym2, exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyVar(sym1, exp11.tpe, sym2, exp21.tpe)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+      } yield s2 @@ s1
 
-    case (Expression.LetRec(sym1, exp11, exp12, _, _, _), Expression.LetRec(sym2, exp21, exp22, _, _, _)) if sym1 == sym2 =>
-      unifyExp(exp11, exp12, exp21, exp22, metaVars)
+    case (Expression.LetRec(sym1, exp11, exp12, _, _, _), Expression.LetRec(sym2, exp21, exp22, _, _, _)) =>
+      for {
+        s1 <- unifyVar(sym1, exp11.tpe, sym2, exp21.tpe)
+        s2 <- unifyExp(s1(exp12), s1(exp22), metaVars)
+      } yield s2 @@ s1
 
     case (Expression.IfThenElse(exp11, exp12, exp13, _, _, _), Expression.IfThenElse(exp21, exp22, exp23, _, _, _)) =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
@@ -372,7 +386,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Stm(exp11, exp12, _, _, _), Expression.Stm(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    //      case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression  // TODO
+    case (Expression.Match(_, _, _, _, _), _) =>
+      // NB: We currently do not perform unification of complex binding constructs.
+      None
+
+    case (_, Expression.Match(_, _, _, _, _)) =>
+      // NB: We currently do not perform unification of complex binding constructs.
+      None
 
     case (Expression.Tag(sym1, tag1, exp1, _, _, _), Expression.Tag(sym2, tag2, exp2, _, _, _)) if sym1 == sym2 && tag1 == tag2 =>
       unifyExp(exp1, exp2, metaVars)
@@ -458,9 +478,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.Cast(exp1, _, _, _), Expression.Cast(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    //
-    //      case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
+    case (Expression.TryCatch(_, _, _, _, _), _) =>
+      // NB: We currently do not perform unification of complex binding constructs.
+      None
+
+    case (_, Expression.TryCatch(_, _, _, _, _)) =>
+      // NB: We currently do not perform unification of complex binding constructs.
+      None
 
     case (Expression.InvokeConstructor(constructor1, exps1, _, _, _), Expression.InvokeConstructor(constructor2, exps2, _, _, _)) =>
       unifyExps(exps1, exps2, metaVars)
@@ -496,6 +520,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
 
     //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
     //
+    // TODO: Allow special unification here.
+
+    // NB: We currently do not perform unification of complex binding constructs.
+
+
 
     case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
