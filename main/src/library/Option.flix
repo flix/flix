@@ -340,7 +340,7 @@ namespace Option {
     @lint
     def useReplace(): Bool =
         forall [a] (x: a, y: a, o: Option[a]).
-            Option.map(z -> if (z == x) x else y, o) === Option.replace(x, y, o)
+            Option.map(z -> if (z == x) y else z, o) === Option.replace(x, y, o)
 
     @lint
     def useSequence(): Bool =

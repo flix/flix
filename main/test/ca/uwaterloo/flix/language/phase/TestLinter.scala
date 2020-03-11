@@ -12,6 +12,42 @@ class TestLinter extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.Default.copy(xlinter = true)
 
+  test("Option.useReplace") {
+    val input =
+      s"""
+         |def main(): Option[Int] =
+         |    let o = Some(21);
+         |    Option.map(x -> if (x == 21) 42 else x, o)
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Option.useZip") {
+    val input =
+      s"""
+         |def main(): Option[(Int, Int)] =
+         |    let o1 = Some(21);
+         |    let o2 = Some(42);
+         |    Option.flatMap(x -> Option.map(y -> (x, y), o2), o1)
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("List.mapIdentity") {
+    val input =
+      s"""
+         |def main(): List[Int] =
+         |    List.map(x -> x, 1 :: Nil)
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
   test("List.mapMap01") {
     val input =
       s"""
@@ -22,7 +58,6 @@ class TestLinter extends FunSuite with TestUtils {
     val result = run(input)
     expectError[LinterError.Lint](result)
   }
-
 
 
   private def run(s: String): Validation[CompilationResult, CompilationError] = new Flix().setOptions(DefaultOptions).addStr(s).compile()
