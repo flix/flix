@@ -37,7 +37,7 @@ object LinterError {
       vt << s"  |\\_/|      | Do you want me to help you with that?            |" << NewLine
       vt << s"  \\___/      \\__________________________________________________/" << NewLine
       vt << NewLine
-      vt << ">> The lint: " << Red(sym.name) << " applies to the code at: " << NewLine
+      vt << ">> The " << Red(sym.name) << " lint applies to the code at: " << NewLine
       vt << NewLine
       vt << Code(loc, s"matches ${sym.name}.") << NewLine
       vt << "The lint suggests that this code can be replaced by: " << NewLine
