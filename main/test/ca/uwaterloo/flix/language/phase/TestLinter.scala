@@ -37,6 +37,17 @@ class TestLinter extends FunSuite with TestUtils {
     expectError[LinterError.Lint](result)
   }
 
+  test("List.filterFilter") {
+    val input =
+      s"""
+         |pub def main(): List[Int] =
+         |    List.filter(x -> x > 10, List.filter(y -> y > 20, Nil))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
   test("List.mapIdentity") {
     val input =
       s"""

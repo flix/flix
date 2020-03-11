@@ -846,17 +846,15 @@ namespace List {
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-// TODO: Broken
     @lint
     def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
-            filter(g, filter(f, xs)) === filter(f >> g, xs)
+            filter(g, filter(f, xs)) === filter(x -> f(x) && g(x), xs)
 
-// TODO: Broken
     @lint
     def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
-            Option.find(g, List.find(f, xs)) === find(f >> g, xs)
+            Option.find(g, List.find(f, xs)) === find(x -> f(x) && g(x), xs)
 
     @lint
     def mapIdentity(): Bool =
