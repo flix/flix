@@ -40,8 +40,19 @@ class TestLinter extends FunSuite with TestUtils {
   test("List.filterFilter") {
     val input =
       s"""
-         |pub def main(): List[Int] =
-         |    List.filter(x -> x > 10, List.filter(y -> y > 20, Nil))
+         |def main(): List[Int] =
+         |    List.filter(x -> x > 21, List.filter(y -> y > 42, Nil))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("List.findFind") {
+    val input =
+      s"""
+         |def main(): Option[Int] =
+         |    Option.find(x -> x > 21, List.find(y -> y > 42, Nil))
          |
        """.stripMargin
     val result = run(input)
@@ -86,6 +97,20 @@ class TestLinter extends FunSuite with TestUtils {
       s"""
          |def main(): List[Int] & Impure =
          |    List.map(x -> {[1, 2, 3]; x + 1}, List.map(y -> y + 2, Nil))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("List.mapZip") {
+    val input =
+      s"""
+         |def main(): List[Int] =
+         |    let f = (x, y) -> x + y;
+         |    let xs = 1 :: 2 :: Nil;
+         |    let ys = 1 :: 2 :: Nil;
+         |        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys))
          |
        """.stripMargin
     val result = run(input)
