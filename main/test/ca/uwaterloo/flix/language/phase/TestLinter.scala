@@ -59,6 +59,27 @@ class TestLinter extends FunSuite with TestUtils {
     expectError[LinterError.Lint](result)
   }
 
+  test("List.mapMap02") {
+    val input =
+      s"""
+         |def main(): Int & Impure =
+         |    List.length(List.map(x -> x + 1, List.map(y -> {[1, 2, 3]; y + 2}, Nil)))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("List.mapMap03") {
+    val input =
+      s"""
+         |def main(): Int & Impure =
+         |    List.length(List.map(x -> {[1, 2, 3]; x + 1}, List.map(y -> y + 2, Nil)))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
 
   private def run(s: String): Validation[CompilationResult, CompilationError] = new Flix().setOptions(DefaultOptions).addStr(s).compile()
 
