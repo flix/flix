@@ -846,11 +846,13 @@ namespace List {
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
+// TODO: Broken
     @lint
     def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
             filter(g, filter(f, xs)) === filter(f >> g, xs)
 
+// TODO: Broken
     @lint
     def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).

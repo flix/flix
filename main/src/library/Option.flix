@@ -288,11 +288,13 @@ namespace Option {
         forall [a] (o: Option[a]).
             flatten(Some(o)) === o
 
+// TODO: Broken
     @lint
     def filterFilter(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
             filter(g, filter(f, o)) === filter(f >> g, o)
 
+// TODO: Broken
     @lint
     def findFind(): Bool =
         forall [a] (f: a -> Bool, g: a -> Bool, o: Option[a]).
