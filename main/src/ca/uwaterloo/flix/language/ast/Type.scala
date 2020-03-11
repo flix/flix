@@ -386,9 +386,19 @@ object Type {
   /**
     * Extends the record row `rest` with the given type and label.
     */
-  def mkExtendRecordRow(label: String, tpe: Type, rest: Type): Type = {
+  def mkExtendedRecordRow(label: String, tpe: Type, rest: Type): Type = {
     val extendedRow = mkApply(Type.Cst(TypeConstructor.ExtendedRecordRow(label)), List(tpe, rest))
     Type.Apply(Type.Cst(TypeConstructor.Record), extendedRow)
+  }
+
+  // MATT this and the above method form a sort of wrapper case class thing. Is there a better way to do this?
+  object matchExtendedRecordRow {
+    def unapply(arg: Type): Option[(String, Type, Type)] = {
+      arg match {
+        case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.ExtendedRecordRow(label)), tpe), rest) => Some((label, tpe, rest))
+        case _ => None
+      }
+    }
   }
 
 

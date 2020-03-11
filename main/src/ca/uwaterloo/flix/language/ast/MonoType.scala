@@ -66,9 +66,11 @@ object MonoType {
 
   case class Arrow(args: List[MonoType], result: MonoType) extends MonoType
 
-  case class RecordEmpty() extends MonoType
+  case class EmptyRecordRow() extends MonoType
 
-  case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
+  case class ExtendedRecordRow(label: String, value: MonoType, rest: MonoType) extends MonoType
+
+  case class Record(row: MonoType) extends MonoType
 
   case class SchemaEmpty() extends MonoType
 
