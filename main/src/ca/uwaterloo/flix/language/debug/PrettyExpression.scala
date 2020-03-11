@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, TypedAst}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Type, TypeConstructor, TypedAst, UnaryOperator}
 
 /**
   * Pretty printing of expressions.
@@ -13,110 +13,56 @@ object PrettyExpression {
     */
   def pretty(e0: TypedAst.Expression): String = e0 match {
 
-    //
-    //    case class Unit(loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Unit
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class True(loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Bool
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class False(loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Bool
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Char
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Float32
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Float64
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Int8
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Int16
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    case Expression.Int32(lit, _) => lit.toString
+    case Expression.Unit(_) => "()"
 
-    //    case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Int32
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Int64
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.BigInt
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Str
-    //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //  def eff: Type = Type.Pure
-    //  }
-    //
+    case Expression.True(_) => "true"
+
+    case Expression.False(_) => "false"
+
+    case Expression.Char(lit, _) => s"'$lit'"
+
+    case Expression.Float32(lit, _) => s"${lit}f32"
+
+    case Expression.Float64(lit, _) => s"$lit"
+
+    case Expression.Int8(lit, _) => s"${lit}i8"
+
+    case Expression.Int16(lit, _) => s"${lit}i16"
+
+    case Expression.Int32(lit, _) => s"$lit"
+
+    case Expression.Int64(lit, _) => s"${lit}i64"
+
+    case Expression.BigInt(lit, _) => s"${lit}ii"
+
+    case Expression.Str(lit, _) => "\"" + lit + "\""
+
+    case Expression.Wild(_, _) => "_"
 
     case Expression.Var(sym, _, _) => sym.text
 
     case Expression.Def(sym, _, _) => sym.toString
 
-    //
-    //    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //  def eff: Type = Type.Pure
-    //  }
-    //
+    case Expression.Hole(sym, _, _, _) => s"?${sym.name}"
+
     case Expression.Lambda(fparam, exp, _, _) =>
       s"${fparam.sym.text} -> ${pretty(exp)}"
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       s"${pretty(exp1)}(${pretty(exp2)})"
 
-    //    case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    case Expression.Binary(op, exp1, exp2, _, _, _) => op match {
-      case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
-      case _ => e0.toString
+    case Expression.Unary(op, exp, _, _, _) => op match {
+      case UnaryOperator.LogicalNot => s"!${pretty(exp)}"
+      case UnaryOperator.Plus => s"+${pretty(exp)}"
+      case UnaryOperator.Minus => s"-${pretty(exp)}"
+      case UnaryOperator.BitwiseNegate => s"~~~${pretty(exp)}"
     }
 
+    case Expression.Binary(op, exp1, exp2, _, _, _) => op match {
+      case BinaryOperator.Plus => s"${pretty(exp1)} + ${pretty(exp2)}"
+      // TODO: Rest
+      case _ => e0.toString
+    }
 
     //
     //    case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -125,25 +71,22 @@ object PrettyExpression {
     //
     //    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //    case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-
     case Expression.Stm(exp1, exp2, _, _, _) =>
       s"${pretty(exp1); pretty(exp2)}"
 
     //
     //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //    case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
-    case Expression.Tag(_, tag, exp, _, _, _) =>
-      s"$tag${pretty(exp)}"
+    case Expression.Tag(_, tag, exp, _, _, _) => exp.tpe match {
+      case Type.Cst(TypeConstructor.Unit) => tag
+      case _ => s"$tag${pretty(exp)}"
+    }
 
-    //
-    //    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //  def eff: Type = Type.Pure
-    //  }
+    case Expression.Tuple(elms, _, _, _) =>
+      s"(${elms.map(pretty).mkString(", ")})"
+
+    //    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
@@ -181,17 +124,9 @@ object PrettyExpression {
     //
     //    case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //    case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Bool
+    //    case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression
     //
-    //  def eff: Type = Type.Pure
-    //  }
-    //
-    //    case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
-    //  def tpe: Type = Type.Bool
-    //
-    //  def eff: Type = Type.Pure
-    //  }
+    //    case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
@@ -221,17 +156,13 @@ object PrettyExpression {
     //
     //    case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //    case class ProcessSpawn
-    //    (exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
     case Expression.ProcessSpawn(exp, _, _, _) =>
       s"spawn ${pretty(exp)}"
 
     //    case class ProcessPanic(msg: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //    case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //  def eff: Type = Type.Pure
-    //  }
+    //    case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //    case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
