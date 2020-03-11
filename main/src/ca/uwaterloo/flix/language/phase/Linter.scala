@@ -31,6 +31,7 @@ import scala.annotation.tailrec
   * Possible improvements:
   *
   * - Add support for unification of complex binding constructs such as Match and Select.
+  * - Add support for unification of constraint sets.
   * - Add support for the `implies` meta-predicate.
   */
 object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
@@ -61,6 +62,15 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       case xs => Failure(LazyList.from(xs))
     }
   }
+
+  /**
+    * A definition is a target for linting if it is:
+    *
+    * - a non-benchmark.
+    * - a non-lint.
+    * - a non-test.
+    */
+  private def isTarget(defn: TypedAst.Def): Boolean = !defn.ann.isBenchmark && !defn.ann.isLint && !defn.ann.isTest
 
   /**
     * Searches for lint instances in the given definition `defn0`.
@@ -518,23 +528,23 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.PutChannel(exp11, exp12, _, _, _), Expression.PutChannel(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    //      case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
-    //
-    // TODO: Allow special unification here.
+    case (Expression.SelectChannel(_, _, _, _, _), _) =>
+      // NB: We currently do not perform unification of complex binding constructs.
+      None
 
-    // NB: We currently do not perform unification of complex binding constructs.
-
-
+    case (_, Expression.SelectChannel(_, _, _, _, _)) =>
+      // NB: We currently do not perform unification of complex binding constructs.
+      None
 
     case (Expression.ProcessSpawn(exp1, _, _, _), Expression.ProcessSpawn(exp2, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.ProcessPanic(msg1, _, _, _), Expression.ProcessPanic(msg2, _, _, _)) if msg1 == msg2 => Some(Substitution.empty)
 
-    //      case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression { // TODO
-    //        def eff: Type = Type.Pure
-    //      }
-    //
+    case (Expression.FixpointConstraintSet(_, _, _), Expression.FixpointConstraintSet(_, _, _)) =>
+      // NB: We currently do not perform unification inside constraint sets.
+      None
+
     case (Expression.FixpointCompose(exp11, exp12, _, _, _), Expression.FixpointCompose(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
@@ -547,9 +557,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    //      case class FixpointFold(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression // TODO
+    case (Expression.FixpointFold(sym1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(sym2, exp21, exp22, exp23, _, _, _)) if sym1 == sym2 =>
+      unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
+
   }
 
   /**
@@ -587,13 +599,6 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       } yield s2 @@ s1
   }
 
-  // TODO: DOC
-  private def unifyConstraint(c1: Constraint, c2: Constraint, metaVars: List[Symbol.VarSym])(implicit flix: Flix): Option[Substitution] = (c1, c2) match {
-    case (Constraint(_, head1, body1, _), Constraint(_, head2, body2, _)) =>
-      ??? // TODO
-  }
-
-
   /**
     * Returns all lints in the given AST `root`.
     */
@@ -608,7 +613,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the quantifiers and inner expression of the given (optionally) quantified expression `exp0`.
     */
-  private def popForall(exp0: Expression): (List[FormalParam], Expression) = {
+  private def splitQuantifiersAndBody(exp0: Expression): (List[FormalParam], Expression) = {
     @tailrec
     def visit(exp0: Expression, acc: List[FormalParam]): (List[FormalParam], Expression) = exp0 match {
       case Expression.Universal(fparam, exp, loc) => visit(exp, fparam :: acc)
@@ -618,12 +623,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     visit(exp0, Nil)
   }
 
-
   /**
     * Returns all non-lints definitions in the given AST `root`.
     */
   private def targetsOf(root: Root): List[Def] = root.defs.foldLeft(Nil: List[Def]) {
-    case (acc, (sym, defn)) => if (!defn.ann.isLint && !defn.ann.isTest) defn :: acc else acc // TODO: Criteria?
+    case (acc, (sym, defn)) => if (isTarget(defn)) defn :: acc else acc
   }
 
   /**
@@ -637,7 +641,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     val implies = Symbol.mkDefnSym("implies")
 
     // Split the expression into its parts.
-    val (quantifiers, base) = popForall(exp0)
+    val (quantifiers, base) = splitQuantifiersAndBody(exp0)
 
     // Determine the type of lint.
     base match {
@@ -645,13 +649,16 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         if (lintSym == contextEqSym) {
           Some(Lint(sym, quantifiers, left, right))
         } else if (lintSym == implies) {
-          None // TODO
+          // TODO: Add support for additional lints.
+          println(s"Unsupported lint: $sym ")
+          None
         } else {
-          println(s"Malformed lint: $sym ") // TODO
+          // TODO: Add support for additional lints.
+          println(s"Unsupported lint: $sym ")
           None
         }
       case _ =>
-        println(s"Malformed lint: $sym ") // TODO
+        println(s"Malformed lint:   $sym ")
         None
     }
   }
