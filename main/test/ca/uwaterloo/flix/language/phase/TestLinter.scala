@@ -12,6 +12,120 @@ class TestLinter extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.Default.copy(xlinter = true)
 
+  test("Int32.leftAdditionByZero") {
+    val input =
+      s"""
+         |def main(): Int = 0 + 21
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.rightAdditionByZero") {
+    val input =
+      s"""
+         |def main(): Int = 21 + 0
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.subtractionByZero") {
+    val input =
+      s"""
+         |def main(): Int = 21 - 0
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.subtractionBySelf") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    let x = 21;
+         |    x - x
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.leftMultiplicationByZero") {
+    val input =
+      s"""
+         |def main(): Int = 0 * 21
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.rightMultiplicationByZero") {
+    val input =
+      s"""
+         |def main(): Int = 21 * 0
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.leftMultiplicationByOne") {
+    val input =
+      s"""
+         |def main(): Int = 1 * 21
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.rightMultiplicationByOne") {
+    val input =
+      s"""
+         |def main(): Int = 1 * 21
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.divisionByZero") {
+    val input =
+      s"""
+         |def main(): Int = 21 / 0
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.divisionByOne") {
+    val input =
+      s"""
+         |def main(): Int = 21 / 1
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Int32.divisionBySelf") {
+    val input =
+      s"""
+         |def main(): Int =
+         |    let x = 21;
+         |    x / x
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
   test("Option.existsSome") {
     val input =
       s"""
