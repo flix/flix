@@ -269,16 +269,6 @@ namespace Option {
     /////////////////////////////////////////////////////////////////////////////
 
     @lint
-    def countAtLeastZero(): Bool =
-        forall [a] (f: a -> Bool, o: Option[a]).
-            count(f, o) >= 0
-
-    @lint
-    def countAtMostOne(): Bool =
-        forall [a] (f: a -> Bool).
-            count(f, None) <= 1
-
-    @lint
     def existsSome(): Bool =
         forall [a] (f: a -> Bool & e, x: a).
             exists(f, Some(x)) === f(x)

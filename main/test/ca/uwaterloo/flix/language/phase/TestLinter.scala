@@ -12,6 +12,55 @@ class TestLinter extends FunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.Default.copy(xlinter = true)
 
+  test("Option.existsSome") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    let f = x -> x == 21;
+         |    Option.exists(f, Some(42))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Option.flattenSome") {
+    val input =
+      s"""
+         |def main(): Option[Int] =
+         |    Option.flatten(Some(Some(42)))
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Option.useExists") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    let f = x -> x == 21;
+         |    let o = Some(42);
+         |    Option.getWithDefault(Option.map(f, o), false)
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
+  test("Option.useForall") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    let f = x -> x == 21;
+         |    let o = Some(42);
+         |    Option.getWithDefault(Option.map(f, o), true)
+         |
+       """.stripMargin
+    val result = run(input)
+    expectError[LinterError.Lint](result)
+  }
+
   test("Option.useReplace") {
     val input =
       s"""
