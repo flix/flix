@@ -226,7 +226,7 @@ object ParsedAst {
 
   object Use {
 
-    case class UseWildcard(sp1: SourcePosition, nname: Name.NName, sp2: SourcePosition) extends Use
+    case class UseWild(sp1: SourcePosition, nname: Name.NName, sp2: SourcePosition) extends Use
 
     /**
       * Use Def.

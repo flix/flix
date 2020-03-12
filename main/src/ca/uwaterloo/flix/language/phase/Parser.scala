@@ -319,20 +319,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    Uses.UseWildcard | Uses.UseDef | Uses.UseDefs
+    atomic("use") ~ WS ~ (Uses.UseWild | Uses.UseDef | Uses.UseDefs)
   }
 
   object Uses {
-    def UseWildcard: Rule1[ParsedAst.Use.UseWildcard] = rule {
-      atomic("use") ~ WS ~ SP ~ Names.Namespace ~ "_" ~ SP ~> ParsedAst.Use.UseWildcard
+    def UseWild: Rule1[ParsedAst.Use.UseWild] = rule {
+      SP ~ Names.Namespace ~ "." ~ "_" ~ SP ~> ParsedAst.Use.UseWild
     }
 
     def UseDef: Rule1[ParsedAst.Use.UseDef] = rule {
-      atomic("use") ~ WS ~ SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Use.UseDef
+      SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Use.UseDef
     }
 
     def UseDefs: Rule1[ParsedAst.Use.UseDefs] = rule {
-      atomic("use") ~ WS ~ SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(UsePart).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseDefs
+      SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(UsePart).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseDefs
     }
 
     def UsePart: Rule1[ParsedAst.Use.UsePart] = {
