@@ -227,16 +227,23 @@ object ParsedAst {
   object Use {
 
     /**
+      * Use Def.
+      *
       * @param qname the fully-qualified name of the definition.
       * @param sp1   the position of the first character in the literal.
       * @param sp2   the position of the last character in the literal.
       */
     case class UseDef(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends Use
 
+    /**
+      * TODO: DOCS
+      */
+    case class UseDefs(sp1: SourcePosition, nname: Name.NName, idents: Seq[Name.Ident], sp2: SourcePosition) extends Use
+
     // TODO:
     case class UseDefAlias(sp1: SourcePosition, qname: Name.QName, ident: Name.Ident, sp2: SourcePosition) extends Use
 
-    case class UseWildcard(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends Use
+    case class UseWildcard(sp1: SourcePosition, nname: Name.NName, sp2: SourcePosition) extends Use
 
   }
 
