@@ -625,7 +625,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | UseIn | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessPanic | ArrayLit | ArrayNew |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -675,6 +675,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def LetRec: Rule1[ParsedAst.Expression.LetRec] = rule {
       SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetRec
+    }
+
+    def UseIn: Rule1[ParsedAst.Expression.Use] = rule {
+      SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Use
     }
 
     def LetImport: Rule1[ParsedAst.Expression] = {

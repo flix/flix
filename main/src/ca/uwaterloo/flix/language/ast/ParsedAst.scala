@@ -540,6 +540,16 @@ object ParsedAst {
     case class LetRec(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Use Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param use the use.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Use(sp1: SourcePosition, use: ParsedAst.Use, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Let Import Expression.
       *
       * @param sp1 the position of the first character in the expression.

@@ -467,6 +467,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
       }
 
+    // TODO: Move
+    case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
+      visitExp(exp)
+
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
 
