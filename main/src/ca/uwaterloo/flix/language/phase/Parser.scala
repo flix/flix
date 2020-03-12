@@ -102,19 +102,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Root                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = {
+    def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
+      zeroOrMore(Use).separatedBy(WS)
+    }
+
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {
       zeroOrMore(Declaration)
     }
 
     rule {
-      SP ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+      SP ~ Uses ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
     }
   }
 
   /////////////////////////////////////////////////////////////////////////////
   // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
-  // NB: RuleDeclaration must be parsed before FactDeclaration.
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
       Declarations.Constraint |
@@ -310,6 +313,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def Attribute: Rule1[ParsedAst.Attribute] = rule {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Uses                                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  def Use: Rule1[ParsedAst.Use] = rule {
+    Uses.UseDef
+  }
+
+  object Uses {
+    def UseDef: Rule1[ParsedAst.Use.UseDef] = rule {
+      atomic("use") ~ WS ~ SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Use.UseDef
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1094,7 +1110,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UnaryArrow: Rule1[ParsedAst.Type] = rule {
       Apply ~ optional(
-          (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
+        (optWS ~ atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.UnaryImpureArrow) |
           (optWS ~ atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.UnaryPolymorphicArrow)
       )
     }
@@ -1114,9 +1130,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ TypeList ~ optWS ~ (
-            (atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
+          (atomic("~>") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.ImpureArrow) |
             (atomic("->") ~ optWS ~ Type ~ optional(WS ~ atomic("&") ~ WS ~ AndEffSeq) ~ SP ~> ParsedAst.Type.PolymorphicArrow)
-        )
+          )
       }
     }
 
