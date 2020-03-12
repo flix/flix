@@ -319,14 +319,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    atomic("use") ~ WS ~ (Uses.UseWild | Uses.UseDef | Uses.UseDefs)
+    atomic("use") ~ WS ~ (Uses.UseDef | Uses.UseDefs)
   }
 
   object Uses {
-    def UseWild: Rule1[ParsedAst.Use.UseWild] = rule {
-      SP ~ Names.Namespace ~ "." ~ "_" ~ SP ~> ParsedAst.Use.UseWild
-    }
-
     def UseDef: Rule1[ParsedAst.Use.UseDef] = rule {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Use.UseDef
     }
