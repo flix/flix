@@ -1,4 +1,6 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.exp.bool;
+
+import flix.runtime.fixpoint.ram.RamTerm;
 
 import java.io.PrintStream;
 

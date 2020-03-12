@@ -1,16 +1,16 @@
 package flix.runtime.fixpoint.ram.stmt;
 
-import flix.runtime.fixpoint.ram.LocalVariable;
+import flix.runtime.fixpoint.ram.RowVariable;
 import flix.runtime.fixpoint.ram.TableName;
 
 import java.io.PrintStream;
 
 public class ForEachStmt implements Stmt {
     private TableName name;
-    private LocalVariable localVar;
+    private RowVariable localVar;
     private Stmt body;
 
-    public ForEachStmt(TableName name, LocalVariable localVar, Stmt body) {
+    public ForEachStmt(TableName name, RowVariable localVar, Stmt body) {
         this.name = name;
         this.localVar = localVar;
         this.body = body;

@@ -1,9 +1,9 @@
 package flix.runtime.fixpoint.ram;
 
-public class LocalVariable {
+public class RowVariable {
     private String varName;
 
-    public LocalVariable(String varName) {
+    public RowVariable(String varName) {
         this.varName = varName;
     }
 

@@ -1,7 +1,7 @@
 package flix.runtime.fixpoint.ram.stmt;
 
-import flix.runtime.fixpoint.ram.RelationExp;
 import flix.runtime.fixpoint.ram.TableName;
+import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 
 import java.io.PrintStream;
 

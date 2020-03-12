@@ -4,19 +4,29 @@ import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.*;
+import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
+import flix.runtime.fixpoint.ram.exp.bool.EqualsBoolExp;
+import flix.runtime.fixpoint.ram.exp.bool.NotBoolExp;
+import flix.runtime.fixpoint.ram.exp.bool.TubleInRelBoolExp;
 import flix.runtime.fixpoint.ram.stmt.IfStmt;
 import flix.runtime.fixpoint.ram.stmt.ProjectStmt;
 import flix.runtime.fixpoint.ram.stmt.SeqStmt;
 import flix.runtime.fixpoint.ram.stmt.Stmt;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.symbol.RelSym;
+import flix.runtime.fixpoint.symbol.VarSym;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
+import flix.runtime.fixpoint.term.VarTerm;
 
 import java.util.*;
 import java.util.stream.Stream;
 
 public class MySolver {
+
+    private static final Object[] nullArray = new Object[]{null};
+    private static int variableCounter = 0;
+
     public static void solve(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
         Stmt[] factProjections = generateFactProjectionStmts(cs, relHasFact);
@@ -84,25 +94,40 @@ public class MySolver {
         Term[] headTerms = ((AtomPredicate) head).getTerms();
 
         // Map from AtomPredicate to the localvar used to get values to that recursion
-        Map<AtomPredicate, LocalVariable> atomToLocal = new HashMap<>();
+        Map<AtomPredicate, RowVariable> atomToLocal = new HashMap<>();
         // Map from terms to the set of AttrTerms they will be instantiated as
-        Map<Term, Set<AttrTerm>> termToRamAttr = new HashMap<>();
+        Map<VarSym, Set<AttrTerm>> VarSymToAttrTerm = new HashMap<>();
+        // Define the set for all boolExps describing when a value must be constant
+        Set<BoolExp> constantValues = new HashSet<>();
+
         // Define all variables needed and define what the variables are instantiated as
         for (Predicate bodyPred : c.getBodyPredicates()) {
             if (bodyPred instanceof AtomPredicate) {
-                LocalVariable localVar = genNewLocalVariable(((AtomPredicate) bodyPred).getSym().getName());
-                atomToLocal.put((AtomPredicate) bodyPred, localVar);
-                Term[] terms = ((AtomPredicate) bodyPred).getTerms();
+                AtomPredicate currentPred = (AtomPredicate) bodyPred;
+                RowVariable localVar = genNewRowVariable(currentPred.getSym().getName());
+                atomToLocal.put(currentPred, localVar);
+                Term[] terms = currentPred.getTerms();
                 for (int i = 0; i < terms.length; i++) {
                     Term currentTerm = terms[i];
                     AttrTerm attrTerm = new AttrTerm(localVar, i);
-                    if (termToRamAttr.containsKey(currentTerm)){
-                        termToRamAttr.get(currentTerm).add(attrTerm);
+                    // We now split on what kind of term it is.
+                    if (currentTerm instanceof VarTerm) {
+                        VarSym currentSym = ((VarTerm) currentTerm).getSym();
+                        if (VarSymToAttrTerm.containsKey(currentSym)) {
+                            VarSymToAttrTerm.get(currentSym).add(attrTerm);
+                        } else {
+                            HashSet<AttrTerm> attrSet = new HashSet<>();
+                            attrSet.add(attrTerm);
+                            VarSymToAttrTerm.put(currentSym, attrSet);
+                        }
+                    } else if (currentTerm instanceof LitTerm) {
+                        RamLitTerm literal = new RamLitTerm(((LitTerm) currentTerm).getFunction().apply(nullArray));
+                        constantValues.add(new EqualsBoolExp(attrTerm, literal));
                     } else {
-                        HashSet<AttrTerm> attrSet = new HashSet<>();
-                        attrSet.add(attrTerm);
-                        termToRamAttr.put(currentTerm, attrSet);
+                        throw new UnsupportedOperationException("Right now the terms of predicates in the body" +
+                                " of a rule can only be VarTerms");
                     }
+
 
                 }
             } else {
@@ -113,41 +138,45 @@ public class MySolver {
         RamTerm[] headRamTerms = new RamTerm[headTerms.length];
         for (int i = 0; i < headTerms.length; i++) {
             Term term = headTerms[i];
-            Set<AttrTerm> a = termToRamAttr.get(term);
-            headRamTerms[i] = termToRamAttr.get(term).iterator().next();
+            if (term instanceof VarTerm) {
+                VarSym sym = ((VarTerm) term).getSym();
+                Set<AttrTerm> a = VarSymToAttrTerm.get(sym);
+                headRamTerms[i] = VarSymToAttrTerm.get(sym).iterator().next();
+            } else if (term instanceof LitTerm) {
+                headRamTerms[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
+            }
+
         }
         Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
         // Now I need to check that this element does not exist already
-        BoolExp checkBool = new UnaryBoolExp(UnaryBoolOperator.NOT, new TubleInRelBoolExp(headRamTerms, new TableName(TableClassifier.RESULT, headSym)));
+        BoolExp checkBool = new NotBoolExp(new TubleInRelBoolExp(headRamTerms, new TableName(TableClassifier.RESULT, headSym)));
         resultStmt = new IfStmt(checkBool, resultStmt);
 
         // I can then generate the list of if statements
-        for (Term t : termToRamAttr.keySet()){
-            Set<AttrTerm> attrs = termToRamAttr.get(t);
-            if (t instanceof LitTerm){
-                for (AttrTerm attr : attrs){
-                    BoolExp equalsBool = new EqualsBoolExp(attr, new flix.runtime.fixpoint.ram.LitTerm(((LitTerm) t).getFunction().apply(new Object[]{null})));
-                    resultStmt = new IfStmt(equalsBool, resultStmt);
-                }
-            } else {
-                Iterator<AttrTerm> it = attrs.iterator();
-                AttrTerm first = it.next();
-                while (it.hasNext()){
-                    AttrTerm attr = it.next();
-                    BoolExp equalsBool = new EqualsBoolExp(first, attr);
-                    resultStmt = new IfStmt(equalsBool, resultStmt);
-                }
+        for (VarSym sym : VarSymToAttrTerm.keySet()) {
+            Set<AttrTerm> attrs = VarSymToAttrTerm.get(sym);
+
+            Iterator<AttrTerm> it = attrs.iterator();
+            AttrTerm first = it.next();
+            while (it.hasNext()) {
+                AttrTerm attr = it.next();
+                BoolExp equalsBool = new EqualsBoolExp(first, attr);
+                resultStmt = new IfStmt(equalsBool, resultStmt);
+
             }
+        }
+        for (BoolExp exp : constantValues){
+
         }
 
         // I can now generate all the for each statements
 
         return resultStmt;
     }
-    private static int variableCounter = 0;
-    private static LocalVariable genNewLocalVariable(String name) {
+
+    private static RowVariable genNewRowVariable(String name) {
         variableCounter++;
-        return new LocalVariable(name + "_" + (variableCounter));
+        return new RowVariable(name + "_" + (variableCounter));
     }
 
     private static Map<RelSym, ArrayList<Constraint>> findRulesForDerived(ConstraintSystem cs) {
@@ -195,8 +224,8 @@ public class MySolver {
                 assert term instanceof LitTerm;
 
                 LitTerm litTerm = (LitTerm) term;
-                ProxyObject proxy = litTerm.getFunction().apply(new Object[]{null});
-                ramTerms[termI] = new flix.runtime.fixpoint.ram.LitTerm(proxy);
+                ProxyObject proxy = litTerm.getFunction().apply(nullArray);
+                ramTerms[termI] = new RamLitTerm(proxy);
             }
             stmts[factI] = new ProjectStmt(ramTerms
                     , new TableName(TableClassifier.RESULT, atom.getSym()));

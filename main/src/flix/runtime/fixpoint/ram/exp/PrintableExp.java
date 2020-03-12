@@ -1,11 +1,11 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.exp;
 
 import java.io.PrintStream;
 
 /**
- * The common interface for all expressions
+ * The common printing interface for expressions
  */
-public interface Exp {
+public interface PrintableExp {
     /**
      * A function to print the statements as a program
      *

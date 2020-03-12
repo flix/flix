@@ -1,6 +1,6 @@
 package flix.runtime.fixpoint.ram.stmt;
 
-import flix.runtime.fixpoint.ram.BoolExp;
+import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
 
 import java.io.PrintStream;
 

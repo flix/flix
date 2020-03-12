@@ -1,4 +1,4 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.exp.relation;
 
 public enum BinaryRelationOperator {
     UNION,

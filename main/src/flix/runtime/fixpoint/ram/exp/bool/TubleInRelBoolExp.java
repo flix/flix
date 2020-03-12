@@ -1,4 +1,7 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.exp.bool;
+
+import flix.runtime.fixpoint.ram.RamTerm;
+import flix.runtime.fixpoint.ram.TableName;
 
 import java.io.PrintStream;
 
@@ -15,7 +18,7 @@ public class TubleInRelBoolExp implements BoolExp {
     public void prettyPrint(PrintStream stream) {
         stream.print("(");
         for (int i = 0; i < terms.length; i++) {
-            stream.print(terms[i]);
+            terms[i].prettyPrint(stream);
             if (i < terms.length - 1){
                 stream.print(", ");
             }

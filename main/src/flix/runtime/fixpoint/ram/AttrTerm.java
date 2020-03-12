@@ -4,27 +4,21 @@ import java.io.PrintStream;
 import java.util.Objects;
 
 public class AttrTerm implements RamTerm {
-    private LocalVariable localVar;
+    private RowVariable localVar;
     private int index;
 
-    public AttrTerm(LocalVariable localVar, int index) {
+    public AttrTerm(RowVariable localVar, int index) {
         this.localVar = localVar;
         this.index = index;
     }
 
     @Override
-    public String toString() {
-        return localVar.getVarName() +
-                "[" + index + ']';
-    }
-
-    @Override
     public void prettyPrint(PrintStream stream) {
-        stream.print(localVar.getVarName() +
+        stream.print('$' + localVar.getVarName() +
                 "[" + index + ']');
     }
 
-    public LocalVariable getLocalVar() {
+    public RowVariable getLocalVar() {
         return localVar;
     }
 

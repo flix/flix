@@ -1,10 +1,11 @@
 package flix.runtime.fixpoint.ram;
 
+import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.io.PrintStream;
 
-public class TableName implements RelationExp{
+public class TableName implements RelationExp {
     private TableClassifier classifier;
     private PredSym name;
 
