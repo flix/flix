@@ -227,9 +227,8 @@ object ParsedAst {
   object Use {
 
     /**
-      * Use Def.
+      * TODO: DOC
       *
-      * @param qname the fully-qualified name of the definition.
       * @param sp1   the position of the first character in the literal.
       * @param sp2   the position of the last character in the literal.
       */
