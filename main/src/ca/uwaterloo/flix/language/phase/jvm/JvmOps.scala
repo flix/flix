@@ -830,9 +830,8 @@ object JvmOps {
       Type.Apply(base, args)
 
     case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack
-    case MonoType.EmptyRecordRow() => Type.EmptyRecordRow
-    case MonoType.ExtendedRecordRow(label, value, rest) => Type.mkExtendedRecordRow(label, hackMonoType2Type(value), hackMonoType2Type(rest))
-    case MonoType.Record(row) => Type.Apply(Type.Cst(TypeConstructor.Record), hackMonoType2Type(row))
+    case MonoType.RecordEmpty() => Type.RecordEmpty
+    case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
     case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }
@@ -1152,9 +1151,8 @@ object JvmOps {
         }
       case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
 
-      case MonoType.EmptyRecordRow() => Set(tpe)
-      case MonoType.ExtendedRecordRow(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
-      case MonoType.Record(row) => Set(tpe) ++ nestedTypesOf(row)
+      case MonoType.RecordEmpty() => Set(tpe)
+      case MonoType.RecordExtend(label, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
 
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest

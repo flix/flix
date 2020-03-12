@@ -312,7 +312,7 @@ object Unification {
 
       case (Type.SchemaEmpty, Type.SchemaEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.matchExtendedRecordRow(label1, fieldType1, restRow1), row2) =>
+      case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
         // Attempt to write the row to match.
         rewriteRow(row2, label1, fieldType1, row2) flatMap {
           case (subst1, restRow2) =>
@@ -373,7 +373,7 @@ object Unification {
       * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
       */
     def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
-      case Type.matchExtendedRecordRow(label2, fieldType2, restRow2) =>
+      case Type.RecordExtend(label2, fieldType2, restRow2) =>
         // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
         if (label1 == label2) {
           // Case 1.1: The labels match, their types must match.
@@ -383,18 +383,18 @@ object Unification {
         } else {
           // Case 1.2: The labels do not match, attempt to match with a label further down.
           rewriteRow(restRow2, label1, fieldType1, originalType) map {
-            case (subst, rewrittenRow) => (subst, Type.mkExtendedRecordRow(label2, fieldType2, rewrittenRow))
+            case (subst, rewrittenRow) => (subst, Type.RecordExtend(label2, fieldType2, rewrittenRow))
           }
         }
       case tvar: Type.Var =>
         // Case 2: The row is a type variable.
         // Introduce a fresh type variable to represent one more level of the row.
         val restRow2 = Type.freshTypeVarXXXDeprecated()
-        val type2 = Type.mkExtendedRecordRow(label1, fieldType1, restRow2)
+        val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
         val subst = Unification.Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
 
-      case Type.EmptyRecordRow =>
+      case Type.RecordEmpty =>
         // Case 3: The `label` does not exist in the record.
         Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
 

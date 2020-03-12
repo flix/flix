@@ -1149,7 +1149,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.mkExtendedRecordRow(label.name, v, r)
+      } yield Type.mkExtendRecordRow(label, v, r)
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
