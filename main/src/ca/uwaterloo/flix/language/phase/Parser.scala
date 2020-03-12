@@ -323,16 +323,30 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   object Uses {
+    def UseWildcard: Rule1[ParsedAst.Use.UseWildcard] = rule {
+      atomic("use") ~ WS ~ SP ~ Names.Namespace ~ "_" ~ SP ~> ParsedAst.Use.UseWildcard
+    }
+
     def UseDef: Rule1[ParsedAst.Use.UseDef] = rule {
       atomic("use") ~ WS ~ SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Use.UseDef
     }
 
     def UseDefs: Rule1[ParsedAst.Use.UseDefs] = rule {
-      atomic("use") ~ WS ~ SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(Names.Definition).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseDefs
+      atomic("use") ~ WS ~ SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(UsePart).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseDefs
     }
 
-    def UseWildcard: Rule1[ParsedAst.Use.UseWildcard] = rule {
-      atomic("use") ~ WS ~ SP ~ Names.Namespace ~ "_" ~ SP ~> ParsedAst.Use.UseWildcard
+    def UsePart: Rule1[ParsedAst.Use.UsePart] = {
+      def NoAlias: Rule1[ParsedAst.Use.UsePart.NoAlias] = rule {
+        Names.Definition ~> ParsedAst.Use.UsePart.NoAlias
+      }
+
+      def Alias: Rule1[ParsedAst.Use.UsePart.Alias] = rule {
+        Names.Definition ~ WS ~ "=>" ~ WS ~ Names.Definition ~> ParsedAst.Use.UsePart.Alias
+      }
+
+      rule {
+        Alias | NoAlias
+      }
     }
   }
 

@@ -226,6 +226,8 @@ object ParsedAst {
 
   object Use {
 
+    case class UseWildcard(sp1: SourcePosition, nname: Name.NName, sp2: SourcePosition) extends Use
+
     /**
       * Use Def.
       *
@@ -238,14 +240,20 @@ object ParsedAst {
     /**
       * TODO: DOCS
       */
-    case class UseDefs(sp1: SourcePosition, nname: Name.NName, idents: Seq[Name.Ident], sp2: SourcePosition) extends Use
+    case class UseDefs(sp1: SourcePosition, nname: Name.NName, parts: Seq[ParsedAst.Use.UsePart], sp2: SourcePosition) extends Use
 
-    // TODO:
-    case class UseDefAlias(sp1: SourcePosition, qname: Name.QName, ident: Name.Ident, sp2: SourcePosition) extends Use
+    sealed trait UsePart
 
-    case class UseWildcard(sp1: SourcePosition, nname: Name.NName, sp2: SourcePosition) extends Use
+    object UsePart {
+
+      case class NoAlias(ident: Name.Ident) extends UsePart
+
+      case class Alias(ident: Name.Ident, alias: Name.Ident) extends UsePart
+
+    }
 
   }
+
 
   /**
     * Literals.
