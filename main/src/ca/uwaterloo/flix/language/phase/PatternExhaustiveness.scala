@@ -741,6 +741,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.Tuple(l)) => l
       case Type.Zero => 0
       case Type.Succ(n, t) => 2
+      case Type.Cst(TypeConstructor.Record) => 1
+      case Type.Cst(TypeConstructor.EmptyRecordRow) => 0
+      case Type.Cst(TypeConstructor.ExtendedRecordRow(_)) => 2
       case Type.SchemaEmpty => 0 // TODO: Correct?
       case Type.SchemaExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)

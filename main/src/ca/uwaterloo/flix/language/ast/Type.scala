@@ -386,7 +386,7 @@ object Type {
   /**
     * Extends the record row `rest` with the given type and label.
     */
-  def mkExtendRecordRow(label: String, tpe: Type, rest: Type): Type = {
+  def mkExtendedRecordRow(label: String, tpe: Type, rest: Type): Type = {
     val extendedRow = mkApply(Type.Cst(TypeConstructor.ExtendedRecordRow(label)), List(tpe, rest))
     Type.Apply(Type.Cst(TypeConstructor.Record), extendedRow)
   }

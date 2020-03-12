@@ -114,27 +114,6 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents the type of schemas.
-    */
-  case object Schema extends TypeConstructor {
-    def kind: Kind = Kind.SchemaRow -> Kind.Star
-  }
-
-  /**
-    * A type constructor that represents the type of schema rows.
-    */
-  case object EmptySchemaRow extends TypeConstructor {
-    def kind: Kind = Kind.SchemaRow
-  }
-
-  /**
-    * A type constructor that represents the type of extended schema rows.
-    */
-  case class ExtendedSchemaRow(sym: Symbol.PredSym) extends TypeConstructor {
-    def kind: Kind = Kind.SchemaRow -> Kind.SchemaRow
-  }
-
-  /**
     * A type constructor that represent the type of arrays.
     */
   case object Array extends TypeConstructor {

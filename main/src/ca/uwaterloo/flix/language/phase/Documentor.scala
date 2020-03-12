@@ -161,6 +161,10 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.BigInt => "BigInt"
         case TypeConstructor.Str => "Str"
 
+        case TypeConstructor.Record => "Record" // MATT fix these to match standard { } pattern
+        case TypeConstructor.EmptyRecordRow => "EmptyRecordRow"
+        case TypeConstructor.ExtendedRecordRow(label) => s"ExtendedRecordRow($label)"
+
         case TypeConstructor.Relation(sym) => sym.toString
 
         case TypeConstructor.Lattice(sym) => sym.toString

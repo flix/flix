@@ -830,10 +830,17 @@ object JvmOps {
       Type.Apply(base, args)
 
     case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack
-    case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
+    case MonoType.RecordEmpty() => Type.Apply(Type.Cst(TypeConstructor.Record), Type.EmptyRecordRow)
+    case record @ MonoType.RecordExtend(_, _, _) => Type.Apply(Type.Cst(TypeConstructor.Record), hackMonotype2Row(record))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
     case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
+  }
+
+  // MATT docs
+  private def hackMonotype2Row(tpe: MonoType): Type = tpe match {
+    case MonoType.RecordEmpty() => Type.EmptyRecordRow
+    case MonoType.RecordExtend(label, value, rest) => Type.mkExtendedRecordRow(label, hackMonoType2Type(value), hackMonotype2Row(rest))
+    case _ => throw InternalCompilerException(s"Unexpected type: $tpe")
   }
 
   // TODO: Remove

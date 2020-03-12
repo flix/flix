@@ -1149,7 +1149,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.mkExtendRecordRow(label, v, r)
+      } yield Type.mkExtendedRecordRow(label.name, v, r)  // MATT need to translate between records and rows here,
+                                                          // MATT or add Record/ExtendedRow/EmptyRow to NamedAst types?
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
