@@ -902,20 +902,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
-        // TODO: Check formal parameter type.
         for {
+          paramTyp <- unifyTypM(fparam.sym.tvar, fparam.tpe, loc)
           (typ, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
-          resultEff <- unifyEffM(eff, Type.Pure, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
-        // TODO: Check formal parameter type.
         for {
+          paramTyp <- unifyTypM(fparam.sym.tvar, fparam.tpe, loc)
           (typ, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
-          resultEff <- unifyEffM(eff, Type.Pure, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, evar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.

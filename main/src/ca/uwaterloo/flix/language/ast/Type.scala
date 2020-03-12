@@ -461,7 +461,7 @@ object Type {
           // Format the effect.
           val effPart = eff match {
             case Type.Cst(TypeConstructor.Pure) => ""
-            case Type.Cst(TypeConstructor.Impure) => " & Impure"
+            case Type.Cst(TypeConstructor.Impure) => ""
             case _ => " & (" + visit(eff, m) + ")"
           }
           // Format the result type.

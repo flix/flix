@@ -95,6 +95,15 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@lint` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Lint(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@lint"
+    }
+
+    /**
       * An AST node that represents a `@test` annotation.
       *
       * A function marked with `test` is evaluated as part of the test framework.
@@ -103,17 +112,6 @@ object Ast {
       */
     case class Test(loc: SourceLocation) extends Annotation {
       override def toString: String = "@test"
-    }
-
-    /**
-      * An AST node that represents a `@theorem` annotation.
-      *
-      * A function marked with `theorem` is used for code patterns.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Theorem(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@theorem"
     }
 
     /**
@@ -160,14 +158,14 @@ object Ast {
     def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
 
     /**
+      * Returns `true` if `this` sequence contains the `@lint` annotation.
+      */
+    def isLint: Boolean = annotations exists (_.isInstanceOf[Annotation.Lint])
+
+    /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@theorem` annotation.
-      */
-    def isTheorem: Boolean = annotations exists (_.isInstanceOf[Annotation.Theorem])
 
     /**
       * Returns `true` if `this` sequence contains the `@unchecked` annotation.

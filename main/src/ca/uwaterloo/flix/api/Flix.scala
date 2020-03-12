@@ -105,7 +105,7 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/library/StringBuilder.flix"),
 
     //"CodePatterns.flix" -> LocalResource.get("/library/CodePatterns.flix"),
-    //"Vec.flix" -> LocalResource.get("/library/Vec.flix"),
+    // "Vec.flix" -> LocalResource.get("/library/Vec.flix"),
 
     //"flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
     //"flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),

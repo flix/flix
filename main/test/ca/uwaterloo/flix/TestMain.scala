@@ -152,6 +152,12 @@ class TestMain extends FunSuite {
     assert(opts.xinvariants)
   }
 
+  test("--Xlinter") {
+    val args = Array("--Xlinter", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xlinter)
+  }
+
   test("--Xno-effects") {
     val args = Array("--Xno-effects", "p.flix")
     val opts = Main.parseCmdOpts(args).get

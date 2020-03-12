@@ -1457,8 +1457,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     past.ident.name match {
       case "benchmark" => Ast.Annotation.Benchmark(loc).toSuccess
       case "law" => Ast.Annotation.Law(loc).toSuccess
+      case "lint" => Ast.Annotation.Lint(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
-      case "theorem" => Ast.Annotation.Theorem(loc).toSuccess
       case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
       case name => WeederError.UndefinedAnnotation(name, loc).toFailure
     }
