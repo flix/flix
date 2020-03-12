@@ -137,6 +137,55 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateTypeAlias](result)
   }
 
+  test("SuspiciousTypeVarName.01") {
+    val input =
+      s"""
+         |def f(_x: List[unit]): Unit = ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
+  test("SuspiciousTypeVarName.02") {
+    val input =
+      s"""
+         |def f(_x: List[Result[Unit, bool]]): Unit = ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
+  test("SuspiciousTypeVarName.03") {
+    val input =
+      s"""
+         |def f(): List[char] = ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
+  test("SuspiciousTypeVarName.04") {
+    val input =
+      s"""
+         |def f(): Unit =
+         |    let x: int = 42;
+         |    ()
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
+  test("SuspiciousTypeVarName.05") {
+    val input =
+      s"""
+         |enum A {
+         |    case X(string)
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.SuspiciousTypeVarName](result)
+  }
+
   test("UndefinedTypeVar.Def.01") {
     val input = "def f[a](): b = 123"
     val result = new Flix().addStr(input).compile()

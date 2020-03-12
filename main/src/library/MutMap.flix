@@ -91,7 +91,7 @@ namespace MutMap {
     ///
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
-    pub def getOrElsePut(k: k, d: v, m: mut MutMap[k, v]): v & impure =
+    pub def getOrElsePut(k: k, d: v, m: mut MutMap[k, v]): v & Impure =
         let MutMap(mm) = m;
         match Map.get(k, deref mm) {
             case None    => mm := Map.insert(k, d, deref mm); d
