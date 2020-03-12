@@ -76,6 +76,25 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate a suspicious type variable name.
+    *
+    * @param name the name of the type variable.
+    * @param loc  the location of the suspicious type variable.
+    */
+  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Suspicious type variable '" << Red(name) << s"'. Did you mean: '" << Cyan(name.capitalize) << "'?" << NewLine
+      vt << NewLine
+      vt << Code(loc, "Suspicious type variable.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Type variables are always lowercase. Named types are uppercase." << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
@@ -96,7 +115,7 @@ object NameError {
     * An error raised to indicate that the local variable was not found.
     *
     * @param name the name of the variable.
-    * @param loc  the location of the method name.
+    * @param loc  the location of the undefined variable.
     */
   case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
     val source: Source = loc.source
@@ -113,7 +132,7 @@ object NameError {
     * An error raised to indicate that the type variable was not found.
     *
     * @param name the name of the type variable.
-    * @param loc  the location of the method name.
+    * @param loc  the location of the undefined type variable.
     */
   case class UndefinedTypeVar(name: String, loc: SourceLocation) extends NameError {
     val source: Source = loc.source

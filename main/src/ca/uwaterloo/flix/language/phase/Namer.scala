@@ -926,10 +926,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitType(tpe0: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
     case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
-    case WeededAst.Type.Var(ident, loc) => tenv0.get(ident.name) match {
-      case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
-      case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
-    }
+    case WeededAst.Type.Var(ident, loc) =>
+      //
+      // Check for [[NameError.SuspiciousTypeVarName]].
+      //
+      if (isSuspiciousTypeVarName(ident.name)) {
+        NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
+      } else {
+        tenv0.get(ident.name) match {
+          case None => NameError.UndefinedTypeVar(ident.name, loc).toFailure
+          case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
+        }
+      }
 
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified)
@@ -998,6 +1006,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (t1, t2) => NamedAst.Type.Or(t1, t2, loc)
       }
 
+  }
+
+  /**
+    * Returns `true` if the given string `s` is a suspicious type variable name.
+    */
+  private def isSuspiciousTypeVarName(s: String): Boolean = s match {
+    case "unit" => true
+    case "bool" => true
+    case "char" => true
+    case "float" => true
+    case "float32" => true
+    case "float64" => true
+    case "int" => true
+    case "int8" => true
+    case "int16" => true
+    case "int32" => true
+    case "int64" => true
+    case "bigint" => true
+    case "str" => true
+    case "string" => true
+    case "array" => true
+    case "ref" => true
+    case "pure" => true
+    case "impure" => true
+    case _ => false
   }
 
   /**
