@@ -5,14 +5,14 @@ use A.{Color => MyColor}
 use A/B.{Currency => MyCurrency}
 
 namespace X {
-    pub def f(): Color = Red
-    pub def g(): Currency = USD
-    pub def h(): Kelvin = Kelvin(123)
-    pub def j(): Currency = Currency.USD
-    pub def k(): Currency = Currency.CAD
-    pub def l(): MyColor = MyColor.Red
-    pub def m(): MyCurrency = MyCurrency.USD
-    pub def n(): MyCurrency = MyCurrency.CAD
+    pub def f(): Color = Color.Red
+    pub def g(): Color = Color.Red
+    pub def h(): Currency = Currency.USD
+    pub def i(): Currency = Currency.CAD
+    pub def j(): Kelvin = Kelvin.Kelvin(123)
+    pub def k(): MyColor = MyColor.Red
+    pub def l(): MyCurrency = MyCurrency.USD
+    pub def m(): MyCurrency = MyCurrency.CAD
 }
 
 namespace A {

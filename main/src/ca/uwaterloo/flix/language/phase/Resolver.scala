@@ -962,9 +962,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val globalMatches = mutable.Set.empty[NamedAst.Enum]
     for ((_, decls) <- prog0.enums) {
       for ((enumName, decl) <- decls) {
-        for ((tagName, caze) <- decl.cases) {
-          if (tag.name == tagName) {
-            globalMatches += decl
+        if (decl.sym.namespace == Nil) {
+          for ((tagName, caze) <- decl.cases) {
+            if (tag.name == tagName) {
+              globalMatches += decl
+            }
           }
         }
       }
