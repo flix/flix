@@ -402,17 +402,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tpe = Type.freshTypeVar()
       NamedAst.Expression.Hole(name, tpe, Type.freshTypeVar(), loc).toSuccess
 
+    case WeededAst.Expression.Use(uses, exp, loc) =>
+      val uenv = getUseEnv(uses)
+      visitExp(exp, env0, tenv0)
+
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
+
     case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
+
     case WeededAst.Expression.False(loc) => NamedAst.Expression.False(loc).toSuccess
+
     case WeededAst.Expression.Char(lit, loc) => NamedAst.Expression.Char(lit, loc).toSuccess
+
     case WeededAst.Expression.Float32(lit, loc) => NamedAst.Expression.Float32(lit, loc).toSuccess
+
     case WeededAst.Expression.Float64(lit, loc) => NamedAst.Expression.Float64(lit, loc).toSuccess
+
     case WeededAst.Expression.Int8(lit, loc) => NamedAst.Expression.Int8(lit, loc).toSuccess
+
     case WeededAst.Expression.Int16(lit, loc) => NamedAst.Expression.Int16(lit, loc).toSuccess
+
     case WeededAst.Expression.Int32(lit, loc) => NamedAst.Expression.Int32(lit, loc).toSuccess
+
     case WeededAst.Expression.Int64(lit, loc) => NamedAst.Expression.Int64(lit, loc).toSuccess
+
     case WeededAst.Expression.BigInt(lit, loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
+
     case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
     case WeededAst.Expression.Apply(exp1, exp2, loc) =>
@@ -1354,6 +1369,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.Var] = {
     tparams0.map(p => p.name.name -> p.tpe).toMap
+  }
+
+  /**
+    * Returns a use environment constructed from the given uses `us0`.
+    */
+  private def getUseEnv(us0: List[WeededAst.Use]): Map[String, Symbol.DefnSym] = {
+
   }
 
   /**
