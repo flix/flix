@@ -55,15 +55,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     )
 
     // collect all the declarations.
-    val declarations = program.roots.flatMap {
-      case root =>
-        val uenv0 = getUseEnv(root.uses)
-        root.decls.map(d => (uenv0, d))
-    }
+    val declarations = mapN(traverse(program.roots) {
+      case root => mapN(mergeUseEnvs(root.uses, Map.empty)) {
+        case uenv0 => root.decls.map(d => (uenv0, d))
+      }
+    })(_.flatten)
 
     // fold over the top-level declarations.
-    val result = Validation.fold(declarations, prog0) {
-      case (pacc, (uenv0, decl)) => visitDecl(decl, Name.RootNS, uenv0, pacc)
+    val result = flatMapN(declarations) {
+      case decls => Validation.fold(decls, prog0) {
+        case (pacc, (uenv0, decl)) => visitDecl(decl, Name.RootNS, uenv0, pacc)
+      }
     }
 
     // fold over the named expressions.
@@ -1385,15 +1387,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.Var] = {
     tparams0.map(p => p.name.name -> p.tpe).toMap
   }
-
-  /**
-    * Returns a use environment constructed from the given uses `us0`.
-    */
-  private def getUseEnv(us0: List[WeededAst.Use]): Map[String, Name.QName] =
-  // TODO: Duplicate names?
-    us0.foldRight(Map.empty[String, Name.QName]) {
-      case (WeededAst.Use(qname, alias, _), macc) => macc + (alias.name -> qname)
-    }
 
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given type environment `tenv0`.
