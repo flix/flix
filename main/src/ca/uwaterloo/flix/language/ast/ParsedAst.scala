@@ -227,27 +227,33 @@ object ParsedAst {
   object Use {
 
     /**
-      * TODO: DOC
+      * A use of a single qualified name.
       *
-      * @param sp1   the position of the first character in the literal.
-      * @param sp2   the position of the last character in the literal.
+      * @param sp1   the position of the first character.
+      * @param qname the qualified name.
+      * @param sp2   the position of the last character.
       */
-    case class UseDef(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends Use
+    case class UseOne(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends Use
 
     /**
-      * TODO: DOCS
+      * A use of multiple names from a namespace.
+      *
+      * @param sp1       the position of the first character.
+      * @param nname     the namespace.
+      * @param fragments the names.
+      * @param sp2       the position of the last character.
       */
-    case class UseDefs(sp1: SourcePosition, nname: Name.NName, parts: Seq[ParsedAst.Use.UsePart], sp2: SourcePosition) extends Use
+    case class UseMany(sp1: SourcePosition, nname: Name.NName, fragments: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
-    sealed trait UsePart
-
-    object UsePart {
-
-      case class NoAlias(ident: Name.Ident) extends UsePart
-
-      case class Alias(ident: Name.Ident, alias: Name.Ident) extends UsePart
-
-    }
+    /**
+      * A name with an optional alias.
+      *
+      * @param sp1   the position of the first character.
+      * @param ident the  name.
+      * @param alias the optional alias of the name.
+      * @param sp2   the position of the last character.
+      */
+    case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
 
   }
 

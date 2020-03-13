@@ -319,30 +319,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    atomic("use") ~ WS ~ (Uses.UseOne | Uses.UseDefs)
+    atomic("use") ~ WS ~ (Uses.UseOne | Uses.UseMany)
   }
 
   object Uses {
-    def UseOne: Rule1[ParsedAst.Use.UseDef] = rule {
-      SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Use.UseDef
+    def UseOne: Rule1[ParsedAst.Use.UseOne] = rule {
+      SP ~ (Names.LowerCaseQName | Names.UpperCaseQName) ~ SP ~> ParsedAst.Use.UseOne
     }
 
-    def UseDefs: Rule1[ParsedAst.Use.UseDefs] = rule {
-      SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(UsePart).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseDefs
+    def UseMany: Rule1[ParsedAst.Use.UseMany] = rule {
+      SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
     }
 
-    def UsePart: Rule1[ParsedAst.Use.UsePart] = {
-      def NoAlias: Rule1[ParsedAst.Use.UsePart.NoAlias] = rule {
-        Names.Definition ~> ParsedAst.Use.UsePart.NoAlias
-      }
+    def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
+      SP ~ LowerOrUpperName ~ optional(WS ~ atomic("=>") ~ WS ~ LowerOrUpperName) ~ SP ~> ParsedAst.Use.NameAndAlias
+    }
 
-      def Alias: Rule1[ParsedAst.Use.UsePart.Alias] = rule {
-        Names.Definition ~ WS ~ "=>" ~ WS ~ Names.Definition ~> ParsedAst.Use.UsePart.Alias
-      }
-
-      rule {
-        Alias | NoAlias
-      }
+    def LowerOrUpperName: Rule1[Name.Ident] = rule {
+      Names.LowerCaseName | Names.UpperCaseName
     }
   }
 
