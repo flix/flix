@@ -7,6 +7,7 @@ HEAD:
 - Added spaceship operator.
 - Added binary, octal, and hex literals.
 - Added support for underscores in number literals.
+- Added use construct (to import from other namespaces).
 - Improved the performance of the compiler.
 
 Version 0.11.0:
