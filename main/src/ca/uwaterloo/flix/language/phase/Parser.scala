@@ -111,7 +111,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     rule {
-      SP ~ Uses ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
+      optWS ~ SP ~ Uses ~ Decls ~ SP ~ optWS ~ EOI ~> ParsedAst.Root
     }
   }
 
