@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
-import java.lang.{Byte => JByte, Short => JShort, Integer => JInt, Long => JLong}
+import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
@@ -280,6 +280,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Performs weeding on the given use `u0`.
+    */
+  private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
+    case ParsedAst.Use.UseOne(sp1, qname, sp2) => List(WeededAst.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
+    case ParsedAst.Use.UseMany(_, nname, names, _) =>
+      val us = names.foldRight(Nil: List[WeededAst.Use]) {
+        case (ParsedAst.Use.NameAndAlias(sp1, ident, None, sp2), acc) =>
+          WeededAst.Use(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2)) :: acc
+        case (ParsedAst.Use.NameAndAlias(sp1, ident, Some(alias), sp2), acc) =>
+          WeededAst.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+      }
+      us.toSuccess
+  }
+
+  /**
     * Weeds the given expression.
     */
   private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
@@ -299,6 +314,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         return IllegalHole(loc).toFailure
       }
       WeededAst.Expression.Hole(name, loc).toSuccess
+
+    case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
+      mapN(visitUse(use), visitExp(exp)) {
+        case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
 
@@ -466,10 +486,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
       }
-
-    // TODO: Move
-    case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
-      visitExp(exp)
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -1878,6 +1894,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
+    case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)

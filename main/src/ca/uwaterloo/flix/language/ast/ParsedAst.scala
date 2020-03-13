@@ -238,12 +238,12 @@ object ParsedAst {
     /**
       * A use of multiple names from a namespace.
       *
-      * @param sp1       the position of the first character.
-      * @param nname     the namespace.
-      * @param fragments the names.
-      * @param sp2       the position of the last character.
+      * @param sp1   the position of the first character.
+      * @param nname the namespace.
+      * @param names the names.
+      * @param sp2   the position of the last character.
       */
-    case class UseMany(sp1: SourcePosition, nname: Name.NName, fragments: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+    case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
     /**
       * A name with an optional alias.
@@ -256,7 +256,6 @@ object ParsedAst {
     case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
 
   }
-
 
   /**
     * Literals.
@@ -421,6 +420,16 @@ object ParsedAst {
     case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Use Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param use the use.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Use(sp1: SourcePosition, use: ParsedAst.Use, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Literal Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -556,16 +565,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class LetRec(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Use Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param use the use.
-      * @param exp the body expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Use(sp1: SourcePosition, use: ParsedAst.Use, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Let Import Expression.

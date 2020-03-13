@@ -52,6 +52,8 @@ object WeededAst {
 
   }
 
+  case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation)
+
   sealed trait Expression {
     def loc: SourceLocation
   }
@@ -63,6 +65,8 @@ object WeededAst {
     case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends WeededAst.Expression
+
+    case class Use(uses: List[WeededAst.Use], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 
