@@ -399,9 +399,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (None, None) =>
           // Case 1: the name is a reference to a top-level function.
           NamedAst.Expression.Def(qname, Type.freshTypeVar(), loc).toSuccess
-        case (None, Some(qname)) =>
+        case (None, Some(actualQName)) =>
           // Case 2: the name is a use.
-          NamedAst.Expression.Def(qname, Type.freshTypeVar(), loc).toSuccess
+          NamedAst.Expression.Def(actualQName, Type.freshTypeVar(), loc).toSuccess
         case (Some(sym), None) =>
           // Case 3: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
@@ -971,11 +971,27 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Type.Ambiguous(qname, loc) =>
-      if (qname.isUnqualified)
-        tenv0.get(qname.ident.name) match {
-          case None => NamedAst.Type.Ambiguous(qname, loc).toSuccess
-          case Some(tvar) => NamedAst.Type.Var(tvar, loc).toSuccess
+      if (qname.isUnqualified) {
+        val name = qname.ident.name
+
+        (uenv0.get(name), tenv0.get(name)) match {
+          case (None, None) =>
+            // Case 1: the name is a reference to a top-level type.
+            NamedAst.Type.Ambiguous(qname, loc).toSuccess
+
+          case (None, Some(tvar)) =>
+            // Case 2: the name is a type variable.
+            NamedAst.Type.Var(tvar, loc).toSuccess
+
+          case (Some(actualQName), None) =>
+            // Case 3: the name is a use.
+            NamedAst.Type.Ambiguous(actualQName, loc).toSuccess
+
+          case (Some(qname), Some(tvar)) =>
+            // Case 4: the name is ambiguous.
+            throw InternalCompilerException(s"Unexpected ambiguous type.")
         }
+      }
       else
         NamedAst.Type.Ambiguous(qname, loc).toSuccess
 
