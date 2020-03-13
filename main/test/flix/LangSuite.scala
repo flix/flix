@@ -6,6 +6,12 @@ import org.scalatest.Suites
 class LangSuite extends Suites(
 
   //
+  // Declarations.
+  //
+  new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
+
+
+  //
   // Effects.
   //
   new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix"),

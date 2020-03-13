@@ -85,7 +85,6 @@ class FeatureSuite extends Suites(
   //
   // Declarations.
   //
-  new FlixTest("Test.Decl.Namespace", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Namespace.flix"),
   new FlixTest("Test.Decl.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Def.flix"),
   new FlixTest("Test.Decl.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Constraint.flix"),
   new FlixTest("Test.Decl.Enum", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Enum.flix"),
