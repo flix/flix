@@ -416,9 +416,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.Expression.Hole(name, tpe, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.Use(uses, exp, loc) =>
-      // TODO: Merge envs correctly
-      val uenv = uenv0 ++ getUseEnv(uses)
-      visitExp(exp, env0, uenv, tenv0)
+      flatMapN(mergeUseEnvs(uses, uenv0)) {
+        case uenv1 => visitExp(exp, env0, uenv1, tenv0)
+      }
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
 
@@ -1389,12 +1389,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns a use environment constructed from the given uses `us0`.
     */
-  private def getUseEnv(us0: List[WeededAst.Use]): Map[String, Name.QName] = {
-    // TODO: Duplicate names?
+  private def getUseEnv(us0: List[WeededAst.Use]): Map[String, Name.QName] =
+  // TODO: Duplicate names?
     us0.foldRight(Map.empty[String, Name.QName]) {
       case (WeededAst.Use(qname, alias, _), macc) => macc + (alias.name -> qname)
     }
-  }
 
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given type environment `tenv0`.
@@ -1404,5 +1403,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
     }
   }
+
+  /**
+    * Merges the given `uses` into the given use environment `uenv0`.
+    */
+  private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: Map[String, Name.QName]): Validation[Map[String, Name.QName], NameError] =
+    Validation.fold(uses, uenv0) {
+      case (uenv1, WeededAst.Use(qname, alias, _)) =>
+        val name = alias.name
+        uenv1.get(name) match {
+          case None => (uenv1 + (name -> qname)).toSuccess
+          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
+        }
+    }
 
 }

@@ -79,6 +79,26 @@ object NameError {
   }
 
   /**
+    * An error raised to indicate that the given `name` is used twice.
+    *
+    * @param name the clashing name.
+    * @param loc1 the location of the first use.
+    * @param loc2 the location of the second use.
+    */
+  case class DuplicateUse(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+    val source: Source = loc1.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Duplicate use of the name '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first use was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second use was here.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the given type alias `name` is defined multiple times.
     *
     * @param name the name.
