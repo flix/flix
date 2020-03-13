@@ -47,3 +47,41 @@ namespace C {
         use C.{f => fc};
         (fa() + fb() + fc()) == 6
 }
+
+pub def f(): Int = 4
+namespace X {
+    pub def f(): Int = 5
+    namespace Y {
+        pub def f(): Int = 6
+        namespace Z {
+            pub def f(): Int = 7
+        }
+    }
+}
+
+@test
+def testNamespace08(): Bool =
+    f() == 4
+
+@test
+def testNamespace09(): Bool =
+    use X.f;
+    f() == 5
+
+@test
+def testNamespace10(): Bool =
+    use X/Y.f;
+    f() == 6
+
+@test
+def testNamespace11(): Bool =
+    use X/Y/Z.f;
+    f() == 7
+
+@test
+def testNamespace12(): Bool =
+    use X.{f => fx};
+    use X/Y.{f => fxy};
+    use X/Y/Z.{f => fxyz};
+    (f() + fx() + fxy() + fxyz()) == 22
+
