@@ -1,9 +1,11 @@
 use A.Color
 use A/B.Currency
+use A/B.Kelvin
 
 namespace X {
     pub def f(): Color = Red
     pub def g(): Currency = USD
+    pub def h(): Kelvin = Kelvin(123)
 }
 
 namespace A {
@@ -16,6 +18,7 @@ namespace A {
             case USD,
             case CAD
         }
+        pub opaque type Kelvin = Int
     }
 
 }
