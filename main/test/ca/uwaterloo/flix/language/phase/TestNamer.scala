@@ -190,7 +190,20 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUse](result)
   }
 
-
+  test("DuplicateUse.04") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.{f => g, f => g};
+         |    g() == g()
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUse](result)
+  }
 
   test("DuplicateTypeAlias.01") {
     val input =
