@@ -30,6 +30,22 @@ class TestNamer extends FunSuite with TestUtils {
          |    use Foo.f;
          |    let f = _ -> true;
          |    f(123)
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousVarOrUse](result)
+  }
+
+  test("AmbiguousVarOrUse.02") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use Foo.f;
+         |    let f = _ -> true;
+         |    use Foo.g;
+         |    let g = _ -> true;
+         |    f(g(123))
+         |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[NameError.AmbiguousVarOrUse](result)
