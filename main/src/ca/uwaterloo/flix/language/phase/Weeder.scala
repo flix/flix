@@ -60,13 +60,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given abstract syntax tree.
     */
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
+    val usesVal = traverse(root.uses)(visitUse)
     val declarationsVal = traverse(root.decls)(visitDecl)
     val propertiesVal = visitAllProperties(root)
     val loc = mkSL(root.sp1, root.sp2)
 
-    mapN(declarationsVal, propertiesVal) {
-      case (decls1, decls2) =>
-        WeededAst.Root(decls1.flatten ++ decls2, loc)
+    mapN(usesVal, declarationsVal, propertiesVal) {
+      case (uses, decls1, decls2) =>
+        WeededAst.Root(uses.flatten, decls1.flatten ++ decls2, loc)
     }
   }
 
@@ -2092,7 +2093,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
-    WeededAst.Root(List(decl), SourceLocation.Unknown)
+    WeededAst.Root(Nil, List(decl), SourceLocation.Unknown)
   }
 
 }

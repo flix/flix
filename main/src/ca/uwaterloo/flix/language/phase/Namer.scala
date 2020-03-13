@@ -55,16 +55,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     )
 
     // collect all the declarations.
-    val declarations = program.roots.flatMap(_.decls)
+    val declarations = program.roots.flatMap {
+      case root =>
+        val uenv0 = getUseEnv(root.uses)
+        root.decls.map(d => (uenv0, d))
+    }
 
     // fold over the top-level declarations.
     val result = Validation.fold(declarations, prog0) {
-      case (pacc, decl) => visitDecl(decl, Name.RootNS, pacc)
+      case (pacc, (uenv0, decl)) => visitDecl(decl, Name.RootNS, uenv0, pacc)
     }
 
     // fold over the named expressions.
     val named = traverse(program.named) {
-      case (sym, exp) => visitExp(exp, Map.empty, /* TODO: UENV */ Map.empty, Map.empty).map(e => sym -> e)
+      case (sym, exp) => visitExp(exp, Map.empty, Map.empty, Map.empty).map(e => sym -> e)
     }
 
     mapN(result, named) {
@@ -77,14 +81,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
     */
-  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = decl0 match {
+  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: Map[String, Name.QName], prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = decl0 match {
     /*
      * Namespace.
      */
     case WeededAst.Declaration.Namespace(ns, decls, loc) => Validation.fold(decls, prog0) {
       case (pacc, decl) =>
         val namespace = Name.NName(ns.sp1, ns0.idents ::: ns.idents, ns.sp2)
-        visitDecl(decl, namespace, pacc)
+        visitDecl(decl, namespace, uenv0, pacc)
     }
 
     /*
@@ -96,7 +100,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defns.get(ident.name) match {
         case None =>
           // Case 1: The definition does not already exist. Update it.
-          visitDef(decl, Map.empty, /* TODO: UENV */ Map.empty, ns0) map {
+          visitDef(decl, uenv0, Map.empty, ns0) map {
             case defn => prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
           }
         case Some(defn) =>
@@ -177,7 +181,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * Property.
      */
     case WeededAst.Declaration.Property(law, defn, exp0, loc) =>
-      visitExp(exp0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty) map {
+      visitExp(exp0, Map.empty, uenv0, Map.empty) map {
         case exp =>
           val lawSym = Symbol.mkDefnSym(law.namespace, law.ident)
           val defnSym = Symbol.mkDefnSym(ns0, defn)
@@ -190,12 +194,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
      * BoundedLattice (deprecated).
      */
     case WeededAst.Declaration.LatticeComponents(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
-      val botVal = visitExp(bot0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty)
-      val topVal = visitExp(top0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty)
-      val equVal = visitExp(equ0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty)
-      val leqVal = visitExp(leq0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty)
-      val lubVal = visitExp(lub0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty)
-      val glbVal = visitExp(glb0, Map.empty, /* TODO: UENV */ Map.empty, Map.empty)
+      val botVal = visitExp(bot0, Map.empty, uenv0, Map.empty)
+      val topVal = visitExp(top0, Map.empty, uenv0, Map.empty)
+      val equVal = visitExp(equ0, Map.empty, uenv0, Map.empty)
+      val leqVal = visitExp(leq0, Map.empty, uenv0, Map.empty)
+      val lubVal = visitExp(lub0, Map.empty, uenv0, Map.empty)
+      val glbVal = visitExp(glb0, Map.empty, uenv0, Map.empty)
       val tpeVal = visitType(tpe0, Map.empty)
 
       mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {

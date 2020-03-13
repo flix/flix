@@ -24,7 +24,7 @@ object WeededAst {
 
   case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym])
 
-  case class Root(decls: List[WeededAst.Declaration], loc: SourceLocation)
+  case class Root(uses: List[WeededAst.Use], decls: List[WeededAst.Declaration], loc: SourceLocation)
 
   sealed trait Declaration {
     def loc: SourceLocation
