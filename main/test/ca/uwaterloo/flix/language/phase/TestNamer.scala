@@ -23,6 +23,18 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
+  test("AmbiguousVarOrUse.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use Foo.f;
+         |    let f = _ -> true;
+         |    f(123)
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousVarOrUse](result)
+  }
+
   test("DuplicateDef.01") {
     val input =
       s"""

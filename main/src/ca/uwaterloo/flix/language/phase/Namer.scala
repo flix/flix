@@ -384,15 +384,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
-    case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
-      // lookup the variable name in the environment.
-      env0.get(name.ident.name) match {
-        case None =>
-          // Case 1: reference.
-          NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
-        case Some(sym) =>
-          // Case 2: variable.
+    case WeededAst.Expression.VarOrDef(qname, loc) if qname.isUnqualified =>
+      // the ident name.
+      val name = qname.ident.name
+
+      // lookup the name in the variable and use environments.
+      (env0.get(name), uenv0.get(name)) match {
+        case (None, None) =>
+          // Case 1: the name is a reference to a top-level function.
+          NamedAst.Expression.Def(qname, Type.freshTypeVar(), loc).toSuccess
+        case (None, Some(qname)) =>
+          // Case 2: the name is a use.
+          NamedAst.Expression.Def(qname, Type.freshTypeVar(), loc).toSuccess
+        case (Some(sym), None) =>
+          // Case 3: the name is a variable.
           NamedAst.Expression.Var(sym, loc).toSuccess
+        case (Some(sym), Some(qname)) =>
+          // Case 4: the name is ambiguous.
+          NameError.AmbiguousVarOrUse(name, loc, sym.loc, qname.loc).toFailure
       }
 
     case WeededAst.Expression.VarOrDef(name, loc) =>
