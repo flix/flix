@@ -103,7 +103,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Root: Rule1[ParsedAst.Root] = {
     def Uses: Rule1[Seq[ParsedAst.Use]] = rule {
-      zeroOrMore(Use).separatedBy(WS)
+      zeroOrMore(Use ~ optWS ~ ";").separatedBy(optWS)
     }
 
     def Decls: Rule1[Seq[ParsedAst.Declaration]] = rule {

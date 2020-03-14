@@ -151,8 +151,8 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUse.02") {
     val input =
       s"""
-         |use A.f
-         |use B.f
+         |use A.f;
+         |use B.f;
          |
          |def main(): Bool =
          |    f() == f()
@@ -172,7 +172,7 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUse.03") {
     val input =
       s"""
-         |use A.f
+         |use A.f;
          |
          |def main(): Bool =
          |    use B.f;

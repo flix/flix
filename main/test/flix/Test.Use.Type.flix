@@ -1,8 +1,8 @@
-use A.Color
-use A/B.Currency
-use A/B.Kelvin
-use A.{Color => MyColor}
-use A/B.{Currency => MyCurrency}
+use A.Color;
+use A/B.Currency;
+use A/B.Kelvin;
+use A.{Color => MyColor};
+use A/B.{Currency => MyCurrency};
 
 namespace X {
     pub def f(): Color = Color.Red
