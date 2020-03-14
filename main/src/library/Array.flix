@@ -225,7 +225,7 @@ namespace Array {
     ///
     /// Helper for `scanLeft`.
     ///
-    def scanLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], b: array[b], len: Int32, i: Int32) : Unit & Impure =
+    def scanLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], b: Array[b], len: Int32, i: Int32) : Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -248,7 +248,7 @@ namespace Array {
     ///
     /// Helper for `scanRight`.
     ///
-    def scanRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], b: array[b], i: Int32) : Unit & Impure =
+    def scanRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], b: Array[b], i: Int32) : Unit & Impure =
         if (i < 0)
             ()
         else {
@@ -1197,7 +1197,7 @@ namespace Array {
     ///
     /// Helper for `foreachWithIndex`.
     ///
-    def foreachAccumHelper(f: (st, a) ~> st, a: Array[a], len: Int32, s: st, i: int32): st & Impure =
+    def foreachAccumHelper(f: (st, a) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
         if (i >= len)
             s
         else {
