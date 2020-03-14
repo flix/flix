@@ -56,9 +56,12 @@ public class MySolver {
         seqStmt.prettyPrint(System.out, 0);
     }
 
-    /*
-        Vi har brug for at vi kan have en tuble som type datatype som hvor vi kan spørge om  eksistens i en tabel og indsætte i en tabel
-        Hvad nu hvis der optræder en literal (konstant) i Head eller body af en regel
+    /**
+     * Vi har brug for at vi kan have en tuble som type datatype som hvor vi kan spørge om  eksistens i en tabel og indsætte i en tabel
+     *         Hvad nu hvis der optræder en literal (konstant) i Head eller body af en regel
+     * @param relSym The RelSym we evaluate rules for
+     * @param derived A map from RelSym to all the rules that is used to derive it
+     * @return An array of statements that should evaluate the rules deriving relSym
      */
     private static Stmt[] eval(RelSym relSym, Map<RelSym, ArrayList<Constraint>> derived) {
         // Generate facts for each rule for the fact
@@ -87,6 +90,12 @@ public class MySolver {
         return result;
     }
 
+    /**
+     * Lav et kodeeksempel i stil med https://github.com/flix/flix/blob/master/main/src/ca/uwaterloo/flix/language/phase/Synthesize.scala#L574
+     * @param c The specific rule that we want to evaluate
+     * @param relTableMap A map telling the program which TableName a given PredSym should be represented by
+     * @return A statement evaluating c
+     */
     private static Stmt evalRule(Constraint c, Map<PredSym, TableName> relTableMap) {
         Predicate head = c.getHeadPredicate();
         assert head instanceof AtomPredicate;
