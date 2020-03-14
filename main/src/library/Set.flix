@@ -308,7 +308,11 @@ namespace Set {
 
 
 
-
+    ///
+    /// Returns `xs` as a mutable set.
+    ///
+    pub def toMutable(xs: Set[a]): MutSet[a] & Impure =
+        MutSet(ref xs)
 
     ///
     /// Returns the set `xs` as a list.

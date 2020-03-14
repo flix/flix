@@ -478,6 +478,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
           } yield (resultTyp, resultEff)
 
+        case BinaryOperator.Spaceship =>
+          for {
+            (tpe1, eff1) <- visitExp(exp1)
+            (tpe2, eff2) <- visitExp(exp2)
+            valueType <- unifyTypM(tpe1, tpe2, loc)
+            resultTyp <- unifyTypM(tvar, Type.Int32, loc)
+            resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
+          } yield (resultTyp, resultEff)
+
         case BinaryOperator.LogicalAnd | BinaryOperator.LogicalOr =>
           for {
             (tpe1, eff1) <- visitExp(exp1)
@@ -868,14 +877,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         //  exp : Ref[t] @ eff
         //  -------------------
-        //  deref exp : t @ eff
+        //  deref exp : t @ Impure
         //
         val elementType = Type.freshTypeVar()
         for {
-          (typ, eff) <- visitExp(exp)
+          (typ, _) <- visitExp(exp)
           refType <- unifyTypM(typ, mkRefType(elementType), loc)
           resultTyp <- unifyTypM(tvar, elementType, loc)
-          resultEff <- unifyEffM(evar, eff, loc)
+          resultEff <- unifyEffM(evar, Type.Impure, loc)
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Assign(exp1, exp2, tvar, evar, loc) =>
@@ -893,20 +902,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield (resultTyp, resultEff)
 
       case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
-        // TODO: Check formal parameter type.
         for {
+          paramTyp <- unifyTypM(fparam.sym.tvar, fparam.tpe, loc)
           (typ, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
-          resultEff <- unifyEffM(eff, Type.Pure, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
-        // TODO: Check formal parameter type.
         for {
+          paramTyp <- unifyTypM(fparam.sym.tvar, fparam.tpe, loc)
           (typ, eff) <- visitExp(exp)
           resultTyp <- unifyTypM(typ, Type.Bool, loc)
-          resultEff <- unifyEffM(eff, Type.Pure, loc)
-        } yield (resultTyp, resultEff)
+        } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Ascribe(exp, expectedTyp, expectedEff, tvar, evar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.

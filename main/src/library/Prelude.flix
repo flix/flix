@@ -197,3 +197,89 @@ law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 /// the height assigned to `x` is stricty greater than the height assigned to `y`.
 ///
 law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). (x ⊑ y && !equ(x, y)) → (h(x) > h(y))
+
+///
+/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
+///
+def ===(x: a, y: a): Bool = ???
+
+namespace Tuple2 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq(t1: (a, b), t2: (a, b)): Bool =
+        let (a1, b1) = t1;
+        let (a2, b2) = t2;
+            a1 == a2 && b1 == b2
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    def __cmp(t1: (a, b), t2: (a, b)): Int32 =
+        let (a1, b1) = t1;
+        let (a2, b2) = t2;
+            let cmp1 = a1 <=> a2;
+            if (cmp1 != 0)
+                cmp1
+            else
+                b1 <=> b2
+}
+
+namespace Tuple3 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq(t1: (a, b, c), t2: (a, b, c)): Bool =
+        let (a1, b1, c1) = t1;
+        let (a2, b2, c2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    def __cmp(t1: (a, b, c), t2: (a, b, c)): Int32 =
+        let (a1, b1, c1) = t1;
+        let (a2, b2, c2) = t2;
+            let cmp1 = a1 <=> a2;
+            if (cmp1 != 0)
+                cmp1
+            else
+                let cmp2 = b1 <=> b2;
+                if (cmp2 != 0)
+                    cmp2
+                else
+                    c1 <=> c2
+}
+
+namespace Tuple4 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq(t1: (a, b, c, d), t2: (a, b, c, d)): Bool =
+        let (a1, b1, c1, d1) = t1;
+        let (a2, b2, c2, d2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2 && d1 == d2
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    def __cmp(t1: (a, b, c, d), t2: (a, b, c, d)): Int32 =
+        let (a1, b1, c1, d1) = t1;
+        let (a2, b2, c2, d2) = t2;
+            let cmp1 = a1 <=> a2;
+            if (cmp1 != 0)
+                cmp1
+            else
+                let cmp2 = b1 <=> b2;
+                if (cmp2 != 0)
+                    cmp2
+                else
+                    let cmp3 = c1 <=> c2;
+                    if (cmp3 != 0)
+                        cmp3
+                    else
+                        d1 <=> d2
+}

@@ -852,4 +852,49 @@ namespace List {
         case (x :: rs, y :: qs) => x == y && __eq(rs, qs)
         case _ => false
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def filterFilter(): Bool =
+        forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
+            filter(g, filter(f, xs)) === filter(x -> f(x) && g(x), xs)
+
+    @lint
+    def findFind(): Bool =
+        forall [a] (f: a -> Bool, g: a -> Bool, xs: List[a]).
+            Option.find(g, List.find(f, xs)) === find(x -> f(x) && g(x), xs)
+
+    @lint
+    def mapIdentity(): Bool =
+        forall [a] (xs: List[a]).
+            map(x -> x, xs) === xs
+
+    @lint
+    def mapMap1(): Bool =
+        forall [a, b, c] (f: a -> b, g: b -> c, xs: List[a]).
+            map(g, map(f, xs)) === map(f >> g, xs)
+
+    @lint
+    def mapMap2(): Bool =
+        forall [a, b, c] (f: a ~> b, g: b -> c, xs: List[a]).
+            map(g, map(f, xs)) === map(f >> g, xs)
+
+    @lint
+    def mapMap3(): Bool =
+        forall [a, b, c] (f: a -> b, g: b ~> c, xs: List[a]).
+            map(g, map(f, xs)) === map(f >> g, xs)
+
+    @lint
+    def mapZip(): Bool =
+      forall [a, b, c] (f: (a, b) -> c, xs: List[a], ys: List[b]).
+        List.map(p -> f(fst(p), snd(p)), List.zip(xs, ys)) === List.map2(f, xs, ys)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+
 }

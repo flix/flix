@@ -2,6 +2,13 @@
 
 HEAD:
 
+- Added mutable sets and maps (backed by immutable sets and maps for now).
+- Added NonEmptyList.
+- Added spaceship operator.
+- Added binary, octal, and hex literals.
+- Added support for underscores in number literals.
+- Improved the performance of the compiler.
+
 Version 0.11.0:
 
 - Added light-weight polymorphic effects.

@@ -77,7 +77,10 @@ namespace Map {
     ///
     /// Otherwise, returns `d`.
     ///
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v = Option.getWithDefault(get(k, m), d)
+    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v = match get(k, m) {
+        case None    => d
+        case Some(v) => v
+    }
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -161,19 +164,6 @@ namespace Map {
     pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
         let Map(xs) = m;
             Map(List.map(match (key, v) -> if (key == k) (k, Option.getWithDefault(f(k, v), v)) else (key, v), xs))
-
-    ///
-    /// Replaces the mapping `fst(x) -> snd(x)` with `fst(y) -> snd(y)` if `fst(x) -> snd(x)` is in `m`. Otherwise, returns `m`.
-    ///
-    /// Note: The returned map may be smaller than `m`.
-    ///
-    pub def replace(x: (k, v), y: (k, v), m: Map[k, v]): Map[k, v] =
-        let (k, v) = x;
-            match get(k, m) {
-                case None => m
-                case Some(w) => if (v == w) insert(fst(y), snd(y), delete(k, m)) else m
-            }
-
 
 
 
@@ -480,6 +470,11 @@ namespace Map {
 
 
 
+    ///
+    /// Returns `m` as a mutable set.
+    ///
+    pub def toMutable(m: Map[k, v]): MutMap[k, v] & Impure =
+        MutMap(ref m)
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -504,11 +499,24 @@ namespace Map {
         case Map(xs) => List.foreach(p -> f(fst(p), snd(p)), xs)
     }
 
-
-
-
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
-    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && size(m1) == size(m2)
+    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = isSubmapOf(m1, m2) && isSubmapOf(m2, m1)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useGetWithDefault(): Bool =
+        forall [k, v] (k: k, d: v, m: Map[k, v]).
+            Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
+
+    @lint
+    def useIsSubmapOf(): Bool =
+        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
+            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
+
+
 }
