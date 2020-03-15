@@ -9,6 +9,9 @@ public final class SeqStmt implements Stmt {
     private final Stmt[] stmts;
 
     public SeqStmt(Stmt[] stmts) {
+
+        if (stmts == null || stmts.length == 0)
+            throw new IllegalArgumentException("'stmts' must be non-null and non-empty");
         this.stmts = stmts;
     }
 

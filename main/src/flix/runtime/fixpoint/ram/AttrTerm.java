@@ -8,6 +8,9 @@ public final class AttrTerm implements RamTerm {
     private final int index;
 
     public AttrTerm(RowVariable localVar, int index) {
+        if (localVar == null){
+            throw new IllegalArgumentException("'localVar' must be non-null");
+        }
         this.localVar = localVar;
         this.index = index;
     }

@@ -10,6 +10,8 @@ public final class TubleInRelBoolExp implements BoolExp {
     private final TableName table;
 
     public TubleInRelBoolExp(RamTerm[] terms, TableName table) {
+        if (terms == null || terms.length == 0) throw new IllegalArgumentException("'terms' must be non-null and non-empty");
+        if (table == null) throw new IllegalArgumentException("'table' must be non-null");
         this.terms = terms;
         this.table = table;
     }

@@ -8,6 +8,7 @@ public final class RamLitTerm implements RamTerm {
     private final ProxyObject literal;
 
     public RamLitTerm(ProxyObject literal) {
+        if (literal == null) throw new IllegalArgumentException("'literal' must be non-null");
         this.literal = literal;
     }
 

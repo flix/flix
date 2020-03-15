@@ -11,6 +11,9 @@ public final class ForEachStmt implements Stmt {
     private final Stmt body;
 
     public ForEachStmt(TableName name, RowVariable localVar, Stmt body) {
+        if (name == null) throw new IllegalArgumentException("'name' must be non-null");
+        if (localVar == null) throw new IllegalArgumentException("'localVar' must be non-null");
+        if (body == null) throw new IllegalArgumentException("'body' must be non-null");
         this.name = name;
         this.localVar = localVar;
         this.body = body;

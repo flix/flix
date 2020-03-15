@@ -6,6 +6,7 @@ public final class NotBoolExp implements BoolExp {
     private final BoolExp exp;
 
     public NotBoolExp(BoolExp exp) {
+        if (exp == null) throw new IllegalArgumentException("'epx' must be non-null");
         this.exp = exp;
     }
 

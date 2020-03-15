@@ -9,6 +9,8 @@ public final class IfStmt implements Stmt {
     private final Stmt stmt;
 
     public IfStmt(BoolExp boolExp, Stmt stmt) {
+        if (boolExp == null) throw new IllegalArgumentException("'boolExp' must be non-null");
+        if (stmt == null) throw new IllegalArgumentException("'stmt' must be non-null");
         this.boolExp = boolExp;
         this.stmt = stmt;
     }

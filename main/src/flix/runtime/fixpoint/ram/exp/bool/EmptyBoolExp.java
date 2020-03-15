@@ -8,6 +8,7 @@ public final class EmptyBoolExp implements BoolExp {
     private final RelationExp relExp;
 
     public EmptyBoolExp(RelationExp relExp) {
+        if (relExp == null) throw new IllegalArgumentException("'relExp' must be non-null");
         this.relExp = relExp;
     }
 

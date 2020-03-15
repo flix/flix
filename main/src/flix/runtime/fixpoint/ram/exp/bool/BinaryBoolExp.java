@@ -8,6 +8,9 @@ public final class BinaryBoolExp implements BoolExp {
     private final BoolExp exp2;
 
     public BinaryBoolExp(BinaryBoolOperator operator, BoolExp exp1, BoolExp exp2) {
+        if (operator == null) throw new IllegalArgumentException("'operator' must be non-null");
+        if (exp1 == null) throw new IllegalArgumentException("'exp1' must be non-null");
+        if (exp2 == null) throw new IllegalArgumentException("'exp2' must be non-null");
         this.operator = operator;
         this.exp1 = exp1;
         this.exp2 = exp2;
