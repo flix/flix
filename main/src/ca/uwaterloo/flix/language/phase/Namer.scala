@@ -976,6 +976,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       if (qname.isUnqualified) {
         val name = qname.ident.name
 
+        // TODO: Refactor this back to the way it was.
         (uenv0.get(name), tenv0.get(name)) match {
           case (None, None) =>
             // Case 1: the name is a reference to a top-level type.
