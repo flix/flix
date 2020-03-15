@@ -5,9 +5,9 @@ import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 
 import java.io.PrintStream;
 
-public class AssignStmt implements Stmt {
-    private TableName name;
-    private RelationExp relationExp;
+public final class AssignStmt implements Stmt {
+    private final TableName name;
+    private final RelationExp relationExp;
 
     public AssignStmt(TableName name, RelationExp relationExp) {
         this.name = name;

@@ -4,9 +4,9 @@ import flix.runtime.fixpoint.ram.RamTerm;
 
 import java.io.PrintStream;
 
-public class EqualsBoolExp implements BoolExp {
-    RamTerm term1;
-    RamTerm term2;
+public final class EqualsBoolExp implements BoolExp {
+    private final RamTerm term1;
+    private final RamTerm term2;
 
     public EqualsBoolExp(RamTerm term1, RamTerm term2) {
         this.term1 = term1;

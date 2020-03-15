@@ -5,9 +5,9 @@ import flix.runtime.fixpoint.ram.TableName;
 
 import java.io.PrintStream;
 
-public class ProjectStmt implements Stmt {
-    private RamTerm[] facts;
-    private TableName table;
+public final class ProjectStmt implements Stmt {
+    private final RamTerm[] facts;
+    private final TableName table;
 
     public ProjectStmt(RamTerm[] facts, TableName table) {
         this.facts = facts;

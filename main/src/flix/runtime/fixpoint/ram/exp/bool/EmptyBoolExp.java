@@ -4,8 +4,8 @@ import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 
 import java.io.PrintStream;
 
-public class EmptyBoolExp implements BoolExp {
-    RelationExp relExp;
+public final class EmptyBoolExp implements BoolExp {
+    private final RelationExp relExp;
 
     public EmptyBoolExp(RelationExp relExp) {
         this.relExp = relExp;

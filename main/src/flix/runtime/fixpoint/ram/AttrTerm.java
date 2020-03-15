@@ -3,9 +3,9 @@ package flix.runtime.fixpoint.ram;
 import java.io.PrintStream;
 import java.util.Objects;
 
-public class AttrTerm implements RamTerm {
-    private RowVariable localVar;
-    private int index;
+public final class AttrTerm implements RamTerm {
+    private final RowVariable localVar;
+    private final int index;
 
     public AttrTerm(RowVariable localVar, int index) {
         this.localVar = localVar;

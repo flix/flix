@@ -2,10 +2,10 @@ package flix.runtime.fixpoint.ram.exp.relation;
 
 import java.io.PrintStream;
 
-public class BinaryRelationExp implements RelationExp{
-    BinaryRelationOperator operator;
-    RelationExp exp1;
-    RelationExp exp2;
+public final class BinaryRelationExp implements RelationExp{
+    private final BinaryRelationOperator operator;
+    private final RelationExp exp1;
+    private final RelationExp exp2;
 
     public BinaryRelationExp(BinaryRelationOperator operator, RelationExp exp1, RelationExp exp2) {
         this.operator = operator;

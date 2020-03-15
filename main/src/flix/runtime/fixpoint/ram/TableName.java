@@ -5,16 +5,16 @@ import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.io.PrintStream;
 
-public class TableName implements RelationExp {
-    private TableClassifier classifier;
-    private PredSym name;
+public final class TableName implements RelationExp {
+    private final TableVersion classifier;
+    private final PredSym name;
 
-    public TableName(TableClassifier classifier, PredSym name) {
+    public TableName(TableVersion classifier, PredSym name) {
         this.classifier = classifier;
         this.name = name;
     }
 
-    public TableClassifier getClassifier() {
+    public TableVersion getClassifier() {
         return classifier;
     }
 
@@ -25,9 +25,9 @@ public class TableName implements RelationExp {
     @Override
     public String toString() {
         String result = "";
-        if (classifier == TableClassifier.DELTA) {
+        if (classifier == TableVersion.DELTA) {
             result += "Δ" + name.getName();
-        } else if (classifier == TableClassifier.NEW) {
+        } else if (classifier == TableVersion.NEW) {
             result += "Δ" + name.getName() + "'";
         } else {
             result += name.getName();

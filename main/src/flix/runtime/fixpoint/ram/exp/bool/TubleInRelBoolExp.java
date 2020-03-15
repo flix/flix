@@ -5,9 +5,9 @@ import flix.runtime.fixpoint.ram.TableName;
 
 import java.io.PrintStream;
 
-public class TubleInRelBoolExp implements BoolExp {
-    RamTerm[] terms;
-    TableName table;
+public final class TubleInRelBoolExp implements BoolExp {
+    private final RamTerm[] terms;
+    private final TableName table;
 
     public TubleInRelBoolExp(RamTerm[] terms, TableName table) {
         this.terms = terms;

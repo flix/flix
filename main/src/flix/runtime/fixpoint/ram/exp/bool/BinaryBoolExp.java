@@ -2,10 +2,10 @@ package flix.runtime.fixpoint.ram.exp.bool;
 
 import java.io.PrintStream;
 
-public class BinaryBoolExp implements BoolExp {
-    BinaryBoolOperator operator;
-    BoolExp exp1;
-    BoolExp exp2;
+public final class BinaryBoolExp implements BoolExp {
+    private final BinaryBoolOperator operator;
+    private final BoolExp exp1;
+    private final BoolExp exp2;
 
     public BinaryBoolExp(BinaryBoolOperator operator, BoolExp exp1, BoolExp exp2) {
         this.operator = operator;

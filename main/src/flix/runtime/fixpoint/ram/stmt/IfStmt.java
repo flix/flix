@@ -4,9 +4,9 @@ import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
 
 import java.io.PrintStream;
 
-public class IfStmt implements Stmt {
-    BoolExp boolExp;
-    Stmt stmt;
+public final class IfStmt implements Stmt {
+    private final BoolExp boolExp;
+    private final Stmt stmt;
 
     public IfStmt(BoolExp boolExp, Stmt stmt) {
         this.boolExp = boolExp;

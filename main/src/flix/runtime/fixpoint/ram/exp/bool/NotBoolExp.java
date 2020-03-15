@@ -2,8 +2,8 @@ package flix.runtime.fixpoint.ram.exp.bool;
 
 import java.io.PrintStream;
 
-public class NotBoolExp implements BoolExp {
-    private BoolExp exp;
+public final class NotBoolExp implements BoolExp {
+    private final BoolExp exp;
 
     public NotBoolExp(BoolExp exp) {
         this.exp = exp;

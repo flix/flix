@@ -4,8 +4,8 @@ import flix.runtime.ProxyObject;
 
 import java.io.PrintStream;
 
-public class RamLitTerm implements RamTerm {
-    private ProxyObject literal;
+public final class RamLitTerm implements RamTerm {
+    private final ProxyObject literal;
 
     public RamLitTerm(ProxyObject literal) {
         this.literal = literal;

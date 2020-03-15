@@ -73,7 +73,7 @@ public class MySolver {
                     // For all relation symbols we make a map to the TableName
                     if (sym instanceof RelSym) {
                         // Since we want to use all the facts, generated, we don't care if the facts are derived or not
-                        relTableMap.put(sym, new TableName(TableClassifier.RESULT, sym));
+                        relTableMap.put(sym, new TableName(TableVersion.RESULT, sym));
                     } else {
                         throw new UnsupportedOperationException("We do not support LatSym yet");
                     }
@@ -132,7 +132,7 @@ public class MySolver {
                                     "VarTerm or LitTerm, should at least also allow for WildTerm");
                         }
                     }
-                    TableName name = new TableName(TableClassifier.RESULT, currentPred.getSym());
+                    TableName name = new TableName(TableVersion.RESULT, currentPred.getSym());
                     boolRestrictions.add(new NotBoolExp(new TubleInRelBoolExp(ramTerms, name)));
                 }
 
@@ -178,9 +178,9 @@ public class MySolver {
             }
 
         }
-        Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableClassifier.DELTA, headSym));
+        Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableVersion.DELTA, headSym));
         // Now I need to check that this element does not exist already
-        BoolExp checkBool = new NotBoolExp(new TubleInRelBoolExp(headRamTerms, new TableName(TableClassifier.RESULT, headSym)));
+        BoolExp checkBool = new NotBoolExp(new TubleInRelBoolExp(headRamTerms, new TableName(TableVersion.RESULT, headSym)));
         resultStmt = new IfStmt(checkBool, resultStmt);
 
         // I can then generate the list of if statements
@@ -266,7 +266,7 @@ public class MySolver {
                 ramTerms[termI] = new RamLitTerm(proxy);
             }
             stmts[factI] = new ProjectStmt(ramTerms
-                    , new TableName(TableClassifier.RESULT, atom.getSym()));
+                    , new TableName(TableVersion.RESULT, atom.getSym()));
         }
         return stmts;
     }
