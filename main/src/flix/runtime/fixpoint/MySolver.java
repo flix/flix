@@ -8,10 +8,7 @@ import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
 import flix.runtime.fixpoint.ram.exp.bool.EqualsBoolExp;
 import flix.runtime.fixpoint.ram.exp.bool.NotBoolExp;
 import flix.runtime.fixpoint.ram.exp.bool.TubleInRelBoolExp;
-import flix.runtime.fixpoint.ram.stmt.IfStmt;
-import flix.runtime.fixpoint.ram.stmt.ProjectStmt;
-import flix.runtime.fixpoint.ram.stmt.SeqStmt;
-import flix.runtime.fixpoint.ram.stmt.Stmt;
+import flix.runtime.fixpoint.ram.stmt.*;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.symbol.RelSym;
 import flix.runtime.fixpoint.symbol.VarSym;
@@ -105,14 +102,41 @@ public class MySolver {
         // Map from AtomPredicate to the localvar used to get values to that recursion
         Map<AtomPredicate, RowVariable> atomToLocal = new HashMap<>();
         // Map from terms to the set of AttrTerms they will be instantiated as
-        Map<VarSym, Set<AttrTerm>> VarSymToAttrTerm = new HashMap<>();
+        Map<VarSym, Set<AttrTerm>> varSymToAttrTerm = new HashMap<>();
         // Define the set for all boolExps describing when a value must be constant
-        Set<BoolExp> constantValues = new HashSet<>();
+        Set<BoolExp> boolRestrictions = new HashSet<>();
 
         // Define all variables needed and define what the variables are instantiated as
         for (Predicate bodyPred : c.getBodyPredicates()) {
             if (bodyPred instanceof AtomPredicate) {
                 AtomPredicate currentPred = (AtomPredicate) bodyPred;
+                /*
+                    If the AtomPredicate is a "not" predicate we need to generate an if-statement later that makes
+                    sure that it holds. This must be done before we add the predicate to atomToLocal, since the values
+                    cannot be determined by this predicate
+                    TODO: Make sure that we do not traverse a negated predicate, since this is never necessary
+                 */
+                if (!currentPred.isPositive()){
+                    // This could perhaps be moved to the already existing loop across the terms
+                    Term[] terms = currentPred.getTerms();
+                    RamTerm[] ramTerms = new RamTerm[terms.length];
+                    for (int i = 0; i < terms.length; i++) {
+                        Term term = terms[i];
+                        if (term instanceof VarTerm){
+                            VarSym sym = ((VarTerm) term).getSym();
+                            ramTerms[i] = varSymToAttrTerm.get(sym).iterator().next();
+                        } else if (term instanceof LitTerm){
+                            ramTerms[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
+                        } else {
+                            throw new UnsupportedOperationException("Right now negated AtomPred can only contain" +
+                                    "VarTerm or LitTerm, should at least also allow for WildTerm");
+                        }
+                    }
+                    TableName name = new TableName(TableClassifier.RESULT, currentPred.getSym());
+                    boolRestrictions.add(new NotBoolExp(new TubleInRelBoolExp(ramTerms, name)));
+                }
+
+                // Since it is not negated we might have to traverse the values of this table
                 RowVariable localVar = genNewRowVariable(currentPred.getSym().getName());
                 atomToLocal.put(currentPred, localVar);
                 Term[] terms = currentPred.getTerms();
@@ -122,22 +146,20 @@ public class MySolver {
                     // We now split on what kind of term it is.
                     if (currentTerm instanceof VarTerm) {
                         VarSym currentSym = ((VarTerm) currentTerm).getSym();
-                        if (VarSymToAttrTerm.containsKey(currentSym)) {
-                            VarSymToAttrTerm.get(currentSym).add(attrTerm);
+                        if (varSymToAttrTerm.containsKey(currentSym)) {
+                            varSymToAttrTerm.get(currentSym).add(attrTerm);
                         } else {
                             HashSet<AttrTerm> attrSet = new HashSet<>();
                             attrSet.add(attrTerm);
-                            VarSymToAttrTerm.put(currentSym, attrSet);
+                            varSymToAttrTerm.put(currentSym, attrSet);
                         }
                     } else if (currentTerm instanceof LitTerm) {
                         RamLitTerm literal = new RamLitTerm(((LitTerm) currentTerm).getFunction().apply(nullArray));
-                        constantValues.add(new EqualsBoolExp(attrTerm, literal));
+                        boolRestrictions.add(new EqualsBoolExp(attrTerm, literal));
                     } else {
                         throw new UnsupportedOperationException("Right now the terms of predicates in the body" +
                                 " of a rule can only be VarTerms");
                     }
-
-
                 }
             } else {
                 throw new UnsupportedOperationException("We only support AtomPredicates");
@@ -149,8 +171,8 @@ public class MySolver {
             Term term = headTerms[i];
             if (term instanceof VarTerm) {
                 VarSym sym = ((VarTerm) term).getSym();
-                Set<AttrTerm> a = VarSymToAttrTerm.get(sym);
-                headRamTerms[i] = VarSymToAttrTerm.get(sym).iterator().next();
+                Set<AttrTerm> a = varSymToAttrTerm.get(sym);
+                headRamTerms[i] = varSymToAttrTerm.get(sym).iterator().next();
             } else if (term instanceof LitTerm) {
                 headRamTerms[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
             }
@@ -162,8 +184,8 @@ public class MySolver {
         resultStmt = new IfStmt(checkBool, resultStmt);
 
         // I can then generate the list of if statements
-        for (VarSym sym : VarSymToAttrTerm.keySet()) {
-            Set<AttrTerm> attrs = VarSymToAttrTerm.get(sym);
+        for (VarSym sym : varSymToAttrTerm.keySet()) {
+            Set<AttrTerm> attrs = varSymToAttrTerm.get(sym);
 
             Iterator<AttrTerm> it = attrs.iterator();
             AttrTerm first = it.next();
@@ -171,14 +193,21 @@ public class MySolver {
                 AttrTerm attr = it.next();
                 BoolExp equalsBool = new EqualsBoolExp(first, attr);
                 resultStmt = new IfStmt(equalsBool, resultStmt);
-
             }
         }
-        for (BoolExp exp : constantValues){
-
+        for (BoolExp exp : boolRestrictions){
+            resultStmt = new IfStmt(exp, resultStmt);
         }
 
-        // I can now generate all the for each statements
+        // I can now generate all the for each statements for all AtomPredicates
+        for (Predicate pred : c.getBodyPredicates()){
+            if (pred instanceof AtomPredicate){
+                AtomPredicate currentPred = (AtomPredicate) pred;
+                resultStmt = new ForEachStmt(relTableMap.get(currentPred.getSym()),
+                        atomToLocal.get(currentPred),
+                        resultStmt);
+            }
+        }
 
         return resultStmt;
     }
