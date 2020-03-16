@@ -1421,7 +1421,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: Map[String, Name.QName]): Validation[Map[String, Name.QName], NameError] =
     Validation.fold(uses, uenv0) {
-      case (uenv1, WeededAst.Use(qname, alias, _)) =>
+      case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
+        val name = alias.name
+        uenv1.get(name) match {
+          case None => (uenv1 + (name -> qname)).toSuccess
+          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
+        }
+      case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
         uenv1.get(name) match {
           case None => (uenv1 + (name -> qname)).toSuccess

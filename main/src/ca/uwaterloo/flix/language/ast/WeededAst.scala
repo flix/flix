@@ -52,7 +52,16 @@ object WeededAst {
 
   }
 
-  case class Use(qname: Name.QName, alias: Name.Ident, loc: SourceLocation)
+  sealed trait Use
+
+  object Use {
+
+    case class UseDef(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+
+    case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+
+  }
+
 
   sealed trait Expression {
     def loc: SourceLocation
