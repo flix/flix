@@ -55,6 +55,27 @@ def testUseEnum11(): Bool =
     use A.Color;
     Color.Red != Color.Blu
 
+@test
+def testUseEnum12(): Bool =
+    use A/B.Currency.USD;
+    USD == USD
+
+@test
+def testUseEnum13(): Bool =
+    use A/B.Currency.CAD;
+    CAD == CAD
+
+@test
+def testUseEnum14(): Bool =
+    use A/B.Currency.USD;
+    use A/B.Currency.CAD;
+    USD != CAD
+
+@test
+def testUseEnum15(): Bool =
+    use A/B.Currency.{USD, CAD};
+    USD != CAD
+
 namespace A {
     pub enum Color {
         case Red,
