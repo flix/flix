@@ -229,6 +229,36 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateUseTag](result)
   }
 
+  test("DuplicateUseTag.02") {
+    val input =
+      s"""
+         |
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.03") {
+    val input =
+      s"""
+         |
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.04") {
+    val input =
+      s"""
+         |
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
   test("DuplicateTypeAlias.01") {
     val input =
       s"""
