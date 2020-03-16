@@ -1128,11 +1128,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
       // Disambiguate type.
-      //(lookupEnum(qname, ns0, root), lookupTypeAlias()) // TODO
-      val decls = root.enums.getOrElse(qname.namespace, Map.empty)
-      decls.get(qname.ident.name) match {
-        case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+      (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+        case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
+        case (None, Some(typeAliasDecl)) => getTypeAliasIfAccessible(typeAliasDecl, ns0, root, loc)
+        case (Some(enumDecl), Some(typeAliasDecl)) =>
+          val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
+          ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
 
     case NamedAst.Type.Enum(sym) =>
