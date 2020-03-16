@@ -1433,6 +1433,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case None => (uenv1 + (name -> qname)).toSuccess
           case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
         }
+      case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
+        ???
     }
 
   /**
