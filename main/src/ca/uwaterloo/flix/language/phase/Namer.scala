@@ -56,7 +56,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // collect all the declarations.
     val declarations = mapN(traverse(program.roots) {
-      case root => mapN(mergeUseEnvs(root.uses, Map.empty)) {
+      case root => mapN(mergeUseEnvs(root.uses, UseEnv.empty)) {
         case uenv0 => root.decls.map(d => (uenv0, d))
       }
     })(_.flatten)
@@ -70,7 +70,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     // fold over the named expressions.
     val named = traverse(program.named) {
-      case (sym, exp) => visitExp(exp, Map.empty, Map.empty, Map.empty).map(e => sym -> e)
+      case (sym, exp) => visitExp(exp, Map.empty, UseEnv.empty, Map.empty).map(e => sym -> e)
     }
 
     mapN(result, named) {
@@ -83,7 +83,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
     */
-  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: Map[String, Name.QName], prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = decl0 match {
+  private def visitDecl(decl0: WeededAst.Declaration, ns0: Name.NName, uenv0: UseEnv, prog0: NamedAst.Root)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = decl0 match {
     /*
      * Namespace.
      */
@@ -299,7 +299,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given constraint `c0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
+  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Constraint, NameError] = c0 match {
     case WeededAst.Constraint(h, bs, loc) =>
       // Find the variables visible in the head and rule scope of the constraint.
       // Remove any variables already in the outer environment.
@@ -341,7 +341,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given `cases` map.
     */
-  private def casesOf(cases: Map[String, WeededAst.Case], uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[String, NamedAst.Case], NameError] = {
+  private def casesOf(cases: Map[String, WeededAst.Case], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[Map[String, NamedAst.Case], NameError] = {
     val casesVal = cases map {
       case (name, WeededAst.Case(enum, tag, tpe)) =>
         mapN(visitType(tpe, uenv0, tenv0)) {
@@ -354,7 +354,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given definition declaration `decl0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
+  private def visitDef(decl0: WeededAst.Declaration.Def, uenv0: UseEnv, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Def, NameError] = decl0 match {
     case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
       val tparams = getTypeParams(tparams0, fparams0, tpe, loc)
 
@@ -385,7 +385,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given expression `exp0` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
+  private def visitExp(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Expression, NameError] = exp0 match {
 
     case WeededAst.Expression.Wild(loc) =>
       NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
@@ -395,7 +395,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val name = qname.ident.name
 
       // lookup the name in the variable and use environments.
-      (env0.get(name), uenv0.get(name)) match {
+      (env0.get(name), uenv0.defs.get(name)) match {
         case (None, None) =>
           // Case 1: the name is a reference to a top-level function.
           NamedAst.Expression.Def(qname, Type.freshTypeVar(), loc).toSuccess
@@ -911,7 +911,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given head predicate `head` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
+  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
@@ -926,7 +926,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given body predicate `body` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
-  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
+  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
@@ -956,7 +956,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Names the given type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def visitType(tpe0: WeededAst.Type, uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
+  private def visitType(tpe0: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Type, NameError] = tpe0 match {
     case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
     case WeededAst.Type.Var(ident, loc) =>
@@ -977,7 +977,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val name = qname.ident.name
 
         // TODO: Refactor this back to the way it was.
-        (uenv0.get(name), tenv0.get(name)) match {
+        (uenv0.tpes.get(name), tenv0.get(name)) match {
           case (None, None) =>
             // Case 1: the name is a reference to a top-level type.
             NamedAst.Type.Ambiguous(qname, loc).toSuccess
@@ -1254,7 +1254,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded attribute to a named attribute.
     */
-  private def visitAttribute(attr: WeededAst.Attribute, uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
+  private def visitAttribute(attr: WeededAst.Attribute, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Attribute, NameError] = attr match {
     case WeededAst.Attribute(ident, tpe0, loc) =>
       mapN(visitType(tpe0, uenv0, tenv0)) {
         case tpe => NamedAst.Attribute(ident, tpe, loc)
@@ -1264,7 +1264,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
+  private def visitFormalParam(fparam: WeededAst.FormalParam, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case WeededAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = if (ident.name == "_")
@@ -1313,7 +1313,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given formal parameters `fparam0` under the given environments `uenv0` and `tenv0`.
     */
-  private def getFormalParams(fparams0: List[WeededAst.FormalParam], uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
+  private def getFormalParams(fparams0: List[WeededAst.FormalParam], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[List[NamedAst.FormalParam], NameError] = {
     traverse(fparams0)(visitFormalParam(_, uenv0, tenv0))
   }
 
@@ -1410,7 +1410,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given environments `uenv0` and `tenv0`.
     */
-  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: Map[String, Name.QName], tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
+  private def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Scheme, NameError] = {
     mapN(visitType(tpe, uenv0, tenv0)) {
       case t => NamedAst.Scheme(tparams0.map(_.tpe), t)
     }
@@ -1419,33 +1419,57 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Merges the given `uses` into the given use environment `uenv0`.
     */
-  private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: Map[String, Name.QName]): Validation[Map[String, Name.QName], NameError] =
+  private def mergeUseEnvs(uses: List[WeededAst.Use], uenv0: UseEnv): Validation[UseEnv, NameError] =
     Validation.fold(uses, uenv0) {
       case (uenv1, WeededAst.Use.UseDef(qname, alias, _)) =>
         val name = alias.name
-        uenv1.get(name) match {
-          case None => (uenv1 + (name -> qname)).toSuccess
+        uenv1.defs.get(name) match {
+          case None => uenv1.addDef(name, qname).toSuccess
           case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
-        uenv1.get(name) match {
-          case None => (uenv1 + (name -> qname)).toSuccess
+        uenv1.tpes.get(name) match {
+          case None => uenv1.addTpe(name, qname).toSuccess
           case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
+        println(qname + "." + tag + "." + alias)
         ???
     }
 
   /**
     * Returns the result of looking up the optional enum in the use environment `uenv0`.
     */
-  private def lookupEnum(enumOpt: Option[Name.QName], uenv0: Map[String, Name.QName]): Option[Name.QName] = enumOpt map {
-    case qname if qname.isUnqualified => uenv0.get(qname.ident.name) match {
+  private def lookupEnum(enumOpt: Option[Name.QName], uenv0: UseEnv): Option[Name.QName] = enumOpt map {
+    case qname if qname.isUnqualified => uenv0.tpes.get(qname.ident.name) match {
       case None => qname
       case Some(actualQName) => actualQName
     }
     case qname => qname
+  }
+
+  /**
+    * Companion object for the [[UseEnv]] class.
+    */
+  private object UseEnv {
+    val empty: UseEnv = UseEnv(Map.empty, Map.empty)
+  }
+
+  /**
+    * Represents a set of used names and their definitions.
+    */
+  private case class UseEnv(defs: Map[String, Name.QName], tpes: Map[String, Name.QName]) {
+    /**
+      * Binds the def name `s` to the qualified name `n`.
+      */
+    def addDef(s: String, n: Name.QName): UseEnv = copy(defs = defs + (s -> n))
+
+    /**
+      * Binds the tpe name `s` to the qualified name `n`.
+      */
+    def addTpe(s: String, n: Name.QName): UseEnv = copy(tpes = tpes + (s -> n))
+
   }
 
 }
