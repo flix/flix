@@ -1073,7 +1073,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
       case "Unit" => Type.Unit.toSuccess
@@ -1097,7 +1099,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
+        (lookupEnum(qname, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
           // Case 1: Not Found.
           case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
@@ -1123,6 +1125,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
         }
     }
+
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
       // Lookup the enum using the namespace.
       val decls = root.enums.getOrElse(qname.namespace, Map.empty)
@@ -1130,6 +1133,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
         case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
       }
+
     case NamedAst.Type.Enum(sym) =>
       Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
 
@@ -1185,7 +1189,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
-        tparams <- traverse(tparams0)(lookupType(_, ns0, root));
+        tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
       } yield Type.mkArrow(tparams, eff, tresult)
@@ -1222,11 +1226,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Optionally returns the enum with the given `name` in the given namespace `ns0`.
     */
-  private def lookupEnum(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
-    val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
-    enumsInNamespace.get(typeName) orElse {
-      val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
-      enumsInRootNS.get(typeName)
+  private def lookupEnum(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
+      enumsInNamespace.get(qname.ident.name) orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
+        enumsInRootNS.get(qname.ident.name)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      root.enums.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
