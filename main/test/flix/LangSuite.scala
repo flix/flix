@@ -9,8 +9,6 @@ class LangSuite extends Suites(
   // Declarations.
   //
   new FlixTest("Test.Dec.Namespace", "main/test/flix/Test.Dec.Namespace.flix"),
-  new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
-  new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 
   //
   // Effects.
@@ -83,5 +81,12 @@ class LangSuite extends Suites(
   // Stm.
   //
   new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),
+
+  //
+  // Use.
+  //
+  new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
+  new FlixTest("Test.Use.Enum", "main/test/flix/Test.Use.Enum.flix"),
+  new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 
 )
