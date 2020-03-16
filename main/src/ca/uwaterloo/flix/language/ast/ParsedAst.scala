@@ -227,7 +227,7 @@ object ParsedAst {
   object Use {
 
     /**
-      * A use of a single qualified name.
+      * A use of a single name from a namespace.
       *
       * @param sp1   the position of the first character.
       * @param nname the namespace.
@@ -247,20 +247,20 @@ object ParsedAst {
     case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
     /**
-      * A use of a single qualified tag.
+      * A use of a single tag.
       *
       * @param sp1   the position of the first character.
-      * @param qname the qualified name of the enum
+      * @param qname the name of the enum.
       * @param tag   the name of the tag.
       * @param sp2   the position of the last character.
       */
     case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
 
     /**
-      * A use of multiple qualified tags.
+      * A use of multiple tags.
       *
       * @param sp1   the position of the first character.
-      * @param qname the qualified name of the enum
+      * @param qname the name of the enum.
       * @param tags  the names of the tags.
       * @param sp2   the position of the last character.
       */
@@ -270,8 +270,8 @@ object ParsedAst {
       * A name with an optional alias.
       *
       * @param sp1   the position of the first character.
-      * @param ident the  name.
-      * @param alias the optional alias of the name.
+      * @param ident the name.
+      * @param alias the optional alias.
       * @param sp2   the position of the last character.
       */
     case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
