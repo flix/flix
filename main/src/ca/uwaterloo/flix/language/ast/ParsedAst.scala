@@ -246,10 +246,24 @@ object ParsedAst {
       */
     case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
-    // TODO: DOC
+    /**
+      * A use of a single qualified tag.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the qualified name of the enum
+      * @param tag   the name of the tag.
+      * @param sp2   the position of the last character.
+      */
     case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
 
-    // TODO: DOC
+    /**
+      * A use of multiple qualified tags.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the qualified name of the enum
+      * @param tags  the names of the tags.
+      * @param sp2   the position of the last character.
+      */
     case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[Name.Ident], sp2: SourcePosition) extends Use
 
     /**
