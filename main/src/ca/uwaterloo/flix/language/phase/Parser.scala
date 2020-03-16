@@ -324,7 +324,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Uses {
     def UseOne: Rule1[ParsedAst.Use.UseOne] = rule {
-      SP ~ (Names.LowerCaseQName | Names.UpperCaseQName) ~ SP ~> ParsedAst.Use.UseOne
+      SP ~ Names.Namespace ~ "." ~ LowerOrUpperName ~ SP ~> ParsedAst.Use.UseOne
     }
 
     def UseMany: Rule1[ParsedAst.Use.UseMany] = rule {

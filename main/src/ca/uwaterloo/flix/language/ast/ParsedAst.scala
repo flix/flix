@@ -230,10 +230,11 @@ object ParsedAst {
       * A use of a single qualified name.
       *
       * @param sp1   the position of the first character.
-      * @param qname the qualified name.
+      * @param nname the namespace.
+      * @param ident the name.
       * @param sp2   the position of the last character.
       */
-    case class UseOne(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends Use
+    case class UseOne(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
 
     /**
       * A use of multiple names from a namespace.
