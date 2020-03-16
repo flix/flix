@@ -394,10 +394,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       // the ident name.
       val name = qname.ident.name
 
-      // lookup the name in the variable and use environments.
+      // lookup the name in the var and use environments.
       (env0.get(name), uenv0.defs.get(name)) match {
         case (None, None) =>
-          // Case 1: the name is a reference to a top-level function.
+          // Case 1: the name is a top-level function.
           NamedAst.Expression.Def(qname, Type.freshTypeVar(), loc).toSuccess
         case (None, Some(actualQName)) =>
           // Case 2: the name is a use.
@@ -1453,13 +1453,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val name = alias.name
         uenv1.defs.get(name) match {
           case None => uenv1.addDef(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure // TODO: Introduce distinct errors?
+          case Some(otherQName) => NameError.DuplicateUseDef(name, otherQName.loc, qname.loc).toFailure
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
         uenv1.tpes.get(name) match {
           case None => uenv1.addTpe(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure // TODO: Introduce distinct errors?
+          case Some(otherQName) => NameError.DuplicateUseTyp(name, otherQName.loc, qname.loc).toFailure
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
         val name = alias.name

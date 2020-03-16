@@ -128,7 +128,7 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateUse.01") {
+  test("DuplicateUseDef.01") {
     val input =
       s"""
          |def main(): Bool =
@@ -145,10 +145,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateUse](result)
+    expectError[NameError.DuplicateUseDef](result)
   }
 
-  test("DuplicateUse.02") {
+  test("DuplicateUseDef.02") {
     val input =
       s"""
          |use A.f;
@@ -166,10 +166,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateUse](result)
+    expectError[NameError.DuplicateUseDef](result)
   }
 
-  test("DuplicateUse.03") {
+  test("DuplicateUseDef.03") {
     val input =
       s"""
          |use A.f;
@@ -187,10 +187,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateUse](result)
+    expectError[NameError.DuplicateUseDef](result)
   }
 
-  test("DuplicateUse.04") {
+  test("DuplicateUseDef.04") {
     val input =
       s"""
          |def main(): Bool =
@@ -202,8 +202,58 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateUse](result)
+    expectError[NameError.DuplicateUseDef](result)
   }
+
+  test("DuplicateUseTyp.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.Color;
+         |    use B.Color;
+         |    true
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTyp](result)
+  }
+
+  test("DuplicateUseTyp.02") {
+    val input =
+      s"""
+         |use A.Color;
+         |use B.Color;
+         |
+         |def main(): Bool = true
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTyp](result)
+  }
+
 
   test("DuplicateUseTag.01") {
     val input =
