@@ -8,10 +8,14 @@ import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
 import flix.runtime.fixpoint.ram.exp.bool.EqualsBoolExp;
 import flix.runtime.fixpoint.ram.exp.bool.NotBoolExp;
 import flix.runtime.fixpoint.ram.exp.bool.TubleInRelBoolExp;
+import flix.runtime.fixpoint.ram.exp.relation.BinaryRelationExp;
+import flix.runtime.fixpoint.ram.exp.relation.BinaryRelationOperator;
+import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 import flix.runtime.fixpoint.ram.stmt.*;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.symbol.RelSym;
 import flix.runtime.fixpoint.symbol.VarSym;
+import flix.runtime.fixpoint.term.AppTerm;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
 import flix.runtime.fixpoint.term.VarTerm;
@@ -43,20 +47,27 @@ public class MySolver {
             }
         }
         Stmt[][] ramRules = new Stmt[derived.keySet().size()][];
+        Stmt[] mergeStmts = new Stmt[derived.keySet().size()];
         int i = 0;
         for (RelSym relSym : derived.keySet()) {
             ramRules[i] = eval(relSym, derived);
+            TableName orig = new TableName(TableVersion.RESULT, relSym);
+            RelationExp mergeToOrig = new BinaryRelationExp(BinaryRelationOperator.UNION,
+                    orig,
+                    new TableName(TableVersion.DELTA, relSym));
+            mergeStmts[i] = new AssignStmt(orig, mergeToOrig);
             i++;
         }
         Stmt[] ramRulesFlat = Stream.of(ramRules).flatMap(Stream::of).toArray(Stmt[]::new);
-        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat).flatMap(Stream::of).toArray(Stmt[]::new));
+        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
         seqStmt.prettyPrint(System.out, 0);
     }
 
     /**
      * Vi har brug for at vi kan have en tuble som type datatype som hvor vi kan spørge om  eksistens i en tabel og indsætte i en tabel
-     *         Hvad nu hvis der optræder en literal (konstant) i Head eller body af en regel
-     * @param relSym The RelSym we evaluate rules for
+     * Hvad nu hvis der optræder en literal (konstant) i Head eller body af en regel
+     *
+     * @param relSym  The RelSym we evaluate rules for
      * @param derived A map from RelSym to all the rules that is used to derive it
      * @return An array of statements that should evaluate the rules deriving relSym
      */
@@ -89,7 +100,8 @@ public class MySolver {
 
     /**
      * Lav et kodeeksempel i stil med https://github.com/flix/flix/blob/master/main/src/ca/uwaterloo/flix/language/phase/Synthesize.scala#L574
-     * @param c The specific rule that we want to evaluate
+     *
+     * @param c           The specific rule that we want to evaluate
      * @param relTableMap A map telling the program which TableName a given PredSym should be represented by
      * @return A statement evaluating c
      */
@@ -116,16 +128,16 @@ public class MySolver {
                     cannot be determined by this predicate
                     TODO: Make sure that we do not traverse a negated predicate, since this is never necessary
                  */
-                if (!currentPred.isPositive()){
+                if (!currentPred.isPositive()) {
                     // This could perhaps be moved to the already existing loop across the terms
                     Term[] terms = currentPred.getTerms();
                     RamTerm[] ramTerms = new RamTerm[terms.length];
                     for (int i = 0; i < terms.length; i++) {
                         Term term = terms[i];
-                        if (term instanceof VarTerm){
+                        if (term instanceof VarTerm) {
                             VarSym sym = ((VarTerm) term).getSym();
                             ramTerms[i] = varSymToAttrTerm.get(sym).iterator().next();
-                        } else if (term instanceof LitTerm){
+                        } else if (term instanceof LitTerm) {
                             ramTerms[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
                         } else {
                             throw new UnsupportedOperationException("Right now negated AtomPred can only contain" +
@@ -156,10 +168,12 @@ public class MySolver {
                     } else if (currentTerm instanceof LitTerm) {
                         RamLitTerm literal = new RamLitTerm(((LitTerm) currentTerm).getFunction().apply(nullArray));
                         boolRestrictions.add(new EqualsBoolExp(attrTerm, literal));
-                    } else {
+                    } else if (currentTerm instanceof AppTerm) {
                         throw new UnsupportedOperationException("Right now the terms of predicates in the body" +
-                                " of a rule can only be VarTerms");
+                                " of a rule cannot be AppTerm");
+                        //TODO: Should it be possible? And what to do then?
                     }
+                    //TODO: Is it necessary to do something with WildTerm?
                 }
             } else {
                 throw new UnsupportedOperationException("We only support AtomPredicates");
@@ -195,13 +209,13 @@ public class MySolver {
                 resultStmt = new IfStmt(equalsBool, resultStmt);
             }
         }
-        for (BoolExp exp : boolRestrictions){
+        for (BoolExp exp : boolRestrictions) {
             resultStmt = new IfStmt(exp, resultStmt);
         }
 
         // I can now generate all the for each statements for all AtomPredicates
-        for (Predicate pred : c.getBodyPredicates()){
-            if (pred instanceof AtomPredicate){
+        for (Predicate pred : c.getBodyPredicates()) {
+            if (pred instanceof AtomPredicate) {
                 AtomPredicate currentPred = (AtomPredicate) pred;
                 resultStmt = new ForEachStmt(relTableMap.get(currentPred.getSym()),
                         atomToLocal.get(currentPred),
