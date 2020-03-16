@@ -1432,13 +1432,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val name = alias.name
         uenv1.defs.get(name) match {
           case None => uenv1.addDef(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure // TODO: Introduce distinct errors?
         }
       case (uenv1, WeededAst.Use.UseTyp(qname, alias, _)) =>
         val name = alias.name
         uenv1.tpes.get(name) match {
           case None => uenv1.addTpe(name, qname).toSuccess
-          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
+          case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure // TODO: Introduce distinct errors?
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
         val name = alias.name
