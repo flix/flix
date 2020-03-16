@@ -16,16 +16,21 @@ def testUseEnum03(): Bool =
 
 @test
 def testUseEnum04(): Bool =
-    use A.Color;
-    Color.Red == Color.Red
+    use A.Color.{Red, Blu};
+    Red != Blu
 
 @test
 def testUseEnum05(): Bool =
     use A.Color;
-    Color.Blu == Color.Blu
+    Color.Red == Color.Red
 
 @test
 def testUseEnum06(): Bool =
+    use A.Color;
+    Color.Blu == Color.Blu
+
+@test
+def testUseEnum07(): Bool =
     use A.Color;
     Color.Red != Color.Blu
 
