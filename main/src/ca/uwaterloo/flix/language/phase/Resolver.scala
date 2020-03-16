@@ -953,37 +953,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Finds the enum definition matching the given qualified name and tag.
+    * Finds the enum that maches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
-    /*
-     * Lookup the tag name in all enums across all namespaces.
-     */
-    val globalMatches = mutable.Set.empty[NamedAst.Enum]
-    for ((_, decls) <- prog0.enums) {
-      for ((enumName, decl) <- decls) {
-        if (decl.sym.namespace == Nil) {
-          for ((tagName, caze) <- decl.cases) {
-            if (tag.name == tagName) {
-              globalMatches += decl
-            }
-          }
-        }
-      }
-    }
+  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
 
-    // Case 1: Exact match found. Simply return it.
-    if (globalMatches.size == 1) {
-      return getEnumIfAccessible(globalMatches.head, ns, tag.loc)
-    }
+    //
+    // Determine where to search for the enum.
+    //
+    // If the tag is fully-qualified then use that name. Otherwise use the current namespace.
+    //
+    val namespace = if (qname.exists(_.isQualified)) qname.get.namespace else ns0
 
-    // Case 2: No or multiple matches found.
-    // Lookup the tag in either the fully qualified namespace or the current namespace.
-    val namespace = if (qname.exists(_.isQualified)) qname.get.namespace else ns
-
-    /*
-     * Lookup the tag name in all enums in the current namespace.
-     */
+    // Case 1: Find all matching enums in the namespace.
     val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
     for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Enum])) {
       for ((tagName, caze) <- decl.cases) {
@@ -993,29 +974,42 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     }
 
-    // Case 2.1: Exact match found in namespace. Simply return it.
+    // Case 1.1: Exact match found in the namespace.
     if (namespaceMatches.size == 1) {
-      return getEnumIfAccessible(namespaceMatches.head, ns, tag.loc)
+      return getEnumIfAccessible(namespaceMatches.head, ns0, tag.loc)
     }
 
-    // Case 2.2: No matches found in namespace.
-    if (namespaceMatches.isEmpty) {
-      return ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
-    }
-
-    // Case 2.3: Multiple matches found in namespace and no enum name.
-    if (qname.isEmpty) {
+    // Case 1.2: Multiple matches found in the namespace.
+    if (namespaceMatches.size > 1) {
       val locs = namespaceMatches.map(_.sym.loc).toList.sorted
-      return ResolutionError.AmbiguousTag(tag.name, ns, locs, tag.loc).toFailure
+      return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
     }
 
-    // Case 2.4: Multiple matches found in namespace and an enum name is available.
-    val filteredMatches = namespaceMatches.filter(_.sym.name == qname.get.ident.name)
-    if (filteredMatches.size == 1) {
-      return getEnumIfAccessible(filteredMatches.head, ns, tag.loc)
+    // Case 2: Find all matching enums in the root namespace.
+    val globalMatches = mutable.Set.empty[NamedAst.Enum]
+    for (decls <- prog0.enums.get(Name.RootNS)) {
+      for ((enumName, decl) <- decls) {
+        for ((tagName, caze) <- decl.cases) {
+          if (tag.name == tagName) {
+            globalMatches += decl
+          }
+        }
+      }
     }
 
-    ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
+    // Case 2.1: Exact match found in the root namespace.
+    if (globalMatches.size == 1) {
+      return getEnumIfAccessible(globalMatches.head, ns0, tag.loc)
+    }
+
+    // Case 2.2: Multiple matches found in the root namespace.
+    if (globalMatches.size > 1) {
+      val locs = globalMatches.map(_.sym.loc).toList.sorted
+      return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
+    }
+
+    // Case 3: No match found.
+    ResolutionError.UndefinedTag(tag.name, ns0, tag.loc).toFailure
   }
 
   /**
