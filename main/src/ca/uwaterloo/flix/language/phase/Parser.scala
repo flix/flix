@@ -327,8 +327,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.Namespace ~ "." ~ LowerOrUpperName ~ SP ~> ParsedAst.Use.UseOne
     }
 
-    def UseMany: Rule1[ParsedAst.Use.UseMany] = rule {
-      SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
+    def UseMany: Rule1[ParsedAst.Use.UseMany] = {
+      def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
+        SP ~ LowerOrUpperName ~ optional(WS ~ atomic("=>") ~ WS ~ LowerOrUpperName) ~ SP ~> ParsedAst.Use.NameAndAlias
+      }
+
+      rule {
+        SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
+      }
     }
 
     def UseOneTag: Rule1[ParsedAst.Use.UseOneTag] = rule {
@@ -343,10 +349,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
       }
-    }
-
-    def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
-      SP ~ LowerOrUpperName ~ optional(WS ~ atomic("=>") ~ WS ~ LowerOrUpperName) ~ SP ~> ParsedAst.Use.NameAndAlias
     }
 
     def LowerOrUpperName: Rule1[Name.Ident] = rule {
@@ -651,7 +653,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | LetMatchStar | UseIn | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
+      LetRec | LetMatch | LetMatchStar | LetUse | LetImport | IfThenElse | Match | LambdaMatch | TryCatch | Lambda | Tuple |
         RecordOperation | RecordLiteral | Block | RecordSelectLambda | NewChannel |
         GetChannel | SelectChannel | ProcessSpawn | ProcessPanic | ArrayLit | ArrayNew |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | ConstraintSet | FixpointSolve | FixpointFold |
@@ -703,7 +705,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetRec
     }
 
-    def UseIn: Rule1[ParsedAst.Expression.Use] = rule {
+    def LetUse: Rule1[ParsedAst.Expression.Use] = rule {
       SP ~ Use ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Use
     }
 
@@ -1398,8 +1400,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ oneOrMore(UpperCaseName).separatedBy("/") ~ SP ~>
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
-
-    // TODO: Cleanup in these names.
 
     def Annotation: Rule1[Name.Ident] = LowerCaseName
 
