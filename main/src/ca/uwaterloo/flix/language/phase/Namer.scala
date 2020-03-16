@@ -515,13 +515,34 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.Tag(enumOpt0, tag, expOpt, loc) =>
-      val enumOpt = enumOpt0 map {
-        case qname =>
-          if (qname.isUnqualified)
-            uenv0.tpes.getOrElse(qname.ident.name, qname)
-          else
-            qname
+    case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
+      val (enumOpt: Option[Name.QName], tag: Name.Ident) = enumOpt0 match {
+        case None =>
+          // Case 1: The tag is unqualified. Look it up in the use environment.
+          uenv0.tags.get(tag0.name) match {
+            case None =>
+              // Case 1.1: The tag is unqualified and does not appear in the use environment. Leave it as is.
+              (None, tag0)
+            case Some((actualQName, actualTag)) =>
+              // Case 1.2: The tag is unqualified and appears in the use environment. Use the actual qualified name and actual tag.
+              (Some(actualQName), actualTag)
+          }
+        case Some(qname) =>
+          // Case 2: The tag is qualified. Check if it fully-qualified.
+          if (qname.isUnqualified) {
+            // Case 2.1: The tag is only qualified by one name. Look it up in the use environment.
+            uenv0.tpes.get(qname.ident.name) match {
+              case None =>
+                // Case 2.1.1: The qualified name is not in the use environment. Do not touch it.
+                (Some(qname), tag0)
+              case Some(actualQName) =>
+                // Case 2.1.2: The qualified name is in the use environment. Use it instead.
+                (Some(actualQName), tag0)
+            }
+          } else {
+            // Case 2.2: The tag is fully-qualified. Do not touch it.
+            (Some(qname), tag0)
+          }
       }
 
       expOpt match {
