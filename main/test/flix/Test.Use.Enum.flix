@@ -21,16 +21,37 @@ def testUseEnum04(): Bool =
 
 @test
 def testUseEnum05(): Bool =
+    use A.Color.{Red => R};
+    R == R
+
+@test
+def testUseEnum06(): Bool =
+    use A.Color.{Blu => B};
+    B == B
+
+@test
+def testUseEnum07(): Bool =
+    use A.Color.{Red => R};
+    use A.Color.{Blu => B};
+    R != B
+
+@test
+def testUseEnum08(): Bool =
+    use A.Color.{Red => R, Blu => B};
+    R != B
+
+@test
+def testUseEnum09(): Bool =
     use A.Color;
     Color.Red == Color.Red
 
 @test
-def testUseEnum06(): Bool =
+def testUseEnum10(): Bool =
     use A.Color;
     Color.Blu == Color.Blu
 
 @test
-def testUseEnum07(): Bool =
+def testUseEnum11(): Bool =
     use A.Color;
     Color.Red != Color.Blu
 
