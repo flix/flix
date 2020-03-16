@@ -1441,21 +1441,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case Some(otherQName) => NameError.DuplicateUse(name, otherQName.loc, qname.loc).toFailure
         }
       case (uenv1, WeededAst.Use.UseTag(qname, tag, alias, loc)) =>
-        println(qname + "." + tag + "." + alias)
-        ???
+        val name = alias.name
+        uenv1.tags.get(name) match {
+          case None => uenv1.addTag(name, qname, tag.name).toSuccess
+          case Some((otherQName, otherTag)) => NameError.DuplicateUseTag(name, otherQName.loc, qname.loc).toFailure
+        }
     }
 
   /**
     * Companion object for the [[UseEnv]] class.
     */
   private object UseEnv {
-    val empty: UseEnv = UseEnv(Map.empty, Map.empty)
+    val empty: UseEnv = UseEnv(Map.empty, Map.empty, Map.empty)
   }
 
   /**
     * Represents a set of used names and their definitions.
     */
-  private case class UseEnv(defs: Map[String, Name.QName], tpes: Map[String, Name.QName]) {
+  private case class UseEnv(defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, String)]) {
     /**
       * Binds the def name `s` to the qualified name `n`.
       */
@@ -1466,6 +1469,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       */
     def addTpe(s: String, n: Name.QName): UseEnv = copy(tpes = tpes + (s -> n))
 
+    /**
+      * Binds the tag name `s` to the qualified name `n` and tag `t`.
+      */
+    def addTag(s: String, n: Name.QName, t: String): UseEnv = copy(tags = tags + (s -> (n, t)))
   }
 
 }
