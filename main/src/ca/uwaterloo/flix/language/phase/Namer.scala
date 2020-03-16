@@ -515,16 +515,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.Tag(enumOpt, tag, expOpt, loc) =>
-      val enum = lookupEnum(enumOpt, uenv0)
+    case WeededAst.Expression.Tag(enumOpt0, tag, expOpt, loc) =>
+      val enumOpt = enumOpt0 map {
+        case qname =>
+          if (qname.isUnqualified)
+            uenv0.tpes.getOrElse(qname.ident.name, qname)
+          else
+            qname
+      }
+
       expOpt match {
         case None =>
           // Case 1: The tag does not have an expression. Nothing more to be done.
-          NamedAst.Expression.Tag(enum, tag, None, Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
+          NamedAst.Expression.Tag(enumOpt, tag, None, Type.freshTypeVar(), Type.freshEffectVar(), loc).toSuccess
         case Some(exp) =>
           // Case 2: The tag has an expression. Perform naming on it.
           visitExp(exp, env0, uenv0, tenv0) map {
-            case e => NamedAst.Expression.Tag(enum, tag, Some(e), Type.freshTypeVar(), Type.freshEffectVar(), loc)
+            case e => NamedAst.Expression.Tag(enumOpt, tag, Some(e), Type.freshTypeVar(), Type.freshEffectVar(), loc)
           }
       }
 
@@ -1437,17 +1444,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         println(qname + "." + tag + "." + alias)
         ???
     }
-
-  /**
-    * Returns the result of looking up the optional enum in the use environment `uenv0`.
-    */
-  private def lookupEnum(enumOpt: Option[Name.QName], uenv0: UseEnv): Option[Name.QName] = enumOpt map {
-    case qname if qname.isUnqualified => uenv0.tpes.get(qname.ident.name) match {
-      case None => qname
-      case Some(actualQName) => actualQName
-    }
-    case qname => qname
-  }
 
   /**
     * Companion object for the [[UseEnv]] class.
