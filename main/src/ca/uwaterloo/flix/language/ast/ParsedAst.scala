@@ -246,6 +246,12 @@ object ParsedAst {
       */
     case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
 
+    // TODO: DOC
+    case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
+
+    // TODO: DOC
+    case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[Name.Ident], sp2: SourcePosition) extends Use
+
     /**
       * A name with an optional alias.
       *

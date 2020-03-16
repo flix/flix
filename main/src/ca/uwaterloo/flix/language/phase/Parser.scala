@@ -319,7 +319,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Uses                                                                    //
   /////////////////////////////////////////////////////////////////////////////
   def Use: Rule1[ParsedAst.Use] = rule {
-    atomic("use") ~ WS ~ (Uses.UseOne | Uses.UseMany)
+    atomic("use") ~ WS ~ (Uses.UseOneTag | Uses.UseManyTag | Uses.UseOne | Uses.UseMany)
   }
 
   object Uses {
@@ -329,6 +329,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UseMany: Rule1[ParsedAst.Use.UseMany] = rule {
       SP ~ Names.Namespace ~ "." ~ "{" ~ zeroOrMore(NameAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseMany
+    }
+
+    def UseOneTag: Rule1[ParsedAst.Use.UseOneTag] = rule {
+      SP ~ Names.QualifiedType ~ "." ~ Names.Tag ~ SP ~> ParsedAst.Use.UseOneTag
+    }
+
+    def UseManyTag: Rule1[ParsedAst.Use.UseManyTag] = rule {
+      SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(Names.Tag).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
     }
 
     def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
@@ -1385,6 +1393,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         ((sp1: SourcePosition, parts: Seq[Name.Ident], sp2: SourcePosition) => Name.NName(sp1, parts.toList, sp2))
     }
 
+    // TODO: Cleanup in these names.
+
     def Annotation: Rule1[Name.Ident] = LowerCaseName
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
@@ -1397,13 +1407,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LowerCaseName | GreekName | MathName | OperatorName
     }
 
+    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName
+
     def Eff: Rule1[Name.Ident] = LowerCaseName
 
     def Field: Rule1[Name.Ident] = LowerCaseName
 
     def Hole: Rule1[Name.Ident] = LowerCaseName
-
-    def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
 

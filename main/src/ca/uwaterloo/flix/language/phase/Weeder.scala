@@ -299,6 +299,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             WeededAst.Use.UseTyp(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
       }
       us.toSuccess
+
+    case (ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2)) => Nil.toSuccess // TODO
+
+    case (ParsedAst.Use.UseManyTag(sp1, qname, tags, sp2)) => Nil.toSuccess // TODO
   }
 
   /**
