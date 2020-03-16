@@ -1003,22 +1003,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
-
-        // TODO: Refactor this back to the way it was.
-        (uenv0.tpes.get(name), tenv0.get(name)) match {
+        (tenv0.get(name), uenv0.tpes.get(name)) match {
           case (None, None) =>
-            // Case 1: the name is a reference to a top-level type.
+            // Case 1: the name is top-level type.
             NamedAst.Type.Ambiguous(qname, loc).toSuccess
 
-          case (None, Some(tvar)) =>
+          case (Some(tvar), None) =>
             // Case 2: the name is a type variable.
             NamedAst.Type.Var(tvar, loc).toSuccess
 
-          case (Some(actualQName), None) =>
+          case (None, Some(actualQName)) =>
             // Case 3: the name is a use.
             NamedAst.Type.Ambiguous(actualQName, loc).toSuccess
 
-          case (Some(qname), Some(tvar)) =>
+          case (Some(tvar), Some(qname)) =>
             // Case 4: the name is ambiguous.
             throw InternalCompilerException(s"Unexpected ambiguous type.")
         }
@@ -1477,7 +1475,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Represents a set of used names and their definitions.
+    * Represents an environment of "imported" names, including defs, types, and tags.
     */
   private case class UseEnv(defs: Map[String, Name.QName], tpes: Map[String, Name.QName], tags: Map[String, (Name.QName, Name.Ident)]) {
     /**
