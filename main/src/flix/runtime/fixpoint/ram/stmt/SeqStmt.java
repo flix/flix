@@ -24,6 +24,5 @@ public final class SeqStmt implements Stmt {
                 stream.print(";\n");
             }
         }
-        stream.print('\n');
     }
 }

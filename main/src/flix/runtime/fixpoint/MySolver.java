@@ -4,10 +4,7 @@ import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.*;
-import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
-import flix.runtime.fixpoint.ram.exp.bool.EqualsBoolExp;
-import flix.runtime.fixpoint.ram.exp.bool.NotBoolExp;
-import flix.runtime.fixpoint.ram.exp.bool.TubleInRelBoolExp;
+import flix.runtime.fixpoint.ram.exp.bool.*;
 import flix.runtime.fixpoint.ram.exp.relation.BinaryRelationExp;
 import flix.runtime.fixpoint.ram.exp.relation.BinaryRelationOperator;
 import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
@@ -20,6 +17,7 @@ import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
 import flix.runtime.fixpoint.term.VarTerm;
 
+import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -46,11 +44,11 @@ public class MySolver {
                 factRelSyms.add(relSym);
             }
         }
-        Stmt[][] ramRules = new Stmt[derived.keySet().size()][];
+        Stmt[][] ramIntoRules = new Stmt[derived.keySet().size()][];
         Stmt[] mergeStmts = new Stmt[derived.keySet().size()];
         int i = 0;
         for (RelSym relSym : derived.keySet()) {
-            ramRules[i] = eval(relSym, derived);
+            ramIntoRules[i] = eval(relSym, derived);
             TableName orig = new TableName(TableVersion.RESULT, relSym);
             RelationExp mergeToOrig = new BinaryRelationExp(BinaryRelationOperator.UNION,
                     orig,
@@ -58,9 +56,38 @@ public class MySolver {
             mergeStmts[i] = new AssignStmt(orig, mergeToOrig);
             i++;
         }
-        Stmt[] ramRulesFlat = Stream.of(ramRules).flatMap(Stream::of).toArray(Stmt[]::new);
-        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
-        seqStmt.prettyPrint(System.out, 0);
+        Stmt[] ramRulesFlat = Stream.of(ramIntoRules).flatMap(Stream::of).toArray(Stmt[]::new);
+
+        // Now We define the inner while loop that will be the main part of the algorithm
+
+        // First we define the condition of the loop
+        i = 0;
+        Stmt[] saveLastIteration = new Stmt[derived.keySet().size()];
+        BoolExp whileCondition = null;
+        for (RelSym rel : derived.keySet()) {
+            TableName mergeInto = new TableName(TableVersion.NEW, rel);
+            TableName delta = new TableName(TableVersion.DELTA, rel);
+            saveLastIteration[i] = new AssignStmt(mergeInto, delta);
+
+            if (whileCondition != null) {
+                whileCondition = new BinaryBoolExp(BinaryBoolOperator.OR, whileCondition, new NotBoolExp(new EmptyBoolExp(delta)));
+            } else {
+                whileCondition = new NotBoolExp(new EmptyBoolExp(delta));
+            }
+
+            i++;
+        }
+
+        // Then we define the evaluation
+
+
+        SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
+        Stmt mainWhile = new WhileStmt(whileCondition, whileBody);
+
+        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat, mergeStmts, new Stmt[]{mainWhile}).flatMap(Stream::of).toArray(Stmt[]::new));
+        PrintStream stream = System.out;
+        seqStmt.prettyPrint(stream, 0);
+        stream.print('\n');
     }
 
     /**
