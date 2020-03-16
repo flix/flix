@@ -1099,7 +1099,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(qname, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
+        (lookupEnum(qname, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
           // Case 1: Not Found.
           case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
@@ -1127,7 +1127,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     }
 
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
-      // Lookup the enum using the namespace.
+      // Disambiguate type.
+      //(lookupEnum(qname, ns0, root), lookupTypeAlias()) // TODO
       val decls = root.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
@@ -1266,11 +1267,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
-  private def lookupTypeAlias(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
-    val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
-    typeAliasesInNamespace.get(typeName) orElse {
-      val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
-      typeAliasesInRootNS.get(typeName)
+  private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+      typeAliasesInNamespace.get(qname.ident.name) orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+        typeAliasesInRootNS.get(qname.ident.name)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      root.typealiases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
