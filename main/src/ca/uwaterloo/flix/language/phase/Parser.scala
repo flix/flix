@@ -335,8 +335,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ Names.QualifiedType ~ "." ~ Names.Tag ~ SP ~> ParsedAst.Use.UseOneTag
     }
 
-    def UseManyTag: Rule1[ParsedAst.Use.UseManyTag] = rule {
-      SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(Names.Tag).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+    def UseManyTag: Rule1[ParsedAst.Use.UseManyTag] = {
+      def TagAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {
+        SP ~ Names.Tag ~ optional(WS ~ atomic("=>") ~ WS ~ Names.Tag) ~ SP ~> ParsedAst.Use.NameAndAlias
+      }
+
+      rule {
+        SP ~ Names.QualifiedType ~ "." ~ "{" ~ zeroOrMore(TagAndAlias).separatedBy(optWS ~ "," ~ optWS) ~ "}" ~ SP ~> ParsedAst.Use.UseManyTag
+      }
     }
 
     def NameAndAlias: Rule1[ParsedAst.Use.NameAndAlias] = rule {

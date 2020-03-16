@@ -60,6 +60,8 @@ object WeededAst {
 
     case class UseTyp(qname: Name.QName, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
 
+    case class UseTag(qname: Name.QName, tag: Name.Ident, alias: Name.Ident, loc: SourceLocation) extends WeededAst.Use
+
   }
 
 
