@@ -232,8 +232,22 @@ class TestNamer extends FunSuite with TestUtils {
   test("DuplicateUseTag.02") {
     val input =
       s"""
+         |use A.Color.Red;
+         |use B.Color.Red;
+         |def main(): Bool =
+         |    Red == Red
          |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
          |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[NameError.DuplicateUseTag](result)
@@ -243,7 +257,22 @@ class TestNamer extends FunSuite with TestUtils {
     val input =
       s"""
          |
+         |use A.Color.Red;
+         |def main(): Bool =
+         |    use B.Color.Red;
+         |    Red == Red
          |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[NameError.DuplicateUseTag](result)

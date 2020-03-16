@@ -300,10 +300,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
       us.toSuccess
 
-    case (ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2)) =>
+    case ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2) =>
       List(WeededAst.Use.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
 
-    case (ParsedAst.Use.UseManyTag(sp1, qname, tags, sp2)) =>
+    case ParsedAst.Use.UseManyTag(sp1, qname, tags, sp2) =>
       val us = tags.foldRight(Nil: List[WeededAst.Use]) {
         case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
           val alias = aliasOpt.getOrElse(ident)
