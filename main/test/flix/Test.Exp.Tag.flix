@@ -2,23 +2,71 @@ namespace Test/Exp/Tag {
 
     enum A {
         case OfUnit(Unit)
-//        case OfBool(Bool)
-//        case OfChar(Char)
-//        case OfFloat32(Float32)
-//        case OfFloat64(Float64)
-//        case OfInt8(Int8)
+        case OfBool(Bool)
+        case OfChar(Char)
+        case OfFloat32(Float32)
+        case OfFloat64(Float64)
+        case OfInt8(Int8)
     }
 
     @test
-    def testTag01(): A = OfUnit(())
+    def testUnitTag01(): A = OfUnit(())
 
     @test
-    def testTag02(): A = A.OfUnit(())
+    def testUnitTag02(): A = A.OfUnit(())
 
     @test
-    def testTag03(): A = Test/Exp/Tag/A.OfUnit(())
+    def testUnitTag03(): A = Test/Exp/Tag/A.OfUnit(())
 
 
+    @test
+    def testBoolTag01(): A = OfBool(true)
+
+    @test
+    def testBoolTag02(): A = A.OfBool(true)
+
+    @test
+    def testBoolTag03(): A = Test/Exp/Tag/A.OfBool(true)
+
+
+    @test
+    def testCharTag01(): A = OfChar('a')
+
+    @test
+    def testCharTag02(): A = A.OfChar('a')
+
+    @test
+    def testCharTag03(): A = Test/Exp/Tag/A.OfChar('a')
+
+
+    @test
+    def testFloat32Tag01(): A = OfFloat32(21.42f32)
+
+    @test
+    def testFloat32Tag02(): A = A.OfFloat32(21.42f32)
+
+    @test
+    def testFloat32Tag03(): A = Test/Exp/Tag/A.OfFloat32(21.42f32)
+
+
+    @test
+    def testFloat64Tag01(): A = OfFloat64(21.42f64)
+
+    @test
+    def testFloat64Tag02(): A = A.OfFloat64(21.42f64)
+
+    @test
+    def testFloat64Tag03(): A = Test/Exp/Tag/A.OfFloat64(21.42f64)
+
+
+    @test
+    def testInt8Tag01(): A = OfInt8(42i8)
+
+    @test
+    def testInt8Tag02(): A = A.OfInt8(42i8)
+
+    @test
+    def testInt8Tag03(): A = Test/Exp/Tag/A.OfInt8(42i8)
 
 //  /**
 //    * Represents the Int16 type.
