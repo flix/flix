@@ -156,4 +156,25 @@ namespace Test/Exp/Tag {
     @test
     def testTupleTag03(): A = Test/Exp/Tag/A.OfTuple(true, 'a', "Hello World!")
 
+    pub enum Suit {
+        case Hearts, Diamonds, Clubs, Spades
+    }
+
+    pub enum Rank {
+        case N(Int), Jack, Queen, King, Ace
+    }
+
+    pub enum Card {
+        case Card(Suit, Rank)
+    }
+
+    @test
+    def testNestedTag01(): Card = Card(Hearts, N(5))
+
+    @test
+    def testNestedTag02(): Card = Card.Card(Suit.Hearts, Rank.N(5))
+
+    @test
+    def testNestedTag03(): Card = Test/Exp/Tag/Card.Card(Test/Exp/Tag/Suit.Hearts, Test/Exp/Tag/Rank.N(5))
+
 }
