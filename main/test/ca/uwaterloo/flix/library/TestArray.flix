@@ -3428,3 +3428,154 @@ def mkStringBy04(): Bool & Impure =
     let a = [1,2,3];
     let s = Array.mkStringBy(Int32.toString, ",", a);
     s == "1,2,3"
+
+/////////////////////////////////////////////////////////////////////////////
+// sortBy                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def sortBy01(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def sortBy02(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [0]);
+    Array.sameElements(a, [0])
+
+@test
+def sortBy03(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [0,1]);
+    Array.sameElements(a, [0,1])
+
+@test
+def sortBy04(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [1,0]);
+    Array.sameElements(a, [0,1])
+
+@test
+def sortBy05(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [1,1]);
+    Array.sameElements(a, [1,1])
+
+@test
+def sortBy06(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [0,1,2,3,4,5]);
+    Array.sameElements(a, [0,1,2,3,4,5])
+
+@test
+def sortBy07(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [5,4,3,2,1,0]);
+    Array.sameElements(a, [0,1,2,3,4,5])
+
+@test
+def sortBy08(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [5,3,0,4,1,2]);
+    Array.sameElements(a, [0,1,2,3,4,5])
+
+@test
+def sortBy09(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x < y) -1 else 1, [2,3,0,4,1,2]);
+    Array.sameElements(a, [0,1,2,2,3,4])
+
+@test
+def sortBy10(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [0,1,2,3,4,5]);
+    Array.sameElements(a, [5,4,3,2,1,0])
+
+@test
+def sortBy11(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [5,4,3,2,1,0]);
+    Array.sameElements(a, [5,4,3,2,1,0])
+
+@test
+def sortBy12(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [5,3,0,4,1,2]);
+    Array.sameElements(a, [5,4,3,2,1,0])
+
+@test
+def sortBy13(): Bool & Impure =
+    let a = Array.sortBy((x,y) -> if (x > y) -1 else 1, [2,3,0,4,1,2]);
+    Array.sameElements(a, [4,3,2,2,1,0])
+
+/////////////////////////////////////////////////////////////////////////////
+// sortByInPlace                                                           //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def sortByInPlace01(): Bool & Impure =
+    let a = []: Array[Int32];
+    Array.sortBy((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def sortByInPlace02(): Bool & Impure =
+    let a = [0];
+     Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0])
+
+@test
+def sortByInPlace03(): Bool & Impure =
+    let a = [0,1];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0,1])
+
+@test
+def sortByInPlace04(): Bool & Impure =
+    let a = [1,0];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0,1])
+
+@test
+def sortByInPlace05(): Bool & Impure =
+    let a = [1,1];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [1,1])
+
+@test
+def sortByInPlace06(): Bool & Impure =
+    let a = [0,1,2,3,4,5];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0,1,2,3,4,5])
+
+@test
+def sortByInPlace07(): Bool & Impure =
+    let a = [5,4,3,2,1,0];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0,1,2,3,4,5])
+
+@test
+def sortByInPlace08(): Bool & Impure =
+    let a = [5,3,0,4,1,2];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0,1,2,3,4,5])
+
+@test
+def sortByInPlace09(): Bool & Impure =
+    let a = [2,3,0,4,1,2];
+    Array.sortByInPlace((x,y) -> if (x < y) -1 else 1, a);
+    Array.sameElements(a, [0,1,2,2,3,4])
+
+@test
+def sortByInPlace10(): Bool & Impure =
+    let a = [0,1,2,3,4,5];
+    Array.sortByInPlace((x,y) -> if (x > y) -1 else 1, a);
+    Array.sameElements(a, [5,4,3,2,1,0])
+
+@test
+def sortByInPlace11(): Bool & Impure =
+    let a = [5,4,3,2,1,0];
+    Array.sortByInPlace((x,y) -> if (x > y) -1 else 1, a);
+    Array.sameElements(a, [5,4,3,2,1,0])
+
+@test
+def sortByInPlace12(): Bool & Impure =
+    let a = [5,3,0,4,1,2];
+    Array.sortByInPlace((x,y) -> if (x > y) -1 else 1, a);
+    Array.sameElements(a, [5,4,3,2,1,0])
+
+@test
+def sortByInPlace13(): Bool & Impure =
+    let a = [2,3,0,4,1,2];
+    Array.sortByInPlace((x,y) -> if (x > y) -1 else 1, a);
+    Array.sameElements(a, [4,3,2,2,1,0])

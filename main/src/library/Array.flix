@@ -1137,18 +1137,18 @@ namespace Array {
         let alen = Array.length(a);
         let blen = Array.length(b);
         if (alen == blen)
-            sameElementsHelper(a, b, alen, 0)
+            sameElementsHelper(a, b, alen, 0) as & Pure
         else
             false
 
     ///
     /// Helper for `sameElements`.
     ///
-    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Pure =
+    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
             true
         else {
-            if (a[i] as a & Pure != b[i] as a & Pure) false else sameElementsHelper(a, b, len, i+1)
+            if (a[i] != b[i]) false else sameElementsHelper(a, b, len, i+1)
         }
 
     ///
@@ -1325,25 +1325,36 @@ namespace Array {
         pos + Array.length(sub)
 
     ///
-    /// Sort array `a` with the comparing function `f`.
+    /// Sort array `a` with the comparing function `f`, returning a sorted copy.
     ///
-    pub def quicksortBy(f: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
+    /// The sort implementation is quicksort.
+    ///
+    pub def sortBy(f: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
         let len = Array.length(a);
         let b = Array.slice(a, 0, len);
-        quicksortByInPlace(f, b);
+        sortByInPlace(f, b);
         b
 
-    pub def quicksortByInPlace(comparing: (a,a) -> Int32, a: Array[a]): Unit & Impure =
+    ///
+    /// Sort array `a` with the comparing function `f`, mutating `a` in place.
+    ///
+    /// The sort implementation is quicksort.
+    ///
+    pub def sortByInPlace(comparing: (a,a) -> Int32, a: Array[a]): Unit & Impure =
         let len = Array.length(a);
-        if (len == 0) () else quicksortHelper(comparing, a, 0, len-1)
+        if (len == 0) () else sortByInPlaceHelper(comparing, a, 0, len-1)
 
-    def quicksortHelper(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    ///
+    /// Helper for `sortByInPlace`.
+    ///
+    def sortByInPlaceHelper(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo < hi) {
-            let p = quicksortPartition(comparing, a, lo, hi);
-            quicksortHelper(comparing, a, lo, p-1);
-            quicksortHelper(comparing, a, p+1, hi)
+            let p = sortByPartition(comparing, a, lo, hi);
+            sortByInPlaceHelper(comparing, a, lo, p-1);
+            sortByInPlaceHelper(comparing, a, p+1, hi)
         }
         else ()
+
     ///
     /// Swap the elements at `i` and `j`.
     ///
@@ -1356,22 +1367,30 @@ namespace Array {
         a[j] = x;
         ()
 
+    ///
+    /// A forloop with an accumulator.
+    ///
     /// precondition: lo <= hi
-    def forLoop(lo: Int32, hi: Int32, ac: a, f: (Int32,a) -> a & e): a & e =
+    ///
+    def forWithAccum(lo: Int32, hi: Int32, ac: a, f: (Int32, a) -> a & e): a & e =
         if (lo == hi)
-            f(lo,ac)
+            f(lo, ac)
         else {
             let ac1 = f(lo, ac);
-            forLoop(lo+1, hi, ac1, f)
+            forWithAccum(lo+1, hi, ac1, f)
         }
 
-    def quicksortPartition(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    ///
+    /// Partition step of the quicksort algorithm.
+    ///
+    def sortByPartition(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
-        let i = forLoop(lo, hi, lo, (j,ix) ->
+        let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (comparing(a[j], pivot) < 0) {
                 swapInPlace(a, ix, j);
                 ix+1
             } else ix);
         swapInPlace(a, i, hi);
         i
+
 }
