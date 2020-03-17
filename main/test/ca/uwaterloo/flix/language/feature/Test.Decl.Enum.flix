@@ -6,7 +6,7 @@ enum SingleCaseEnum {
 def testEnum01(): SingleCaseEnum = Single
 
 @test
-def testEnum02(): SingleCaseEnum = A.Single
+def testEnum02(): SingleCaseEnum = SingleCaseEnum.Single
 
 enum TwoCaseEnum {
     case One,

@@ -12,7 +12,7 @@ enum ConstProp01 { case Top01, case Val01(Int), case Bot01 }
 def f01(): ConstProp01 = ConstProp01.Top01
 
 @test
-def testTag01(): Bool = assertEq!(f01(), ConstProp1.Top01)
+def testTag01(): Bool = assertEq!(f01(), ConstProp01.Top01)
 
 def f02(): ConstProp01 = ConstProp01.Val01(42)
 

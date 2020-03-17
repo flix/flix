@@ -78,6 +78,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Reference.Precedence", "main/test/flix/Test.Exp.Reference.Precedence.flix"),
 
   //
+  // Tag.
+  //
+  new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
+
+  //
   // Stm.
   //
   new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),

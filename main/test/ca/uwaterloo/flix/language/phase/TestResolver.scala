@@ -615,28 +615,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UndefinedTag.01") {
     val input =
       s"""
-         |namespace A {
-         |  def f(): Int = Foo.Bar
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedTag](result)
-  }
-
-  test("UndefinedTag.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  def f(): Int = Foo/Bar.Qux(true)
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedTag](result)
-  }
-
-  test("UndefinedTag.03") {
-    val input =
-      s"""
          |enum A {
          |  case Foo
          |}
@@ -648,7 +626,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UndefinedTag.04") {
+  test("UndefinedTag.02") {
     val input =
       s"""
          |namespace A {
@@ -664,7 +642,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UndefinedTag.05") {
+  test("UndefinedTag.03") {
     val input =
       s"""
          |namespace A {
@@ -714,5 +692,26 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("UndefinedType.03") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): Int = Foo.Bar
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UndefinedType.04") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): Int = Foo/Bar.Qux(true)
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedType](result)
+  }
 
 }
