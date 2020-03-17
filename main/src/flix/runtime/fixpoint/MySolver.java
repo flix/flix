@@ -78,7 +78,12 @@ public class MySolver {
             i++;
         }
 
-        // Then we define the evaluation
+        // Then we define the evaluation TODO: There is no real reason for 3 loops through the keyset, just for convenience while writing
+        i = 0;
+        Stmt[][] iterationEvaluation = new Stmt[derived.keySet().size()][];
+        for (RelSym rel : derived.keySet()) {
+            iterationEvaluation[i] = evalIncr(rel, derived.get(rel));
+        }
 
 
         SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
@@ -88,6 +93,25 @@ public class MySolver {
         PrintStream stream = System.out;
         seqStmt.prettyPrint(stream, 0);
         stream.print('\n');
+    }
+
+    /**
+     * This method creates the statements for incremental evaluation of the rules
+     *
+     * @param rel         The relation that is being evaluated
+     * @param constraints The constraints defining the rules for the relation
+     * @return An array of statements evaluating the rules. Should be 1 ForEachStmt for each rule
+     */
+    private static Stmt[] evalIncr(RelSym rel, ArrayList<Constraint> constraints) {
+        Stmt[] result = new Stmt[constraints.size()];
+
+        for (int i = 0; i < constraints.size(); i++) {
+            Constraint constraint = constraints.get(i);
+            result[i] = evalRuleIncr(constraint);
+        }
+
+        assert result.length == constraints.size();
+        return result;
     }
 
     /**
