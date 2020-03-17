@@ -99,6 +99,8 @@ object BenchmarkCompiler {
     * Adds the compiler test cases.
     */
   private def addCompilerTests(flix: Flix): Unit = {
+    flix.addPath("main/test/flix/Test.Eff.Polymorphism.flix")
+
     flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
@@ -127,6 +129,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
     flix.addPath("main/test/flix/Test.Exp.Stm.flix")
+    flix.addPath("main/test/flix/Test.Exp.Tag.flix")
 
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")

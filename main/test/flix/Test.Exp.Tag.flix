@@ -177,4 +177,47 @@ namespace Test/Exp/Tag {
     @test
     def testNestedTag03(): Card = Test/Exp/Tag/Card.Card(Test/Exp/Tag/Suit.Hearts, Test/Exp/Tag/Rank.N(5))
 
+    pub enum Poly[a, b] {
+        case None,
+        case This(a)
+        case That(b)
+        case Both(a, b)
+    }
+
+    @test
+    def testPolyTag01(): Poly[Int32, String] = None
+
+    @test
+    def testPolyTag02(): Poly[Int32, String] = Poly.None
+
+    @test
+    def testPolyTag03(): Poly[Int32, String] = Test/Exp/Tag/Poly.None
+
+    @test
+    def testPolyTag04(): Poly[Int32, String] = This(123)
+
+    @test
+    def testPolyTag05(): Poly[Int32, String] = Poly.This(123)
+
+    @test
+    def testPolyTag06(): Poly[Int32, String] = Test/Exp/Tag/Poly.This(123)
+
+    @test
+    def testPolyTag07(): Poly[Int32, String] = That("Hello World!")
+
+    @test
+    def testPolyTag08(): Poly[Int32, String] = Poly.That("Hello World!")
+
+    @test
+    def testPolyTag09(): Poly[Int32, String] = Test/Exp/Tag/Poly.That("Hello World!")
+
+    @test
+    def testPolyTag10(): Poly[Int32, String] = Both(123, "Hello World!")
+
+    @test
+    def testPolyTag11(): Poly[Int32, String] = Poly.Both(123, "Hello World!")
+
+    @test
+    def testPolyTag12(): Poly[Int32, String] = Test/Exp/Tag/Poly.Both(123, "Hello World!")
+
 }
