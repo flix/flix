@@ -52,6 +52,16 @@ object Options {
     * Default test options.
     */
   val DefaultTest: Options = Default.copy(core = false, test = true, verbosity = Verbosity.Silent)
+
+  /**
+    * Default test options with the standard library.
+    */
+  val TestWithLibrary: Options = DefaultTest
+
+  /**
+    * Default test options without the standard library.
+    */
+  val TestWithoutLibrary: Options = DefaultTest.copy(core = true)
 }
 
 /**

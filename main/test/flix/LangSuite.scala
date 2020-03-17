@@ -15,7 +15,6 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Eff.Polymorphism", "main/test/flix/Test.Eff.Polymorphism.flix"),
 
-
   //
   // Equality.
   //
@@ -81,6 +80,7 @@ class LangSuite extends Suites(
   // Tag.
   //
   new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.flix"),
+  new FlixTest("Test.Exp.Tag", "main/test/flix/Test.Exp.Tag.Lambda.flix"),
 
   //
   // Stm.
@@ -92,7 +92,6 @@ class LangSuite extends Suites(
   //
   new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
   new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.flix"),
-  new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.Lambda.flix"),
   new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 
 )
