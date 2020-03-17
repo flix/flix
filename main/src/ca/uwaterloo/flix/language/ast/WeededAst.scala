@@ -64,7 +64,6 @@ object WeededAst {
 
   }
 
-
   sealed trait Expression {
     def loc: SourceLocation
   }

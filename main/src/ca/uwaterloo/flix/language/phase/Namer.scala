@@ -417,9 +417,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val tpe = Type.freshTypeVar()
       NamedAst.Expression.Hole(name, tpe, Type.freshTypeVar(), loc).toSuccess
 
-    case WeededAst.Expression.Use(uses, exp, loc) =>
-      flatMapN(mergeUseEnvs(uses, uenv0)) {
-        case uenv1 => visitExp(exp, env0, uenv1, tenv0)
+    case WeededAst.Expression.Use(uses0, exp, loc) =>
+      val uses = uses0.map {
+        case WeededAst.Use.UseDef(qname, alias, loc) => NamedAst.Use.UseDef(qname, alias, loc)
+        case WeededAst.Use.UseTyp(qname, alias, loc) => NamedAst.Use.UseTyp(qname, alias, loc)
+        case WeededAst.Use.UseTag(qname, tag, alias, loc) => NamedAst.Use.UseTag(qname, tag, alias, loc)
+      }
+
+      flatMapN(mergeUseEnvs(uses0, uenv0)) {
+        case uenv1 => mapN(visitExp(exp, env0, uenv1, tenv0)) {
+          case e => uses.foldRight(e) {
+            case (use, acc) => NamedAst.Expression.Use(use, acc, loc)
+          }
+        }
       }
 
     case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess

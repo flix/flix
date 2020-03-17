@@ -280,7 +280,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         }
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
-          lookupQName(qname, ns0, prog0) map {
+          lookupDef(qname, ns0, prog0) map {
             case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, loc)
           }
 
@@ -290,6 +290,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             case Some(name) => Symbol.mkHoleSym(ns0, name)
           }
           ResolvedAst.Expression.Hole(sym, tpe, evar, loc).toSuccess
+
+        case NamedAst.Expression.Use(use, exp, loc) =>
+          // Lookup the used name to ensure that it exists.
+          use match {
+            case NamedAst.Use.UseDef(qname, _, _) =>
+              flatMapN(lookupDef(qname, ns0, prog0))(_ => visit(exp, tenv0))
+
+            case NamedAst.Use.UseTyp(qname, _, _) =>
+              flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, prog0))(_ => visit(exp, tenv0))
+
+            case NamedAst.Use.UseTag(qname, tag, _, _) =>
+              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, prog0))(_ => visit(exp, tenv0))
+          }
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
 
@@ -920,7 +933,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupQName(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[LookupResult, ResolutionError] = {
+  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[LookupResult, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, prog0)
 
     defOpt match {
