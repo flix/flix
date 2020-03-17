@@ -339,7 +339,8 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       if (metaVars.contains(sym)) {
         // Case 1: We are unifying a meta-variable.
         // Determine if we can unify the type of the meta-variable and the expression.
-        if (Unification.isInstance(varTyp, expTyp))
+        // NB: The expression must be pure to ensure soundness.
+        if (exp0.eff == Type.Pure && Unification.isInstance(varTyp, expTyp))
           Some(Substitution.singleton(sym, exp0))
         else
           None
