@@ -358,6 +358,19 @@ namespace RBTree {
         if (b >= e) empty() else rangeHelper(b, e - 1, empty())
 
     ///
+    /// Returns a tree containing `n` random nodes.
+    ///
+    /// TODO: Move to test code
+    pub def random(n: Int32): RBTree[Int32] & Impure = {
+        let seed = match Int64.fromString("42") {
+            case Ok(s) => s
+            case _ => panic "no seed given"
+        };
+        let r = Random.newWithSeed(seed);
+        List.fold((acc, x) -> RBTree.insert(x, acc), RBTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
+    }
+
+    ///
     /// Returns `true` if and only if the binary search tree invariant holds.
     ///
     pub def binarySearchTreeInvariantHolds(tree: RBTree[a]): Bool = match tree {
