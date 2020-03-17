@@ -78,6 +78,21 @@ namespace Test/Use/Tag {
         use Test/Use/Tag/A/B.Currency.{USD, CAD};
         USD != CAD
 
+    @test
+    def testUseEnum16(): Bool =
+        use Test/Use/Tag/A/B.Currency;
+        Currency.CAD == Currency.CAD
+
+    @test
+    def testUseEnum17(): Bool =
+        use Test/Use/Tag/A/B.Currency;
+        Currency.USD == Currency.USD
+
+    @test
+    def testUseEnum18(): Bool =
+        use Test/Use/Tag/A/B.Currency;
+        Currency.CAD != Currency.USD
+
     namespace A {
         pub enum Color {
             case Red,
