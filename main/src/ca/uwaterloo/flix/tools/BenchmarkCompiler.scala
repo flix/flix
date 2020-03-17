@@ -130,6 +130,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
     flix.addPath("main/test/flix/Test.Exp.Stm.flix")
     flix.addPath("main/test/flix/Test.Exp.Tag.flix")
+    flix.addPath("main/test/flix/Test.Use.Tag.flix")
 
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")

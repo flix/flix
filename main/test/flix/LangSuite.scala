@@ -91,7 +91,7 @@ class LangSuite extends Suites(
   // Use.
   //
   new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
-  new FlixTest("Test.Use.Enum", "main/test/flix/Test.Use.Enum.flix"),
+  new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.flix"),
   new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 
 )
