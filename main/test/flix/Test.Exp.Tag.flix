@@ -7,6 +7,14 @@ namespace Test/Exp/Tag {
         case OfFloat32(Float32)
         case OfFloat64(Float64)
         case OfInt8(Int8)
+        case OfInt16(Int16)
+        case OfInt32(Int32)
+        case OfInt64(Int64)
+        case OfBigInt(BigInt)
+        case OfString(String)
+        case OfArrayOfInt(Array[Int])
+        case OfArrayOfString(Array[String])
+        case OfTuple(Bool, Char, String)
     }
 
     @test
@@ -68,106 +76,84 @@ namespace Test/Exp/Tag {
     @test
     def testInt8Tag03(): A = Test/Exp/Tag/A.OfInt8(42i8)
 
-//  /**
-//    * Represents the Int16 type.
-//    */
-//  val Int16: Type = Type.Cst(TypeConstructor.Int16)
-//
-//  /**
-//    * Represents the Int32 type.
-//    */
-//  val Int32: Type = Type.Cst(TypeConstructor.Int32)
-//
-//  /**
-//    * Represents the Int64 type.
-//    */
-//  val Int64: Type = Type.Cst(TypeConstructor.Int64)
-//
-//  /**
-//    * Represents the BigInt type.
-//    */
-//  val BigInt: Type = Type.Cst(TypeConstructor.BigInt)
-//
-//  /**
-//    * Represents the String type.
-//    */
-//  val Str: Type = Type.Cst(TypeConstructor.Str)
 
-//
-//  /**
-//    * A type constructor that represent the type of arbitrary-precision integers.
-//    */
-//  case object BigInt extends TypeConstructor {
-//    def kind: Kind = Kind.Star
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of strings.
-//    */
-//  case object Str extends TypeConstructor {
-//    def kind: Kind = Kind.Star
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of arrays.
-//    */
-//  case object Array extends TypeConstructor {
-//    /**
-//      * The shape of an array is Array[t].
-//      */
-//    def kind: Kind = Kind.Star -> Kind.Star
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of channels.
-//    */
-//  case object Channel extends TypeConstructor {
-//    /**
-//      * The shape of a channel is Channel[t].
-//      */
-//    def kind: Kind = Kind.Star -> Kind.Star
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of enums.
-//    */
-//  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
-//
-//  /**
-//    * A type constructor that represent the type of JVM classes.
-//    */
-//  case class Native(clazz: Class[_]) extends TypeConstructor {
-//    def kind: Kind = Kind.Star
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of references.
-//    */
-//  case object Ref extends TypeConstructor {
-//    /**
-//      * The shape of a reference is Ref[t].
-//      */
-//    def kind: Kind = Kind.Star -> Kind.Star
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of tuples.
-//    */
-//  case class Tuple(l: Int) extends TypeConstructor {
-//    /**
-//      * The shape of a tuple is (t1, ..., tn).
-//      */
-//    def kind: Kind = ??? // TODO
-//  }
-//
-//  /**
-//    * A type constructor that represent the type of vectors.
-//    */
-//  case object Vector extends TypeConstructor {
-//    /**
-//      * The shape of a vector is Array[t;n].
-//      */
-//    def kind: Kind = (Kind.Star -> Kind.Nat) -> Kind.Star
-//  }
+    @test
+    def testInt16Tag01(): A = OfInt16(42i16)
+
+    @test
+    def testInt16Tag02(): A = A.OfInt16(42i16)
+
+    @test
+    def testInt16Tag03(): A = Test/Exp/Tag/A.OfInt16(42i16)
+
+
+    @test
+    def testInt32Tag01(): A = OfInt32(42i32)
+
+    @test
+    def testInt32Tag02(): A = A.OfInt32(42i32)
+
+    @test
+    def testInt32Tag03(): A = Test/Exp/Tag/A.OfInt32(42i32)
+
+
+    @test
+    def testInt64Tag01(): A = OfInt64(42i64)
+
+    @test
+    def testInt64Tag02(): A = A.OfInt64(42i64)
+
+    @test
+    def testInt64Tag03(): A = Test/Exp/Tag/A.OfInt64(42i64)
+
+
+    @test
+    def testBigIntTag01(): A = OfBigInt(42ii)
+
+    @test
+    def testBigIntTag02(): A = A.OfBigInt(42ii)
+
+    @test
+    def testBigIntTag03(): A = Test/Exp/Tag/A.OfBigInt(42ii)
+
+
+    @test
+    def testStringTag01(): A = OfString("Hello World!")
+
+    @test
+    def testStringTag02(): A = A.OfString("Hello World!")
+
+    @test
+    def testStringTag03(): A = Test/Exp/Tag/A.OfString("Hello World!")
+
+
+    @test
+    def testArrayOfIntTag01(): A & Impure = OfArrayOfInt([1, 2, 3])
+
+    @test
+    def testArrayOfIntTag02(): A & Impure = A.OfArrayOfInt([1, 2, 3])
+
+    @test
+    def testArrayOfIntTag03(): A & Impure = Test/Exp/Tag/A.OfArrayOfInt([1, 2, 3])
+
+
+    @test
+    def testArrayOfStringTag01(): A & Impure = OfArrayOfString(["a", "b", "c"])
+
+    @test
+    def testArrayOfStringTag02(): A & Impure = A.OfArrayOfString(["a", "b", "c"])
+
+    @test
+    def testArrayOfStringTag03(): A & Impure = Test/Exp/Tag/A.OfArrayOfString(["a", "b", "c"])
+
+
+    @test
+    def testTupleTag01(): A = OfTuple(true, 'a', "Hello World!")
+
+    @test
+    def testTupleTag02(): A = A.OfTuple(true, 'a', "Hello World!")
+
+    @test
+    def testTupleTag03(): A = Test/Exp/Tag/A.OfTuple(true, 'a', "Hello World!")
 
 }
