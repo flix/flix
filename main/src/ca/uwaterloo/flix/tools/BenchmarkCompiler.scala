@@ -99,6 +99,8 @@ object BenchmarkCompiler {
     * Adds the compiler test cases.
     */
   private def addCompilerTests(flix: Flix): Unit = {
+    flix.addPath("main/test/flix/Test.Eff.Polymorphism.flix")
+
     flix.addPath("main/test/flix/Test.Exp.ArrayLength.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLit.flix")
     flix.addPath("main/test/flix/Test.Exp.ArrayLoad.flix")
@@ -122,11 +124,15 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
     flix.addPath("main/test/flix/Test.Exp.Jvm.PutField.flix")
     flix.addPath("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
+    flix.addPath("main/test/flix/Test.Exp.Let.MatchStar.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Assign.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Deref.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Ref.flix")
     flix.addPath("main/test/flix/Test.Exp.Stm.flix")
+    flix.addPath("main/test/flix/Test.Exp.Tag.flix")
+    flix.addPath("main/test/flix/Test.Exp.Tag.Lambda.flix")
+    flix.addPath("main/test/flix/Test.Use.Tag.flix")
 
 
     flix.addPath("main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix")
