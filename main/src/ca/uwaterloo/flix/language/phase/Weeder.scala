@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.math.BigInteger
-import java.lang.{Byte => JByte, Short => JShort, Integer => JInt, Long => JLong}
+import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
@@ -60,13 +60,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given abstract syntax tree.
     */
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
+    val usesVal = traverse(root.uses)(visitUse)
     val declarationsVal = traverse(root.decls)(visitDecl)
     val propertiesVal = visitAllProperties(root)
     val loc = mkSL(root.sp1, root.sp2)
 
-    mapN(declarationsVal, propertiesVal) {
-      case (decls1, decls2) =>
-        WeededAst.Root(decls1.flatten ++ decls2, loc)
+    mapN(usesVal, declarationsVal, propertiesVal) {
+      case (uses, decls1, decls2) =>
+        WeededAst.Root(uses.flatten, decls1.flatten ++ decls2, loc)
     }
   }
 
@@ -280,6 +281,38 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Performs weeding on the given use `u0`.
+    */
+  private def visitUse(u0: ParsedAst.Use): Validation[List[WeededAst.Use], WeederError] = u0 match {
+    case ParsedAst.Use.UseOne(sp1, nname, ident, sp2) =>
+      if (ident.isLower)
+        List(WeededAst.Use.UseDef(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+      else
+        List(WeededAst.Use.UseTyp(Name.QName(sp1, nname, ident, sp2), ident, mkSL(sp1, sp2))).toSuccess
+    case ParsedAst.Use.UseMany(_, nname, names, _) =>
+      val us = names.foldRight(Nil: List[WeededAst.Use]) {
+        case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
+          val alias = aliasOpt.getOrElse(ident)
+          if (ident.isLower)
+            WeededAst.Use.UseDef(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+          else
+            WeededAst.Use.UseTyp(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)) :: acc
+      }
+      us.toSuccess
+
+    case ParsedAst.Use.UseOneTag(sp1, qname, tag, sp2) =>
+      List(WeededAst.Use.UseTag(qname, tag, tag, mkSL(sp1, sp2))).toSuccess
+
+    case ParsedAst.Use.UseManyTag(sp1, qname, tags, sp2) =>
+      val us = tags.foldRight(Nil: List[WeededAst.Use]) {
+        case (ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2), acc) =>
+          val alias = aliasOpt.getOrElse(ident)
+          WeededAst.Use.UseTag(qname, ident, alias, mkSL(sp1, sp2)) :: acc
+      }
+      us.toSuccess
+  }
+
+  /**
     * Weeds the given expression.
     */
   private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
@@ -299,6 +332,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         return IllegalHole(loc).toFailure
       }
       WeededAst.Expression.Hole(name, loc).toSuccess
+
+    case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
+      mapN(visitUse(use), visitExp(exp)) {
+        case (us, e) => WeededAst.Expression.Use(us, e, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
 
@@ -1874,6 +1912,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
+    case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
@@ -2071,7 +2110,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, castedToStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
-    WeededAst.Root(List(decl), SourceLocation.Unknown)
+    WeededAst.Root(Nil, List(decl), SourceLocation.Unknown)
   }
 
 }

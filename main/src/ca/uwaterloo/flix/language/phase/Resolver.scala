@@ -280,8 +280,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         }
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
-          lookupQName(qname, ns0, prog0) map {
-            case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, loc)
+          lookupDef(qname, ns0, prog0) map {
+            case sym => ResolvedAst.Expression.Def(sym, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(nameOpt, tpe, evar, loc) =>
@@ -290,6 +290,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             case Some(name) => Symbol.mkHoleSym(ns0, name)
           }
           ResolvedAst.Expression.Hole(sym, tpe, evar, loc).toSuccess
+
+        case NamedAst.Expression.Use(use, exp, loc) =>
+          // Lookup the used name to ensure that it exists.
+          use match {
+            case NamedAst.Use.UseDef(qname, _, _) =>
+              flatMapN(lookupDef(qname, ns0, prog0))(_ => visit(exp, tenv0))
+
+            case NamedAst.Use.UseTyp(qname, _, _) =>
+              flatMapN(lookupType(NamedAst.Type.Ambiguous(qname, loc), ns0, prog0))(_ => visit(exp, tenv0))
+
+            case NamedAst.Use.UseTag(qname, tag, _, _) =>
+              flatMapN(lookupEnumByTag(Some(qname), tag, ns0, prog0))(_ => visit(exp, tenv0))
+          }
 
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
 
@@ -907,20 +920,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * The result of a qualified name lookup.
-    */
-  sealed trait LookupResult
-
-  object LookupResult {
-
-    case class Def(sym: Symbol.DefnSym) extends LookupResult
-
-  }
-
-  /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupQName(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[LookupResult, ResolutionError] = {
+  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Root): Validation[Symbol.DefnSym, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, prog0)
 
     defOpt match {
@@ -953,67 +955,92 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Finds the enum definition matching the given qualified name and tag.
+    * Finds the enum that maches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
-    /*
-     * Lookup the tag name in all enums across all namespaces.
-     */
-    val globalMatches = mutable.Set.empty[NamedAst.Enum]
-    for ((_, decls) <- prog0.enums) {
-      for ((enumName, decl) <- decls) {
-        for ((tagName, caze) <- decl.cases) {
-          if (tag.name == tagName) {
-            globalMatches += decl
+  def lookupEnumByTag(qnameOpt: Option[Name.QName], tag: Name.Ident, ns0: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Enum, ResolutionError] = {
+    // Determine whether the name is qualified.
+    qnameOpt match {
+      case None =>
+        // Case 1: The name is unqualified.
+
+        // Find all matching enums in the current namespace.
+        val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
+        for ((enumName, decl) <- prog0.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])) {
+          for ((tagName, caze) <- decl.cases) {
+            if (tag.name == tagName) {
+              namespaceMatches += decl
+            }
           }
         }
-      }
-    }
 
-    // Case 1: Exact match found. Simply return it.
-    if (globalMatches.size == 1) {
-      return getEnumIfAccessible(globalMatches.head, ns, tag.loc)
-    }
-
-    // Case 2: No or multiple matches found.
-    // Lookup the tag in either the fully qualified namespace or the current namespace.
-    val namespace = if (qname.exists(_.isQualified)) qname.get.namespace else ns
-
-    /*
-     * Lookup the tag name in all enums in the current namespace.
-     */
-    val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
-    for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Enum])) {
-      for ((tagName, caze) <- decl.cases) {
-        if (tag.name == tagName) {
-          namespaceMatches += decl
+        // Case 1.1.1: Exact match found in the namespace.
+        if (namespaceMatches.size == 1) {
+          return getEnumIfAccessible(namespaceMatches.head, ns0, tag.loc)
         }
-      }
+
+        // Case 1.1.2: Multiple matches found in the namespace.
+        if (namespaceMatches.size > 1) {
+          val locs = namespaceMatches.map(_.sym.loc).toList.sorted
+          return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
+        }
+
+        // Find all matching enums in the root namespace.
+        val globalMatches = mutable.Set.empty[NamedAst.Enum]
+        for (decls <- prog0.enums.get(Name.RootNS)) {
+          for ((enumName, decl) <- decls) {
+            for ((tagName, caze) <- decl.cases) {
+              if (tag.name == tagName) {
+                globalMatches += decl
+              }
+            }
+          }
+        }
+
+        // Case 1.2.1: Exact match found in the root namespace.
+        if (globalMatches.size == 1) {
+          return getEnumIfAccessible(globalMatches.head, ns0, tag.loc)
+        }
+
+        // Case 1.2.2: Multiple matches found in the root namespace.
+        if (globalMatches.size > 1) {
+          val locs = globalMatches.map(_.sym.loc).toList.sorted
+          return ResolutionError.AmbiguousTag(tag.name, ns0, locs, tag.loc).toFailure
+        }
+
+        // Case 1.2.3: No match found.
+        ResolutionError.UndefinedTag(tag.name, ns0, tag.loc).toFailure
+
+      case Some(qname) =>
+        // Case 2: The name is qualified.
+
+        // Determine where to search for the enum.
+        val enumsInNS = if (qname.isUnqualified) {
+          // The name is unqualified (e.g. Option.None) so search in the current namespace.
+          prog0.enums.getOrElse(ns0, Map.empty[String, NamedAst.Enum])
+        } else {
+          // The name is qualified (e.g. Foo/Bar/Baz.Qux) so search in the Foo/Bar/Baz namespace.
+          prog0.enums.getOrElse(qname.namespace, Map.empty[String, NamedAst.Enum])
+        }
+
+        // Lookup the enum declaration.
+        enumsInNS.get(qname.ident.name) match {
+          case None =>
+            // Case 2.1: The enum does not exist.
+            ResolutionError.UndefinedType(qname, ns0, qname.loc).toFailure
+          case Some(enumDecl) =>
+            // Case 2.2: Enum declaration found. Look for the tag.
+            for ((tagName, caze) <- enumDecl.cases) {
+              if (tag.name == tagName) {
+                // Case 2.2.1: Tag found.
+                return getEnumIfAccessible(enumDecl, ns0, tag.loc)
+              }
+            }
+
+            // Case 2.2.2: No match found.
+            ResolutionError.UndefinedTag(tag.name, ns0, tag.loc).toFailure
+        }
     }
 
-    // Case 2.1: Exact match found in namespace. Simply return it.
-    if (namespaceMatches.size == 1) {
-      return getEnumIfAccessible(namespaceMatches.head, ns, tag.loc)
-    }
-
-    // Case 2.2: No matches found in namespace.
-    if (namespaceMatches.isEmpty) {
-      return ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
-    }
-
-    // Case 2.3: Multiple matches found in namespace and no enum name.
-    if (qname.isEmpty) {
-      val locs = namespaceMatches.map(_.sym.loc).toList.sorted
-      return ResolutionError.AmbiguousTag(tag.name, ns, locs, tag.loc).toFailure
-    }
-
-    // Case 2.4: Multiple matches found in namespace and an enum name is available.
-    val filteredMatches = namespaceMatches.filter(_.sym.name == qname.get.ident.name)
-    if (filteredMatches.size == 1) {
-      return getEnumIfAccessible(filteredMatches.head, ns, tag.loc)
-    }
-
-    ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
   }
 
   /**
@@ -1077,7 +1104,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root)(implicit recursionDepth: Int = 0): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
+
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
+
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
       case "Unit" => Type.Unit.toSuccess
@@ -1101,7 +1130,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(typeName, ns0, root)) match {
+        (lookupEnum(qname, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
           // Case 1: Not Found.
           case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
@@ -1127,13 +1156,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
         }
     }
+
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
-      // Lookup the enum using the namespace.
-      val decls = root.enums.getOrElse(qname.namespace, Map.empty)
-      decls.get(qname.ident.name) match {
-        case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+      // Disambiguate type.
+      (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+        case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+        case (Some(enumDecl), None) => getEnumTypeIfAccessible(enumDecl, ns0, loc)
+        case (None, Some(typeAliasDecl)) => getTypeAliasIfAccessible(typeAliasDecl, ns0, root, loc)
+        case (Some(enumDecl), Some(typeAliasDecl)) =>
+          val locs = enumDecl.loc :: typeAliasDecl.loc :: Nil
+          ResolutionError.AmbiguousType(qname.ident.name, ns0, locs, loc).toFailure
       }
+
     case NamedAst.Type.Enum(sym) =>
       Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
 
@@ -1189,7 +1223,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     case NamedAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
       for {
-        tparams <- traverse(tparams0)(lookupType(_, ns0, root));
+        tparams <- traverse(tparams0)(lookupType(_, ns0, root))
         tresult <- lookupType(tresult0, ns0, root)
         eff <- lookupType(eff0, ns0, root)
       } yield Type.mkArrow(tparams, eff, tresult)
@@ -1226,11 +1260,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Optionally returns the enum with the given `name` in the given namespace `ns0`.
     */
-  private def lookupEnum(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
-    val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
-    enumsInNamespace.get(typeName) orElse {
-      val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
-      enumsInRootNS.get(typeName)
+  private def lookupEnum(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
+      enumsInNamespace.get(qname.ident.name) orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
+        enumsInRootNS.get(qname.ident.name)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      root.enums.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -1259,11 +1300,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Optionally returns the type alias with the given `name` in the given namespace `ns0`.
     */
-  private def lookupTypeAlias(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
-    val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
-    typeAliasesInNamespace.get(typeName) orElse {
-      val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
-      typeAliasesInRootNS.get(typeName)
+  private def lookupTypeAlias(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.TypeAlias] = {
+    if (qname.isUnqualified) {
+      // Case 1: The name is unqualified. Lookup in the current namespace.
+      val typeAliasesInNamespace = root.typealiases.getOrElse(ns0, Map.empty)
+      typeAliasesInNamespace.get(qname.ident.name) orElse {
+        // Case 1.1: The name was not found in the current namespace. Try the root namespace.
+        val typeAliasesInRootNS = root.typealiases.getOrElse(Name.RootNS, Map.empty)
+        typeAliasesInRootNS.get(qname.ident.name)
+      }
+    } else {
+      // Case 2: The name is qualified. Look it up in its namespace.
+      root.typealiases.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
     }
   }
 
@@ -1277,12 +1325,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
+  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.DefnSym, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
     if (defn0.mod.isPublic)
-      return LookupResult.Def(defn0.sym).toSuccess
+      return defn0.sym.toSuccess
 
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
@@ -1290,7 +1338,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val prefixNs = defn0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return LookupResult.Def(defn0.sym).toSuccess
+      return defn0.sym.toSuccess
 
     //
     // The definition is not accessible.

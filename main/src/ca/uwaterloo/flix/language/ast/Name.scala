@@ -54,7 +54,12 @@ object Name {
     /**
       * Returns `true`if `this` identifier is a wildcard.
       */
-    def isWild(): Boolean = name.startsWith("_")
+    def isWild: Boolean = name.startsWith("_")
+
+    /**
+      * Returns `true` if `this` identifier is lowercase.
+      */
+    def isLower: Boolean = name.charAt(0).isLower
 
     /**
       * The source location of the identifier.

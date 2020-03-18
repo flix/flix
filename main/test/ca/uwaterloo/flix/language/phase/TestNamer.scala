@@ -23,6 +23,34 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
+  test("AmbiguousVarOrUse.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use Foo.f;
+         |    let f = _ -> true;
+         |    f(123)
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousVarOrUse](result)
+  }
+
+  test("AmbiguousVarOrUse.02") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use Foo.f;
+         |    let f = _ -> true;
+         |    use Foo.g;
+         |    let g = _ -> true;
+         |    f(g(123))
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.AmbiguousVarOrUse](result)
+  }
+
   test("DuplicateDef.01") {
     val input =
       s"""
@@ -100,6 +128,224 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateDef](result)
   }
 
+  test("DuplicateUseDef.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.f;
+         |    use B.f;
+         |    f() == f()
+         |
+         |namespace A {
+         |    def f(): Int = 1
+         |}
+         |
+         |namespace B {
+         |    def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseDef.02") {
+    val input =
+      s"""
+         |use A.f;
+         |use B.f;
+         |
+         |def main(): Bool =
+         |    f() == f()
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseDef.03") {
+    val input =
+      s"""
+         |use A.f;
+         |
+         |def main(): Bool =
+         |    use B.f;
+         |    f() == f()
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+         |
+         |namespace B {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseDef.04") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.{f => g, f => g};
+         |    g() == g()
+         |
+         |namespace A {
+         |    pub def f(): Int = 1
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseDef](result)
+  }
+
+  test("DuplicateUseTyp.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.Color;
+         |    use B.Color;
+         |    true
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTyp](result)
+  }
+
+  test("DuplicateUseTyp.02") {
+    val input =
+      s"""
+         |use A.Color;
+         |use B.Color;
+         |
+         |def main(): Bool = true
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blue
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTyp](result)
+  }
+
+
+  test("DuplicateUseTag.01") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use A.Color.Red;
+         |    use B.Color.Red;
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.02") {
+    val input =
+      s"""
+         |use A.Color.Red;
+         |use B.Color.Red;
+         |def main(): Bool =
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.03") {
+    val input =
+      s"""
+         |
+         |use A.Color.Red;
+         |def main(): Bool =
+         |    use B.Color.Red;
+         |    Red == Red
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+         |namespace B {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
+
+  test("DuplicateUseTag.04") {
+    val input =
+      s"""
+         |def main(): Bool =
+         |    use B.Color.{Red => R};
+         |    use B.Color.{Blu => R};
+         |    R == R
+         |
+         |namespace A {
+         |    enum Color {
+         |        case Red, Blu
+         |    }
+         |}
+         |
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateUseTag](result)
+  }
 
   test("DuplicateTypeAlias.01") {
     val input =

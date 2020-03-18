@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.vt.TerminalContext
 import flix.runtime.ProxyObject
 import org.scalatest.FunSuite
 
-class FlixTest(name: String, paths: String*)(implicit options: Options = Options.DefaultTest) extends FunSuite {
+class FlixTest(name: String, paths: String*)(implicit options: Options = Options.TestWithoutLibrary) extends FunSuite {
 
   /**
     * Returns the name of the test suite.
