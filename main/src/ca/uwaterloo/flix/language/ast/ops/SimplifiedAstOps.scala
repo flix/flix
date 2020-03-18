@@ -600,7 +600,23 @@ object SimplifiedAstOps {
     case Expression.Universal(fparam, exp, loc) =>
       freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
+    case Expression.Cast(exp, tpe, loc) => freeVars(exp)
+
     case Expression.TryCatch(exp, rules, tpe, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
+
+    case Expression.InvokeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.InvokeMethod(method, exp, args, tpe, loc) => freeVars(exp) ++ args.flatMap(freeVars)
+
+    case Expression.InvokeStaticMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.GetField(field, exp, tpe, loc) => freeVars(exp)
+
+    case Expression.PutField(field, exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+
+    case Expression.GetStaticField(field, tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.PutStaticField(field, exp, tpe, loc) => freeVars(exp)
 
     case Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
 
@@ -675,20 +691,6 @@ object SimplifiedAstOps {
   }
 
   /**
-   * Returns the free variables in the given body term `term0`.
-   */
-  private def freeVars(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
-    case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Body.QuantVar(sym, tpe, loc) =>
-      // Quantified variables are never free.
-      mutable.LinkedHashSet.empty
-    case Term.Body.CapturedVar(sym, tpe, loc) =>
-      // Captured variables are by definition free.
-      mutable.LinkedHashSet((sym, tpe))
-    case Term.Body.Lit(exp, tpe, loc) => freeVars(exp)
-  }
-
-  /**
    * Returns the free variables in the given head term `term0`.
    */
   private def freeVars(term0: Term.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
@@ -700,5 +702,19 @@ object SimplifiedAstOps {
       mutable.LinkedHashSet((sym, tpe))
     case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
     case Term.Head.App(exp, args, tpe, loc) => freeVars(exp)
+  }
+
+  /**
+   * Returns the free variables in the given body term `term0`.
+   */
+  private def freeVars(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
+    case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Body.QuantVar(sym, tpe, loc) =>
+      // Quantified variables are never free.
+      mutable.LinkedHashSet.empty
+    case Term.Body.CapturedVar(sym, tpe, loc) =>
+      // Captured variables are by definition free.
+      mutable.LinkedHashSet((sym, tpe))
+    case Term.Body.Lit(exp, tpe, loc) => freeVars(exp)
   }
 }
