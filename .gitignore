@@ -7,3 +7,4 @@
 target
 .ensime*
 /*.flix
+/package_test
