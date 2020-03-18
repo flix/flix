@@ -42,9 +42,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
     val (uncurriedDefs, uncurryCtxt) = flix.subphase("Uncurrying") {
       root.defs.foldLeft((List.empty[(Symbol.DefnSym, Def)], Map.empty[Symbol.DefnSym, Symbol.DefnSym])) {
-        case ((defs0, acc0), defn) =>
-          val (defs1, acc1) = uncurryDefn(defn, List(defn))(acc0)
-          (defs0 ++ defs1, acc1)
+        case ((defs0, acc0), defn) => uncurryDefn(defn, defn :: defs0)(acc0)
       }
     }
 
