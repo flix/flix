@@ -38,10 +38,11 @@ object ParsedAst {
     * Root. A collection of imports and declarations.
     *
     * @param sp1   the position of the first character in the source.
+    * @param uses  the uses in the abstract syntax tree.
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
+  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Declarations.
@@ -219,6 +220,65 @@ object ParsedAst {
   }
 
   /**
+    * Uses.
+    */
+  sealed trait Use
+
+  object Use {
+
+    /**
+      * A use of a single name from a namespace.
+      *
+      * @param sp1   the position of the first character.
+      * @param nname the namespace.
+      * @param ident the name.
+      * @param sp2   the position of the last character.
+      */
+    case class UseOne(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
+
+    /**
+      * A use of multiple names from a namespace.
+      *
+      * @param sp1   the position of the first character.
+      * @param nname the namespace.
+      * @param names the names.
+      * @param sp2   the position of the last character.
+      */
+    case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+
+    /**
+      * A use of a single tag.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the name of the enum.
+      * @param tag   the name of the tag.
+      * @param sp2   the position of the last character.
+      */
+    case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
+
+    /**
+      * A use of multiple tags.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the name of the enum.
+      * @param tags  the names of the tags.
+      * @param sp2   the position of the last character.
+      */
+    case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+
+    /**
+      * A name with an optional alias.
+      *
+      * @param sp1   the position of the first character.
+      * @param ident the name.
+      * @param alias the optional alias.
+      * @param sp2   the position of the last character.
+      */
+    case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
+
+  }
+
+  /**
     * Literals.
     */
   sealed trait Literal
@@ -283,55 +343,55 @@ object ParsedAst {
     /**
       * Int8 Literal (signed 8-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
       * @param radix the radix of the literal.
-      * @param lit  the int8 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param lit   the int8 literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class Int8(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int16 Literal (signed 16-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
       * @param radix the radix of the literal.
-      * @param lit  the int16 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param lit   the int16 literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class Int16(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int32 Literal (signed 32-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
       * @param radix the radix of the literal.
-      * @param lit  the int32 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param lit   the int32 literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class Int32(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int64 Literal (signed 64-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
       * @param radix the radix of the literal.
-      * @param lit  the int64 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param lit   the int64 literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class Int64(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * BigInt Literal (arbitrary sized integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
       * @param radix the radix of the literal.
-      * @param lit  the big int literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param lit   the big int literal.
+      * @param sp2   the position of the last character in the literal.
       */
     case class BigInt(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
@@ -379,6 +439,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Use Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param use the use.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Use(sp1: SourcePosition, use: ParsedAst.Use, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.

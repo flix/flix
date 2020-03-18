@@ -73,7 +73,10 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
+    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
+        case Ok(t)  => f(t)
+        case Err(_) => false
+    }
 
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
@@ -81,7 +84,10 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
+    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = match r {
+        case Ok(t)  => f(t)
+        case Err(_) => true
+    }
 
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
@@ -199,5 +205,24 @@ namespace Result {
         case (Ok(_), Err(_))    =>  -1
         case (Err(_), Ok(_))    =>  +1
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useExists(): Bool =
+        forall [t, e] (f: t -> Bool, r: Result[t, e]).
+            getWithDefault(map(f, r), false) === exists(f, r)
+
+    @lint
+    def useForall(): Bool =
+        forall [t, e] (f: t -> Bool, r: Result[t, e]).
+            getWithDefault(map(f, r), true) === forall(f, r)
 
 }

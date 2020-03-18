@@ -699,7 +699,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private def deadDef(decl: Def, used: Used)(implicit root: Root): Boolean =
     !decl.ann.isTest &&
-      !decl.ann.isTheorem &&
+      !decl.ann.isLint &&
       !decl.mod.isPublic &&
       !decl.sym.name.equals("main") &&
       !decl.sym.name.startsWith("_") &&

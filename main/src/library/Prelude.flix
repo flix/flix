@@ -198,6 +198,10 @@ law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 ///
 law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). (x ⊑ y && !equ(x, y)) → (h(x) > h(y))
 
+///
+/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
+///
+def ===(x: a, y: a): Bool = ???
 
 namespace Tuple2 {
 

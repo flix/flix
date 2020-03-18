@@ -254,7 +254,67 @@ namespace Int8 {
         import java.lang.String.strip();
         import java.lang.Byte:parseByte(String);
         Ok(s.strip().parseByte()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: Int8).
+            (0i8 + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: Int8).
+            (x + 0i8) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: Int8).
+            (x - 0i8) === 0i8
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: Int8).
+            (x - x) === 0i8
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: Int8).
+            (0i8 * x) === 0i8
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: Int8).
+            (x * 0i8) === 0i8
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: Int8).
+            (1i8 * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: Int8).
+            (x * 1i8) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: Int8).
+            (x / 0i8) === 0i8
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: Int8).
+            (x / 1i8) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: Int8).
+            (x / x) === 1i8
+
 }

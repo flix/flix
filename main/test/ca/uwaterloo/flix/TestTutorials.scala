@@ -16,10 +16,10 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.util.FlixTest
+import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class TestTutorials extends Suites(
   new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix"),
-  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")
+  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(Options.TestWithLibrary)
 )
