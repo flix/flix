@@ -129,16 +129,18 @@ pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impur
     let files = Array.toList([getPackageFile, getHistoryFile, getLicenseFile, getReadmeFile, getMainSourceFile, getMainTestFile]);
     let dirs = Array.toList([getBuildDir, getSourceDir, getTestDir]);
 
-    // Ensure that none of the path the init process creates are currently present on the system
-    let combined = List.flatten(Array.toList([files, dirs]));
-    let pathExists = List.find(f -> {
-        let dir = Result.map(f, workingDir);
-        match Result.flatMap(Path.exists, dir) {
-            case Ok(exists) => exists
-            // Error occurred, detect error as file being present for now
-            case _ => true
-        }
-    }, combined);
+    // Ensure that none of the paths the init process creates are currently present on the system
+    let pathExists = [files, dirs]
+        |> Array.toList
+        |> List.flatten
+        |> List.map(f -> {
+                let dir = Result.map(f, workingDir);
+                match Result.flatMap(Path.exists, dir) {
+                    case Ok(exists) => exists,
+                    case _ => true
+                }
+            })
+        |> List.find(x -> x);
 
     if (Option.isEmpty(pathExists)) {
         // Create all directories required for the package

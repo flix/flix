@@ -102,14 +102,14 @@ namespace List {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a -> Bool & e, xs: List[a]): Option[a] & e = findLeft(f, xs)
+    pub def find(f: a -> Bool, xs: List[a]): Option[a] = findLeft(f, xs)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a -> Bool & e, xs: List[a]): Option[a] & e = match xs {
+    pub def findLeft(f: a -> Bool, xs: List[a]): Option[a] = match xs {
         case Nil => None
         case x :: rs => if (f(x)) Some(x) else findLeft(f, rs)
     }
