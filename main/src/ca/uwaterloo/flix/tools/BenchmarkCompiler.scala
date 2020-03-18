@@ -124,6 +124,7 @@ object BenchmarkCompiler {
     flix.addPath("main/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix")
     flix.addPath("main/test/flix/Test.Exp.Jvm.PutField.flix")
     flix.addPath("main/test/flix/Test.Exp.Jvm.PutStaticField.flix")
+    flix.addPath("main/test/flix/Test.Exp.Let.MatchStar.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Assign.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Deref.flix")
     flix.addPath("main/test/flix/Test.Exp.Reference.Precedence.flix")
