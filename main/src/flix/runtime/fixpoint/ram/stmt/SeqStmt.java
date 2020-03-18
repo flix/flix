@@ -19,6 +19,10 @@ public final class SeqStmt implements Stmt {
     public void prettyPrint(PrintStream stream, int indentLevel) {
         for (int i = 0; i < stmts.length; i++) {
             Stmt stmt = stmts[i];
+            if (stmt == null) {
+                stream.println("PrettyPrint failed in SeqStmt at: " + (i + 1) + "\n but there was actually: " + stmts.length);
+                return;
+            }
             stmt.prettyPrint(stream, indentLevel);
             if (i < stmts.length - 1) {
                 stream.print(";\n");

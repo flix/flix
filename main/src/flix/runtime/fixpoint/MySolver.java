@@ -63,6 +63,7 @@ public class MySolver {
         // First we define the condition of the loop
         i = 0;
         Stmt[] saveLastIteration = new Stmt[derived.keySet().size()];
+        Stmt[] clearLastIteration = new Stmt[derived.keySet().size()];
         BoolExp whileCondition = null;
         for (RelSym rel : derived.keySet()) {
             TableName mergeInto = new TableName(TableVersion.NEW, rel);
@@ -75,6 +76,9 @@ public class MySolver {
                 whileCondition = new NotBoolExp(new EmptyBoolExp(delta));
             }
 
+            // We should make sure that the tables holding the relations generated in an iteration is cleared at the start of each iteration
+            clearLastIteration[i] = new AssignStmt(new TableName(TableVersion.DELTA, rel), new EmptyRelationExp());
+
             i++;
         }
 
@@ -86,7 +90,7 @@ public class MySolver {
         }
 
 
-        SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
+        SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, clearLastIteration, Stream.of(iterationEvaluation).flatMap(Stream::of).toArray(Stmt[]::new), mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
         Stmt mainWhile = new WhileStmt(whileCondition, whileBody);
 
         SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat, mergeStmts, new Stmt[]{mainWhile}).flatMap(Stream::of).toArray(Stmt[]::new));
@@ -103,7 +107,7 @@ public class MySolver {
      * @return An array of statements evaluating the rules. Should be 1 ForEachStmt for each rule
      */
     private static Stmt[] evalIncr(RelSym rel, ArrayList<Constraint> constraints) {
-        Stmt[] result = new Stmt[constraints.size()];
+        Stmt[][] result = new Stmt[constraints.size()][];
 
         for (int i = 0; i < constraints.size(); i++) {
             Constraint constraint = constraints.get(i);
@@ -111,6 +115,29 @@ public class MySolver {
         }
 
         assert result.length == constraints.size();
+        return Stream.of(result).flatMap(Stream::of).toArray(Stmt[]::new);
+    }
+
+    /**
+     * This method generates one ForEachStmt for each RelSym used in the constraint, such that we look at the
+     * knowledge earned from last iteration one by one
+     *
+     * @param constraint The specific constraint we want to generate Stmts for
+     * @return The Stmts
+     */
+    private static Stmt[] evalRuleIncr(Constraint constraint) {
+        // Let's start by just dividing on AtomPredicate, TODO: we might need the rest of the bodyPredicate too
+        Predicate headPredicate = constraint.getHeadPredicate();
+        Stmt[] result = new Stmt[constraint.getBodyAtoms().length];
+        if (headPredicate instanceof AtomPredicate) {
+            AtomPredicate[] bodyAtoms = constraint.getBodyAtoms();
+            for (int i = 0; i < bodyAtoms.length; i++) {
+                result[i] = evalRule(constraint, bodyAtoms[i].getSym());
+            }
+        } else {
+            throw new IllegalArgumentException("The head of a constraint should be an AtomPredicate, right?");
+        }
+
         return result;
     }
 
@@ -129,22 +156,8 @@ public class MySolver {
         for (int i = 0; i < get.size(); i++) {
             Constraint c = get.get(i);
             Map<PredSym, TableName> relTableMap = new HashMap<>();
-            for (Predicate pred : c.getBodyPredicates()) {
-                if (pred instanceof AtomPredicate) {
-                    PredSym sym = ((AtomPredicate) pred).getSym();
-                    // For all relation symbols we make a map to the TableName
-                    if (sym instanceof RelSym) {
-                        // Since we want to use all the facts, generated, we don't care if the facts are derived or not
-                        relTableMap.put(sym, new TableName(TableVersion.RESULT, sym));
-                    } else {
-                        throw new UnsupportedOperationException("We do not support LatSym yet");
-                    }
-                } else {
-                    throw new UnsupportedOperationException("We only support AtomPredicates for now");
-                }
-            }
             // Evaluate each rule individually
-            result[i] = evalRule(c, relTableMap);
+            result[i] = evalRule(c, null);
         }
         return result;
     }
@@ -152,11 +165,11 @@ public class MySolver {
     /**
      * Lav et kodeeksempel i stil med https://github.com/flix/flix/blob/master/main/src/ca/uwaterloo/flix/language/phase/Synthesize.scala#L574
      *
-     * @param c           The specific rule that we want to evaluate
-     * @param relTableMap A map telling the program which TableName a given PredSym should be represented by
+     * @param c      The specific rule that we want to evaluate
+     * @param newSym Is the symbol of the predicate where we access the data from previous iteration. In the base iteration this is null.
      * @return A statement evaluating c
      */
-    private static Stmt evalRule(Constraint c, Map<PredSym, TableName> relTableMap) {
+    private static Stmt evalRule(Constraint c, PredSym newSym) {
         Predicate head = c.getHeadPredicate();
         assert head instanceof AtomPredicate;
         PredSym headSym = ((AtomPredicate) head).getSym();
@@ -268,7 +281,14 @@ public class MySolver {
         for (Predicate pred : c.getBodyPredicates()) {
             if (pred instanceof AtomPredicate) {
                 AtomPredicate currentPred = (AtomPredicate) pred;
-                resultStmt = new ForEachStmt(relTableMap.get(currentPred.getSym()),
+                PredSym predSym = currentPred.getSym();
+                TableName name;
+                if (predSym == newSym) {
+                    name = new TableName(TableVersion.NEW, predSym);
+                } else {
+                    name = new TableName(TableVersion.RESULT, predSym);
+                }
+                resultStmt = new ForEachStmt(name,
                         atomToLocal.get(currentPred),
                         resultStmt);
             }
