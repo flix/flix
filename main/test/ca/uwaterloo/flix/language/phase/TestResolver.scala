@@ -135,8 +135,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
-
-
   test("InaccessibleDef.01") {
     val input =
       s"""
