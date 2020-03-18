@@ -157,12 +157,14 @@ pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impur
             "  (name " + name + ")",
             "  (version " + quote("0.1.0") + ")",
             // Empty list/empty value?
-            "  (authors )",
+            "  (authors ((name " + quote("Rasmus Larsen") + ") (email " + quote("doctorherbstein@gmail.com") + "))",
             // Should description be quoted?
             "  (description " + quote(name) + ")",
-            "  (license )",
-            "  (depends (package_one " + quote("1.2.3") + "))",
-            "  (home )",
+         // "  (license GPLv3)",
+         // "  (license (name LGPLv2)",
+            "  (license (file " + quote("LICENSE") + ")",
+            "  (depends (other_package " + quote("1.2.3") + "))",
+            "  (home " + quote("https://github.com/Herbstein/package_one") + ")",
             ")"
         ]);
         Result.flatMap(newPackageFile, Result.map(getPackageFile, workingDir));
