@@ -2,7 +2,7 @@
 /// An experimental RBSet type represented internally as a red-black tree.
 ///
 enum RBSet[t] {
-    case RBSet(RBTree.RBTree[t])
+    case RBSet(RBTree.RBTree[t, Unit])
 }
 
 namespace RBSet {
@@ -29,7 +29,7 @@ namespace RBSet {
     ///
     pub def insert(x: a, xs: RBSet[a]): RBSet[a] =
         let RBSet(es) = xs;
-        RBSet(RBTree.insert(x, es))
+        RBSet(RBTree.insert(x, (), es))
 
     ///
     /// Removes `x` from `xs`.
@@ -77,7 +77,10 @@ namespace RBSet {
     ///
     pub def findLeft(f: a -> Bool, xs: RBSet[a]): Option[a] =
         let RBSet(es) = xs;
-        RBTree.findLeft(f, es)
+        match RBTree.findLeft((x, _) -> f(x), es) {
+            case None => None
+            case Some(x, _) => Some(x)
+        }
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
@@ -86,7 +89,10 @@ namespace RBSet {
     ///
     pub def findRight(f: a -> Bool, xs: RBSet[a]): Option[a] =
         let RBSet(es) = xs;
-        RBTree.findRight(f, es)
+        match RBTree.findRight((x, _) -> f(x), es) {
+            case None => None
+            case Some(x, _) => Some(x)
+        }
 
     ///
     /// Alias for `foldLeft`.
@@ -100,7 +106,7 @@ namespace RBSet {
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, xs: RBSet[a]): b & e =
         let RBSet(es) = xs;
-        RBTree.foldLeft(f, s, es)
+        RBTree.foldLeft((b, k, _) -> f(b, k), s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
@@ -109,7 +115,7 @@ namespace RBSet {
     ///
     pub def foldRight(f: (b, a) -> b & e, s: b, xs: RBSet[a]): b & e =
         let RBSet(es) = xs;
-        RBTree.foldRight(f, s, es)
+        RBTree.foldRight((b, k, _) -> f(b, k), s, es)
 
     ///
     /// Alias for `reduceLeft`.
@@ -123,7 +129,10 @@ namespace RBSet {
     ///
     pub def reduceLeft(f: (a, a) -> a & e, xs: RBSet[a]): Option[a] & e =
         let RBSet(es) = xs;
-        RBTree.reduceLeft(f, es)
+        match RBTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) {
+            case None => None
+            case Some(x, _) => Some(x)
+        }
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -132,7 +141,10 @@ namespace RBSet {
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: RBSet[a]): Option[a] & e =
         let RBSet(es) = xs;
-        RBTree.reduceRight(f, es)
+        match RBTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) {
+            case None => None
+            case Some(x, _) => Some(x)
+        }
 
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
@@ -156,7 +168,7 @@ namespace RBSet {
     ///
     pub def exists(f: a -> Bool, xs: RBSet[a]): Bool =
         let RBSet(es) = xs;
-        RBTree.exists(f, es)
+        RBTree.exists((x, _) -> f(x), es)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
@@ -167,7 +179,7 @@ namespace RBSet {
     ///
     pub def forall(f: a -> Bool, xs: RBSet[a]): Bool =
         let RBSet(es) = xs;
-        RBTree.forall(f, es)
+        RBTree.forall((x, _) -> f(x), es)
 
     ///
     /// Returns the union of `xs` and `ys`.
@@ -259,31 +271,38 @@ namespace RBSet {
     ///
     pub def foreach(f: a ~> Unit, xs: RBSet[a]): Unit & Impure =
         let RBSet(es) = xs;
-        RBTree.foreach(f, es)
+        RBTree.foreach((x, _) -> f(x), es)
+
+///    ///
+///    /// Returns the result of a three-way comparison between `xs` and `ys`.
+///    ///
+///    /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
+///    /// Returns n = 0 if `xs` is equal to `ys`.
+///    /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
+///    ///
+///    pub def __cmp(xs: RBSet[a], ys: RBSet[a]): Int32 =
+///        let RBSet(a) = xs;
+///        let RBSet(b) = ys;
+///        RBTree.__cmp(a, b)
+///
+///    ///
+///    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
+///    ///
+///    pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = __cmp(xs, ys) == 0
 
     ///
-    /// Returns the result of a three-way comparison between `xs` and `ys`.
+    /// Helper function for `range`.
     ///
-    /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
-    /// Returns n = 0 if `xs` is equal to `ys`.
-    /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
-    ///
-    pub def __cmp(xs: RBSet[a], ys: RBSet[a]): Int32 =
-        let RBSet(a) = xs;
-        let RBSet(b) = ys;
-        RBTree.__cmp(a, b)
-
-    ///
-    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
-    ///
-    pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = __cmp(xs, ys) == 0
+    def rangeHelper(b: Int32, n: Int32, acc: RBSet[Int32]): RBSet[Int32] =
+        if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
     ///
     /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
     ///
     /// Returns `empty()` if `b >= e`.
     ///
-    pub def range(b: Int32, e: Int32): RBSet[Int32] = RBSet(RBTree.range(b, e))
+    pub def range(b: Int32, e: Int32): RBSet[Int32] =
+        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
 
     ///
     /// Returns a rudimentary string representation of `xs`.
