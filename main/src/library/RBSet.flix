@@ -2,7 +2,7 @@
 /// An experimental RBSet type represented internally as a red-black tree.
 ///
 enum RBSet[t] {
-    case RBSet(RBTree.RBTree[t, Unit])
+    case RBSet(RBTree[t, Unit])
 }
 
 namespace RBSet {
@@ -204,7 +204,6 @@ namespace RBSet {
     ///
     /// Returns all subsets of `xs`.
     ///
-    /// TODO: Optimize (possibly caused by slow __cmp in RBTree)
     pub def subsets(xs: RBSet[a]): RBSet[RBSet[a]] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
@@ -246,7 +245,6 @@ namespace RBSet {
     ///
     /// The function `f` must be pure.
     ///
-    /// TODO: Optimize
     pub def partition(f: a -> Bool, xs: RBSet[a]): (RBSet[a], RBSet[a]) =
         foldLeft((acc, x) -> let (a, b) = acc; if (f(x)) (insert(x, a), b) else (a, insert(x, b)), (empty(), empty()), xs)
 
@@ -261,8 +259,8 @@ namespace RBSet {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    /// TODO: Optimize
-    pub def toMap(xs: RBSet[(a, b)]): Map[a, b] = List.toMap(toList(xs))
+    pub def toMap(xs: RBSet[(a, b)]): Map[a, b] =
+        foldLeft((acc, x) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -273,22 +271,31 @@ namespace RBSet {
         let RBSet(es) = xs;
         RBTree.foreach((x, _) -> f(x), es)
 
-///    ///
-///    /// Returns the result of a three-way comparison between `xs` and `ys`.
-///    ///
-///    /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
-///    /// Returns n = 0 if `xs` is equal to `ys`.
-///    /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
-///    ///
-///    pub def __cmp(xs: RBSet[a], ys: RBSet[a]): Int32 =
-///        let RBSet(a) = xs;
-///        let RBSet(b) = ys;
-///        RBTree.__cmp(a, b)
-///
-///    ///
-///    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
-///    ///
-///    pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = __cmp(xs, ys) == 0
+    ///
+    /// Helper function for `cmp`.
+    ///
+    def __cmpHelper(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
+        case (z :: zs, w :: ws) =>
+            let cmp = z <=> w;
+            if (cmp == 0) __cmpHelper(zs, ws) else cmp
+        case (_ :: _, Nil) => 1
+        case (Nil, _ :: _) => -1
+        case (Nil, Nil) => 0
+    }
+
+    ///
+    /// Returns the result of a three-way comparison between `xs` and `ys`.
+    ///
+    /// Returns n < 0 if `xs` is lexicographically smaller than `ys`.
+    /// Returns n = 0 if `xs` is equal to `ys`.
+    /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
+    ///
+    pub def __cmp(xs: RBSet[a], ys: RBSet[a]): Int32 = __cmpHelper(toList(xs), toList(ys))
+
+    ///
+    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
+    ///
+    pub def __eq(xs: RBSet[a], ys: RBSet[a]): Bool = __cmp(xs, ys) == 0
 
     ///
     /// Helper function for `range`.
