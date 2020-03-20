@@ -61,7 +61,7 @@ namespace RBSet {
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
     pub def isProperSubsetOf(xs: RBSet[a], ys: RBSet[a]): Bool =
-        if (isSubsetOf(xs, ys)) size(xs) != size(ys) else false
+        size(xs) != size(ys) && isSubsetOf(xs, ys)
 
     ///
     /// Alias for `findLeft`.
@@ -113,9 +113,9 @@ namespace RBSet {
     ///
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
-    pub def foldRight(f: (b, a) -> b & e, s: b, xs: RBSet[a]): b & e =
+    pub def foldRight(f: (a, b) -> b & e, s: b, xs: RBSet[a]): b & e =
         let RBSet(es) = xs;
-        RBTree.foldRight((b, k, _) -> f(b, k), s, es)
+        RBTree.foldRight((k, _, b) -> f(k, b), s, es)
 
     ///
     /// Alias for `reduceLeft`.
@@ -151,7 +151,8 @@ namespace RBSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: a -> Bool, xs: RBSet[a]): Int32 = foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
+    pub def count(f: a -> Bool, xs: RBSet[a]): Int32 =
+        foldLeft((acc, x) -> if (f(x)) 1 + acc else acc, 0, xs)
 
     ///
     /// Returns the union of the elements in `xs`.
@@ -185,15 +186,13 @@ namespace RBSet {
     /// Returns the union of `xs` and `ys`.
     ///
     pub def union(xs: RBSet[a], ys: RBSet[a]): RBSet[a] =
-        if (size(xs) >= size(ys)) foldLeft((acc, x) -> insert(x, acc), xs, ys) else union(ys, xs)
+        foldLeft((acc, x) -> insert(x, acc), xs, ys)
 
     ///
     /// Returns the intersection of `xs` and `ys`.
     ///
     pub def intersection(xs: RBSet[a], ys: RBSet[a]): RBSet[a] =
-        if (size(xs) >= size(ys))
         foldLeft((acc, x) -> if (memberOf(x, xs)) insert(x, acc) else acc, empty(), ys)
-        else intersection(ys, xs)
 
     ///
     /// Returns the difference of `xs` and `ys`, i.e. `xs - ys`.

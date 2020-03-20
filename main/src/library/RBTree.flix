@@ -233,8 +233,8 @@ namespace RBTree {
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left, i.e., reverse inorder
     ///
-    pub def foldRight(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
-        case RBNode(_, a, xK, xV, b) => foldRight(f, f(foldRight(f, s, b), xK, xV), a)
+    pub def foldRight(f: (k, v, b) -> b, s: b, tree: RBTree[k, v]): b = match tree {
+        case RBNode(_, a, xK, xV, b) => foldRight(f, f(xK, xV, foldRight(f, s, b)), a)
         case _ => s
     }
 
@@ -303,7 +303,7 @@ namespace RBTree {
     ///
     pub def forall(f: (k, v) -> Bool, tree: RBTree[k, v]): Bool = match tree {
         case RBNode(_, a, xK, xV, b) => if (!f(xK, xV)) false else forall(f, a) && forall(f, b)
-        case _ => false
+        case _ => true
     }
 
     ///
