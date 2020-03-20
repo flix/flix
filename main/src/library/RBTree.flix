@@ -1,38 +1,37 @@
-namespace RBTree {
+///
+/// An immutable red-black tree implementation with keys
+/// of type `k` and values of type `v`.
+///
+/// A red-black tree is a balanced binary search tree.
+/// Each node is either red or black, although a transitory color double-black is allowed during deletion.
+/// The red-black tree satisfy the following invariants.
+///
+/// 1. For all nodes with key `x`,
+/// the left subtree contains only nodes with keys `y` < `x` and
+/// the right subtree contains only nodes with keys `z` > `x`.
+/// 2. No red node has a red parent.
+/// 3. Every path from the root to a leaf contains the same
+/// number of black nodes.
+///
+enum RBTree[k, v] {
+    case RBLeaf,
+    case RBBLeaf,
+    case RBNode(RBTree.RBColor, RBTree[k, v], k, v, RBTree[k, v])
+}
 
-    ///
-    /// A red-black tree implementation used by `Map` and `Set`
-    /// with keys of type `k` and values of type `v`.
-    ///
-    /// The red-black tree is a balanced binary search tree.
-    /// Each node is either red or black, although a
-    /// transitory color double-black is allowed during deletion.
-    /// The red-black tree satisfy the following invariants.
-    ///
-    /// 1. For all nodes with key x,
-    /// the left subtree contains only nodes with keys y < x and
-    /// the right subtree contains only nodes with keys z > x.
-    /// 2. No red node has a red parent.
-    /// 3. Every path from the root to a leaf contains the same
-    /// number of black nodes.
-    ///
-    pub enum RBTree[k, v] {
-        case RBLeaf,
-        case RBBLeaf,
-        case RBNode(RBColor, RBTree[k, v], k, v, RBTree[k, v])
-    }
+namespace RBTree {
 
     ///
     /// The color of a red-black tree node.
     ///
-    enum RBColor {
+    pub enum RBColor {
         case Red
         case Black
         case DoubleBlack
     }
 
     ///
-    /// Returns a new, balanced tree identical to `tree`.
+    /// Helper function for `insert` and `delete`.
     ///
     def balance(tree: RBTree[k, v]): RBTree[k, v] = match tree {
         case RBNode(Black, RBNode(Red, RBNode(Red, a, xK, xV, b), yK, yV, c), zK, zV, d) =>
@@ -51,7 +50,7 @@ namespace RBTree {
     }
 
     ///
-    /// Returns a new tree identical to `tree` except the root is colored black.
+    /// Helper function for `insert`.
     ///
     def blacken(tree: RBTree[k, v]): RBTree[k, v] = match tree {
         case RBNode(Red, RBNode(Red, a, xK, xV, b), yK, yV, c) =>
@@ -75,7 +74,7 @@ namespace RBTree {
     }
 
     ///
-    /// Returns a new, balanced tree containing all elements from `tree` as well as `x`.
+    /// Returns a new, balanced tree containing all nodes of `tree` and a node having key `xK` and value `xV` added.
     ///
     pub def insert(xK: k, xV: v, tree: RBTree[k, v]): RBTree[k, v] = blacken(insertHelper(xK, xV, tree))
 
@@ -111,7 +110,7 @@ namespace RBTree {
     }
 
     ///
-    /// Returns a new tree identical to `tree` except the root is colored red.
+    /// Helper function for `delete`.
     ///
     def redden(tree: RBTree[k, v]): RBTree[k, v] = match tree {
         case RBNode(Black, RBNode(Black, a, xK, xV, b), yK, yV, RBNode(Black, c, zK, zV, d)) =>
@@ -153,12 +152,12 @@ namespace RBTree {
     }
 
     ///
-    /// Returns a new, balanced tree containg all elements of `tree` execept `x`.
+    /// Returns a new, balanced tree containing all nodes of `tree` except the node with key `xK`.
     ///
     pub def delete(xK: k, tree: RBTree[k, v]): RBTree[k, v] = redden(deleteHelper(xK, tree))
 
     ///
-    /// Returns true if and only if `tree` contains `x`.
+    /// Returns true if and only if `tree` contains a node with key `xK`.
     ///
     pub def contains(xK: k, tree: RBTree[k, v]): Bool = match tree {
         case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => contains(xK, a)
@@ -197,7 +196,7 @@ namespace RBTree {
     }
 
     ///
-    /// Optionally returns the first element of `tree` that satisfies the predicate `f` when searching from left to right.
+    /// Optionally returns the first key-value pair of `tree` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
@@ -210,7 +209,7 @@ namespace RBTree {
     }
 
     ///
-    /// Optionally returns the first element of `tree` that satisfies the predicate `f` when searching from right to left.
+    /// Optionally returns the first key-value pair of `tree` that satisfies the predicate `f` when searching from right to left.
     ///
     /// The function `f` must be pure.
     ///
@@ -223,7 +222,7 @@ namespace RBTree {
     }
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `tree` going from left to right, i.e. inorder.
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right, i.e., inorder.
     ///
     ///
     pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
@@ -232,7 +231,7 @@ namespace RBTree {
     }
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `tree` going from right to left, i.e. reverse inorder
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left, i.e., reverse inorder
     ///
     pub def foldRight(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
         case RBNode(_, a, xK, xV, b) => foldRight(f, f(foldRight(f, s, b), xK, xV), a)
@@ -248,8 +247,7 @@ namespace RBTree {
     }
 
     ///
-    /// Applies `f` to all elements in `tree` going from left to right, , i.e. inorder until a single value `v` is obtained. Returns `Some(v)`.
-    /// Returns `None` if `tree` is the empty tree.
+    /// Applies `f` to all key-value pairs in `tree` going from left to right, i.e., inorder until a single value `v` is obtained.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] = match tree {
         case RBNode(_, a, xK, xV, b) =>
@@ -259,8 +257,7 @@ namespace RBTree {
     }
 
     ///
-    /// Applies `f` to all elements in `tree` going from right to left, , i.e. reverse inorder until a single value `v` is obtained. Returns `Some(v)`.
-    /// Returns `None` if `tree` is the empty tree.
+    /// Applies `f` to all key-value pairs in `tree` going from right to left, i.e., reverse inorder until a single value `v` is obtained.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] = match tree {
         case RBNode(_, a, xK, xV, b) =>
@@ -270,7 +267,7 @@ namespace RBTree {
     }
 
     ///
-    /// Optionally returns the left most element of `tree`.
+    /// Optionally returns the left most key-value pair of `tree`.
     ///
     pub def leftMost(tree: RBTree[k, v]): Option[(k, v)] = match tree {
         case RBNode(_, a, xK, xV, _) => if (isEmpty(a)) Some((xK, xV)) else leftMost(a)
@@ -278,7 +275,7 @@ namespace RBTree {
     }
 
     ///
-    /// Optionally returns the right most element of `tree`.
+    /// Optionally returns the right most key-value pair of `tree`.
     ///
     pub def rightMost(tree: RBTree[k, v]): Option[(k, v)] = match tree {
         case RBNode(_, b, xK, xV, _) => if (isEmpty(b)) Some((xK, xV)) else rightMost(b)
@@ -286,9 +283,9 @@ namespace RBTree {
     }
 
     ///
-    /// Returns `true` if and only if at least one element in `tree` satisfies the predicate `f`.
+    /// Returns `true` if and only if at least one key-value pair in `tree` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `xs` is the empty tree.
+    /// Returns `false` if `tree` is the empty tree.
     ///
     /// The function `f` must be pure.
     ///
@@ -298,9 +295,9 @@ namespace RBTree {
     }
 
     ///
-    /// Returns `true` if and only if all elements in `tree` satisfy the predicate `f`.
+    /// Returns `true` if and only if all key-value pairs in `tree` satisfy the predicate `f`.
     ///
-    /// Returns `true` if `xs` is the empty tree.
+    /// Returns `true` if `tree` is the empty tree.
     ///
     /// The function `f` must be pure.
     ///
@@ -310,7 +307,7 @@ namespace RBTree {
     }
 
     ///
-    /// Applies `f` to every element of `tree`.
+    /// Applies `f` to every key-value pair of `tree`.
     ///
     /// The function `f` must be impure.
     ///
@@ -318,90 +315,5 @@ namespace RBTree {
         case RBNode(_, a, xK, xV, b) => foreach(f, a); f(xK, xV); foreach(f, b)
         case _ => ()
     }
-
-///    ///
-///    /// Helper function for `cmp`.
-///    ///
-///    def cmpHelper(this: RBTree[k, v], that: RBTree[k, v], a: Option[a], b: Option[a]): Int32 = match a {
-///        case Some(x) => match b {
-///            case Some(y) =>
-///                let cmp = x <=> y;
-///                if (cmp < 0) -1
-///                else if (cmp == 0) cmpHelper(this, that, findLeft(m -> m <=> x > 0, this), findLeft(n -> n <=> y > 0, that))
-///                else 1
-///            case None => 1
-///        }
-///        case None => -1
-///    }
-///
-///    ///
-///    /// Returns the result of a three-way comparison between `this` and `that`.
-///    ///
-///    /// Returns n < 0 if `this` is lexicographically smaller than `that`.
-///    /// Returns n = 0 if `this` is equal to `that`.
-///    /// Returns n > 0 if `this` is lexicographically greater than `that`.
-///    ///
-///    pub def __cmp(this: RBTree[k, v], that: RBTree[k, v]): Int32 =
-///        if (isEmpty(this) && isEmpty(that)) 0 else cmpHelper(this, that, leftMost(this), leftMost(that))
-///
-///    ///
-///    /// Returns `true` if and only if `this` and `that` are equal, i.e. they have the same elements.
-///    ///
-///    pub def __eq(this: RBTree[k, v], that: RBTree[k, v]): Bool = __cmp(this, that) == 0
-
-    ///
-    /// Helper function for `range`.
-    ///
-    /// TODO: Move to test code
-    def rangeHelper(b: Int32, n: Int32, acc: RBTree[Int32, Unit]): RBTree[Int32, Unit] =
-        if (n < b) acc else rangeHelper(b, n - 1, insert(n, (), acc))
-
-    ///
-    /// Returns a tree of all integers between `b` (inclusive) and `e` (exclusive).
-    ///
-    /// Returns `empty()` if `b >= e`.
-    ///
-    /// TODO: Move to test code
-    pub def range(b: Int32, e: Int32): RBTree[Int32, Unit] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
-
-    ///
-    /// Returns a tree containing `n` random nodes of type Int32 -> Unit.
-    ///
-    /// TODO: Move to test code
-    pub def random(n: Int32): RBTree[Int32, Unit] & Impure = {
-        let seed = match Int64.fromString("42") {
-            case Ok(s) => s
-            case _ => panic "no seed given"
-        };
-        let r = Random.newWithSeed(seed);
-        List.fold((acc, x) -> RBTree.insert(x, (), acc), RBTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
-    }
-
-    ///
-    /// Returns `true` if and only if the binary search tree invariant holds.
-    ///
-    pub def binarySearchTreeInvariantHolds(tree: RBTree[k, v]): Bool = match tree {
-        case RBNode(_, a, xK, _, b) =>
-        if (exists((yK, _) -> yK <=> xK > 0, a) || exists((zK, _) -> zK <=> xK < 0, b)) false
-        else binarySearchTreeInvariantHolds(a) && binarySearchTreeInvariantHolds(b)
-        case _ => true
-    }
-
-    ///
-    /// Helper function for `redParentInvariantHolds`.
-    ///
-    def redParentInvariantHoldsHelper(tree: RBTree[k, v], parentColor: RBColor): Bool = match tree {
-        case RBNode(Red, a, _, _, b) =>
-            if (parentColor == Red) false else redParentInvariantHoldsHelper(a, Red) && redParentInvariantHoldsHelper(b, Red)
-        case RBNode(Black, a, _, _, b) =>
-            redParentInvariantHoldsHelper(a, Black) && redParentInvariantHoldsHelper(b, Black)
-        case _ => true
-    }
-
-    ///
-    /// Returns `true` if and only if no red node has a red parent.
-    ///
-    pub def redParentInvariantHolds(tree: RBTree[k, v]): Bool = redParentInvariantHoldsHelper(tree, Black)
 
 }
