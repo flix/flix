@@ -14,7 +14,6 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
 
   type AbstractCache = Map[LabeledExpression, Set[Expression.Lambda]]
   type AbstractEnvironment = Map[Symbol.VarSym, Set[Expression.Lambda]]
-  type InlineContext = (Set[SourceLocation], Map[Symbol.VarSym, Symbol.VarSym], Map[Symbol.LabelSym, Symbol.LabelSym])
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("CFA") {
     /* Uncurry an arrow type A -> (B -> C) into an arrow (A, B) -> C
@@ -1177,318 +1176,276 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
       })(Map.empty, Map.empty)
     }
 
-    def inlineExp(exp0: Expression): State[InlineContext, Expression] =
+    def inlineExp(exp0: Expression, ctxt0: Set[SourceLocation]): Expression = //TODO: Identifying lambdas by source location is not great
       exp0 match {
-        case LabeledExpression(label, exp) => inlineExp(exp)
+        case LabeledExpression(label, exp) => inlineExp(exp, ctxt0)
 
-        case Expression.Unit => State.ret(exp0)
-        case Expression.True => State.ret(exp0)
-        case Expression.False => State.ret(exp0)
-        case Expression.Char(lit) => State.ret(exp0)
-        case Expression.Float32(lit) => State.ret(exp0)
-        case Expression.Float64(lit) => State.ret(exp0)
-        case Expression.Int8(lit) => State.ret(exp0)
-        case Expression.Int16(lit) => State.ret(exp0)
-        case Expression.Int32(lit) => State.ret(exp0)
-        case Expression.Int64(lit) => State.ret(exp0)
-        case Expression.BigInt(lit) => State.ret(exp0)
-        case Expression.Str(lit) => State.ret(exp0)
+        case Expression.Unit => exp0
+        case Expression.True => exp0
+        case Expression.False => exp0
+        case Expression.Char(lit) => exp0
+        case Expression.Float32(lit) => exp0
+        case Expression.Float64(lit) => exp0
+        case Expression.Int8(lit) => exp0
+        case Expression.Int16(lit) => exp0
+        case Expression.Int32(lit) => exp0
+        case Expression.Int64(lit) => exp0
+        case Expression.BigInt(lit) => exp0
+        case Expression.Str(lit) => exp0
 
-        case Expression.Def(sym, tpe, loc) => State.ret(Expression.Def(sym, tpe, loc))
+        case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
-        case Expression.Var(sym, tpe, loc) => State { case (ctxt0, vars, labels) =>
-          val s = vars.getOrElse(sym, sym)
-          (Expression.Var(s, tpe, loc), (ctxt0, vars, labels))
-        }
+        case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc)
 
-        case Expression.Lambda(args, body, tpe, loc) => State { case (ctxt0, vars0, labels) =>
-          val freshArgs = args.map(fparam => fparam.copy(sym = Symbol.freshVarSym(fparam.sym)))
-          val vars1 = args.zip(freshArgs).map {
-            case (oldParam, newParam) => oldParam.sym -> newParam.sym
-          }
-          val (b, _) = inlineExp(body)((ctxt0 + loc, vars0 ++ vars1.toMap, labels))
-          (Expression.Lambda(freshArgs, b, tpe, loc), (ctxt0, vars0, labels))
-        }
+        case Expression.Lambda(args, body, tpe, loc) =>
+          val b = inlineExp(body, ctxt0 + loc)
+          Expression.Lambda(args, b, tpe, loc)
 
-        case Expression.Apply(lExp, args, tpe, loc) => State { st =>
+        case Expression.Apply(lExp, args, tpe, loc) =>
           val lams = lExp.exp match {
             case Expression.Var(sym, tpe, loc) => varFlow.getOrElse(sym, Set.empty)
             case _ => expFlow.getOrElse(lExp, Set.empty)
           }
-          val (as, _) = State.sequence(args map inlineExp)(st)
+          val as = args map (inlineExp(_, ctxt0))
           if (lams.size == 1) {
             val lam = lams.head
-            val lamCtxt = st._1
-            if (!lamCtxt.contains(lam.loc)) {
-              val (i, _) = inlineExp(lam)(st)
+            if (!ctxt0.contains(lam.loc)) {
+              val i = inlineExp(renameBoundVars(lam, Map.empty, Map.empty), ctxt0)
               if (SimplifiedAstOps.freeVars(i).isEmpty) {
-                (Expression.Apply(i, as, tpe, loc), st)
+                Expression.Apply(i, as, tpe, loc)
               } else {
-                val (e, _) = inlineExp(lExp)(st)
-                (Expression.Apply(e, as, tpe, loc), st)
+                val e = inlineExp(lExp, ctxt0)
+                Expression.Apply(e, as, tpe, loc)
               }
             } else {
-              val (e, _) = inlineExp(lExp)(st)
-              (Expression.Apply(e, as, tpe, loc), st)
+              val e = inlineExp(lExp, ctxt0)
+              Expression.Apply(e, as, tpe, loc)
             }
           } else {
-            val (e, _) = inlineExp(lExp)(st)
-            (Expression.Apply(e, as, tpe, loc), st)
+            val e = inlineExp(lExp, ctxt0)
+            Expression.Apply(e, as, tpe, loc)
           }
-        }
 
-        case Expression.Unary(sop, op, exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Unary(sop, op, e, tpe, loc)
+        case Expression.Unary(sop, op, exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Unary(sop, op, e, tpe, loc)
 
-        case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => for {
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-        } yield Expression.Binary(sop, op, e1, e2, tpe, loc)
+        case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.Binary(sop, op, e1, e2, tpe, loc)
 
-        case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => for {
-          cond <- inlineExp(exp1)
-          consequent <- inlineExp(exp2)
-          alternative <- inlineExp(exp3)
-        } yield Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
+        case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+          val cond = inlineExp(exp1, ctxt0)
+          val consequent = inlineExp(exp2, ctxt0)
+          val alternative = inlineExp(exp3, ctxt0)
+          Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
 
-        case Expression.Branch(exp, branches, tpe, loc) => for {
-          // Need to rename all cases before we inline their bodies
-          // because they can refer to each other.
-          renamedBranches <- State.sequence(branches.toList map {
-            case (sym, br) => State { case (ctxt0, vars0, labels0) =>
-              val freshLabel = Symbol.freshLabel(sym)
-              val labels1 = labels0 + (sym -> freshLabel)
-              ((freshLabel -> br), (ctxt0, vars0, labels1))
-            }: State[InlineContext, (Symbol.LabelSym, Expression)]
-          })
-          bs <- State.sequence(renamedBranches map {
-            case (sym, br) => for {
-              b <- inlineExp(br)
-            } yield (sym -> b)
-          })
-          e <- inlineExp(exp)
-        } yield Expression.Branch(e, bs.toMap, tpe, loc)
+        case Expression.Branch(exp, branches, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          val bs = branches map {
+            case (sym, br) =>
+              val b = inlineExp(br, ctxt0)
+              (sym -> b)
+          }
+          Expression.Branch(e, bs, tpe, loc)
 
-        case Expression.JumpTo(sym, tpe, loc) => State { case (ctxt0, vars0, labels0) =>
-          val s = labels0(sym) // Jumps don't occur outside branch blocks
-          (Expression.JumpTo(s, tpe, loc), (ctxt0, vars0, labels0))
-        }
+        case Expression.JumpTo(sym, tpe, loc) => Expression.JumpTo(sym, tpe, loc)
 
-        case Expression.Let(sym, exp1, exp2, tpe, loc) => State { case (ctxt0, vars0, labels0) =>
-          val freshSym = Symbol.freshVarSym(sym)
-          val vars1 = vars0 + (sym -> freshSym)
-          val (e1, _) = inlineExp(exp1)((ctxt0, vars0, labels0))
-          val (e2, _) = inlineExp(exp2)((ctxt0, vars1, labels0))
-          (Expression.Let(freshSym, e1, e2, tpe, loc), (ctxt0, vars0, labels0))
-        }
+        case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.Let(sym, e1, e2, tpe, loc)
 
-        case Expression.LetRec(sym, exp1, exp2, tpe, loc) => State { case (ctxt0, vars0, labels0) =>
-          val freshSym = Symbol.freshVarSym(sym)
-          val vars1 = vars0 + (sym -> freshSym)
-          val (e1, _) = inlineExp(exp1)((ctxt0, vars1, labels0))
-          val (e2, _) = inlineExp(exp2)((ctxt0, vars1, labels0))
-          (Expression.LetRec(freshSym, e1, e2, tpe, loc), (ctxt0, vars0, labels0))
-        }
+        case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.LetRec(sym, e1, e2, tpe, loc)
 
-        case Expression.Is(sym, tag, exp, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Is(sym, tag, e, loc)
+        case Expression.Is(sym, tag, exp, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Is(sym, tag, e, loc)
 
-        case Expression.Tag(sym, tag, exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Tag(sym, tag, e, tpe, loc)
+        case Expression.Tag(sym, tag, exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Tag(sym, tag, e, tpe, loc)
 
-        case Expression.Untag(sym, tag, exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Untag(sym, tag, e, tpe, loc)
+        case Expression.Untag(sym, tag, exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Untag(sym, tag, e, tpe, loc)
 
-        case Expression.Index(base, offset, tpe, loc) => for {
-          b <- inlineExp(base)
-        } yield Expression.Index(b, offset, tpe, loc)
+        case Expression.Index(base, offset, tpe, loc) =>
+          val b = inlineExp(base, ctxt0)
+          Expression.Index(b, offset, tpe, loc)
 
-        case Expression.Tuple(elms, tpe, loc) => for {
-          es <- State.sequence(elms map inlineExp)
-        } yield Expression.Tuple(es, tpe, loc)
+        case Expression.Tuple(elms, tpe, loc) =>
+          val es = elms map (inlineExp(_, ctxt0))
+          Expression.Tuple(es, tpe, loc)
 
-        case Expression.RecordEmpty(tpe, loc) => State.ret(Expression.RecordEmpty(tpe, loc))
+        case Expression.RecordEmpty(tpe, loc) => Expression.RecordEmpty(tpe, loc)
 
-        case Expression.RecordSelect(exp, label, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.RecordSelect(e, label, tpe, loc)
+        case Expression.RecordSelect(exp, label, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.RecordSelect(e, label, tpe, loc)
 
-        case Expression.RecordExtend(label, value, rest, tpe, loc) => for {
-          v <- inlineExp(value)
-          r <- inlineExp(rest)
-        } yield Expression.RecordExtend(label, v, r, tpe, loc)
+        case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+          val v = inlineExp(value, ctxt0)
+          val r = inlineExp(rest, ctxt0)
+          Expression.RecordExtend(label, v, r, tpe, loc)
 
-        case Expression.RecordRestrict(label, rest, tpe, loc) => for {
-          r <- inlineExp(rest)
-        } yield Expression.RecordRestrict(label, r, tpe, loc)
+        case Expression.RecordRestrict(label, rest, tpe, loc) =>
+          val r = inlineExp(rest, ctxt0)
+          Expression.RecordRestrict(label, r, tpe, loc)
 
-        case Expression.ArrayLit(elms, tpe, loc) => for {
-          es <- State.sequence(elms map inlineExp)
-        } yield Expression.ArrayLit(es, tpe, loc)
+        case Expression.ArrayLit(elms, tpe, loc) =>
+          val es = elms map (inlineExp(_, ctxt0))
+          Expression.ArrayLit(es, tpe, loc)
 
-        case Expression.ArrayNew(elm, len, tpe, loc) => for {
-          e <- inlineExp(elm)
-          ln <- inlineExp(len)
-        } yield Expression.ArrayNew(e, ln, tpe, loc)
+        case Expression.ArrayNew(elm, len, tpe, loc) =>
+          val e = inlineExp(elm, ctxt0)
+          val ln = inlineExp(len, ctxt0)
+          Expression.ArrayNew(e, ln, tpe, loc)
 
-        case Expression.ArrayLoad(base, index, tpe, loc) => for {
-          b <- inlineExp(base)
-          i <- inlineExp(index)
-        } yield Expression.ArrayLoad(b, i, tpe, loc)
+        case Expression.ArrayLoad(base, index, tpe, loc) =>
+          val b = inlineExp(base, ctxt0)
+          val i = inlineExp(index, ctxt0)
+          Expression.ArrayLoad(b, i, tpe, loc)
 
-        case Expression.ArrayStore(base, index, elm, tpe, loc) => for {
-          b <- inlineExp(base)
-          i <- inlineExp(index)
-          e <- inlineExp(elm)
-        } yield Expression.ArrayStore(b, i, e, tpe, loc)
+        case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+          val b = inlineExp(base, ctxt0)
+          val i = inlineExp(index, ctxt0)
+          val e = inlineExp(elm, ctxt0)
+          Expression.ArrayStore(b, i, e, tpe, loc)
 
-        case Expression.ArrayLength(base, tpe, loc) => for {
-          b <- inlineExp(base)
-        } yield Expression.ArrayLength(b, tpe, loc)
+        case Expression.ArrayLength(base, tpe, loc) =>
+          val b = inlineExp(base, ctxt0)
+          Expression.ArrayLength(b, tpe, loc)
 
-        case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) => for {
-          b <- inlineExp(base)
-          i1 <- inlineExp(startIndex)
-          i2 <- inlineExp(endIndex)
-        } yield Expression.ArraySlice(b, i1, i2, tpe, loc)
+        case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+          val b = inlineExp(base, ctxt0)
+          val i1 = inlineExp(startIndex, ctxt0)
+          val i2 = inlineExp(endIndex, ctxt0)
+          Expression.ArraySlice(b, i1, i2, tpe, loc)
 
-        case Expression.Ref(exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Ref(e, tpe, loc)
+        case Expression.Ref(exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Ref(e, tpe, loc)
 
-        case Expression.Deref(exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Deref(e, tpe, loc)
+        case Expression.Deref(exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Deref(e, tpe, loc)
 
-        case Expression.Assign(exp1, exp2, tpe, loc) => for {
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-        } yield Expression.Assign(e1, e2, tpe, loc)
+        case Expression.Assign(exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.Assign(e1, e2, tpe, loc)
 
-        case Expression.Existential(fparam, exp, loc) => State { case (ctxt0, vars0, labels0) =>
-          val freshParam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
-          val vars1 = vars0 + (fparam.sym -> freshParam.sym)
-          val (e, _) = inlineExp(exp)((ctxt0, vars1, labels0))
-          (Expression.Existential(freshParam, e, loc), (ctxt0, vars0, labels0))
-        }
+        case Expression.Existential(fparam, exp, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Existential(fparam, e, loc)
 
-        case Expression.Universal(fparam, exp, loc) => State { case (ctxt0, vars0, labels0) =>
-          val freshParam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
-          val vars1 = vars0 + (fparam.sym -> freshParam.sym)
-          val (e, _) = inlineExp(exp)((ctxt0, vars1, labels0))
-          (Expression.Universal(freshParam, e, loc), (ctxt0, vars0, labels0))
-        }
+        case Expression.Universal(fparam, exp, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Universal(fparam, e, loc)
 
-        case Expression.Cast(exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.Cast(e, tpe, loc)
+        case Expression.Cast(exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.Cast(e, tpe, loc)
 
-        case Expression.TryCatch(exp, rules, tpe, loc) => for {
-          // TODO: is this right or do we need to handle it like Branch?
-          e <- inlineExp(exp)
-          rs <- State.sequence(rules map {
-            case CatchRule(sym, clazz, body) => State { case (ctxt0, vars0, labels0) =>
-              val freshSym = Symbol.freshVarSym(sym)
-              val vars1 = vars0 + (sym -> freshSym)
-              val (b, _) = inlineExp(body)((ctxt0, vars1, labels0))
-              (CatchRule(freshSym, clazz, b), (ctxt0, vars0, labels0))
-            }: State[InlineContext, SimplifiedAst.CatchRule]
-          })
-        } yield Expression.TryCatch(e, rs, tpe, loc)
+        case Expression.TryCatch(exp, rules, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          val rs = rules map {
+            case CatchRule(sym, clazz, body) =>
+              val b = inlineExp(body, ctxt0)
+              CatchRule(sym, clazz, b)
+          }
+          Expression.TryCatch(e, rs, tpe, loc)
 
-        case Expression.InvokeConstructor(constructor, args, tpe, loc) => for {
-          as <- State.sequence(args map inlineExp)
-        } yield Expression.InvokeConstructor(constructor, as, tpe, loc)
+        case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+          val as = args map (inlineExp(_, ctxt0))
+          Expression.InvokeConstructor(constructor, as, tpe, loc)
 
-        case Expression.InvokeMethod(method, exp, args, tpe, loc) => for {
-          e <- inlineExp(exp)
-          as <- State.sequence(args map inlineExp)
-        } yield Expression.InvokeMethod(method, e, as, tpe, loc)
+        case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          val as = args map (inlineExp(_, ctxt0))
+          Expression.InvokeMethod(method, e, as, tpe, loc)
 
-        case Expression.InvokeStaticMethod(method, args, tpe, loc) => for {
-          as <- State.sequence(args map inlineExp)
-        } yield Expression.InvokeStaticMethod(method, as, tpe, loc)
+        case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+          val as = args map (inlineExp(_, ctxt0))
+          Expression.InvokeStaticMethod(method, as, tpe, loc)
 
-        case Expression.GetField(field, exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.GetField(field, e, tpe, loc)
+        case Expression.GetField(field, exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.GetField(field, e, tpe, loc)
 
-        case Expression.PutField(field, exp1, exp2, tpe, loc) => for {
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-        } yield Expression.PutField(field, e1, e2, tpe, loc)
+        case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.PutField(field, e1, e2, tpe, loc)
 
-        case Expression.GetStaticField(field, tpe, loc) => State.ret(Expression.GetStaticField(field, tpe, loc))
+        case Expression.GetStaticField(field, tpe, loc) => Expression.GetStaticField(field, tpe, loc)
 
-        case Expression.PutStaticField(field, exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.PutStaticField(field, e, tpe, loc)
+        case Expression.PutStaticField(field, exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.PutStaticField(field, e, tpe, loc)
 
-        case Expression.NewChannel(exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.NewChannel(e, tpe, loc)
+        case Expression.NewChannel(exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.NewChannel(e, tpe, loc)
 
-        case Expression.GetChannel(exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.GetChannel(e, tpe, loc)
+        case Expression.GetChannel(exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.GetChannel(e, tpe, loc)
 
-        case Expression.PutChannel(exp1, exp2, tpe, loc) => for {
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-        } yield Expression.PutChannel(e1, e2, tpe, loc)
+        case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.PutChannel(e1, e2, tpe, loc)
 
-        case Expression.SelectChannel(rules, default, tpe, loc) => for {
-          // TODO: is this right or do we need to handle it like Branch?
-          rs <- State.sequence(rules map {
-            case SelectChannelRule(sym, chan, exp) => State { case (ctxt0, vars0, labels0) =>
-              val freshSym = Symbol.freshVarSym(sym)
-              val vars1 = vars0 + (sym -> freshSym)
-              val (c, _) = inlineExp(chan)((ctxt0, vars0, labels0)) // TODO: can sym occur in chan?
-              val (e, _) = inlineExp(exp)((ctxt0, vars1, labels0))
-              (SimplifiedAst.SelectChannelRule(freshSym, c, e), (ctxt0, vars0, labels0))
-            }: State[InlineContext, SimplifiedAst.SelectChannelRule]
-          })
-          d <- State.mapOpt(default.map(inlineExp))
-        } yield Expression.SelectChannel(rs, d, tpe, loc)
+        case Expression.SelectChannel(rules, default, tpe, loc) =>
+          val rs = rules map {
+            case SelectChannelRule(sym, chan, exp) =>
+              val c = inlineExp(chan, ctxt0)
+              val e = inlineExp(exp, ctxt0)
+              SelectChannelRule(sym, c, e)
+          }
+          val d = default.map(inlineExp(_, ctxt0))
+          Expression.SelectChannel(rs, d, tpe, loc)
 
-        case Expression.ProcessSpawn(exp, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.ProcessSpawn(e, tpe, loc)
+        case Expression.ProcessSpawn(exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.ProcessSpawn(e, tpe, loc)
 
-        case Expression.ProcessPanic(msg, tpe, loc) => State.ret(Expression.ProcessPanic(msg, tpe, loc))
+        case Expression.ProcessPanic(msg, tpe, loc) => Expression.ProcessPanic(msg, tpe, loc)
 
-        case Expression.FixpointConstraintSet(cs0, tpe, loc) => State.ret(Expression.FixpointConstraintSet(cs0, tpe, loc))
+        case Expression.FixpointConstraintSet(cs0, tpe, loc) => Expression.FixpointConstraintSet(cs0, tpe, loc)
 
-        case Expression.FixpointCompose(exp1, exp2, tpe, loc) => for {
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-        } yield Expression.FixpointCompose(e1, e2, tpe, loc)
+        case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.FixpointCompose(e1, e2, tpe, loc)
 
-        case Expression.FixpointSolve(exp, stf, tpe, loc) => for {
-          e <- inlineExp(exp)
-        } yield Expression.FixpointSolve(e, stf, tpe, loc)
+        case Expression.FixpointSolve(exp, stf, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.FixpointSolve(e, stf, tpe, loc)
 
-        case Expression.FixpointProject(sym, exp, tpe, loc) => for { // TODO: rename?
-          e <- inlineExp(exp)
-        } yield Expression.FixpointProject(sym, e, tpe, loc)
+        case Expression.FixpointProject(sym, exp, tpe, loc) =>
+          val e = inlineExp(exp, ctxt0)
+          Expression.FixpointProject(sym, e, tpe, loc)
 
-        case Expression.FixpointEntails(exp1, exp2, tpe, loc) => for {
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-        } yield Expression.FixpointEntails(e1, e2, tpe, loc)
+        case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          Expression.FixpointEntails(e1, e2, tpe, loc)
 
-        case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => for { // TODO: rename?
-          e1 <- inlineExp(exp1)
-          e2 <- inlineExp(exp2)
-          e3 <- inlineExp(exp3)
-        } yield Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
+        case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+          val e1 = inlineExp(exp1, ctxt0)
+          val e2 = inlineExp(exp2, ctxt0)
+          val e3 = inlineExp(exp3, ctxt0)
+          Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
 
-        case Expression.HoleError(sym, tpe, loc) => State.ret(Expression.HoleError(sym, tpe, loc))
-        case Expression.MatchError(tpe, loc) => State.ret(Expression.MatchError(tpe, loc))
+        case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
+        case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
 
         case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
         case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
@@ -1499,12 +1456,12 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
         case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       }
 
-    val (unlabeledDefs, _) = flix.subphase("Inlining") {
-      State.sequence(labeledDefs.map {
-        case (sym, defn) => for {
-          i <- inlineExp(defn.exp)
-        } yield (sym -> defn.copy(exp = i))
-      })((Set.empty, Map.empty, Map.empty))
+    val unlabeledDefs = flix.subphase("Inlining") {
+      labeledDefs.map {
+        case (sym, defn) =>
+          val i = inlineExp(defn.exp, Set.empty)
+          sym -> defn.copy(exp = i)
+      }
     }
 
     def simplifyApply(exp0: Expression): Expression =
@@ -1814,7 +1771,7 @@ object ControlFlowAnalysis extends Phase[SimplifiedAst.Root, SimplifiedAst.Root]
       case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
       case Expression.Var(sym, tpe, loc) =>
-        val s = vars0(sym)
+        val s = vars0.getOrElse(sym, sym) // sym might not have been renamed e.g. if it's a free variable.
         Expression.Var(s, tpe, loc)
 
       case Expression.Lambda(args0, body, tpe, loc) =>
