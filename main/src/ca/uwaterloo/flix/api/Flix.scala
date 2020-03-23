@@ -260,6 +260,7 @@ class Flix {
       Synthesize |>
       Simplifier |>
       Uncurrier |>
+      Uncurrier2 |>
       ControlFlowAnalysis |>
       ClosureConv |>
       LambdaLift |>
