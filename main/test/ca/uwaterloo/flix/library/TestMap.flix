@@ -203,19 +203,19 @@ def valuesOf01(): Bool = Map.valuesOf(Map#{}) `assertEq!` Nil
 def valuesOf02(): Bool = Map.valuesOf(Map#{1 -> 2}) `assertEq!` 2 :: Nil
 
 @test
-def valuesOf03(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4}) `assertEq!` 4 :: 2 :: Nil
+def valuesOf03(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4}) `assertEq!` 2 :: 4 :: Nil
 
 @test
-def valuesOf04(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6}) `assertEq!` 6 :: 4 :: 2 :: Nil
+def valuesOf04(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6}) `assertEq!` 2 :: 4 :: 6 :: Nil
 
 @test
-def valuesOf05(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) `assertEq!` 8 :: 6 :: 4 :: 2 :: Nil
+def valuesOf05(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) `assertEq!` 2 :: 4 :: 6 :: 8 :: Nil
 
 @test
-def valuesOf06(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `assertEq!` 10 :: 8 :: 6 :: 4 :: 2 :: Nil
+def valuesOf06(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `assertEq!` 2 :: 4 :: 6 :: 8 :: 10 :: Nil
 
 @test
-def valuesOf07(): Bool = Map.valuesOf(Map#{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) `assertEq!` -5 :: 7 :: -5 :: 4 :: -11 :: Nil
+def valuesOf07(): Bool = Map.valuesOf(Map#{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) `assertEq!` -11 :: 4 :: -5 :: 7 :: -5 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // insert                                                                  //

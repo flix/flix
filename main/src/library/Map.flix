@@ -99,7 +99,7 @@ namespace Map {
     /// Returns the values of `m`.
     ///
     pub def valuesOf(m: Map[k, v]): List[v] =
-        foldLeftWithKey((b, _, v) -> v :: b, Nil, m)
+        foldRight((v, b) -> v :: b, Nil, m)
 
 
 
