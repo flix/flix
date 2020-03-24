@@ -268,7 +268,7 @@ namespace Set {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(xs: Set[(a, b)]): Map[a, b] =
-        foldLeft((acc, x) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
+        foldRight((x, acc) -> let (k, v) = x; Map.insert(k, v, acc), Map#{}, xs)
 
     ///
     /// Applies `f` to every element of `xs`.
