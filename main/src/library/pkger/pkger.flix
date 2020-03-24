@@ -203,8 +203,4 @@ pub def semver_main(): Bool = match Parser.runParser(SemVerParser.parseSemVer(),
     case None => false
 }
 
-pub def package_main(): Option[(String, Atom)] = Parser.runParser(PackageParser.parsePackage(), "hi")
-
-pub def json_main(): Bool = Option.isEmpty(Parser.runParser(JsonParser.jsonValue(), "[42]"))
-
 pub def test_main(): Int = 0
