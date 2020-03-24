@@ -106,7 +106,7 @@ namespace RBSet {
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, xs: RBSet[a]): b & e =
         let RBSet(es) = xs;
-        RBTree.foldLeft((b, k, _) -> f(b, k), s, es)
+        RBTree.foldLeft((k, b, _) -> f(b, k), s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
