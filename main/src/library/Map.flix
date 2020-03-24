@@ -138,7 +138,7 @@ namespace Map {
 
 
     ///
-    /// Updates `m` with `k -> f(v)` if `k` is in `m`.
+    /// Updates `m` with `k -> f(v)` if `k -> v` is in `m`.
     ///
     /// Otherwise, returns `m`.
     ///
@@ -146,7 +146,7 @@ namespace Map {
         adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> f(k, v)` if `k` is in `m`. Otherwise, returns `m`.
+    /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
     ///
     pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: Map[k, v]): Map[k, v] & e = match get(k, m) {
         case None => m
@@ -154,13 +154,13 @@ namespace Map {
     }
 
     ///
-    /// Updates `m` with `k -> v1` if `k` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
     pub def update(f: v -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
         updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
-    /// Updates `m` with `k -> v1` if `k` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
+    /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
     pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e = match get(k, m) {
         case None => m
