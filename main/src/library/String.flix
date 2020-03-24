@@ -15,6 +15,11 @@
  */
 namespace String {
 
+    pub def equals(s1: String, s2: String): Bool = {
+        import java.lang.String.equals(##java.lang.Object);
+        s1.equals(s2 as ##java.lang.Object) as & Pure
+    }
+
     ///
     /// Returns the character at position `i` in the string `s`.
     ///

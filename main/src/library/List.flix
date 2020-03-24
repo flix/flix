@@ -308,6 +308,11 @@ namespace List {
         case _ => panic "unreachable"
     }
 
+    pub def remove(p: a -> Bool, xs: List[a]): List[a] = match xs {
+        case x :: ys => if (p(x)) { x :: remove(p, ys) } else { remove(p, ys) }
+        case Nil => Nil
+    }
+
     ///
     /// Helper function for `permutations`.
     ///

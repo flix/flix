@@ -76,16 +76,16 @@ pub opaque type Author = { name: String
                          , email: String
                          }
 
-pub opaque type Package = { name: String
-                          , version: SemVer
-                          , authors: List[Author]
-                          , description: String
-                          // This could be mandatory
-                          , license: Option[License]
-                          // Mapping package dependency names to the semver pattern
-                          , depends: List[(String, SemVer)]
-                          , home: Option[String] // Url?
-                          }
+pub type alias Package = { name: String
+                         , version: SemVer
+                         , authors: List[Author]
+                         , description: String
+                         // This could be mandatory
+                         , license: Option[License]
+                         // Mapping package dependency names to the semver pattern
+                         , depends: List[(String, SemVer)]
+                         , home: Option[String] // Url?
+                         }
 
 pub opaque type LockedPackage = { name: String
                                 // All transitive dependencies, their specific version, and where they were retrieved from.
@@ -93,10 +93,17 @@ pub opaque type LockedPackage = { name: String
                                 }
 
 // Add a new package to the package. Handle superseding old versions
-pub def addDependency(self: Package, package: String, version: SemVer): Package = ???
+pub def addDependency(self: Package, package: String, version: SemVer): Package = {
+    let selfx = self.removeDependency(package);
+    let addedPackage = (package, version) :: selfx.depends;
+    { depends = addedPackage | self }
+}
 
 // Remove a package from the list of dependencies
-pub def removeDependency(self: Package, package: String): Package = ???
+pub def removeDependency(self: Package, package: String): Package = {
+    let removedPackage = List.remove(tup -> match tup { case (p, _) => p == package }, self.depends);
+    { depends = removedPackage | self }
+}
 
 // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
 pub def lockPackage(self: Package): List[LockedPackage] = ???
