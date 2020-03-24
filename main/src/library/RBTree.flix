@@ -68,8 +68,8 @@ namespace RBTree {
         case RBNode(color, a, yK, yV, b) =>
             let cmp = xK <=> yK;
             if (cmp < 0) balance(RBNode(color, insertHelper(xK, xV, a), yK, yV, b))
-            else if (cmp == 0) RBNode(color, a, yK, yV, b)
-            else  balance(RBNode(color, a, yK, yV, insertHelper(xK, xV, b)))
+            else if (cmp == 0) RBNode(color, a, yK, xV, b)
+            else balance(RBNode(color, a, yK, yV, insertHelper(xK, xV, b)))
         case _ => tree
     }
 
@@ -326,6 +326,18 @@ namespace RBTree {
     pub def foreach(f: (k, v) ~> Unit, tree: RBTree[k, v]): Unit & Impure = match tree {
         case RBNode(_, a, xK, xV, b) => foreach(f, a); f(xK, xV); foreach(f, b)
         case _ => ()
+    }
+
+    ///
+    /// Returns `Some(xV)` if `tree` contains a node with key `xK`.
+    ///
+    /// Otherwise returns `None`.
+    ///
+    pub def findWithKey(xK: k, tree: RBTree[k, v]): Option[v] = match tree {
+        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => get(xK, a)
+        case RBNode(_, _, yK, _, _) if xK <=> yK == 0 => true
+        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => get(xK, b)
+        case _ => None
     }
 
 }
