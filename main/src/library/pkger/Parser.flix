@@ -97,7 +97,7 @@ namespace SemVerParser {
     pub def parseSemVer(): Parser[SemVer] = Parser.bind(parseNumber(), major -> {
         Parser.bind(Parser.char('.') *> parseNumber(), minor -> {
             Parser.bind(Parser.char('.') *> parseNumber(), patch -> {
-                Parser.return((major, minor, patch, None))
+                Parser.return((major, minor, patch))
             })
         })
     })
