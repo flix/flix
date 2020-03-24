@@ -262,7 +262,7 @@ namespace Map {
     /// Returns `None` if `m` is the empty Map.
     ///
     pub def reduceLeft(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e =
-        match reduceLeftWithKey((_, v1, _, v2) -> ((), f(v1, v2)), m) {
+        match reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) {
             case None => None
             case Some(_, v) => Some(v)
         }
@@ -286,7 +286,7 @@ namespace Map {
     /// Returns `None` if `m` is the empty Map.
     ///
     pub def reduceRight(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e =
-        match reduceRightWithKey((_, v1, _, v2) -> ((), f(v1, v2)), m) {
+        match reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) {
             case None => None
             case Some((_, v)) => Some(v)
         }
