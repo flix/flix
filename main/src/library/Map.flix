@@ -92,12 +92,14 @@ namespace Map {
     ///
     /// Returns the keys of `m`.
     ///
-    pub def keysOf(m: Map[k, v]): Set[k] = foldLeftWithKey((b, k, _) -> Set.insert(k, b), Set.empty(), m)
+    pub def keysOf(m: Map[k, v]): Set[k] =
+        foldLeftWithKey((b, k, _) -> Set.insert(k, b), Set.empty(), m)
 
     ///
     /// Returns the values of `m`.
     ///
-    pub def valuesOf(m: Map[k, v]): List[v] = foldLeftWithKey((b, _, v) -> v :: b, Nil, m)
+    pub def valuesOf(m: Map[k, v]): List[v] =
+        foldLeftWithKey((b, _, v) -> v :: b, Nil, m)
 
 
 
@@ -140,7 +142,8 @@ namespace Map {
     ///
     /// Otherwise, returns `m`.
     ///
-    pub def adjust(f: v -> v & e, k: k, m: Map[k, v]): Map[k, v] & e = adjustWithKey((_, v1) -> f(v1), k, m)
+    pub def adjust(f: v -> v & e, k: k, m: Map[k, v]): Map[k, v] & e =
+        adjustWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> f(k, v)` if `k` is in `m`. Otherwise, returns `m`.
@@ -153,7 +156,8 @@ namespace Map {
     ///
     /// Updates `m` with `k -> v1` if `k` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    pub def update(f: v -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e = updateWithKey((_, v1) -> f(v1), k, m)
+    pub def update(f: v -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
+        updateWithKey((_, v1) -> f(v1), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
@@ -198,7 +202,8 @@ namespace Map {
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
     ///
-    pub def isProperSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool = size(m1) != size(m2) && isSubmapOf(m1, m2)
+    pub def isProperSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool =
+        size(m1) != size(m2) && isSubmapOf(m1, m2)
 
     ///
     /// Alias for `findLeft`.
@@ -275,7 +280,8 @@ namespace Map {
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey((b, _, v) -> f(b, v), s, m)
+    pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e =
+        foldLeftWithKey((b, _, v) -> f(b, v), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
@@ -406,12 +412,14 @@ namespace Map {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def union(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = unionWithKey((_, v1, _) -> v1, m1, m2)
+    pub def union(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        unionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+        unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
@@ -424,12 +432,14 @@ namespace Map {
     ///
     /// That is, key collisions are resolved by taking the mapping from `m1`.
     ///
-    pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = intersectionWithKey((_, v1, _) -> v1, m1, m2)
+    pub def intersection(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        intersectionWithKey((_, v1, _) -> v1, m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+        intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
@@ -443,7 +453,8 @@ namespace Map {
     ///
     /// That is, returns the map `m1` with the keys removed that are in `m2`.
     ///
-    pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
+    pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
+        differenceWithKey((_, _, _) -> None, m1, m2)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -452,7 +463,8 @@ namespace Map {
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
-    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
+        differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -487,12 +499,14 @@ namespace Map {
     ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
-    pub def toList(m: Map[k, v]): List[(k, v)] = foldLeftWithKey((b, k, v) -> (k, v) :: b, Nil, m)
+    pub def toList(m: Map[k, v]): List[(k, v)] =
+        foldLeftWithKey((b, k, v) -> (k, v) :: b, Nil, m)
 
     ///
     /// Returns the Map `m` as a set of key-value pairs.
     ///
-    pub def toSet(m: Map[k, v]): Set[(k, v)] = foldLeftWithKey((b, k, v) -> Set.insert((k, v), b), Set.empty(), m)
+    pub def toSet(m: Map[k, v]): Set[(k, v)] =
+        foldLeftWithKey((b, k, v) -> Set.insert((k, v), b), Set.empty(), m)
 
     ///
     /// Applies `f` to every element of `xs`.
