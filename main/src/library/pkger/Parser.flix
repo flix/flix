@@ -91,41 +91,6 @@ pub def <|>(l: Parser[a], r: Parser[a]): Parser[a] = Parser.choose(l, r)
 
 pub def >>=(v: Parser[a], f: a -> Parser[b]): Parser[b] = Parser.bind(v, f)
 
-pub enum JsonValue {
-    case JsonNull
-    case JsonBool(Bool)
-    // Json spec allows for parser-defined limits on integer sizes
-    case JsonNumber(Int)
-    case JsonString(String)
-    case JsonArray(List[JsonValue])
-}
-
-namespace JsonParser {
-    pub def jsonNull(): Parser[JsonValue] = (_ -> JsonNull) <&> Parser.string("null")
-
-    def jsonBoolHelper(s: String): JsonValue = match s {
-        case "true" => JsonBool(true),
-        case "false" => JsonBool(false)
-        // TODO: Is there something akin to `unreachable!()` from Rust?
-        case _ => ???
-    }
-
-    pub def jsonBool(): Parser[JsonValue] = jsonBoolHelper <&> (Parser.string("true") <|> Parser.string("false"))
-
-    def jsonNumberHelper(s: String): Option[JsonValue] = Option.map(i -> JsonNumber(i),  Result.toOption(Int32.fromString(s)))
-
-    pub def jsonNumber(): Parser[JsonValue] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), jsonNumberHelper)
-
-    pub def jsonString(): Parser[JsonValue] = (s -> JsonString(s)) <&> (Parser.char('"') *> Parser.span(c -> c != '"') <* Parser.char('"'))
-
-    // TODO: Because `jsonValue` is called here, we recurse infinitely
-    pub def jsonArrayElementHelper(): Parser[List[JsonValue]] = Parser.separatedBy(Parser.whitespace() *> Parser.char(',') <* Parser.whitespace(), jsonValue())
-
-    pub def jsonArray(): Parser[JsonValue] = (xs -> JsonArray(xs)) <&> (Parser.char('[') *> Parser.whitespace() *> jsonArrayElementHelper() <* Parser.whitespace() <* Parser.whitespace())
-
-    pub def jsonValue(): Parser[JsonValue] = jsonBool() <|> jsonNumber() <|> jsonString() <|> jsonArray()
-}
-
 namespace SemVerParser {
     def parseNumber(): Parser[Int] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), s -> Result.toOption(Int32.fromString(s)))
 
@@ -136,27 +101,4 @@ namespace SemVerParser {
             })
         })
     })
-}
-
-pub enum Atom {
-    case AtomIdentifier(String),
-    case AtomString(String),
-    case AtomList(List[Atom])
-}
-
-namespace PackageParser {
-    /*
-        TODO: S-expression plan
-        List of atoms (name?) that can be either an identifier, string, or another list (do we need strings? longer text?)
-        Parse into atom, and pick out values from that structure
-    */
-
-    def parseIdentifier(): Parser[Atom] = (s -> AtomIdentifier(s)) <&> Parser.span(c -> c != ' ')
-
-    def parseString(): Parser[Atom] = (s -> AtomString(s)) <&> (Parser.char('"') *> Parser.span(c -> c != '"') <* Parser.char('"'))
-
-    // TODO: Still bound by `some` and `many` mutual recursion issue
-    pub def parseAtomList(): Parser[Atom] = (xs -> AtomList(xs)) <&> (Parser.char('(') *> (Parser.separatedBy(Parser.whitespace(), parsePackage())) <* Parser.char(')'))
-
-    pub def parsePackage(): Parser[Atom] = parseIdentifier() <|> parseString()
 }

@@ -157,7 +157,7 @@ pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impur
             "  (name " + name + ")",
             "  (version " + quote("0.1.0") + ")",
             // Empty list/empty value?
-            "  (authors ((name " + quote("Rasmus Larsen") + ") (email " + quote("doctorherbstein@gmail.com") + "))",
+            "  (authors ((name " + quote("Rasmus Larsen") + ") (email " + quote("doctorherbstein@gmail.com") + ")))",
             // Should description be quoted?
             "  (description " + quote(name) + ")",
          // "  (license GPLv3)",
