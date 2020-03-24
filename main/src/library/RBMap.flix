@@ -71,7 +71,7 @@ namespace RBMap {
     ///
     /// Updates `m` with `k -> v`.
     ///
-    pub def insert(k: k, v: v, m: RBMap[k, v]): RBMap[k, v] = insertWithKey((_, v1, _) -> v1, k, v, m)
+    pub def insert(k: k, v: v, m: RBMap[k, v]): RBMap[k, v] = insertWithKey((_, _, v1) -> v1, k, v, m)
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
@@ -88,7 +88,9 @@ namespace RBMap {
     ///
     pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: RBMap[k, v]): RBMap[k, v] & e = match get(k, m) {
         case None => m
-        case Some(v1) => insert(f(k, v, v1), m)
+        case Some(v1) =>
+            let RBMap(xs) = m;
+            RBMap(RBTree.insert(k, f(k, v, v1), xs))
     }
 
     ///
@@ -103,7 +105,7 @@ namespace RBMap {
     ///
     pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: RBMap[k, v]): RBMap[k, v] & e = match get(k, m) {
         case None => m
-        case Some(v) => insert(f(k, v), m)
+        case Some(v) => insert(k, f(k, v), m)
     }
 
     ///
@@ -137,7 +139,7 @@ namespace RBMap {
     ///
     pub def delete(k: k, m: RBMap[k, v]): RBMap[k, v] =
         let RBMap(xs) = m;
-        RBTree.delete(k, xs)
+        RBMap(RBTree.delete(k, xs))
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
@@ -201,7 +203,7 @@ namespace RBMap {
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
     pub def mapWithKey(f: (k, v1) -> v2 & e, m: RBMap[k, v1]): RBMap[k, v2] & e =
-        foldLeftWithKey((k, b, v) -> insert(f(k, v), b), empty(), m)
+        foldLeftWithKey((k, b, v) -> insert(k, f(k, v), b), empty(), m)
 
     ///
     /// Alias for `foldLeft`.
@@ -262,7 +264,11 @@ namespace RBMap {
     ///
     /// Returns `None` if `m` is the empty RBMap.
     ///
-    pub def reduceLeft(f: (v, v) -> v & e, m: RBMap[k, v]): Option[v] & e = reduceLeftWithKey((_, v1, _, v2) -> f(v1, v2), m)
+    pub def reduceLeft(f: (v, v) -> v & e, m: RBMap[k, v]): Option[v] & e =
+        match reduceLeftWithKey((_, v1, _, v2) -> ((), f(v1, v2)), m) {
+            case None => None
+            case Some(_, v) => Some(v)
+        }
 
     ///
     /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
@@ -282,7 +288,12 @@ namespace RBMap {
     ///
     /// Returns `None` if `m` is the empty RBMap.
     ///
-    pub def reduceRight(f: (v, v) -> v & e, m: RBMap[k, v]): Option[v] & e = reduceRight((_, v1, _, v2) -> f(v1, v2), m)
+    pub def reduceRight(f: (v, v) -> v & e, m: RBMap[k, v]): Option[v] & e =
+        match reduceRightWithKey((_, v1, _, v2) -> ((), f(v1, v2)), m) {
+            case None => None
+            case Some((_, v)) => Some(v)
+        }
+
 
     ///
     /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
@@ -291,7 +302,7 @@ namespace RBMap {
     ///
     /// Returns `None` if `m` is the empty RBMap.
     ///
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: RBMap[k, v]): Option[(k, v)] & e =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: RBMap[k, v]): Option[(k, v)] =
         let RBMap(xs) = m;
         RBTree.reduceRight(f, xs)
 
