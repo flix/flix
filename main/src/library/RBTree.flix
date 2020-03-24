@@ -225,8 +225,8 @@ namespace RBTree {
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right, i.e., inorder.
     ///
     ///
-    pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
-        case RBNode(_, a, xK, xV, b) => foldLeft(f, f(foldLeft(f, s, a), xK, xV), b)
+    pub def foldLeft(f: (k, b, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
+        case RBNode(_, a, xK, xV, b) => foldLeft(f, f(xK, foldLeft(f, s, a), xV), b)
         case _ => s
     }
 
@@ -334,9 +334,9 @@ namespace RBTree {
     /// Otherwise returns `None`.
     ///
     pub def findWithKey(xK: k, tree: RBTree[k, v]): Option[v] = match tree {
-        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => get(xK, a)
-        case RBNode(_, _, yK, _, _) if xK <=> yK == 0 => true
-        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => get(xK, b)
+        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => findWithKey(xK, a)
+        case RBNode(_, _, yK, yV, _) if xK <=> yK == 0 => Some(yV)
+        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => findWithKey(xK, b)
         case _ => None
     }
 
