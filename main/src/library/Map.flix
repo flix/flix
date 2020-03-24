@@ -64,12 +64,12 @@ namespace Map {
     ///
     /// Returns the keys of `m`.
     ///
-    pub def keysOf(m: Map[k, v]): Set[k] = foldLeftWithKey((k, b, _) -> Set.insert(k, b), Set.empty(), m)
+    pub def keysOf(m: Map[k, v]): Set[k] = foldLeftWithKey((b, k, _) -> Set.insert(k, b), Set.empty(), m)
 
     ///
     /// Returns the values of `m`.
     ///
-    pub def valuesOf(m: Map[k, v]): List[v] = foldLeftWithKey((_, b, v) -> v :: b, Nil, m)
+    pub def valuesOf(m: Map[k, v]): List[v] = foldLeftWithKey((b, _, v) -> v :: b, Nil, m)
 
     ///
     /// Updates `m` with `k -> v`.
@@ -191,7 +191,7 @@ namespace Map {
     /// The function `f` must be pure.
     ///
     pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] =
-        foldLeftWithKey((k, b, v) -> if (f(k, v)) insert(k, v, b) else b, empty(), m)
+        foldLeftWithKey((b, k, v) -> if (f(k, v)) insert(k, v, b) else b, empty(), m)
 
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
@@ -202,7 +202,7 @@ namespace Map {
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
     pub def mapWithKey(f: (k, v1) -> v2 & e, m: Map[k, v1]): Map[k, v2] & e =
-        foldLeftWithKey((k, b, v) -> insert(k, f(k, v), b), empty(), m)
+        foldLeftWithKey((b, k, v) -> insert(k, f(k, v), b), empty(), m)
 
     ///
     /// Alias for `foldLeft`.
@@ -219,14 +219,14 @@ namespace Map {
     ///
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey((_, b, v) -> f(b, v), s, m)
+    pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey((b, _, v) -> f(b, v), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (k, b, v) -> b & e, s: b, m: Map[k, v]): b & e =
+    pub def foldLeftWithKey(f: (b, k, v) -> b & e, s: b, m: Map[k, v]): b & e =
         let Map(xs) = m;
         RBTree.foldLeft(f, s, xs)
 
@@ -310,7 +310,7 @@ namespace Map {
     /// The function `f` must be pure.
     ///
     pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
-        foldLeftWithKey((k, b, v) -> if (f(k, v)) 1 + b else b, 0, m)
+        foldLeftWithKey((b, k, v) -> if (f(k, v)) 1 + b else b, 0, m)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
@@ -423,12 +423,12 @@ namespace Map {
     ///
     /// Returns the Map `m` as a list of key-value pairs.
     ///
-    pub def toList(m: Map[k, v]): List[(k, v)] = foldLeftWithKey((k, b, v) -> (k, v) :: b, Nil, m)
+    pub def toList(m: Map[k, v]): List[(k, v)] = foldLeftWithKey((b, k, v) -> (k, v) :: b, Nil, m)
 
     ///
     /// Returns the Map `m` as a set of key-value pairs.
     ///
-    pub def toSet(m: Map[k, v]): Set[(k, v)] = foldLeftWithKey((k, b, v) -> Set.insert((k, v), b), Set.empty(), m)
+    pub def toSet(m: Map[k, v]): Set[(k, v)] = foldLeftWithKey((b, k, v) -> Set.insert((k, v), b), Set.empty(), m)
 
     ///
     /// Applies `f` to every element of `xs`.
