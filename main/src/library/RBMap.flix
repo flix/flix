@@ -86,12 +86,12 @@ namespace RBMap {
     ///
     /// Otherwise, updates `m` with `k -> v`.
     ///
-    pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: RBMap[k, v]): RBMap[k, v] & e = match get(k, m) {
-        case None => m
-        case Some(v1) =>
-            let RBMap(xs) = m;
-            RBMap(RBTree.insert(k, f(k, v, v1), xs))
-    }
+    pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: RBMap[k, v]): RBMap[k, v] & e =
+        let RBMap(xs) = m;
+        match get(k, m) {
+            case None => RBMap(RBTree.insert(k, v, xs))
+            case Some(v1) => RBMap(RBTree.insert(k, f(k, v, v1), xs))
+        }
 
     ///
     /// Updates `m` with `k -> f(v)` if `k` is in `m`.
