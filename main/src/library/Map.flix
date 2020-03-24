@@ -74,7 +74,9 @@ namespace Map {
     ///
     /// Updates `m` with `k -> v`.
     ///
-    pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] = insertWithKey((_, _, v1) -> v1, k, v, m)
+    pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] =
+        let Map(xs) = m;
+        Map(RBTree.insert(k, v, xs))
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
