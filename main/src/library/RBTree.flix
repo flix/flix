@@ -251,12 +251,12 @@ namespace RBTree {
     /// Applies `f` to all key-value pairs in `tree` going from left to right, i.e., inorder until a single value `v` is obtained.
     ///
     pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] =
-    reduceLeftHelper((x: Option[(k, v)], y: (k, v)) -> match x {
-      case Some((xK, xV)) =>
-        let (yK, yV) = y;
-        Some(f(xK, xV, yK, yV))
-      case None => Some(y)
-    }, None, tree)
+        reduceLeftHelper((x: Option[(k, v)], y: (k, v)) -> match x {
+            case Some((xK, xV)) =>
+                let (yK, yV) = y;
+                Some(f(xK, xV, yK, yV))
+            case None => Some(y)
+        }, None, tree)
 
     ///
     /// Helper function for `reduceRight`.
@@ -271,12 +271,12 @@ namespace RBTree {
     /// Applies `f` to all key-value pairs in `tree` going from right to left, i.e., reverse inorder until a single value `v` is obtained.
     ///
     pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] =
-    reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
-      case Some((xK, xV)) =>
-        let (yK, yV) = y;
-        Some(f(yK, yV, xK, xV))
-      case None => Some(y)
-    }, None, tree)
+        reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
+            case Some((xK, xV)) =>
+                let (yK, yV) = y;
+                Some(f(yK, yV, xK, xV))
+            case None => Some(y)
+        }, None, tree)
 
     ///
     /// Optionally returns the left most key-value pair of `tree`.
