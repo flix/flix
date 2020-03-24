@@ -69,7 +69,7 @@ namespace Map {
     ///
     /// Returns the values of `m`.
     ///
-    pub def valuesOf(m: Map[k, v]): List[v] = foldLeftWithKey((k, b, _) -> k :: b, Nil, m)
+    pub def valuesOf(m: Map[k, v]): List[v] = foldLeftWithKey((_, b, v) -> v :: b, Nil, m)
 
     ///
     /// Updates `m` with `k -> v`.
@@ -290,7 +290,6 @@ namespace Map {
             case None => None
             case Some((_, v)) => Some(v)
         }
-
 
     ///
     /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
