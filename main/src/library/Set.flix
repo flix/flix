@@ -81,7 +81,7 @@ namespace Set {
     ///
     pub def memberOf(x: a, xs: Set[a]): Bool =
         let Set(es) = xs;
-        RBTree.contains(x, es)
+        RBTree.memberOf(x, es)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
