@@ -1,5 +1,23 @@
+/*
+ * Copyright 2017 Liam Palmer, Esben Bjerre
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 ///
-/// An experimental Map type represented internally as a red-black tree.
+/// The Map type.
+///
+/// A map is currently represented internally as a red-black tree.
 ///
 enum Map[k, v] {
     case Map(RBTree[k, v])
@@ -14,6 +32,11 @@ namespace Map {
         let Map(xs) = m;
         RBTree.size(xs)
 
+
+
+
+
+
     ///
     /// Returns the empty map.
     ///
@@ -27,6 +50,11 @@ namespace Map {
     /// `Map#{k -> v}` is syntactic sugar for `singleton` (`Map#{k -> v} = singleton(k, v)`).
     ///
     pub def singleton(k: k, v: v): Map[k, v] = insert(k, v, empty())
+
+
+
+
+
 
     ///
     /// Returns `true` if and only if `m` is the empty map, i.e. `Map(Nil)`.
@@ -71,6 +99,11 @@ namespace Map {
     ///
     pub def valuesOf(m: Map[k, v]): List[v] = foldLeftWithKey((b, _, v) -> v :: b, Nil, m)
 
+
+
+
+
+
     ///
     /// Updates `m` with `k -> v`.
     ///
@@ -97,6 +130,10 @@ namespace Map {
             case None => Map(RBTree.insert(k, v, xs))
             case Some(v1) => Map(RBTree.insert(k, f(k, v, v1), xs))
         }
+
+
+
+
 
     ///
     /// Updates `m` with `k -> f(v)` if `k` is in `m`.
@@ -133,12 +170,22 @@ namespace Map {
 
 
 
+
+
+
+
+
     ///
     /// Removes the mapping `k` from the map `m`.
     ///
     pub def delete(k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
         Map(RBTree.delete(k, xs))
+
+
+
+
+
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
@@ -178,6 +225,11 @@ namespace Map {
         let Map(xs) = m;
         RBTree.findRight(f, xs)
 
+
+
+
+
+
     ///
     /// Returns a map of all mappings `k -> v` in `m` where `v` satisfies the predicate `f`.
     ///
@@ -203,6 +255,10 @@ namespace Map {
     ///
     pub def mapWithKey(f: (k, v1) -> v2 & e, m: Map[k, v1]): Map[k, v2] & e =
         foldLeftWithKey((b, k, v) -> insert(k, f(k, v), b), empty(), m)
+
+
+
+
 
     ///
     /// Alias for `foldLeft`.
@@ -235,7 +291,8 @@ namespace Map {
     ///
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
-    pub def foldRight(f: (v, b) -> b & e, s: b, m: Map[k, v]): b & e = foldRightWithKey((_, v, b) -> f(v, b), s, m)
+    pub def foldRight(f: (v, b) -> b & e, s: b, m: Map[k, v]): b & e =
+        foldRightWithKey((_, v, b) -> f(v, b), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -304,6 +361,11 @@ namespace Map {
         let Map(xs) = m;
         RBTree.reduceRight(f, xs)
 
+
+
+
+
+
     ///
     /// Returns the number of mappings in `m` that satisfy the predicate `f`.
     ///
@@ -334,6 +396,11 @@ namespace Map {
         let Map(xs) = m;
         RBTree.forall(f, xs)
 
+
+
+
+
+
     ///
     /// Returns the left-biased union of `m1` and `m2`.
     ///
@@ -344,8 +411,7 @@ namespace Map {
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def unionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = unionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the union of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
@@ -363,8 +429,7 @@ namespace Map {
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`.
     ///
-    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def intersectionWith(f: (v, v) -> v & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = intersectionWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
@@ -376,7 +441,7 @@ namespace Map {
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
     ///
-    /// That is, returns the Map `m1` with the keys removed that are in `m2`.
+    /// That is, returns the map `m1` with the keys removed that are in `m2`.
     ///
     pub def difference(m1: Map[k, v], m2: Map[k, v]): Map[k, v] = differenceWithKey((_, _, _) -> None, m1, m2)
 
@@ -387,8 +452,7 @@ namespace Map {
     /// If `f` returns `None` the mapping with `k` is thrown away (proper set difference).
     /// If `f` returns `Some(v)` the mapping `k -> v` is included in the result.
     ///
-    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e =
-        differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
+    pub def differenceWith(f: (v, v) -> Option[v] & e, m1: Map[k, v], m2: Map[k, v]): Map[k, v] & e = differenceWithKey((_, v1, v2) -> f(v1, v2), m1, m2)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -421,7 +485,7 @@ namespace Map {
         MutMap(ref m)
 
     ///
-    /// Returns the Map `m` as a list of key-value pairs.
+    /// Returns the map `m` as a list of key-value pairs.
     ///
     pub def toList(m: Map[k, v]): List[(k, v)] = foldLeftWithKey((b, k, v) -> (k, v) :: b, Nil, m)
 
@@ -438,6 +502,10 @@ namespace Map {
     pub def foreach(f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
         let Map(xs) = m;
         RBTree.foreach(f, xs)
+
+
+
+
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
