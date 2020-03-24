@@ -107,10 +107,7 @@ namespace Set {
     ///
     pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(es) = xs;
-        match RBTree.findLeft((x, _) -> f(x), es) {
-            case None => None
-            case Some(x, _) => Some(x)
-        }
+        RBTree.findLeft((x, _) -> f(x), es) |> Option.map(fst)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
@@ -119,10 +116,7 @@ namespace Set {
     ///
     pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(es) = xs;
-        match RBTree.findRight((x, _) -> f(x), es) {
-            case None => None
-            case Some(x, _) => Some(x)
-        }
+        RBTree.findRight((x, _) -> f(x), es) |> Option.map(fst)
 
 
 
