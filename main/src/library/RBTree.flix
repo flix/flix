@@ -159,10 +159,10 @@ namespace RBTree {
     ///
     /// Returns true if and only if `tree` contains a node with key `xK`.
     ///
-    pub def contains(xK: k, tree: RBTree[k, v]): Bool = match tree {
-        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => contains(xK, a)
+    pub def memberOf(xK: k, tree: RBTree[k, v]): Bool = match tree {
+        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => memberOf(xK, a)
         case RBNode(_, _, yK, _, _) if xK <=> yK == 0 => true
-        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => contains(xK, b)
+        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => memberOf(xK, b)
         case _ => false
     }
 

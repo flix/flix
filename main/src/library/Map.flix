@@ -87,7 +87,7 @@ namespace Map {
     ///
     pub def memberOf(k: k, m: Map[k, v]): Bool =
         let Map(xs) = m;
-        RBTree.contains(k, xs)
+        RBTree.memberOf(k, xs)
 
     ///
     /// Returns the keys of `m`.
