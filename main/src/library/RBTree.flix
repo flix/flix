@@ -225,8 +225,8 @@ namespace RBTree {
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right, i.e., inorder.
     ///
     ///
-    pub def foldLeft(f: (k, b, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
-        case RBNode(_, a, xK, xV, b) => foldLeft(f, f(xK, foldLeft(f, s, a), xV), b)
+    pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
+        case RBNode(_, a, xK, xV, b) => foldLeft(f, f(foldLeft(f, s, a), xK, xV), b)
         case _ => s
     }
 

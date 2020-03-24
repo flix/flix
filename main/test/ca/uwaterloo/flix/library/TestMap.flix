@@ -735,16 +735,16 @@ def foldLeft04(): Bool = Map.foldLeft((s, v) -> s + v, 0, Map#{1 -> 2, 3 -> 4, 5
 // foldLeftWithKey                                                         //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeftWithKey01(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{}) `assertEq!` 0
+def foldLeftWithKey01(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{}) `assertEq!` 0
 
 @test
-def foldLeftWithKey02(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2}) `assertEq!` 3
+def foldLeftWithKey02(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2}) `assertEq!` 3
 
 @test
-def foldLeftWithKey03(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4}) `assertEq!` 10
+def foldLeftWithKey03(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4}) `assertEq!` 10
 
 @test
-def foldLeftWithKey04(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) `assertEq!` 21
+def foldLeftWithKey04(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) `assertEq!` 21
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
