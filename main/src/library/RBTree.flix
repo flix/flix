@@ -31,6 +31,158 @@ namespace RBTree {
     }
 
     ///
+    /// Returns the number of nodes in `tree`.
+    ///
+    pub def size(tree: RBTree[k, v]): Int32 = match tree {
+        case RBNode(_, a, _, _, b) => 1 + size(a) + size(b)
+        case _ => 0
+    }
+
+    ///
+    /// Returns the empty tree.
+    ///
+    pub def empty(): RBTree[k, v] = RBLeaf
+
+    ///
+    /// Returns a new, balanced tree containing all nodes of `tree` and a node having key `xK` and value `xV` added.
+    ///
+    pub def insert(xK: k, xV: v, tree: RBTree[k, v]): RBTree[k, v] = blacken(insertHelper(xK, xV, tree))
+
+    ///
+    /// Returns a new, balanced tree containing all nodes of `tree` except the node with key `xK`.
+    ///
+    pub def delete(xK: k, tree: RBTree[k, v]): RBTree[k, v] = redden(deleteHelper(xK, tree))
+
+    ///
+    /// Returns true if and only if `tree` is the empty tree.
+    ///
+    pub def isEmpty(tree: RBTree[k, v]): Bool = match tree {
+        case RBNode(_, _, _, _, _) => false
+        case _ => true
+    }
+
+    ///
+    /// Returns true if and only if `tree` contains a node with key `xK`.
+    ///
+    pub def memberOf(xK: k, tree: RBTree[k, v]): Bool = match tree {
+        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => memberOf(xK, a)
+        case RBNode(_, _, yK, _, _) if xK <=> yK == 0 => true
+        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => memberOf(xK, b)
+        case _ => false
+    }
+
+    ///
+    /// Optionally returns the first key-value pair of `tree` that satisfies the predicate `f` when searching from left to right.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def findLeft(f: (k, v) -> Bool, tree: RBTree[k, v]): Option[(k, v)] = match tree {
+        case RBNode(_, a, xK, xV, b) => match findLeft(f, a) {
+            case Some((yK, yV)) => Some((yK, yV))
+            case _ => if (f(xK, xV)) Some((xK, xV)) else findLeft(f, b)
+        }
+        case _ => None
+    }
+
+    ///
+    /// Optionally returns the first key-value pair of `tree` that satisfies the predicate `f` when searching from right to left.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def findRight(f: (k, v) -> Bool, tree: RBTree[k, v]): Option[(k, v)] = match tree {
+        case RBNode(_, a, xK, xV, b) => match findRight(f, b) {
+            case Some((yK, yV)) => Some((yK, yV))
+            case _ => if (f(xK, xV)) Some(xK, xV) else findRight(f, a)
+        }
+        case _ => None
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right, i.e., inorder.
+    ///
+    ///
+    pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
+        case RBNode(_, a, xK, xV, b) => foldLeft(f, f(foldLeft(f, s, a), xK, xV), b)
+        case _ => s
+    }
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left, i.e., reverse inorder
+    ///
+    pub def foldRight(f: (k, v, b) -> b, s: b, tree: RBTree[k, v]): b = match tree {
+        case RBNode(_, a, xK, xV, b) => foldRight(f, f(xK, xV, foldRight(f, s, b)), a)
+        case _ => s
+    }
+
+    ///
+    /// Applies `f` to all key-value pairs in `tree` going from left to right, i.e., inorder until a single value `v` is obtained.
+    ///
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] =
+        reduceLeftHelper((x: Option[(k, v)], y: (k, v)) -> match x {
+            case Some((xK, xV)) =>
+                let (yK, yV) = y;
+                Some(f(xK, xV, yK, yV))
+            case None => Some(y)
+        }, None, tree)
+
+    ///
+    /// Applies `f` to all key-value pairs in `tree` going from right to left, i.e., reverse inorder until a single value `v` is obtained.
+    ///
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] =
+        reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
+            case Some((xK, xV)) =>
+                let (yK, yV) = y;
+                Some(f(yK, yV, xK, xV))
+            case None => Some(y)
+        }, None, tree)
+
+    ///
+    /// Returns `true` if and only if at least one key-value pair in `tree` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `tree` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def exists(f: (k, v) -> Bool, tree: RBTree[k, v]): Bool = match tree {
+        case RBNode(_, a, xK, xV, b) => f(xK, xV) || exists(f, a) || exists(f, b)
+        case _ => false
+    }
+
+    ///
+    /// Returns `true` if and only if all key-value pairs in `tree` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `tree` is the empty tree.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def forall(f: (k, v) -> Bool, tree: RBTree[k, v]): Bool = match tree {
+        case RBNode(_, a, xK, xV, b) => if (!f(xK, xV)) false else forall(f, a) && forall(f, b)
+        case _ => true
+    }
+
+    ///
+    /// Applies `f` to every key-value pair of `tree`.
+    ///
+    /// The function `f` must be impure.
+    ///
+    pub def foreach(f: (k, v) ~> Unit, tree: RBTree[k, v]): Unit & Impure = match tree {
+        case RBNode(_, a, xK, xV, b) => foreach(f, a); f(xK, xV); foreach(f, b)
+        case _ => ()
+    }
+
+    ///
+    /// Returns `Some(xV)` if `tree` contains a node with key `xK`.
+    ///
+    /// Otherwise returns `None`.
+    ///
+    pub def findWithKey(xK: k, tree: RBTree[k, v]): Option[v] = match tree {
+        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => findWithKey(xK, a)
+        case RBNode(_, _, yK, yV, _) if xK <=> yK == 0 => Some(yV)
+        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => findWithKey(xK, b)
+        case _ => None
+    }
+
+    ///
     /// Helper function for `insert` and `delete`.
     ///
     def balance(tree: RBTree[k, v]): RBTree[k, v] = match tree {
@@ -72,11 +224,6 @@ namespace RBTree {
             else balance(RBNode(color, a, yK, yV, insertHelper(xK, xV, b)))
         case _ => tree
     }
-
-    ///
-    /// Returns a new, balanced tree containing all nodes of `tree` and a node having key `xK` and value `xV` added.
-    ///
-    pub def insert(xK: k, xV: v, tree: RBTree[k, v]): RBTree[k, v] = blacken(insertHelper(xK, xV, tree))
 
     ///
     /// Helper function for `delete`.
@@ -152,93 +299,6 @@ namespace RBTree {
     }
 
     ///
-    /// Returns a new, balanced tree containing all nodes of `tree` except the node with key `xK`.
-    ///
-    pub def delete(xK: k, tree: RBTree[k, v]): RBTree[k, v] = redden(deleteHelper(xK, tree))
-
-    ///
-    /// Returns true if and only if `tree` contains a node with key `xK`.
-    ///
-    pub def memberOf(xK: k, tree: RBTree[k, v]): Bool = match tree {
-        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => memberOf(xK, a)
-        case RBNode(_, _, yK, _, _) if xK <=> yK == 0 => true
-        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => memberOf(xK, b)
-        case _ => false
-    }
-
-    ///
-    /// Returns the height of `tree`.
-    ///
-    pub def height(tree: RBTree[k, v]): Int32 = match tree {
-        case RBNode(_, a, _, _, b) => if (height(a) > height(b)) 1 + height(a) else 1 + height(b)
-        case _ => 0
-    }
-
-    ///
-    /// Returns the number of nodes in `tree`.
-    ///
-    pub def size(tree: RBTree[k, v]): Int32 = match tree {
-        case RBNode(_, a, _, _, b) => 1 + size(a) + size(b)
-        case _ => 0
-    }
-
-    ///
-    /// Returns the empty tree.
-    ///
-    pub def empty(): RBTree[k, v] = RBLeaf
-
-    ///
-    /// Returns true if and only if `tree` is the empty tree.
-    ///
-    pub def isEmpty(tree: RBTree[k, v]): Bool = match tree {
-        case RBNode(_, _, _, _, _) => false
-        case _ => true
-    }
-
-    ///
-    /// Optionally returns the first key-value pair of `tree` that satisfies the predicate `f` when searching from left to right.
-    ///
-    /// The function `f` must be pure.
-    ///
-    pub def findLeft(f: (k, v) -> Bool, tree: RBTree[k, v]): Option[(k, v)] = match tree {
-        case RBNode(_, a, xK, xV, b) => match findLeft(f, a) {
-            case Some((yK, yV)) => Some((yK, yV))
-            case _ => if (f(xK, xV)) Some((xK, xV)) else findLeft(f, b)
-        }
-        case _ => None
-    }
-
-    ///
-    /// Optionally returns the first key-value pair of `tree` that satisfies the predicate `f` when searching from right to left.
-    ///
-    /// The function `f` must be pure.
-    ///
-    pub def findRight(f: (k, v) -> Bool, tree: RBTree[k, v]): Option[(k, v)] = match tree {
-        case RBNode(_, a, xK, xV, b) => match findRight(f, b) {
-            case Some((yK, yV)) => Some((yK, yV))
-            case _ => if (f(xK, xV)) Some(xK, xV) else findRight(f, a)
-        }
-        case _ => None
-    }
-
-    ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right, i.e., inorder.
-    ///
-    ///
-    pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RBTree[k, v]): b = match tree {
-        case RBNode(_, a, xK, xV, b) => foldLeft(f, f(foldLeft(f, s, a), xK, xV), b)
-        case _ => s
-    }
-
-    ///
-    /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from right to left, i.e., reverse inorder
-    ///
-    pub def foldRight(f: (k, v, b) -> b, s: b, tree: RBTree[k, v]): b = match tree {
-        case RBNode(_, a, xK, xV, b) => foldRight(f, f(xK, xV, foldRight(f, s, b)), a)
-        case _ => s
-    }
-
-    ///
     /// Helper function for `reduceLeft`.
     ///
     def reduceLeftHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)], s: Option[(k, v)], tree: RBTree[k, v]): Option[(k, v)] =
@@ -248,17 +308,6 @@ namespace RBTree {
         }
 
     ///
-    /// Applies `f` to all key-value pairs in `tree` going from left to right, i.e., inorder until a single value `v` is obtained.
-    ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] =
-        reduceLeftHelper((x: Option[(k, v)], y: (k, v)) -> match x {
-            case Some((xK, xV)) =>
-                let (yK, yV) = y;
-                Some(f(xK, xV, yK, yV))
-            case None => Some(y)
-        }, None, tree)
-
-    ///
     /// Helper function for `reduceRight`.
     ///
     def reduceRightHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)], s: Option[(k, v)], tree: RBTree[k, v]): Option[(k, v)] =
@@ -266,78 +315,5 @@ namespace RBTree {
             case RBNode(_, a, xK, xV, b) => reduceRightHelper(f, f(reduceRightHelper(f, s, b), (xK, xV)), a)
             case _ => s
         }
-
-    ///
-    /// Applies `f` to all key-value pairs in `tree` going from right to left, i.e., reverse inorder until a single value `v` is obtained.
-    ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RBTree[k, v]): Option[(k, v)] =
-        reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
-            case Some((xK, xV)) =>
-                let (yK, yV) = y;
-                Some(f(yK, yV, xK, xV))
-            case None => Some(y)
-        }, None, tree)
-
-    ///
-    /// Optionally returns the left most key-value pair of `tree`.
-    ///
-    pub def leftMost(tree: RBTree[k, v]): Option[(k, v)] = match tree {
-        case RBNode(_, a, xK, xV, _) => if (isEmpty(a)) Some((xK, xV)) else leftMost(a)
-        case _ => None
-    }
-
-    ///
-    /// Optionally returns the right most key-value pair of `tree`.
-    ///
-    pub def rightMost(tree: RBTree[k, v]): Option[(k, v)] = match tree {
-        case RBNode(_, b, xK, xV, _) => if (isEmpty(b)) Some((xK, xV)) else rightMost(b)
-        case _ => None
-    }
-
-    ///
-    /// Returns `true` if and only if at least one key-value pair in `tree` satisfies the predicate `f`.
-    ///
-    /// Returns `false` if `tree` is the empty tree.
-    ///
-    /// The function `f` must be pure.
-    ///
-    pub def exists(f: (k, v) -> Bool, tree: RBTree[k, v]): Bool = match tree {
-        case RBNode(_, a, xK, xV, b) => f(xK, xV) || exists(f, a) || exists(f, b)
-        case _ => false
-    }
-
-    ///
-    /// Returns `true` if and only if all key-value pairs in `tree` satisfy the predicate `f`.
-    ///
-    /// Returns `true` if `tree` is the empty tree.
-    ///
-    /// The function `f` must be pure.
-    ///
-    pub def forall(f: (k, v) -> Bool, tree: RBTree[k, v]): Bool = match tree {
-        case RBNode(_, a, xK, xV, b) => if (!f(xK, xV)) false else forall(f, a) && forall(f, b)
-        case _ => true
-    }
-
-    ///
-    /// Applies `f` to every key-value pair of `tree`.
-    ///
-    /// The function `f` must be impure.
-    ///
-    pub def foreach(f: (k, v) ~> Unit, tree: RBTree[k, v]): Unit & Impure = match tree {
-        case RBNode(_, a, xK, xV, b) => foreach(f, a); f(xK, xV); foreach(f, b)
-        case _ => ()
-    }
-
-    ///
-    /// Returns `Some(xV)` if `tree` contains a node with key `xK`.
-    ///
-    /// Otherwise returns `None`.
-    ///
-    pub def findWithKey(xK: k, tree: RBTree[k, v]): Option[v] = match tree {
-        case RBNode(_, a, yK, _, _) if xK <=> yK < 0 => findWithKey(xK, a)
-        case RBNode(_, _, yK, yV, _) if xK <=> yK == 0 => Some(yV)
-        case RBNode(_, _, yK, _, b) if xK <=> yK > 0 => findWithKey(xK, b)
-        case _ => None
-    }
 
 }
