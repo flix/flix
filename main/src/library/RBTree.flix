@@ -274,7 +274,7 @@ namespace RBTree {
     reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
       case Some((xK, xV)) =>
         let (yK, yV) = y;
-        Some(f(xK, xV, yK, yV))
+        Some(f(yK, yV, xK, xV))
       case None => Some(y)
     }, None, tree)
 
