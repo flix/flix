@@ -269,19 +269,22 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e = foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
+    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e =
+        foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
-    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e = foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
+    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e =
+        foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def replace(x: a, y: a, xs: Set[a]): Set[a] = if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
+    pub def replace(x: a, y: a, xs: Set[a]): Set[a] =
+        if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
@@ -292,7 +295,10 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
-        foldLeft((acc, x) -> let (a, b) = acc; if (f(x)) (insert(x, a), b) else (a, insert(x, b)), (empty(), empty()), xs)
+        foldLeft((acc, x) ->
+            let (a, b) = acc;
+            if (f(x)) (insert(x, a), b)
+            else (a, insert(x, b)), (empty(), empty()), xs)
 
 
 
@@ -306,7 +312,8 @@ namespace Set {
     ///
     /// Returns the set `xs` as a list.
     ///
-    pub def toList(xs: Set[a]): List[a] = foldLeft((acc, x) -> x :: acc, Nil, xs)
+    pub def toList(xs: Set[a]): List[a] =
+        foldLeft((acc, x) -> x :: acc, Nil, xs)
 
     ///
     /// Returns the association set `xs` as a map.
@@ -345,7 +352,8 @@ namespace Set {
     /// Returns n = 0 if `xs` is equal to `ys`.
     /// Returns n > 0 if `xs` is lexicographically greater than `ys`.
     ///
-    pub def __cmp(xs: Set[a], ys: Set[a]): Int32 = __cmpHelper(toList(xs), toList(ys))
+    pub def __cmp(xs: Set[a], ys: Set[a]): Int32 =
+        __cmpHelper(toList(xs), toList(ys))
 
     ///
     /// Helper function for `range`.
