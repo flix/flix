@@ -1,5 +1,23 @@
+/*
+ * Copyright 2017 Liam Palmer, Esben Bjerre
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 ///
-/// An experimental Set type represented internally as a red-black tree.
+/// The Set type.
+///
+/// A set is currently represented internally as a red-black tree.
 ///
 enum Set[t] {
     case Set(RBTree[t, Unit])
@@ -14,13 +32,22 @@ namespace Set {
         let Set(es) = xs;
         RBTree.size(es)
 
+
+
+
+
+
     ///
     /// Returns the empty set.
+    ///
+    /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
     ///
     pub def empty(): Set[a] = Set(RBTree.empty())
 
     ///
     /// Returns the singleton set containing `x`.
+    ///
+    /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
     ///
     pub def singleton(x: a): Set[a] = insert(x, empty())
 
@@ -37,6 +64,10 @@ namespace Set {
     pub def delete(x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
         Set(RBTree.delete(x, es))
+
+
+
+
 
     ///
     /// Returns true if and only if `xs` is the empty set.
@@ -60,8 +91,7 @@ namespace Set {
     ///
     /// Returns true if and only if every element in `xs` appears in `ys` and `xs != ys`.
     ///
-    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool =
-        size(xs) != size(ys) && isSubsetOf(xs, ys)
+    pub def isProperSubsetOf(xs: Set[a], ys: Set[a]): Bool = size(xs) != size(ys) && isSubsetOf(xs, ys)
 
     ///
     /// Alias for `findLeft`.
@@ -93,6 +123,11 @@ namespace Set {
             case None => None
             case Some(x, _) => Some(x)
         }
+
+
+
+
+
 
     ///
     /// Alias for `foldLeft`.
@@ -146,6 +181,11 @@ namespace Set {
             case Some(x, _) => Some(x)
         }
 
+
+
+
+
+
     ///
     /// Returns the number of elements in `xs` that satisfy the predicate `f`.
     ///
@@ -182,6 +222,11 @@ namespace Set {
         let Set(es) = xs;
         RBTree.forall((x, _) -> f(x), es)
 
+
+
+
+
+
     ///
     /// Returns the union of `xs` and `ys`.
     ///
@@ -206,6 +251,11 @@ namespace Set {
     pub def subsets(xs: Set[a]): Set[Set[a]] =
         foldLeft((acc, x) -> union(map(y -> insert(x, y), acc), acc), insert(empty(), empty()), xs)
 
+
+
+
+
+
     ///
     /// Returns the set of all elements of `xs` that satisfy the predicate `f`.
     ///
@@ -219,22 +269,19 @@ namespace Set {
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e =
-        foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
+    pub def map(f: a -> b & e, xs: Set[a]): Set[b] & e = foldLeft((acc, x) -> insert(f(x), acc), empty(), xs)
 
     ///
     /// Returns the result of applying `f` to every element in `xs` and taking the union.
     ///
-    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e =
-        foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
+    pub def flatMap(f: a -> Set[b] & e, xs: Set[a]): Set[b] & e = foldLeft((acc, x) -> union(acc, f(x)), empty(), xs)
 
     ///
     /// Replaces the element `x` with `y` if `x` is in `xs`. Otherwise, returns `xs`.
     ///
     /// Note: The returned set may be smaller than `xs`.
     ///
-    pub def replace(x: a, y: a, xs: Set[a]): Set[a] =
-        if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
+    pub def replace(x: a, y: a, xs: Set[a]): Set[a] = if (memberOf(x, xs)) insert(y, delete(x, xs)) else xs
 
     ///
     /// Returns a pair of sets `(ys, zs)`.
@@ -301,11 +348,6 @@ namespace Set {
     pub def __cmp(xs: Set[a], ys: Set[a]): Int32 = __cmpHelper(toList(xs), toList(ys))
 
     ///
-    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
-    ///
-    pub def __eq(xs: Set[a], ys: Set[a]): Bool = __cmp(xs, ys) == 0
-
-    ///
     /// Helper function for `range`.
     ///
     def rangeHelper(b: Int32, n: Int32, acc: Set[Int32]): Set[Int32] =
@@ -320,14 +362,7 @@ namespace Set {
         if (b >= e) empty() else rangeHelper(b, e - 1, empty())
 
     ///
-    /// Returns a rudimentary string representation of `xs`.
+    /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
     ///
-    /// Note: Currently only supports Set[Int32].
-    pub def toString(xs: Set[Int32]): Str =
-        "Set(" +
-            foldLeft((acc: Str, x: Int32) ->
-                if (String.isEmpty(acc)) Int32.toString(x)
-                else acc + ", " + Int32.toString(x), "", xs)
-         + ")"
-
+    pub def __eq(xs: Set[a], ys: Set[a]): Bool = size(xs) == size(ys) && isSubsetOf(xs, ys)
 }
