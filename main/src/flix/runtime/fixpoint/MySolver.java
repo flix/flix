@@ -28,9 +28,14 @@ public class MySolver {
 
     public static void solve(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
+
+        // First we generate all projections for the facts
         Stmt[] factProjections = generateFactProjectionStmts(cs, relHasFact);
 
+        // Then find all the rules and map them to what they derive, and in which stratum they should be evaluated
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratum(cs, stf);
+
+        // And then all stratum are evaluated
         Stmt[] stratumStmts = new Stmt[0];
         for (int stratum : derivedInStratum.keySet()) {
             Stmt[] fullStratum = evalStratum(derivedInStratum.get(stratum));
