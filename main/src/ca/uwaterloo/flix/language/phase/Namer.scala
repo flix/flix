@@ -881,11 +881,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Names the given pattern `pat0` under the given environment `env0`.
+    * Names the given pattern `pat0` under the given environments `env0` and `uenv0`.
     *
     * Every variable in the pattern must be bound by the environment.
     */
-  private def visitPattern(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym])(implicit flix: Flix): NamedAst.Pattern = {
+  private def visitPattern(pat0: WeededAst.Pattern, env0: Map[String, Symbol.VarSym], uenv0: UseEnv)(implicit flix: Flix): NamedAst.Pattern = {
     def visit(p: WeededAst.Pattern): NamedAst.Pattern = p match {
       case WeededAst.Pattern.Wild(loc) => NamedAst.Pattern.Wild(Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Var(ident, loc) =>
@@ -903,7 +903,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Int64(lit, loc) => NamedAst.Pattern.Int64(lit, loc)
       case WeededAst.Pattern.BigInt(lit, loc) => NamedAst.Pattern.BigInt(lit, loc)
       case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
-      case WeededAst.Pattern.Tag(enum, tag, pat, loc) => NamedAst.Pattern.Tag(enum, tag, visit(pat), Type.freshTypeVar(), loc)
+
+      case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
+        val (enumOpt, tag) = disambiguateTag(enumOpt0, tag0, uenv0)
+        NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), Type.freshTypeVar(), loc)
+
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.Array(elms, loc) => NamedAst.Pattern.Array(elms map visit, Type.freshTypeVar(), loc)
       case WeededAst.Pattern.ArrayTailSpread(elms, ident, loc) => ident match {
@@ -943,7 +947,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
-      val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
+      val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
       NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
