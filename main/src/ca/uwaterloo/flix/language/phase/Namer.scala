@@ -526,7 +526,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.Tag(enumOpt0, tag0, expOpt, loc) =>
-      val (enumOpt, tag) = disambiguateTag(enumOpt0, tag0, uenv0)
+      val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
 
       expOpt match {
         case None =>
@@ -852,7 +852,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
-        val (enumOpt, tag) = disambiguateTag(enumOpt0, tag0, uenv0)
+        val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
         NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), Type.freshTypeVar(), loc)
 
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
@@ -905,7 +905,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Pattern.Str(lit, loc) => NamedAst.Pattern.Str(lit, loc)
 
       case WeededAst.Pattern.Tag(enumOpt0, tag0, pat, loc) =>
-        val (enumOpt, tag) = disambiguateTag(enumOpt0, tag0, uenv0)
+        val (enumOpt, tag) = getDisambiguatedTag(enumOpt0, tag0, uenv0)
         NamedAst.Pattern.Tag(enumOpt, tag, visit(pat), Type.freshTypeVar(), loc)
 
       case WeededAst.Pattern.Tuple(elms, loc) => NamedAst.Pattern.Tuple(elms map visit, Type.freshTypeVar(), loc)
@@ -1436,7 +1436,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given environment `uenv0`.
     */
-  private def disambiguateTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
+  private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
     enumOpt0 match {
       case None =>
         // Case 1: The tag is unqualified. Look it up in the use environment.
