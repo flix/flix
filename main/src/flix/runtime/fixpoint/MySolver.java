@@ -30,22 +30,30 @@ public class MySolver {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
         Stmt[] factProjections = generateFactProjectionStmts(cs, relHasFact);
 
-        Map<RelSym, ArrayList<Constraint>> derived = findRulesForDerived(cs);
-        RelSym[] relSyms = cs.getRelationSymbols();
-        // For representing all the RelSym that have rules but also initial facts
-        ArrayList<RelSym> derivedButHasFacts = new ArrayList<>();
-        // For representing the RelSym for tables that only have facts
-        ArrayList<RelSym> factRelSyms = new ArrayList<>();
-        for (RelSym relSym : relHasFact) {
-            // We check if the RelSym that has a fact is also derived, and remember bot if and not
-            if (derived.containsKey(relSym)) {
-                derivedButHasFacts.add(relSym);
-            } else {
-                factRelSyms.add(relSym);
-            }
+        Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratum(cs, stf);
+        Stmt[] stratumStmts = new Stmt[0];
+        for (int stratum : derivedInStratum.keySet()) {
+            Stmt[] fullStratum = evalStratum(derivedInStratum.get(stratum));
+            stratumStmts = Stream.of(stratumStmts, fullStratum).flatMap(Stream::of).toArray(Stmt[]::new);
         }
+
+
+        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, stratumStmts).flatMap(Stream::of).toArray(Stmt[]::new));
+        PrintStream stream = System.out;
+        seqStmt.prettyPrint(stream, 0);
+        stream.print('\n');
+    }
+
+    /**
+     * Evaluates a stratum
+     *
+     * @param derived Is a map to describe the constraints that can be used to derive new facts about the RelSym.
+     * @return An array of all Stmt's that is the evaluation of the stratum
+     */
+    private static Stmt[] evalStratum(Map<RelSym, ArrayList<Constraint>> derived) {
         Stmt[][] ramIntoRules = new Stmt[derived.keySet().size()][];
         Stmt[] mergeStmts = new Stmt[derived.keySet().size()];
+
         int i = 0;
         for (RelSym relSym : derived.keySet()) {
             ramIntoRules[i] = eval(relSym, derived);
@@ -83,20 +91,17 @@ public class MySolver {
         }
 
         // Then we define the evaluation TODO: There is no real reason for 3 loops through the keyset, just for convenience while writing
-        i = 0;
-        Stmt[][] iterationEvaluation = new Stmt[derived.keySet().size()][];
+        Stmt[] iterationEvaluation = new Stmt[0];
         for (RelSym rel : derived.keySet()) {
-            iterationEvaluation[i] = evalIncr(rel, derived.get(rel));
+            Stmt[] eval = evalIncr(rel, derived.get(rel));
+            iterationEvaluation = Stream.of(iterationEvaluation, eval).flatMap(Stream::of).toArray(Stmt[]::new);
         }
 
 
-        SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, clearLastIteration, Stream.of(iterationEvaluation).flatMap(Stream::of).toArray(Stmt[]::new), mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
+        SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, clearLastIteration, iterationEvaluation, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
         Stmt mainWhile = new WhileStmt(whileCondition, whileBody);
 
-        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, ramRulesFlat, mergeStmts, new Stmt[]{mainWhile}).flatMap(Stream::of).toArray(Stmt[]::new));
-        PrintStream stream = System.out;
-        seqStmt.prettyPrint(stream, 0);
-        stream.print('\n');
+        return Stream.of(ramRulesFlat, mergeStmts, new Stmt[]{mainWhile}).flatMap(Stream::of).toArray(Stmt[]::new);
     }
 
     /**
@@ -302,21 +307,31 @@ public class MySolver {
         return new RowVariable(name + "_" + (variableCounter));
     }
 
-    private static Map<RelSym, ArrayList<Constraint>> findRulesForDerived(ConstraintSystem cs) {
-        Map<RelSym, ArrayList<Constraint>> result = new HashMap<>();
+    private static Map<Integer, Map<RelSym, ArrayList<Constraint>>> findRulesForDerivedInStratum(ConstraintSystem cs, Stratification stf) {
+        Map<Integer, Map<RelSym, ArrayList<Constraint>>> result = new HashMap<>();
         for (Constraint c : cs.getRules()) {
             Predicate hPred = c.getHeadPredicate();
             assert hPred instanceof AtomPredicate;
 
             PredSym pred = ((AtomPredicate) hPred).getSym();
             assert pred instanceof RelSym;
+            int stratum = stf.getStratum(pred);
+            if (result.containsKey(stratum) && result.get(stratum) != null) {
+                Map<RelSym, ArrayList<Constraint>> map = result.get(stratum);
+                if (map.containsKey(pred)) {
+                    map.get(pred).add(c);
+                } else {
+                    ArrayList<Constraint> list = new ArrayList<>();
+                    list.add(c);
+                    map.put((RelSym) pred, list);
+                }
 
-            if (result.containsKey(pred)) {
-                result.get(pred).add(c);
             } else {
-                ArrayList<Constraint> list = new ArrayList<>();
-                list.add(c);
-                result.put((RelSym) pred, list);
+                Map<RelSym, ArrayList<Constraint>> newMap = new HashMap<>();
+                ArrayList<Constraint> constraints = new ArrayList<>();
+                constraints.add(c);
+                newMap.put((RelSym) pred, constraints);
+                result.put(stratum, newMap);
             }
         }
         return result;
