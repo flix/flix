@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{CatchRule, Def, Expression, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.ControlFlowAnalysis.{LabeledExpression, State, renameBoundVars}
+import ca.uwaterloo.flix.language.phase.ControlFlowAnalysis.{LabeledExpression, renameBoundVars}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -40,10 +40,10 @@ object Uncurrier2 extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case _ => throw InternalCompilerException(s"Unexpected type: '${tpe0.getClass}'.")
     }
 
-    def uncurryDefn(defn: (Symbol.DefnSym, Def), acc0: Map[Symbol.DefnSym, Def]): State[Map[Symbol.DefnSym, Symbol.DefnSym], Map[Symbol.DefnSym, Def]] = {
+    def uncurryDefn(defn: (Symbol.DefnSym, Def), acc0: Map[Symbol.DefnSym, Def], ctxt0: Map[Symbol.DefnSym, Symbol.DefnSym]): (Map[Symbol.DefnSym, Def], Map[Symbol.DefnSym, Symbol.DefnSym]) = {
       val (sym0, defn0) = defn
       defn0.exp match {
-        case Expression.Lambda(fparams, body, tpe, loc) => State { ctxt0 =>
+        case Expression.Lambda(fparams, body, tpe, loc) =>
           val sym1 = Symbol.freshDefnSym(sym0)
           val params0 = defn0.fparams ++ fparams
           val params1 = params0.map(fparam => fparam.copy(sym = Symbol.freshVarSym(fparam.sym)))
@@ -55,18 +55,17 @@ object Uncurrier2 extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           val uncurriedDefn = defn0.copy(sym = sym1, fparams = params1, exp = exp1, tpe = tpe1)
           val result = sym1 -> uncurriedDefn
           val acc1 = acc0 + result
-          val (us, ctxt1) = uncurryDefn(result, acc1)(ctxt0)
+          val (us, ctxt1) = uncurryDefn(result, acc1, ctxt0)
           val ctxt2 = ctxt1 + (defn0.sym -> sym1)
           (us, ctxt2)
-        }
 
-        case _ => State.ret(acc0)
+        case _ => (acc0, ctxt0)
       }
     }
 
     val (uncurriedDefs0, uncurryCtxt) = flix.subphase("Uncurrying step 0") {
       root.defs.foldLeft((Map.empty[Symbol.DefnSym, Def], Map.empty[Symbol.DefnSym, Symbol.DefnSym])) {
-        case ((defs0, acc0), defn) => uncurryDefn(defn, defs0 + defn)(acc0)
+        case ((defs0, ctxt0), defn) => uncurryDefn(defn, defs0 + defn, ctxt0)
       }
     }
 
