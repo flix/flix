@@ -42,24 +42,28 @@ object Uncurrier2 extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     def uncurryDefn(defn: (Symbol.DefnSym, Def), acc0: Map[Symbol.DefnSym, Def], ctxt0: Map[Symbol.DefnSym, Symbol.DefnSym]): (Map[Symbol.DefnSym, Def], Map[Symbol.DefnSym, Symbol.DefnSym]) = {
       val (sym0, defn0) = defn
-      defn0.exp match {
-        case Expression.Lambda(fparams, body, tpe, loc) =>
-          val sym1 = Symbol.freshDefnSym(sym0)
-          val params0 = defn0.fparams ++ fparams
-          val params1 = params0.map(fparam => fparam.copy(sym = Symbol.freshVarSym(fparam.sym)))
-          val vars0 = params0.zip(params1).map {
-            case (oldParam, newParam) => oldParam.sym -> newParam.sym
-          }
-          val exp1 = renameBoundVars(body, vars0.toMap, Map.empty)
-          val tpe1 = uncurryArrow(defn0.tpe)
-          val uncurriedDefn = defn0.copy(sym = sym1, fparams = params1, exp = exp1, tpe = tpe1)
-          val result = sym1 -> uncurriedDefn
-          val acc1 = acc0 + result
-          val (us, ctxt1) = uncurryDefn(result, acc1, ctxt0)
-          val ctxt2 = ctxt1 + (defn0.sym -> sym1)
-          (us, ctxt2)
+      if (defn0.ann.isBenchmark || defn0.ann.isTest) {
+        (acc0, ctxt0)
+      } else {
+        defn0.exp match {
+          case Expression.Lambda(fparams, body, tpe, loc) =>
+            val sym1 = Symbol.freshDefnSym(sym0)
+            val params0 = defn0.fparams ++ fparams
+            val params1 = params0.map(fparam => fparam.copy(sym = Symbol.freshVarSym(fparam.sym)))
+            val vars0 = params0.zip(params1).map {
+              case (oldParam, newParam) => oldParam.sym -> newParam.sym
+            }
+            val exp1 = renameBoundVars(body, vars0.toMap, Map.empty)
+            val tpe1 = uncurryArrow(defn0.tpe)
+            val uncurriedDefn = defn0.copy(sym = sym1, fparams = params1, exp = exp1, tpe = tpe1)
+            val result = sym1 -> uncurriedDefn
+            val acc1 = acc0 + result
+            val (us, ctxt1) = uncurryDefn(result, acc1, ctxt0)
+            val ctxt2 = ctxt1 + (defn0.sym -> sym1)
+            (us, ctxt2)
 
-        case _ => (acc0, ctxt0)
+          case _ => (acc0, ctxt0)
+        }
       }
     }
 
