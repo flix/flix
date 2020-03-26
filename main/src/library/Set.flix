@@ -293,7 +293,13 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
-        foldLeft((acc, x) -> let (a, b) = acc; if (f(x)) (insert(x, a), b) else (a, insert(x, b)), (empty(), empty()), xs)
+        foldLeft((acc, x) ->
+            let (a, b) = acc;
+            if (f(x))
+                (insert(x, a), b)
+            else
+                (a, insert(x, b)), (empty(), empty()),
+            xs)
 
 
 
