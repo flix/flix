@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.feature
 
 import ca.uwaterloo.flix.util.{FlixTest, Options}
-import org.scalatest.{ParallelTestExecution, Suites}
+import org.scalatest.Suites
 
 // TODO: Sort
 class FeatureSuite extends Suites(
@@ -154,6 +154,4 @@ class FeatureSuite extends Suites(
   //
   new FlixTest("Test.UnusedVarSym", "main/test/ca/uwaterloo/flix/language/feature/Test.UnusedVarSym.flix")(Options.TestWithLibrary),
 
-) with ParallelTestExecution {
-  /* left empty */
-}
+)

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.library
 
 import ca.uwaterloo.flix.util.{FlixTest, Options}
-import org.scalatest.{ParallelTestExecution, Suites}
+import org.scalatest.Suites
 
 class LibrarySuite extends Suites(
   new FlixTest("TestPrelude", "main/test/ca/uwaterloo/flix/library/TestPrelude.flix")(Options.TestWithLibrary),
@@ -42,6 +42,4 @@ class LibrarySuite extends Suites(
   new FlixTest("TestStringBuilder", "main/test/ca/uwaterloo/flix/library/TestStringBuilder.flix")(Options.TestWithLibrary),
   new FlixTest("TestTimer", "main/test/ca/uwaterloo/flix/library/TestTimer.flix")(Options.TestWithLibrary),
   new FlixTest("TestValidation", "main/test/ca/uwaterloo/flix/library/TestValidation.flix")(Options.TestWithLibrary)
-) with ParallelTestExecution {
-  /* left empty */
-}
+)
