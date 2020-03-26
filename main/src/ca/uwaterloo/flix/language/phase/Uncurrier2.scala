@@ -93,12 +93,17 @@ object Uncurrier2 extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           Expression.Lambda(args, b, tpe, loc)
 
         case Expression.Apply(Expression.Apply(Expression.Def(sym0, tpe0, loc0), args1, tpe1, loc1), args2, tpe2, loc2) =>
-          val sym3 = uncurryCtxt(sym0)
-          val defn3 = uncurriedDefs0(sym3)
-          val def3 = Expression.Def(sym3, defn3.tpe, loc1)
-          val as1 = args1 map uncurryApply
-          val as2 = args2 map uncurryApply
-          Expression.Apply(def3, as1 ++ as2, tpe2, loc2)
+          uncurryCtxt.get(sym0) match {
+            case Some(sym3) =>
+              val defn3 = uncurriedDefs0(sym3)
+              val def3 = Expression.Def(sym3, defn3.tpe, loc1)
+              val as1 = args1 map uncurryApply
+              val as2 = args2 map uncurryApply
+              Expression.Apply(def3, as1 ++ as2, tpe2, loc2)
+            case None =>
+              Expression.Apply(Expression.Apply(Expression.Def(sym0, tpe0, loc0), args1, tpe1, loc1), args2, tpe2, loc2)
+          }
+
 
         case Expression.Apply(exp, args, tpe, loc) =>
           val e = uncurryApply(exp)
