@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use RBTree.RBTree;
+
 ///
 /// The Map type.
 ///
@@ -70,7 +72,7 @@ namespace Map {
     ///
     pub def get(k: k, m: Map[k, v]): Option[v] =
         let Map(xs) = m;
-        RBTree.findWithKey(k, xs)
+        RBTree.get(k, xs)
 
     ///
     /// Returns `v` if `k -> v` is in `m`.
@@ -93,13 +95,13 @@ namespace Map {
     /// Returns the keys of `m`.
     ///
     pub def keysOf(m: Map[k, v]): Set[k] =
-        foldLeftWithKey((b, k, _) -> Set.insert(k, b), Set.empty(), m)
+        foldLeftWithKey((acc, k, _) -> Set.insert(k, acc), Set.empty(), m)
 
     ///
     /// Returns the values of `m`.
     ///
     pub def valuesOf(m: Map[k, v]): List[v] =
-        foldRight((v, b) -> v :: b, Nil, m)
+        foldRight((v, acc) -> v :: acc, Nil, m)
 
 
 
@@ -128,10 +130,7 @@ namespace Map {
     ///
     pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: Map[k, v]): Map[k, v] & e =
         let Map(xs) = m;
-        match get(k, m) {
-            case None => Map(RBTree.insert(k, v, xs))
-            case Some(v1) => Map(RBTree.insert(k, f(k, v, v1), xs))
-        }
+        Map(RBTree.insertWith(f, k, v, xs))
 
 
 
@@ -148,10 +147,8 @@ namespace Map {
     ///
     /// Updates `m` with `k -> f(k, v)` if `k -> v` is in `m`. Otherwise, returns `m`.
     ///
-    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: Map[k, v]): Map[k, v] & e = match get(k, m) {
-        case None => m
-        case Some(v) => insert(k, f(k, v), m)
-    }
+    pub def adjustWithKey(f: (k, v) -> v & e, k: k, m: Map[k, v]): Map[k, v] & e =
+        updateWithKey((k1, v) -> Some(f(k1, v)), k, m)
 
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(v) = Some(v1)`. Otherwise, returns `m`.
@@ -162,18 +159,9 @@ namespace Map {
     ///
     /// Updates `m` with `k -> v1` if `k -> v` is in `m` and `f(k, v) = Some(v1)`. Otherwise, returns `m`.
     ///
-    pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e = match get(k, m) {
-        case None => m
-        case Some(v) => match f(k, v) {
-            case None => m
-            case Some(v1) => insert(k, v1, m)
-        }
-    }
-
-
-
-
-
+    pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
+        let Map(xs) = m;
+        Map(RBTree.updateWith(f, k, xs))
 
 
 
@@ -194,10 +182,7 @@ namespace Map {
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
-    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool = forall((k, v) -> match get(k, m2) {
-        case None => false
-        case Some(v1) => v <=> v1 == 0
-    }, m1)
+    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool = forall((k, v) -> get(k, m2) == Some(v), m1)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
@@ -248,7 +233,7 @@ namespace Map {
     /// The function `f` must be pure.
     ///
     pub def filterWithKey(f: (k, v) -> Bool, m: Map[k, v]): Map[k, v] =
-        foldLeftWithKey((b, k, v) -> if (f(k, v)) insert(k, v, b) else b, empty(), m)
+        foldLeftWithKey((acc, k, v) -> if (f(k, v)) insert(k, v, acc) else acc, empty(), m)
 
     ///
     /// Returns a map with mappings `k -> f(v)` for every `k -> v` in `m`.
@@ -259,7 +244,7 @@ namespace Map {
     /// Returns a map with mappings `k -> f(k, v)` for every `k -> v` in `m`.
     ///
     pub def mapWithKey(f: (k, v1) -> v2 & e, m: Map[k, v1]): Map[k, v2] & e =
-        foldLeftWithKey((b, k, v) -> insert(k, f(k, v), b), empty(), m)
+        foldLeftWithKey((acc, k, v) -> insert(k, f(k, v), acc), empty(), m)
 
 
 
@@ -273,7 +258,7 @@ namespace Map {
     ///
     /// Alias for `foldLeftWithKey`.
     ///
-    pub def foldWithKey(f: (k, b, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey(f, s, m)
+    pub def foldWithKey(f: (b, k, v) -> b & e, s: b, m: Map[k, v]): b & e = foldLeftWithKey(f, s, m)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right.
@@ -281,14 +266,14 @@ namespace Map {
     /// That is, the result is of the form: `f(...f(f(s, v1), v2)..., vn)`.
     ///
     pub def foldLeft(f: (b, v) -> b & e, s: b, m: Map[k, v]): b & e =
-        foldLeftWithKey((b, _, v) -> f(b, v), s, m)
+        foldLeftWithKey((acc, _, v) -> f(acc, v), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
     ///
-    pub def foldLeftWithKey(f: (b, k, v) -> b & e, s: b, m: Map[k, v]): b & e =
+    pub def foldLeftWithKey(f: (acc, k, v) -> acc & e, s: acc, m: Map[k, v]): acc & e =
         let Map(xs) = m;
         RBTree.foldLeft(f, s, xs)
 
@@ -298,7 +283,7 @@ namespace Map {
     /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, s)))`.
     ///
     pub def foldRight(f: (v, b) -> b & e, s: b, m: Map[k, v]): b & e =
-        foldRightWithKey((_, v, b) -> f(v, b), s, m)
+        foldRightWithKey((_, v, acc) -> f(v, acc), s, m)
 
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left.
@@ -324,22 +309,19 @@ namespace Map {
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
-    /// Returns `None` if `m` is the empty Map.
+    /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeft(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e =
-        match reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) {
-            case None => None
-            case Some(_, v) => Some(v)
-        }
+        reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
     /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
-    /// Returns `None` if `m` is the empty Map.
+    /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] =
+    pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
         let Map(xs) = m;
         RBTree.reduceLeft(f, xs)
 
@@ -348,22 +330,19 @@ namespace Map {
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
-    /// Returns `None` if `m` is the empty Map.
+    /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRight(f: (v, v) -> v & e, m: Map[k, v]): Option[v] & e =
-        match reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) {
-            case None => None
-            case Some((_, v)) => Some(v)
-        }
+        reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
     /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
-    /// Returns `None` if `m` is the empty Map.
+    /// Returns `None` if `m` is the empty map.
     ///
-    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] =
+    pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
         let Map(xs) = m;
         RBTree.reduceRight(f, xs)
 
@@ -378,12 +357,12 @@ namespace Map {
     /// The function `f` must be pure.
     ///
     pub def count(f: (k, v) -> Bool, m: Map[k, v]): Int32 =
-        foldLeftWithKey((b, k, v) -> if (f(k, v)) 1 + b else b, 0, m)
+        foldLeftWithKey((acc, k, v) -> if (f(k, v)) 1 + acc else acc, 0, m)
 
     ///
     /// Returns `true` if and only if at least one mapping in `m` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `m` is the empty Map.
+    /// Returns `false` if `m` is the empty map.
     ///
     /// The function `f` must be pure.
     ///
@@ -394,7 +373,7 @@ namespace Map {
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
     ///
-    /// Returns `true` if `m` is the empty Map.
+    /// Returns `true` if `m` is the empty map.
     ///
     /// The function `f` must be pure.
     ///
@@ -500,13 +479,13 @@ namespace Map {
     /// Returns the map `m` as a list of key-value pairs.
     ///
     pub def toList(m: Map[k, v]): List[(k, v)] =
-        foldLeftWithKey((b, k, v) -> (k, v) :: b, Nil, m)
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
-    /// Returns the Map `m` as a set of key-value pairs.
+    /// Returns the map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: Map[k, v]): Set[(k, v)] =
-        foldLeftWithKey((b, k, v) -> Set.insert((k, v), b), Set.empty(), m)
+        foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
     /// Applies `f` to every element of `xs`.
@@ -517,12 +496,46 @@ namespace Map {
         let Map(xs) = m;
         RBTree.foreach(f, xs)
 
+    ///
+    /// Helper function for `cmp`.
+    ///
+    def __cmpHelper(m1: List[(k, v)], m2: List[(k, v)]): Int32 = match (m1, m2) {
+        case (z :: zs, w :: ws) =>
+            let cmp = z <=> w;
+            if (cmp == 0) __cmpHelper(zs, ws) else cmp
+        case (_ :: _, Nil) => 1
+        case (Nil, _ :: _) => -1
+        case (Nil, Nil) => 0
+    }
 
-
+    ///
+    /// Returns the result of a three-way comparison between `m1` and `m2`.
+    ///
+    /// Returns n < 0 if all mappings in `m1` are lexicographically smaller than `m2`.
+    /// Returns n = 0 if all mappings `m1` are equal to `m2`.
+    /// Returns n > 0 if all mapppings in `m1` is lexicographically greater than `m1`.
+    ///
+    pub def __cmp(m1: Map[k, v], m2: Map[k, v]): Int32 =
+        __cmpHelper(toList(m1), toList(m2))
 
     ///
     /// Returns `true` if and only if `m1` and `m2` and equal, i.e. they have the same mappings.
     ///
-    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = size(m1) == size(m2) && isSubmapOf(m1, m2)
+    pub def __eq(m1: Map[k, v], m2: Map[k, v]): Bool = __cmp(m1, m2) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useGetWithDefault(): Bool =
+        forall [k, v] (k: k, d: v, m: Map[k, v]).
+            Option.getWithDefault(Map.get(k, m), d) === Map.getWithDefault(k, d, m)
+
+    @lint
+    def useIsSubmapOf(): Bool =
+        forall [k, v] (m1: Map[k, v], m2: Map[k, v]).
+            Map.forall((k, v) -> Map.get(k, m1) == Some(v), m2) === Map.isSubmapOf(m1, m2)
+
 
 }
