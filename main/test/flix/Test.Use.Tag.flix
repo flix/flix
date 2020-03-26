@@ -3,95 +3,149 @@ namespace Test/Use/Tag {
     @test
     def testUseEnum01(): Bool =
         use Test/Use/Tag/A.Color.Red;
-        Red == Red
+        match Red {
+            case Red => true
+            case _   => false
+        }
 
     @test
     def testUseEnum02(): Bool =
         use Test/Use/Tag/A.Color.Blu;
-        Blu == Blu
+        match Blu {
+            case Blu => true
+            case _   => false
+        }
 
     @test
     def testUseEnum03(): Bool =
         use Test/Use/Tag/A.Color.Red;
         use Test/Use/Tag/A.Color.Blu;
-        Red != Blu
+        match Blu {
+            case Red => false
+            case Blu => true
+        }
 
     @test
     def testUseEnum04(): Bool =
         use Test/Use/Tag/A.Color.{Red, Blu};
-        Red != Blu
+        match Blu {
+            case Red => false
+            case Blu => true
+        }
 
     @test
     def testUseEnum05(): Bool =
         use Test/Use/Tag/A.Color.{Red => R};
-        R == R
+        match R {
+            case R => true
+            case _ => false
+        }
 
     @test
     def testUseEnum06(): Bool =
         use Test/Use/Tag/A.Color.{Blu => B};
-        B == B
+        match B {
+            case B => true
+            case _ => false
+        }
 
     @test
     def testUseEnum07(): Bool =
         use Test/Use/Tag/A.Color.{Red => R};
         use Test/Use/Tag/A.Color.{Blu => B};
-        R != B
+        match R {
+            case B => false
+            case R => true
+        }
 
     @test
     def testUseEnum08(): Bool =
         use Test/Use/Tag/A.Color.{Red => R, Blu => B};
-        R != B
+        match R {
+            case B => false
+            case R => true
+        }
 
     @test
     def testUseEnum09(): Bool =
         use Test/Use/Tag/A.Color;
-        Color.Red == Color.Red
+        match Color.Red {
+            case Color.Red => true
+            case _         => true
+        }
 
     @test
     def testUseEnum10(): Bool =
         use Test/Use/Tag/A.Color;
-        Color.Blu == Color.Blu
+        match Color.Blu {
+            case Color.Blu => true
+            case _         => true
+        }
 
     @test
     def testUseEnum11(): Bool =
         use Test/Use/Tag/A.Color;
-        Color.Red != Color.Blu
+        match Color.Red {
+            case Color.Blu => false
+            case Color.Red => true
+        }
 
     @test
     def testUseEnum12(): Bool =
         use Test/Use/Tag/A/B.Currency.USD;
-        USD == USD
+        match USD {
+            case USD => true
+            case _   => false
+        }
 
     @test
     def testUseEnum13(): Bool =
         use Test/Use/Tag/A/B.Currency.CAD;
-        CAD == CAD
+        match CAD {
+            case CAD => true
+            case _   => false
+        }
 
     @test
     def testUseEnum14(): Bool =
         use Test/Use/Tag/A/B.Currency.USD;
         use Test/Use/Tag/A/B.Currency.CAD;
-        USD != CAD
+        match USD {
+            case USD => true
+            case CAD => false
+        }
 
     @test
     def testUseEnum15(): Bool =
         use Test/Use/Tag/A/B.Currency.{USD, CAD};
-        USD != CAD
+        match USD {
+            case USD => true
+            case CAD => false
+        }
 
     @test
     def testUseEnum16(): Bool =
         use Test/Use/Tag/A/B.Currency;
-        Currency.CAD == Currency.CAD
+        match Currency.USD {
+            case Currency.USD => true
+            case _            => false
+        }
 
     @test
     def testUseEnum17(): Bool =
         use Test/Use/Tag/A/B.Currency;
-        Currency.USD == Currency.USD
+        match Currency.CAD {
+            case Currency.CAD => true
+            case _            => false
+        }
 
     @test
     def testUseEnum18(): Bool =
         use Test/Use/Tag/A/B.Currency;
-        Currency.CAD != Currency.USD
+        match Currency.USD {
+            case Currency.CAD => false
+            case Currency.USD => true
+        }
 
     namespace A {
         pub enum Color {
