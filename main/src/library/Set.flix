@@ -145,7 +145,7 @@ namespace Set {
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
-        RBTree.foldLeft((b, k, _) -> f(b, k), s, es)
+        RBTree.foldLeft((acc, k, _) -> f(acc, k), s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
@@ -154,7 +154,7 @@ namespace Set {
     ///
     pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
-        RBTree.foldRight((k, _, b) -> f(k, b), s, es)
+        RBTree.foldRight((k, _, acc) -> f(k, acc), s, es)
 
     ///
     /// Alias for `reduceLeft`.
