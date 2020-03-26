@@ -832,6 +832,17 @@ namespace List {
         case x :: rs => f(x); foreach(f, rs)
     }
 
+    ///
+    /// Compares `xs` and `ys` lexicographically.
+    ///
+    def __cmp(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
+        case (_ :: _, Nil) => 1
+        case (Nil, Nil) => 0
+        case (Nil, _ :: _) => -1
+        case (z :: zs, w :: ws) =>
+            let cmp = z <=> w;
+            if (cmp == 0) __cmp(zs, ws) else cmp
+    }
 
     ///
     /// Returns `true` if and only if `xs` and `ys` and equal.
