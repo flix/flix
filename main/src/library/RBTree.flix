@@ -107,9 +107,12 @@ namespace RBTree {
     pub def get(k: k, tree: RBTree[k, v]): Option[v] = match tree {
         case RBNode(_, a, k1, v, b) =>
             let cmp = k <=> k1;
-            if (cmp < 0) get(k, a)
-            else if (cmp == 0) Some(v)
-            else get(k, b)
+            if (cmp < 0)
+                get(k, a)
+            else if (cmp == 0)
+                Some(v)
+            else
+                get(k, b)
         case _ => None
     }
 
@@ -119,9 +122,12 @@ namespace RBTree {
     pub def memberOf(k: k, tree: RBTree[k, v]): Bool = match tree {
         case RBNode(_, a, k1, _, b) =>
             let cmp = k <=> k1;
-            if (cmp < 0) memberOf(k, a)
-            else if (cmp == 0) true
-            else memberOf(k, b)
+            if (cmp < 0)
+                memberOf(k, a)
+            else if (cmp == 0)
+                true
+            else
+                memberOf(k, b)
         case _ => false
     }
 
@@ -268,9 +274,12 @@ namespace RBTree {
         case RBLeaf => RBNode(Red, RBLeaf, k, v, RBLeaf)
         case RBNode(color, a, k1, v1, b) =>
             let cmp = k <=> k1;
-            if (cmp < 0) balance(RBNode(color, insertWithHelper(f, k, v, a), k1, v1, b))
-            else if (cmp == 0) RBNode(color, a, k, f(k, v, v1), b)
-            else balance(RBNode(color, a, k1, v1, insertWithHelper(f, k, v, b)))
+            if (cmp < 0)
+                balance(RBNode(color, insertWithHelper(f, k, v, a), k1, v1, b))
+            else if (cmp == 0)
+                RBNode(color, a, k, f(k, v, v1), b)
+            else
+                balance(RBNode(color, a, k1, v1, insertWithHelper(f, k, v, b)))
         case _ => tree
     }
 
@@ -281,12 +290,15 @@ namespace RBTree {
         case RBLeaf => tree
         case RBNode(color, a, k1, v1, b) =>
             let cmp = k <=> k1;
-            if (cmp < 0) balance(RBNode(color, updateWithHelper(f, k, a), k1, v1, b))
-            else if (cmp == 0) match f(k1, v1) {
-                case None => tree
-                case Some(v) => RBNode(color, a, k, v, b)
-            }
-            else balance(RBNode(color, a, k1, v1, updateWithHelper(f, k, b)))
+            if (cmp < 0)
+                balance(RBNode(color, updateWithHelper(f, k, a), k1, v1, b))
+            else if (cmp == 0)
+                match f(k1, v1) {
+                    case None => tree
+                    case Some(v) => RBNode(color, a, k, v, b)
+                }
+            else
+                balance(RBNode(color, a, k1, v1, updateWithHelper(f, k, b)))
         case _ => tree
     }
 
@@ -352,14 +364,21 @@ namespace RBTree {
         case RBNode(Black, RBLeaf, k1, _, RBLeaf) => if (k <=> k1 == 0) RBBLeaf else tree
         case RBNode(Black, RBNode(Red, RBLeaf, k1, v1, RBLeaf), k2, v2, RBLeaf) =>
             let cmp = k <=> k2;
-            if (cmp < 0) RBNode(Black, deleteHelper(k, RBNode(Red, RBLeaf, k1, v1, RBLeaf)), k2, v2, RBLeaf)
-            else if (cmp == 0) RBNode(Black, RBLeaf, k1, v1, RBLeaf)
-            else RBNode(Black, RBNode(Red, RBLeaf, k1, v1, RBLeaf), k2, v2, RBLeaf)
+            if (cmp < 0)
+                RBNode(Black, deleteHelper(k, RBNode(Red, RBLeaf, k1, v1, RBLeaf)), k2, v2, RBLeaf)
+            else if
+                (cmp == 0) RBNode(Black, RBLeaf, k1, v1, RBLeaf)
+            else
+                RBNode(Black, RBNode(Red, RBLeaf, k1, v1, RBLeaf), k2, v2, RBLeaf)
         case RBNode(c, a, k1, v1, b) =>
             let cmp = k <=> k1;
-            if (cmp < 0) rotate(RBNode(c, deleteHelper(k, a), k1, v1, b))
-            else if (cmp == 0) let (k2, v2, e) = minDelete(b); rotate(RBNode(c, a, k2, v2, e))
-            else rotate(RBNode(c, a, k1, v1, deleteHelper(k, b)))
+            if (cmp < 0)
+                rotate(RBNode(c, deleteHelper(k, a), k1, v1, b))
+            else if (cmp == 0)
+                let (k2, v2, e) = minDelete(b);
+                rotate(RBNode(c, a, k2, v2, e))
+            else
+                rotate(RBNode(c, a, k1, v1, deleteHelper(k, b)))
         case _ => tree
     }
 
