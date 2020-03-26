@@ -1461,10 +1461,10 @@ def toList01(): Bool = Map.toList(Map#{}) `assertEq!` Nil
 def toList02(): Bool = Map.toList(Map#{1 -> 2}) `assertEq!` (1, 2) :: Nil
 
 @test
-def toList03(): Bool = Map.toList(Map#{1 -> 2, 3 -> 4}) `assertEq!` (3, 4) :: (1, 2) :: Nil
+def toList03(): Bool = Map.toList(Map#{1 -> 2, 3 -> 4}) `assertEq!` (1, 2) :: (3, 4) :: Nil
 
 @test
-def toList04(): Bool = Map.toList(Map#{1 -> 2, 2 -> 2, 3 -> 4}) `assertEq!` (3, 4) :: (2, 2) :: (1, 2) :: Nil
+def toList04(): Bool = Map.toList(Map#{1 -> 2, 2 -> 2, 3 -> 4}) `assertEq!` (1, 2) :: (2, 2) :: (3, 4) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
