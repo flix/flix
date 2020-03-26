@@ -1434,7 +1434,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given environment `uenv0`.
+    * Disambiguate the given tag `tag0` with the given optional enum name `enumOpt0` under the given use environment `uenv0`.
     */
   private def getDisambiguatedTag(enumOpt0: Option[Name.QName], tag0: Name.Ident, uenv0: UseEnv): (Option[Name.QName], Name.Ident) = {
     enumOpt0 match {
