@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use RBTree.RBTree;
+
 ///
 /// The Set type.
 ///
@@ -50,6 +52,14 @@ namespace Set {
     /// `Set#{x}` is syntactic sugar for `singleton` (`Set#{x} = singleton(x)`).
     ///
     pub def singleton(x: a): Set[a] = insert(x, empty())
+
+    ///
+    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
+    ///
+    /// Returns `empty()` if `b >= e`.
+    ///
+    pub def range(b: Int32, e: Int32): Set[Int32] =
+        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
 
     ///
     /// Adds `x` to `xs`.
@@ -158,10 +168,7 @@ namespace Set {
     ///
     pub def reduceLeft(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(es) = xs;
-        match RBTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) {
-            case None => None
-            case Some(x, _) => Some(x)
-        }
+        RBTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -170,10 +177,7 @@ namespace Set {
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(es) = xs;
-        match RBTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) {
-            case None => None
-            case Some(x, _) => Some(x)
-        }
+        RBTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
 
 
 
@@ -289,10 +293,7 @@ namespace Set {
     /// The function `f` must be pure.
     ///
     pub def partition(f: a -> Bool, xs: Set[a]): (Set[a], Set[a]) =
-        foldLeft((acc, x) ->
-            let (a, b) = acc;
-            if (f(x)) (insert(x, a), b)
-            else (a, insert(x, b)), (empty(), empty()), xs)
+        foldLeft((acc, x) -> let (a, b) = acc; if (f(x)) (insert(x, a), b) else (a, insert(x, b)), (empty(), empty()), xs)
 
 
 
@@ -356,15 +357,7 @@ namespace Set {
         if (n < b) acc else rangeHelper(b, n - 1, insert(n, acc))
 
     ///
-    /// Returns a set of all integers between `b` (inclusive) and `e` (exclusive).
-    ///
-    /// Returns `empty()` if `b >= e`.
-    ///
-    pub def range(b: Int32, e: Int32): Set[Int32] =
-        if (b >= e) empty() else rangeHelper(b, e - 1, empty())
-
-    ///
     /// Returns `true` if and only if `xs` and `ys` are equal, i.e. they have the same elements.
     ///
-    pub def __eq(xs: Set[a], ys: Set[a]): Bool = size(xs) == size(ys) && isSubsetOf(xs, ys)
+    pub def __eq(xs: Set[a], ys: Set[a]): Bool = __cmp(xs, ys) == 0
 }
