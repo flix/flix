@@ -374,10 +374,10 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint)(implicit flix: Flix): Constraint = {
-    val Constraint(cparams0, head0, body0) = c0
+    val Constraint(cparams0, head0, body0, loc) = c0
     val head = visitHeadPredicate(head0)
     val body = body0 map visitBodyPredicate
-    Constraint(cparams0, head, body)
+    Constraint(cparams0, head, body, loc)
   }
 
   /**
@@ -563,7 +563,7 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given constraint `c0`.
     */
   private def freeVars(c0: Constraint): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = {
-    val Constraint(cparams, head, body) = c0
+    val Constraint(cparams, head, body, loc) = c0
     freeVars(head) ++ body.flatMap(freeVars)
   }
 
@@ -923,14 +923,14 @@ object ClosureConv extends Phase[Root, Root] {
     }
 
     def visitConstraint(c0: Constraint): Constraint = {
-      val Constraint(cparams0, head0, body0) = c0
+      val Constraint(cparams0, head0, body0, loc) = c0
       val cs = cparams0 map {
         case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
         case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
       }
       val head = visitHeadPredicate(head0)
       val body = body0 map visitBodyPredicate
-      Constraint(cs, head, body)
+      Constraint(cs, head, body, loc)
     }
 
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {

@@ -337,7 +337,7 @@ class Solver(@volatile var constraintSystem: ConstraintSystem, stratification: S
             val head = AtomPredicate.of(sym, true, terms)
             val body = new Array[Predicate](0)
 
-            Constraint.of(new Array[VarSym](0), head, body)
+            Constraint.of(new Array[VarSym](0), head, body, null)
         }
     }
 
@@ -352,7 +352,7 @@ class Solver(@volatile var constraintSystem: ConstraintSystem, stratification: S
             val head = AtomPredicate.of(sym, true, terms.toArray)
             val body = new Array[Predicate](0)
 
-            Constraint.of(new Array[VarSym](0), head, body)
+            Constraint.of(new Array[VarSym](0), head, body, null)
         }
     }
 

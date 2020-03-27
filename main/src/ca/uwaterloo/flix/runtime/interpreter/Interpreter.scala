@@ -748,7 +748,7 @@ object Interpreter {
     val head = evalHeadPredicate(c0.head, env0, lenv0)
     val body = c0.body.map(b => evalBodyPredicate(b, env0, lenv0))
 
-    val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray)
+    val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray, null)
 
     ConstraintSystem.of(Array(constraint))
   }

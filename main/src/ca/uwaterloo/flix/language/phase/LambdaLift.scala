@@ -384,10 +384,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs lambda lifting on the given head predicate `head0`.
       */
     def visitConstraint(c0: SimplifiedAst.Constraint): SimplifiedAst.Constraint = c0 match {
-      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+      case SimplifiedAst.Constraint(cparams, head0, body0, loc) =>
         val head = visitHeadPredicate(head0)
         val body = body0.map(visitBodyPredicate)
-        SimplifiedAst.Constraint(cparams, head, body)
+        SimplifiedAst.Constraint(cparams, head, body, loc)
     }
 
     /**
