@@ -332,7 +332,7 @@ object SimplifiedAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body])
+  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body], loc: SourceLocation)
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym

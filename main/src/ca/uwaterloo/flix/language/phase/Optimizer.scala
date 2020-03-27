@@ -359,10 +359,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the given constraint `c0`.
       */
     def visitConstraint(c0: SimplifiedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Constraint = c0 match {
-      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+      case SimplifiedAst.Constraint(cparams, head0, body0, loc) =>
         val head = visitHeadPred(head0, env0)
         val body = body0.map(visitBodyPred(_, env0))
-        SimplifiedAst.Constraint(cparams, head, body)
+        SimplifiedAst.Constraint(cparams, head, body, loc)
     }
 
     /**
