@@ -567,16 +567,16 @@ namespace Array {
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, a: Array[a]): b & e =
-        foldLeftHelper(f, s, a, 0)
+        foldLeftHelper(f, s, a, 0) as & e
 
     ///
     /// Helper function for `foldLeft`.
     ///
-    def foldLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], i: Int32): b & e =
+    def foldLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], i: Int32): b & Impure =
         if (i >= length(a))
             s
         else {
-            let s1 = f(s, a[i] as a & e);
+            let s1 = f(s, a[i]);
             foldLeftHelper(f, s1, a, i + 1)
         }
 
@@ -586,16 +586,16 @@ namespace Array {
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b & e, s: b, a: Array[a]): b & e =
-        foldRightHelper(f, s, a, length(a) - 1)
+        foldRightHelper(f, s, a, length(a) - 1) as & e
 
     ///
     /// Helper function for `foldRight`.
     ///
-    def foldRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], i: Int32): b & e =
+    def foldRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], i: Int32): b & Impure =
         if (i < 0)
             s
         else {
-            let s1 = f(a[i] as a & e, s);
+            let s1 = f(a[i], s);
             foldRightHelper(f, s1, a, i - 1)
         }
 
@@ -613,16 +613,16 @@ namespace Array {
         if (length(a) == 0)
             None
         else
-            Some(reduceLeftHelper(f, a, a[0] as a & e, 1))
+            Some(reduceLeftHelper(f, a, a[0], 1)) as & e
 
     ///
     /// Helper function for `reduceLeft`.
     ///
-    def reduceLeftHelper(f: (a, a) ->  a & e, a: Array[a], x: a, i:Int32): a & e =
+    def reduceLeftHelper(f: (a, a) ->  a & e, a: Array[a], x: a, i:Int32): a & Impure =
         if (i >= length(a))
             x
         else
-            reduceLeftHelper(f, a, f(x, a[i] as a & e), i+1)
+            reduceLeftHelper(f, a, f(x, a[i]), i+1)
 
     ///
     /// Applies `f` to all elements in `a` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -634,18 +634,18 @@ namespace Array {
             None
         else {
             let end = length(a) - 1;
-            let ac = a[end] as a & e;
-            Some(reduceRightHelper(f, a, ac, end-1))
+            let ac = a[end] as & e;
+            Some(reduceRightHelper(f, a, ac, end-1)) as & e
         }
 
     ///
     /// Helper function for `reduceRight`.
     ///
-    def reduceRightHelper(f: (a, a) -> a & e, a: Array[a], x: a, i:Int32): a & e =
+    def reduceRightHelper(f: (a, a) -> a & e, a: Array[a], x: a, i:Int32): a & Impure =
         if (i < 0)
             x
         else
-            reduceRightHelper(f, a, f(a[i] as a & e, x), i-1)
+            reduceRightHelper(f, a, f(a[i], x), i-1)
 
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
@@ -934,14 +934,14 @@ namespace Array {
     ///
     pub def zipWith(f: (a, b) -> c & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i] as a & e, b[i] as b & e), len) as Array[c] & Impure
+        init(i -> f(a[i], b[i]), len)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
     /// and the second containing all second components in `a`.
     ///
     pub def unzip(a: Array[(a,b)]): (Array[a], Array[b]) & Impure =
-        init2(i -> a[i] as (a,b) & Pure, length(a))
+        init2(i -> a[i], length(a))
 
     ///
     /// Returns an array where the element at index `i` is `f(a[i], b[i])`.
@@ -950,14 +950,14 @@ namespace Array {
     ///
     pub def map2(f: (a, b) -> c & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i] as a & e, b[i] as b & e), len)
+        init(i -> f(a[i], b[i]), len)
 
     ///
     /// Concatenates the results of applying `f` pairwise to the elements of `a` and `b`.
     ///
-    pub def flatMap2(f: (a, b) -> Array[c] & e, a: Array[a], b: Array[b]): Array[c] & e =
+    pub def flatMap2(f: (a, b) -> Array[c] & e, a: Array[a], b: Array[b]): Array[c] & Impure =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(a[i] as a & e, b[i] as b & e), len) |> flatten
+        init(i -> f(a[i], b[i]), len) |> flatten
 
     ///
     /// Alias for `foldLeft2`.
@@ -970,28 +970,28 @@ namespace Array {
     /// starting with the initial value `c` and going from left to right.
     ///
     pub def foldLeft2(f: (c, a, b) ->  c & e, c: c, a: Array[a], b: Array[b]): c & e =
-        foldLeft2Helper(f, c, a, b, 0)
+        let lena = length(a);
+        let lenb = length(b);
+        foldLeft2Helper(f, c, a, b, lena, lenb, 0) as & e
 
     ///
     /// Helper function for `foldLeft2`.
     ///
-    /// TODO make lengths static argument(s)
-    ///
-    def foldLeft2Helper(f: (c, a, b) ->  c & e , s: c, a: Array[a], b: Array[b], i: Int32): c & e =
-        if (i >= length(a) || i >= length(b))
+    def foldLeft2Helper(f: (c, a, b) ->  c & e , s: c, a: Array[a], b: Array[b], lena: Int32, lenb: Int32, i: Int32): c & Impure =
+        if (i >= lena || i >= lenb)
             s
         else {
-            let x = a[i] as a & e;
-            let y = b[i] as b & e;
+            let x = a[i];
+            let y = b[i];
             let s1 = f(s, x, y);
-            foldLeft2Helper(f, s1, a, b, i + 1)
+            foldLeft2Helper(f, s1, a, b, lena, lenb, i+1)
         }
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from right to left.
     ///
-    /// TODO - better guard the calls to drop, or better use indices...
+    /// TODO - rewrite to use two indices
     ///
     pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c & e =
         let len1 = length(a);
@@ -1028,16 +1028,16 @@ namespace Array {
     /// Returns `None` if every element of `xs` is `None`.
     ///
     pub def findMap(f: a -> Option[b] & e, a: Array[a]): Option[b] & e =
-        findMapHelper(f, a, length(a), 0)
+        findMapHelper(f, a, length(a), 0) as & e
 
     ///
     /// Helper function for `findMap`.
     ///
-    def findMapHelper(f: a -> Option[b] & e, a: Array[a], len: Int32, i: Int32): Option[b] & e =
+    def findMapHelper(f: a -> Option[b] & e, a: Array[a], len: Int32, i: Int32): Option[b] & Impure =
         if (i >= len)
             None
         else {
-            let x = f(a[i] as a & e);
+            let x = f(a[i]);
             match x {
                 case Some(v) => Some(v)
                 case None => findMapHelper(f, a, len, i+1)
