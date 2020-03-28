@@ -991,25 +991,22 @@ namespace Array {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from right to left.
     ///
-    /// TODO - rewrite to use two indices
-    ///
     pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c & e =
-        let len1 = length(a);
-        let len2 = length(b);
-        let i = Int32.min(len1, len2) - 1;
-        foldRight2Helper(f, c, drop(len1-len2, a) as Array[a] & e, drop(len2-len1, b) as Array[b] & e, i)
+        let starta = length(a) - 1;
+        let startb = length(b) - 1;
+        foldRight2Helper(f, c, a, b, starta, startb) as & e
 
     ///
     /// Helper function for `foldRight2`.
     ///
-    def foldRight2Helper(f: (a, b, c) -> c & e , s: c, a: Array[a], b: Array[b], i: Int32): c & e =
-        if (i < 0)
+    def foldRight2Helper(f: (a, b, c) -> c & e , s: c, a: Array[a], b: Array[b], ia: Int32, ib: Int32): c & Impure =
+        if (ia < 0 || ib < 0)
             s
         else {
-            let x = a[i] as a & e;
-            let y = b[i] as b & e;
+            let x = a[ia];
+            let y = b[ib];
             let s1 = f(x, y, s);
-            foldRight2Helper(f, s1, a, b, i - 1)
+            foldRight2Helper(f, s1, a, b, ia - 1, ib - 1)
         }
 
     ///
