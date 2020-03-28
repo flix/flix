@@ -271,6 +271,22 @@ namespace Array {
     pub def map(f: a -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
         init(i -> f(a[i]), len)
+    ///
+    /// Apply `f` to every element in array `a`. Array `a` is mutated.
+    ///
+    pub def mapInPlace(f: a -> a, a: Array[a]): Unit & Impure =
+        mapInPlaceHelper(f, length(a), a, 0)
+
+    ///
+    /// Helper of `mapInPlace`
+    ///
+    def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], i: Int32): Unit & Impure =
+        if (i >= len)
+            ()
+        else {
+            a[i] = f(a[i]);
+            mapInPlaceHelper(f, len, a, i+1)
+        }
 
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
@@ -376,8 +392,13 @@ namespace Array {
         map(e -> if (e == x) y else e, a)
 
     ///
+    /// Replace every occurrence of `x` replaced by `y` in the array `a`.
     ///
-    /// Returns `b` with the `n` elements start ing at index `i` replaced with the elements of `a`.
+    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit & Impure =
+        mapInPlace(e -> if (e == x) y else e, a)
+
+    ///
+    /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
     ///
     /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
     /// If `a` becomes depleted then no further patching is done.
@@ -388,6 +409,19 @@ namespace Array {
         let size = if (n > len1) len1 else n;
         let sub = slice(a, 0, size);
         updateSequence(i, sub, b)
+
+    ///
+    /// Update `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
+    ///
+    /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
+    /// If `a` becomes depleted then no further patching is done.
+    /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
+    ///
+    pub def patchInPlace(i: Int32, n: Int32, a: Array[a], b: Array[a]): Unit & Impure =
+        let len1 = length(a);
+        let size = if (n > len1) len1 else n;
+        let sub = slice(a, 0, size);
+        updateSequenceInPlace(i, sub, b)
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
@@ -1289,29 +1323,6 @@ namespace Array {
                     a[ix]
              };
         init(f, length(a))
-
-    ///
-    /// Apply `f` to every element in array `a`. Array `a` is mutated.
-    ///
-    pub def mapInPlace(f: a -> a, a: Array[a]): Unit & Impure =
-        mapInPlaceHelper(f, length(a), a, 0)
-
-    ///
-    /// Helper of `mapInPlace`
-    ///
-    def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], i: Int32): Unit & Impure =
-        if (i >= len)
-            ()
-        else {
-            a[i] = f(a[i]);
-            mapInPlaceHelper(f, len, a, i+1)
-        }
-
-    ///
-    /// Returns `a` with every occurrence of `x` replaced by `y`.
-    ///
-    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit & Impure =
-        mapInPlace(e -> if (e == x) y else e, a)
 
     ///
     /// Update `a` with the elements starting at index `i` replaced by `sub`.
