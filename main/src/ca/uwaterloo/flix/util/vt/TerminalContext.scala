@@ -95,7 +95,6 @@ object TerminalContext {
     def emitBold(s: String): String = Console.BOLD + s + Console.RESET
 
     def emitUnderline(s: String): String = Console.UNDERLINED + s + Console.RESET
-
   }
 
   /**

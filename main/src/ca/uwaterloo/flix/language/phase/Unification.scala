@@ -25,8 +25,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import scala.annotation.tailrec
 
 object Unification {
-
-
   /**
     * Aliases to make the success variable elimination easier to understand.
     */
@@ -399,7 +397,7 @@ object Unification {
 
       case _ =>
         // Case 4: The type is not a row.
-        Err(UnificationError.NonRecordType(row2))
+        Err(UnificationError.NonRecordType(row2)) // MATT NonRecordRowType
     }
 
     /**
@@ -455,7 +453,7 @@ object Unification {
       */
     def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
       case Nil => (Substitution.empty, eff)
-        // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
+      // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
       case x :: xs =>
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)

@@ -948,6 +948,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordEmpty(loc) =>
       NamedAst.Type.RecordEmpty(loc).toSuccess
 
+    case WeededAst.Type.RecordVar(tpe, loc) =>
+      mapN(visitType(tpe, tenv0)) {
+        case t => NamedAst.Type.RecordVar(t, loc)
+      }
+
     case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
       mapN(visitType(value, tenv0), visitType(rest, tenv0)) {
         case (t, r) => NamedAst.Type.RecordExtend(label, t, r, loc)

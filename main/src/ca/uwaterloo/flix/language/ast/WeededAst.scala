@@ -284,6 +284,8 @@ object WeededAst {
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Type
 
+    case class RecordVar(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
     case class RecordExtend(label: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type

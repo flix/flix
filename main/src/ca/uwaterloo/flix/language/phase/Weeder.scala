@@ -1580,13 +1580,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
-      val init = restOpt match {
-        case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
-        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
-      }
-      fields.foldRight(init: WeededAst.Type) {
-        case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
-          WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+      if (fields.isEmpty && restOpt.isDefined) {
+        val tpe = WeededAst.Type.Var(restOpt.get, mkSL(sp1, sp2)) // MATT more precise SL?
+        WeededAst.Type.RecordVar(tpe, mkSL(sp1, sp2))
+      } else {
+        val init = restOpt match {
+          case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
+          case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
+        }
+
+        fields.foldRight(init: WeededAst.Type) {
+          case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) =>
+            WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+        }
       }
 
     case ParsedAst.Type.Schema(sp1, ps, restOpt, sp2) =>

@@ -72,7 +72,7 @@ def testRecordPolyExtend01(): Unit =
     let _p8 = withColor(p4, "Black");
     ()
 
-def withColor[r](rec: r, col: Str): { color: Str | r } =
+def withColor[r](rec: { | r }, col: Str): { color: Str | r } =
     { +color = col | rec }
 
 @test
@@ -87,7 +87,7 @@ def testRecordPolyExtend02(): Unit =
     let _p8 = withAgeAndSex(42, "f", p4);
     ()
 
-def withAgeAndSex[r](age: Int, sex: Str, rec: r): { age: Int, sex: Str | r } =
+def withAgeAndSex[r](age: Int, sex: Str, rec: { | r }): { age: Int, sex: Str | r } =
     { +age = age, +sex = sex | rec }
 
 @test

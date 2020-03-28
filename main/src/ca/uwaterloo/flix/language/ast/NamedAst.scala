@@ -287,6 +287,8 @@ object NamedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
 
+    case class RecordVar(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
     case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class SchemaEmpty(loc: SourceLocation) extends NamedAst.Type
