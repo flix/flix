@@ -16,6 +16,7 @@
 
 package flix.runtime.fixpoint;
 
+import flix.runtime.ReifiedSourceLocation;
 import flix.runtime.fixpoint.predicate.*;
 import flix.runtime.fixpoint.symbol.VarSym;
 
@@ -32,7 +33,7 @@ public final class Constraint {
     /**
      * Constructs a constraint from the given quantified variables, head and body predicates.
      */
-    public static Constraint of(VarSym[] cparams, Predicate head, Predicate[] body) {
+    public static Constraint of(VarSym[] cparams, Predicate head, Predicate[] body, ReifiedSourceLocation loc) {
         if (cparams == null)
             throw new IllegalArgumentException("'cparams' must be non-null.");
         if (head == null)
@@ -40,7 +41,7 @@ public final class Constraint {
         if (body == null)
             throw new IllegalArgumentException("'body' must be non-null.");
 
-        return new Constraint(cparams, head, body);
+        return new Constraint(cparams, head, body, loc);
     }
 
     /**
@@ -57,6 +58,11 @@ public final class Constraint {
      * The body predicates.
      */
     private final Predicate[] body;
+
+    /**
+     * The nullable source location of the constraint.
+     */
+    private final ReifiedSourceLocation loc;
 
     /**
      * The body atom predicates.
@@ -81,7 +87,7 @@ public final class Constraint {
     /**
      * Private constructor.
      */
-    private Constraint(VarSym[] cparams, Predicate head, Predicate[] body) {
+    private Constraint(VarSym[] cparams, Predicate head, Predicate[] body, ReifiedSourceLocation loc) {
         //
         // A head predicate cannot be a guard predicate.
         //
@@ -104,6 +110,7 @@ public final class Constraint {
         this.cparams = cparams;
         this.head = head;
         this.body = body;
+        this.loc = loc;
 
         //
         // Partition the body predicates based on their types. The joy of arrays.
@@ -157,6 +164,13 @@ public final class Constraint {
      */
     public Predicate[] getBodyPredicates() {
         return this.body;
+    }
+
+    /**
+     * Returns the nullable source location.
+     */
+    public ReifiedSourceLocation getSourceLocation() {
+        return this.loc;
     }
 
     /**

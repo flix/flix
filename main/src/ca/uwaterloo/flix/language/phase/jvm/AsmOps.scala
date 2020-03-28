@@ -375,7 +375,7 @@ object AsmOps {
   /**
     * Generates code which instantiate a reified source location.
     */
-  private def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
+  def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
     mv.visitTypeInsn(NEW, JvmName.Runtime.ReifiedSourceLocation.toInternalName)
     mv.visitInsn(DUP)
     mv.visitLdcInsn(loc.source.format)

@@ -1896,7 +1896,7 @@ object GenExpression {
     * Emits code to instantiate a new constraint system for the given constraint `c`.
     */
   private def newConstraintSystem(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
-    case Constraint(cparams, head, body) =>
+    case Constraint(cparams, head, body, _) =>
       // Instantiate the constraint object.
       newConstraint(c, mv)
 
@@ -1931,7 +1931,7 @@ object GenExpression {
     * Emits code to instantiate a new constraint for the given constraint `c`.
     */
   private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
-    case Constraint(cparams, head, body) =>
+    case Constraint(cparams, head, body, loc) =>
       // Emit code for the cparams.
       newVarSyms(c.cparams.map(_.sym), mv)
 
@@ -1953,8 +1953,11 @@ object GenExpression {
         mv.visitInsn(AASTORE)
       }
 
+      // Emit code for the source location.
+      AsmOps.compileReifiedSourceLocation(mv, loc)
+
       // Instantiate a new constraint system object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)Lflix/runtime/fixpoint/Constraint;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;Lflix/runtime/ReifiedSourceLocation;)Lflix/runtime/fixpoint/Constraint;", false);
 
   }
 

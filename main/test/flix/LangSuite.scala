@@ -1,7 +1,7 @@
 package flix
 
 import ca.uwaterloo.flix.util.{FlixTest, Options}
-import org.scalatest.{ParallelTestExecution, Suites}
+import org.scalatest.Suites
 
 class LangSuite extends Suites(
 
@@ -99,6 +99,4 @@ class LangSuite extends Suites(
   new FlixTest("Test.Use.Tag", "main/test/flix/Test.Use.Tag.flix"),
   new FlixTest("Test.Use.Type", "main/test/flix/Test.Use.Type.flix"),
 
-) with ParallelTestExecution {
-  /* left empty */
-}
+)
