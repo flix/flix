@@ -117,17 +117,17 @@ namespace Array {
     /// searching from left to right.
     ///
     pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Pure =
-        let i = indexOfLeftHelper(x, a, 0) as & Pure;
+        let i = indexOfLeftHelper(x, a, length(a), 0) as & Pure;
         if (i < 0) None else Some(i)
 
     ///
     /// Helper function for `indexOfLeft`.
     ///
-    def indexOfLeftHelper(x: a, a: Array[a], i: Int32): Int32 & Impure =
-        if (i >= length(a))
+    def indexOfLeftHelper(x: a, a: Array[a], len:Int32, i: Int32): Int32 & Impure =
+        if (i >= len)
             -1
         else
-            if (a[i] == x) i else indexOfLeftHelper(x, a, i+1)
+            if (a[i] == x) i else indexOfLeftHelper(x, a, len, i+1)
 
     ///
     /// Optionally returns the position of the first occurence of `x` in `a`
@@ -139,13 +139,19 @@ namespace Array {
         if (i < 0) None else Some(i)
 
     ///
-    /// Helper function for `indexOfLeft`.
+    /// Helper function for `indexOfRight`.
     ///
     def indexOfRightHelper(x: a, a: Array[a], i: Int32): Int32 & Impure =
         if (i < 0)
             -1
         else
             if (a[i] == x) i else indexOfRightHelper(x, a, i-1)
+
+    ///
+    /// Return the positions of the all the occurences of `x` in `a`.
+    ///
+    pub def indices(x: a, a: Array[a]): List[Int32] & Pure =
+        findIndices(y -> x == y, a)
 
     ///
     /// Alias for `findLeft`.
@@ -289,6 +295,26 @@ namespace Array {
         let len = length(a);
         let end = len - 1;
         init(i -> a[end - i], len)
+    ///
+    /// Returns the reverse of `a`.
+    ///
+    pub def reverseInPlace(a: Array[a]): Unit & Impure =
+        let len = length(a);
+        reverseInPlaceHelper(a, len / 2, 0, len - 1)
+
+    ///
+    /// Helper for `reverseInPlace`.
+    ///
+    def reverseInPlaceHelper(a: Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
+        if (i >= halflen)
+            ()
+        else {
+            let x = a[i];
+            let y = a[j];
+            put(a, i, y);
+            put(a, j, x);
+            reverseInPlaceHelper(a, halflen, i+1, j-1)
+        }
 
     ///
     /// Rotate the contents of array `a` by `n` steps to the left.
@@ -1240,7 +1266,7 @@ namespace Array {
         if (len < 1) s else foreachAccumHelper(f, a, len, s, 0)
 
     ///
-    /// Helper for `foreachWithIndex`.
+    /// Helper for `foreachAccum`.
     ///
     def foreachAccumHelper(f: (st, a) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
         if (i >= len)
@@ -1279,27 +1305,6 @@ namespace Array {
         else {
             a[i] = f(a[i]);
             mapInPlaceHelper(f, len, a, i+1)
-        }
-
-    ///
-    /// Returns the reverse of `a`.
-    ///
-    pub def reverseInPlace(a: Array[a]): Unit & Impure =
-        let len = length(a);
-        reverseInPlaceHelper(a, len / 2, 0, len - 1)
-
-    ///
-    /// Helper for `reverseInPlace`.
-    ///
-    def reverseInPlaceHelper(a: Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
-        if (i >= halflen)
-            ()
-        else {
-            let x = a[i];
-            let y = a[j];
-            put(a, i, y);
-            put(a, j, x);
-            reverseInPlaceHelper(a, halflen, i+1, j-1)
         }
 
     ///
@@ -1381,7 +1386,7 @@ namespace Array {
     ///
     /// Swap the elements at `i` and `j`.
     ///
-    /// Precondition: `i` and `j` should be within bounds.
+    /// Precondition: `i` and `j` are within bounds.
     ///
     def swapInPlace(a: Array[Int32], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
@@ -1389,19 +1394,6 @@ namespace Array {
         a[i] = y;
         a[j] = x;
         ()
-
-    ///
-    /// A forloop with an accumulator.
-    ///
-    /// precondition: lo <= hi
-    ///
-    def forWithAccum(lo: Int32, hi: Int32, ac: a, f: (Int32, a) -> a & e): a & e =
-        if (lo == hi)
-            f(lo, ac)
-        else {
-            let ac1 = f(lo, ac);
-            forWithAccum(lo+1, hi, ac1, f)
-        }
 
     ///
     /// Partition step of the quicksort algorithm.
@@ -1415,5 +1407,18 @@ namespace Array {
             } else ix);
         swapInPlace(a, i, hi);
         i
+
+    ///
+    /// A forloop with an accumulator (helper for sorting).
+    ///
+    /// precondition: lo <= hi
+    ///
+    def forWithAccum(lo: Int32, hi: Int32, ac: a, f: (Int32, a) -> a & e): a & e =
+        if (lo == hi)
+            f(lo, ac)
+        else {
+            let ac1 = f(lo, ac);
+            forWithAccum(lo+1, hi, ac1, f)
+        }
 
 }
