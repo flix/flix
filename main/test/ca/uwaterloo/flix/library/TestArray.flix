@@ -3352,6 +3352,30 @@ def findIndexOfRight06(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [-6
 def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,7]) == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
+// findIndices                                                             //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def findIndices01(): Bool & Impure = Array.findIndices(i -> i > 2, []: Array[Int32]) == Nil
+
+@test
+def findIndices02(): Bool & Impure = Array.findIndices(i -> i > 2, [1]) == Nil
+
+@test
+def findIndices03(): Bool & Impure = Array.findIndices(i -> i > 2, [3]) == 0 :: Nil
+
+@test
+def findIndices04(): Bool & Impure = Array.findIndices(i -> i > 2, [1,2]) == Nil
+
+@test
+def findIndices05(): Bool & Impure = Array.findIndices(i -> i > 2, [6,-6]) == 0 :: Nil
+
+@test
+def findIndices06(): Bool & Impure = Array.findIndices(i -> i > 2, [-6,6]) == 1 :: Nil
+
+@test
+def findIndices07(): Bool & Impure = Array.findIndices(i -> i > 2, [6,7]) == 0 :: 1 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
 // replaceInPlace                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
