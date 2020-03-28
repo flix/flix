@@ -4,7 +4,7 @@ namespace RedBlackTree {
     /// An immutable red-black tree implementation with keys
     /// of type `k` and values of type `v`.
     ///
-    /// A red-black tree is a balanced binary search tree.
+    /// A red-black tree is a self-balancing binary search tree.
     /// Each node is either red or black, although a transitory
     /// color double-black is allowed during deletion.
     /// The red-black tree satisfy the following invariants.
