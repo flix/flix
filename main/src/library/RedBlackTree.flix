@@ -24,9 +24,9 @@ namespace RedBlackTree {
         case Leaf
 
         ///
-        /// A double-black leaf
+        /// A double-black leaf.
         ///
-        case BBLeaf
+        case DoubleBlackLeaf
 
         ///
         /// A tree node consists of a color, left subtree, key, value and right subtree.
@@ -183,7 +183,7 @@ namespace RedBlackTree {
     ///
     /// Applies `f` to all key-value pairs in `tree` going from right to left until a single pair `(k, v)` is obtained.
     ///
-    /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
+    /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`.
     ///
     /// Returns `None` if `tree` is the empty tree.
     ///
@@ -298,27 +298,27 @@ namespace RedBlackTree {
     def rotate(tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
         case Node(Red, Node(DoubleBlack, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
             balance(Node(Black, Node(Red, Node(Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
-        case Node(Red, BBLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
+        case Node(Red, DoubleBlackLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
             balance(Node(Black, Node(Red, Leaf, k2, v2, c), k3, v3, d))
         case Node(Red, Node(Black, a, k1, v1, b), k2, v2, Node(DoubleBlack, c, k3, v3, d)) =>
             balance(Node(Black, a, k1, v1, Node(Red, b, k2, v2, Node(Black, c, k3, v3, d))))
-        case Node(Red, Node(Black, a, k1, v1, b), k2, v2, BBLeaf) =>
+        case Node(Red, Node(Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
             balance(Node(Black, a, k1, v1, Node(Red, b, k2, v2, Leaf)))
         case Node(Black, Node(DoubleBlack, a, k1, v1, b), k2, v2, Node(Black, c, k3, v3, d)) =>
             balance(Node(DoubleBlack, Node(Red, Node(Black, a, k1, v1, b), k2, v2, c), k3, v3, d))
-        case Node(Black, BBLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
+        case Node(Black, DoubleBlackLeaf, k2, v2, Node(Black, c, k3, v3, d)) =>
             balance(Node(DoubleBlack, Node(Red, Leaf, k2, v2, c), k3, v3, d))
         case Node(Black, Node(Black, a, k1, v1, b), k2, v2, Node(DoubleBlack, c, k3, v3, d)) =>
             balance(Node(DoubleBlack, a, k1, v1, Node(Red, b, k2, v2, Node(Black, c, k3, v3, d))))
-        case Node(Black, Node(Black, a, k1, v1, b), k2, v2, BBLeaf) =>
+        case Node(Black, Node(Black, a, k1, v1, b), k2, v2, DoubleBlackLeaf) =>
             balance(Node(DoubleBlack, a, k1, v1, Node(Red, b, k2, v2, Leaf)))
         case Node(Black, Node(DoubleBlack, a, k4, v4, b), k1, v1, Node(Red, Node(Black, c, k2, v2, d), k3, v3, e)) =>
             Node(Black, balance(Node(Black, Node(Red, Node(Black, a, k4, v4, b), k1, v1, c), k2, v2, d)), k3, v3, e)
-        case Node(Black, BBLeaf, k1, v1, Node(Red, Node(Black, c, k2, v2, d), k3, v3, e)) =>
+        case Node(Black, DoubleBlackLeaf, k1, v1, Node(Red, Node(Black, c, k2, v2, d), k3, v3, e)) =>
             Node(Black, balance(Node(Black, Node(Red, Leaf, k1, v1, c), k2, v2, d)), k3, v3, e)
         case Node(Black, Node(Red, a, k4, v4, Node(Black, b, k1, v1, c)), k2, v2, Node(DoubleBlack, d, k3, v3, e)) =>
             Node(Black, a, k4, v4, balance(Node(Black, b, k1, v1, Node(Red, c, k2, v2, Node(Black, d, k3, v3, e)))))
-        case Node(Black, Node(Red, a, k4, v4, Node(Black, b, k1, v1, c)), k2, v2, BBLeaf) =>
+        case Node(Black, Node(Red, a, k4, v4, Node(Black, b, k1, v1, c)), k2, v2, DoubleBlackLeaf) =>
             Node(Black, a, k4, v4, balance(Node(Black, b, k1, v1, Node(Red, c, k2, v2, Leaf))))
         case _ => tree
     }
@@ -337,7 +337,7 @@ namespace RedBlackTree {
     ///
     def minDelete(tree: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) = match tree {
         case Node(Red, Leaf, k1, v1, Leaf) => (k1, v1, Leaf)
-        case Node(Black, Leaf, k1, v1, Leaf) => (k1, v1, BBLeaf)
+        case Node(Black, Leaf, k1, v1, Leaf) => (k1, v1, DoubleBlackLeaf)
         case Node(Black, Leaf, k1, v1, Node(Red, Leaf, k2, v2, Leaf)) =>
             (k1, v1, Node(Black, Leaf, k2, v2, Leaf))
         case Node(c, a, k1, v1, b) =>
@@ -351,7 +351,7 @@ namespace RedBlackTree {
     ///
     def deleteHelper(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = match tree {
         case Node(Red, Leaf, k1, _, Leaf) => if (k <=> k1 == 0) Leaf else tree
-        case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == 0) BBLeaf else tree
+        case Node(Black, Leaf, k1, _, Leaf) => if (k <=> k1 == 0) DoubleBlackLeaf else tree
         case Node(Black, Node(Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
             let cmp = k <=> k2;
             if (cmp < 0)
