@@ -95,6 +95,7 @@ def testToList03(): Bool & Impure = Array.toList([1, 2]) == 1 :: 2 :: Nil
 /////////////////////////////////////////////////////////////////////////////
 // head                                                                    //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def head01(): Bool & Impure = Array.head([]: Array[Int32]) == None
 
@@ -125,6 +126,7 @@ def last04(): Bool & Impure = Array.last([1,2,3]) == Some(3)
 /////////////////////////////////////////////////////////////////////////////
 // append                                                                  //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def append01(): Bool & Impure =
     let a = Array.append([]: Array[Int32], []: Array[Int32]);
@@ -609,7 +611,6 @@ def mapInPlace04(): Bool & Impure =
     Array.mapInPlace(x -> x+1, a);
     Array.sameElements(a, [1,2,3])
 
-
 /////////////////////////////////////////////////////////////////////////////
 // mapWithIndex                                                            //
 /////////////////////////////////////////////////////////////////////////////
@@ -648,6 +649,52 @@ def mapWithIndex06(): Bool & Impure =
 def mapWithIndex07(): Bool & Impure = 
     let a = Array.mapWithIndex((e, i) -> if (i < 1) e > 2 else e <= 2, [7,8]);
     Array.sameElements(a, [true,false])
+
+/////////////////////////////////////////////////////////////////////////////
+// mapWithIndexInPlace                                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def mapWithIndexInPlace01(): Bool & Impure =
+    let a = []: Array[Int32];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, []: Array[Int32])
+
+@test
+def mapWithIndexInPlace02(): Bool & Impure =
+    let a = [1];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, [11])
+
+@test
+def mapWithIndexInPlace03(): Bool & Impure =
+    let a = [3];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, [13])
+
+@test
+def mapWithIndexInPlace04(): Bool & Impure =
+    let a = [1,2];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, [11,2])
+
+@test
+def mapWithIndexInPlace05(): Bool & Impure =
+    let a = [1,8];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, [11,8])
+
+@test
+def mapWithIndexInPlace06(): Bool & Impure =
+    let a = [8,1];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, [18,1])
+
+@test
+def mapWithIndexInPlace07(): Bool & Impure =
+    let a = [7,8,9];
+    Array.mapWithIndexInPlace((e, i) -> if (i < 1) e + 10 else e, a);
+    Array.sameElements(a, [17,8,9])
 
 /////////////////////////////////////////////////////////////////////////////
 // flatMap                                                                 //

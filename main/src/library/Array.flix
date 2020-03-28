@@ -271,6 +271,7 @@ namespace Array {
     pub def map(f: a -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
         init(i -> f(a[i]), len)
+
     ///
     /// Apply `f` to every element in array `a`. Array `a` is mutated.
     ///
@@ -296,6 +297,25 @@ namespace Array {
     pub def mapWithIndex(f: (a, Int32) -> b & e, a: Array[a]): Array[b] & Impure =
         let len = length(a);
         init(i -> f(a[i], i), len)
+
+
+    ///
+    /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
+    ///
+    pub def mapWithIndexInPlace(f: (a, Int32) -> a, a: Array[a]): Unit & Impure =
+        mapWithIndexInPlaceHelper(f, length(a), a, 0)
+
+    ///
+    /// Helper of `mapWithIndexInPlace`
+    ///
+    def mapWithIndexInPlaceHelper(f: (a, Int32) -> a, len: Int32, a: Array[a], i: Int32): Unit & Impure =
+        if (i >= len)
+            ()
+        else {
+            a[i] = f(a[i], i);
+            mapWithIndexInPlaceHelper(f, len, a, i+1)
+        }
+
 
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
