@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use RBTree.RBTree;
+use RedBlackTree.RedBlackTree;
 
 ///
 /// The Set type.
@@ -22,7 +22,7 @@ use RBTree.RBTree;
 /// A set is currently represented internally as a red-black tree.
 ///
 enum Set[t] {
-    case Set(RBTree[t, Unit])
+    case Set(RedBlackTree[t, Unit])
 }
 
 namespace Set {
@@ -32,7 +32,7 @@ namespace Set {
     ///
     pub def size(xs: Set[a]): Int32 =
         let Set(es) = xs;
-        RBTree.size(es)
+        RedBlackTree.size(es)
 
 
 
@@ -44,7 +44,7 @@ namespace Set {
     ///
     /// `Set#{}` is syntactic sugar for `empty` (`Set#{} = empty()`).
     ///
-    pub def empty(): Set[a] = Set(RBTree.empty())
+    pub def empty(): Set[a] = Set(RedBlackTree.empty())
 
     ///
     /// Returns the singleton set containing `x`.
@@ -66,14 +66,14 @@ namespace Set {
     ///
     pub def insert(x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
-        Set(RBTree.insert(x, (), es))
+        Set(RedBlackTree.insert(x, (), es))
 
     ///
     /// Removes `x` from `xs`.
     ///
     pub def delete(x: a, xs: Set[a]): Set[a] =
         let Set(es) = xs;
-        Set(RBTree.delete(x, es))
+        Set(RedBlackTree.delete(x, es))
 
 
 
@@ -84,14 +84,14 @@ namespace Set {
     ///
     pub def isEmpty(xs: Set[a]): Bool =
         let Set(es) = xs;
-        RBTree.isEmpty(es)
+        RedBlackTree.isEmpty(es)
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.
     ///
     pub def memberOf(x: a, xs: Set[a]): Bool =
         let Set(es) = xs;
-        RBTree.memberOf(x, es)
+        RedBlackTree.memberOf(x, es)
 
     ///
     /// Returns true if and only if every element in `xs` appears in `ys`.
@@ -117,7 +117,7 @@ namespace Set {
     ///
     pub def findLeft(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(es) = xs;
-        RBTree.findLeft((x, _) -> f(x), es) |> Option.map(fst)
+        RedBlackTree.findLeft((x, _) -> f(x), es) |> Option.map(fst)
 
     ///
     /// Optionally returns the first element of `xs` that satisfies the predicate `f` when searching from right to left.
@@ -126,7 +126,7 @@ namespace Set {
     ///
     pub def findRight(f: a -> Bool, xs: Set[a]): Option[a] =
         let Set(es) = xs;
-        RBTree.findRight((x, _) -> f(x), es) |> Option.map(fst)
+        RedBlackTree.findRight((x, _) -> f(x), es) |> Option.map(fst)
 
 
 
@@ -145,7 +145,7 @@ namespace Set {
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
-        RBTree.foldLeft((acc, k, _) -> f(acc, k), s, es)
+        RedBlackTree.foldLeft((acc, k, _) -> f(acc, k), s, es)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `xs` going from right to left.
@@ -154,7 +154,7 @@ namespace Set {
     ///
     pub def foldRight(f: (a, b) -> b & e, s: b, xs: Set[a]): b & e =
         let Set(es) = xs;
-        RBTree.foldRight((k, _, acc) -> f(k, acc), s, es)
+        RedBlackTree.foldRight((k, _, acc) -> f(k, acc), s, es)
 
     ///
     /// Alias for `reduceLeft`.
@@ -168,7 +168,7 @@ namespace Set {
     ///
     pub def reduceLeft(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(es) = xs;
-        RBTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
+        RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
 
     ///
     /// Applies `f` to all elements in `xs` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -177,7 +177,7 @@ namespace Set {
     ///
     pub def reduceRight(f: (a, a) -> a & e, xs: Set[a]): Option[a] & e =
         let Set(es) = xs;
-        RBTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
+        RedBlackTree.reduceRight((x, _, y, _) -> (f(x, y), ()), es) |> Option.map(fst)
 
 
 
@@ -207,7 +207,7 @@ namespace Set {
     ///
     pub def exists(f: a -> Bool, xs: Set[a]): Bool =
         let Set(es) = xs;
-        RBTree.exists((x, _) -> f(x), es)
+        RedBlackTree.exists((x, _) -> f(x), es)
 
     ///
     /// Returns `true` if and only if all elements in `xs` satisfy the predicate `f`.
@@ -218,7 +218,7 @@ namespace Set {
     ///
     pub def forall(f: a -> Bool, xs: Set[a]): Bool =
         let Set(es) = xs;
-        RBTree.forall((x, _) -> f(x), es)
+        RedBlackTree.forall((x, _) -> f(x), es)
 
 
 
@@ -332,7 +332,7 @@ namespace Set {
     ///
     pub def foreach(f: a ~> Unit, xs: Set[a]): Unit & Impure =
         let Set(es) = xs;
-        RBTree.foreach((x, _) -> f(x), es)
+        RedBlackTree.foreach((x, _) -> f(x), es)
 
     ///
     /// Helper function for `cmp`.

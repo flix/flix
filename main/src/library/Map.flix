@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use RBTree.RBTree;
+use RedBlackTree.RedBlackTree;
 
 ///
 /// The Map type.
@@ -22,7 +22,7 @@ use RBTree.RBTree;
 /// A map is currently represented internally as a red-black tree.
 ///
 enum Map[k, v] {
-    case Map(RBTree[k, v])
+    case Map(RedBlackTree[k, v])
 }
 
 namespace Map {
@@ -32,7 +32,7 @@ namespace Map {
     ///
     pub def size(m: Map[k, v]): Int32 =
         let Map(xs) = m;
-        RBTree.size(xs)
+        RedBlackTree.size(xs)
 
 
 
@@ -44,7 +44,7 @@ namespace Map {
     ///
     /// `Map#{}` is syntactic sugar for `empty` (`Map#{} = empty()`).
     ///
-    pub def empty(): Map[k, v] = Map(RBTree.empty())
+    pub def empty(): Map[k, v] = Map(RedBlackTree.empty())
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
@@ -63,7 +63,7 @@ namespace Map {
     ///
     pub def isEmpty(m: Map[k, v]): Bool =
         let Map(xs) = m;
-        RBTree.isEmpty(xs)
+        RedBlackTree.isEmpty(xs)
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
@@ -72,7 +72,7 @@ namespace Map {
     ///
     pub def get(k: k, m: Map[k, v]): Option[v] =
         let Map(xs) = m;
-        RBTree.get(k, xs)
+        RedBlackTree.get(k, xs)
 
     ///
     /// Returns `v` if `k -> v` is in `m`.
@@ -89,7 +89,7 @@ namespace Map {
     ///
     pub def memberOf(k: k, m: Map[k, v]): Bool =
         let Map(xs) = m;
-        RBTree.memberOf(k, xs)
+        RedBlackTree.memberOf(k, xs)
 
     ///
     /// Returns the keys of `m`.
@@ -113,7 +113,7 @@ namespace Map {
     ///
     pub def insert(k: k, v: v, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
-        Map(RBTree.insert(k, v, xs))
+        Map(RedBlackTree.insert(k, v, xs))
 
     ///
     /// Updates `m` with `k -> f(v, v1)` if `k -> v1` is in `m`.
@@ -130,7 +130,7 @@ namespace Map {
     ///
     pub def insertWithKey(f: (k, v, v) -> v & e, k: k, v: v, m: Map[k, v]): Map[k, v] & e =
         let Map(xs) = m;
-        Map(RBTree.insertWith(f, k, v, xs))
+        Map(RedBlackTree.insertWith(f, k, v, xs))
 
 
 
@@ -161,7 +161,7 @@ namespace Map {
     ///
     pub def updateWithKey(f: (k, v) -> Option[v] & e, k: k, m: Map[k, v]): Map[k, v] & e =
         let Map(xs) = m;
-        Map(RBTree.updateWith(f, k, xs))
+        Map(RedBlackTree.updateWith(f, k, xs))
 
 
 
@@ -172,7 +172,7 @@ namespace Map {
     ///
     pub def delete(k: k, m: Map[k, v]): Map[k, v] =
         let Map(xs) = m;
-        Map(RBTree.delete(k, xs))
+        Map(RedBlackTree.delete(k, xs))
 
 
 
@@ -204,7 +204,7 @@ namespace Map {
     ///
     pub def findLeft(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
-        RBTree.findLeft(f, xs)
+        RedBlackTree.findLeft(f, xs)
 
     ///
     /// Optionally returns the first mapping of `m` that satisfies the predicate `f` when searching from right to left.
@@ -213,7 +213,7 @@ namespace Map {
     ///
     pub def findRight(f: (k, v) -> Bool, m: Map[k, v]): Option[(k, v)] =
         let Map(xs) = m;
-        RBTree.findRight(f, xs)
+        RedBlackTree.findRight(f, xs)
 
 
 
@@ -275,7 +275,7 @@ namespace Map {
     ///
     pub def foldLeftWithKey(f: (acc, k, v) -> acc & e, s: acc, m: Map[k, v]): acc & e =
         let Map(xs) = m;
-        RBTree.foldLeft(f, s, xs)
+        RedBlackTree.foldLeft(f, s, xs)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from right to left.
@@ -292,7 +292,7 @@ namespace Map {
     ///
     pub def foldRightWithKey(f: (k, v, b) -> b & e, s: b, m: Map[k, v]): b & e =
         let Map(xs) = m;
-        RBTree.foldRight(f, s, xs)
+        RedBlackTree.foldRight(f, s, xs)
 
     ///
     /// Alias for `reduceLeft`.
@@ -323,7 +323,7 @@ namespace Map {
     ///
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
         let Map(xs) = m;
-        RBTree.reduceLeft(f, xs)
+        RedBlackTree.reduceLeft(f, xs)
 
     ///
     /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -344,7 +344,7 @@ namespace Map {
     ///
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) & e, m: Map[k, v]): Option[(k, v)] & e =
         let Map(xs) = m;
-        RBTree.reduceRight(f, xs)
+        RedBlackTree.reduceRight(f, xs)
 
 
 
@@ -368,7 +368,7 @@ namespace Map {
     ///
     pub def exists(f: (k, v) -> Bool, m: Map[k, v]): Bool =
         let Map(xs) = m;
-        RBTree.exists(f, xs)
+        RedBlackTree.exists(f, xs)
 
     ///
     /// Returns `true` if and only if all mappings in `m` satisfy the predicate `f`.
@@ -379,7 +379,7 @@ namespace Map {
     ///
     pub def forall(f: (k, v) -> Bool, m: Map[k, v]): Bool =
         let Map(xs) = m;
-        RBTree.forall(f, xs)
+        RedBlackTree.forall(f, xs)
 
 
 
@@ -494,7 +494,7 @@ namespace Map {
     ///
     pub def foreach(f: (k, v) ~> Unit, m: Map[k, v]): Unit & Impure =
         let Map(xs) = m;
-        RBTree.foreach(f, xs)
+        RedBlackTree.foreach(f, xs)
 
     ///
     /// Helper function for `cmp`.
