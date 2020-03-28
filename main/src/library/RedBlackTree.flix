@@ -119,17 +119,7 @@ namespace RedBlackTree {
     ///
     /// Returns `true` if and only if `tree` contains the key `k`.
     ///
-    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool = match tree {
-        case Node(_, a, k1, _, b) =>
-            let cmp = k <=> k1;
-            if (cmp < 0)
-                memberOf(k, a)
-            else if (cmp == 0)
-                true
-            else
-                memberOf(k, b)
-        case _ => false
-    }
+    pub def memberOf(k: k, tree: RedBlackTree[k, v]): Bool = get(k, tree) != None
 
     ///
     /// Optionally returns the first key-value pair in `tree` that satisfies the predicate `f` when searching from left to right.
