@@ -270,25 +270,39 @@ def indexOfRight07(): Bool & Impure = Array.indexOfRight(1, [1,1]) == Some(1)
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indices01(): Bool & Impure = Array.indices(0, []: Array[Int32]) == Nil
+def indices01(): Bool & Impure =
+    let a = Array.indices(0, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
 
 @test
-def indices02(): Bool & Impure = Array.indices(0, [1]) == Nil
+def indices02(): Bool & Impure =
+    let a = Array.indices(0, [1]);
+    Array.sameElements(a, []: Array[Int32])
 
 @test
-def indices03(): Bool & Impure = Array.indices(1, [1]) == 0 :: Nil
+def indices03(): Bool & Impure =
+    let a = Array.indices(1, [1]);
+    Array.sameElements(a, [0])
 
 @test
-def indices04(): Bool & Impure = Array.indices(0, [1,2]) == Nil
+def indices04(): Bool & Impure =
+    let a = Array.indices(0, [1,2]);
+    Array.sameElements(a, []: Array[Int32])
 
 @test
-def indices05(): Bool & Impure = Array.indices(1, [1,2]) == 0 :: Nil
+def indices05(): Bool & Impure =
+    let a = Array.indices(1, [1,2]);
+    Array.sameElements(a, [0])
 
 @test
-def indices06(): Bool & Impure = Array.indices(2, [1,2]) == 1 :: Nil
+def indices06(): Bool & Impure =
+    let a = Array.indices(2, [1,2]);
+    Array.sameElements(a, [1])
 
 @test
-def indices07(): Bool & Impure = Array.indices(1, [1,1]) == 0 :: 1 :: Nil
+def indices07(): Bool & Impure =
+    let a = Array.indices(1, [1,1]);
+    Array.sameElements(a, [0,1])
 
 /////////////////////////////////////////////////////////////////////////////
 // find                                                                    //
@@ -3252,25 +3266,39 @@ def findIndexOfRight07(): Bool & Impure = Array.findIndexOfRight(i -> i > 2, [6,
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def findIndices01(): Bool & Impure = Array.findIndices(i -> i > 2, []: Array[Int32]) == Nil
+def findIndices01(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, []: Array[Int32]);
+    Array.sameElements(a, []: Array[Int32])
 
 @test
-def findIndices02(): Bool & Impure = Array.findIndices(i -> i > 2, [1]) == Nil
+def findIndices02(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, [1]);
+    Array.sameElements(a, []: Array[Int32])
 
 @test
-def findIndices03(): Bool & Impure = Array.findIndices(i -> i > 2, [3]) == 0 :: Nil
+def findIndices03(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, [3]);
+    Array.sameElements(a, [0])
 
 @test
-def findIndices04(): Bool & Impure = Array.findIndices(i -> i > 2, [1,2]) == Nil
+def findIndices04(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, [1,2]);
+    Array.sameElements(a, [] : Array[Int32])
 
 @test
-def findIndices05(): Bool & Impure = Array.findIndices(i -> i > 2, [6,-6]) == 0 :: Nil
+def findIndices05(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, [6,-6]);
+    Array.sameElements(a, [0])
 
 @test
-def findIndices06(): Bool & Impure = Array.findIndices(i -> i > 2, [-6,6]) == 1 :: Nil
+def findIndices06(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, [-6,6]);
+    Array.sameElements(a, [1])
 
 @test
-def findIndices07(): Bool & Impure = Array.findIndices(i -> i > 2, [6,7]) == 0 :: 1 :: Nil
+def findIndices07(): Bool & Impure =
+    let a = Array.findIndices(i -> i > 2, [6,7]);
+    Array.sameElements(a, [0,1])
 
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //

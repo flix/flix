@@ -149,7 +149,7 @@ namespace Array {
     ///
     /// Return the positions of the all the occurences of `x` in `a`.
     ///
-    pub def indices(x: a, a: Array[a]): List[Int32] & Pure =
+    pub def indices(x: a, a: Array[a]): Array[Int32] & Impure =
         findIndices(y -> x == y, a)
 
     ///
@@ -805,7 +805,6 @@ namespace Array {
     ///
     /// Returns an array of every element in `a` that satisfies the predicate `f`.
     ///
-    ///
     /// The function `f` must be pure.
     ///
     pub def filter(f: a -> Bool, a: Array[a]): Array[a] & Impure =
@@ -1199,8 +1198,8 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findIndices(f: a -> Bool, a: Array[a]): List[Int32] =
-        findIndicesHelper(f, a, length(a), 0) as & Pure
+    pub def findIndices(f: a -> Bool, a: Array[a]): Array[Int32] & Impure =
+        findIndicesHelper(f, a, length(a), 0) |> List.toArray
 
     ///
     /// Helper function for `findIndices`.
@@ -1322,7 +1321,8 @@ namespace Array {
         }
 
     ///
-    /// Apply the effectful function `f` to all the elements in the array `a`.
+    /// Apply the effectful function `f` to all the elements in the array `a` and the accumulator `s`.
+    /// The function returns the final value of the accumulator `s`.
     ///
     pub def foreachAccum(f: (a, st) ~> st, s: st, a: Array[a]): st & Impure =
         foreachAccumHelper(f, a, length(a), s, 0)
