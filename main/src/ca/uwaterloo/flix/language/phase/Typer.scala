@@ -37,13 +37,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val result = for {
       defs <- typeDefs(program)
       enums <- typeEnums(program)
-      relations <- typeRelations(program)
       lattices <- typeLattices(program)
       latticeComponents <- typeLatticeComponents(program)
       properties <- typeProperties(program)
     } yield {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, enums, relations, lattices, latticeComponents, properties, specialOps, program.reachable, program.sources)
+      TypedAst.Root(defs, enums, lattices, latticeComponents, properties, specialOps, program.reachable, program.sources)
     }
 
     result match {
@@ -105,21 +104,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // Visit every enum in the program.
     val result = program.enums.toList.map {
       case (_, enum) => visitEnum(enum)
-    }
-
-    // Sequence the results and convert them back to a map.
-    Result.sequence(result).map(_.toMap)
-  }
-
-  /**
-    * Performs type inference and reassembly on all relations in the given program.
-    *
-    * Returns [[Err]] if type resolution fails.
-    */
-  private def typeRelations(program: ResolvedAst.Program): Result[Map[Symbol.RelSym, TypedAst.Relation], TypeError] = {
-    // Visit every relation in the program.
-    val result = program.relations.toList.map {
-      case (_, rel) => typeCheckRel(rel)
     }
 
     // Sequence the results and convert them back to a map.
@@ -272,19 +256,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Err(e) => Err(e)
         }
     }
-  }
-
-  /**
-    * Performs type resolution on the given relation `r`.
-    *
-    * Returns [[Err]] if a type is unresolved.
-    */
-  private def typeCheckRel(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-    case ResolvedAst.Relation(doc, mod, sym, tparams0, attr0, sc0, loc) =>
-      val tparams = getTypeParams(tparams0)
-      for {
-        attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
-      } yield sym -> TypedAst.Relation(doc, mod, sym, tparams, attr, loc)
   }
 
   /**

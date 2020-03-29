@@ -34,7 +34,7 @@ import scala.collection.parallel.CollectionConverters._
   * For example, the redundancy phase ensures that there are no:
   *
   * - unused local variables.
-  * - unused enums, definitions, relations, lattices, ...
+  * - unused enums, definitions, ...
   * - useless expressions.
   *
   * and so on.
@@ -72,7 +72,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         checkUnusedEnumsAndTags(usedAll)(root) and
         checkUnusedLattices(usedAll)(root) and
         checkUnusedTypeParamsEnums()(root) and
-        checkUnusedTypeParamsRelations()(root) and
         checkUnusedTypeParamsLattices()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
@@ -177,20 +176,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, (_, decl)) =>
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
           case (sacc, (_, Case(_, _, tpe, _))) => sacc ++ tpe.typeVars
-        }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
-        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
-    }
-  }
-
-  /**
-    * Checks for unused type parameters in relations.
-    */
-  private def checkUnusedTypeParamsRelations()(implicit root: Root): Used = {
-    root.relations.foldLeft(Used.empty) {
-      case (acc, (_, decl)) =>
-        val usedTypeVars = decl.attr.foldLeft(Set.empty[Type.Var]) {
-          case (sacc, Attribute(_, tpe, _)) => sacc ++ tpe.typeVars
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
@@ -693,14 +678,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&
       !root.reachable.contains(decl.sym)
-
-  /**
-    * Returns `true` if the given relation `decl` is unused according to `used`.
-    */
-  private def deadRel(decl: Relation, used: Used): Boolean =
-    !decl.mod.isPublic &&
-      !decl.sym.name.startsWith("_") &&
-      !used.predSyms.contains(decl.sym)
 
   /**
     * Returns `true` if the given lattice `decl` is unused according to `used`.

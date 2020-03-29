@@ -361,7 +361,13 @@ object Synthesize extends Phase[Root, Root] {
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
       case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
-        val ts = terms map visitExp
+        // Introduce equality, hash code, and toString for the types of the terms.
+        for (term <- terms) {
+          getOrMkEq(term.tpe)
+          getOrMkHash(term.tpe)
+          getOrMkToString(term.tpe)
+        }
+        val ts = terms.map(visitExp)
         Predicate.Head.Atom(sym, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
@@ -373,8 +379,14 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc) =>
-        Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc)
+      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+        // Introduce equality, hash code, and toString for the types of the terms.
+        for (term <- terms) {
+          getOrMkEq(term.tpe)
+          getOrMkHash(term.tpe)
+          getOrMkToString(term.tpe)
+        }
+        Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
@@ -1408,18 +1420,13 @@ object Synthesize extends Phase[Root, Root] {
      * (b) Every type that appears as an attribute in some relation or lattice.
      */
     // TODO: Need to deal with polymorphic attributes.
-    val typesInRels = root.relations.flatMap {
-      case (_, Relation(_, _, _, _, attributes, _)) => attributes.map {
-        case Attribute(_, tpe, _) => tpe
-      }
-    }
     val typesInLats = root.lattices.flatMap {
       case (_, Lattice(_, _, _, _, attributes, _)) =>
         attributes.map {
           case Attribute(_, tpe, _) => tpe
         }
     }
-    val typesInTables = typesInRels.toSet ++ typesInLats
+    val typesInTables = typesInLats
 
     /*
      * (c) Every type that appears as some lattice type.
@@ -1429,7 +1436,8 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * Introduce Equality special operators.
      */
-    val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    // TODO: Refactor these
+    (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkEq(tpe))
       case (macc, tpe) => macc
     }
@@ -1437,7 +1445,8 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * Introduce Hash special operators.
      */
-    val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    // TODO: Refactor these
+    (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkHash(tpe))
       case (macc, tpe) => macc
     }
@@ -1445,7 +1454,8 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * Introduce ToString special operators.
      */
-    val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    // TODO: Refactor these
+    (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }
@@ -1461,9 +1471,9 @@ object Synthesize extends Phase[Root, Root] {
      * Construct the map of special operators.
      */
     val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
-      SpecialOperator.Equality -> equalityOps,
-      SpecialOperator.HashCode -> hashOps,
-      SpecialOperator.ToString -> toStringOps
+      SpecialOperator.Equality -> mutEqualityOps.toMap,
+      SpecialOperator.HashCode -> mutHashOps.toMap,
+      SpecialOperator.ToString -> mutToStringOps.toMap
     )
 
     // Reassemble the ast with the new definitions.
