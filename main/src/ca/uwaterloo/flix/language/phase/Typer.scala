@@ -1156,8 +1156,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         for {
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.SchemaExtend(sym, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(sym, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.SchemaExtend(sym.toString, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(sym.toString, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
@@ -1190,7 +1190,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (fType, eff2) <- visitExp(exp2)
           (constraintsType, eff3) <- visitExp(exp3)
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
+          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym.toString, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2, eff3), loc)
@@ -1708,7 +1708,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
+      } yield Type.SchemaExtend(sym.toString, predicateType, Type.freshTypeVar())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       //
@@ -1770,7 +1770,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
         predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.SchemaExtend(sym, predicateType, Type.freshTypeVar())
+      } yield Type.SchemaExtend(sym.toString, predicateType, Type.freshTypeVar())
 
     //
     //  exp : Bool
@@ -1812,7 +1812,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = sym match {
     case sym: Symbol.RelSym =>
-      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+      val base = Type.Cst(TypeConstructor.Relation(sym.toString)): Type
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x

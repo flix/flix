@@ -151,9 +151,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents a relation.
     *
-    * @param sym the symbol of the relation.
+    * @param name the name of the relation.
     */
-  case class Relation(sym: Symbol.RelSym) extends TypeConstructor {
+  case class Relation(name: String) extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 

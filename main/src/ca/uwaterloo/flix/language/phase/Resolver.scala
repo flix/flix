@@ -201,7 +201,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val ts = attributes.map(_.tpe)
-        val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+        val base = Type.Cst(TypeConstructor.Relation(sym.toString)): Type
         val args: Type = ts match {
           case Nil => Type.Unit
           case x :: Nil => x
@@ -1204,7 +1204,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
               // Determine the type of predicate symbol.
               s.typeConstructor match {
                 case Type.Cst(TypeConstructor.Relation(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
-                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
+                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.SchemaExtend(sym.toString, s, acc).toSuccess
                 case nonRelationOrLatticeType => ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
               }
           }
@@ -1484,7 +1484,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   private def mkRelationOrLattice(predSym: Symbol.PredSym, tparams: List[NamedAst.TypeParam], ts: List[Type]): Type = predSym match {
     case sym: Symbol.RelSym =>
-      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+      val base = Type.Cst(TypeConstructor.Relation(sym.toString)): Type
       val args: Type = ts match {
         case Nil => Type.Unit
         case x :: Nil => x
