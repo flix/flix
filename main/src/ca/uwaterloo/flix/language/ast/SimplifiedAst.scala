@@ -25,7 +25,6 @@ object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
-                  relations: Map[Symbol.RelSym, SimplifiedAst.Relation],
                   lattices: Map[Symbol.LatSym, SimplifiedAst.Lattice],
                   latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
                   properties: List[SimplifiedAst.Property],
@@ -36,8 +35,6 @@ object SimplifiedAst {
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation)
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation)
-
-  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation)
 
   case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation)
 
@@ -254,11 +251,11 @@ object SimplifiedAst {
 
     case class FixpointSolve(exp: SimplifiedAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointProject(name: String, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointFold(sym: Symbol.PredSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointFold(name: String, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -278,7 +275,7 @@ object SimplifiedAst {
 
     object Head {
 
-      case class Atom(sym: Symbol.PredSym, den: Denotation, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Atom(name: String, den: Denotation, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
       case class Union(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
@@ -288,7 +285,7 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, den: Denotation, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Atom(name: String, den: Denotation, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Guard(exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 

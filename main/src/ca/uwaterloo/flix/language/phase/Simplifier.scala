@@ -565,7 +565,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointProject(sym, e, tpe, loc)
+        SimplifiedAst.Expression.FixpointProject(sym.toString, e, tpe, loc)
 
       case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -586,8 +586,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // This enables simpler code generation without breaking the semantics
         SimplifiedAst.Expression.Let(var1, e1,
           SimplifiedAst.Expression.Let(var2, e2,
-            SimplifiedAst.Expression.Let(var3, SimplifiedAst.Expression.FixpointProject(sym, e3, e3.tpe, loc),
-              SimplifiedAst.Expression.FixpointFold(sym,
+            SimplifiedAst.Expression.Let(var3, SimplifiedAst.Expression.FixpointProject(sym.toString, e3, e3.tpe, loc),
+              SimplifiedAst.Expression.FixpointFold(sym.toString,
                 SimplifiedAst.Expression.Var(var1, e1.tpe, loc),
                 SimplifiedAst.Expression.Var(var2, e2.tpe, loc),
                 SimplifiedAst.Expression.Var(var3, e3.tpe, loc), tpe, loc), tpe, loc), tpe, loc), tpe, loc)
@@ -602,7 +602,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitHeadPred(head: TypedAst.Predicate.Head, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Head = head match {
       case TypedAst.Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Atom(sym, den, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.Atom(sym.toString, den, ts, tpe, loc)
 
       case TypedAst.Predicate.Head.Union(exp, tpe, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
@@ -615,7 +615,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
       case TypedAst.Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.Atom(sym, den, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.Atom(sym.toString, den, polarity, ts, tpe, loc)
 
       case TypedAst.Predicate.Body.Guard(exp, loc) =>
         val e = newLambdaWrapper(cparams, exp, loc)
@@ -704,14 +704,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val lub = visitExp(lub0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         val glb = visitExp(glb0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
-    }
-
-    /**
-      * Translates the given `relation0` to the SimplifiedAst.
-      */
-    def visitRelation(relation0: TypedAst.Relation): SimplifiedAst.Relation = relation0 match {
-      case TypedAst.Relation(doc, mod, sym, tparams, attributes, loc) =>
-        SimplifiedAst.Relation(mod, sym, attributes.map(visitAttribute), loc)
     }
 
     /**
@@ -1168,13 +1160,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
     val latticeComponents = root.latticeComponents.map { case (k, v) => k -> visitLatticeComponents(v) }
-    val relations = root.relations.map { case (k, v) => k -> visitRelation(v) }
     val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   /**

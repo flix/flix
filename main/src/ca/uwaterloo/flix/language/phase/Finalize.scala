@@ -431,10 +431,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointSolve(e, stf, t, loc)
 
-      case SimplifiedAst.Expression.FixpointProject(sym, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointProject(name, exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointProject(sym.toString, e, t, loc)
+        FinalAst.Expression.FixpointProject(name, e, t, loc)
 
       case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
@@ -442,12 +442,12 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointEntails(e1, e2, t, loc)
 
-      case SimplifiedAst.Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visit(exp1).asInstanceOf[FinalAst.Expression.Var]
         val e2 = visit(exp2).asInstanceOf[FinalAst.Expression.Var]
         val e3 = visit(exp3).asInstanceOf[FinalAst.Expression.Var]
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointFold(sym.toString, e1, e2, e3, t, loc)
+        FinalAst.Expression.FixpointFold(name, e1, e2, e3, t, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
