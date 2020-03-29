@@ -434,7 +434,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case SimplifiedAst.Expression.FixpointProject(sym, exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointProject(sym, e, t, loc)
+        FinalAst.Expression.FixpointProject(sym.toString, e, t, loc)
 
       case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
@@ -447,7 +447,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e2 = visit(exp2).asInstanceOf[FinalAst.Expression.Var]
         val e3 = visit(exp3).asInstanceOf[FinalAst.Expression.Var]
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointFold(sym, e1, e2, e3, t, loc)
+        FinalAst.Expression.FixpointFold(sym.toString, e1, e2, e3, t, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
@@ -470,7 +470,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case SimplifiedAst.Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
       val t = visitType(tpe)
-      FinalAst.Predicate.Head.Atom(sym, den, ts, t, loc)
+      FinalAst.Predicate.Head.Atom(sym.toString, den, ts, t, loc)
 
     case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
       val e = visitExp(exp, m)
@@ -483,7 +483,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case SimplifiedAst.Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val t = visitType(tpe)
-      FinalAst.Predicate.Body.Atom(sym, den, polarity, ts, t, loc)
+      FinalAst.Predicate.Body.Atom(sym.toString, den, polarity, ts, t, loc)
 
     case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
       val e = visitExp(exp, m)

@@ -294,12 +294,7 @@ object Interpreter {
       throw new RuntimeException(msg)
 
     case Expression.FixpointConstraintSet(cs, tpe, loc) =>
-      val empty = fixpoint.ConstraintSystem.of(Array.empty[fixpoint.Constraint])
-      cs.foldLeft(empty) {
-        case (v1, c) =>
-          val v2 = cast2constraintset(evalConstraint(c, env0, lenv0)(flix, root))
-          Solver.compose(v1, v2)
-      }
+      throw new UnsupportedOperationException()
 
     case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, lenv0, root))
@@ -307,15 +302,10 @@ object Interpreter {
       Solver.compose(v1, v2)
 
     case Expression.FixpointSolve(exp, stf, tpe, loc) =>
-      val s = cast2constraintset(eval(exp, env0, lenv0, root))
-      val t = newStratification(stf)(root, flix)
-      val o = newOptions()
-      Solver.solve(s, t, o)
+      throw new UnsupportedOperationException()
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
-      val predSym = newPredSym(sym, env0, lenv0)(root, flix)
-      val cs = cast2constraintset(eval(exp, env0, lenv0, root))
-      Solver.project(predSym, cs)
+    case Expression.FixpointProject(name, exp, tpe, loc) =>
+      throw new UnsupportedOperationException()
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, lenv0, root))
@@ -324,43 +314,8 @@ object Interpreter {
         Value.True else Value.False
 
     case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
-      val predSym = newPredSym(sym, env0, lenv0)(root, flix)
-      val init = env0.get(exp1.sym.toString).get
-      // TODO: what if it's not a closure? Do we have to cover both clo and def?
-      val f = cast2closure(env0.get(exp2.sym.toString).get)
-      val cs = cast2constraintset(env0.get(exp3.sym.toString).get)
-      val projected = Solver.project(predSym, cs)
-      projected.getFacts().foldRight(init)((c, acc) => {
-        val tuple = c.getHeadPredicate() match {
-          // TODO: match may not be complete?
-          case p: AtomPredicate => p.getTerms().toList match {
-            case Nil => Value.Unit
-            case x :: Nil => x match {
-              case l: LitTerm => l.getFunction().apply(new Object)
-            }
-            case terms => terms.map({
-              // TODO: match may not be complete?
-              case l: LitTerm => l.getFunction().apply(new Object)
-            })
-          }
-        }
-        // TODO: maybe not the cleanest. The idea is the following:
-        // evaluate f into a closure
-        val Value.Closure(name, bindings) = cast2closure(f)
-        val constant = root.defs(name)
-        // it results in a closure that takes one argument
-        assert(constant.formals.size == 1)
-        // feed it the tuple as the first argument
-        val env1 = env0 + (constant.formals.head.sym.toString -> tuple)
-        // and evaluate f applied to the tuple
-        val Value.Closure(name2, bindings2) = cast2closure(eval(constant.exp, env1, Map.empty, root))
-        val constant2 = root.defs(name2)
-        // this results into a closure that again takes one argument
-        assert(constant2.formals.size == 1) // TODO: this seems broken
-        // we feed it the acc as second argument and call it
-        val env2 = env1 + (constant2.formals.head.sym.toString -> acc)
-        eval(constant2.exp, env2, Map.empty, root)
-      })
+      throw new UnsupportedOperationException()
+
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)
 
     case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)
@@ -739,182 +694,6 @@ object Interpreter {
   }
 
   /**
-    * Evaluates the given constraint `c0` to a constraint value under the given environment `env0`.
-    */
-  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit flix: Flix, root: FinalAst.Root): AnyRef = {
-    val cparams = c0.cparams.map {
-      case cparam => VarSym.of(cparam.sym.text, cparam.sym.getStackOffset)
-    }
-    val head = evalHeadPredicate(c0.head, env0, lenv0)
-    val body = c0.body.map(b => evalBodyPredicate(b, env0, lenv0))
-
-    val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray, null)
-
-    ConstraintSystem.of(Array(constraint))
-  }
-
-  /**
-    * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
-    */
-  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.Atom(sym, _, terms0, _, _) =>
-      val predSym = newPredSym(sym, env0, lenv0)
-      val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
-      AtomPredicate.of(predSym, true, terms)
-
-    case FinalAst.Predicate.Head.Union(exp, terms0, _, _) =>
-      val f = new function.Function[Array[Object], ProxyObject] {
-        override def apply(as: Array[Object]): ProxyObject = {
-          val clo = cast2closure(eval(exp, env0, lenv0, root))
-          // TODO: Not yet implemented.
-          throw InternalRuntimeException(s"Not yet supported.")
-        }
-      }
-      val ts = terms0.map(t => evalHeadTerm(t, env0))
-      UnionPredicate.of(f, ts.toArray)
-  }
-
-  /**
-    * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
-    */
-  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
-
-    case FinalAst.Predicate.Body.Atom(sym, _, polarity0, terms0, _, _) =>
-      val predSym = newPredSym(sym, env0, lenv0)
-      val polarity = polarity0 match {
-        case Ast.Polarity.Positive => true
-        case Ast.Polarity.Negative => false
-      }
-      val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
-      AtomPredicate.of(predSym, polarity, terms)
-
-    case FinalAst.Predicate.Body.Guard(exp, terms, loc) =>
-      val f = new function.Function[Array[Object], ProxyObject] {
-        override def apply(as: Array[Object]): ProxyObject = {
-          val clo = cast2closure(eval(exp, env0, lenv0, root))
-          // TODO: Not yet implemented.
-          throw InternalRuntimeException(s"Not yet supported.")
-        }
-      }
-      val ts = terms.map(t => evalBodyTerm(t, env0))
-      GuardPredicate.of(f, ts.toArray)
-  }
-
-  /**
-    * Evaluates the given head term `t0` under the given environment `env0` to a head term value.
-    */
-  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): Term = t0 match {
-    //
-    // Free Variables (i.e. variables that are quantified over in the constraint).
-    //
-    case FinalAst.Term.Head.QuantVar(sym, _, _) =>
-      // Lookup the corresponding symbol in the cache.
-      VarTerm.of(VarSym.of(sym.text, sym.getStackOffset))
-
-    //
-    // Bound Variables (i.e. variables that have a value in the local environment).
-    //
-    case FinalAst.Term.Head.CapturedVar(sym, tpe, _) =>
-      // Retrieve the value from the local environment and wrap it in a proxy object.
-      val v = wrapValueInProxyObject(env0(sym.toString), tpe)
-
-      // Construct a literal term with a function that evaluates to the proxy object.
-      LitTerm.of((_: AnyRef) => v)
-
-    //
-    // Literals.
-    //
-    case FinalAst.Term.Head.Lit(sym, _, _) =>
-      // Construct a literal term with a function that invokes another function which returns the literal.
-      LitTerm.of((_: AnyRef) => link(sym, root).apply(Array.emptyObjectArray))
-
-    //
-    // Applications.
-    //
-    case FinalAst.Term.Head.App(exp, args, _, _) =>
-      // Construct a function that when invoked applies the underlying function.
-      ??? // TODO
-  }
-
-  /**
-    * Evaluates the given body term `t0` under the given environment `env0` to a body term value.
-    */
-  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): Term = t0 match {
-    //
-    // Wildcards.
-    //
-    case FinalAst.Term.Body.Wild(_, _) => WildTerm.getSingleton
-
-    //
-    // Free Variables (i.e. variables that are quantified over in the constraint).
-    //
-    case FinalAst.Term.Body.QuantVar(sym, _, _) =>
-      // Lookup the corresponding symbol in the cache.
-      VarTerm.of(VarSym.of(sym.text, sym.getStackOffset))
-
-    //
-    // Bound Variables (i.e. variables that have a value in the local environment).
-    //
-    case FinalAst.Term.Body.CapturedVar(sym, tpe, _) =>
-      // Retrieve the value from the local environment and wrap it in a proxy object.
-      val v = wrapValueInProxyObject(env0(sym.toString), tpe)
-
-      // Construct a literal term with a function that evaluates to the proxy object.
-      LitTerm.of((_: AnyRef) => v)
-
-    //
-    // Literals.
-    //
-    case FinalAst.Term.Body.Lit(sym, _, _) =>
-      // Construct a literal term with a function that invokes another function which returns the literal.
-      LitTerm.of((_: AnyRef) => link(sym, root).apply(Array.emptyObjectArray))
-  }
-
-  /**
-    * Returns the predicate symbol of the given predicate with parameter `p0`.
-    */
-  def newPredSym(sym: Symbol.PredSym, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = {
-    sym match {
-      case sym: Symbol.RelSym => newRelSym(sym)
-      case sym: Symbol.LatSym => newLatSym(sym)
-    }
-  }
-
-  /**
-    * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
-    */
-  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = {
-    val name = sym.toString
-    RelSym.of(name, null)
-  }
-
-  /**
-    * Returns the lattice value associated with the given lattice symbol `sym` and parameter `param` (may be null).
-    */
-  private def newLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
-    case FinalAst.Lattice(_, _, attr, _) =>
-      val name = sym.toString
-      val as = attr.map(a => a.name)
-      val ops = getLatticeOps(attr.last.tpe)
-      LatSym.of(name, as.toArray, ops)
-  }
-
-  /**
-    * Returns the stratification.
-    */
-  private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): Stratification = {
-    val result = new Stratification()
-    for ((predSym, stratum) <- stf.m) {
-      val sym = predSym match {
-        case sym: Symbol.RelSym => newRelSym(sym)
-        case sym: Symbol.LatSym => newLatSym(sym)
-      }
-      result.setStratum(sym, stratum)
-    }
-    result
-  }
-
-  /**
     * Returns the fixpoint options object based on the flix configuration.
     */
   private def newOptions()(implicit flix: Flix): Options = {
@@ -923,21 +702,6 @@ object Interpreter {
     options.setThreads(flix.options.threads)
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
     options
-  }
-
-  /**
-    * Returns the lattice operations associated with the given type `tpe`.
-    */
-  private def getLatticeOps(tpe: MonoType)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
-    val lattice = root.latticeComponents(tpe)
-
-    LatticeOps.of(
-      link(lattice.bot, root),
-      link(lattice.equ, root),
-      link(lattice.leq, root),
-      link(lattice.lub, root),
-      link(lattice.glb, root)
-    )
   }
 
   /**
