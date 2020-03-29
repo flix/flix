@@ -37,7 +37,6 @@ namespace Array {
     ///
     pub def put(a: Array[a], i: Int32, x: a): Array[a] & Impure = a[i] = x; a
 
-
     ///
     /// Returns the length of the array `a`.
     ///
@@ -63,7 +62,6 @@ namespace Array {
             Nil
         else
             a[i] :: toListHelper(a, i + 1)
-
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -108,6 +106,7 @@ namespace Array {
     pub def memberOf(x: a, a: Array[a]): Bool =
         exists(y -> y == x, a)
 
+    ///
     /// Alias for `IndexOfLeft`
     ///
     pub def indexOf(x: a, a: Array[a]): Option[Int32] = indexOfLeft(x,a)
@@ -316,7 +315,6 @@ namespace Array {
             mapWithIndexInPlaceHelper(f, len, a, i+1)
         }
 
-
     ///
     /// Returns the result of applying `f` to every element in `a` and concatenating the results.
     ///
@@ -367,7 +365,9 @@ namespace Array {
         }
 
     ///
-    /// Helper function for `rotateLeft`, `n` must be positive.
+    /// Helper function for `rotateLeft`.
+    ///
+    /// Precondition: `n` must be positive.
     ///
     def rotateLeftHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
@@ -388,7 +388,9 @@ namespace Array {
         }
 
     ///
-    /// Helper function for `rotateRight`, `n` must be positive.
+    /// Helper function for `rotateRight`.
+    ///
+    /// Precondition: `n` must be positive.
     ///
     def rotateRightHelper(n: Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
@@ -492,17 +494,27 @@ namespace Array {
         }
 
     ///
+    /// Imperatively write `sub` at position `pos` in array `out` (helper for intercalate).
+    ///
+    /// Return the new write position which is `pos + length(sub)`.
+    ///
+    def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
+        Array.updateSequenceInPlace(pos, sub, out);
+        pos + Array.length(sub)
+
+
+    ///
     /// Sum the lengths of an array of arrays.
     ///
-    /// Helper for `intercalate` and others.
+    /// Helper for `intercalate` and `flatten`.
     ///
     def sumLengths(arrs: Array[Array[a]]): Int32 & Pure =
         Array.foldLeft((ac,a) -> ac + Array.length(a), 0, arrs)
 
     ///
-    /// Find the head of an array of arrays.
+    /// Find the first non-empty array of an array of arrays (left-to-right).
     ///
-    /// Helper for `intercalate` and others.
+    /// Helper for `intercalate` and `flatten`.
     ///
     def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
         let len = Array.length(arrs);
@@ -519,7 +531,6 @@ namespace Array {
                 case Some(x) => Some(x)
                 case None => headArraysHelper(arrs, len, i+1)
             }
-
 
     ///
     /// Returns the transpose of `a`.
@@ -811,7 +822,8 @@ namespace Array {
     pub def partition(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
         let step = { (x, ac) ->
             let (a1,a2) = ac;
-            if (f(x)) (x :: a1, a2) else (a1, x :: a2) };
+            if (f(x)) (x :: a1, a2) else (a1, x :: a2)
+        };
         let (xs,ys) = foldRight(step, (Nil,Nil), a);
         (List.toArray(xs), List.toArray(ys))
 
@@ -896,7 +908,6 @@ namespace Array {
     /// Alias for `takeLeft`.
     ///
     pub def take(n: Int32, a: Array[a]) : Array[a] & Impure = takeLeft(n, a)
-
 
     ///
     /// Returns a fresh array taking first `n` elements of `a`.
@@ -1093,8 +1104,6 @@ namespace Array {
     ///
     /// Collects the results of applying the partial function `f` to every element in `a`.
     ///
-    /// TODO `f` potentially should probably be pure as otherwise this leaks information about the order of traversal
-    ///
     pub def filterMap(f: a -> Option[b] & e, a: Array[a]): Array[b] & Impure =
         foldRight((x,xs) -> match f(x) {
             case None => xs
@@ -1121,6 +1130,7 @@ namespace Array {
                 case None => findMapHelper(f, a, len, i+1)
             }
         }
+
     ///
     /// Returns the array `a` as a set.
     ///
@@ -1175,7 +1185,6 @@ namespace Array {
         let i = findIndexOfRightHelper(f, a, len-1) as & Pure;
         if (i < 0) None else Some(i)
 
-
     ///
     /// Helper function for `findIndexOfRight`.
     ///
@@ -1203,7 +1212,6 @@ namespace Array {
             let r = findIndicesHelper(f, a, len, i+1);
             if (f(a[i])) i :: r else r
         }
-
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1335,13 +1343,7 @@ namespace Array {
     ///
     pub def updateSequence(i: Int32, sub: Array[a], a: Array[a]): Array[a] & Impure =
         let end = i + length(sub);
-        let f: Int32 -> a & Impure =
-            { ix ->
-                if (ix >= i && ix < end) {
-                    sub[ix - i]
-                } else
-                    a[ix]
-             };
+        let f = ix -> if (ix >= i && ix < end) sub[ix - i] else a[ix];
         init(f, length(a))
 
     ///
@@ -1371,17 +1373,6 @@ namespace Array {
             };
         foreachWithIndex(step, a);
         StringBuilder.toString(sb)
-
-
-
-    ///
-    /// Imperatively write `sub` at position `pos` in array `out`.
-    ///
-    /// Return the new write position which is `pos + length(sub)`.
-    ///
-    def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
-        Array.updateSequenceInPlace(pos, sub, out);
-        pos + Array.length(sub)
 
     ///
     /// Sort array `a` with the comparing function `f`, returning a sorted copy.
@@ -1415,7 +1406,7 @@ namespace Array {
         else ()
 
     ///
-    /// Swap the elements at `i` and `j`.
+    /// Swap the elements at `i` and `j` (helper for sorting).
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
@@ -1427,7 +1418,7 @@ namespace Array {
         ()
 
     ///
-    /// Partition step of the quicksort algorithm.
+    /// Partition step of the quicksort algorithm (helper for sorting).
     ///
     def sortByPartition(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
