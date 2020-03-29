@@ -331,6 +331,7 @@ namespace Array {
         let len = length(a);
         let end = len - 1;
         init(i -> a[end - i], len)
+        
     ///
     /// Returns the reverse of `a`.
     ///
@@ -452,7 +453,7 @@ namespace Array {
     ///
     /// Helper for `intersperse`.
     ///
-    pub def intersperseHelper(x: a, a: Array[a]): Array[a] & Impure =
+    def intersperseHelper(x: a, a: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
         if (len2 <= 0)
@@ -476,7 +477,7 @@ namespace Array {
             case None => []
             case Some(x) =>
                 let out = Array.new(x, len);
-                let overwrite = { (st,a) ->
+                let overwrite = { (a,st) ->
                     let (pos,i) = st;
                     if (i == 0) {
                         let pos1 = arrayWrites(0, a, out);
@@ -742,7 +743,7 @@ namespace Array {
             case None => []
             case Some(x) => {
                 let out = Array.new(x, len);
-                foreachAccum((pos,a) -> arrayWrites(pos, a, out), 0, arrs);
+                foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
         }
@@ -969,7 +970,7 @@ namespace Array {
     ///
     /// Helper function for `groupBy`.
     ///
-    pub def groupByHelper(f: (a, a) -> Bool, xs: List[a]): List[Array[a]] & Impure = match xs {
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a]): List[Array[a]] & Impure = match xs {
         case Nil => Nil
         case x :: rs =>
             let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
@@ -1315,18 +1316,17 @@ namespace Array {
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
-    pub def foreachAccum(f: (st, a) ~> st, s: st, a: Array[a]): st & Impure =
-        let len = length(a);
-        if (len < 1) s else foreachAccumHelper(f, a, len, s, 0)
+    pub def foreachAccum(f: (a, st) ~> st, s: st, a: Array[a]): st & Impure =
+        foreachAccumHelper(f, a, length(a), s, 0)
 
     ///
     /// Helper for `foreachAccum`.
     ///
-    def foreachAccumHelper(f: (st, a) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
+    def foreachAccumHelper(f: (a, st) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
         if (i >= len)
             s
         else {
-            let s1 = f(s, a[i]);
+            let s1 = f(a[i], s);
             foreachAccumHelper(f, a, len, s1, i + 1)
         }
 
