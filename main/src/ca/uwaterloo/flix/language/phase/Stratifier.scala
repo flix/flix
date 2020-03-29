@@ -42,7 +42,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * A type alias for the stratification cache.
     */
-  type Cache = mutable.Map[Set[Symbol.PredSym], Ast.Stratification]
+  type Cache = mutable.Map[Set[String], Ast.Stratification]
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -655,7 +655,7 @@ object Stratifier extends Phase[Root, Root] {
       getPredicateSym(head) match {
         case None => DependencyGraph.empty
         case Some(headSym) =>
-          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
+          val dependencies = body flatMap (b => visitDependencyEdge(headSym.toString, b))
           DependencyGraph(dependencies.toSet)
       }
   }
@@ -663,8 +663,8 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns the predicate symbol of the given head atom `head0`.
     */
-  private def getPredicateSym(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) => Some(sym)
+  private def getPredicateSym(head0: Predicate.Head): Option[String] = head0 match {
+    case Predicate.Head.Atom(sym, den, terms, tpe, loc) => Some(sym.toString)
     case Predicate.Head.Union(exp, tpe, loc) =>
       // NB: The situation is actually more complicated.
       // If the union expressions evaluates to predicate symbols A, B, C it could
@@ -675,7 +675,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns a dependency edge of the right type for the given head symbol `head` and body predicate `body0`.
     */
-  private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+  private def visitDependencyEdge(head: String, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
     case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, sym, loc))
       case Polarity.Negative => Some(DependencyEdge.Negative(head, sym, loc))
@@ -730,7 +730,7 @@ object Stratifier extends Phase[Root, Root] {
     //
     // Any predicate symbol not explicitly in the map has a default value of zero.
     //
-    val stratumOf = mutable.Map.empty[Symbol.PredSym, Int]
+    val stratumOf = mutable.Map.empty[String, Int]
 
     //
     // Compute the number of dependency edges.
@@ -759,29 +759,29 @@ object Stratifier extends Phase[Root, Root] {
         edge match {
           case DependencyEdge.Positive(headSym, bodySym, _) =>
             // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
-            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
-            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
+            val headStratum = stratumOf.getOrElseUpdate(headSym.toString, 0)
+            val bodyStratum = stratumOf.getOrElseUpdate(bodySym.toString, 0)
 
             if (!(headStratum >= bodyStratum)) {
               // Put the head in the same stratum as the body.
-              stratumOf.put(headSym, bodyStratum)
+              stratumOf.put(headSym.toString, bodyStratum)
               changed = true
             }
 
           case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
-            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
-            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
+            val headStratum = stratumOf.getOrElseUpdate(headSym.toString, 0)
+            val bodyStratum = stratumOf.getOrElseUpdate(bodySym.toString, 0)
 
             if (!(headStratum > bodyStratum)) {
               // Put the head in one stratum above the body stratum.
               val newHeadStratum = bodyStratum + 1
-              stratumOf.put(headSym, newHeadStratum)
+              stratumOf.put(headSym.toString.toString, newHeadStratum)
               changed = true
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
+                return StratificationError(findNegativeCycle(bodySym.toString, headSym, g, edgeLoc), tpe, loc).toFailure
               }
             }
         }
@@ -795,30 +795,30 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph, loc: SourceLocation): List[(Symbol.PredSym, SourceLocation)] = {
+  private def findNegativeCycle(src: String, dst: String, g: DependencyGraph, loc: SourceLocation): List[(String, SourceLocation)] = {
     // Computes a map from symbols to their successors.
-    val succ = mutable.Map.empty[Symbol.PredSym, Set[(Symbol.PredSym, SourceLocation)]]
+    val succ = mutable.Map.empty[String, Set[(String, SourceLocation)]]
     for (edge <- g.xs) {
       edge match {
         case DependencyEdge.Positive(head, body, loc) =>
-          val s = succ.getOrElse(body, Set.empty)
-          succ.put(body, s + ((head, loc)))
+          val s = succ.getOrElse(body.toString, Set.empty)
+          succ.put(body.toString, s + ((head, loc)))
         case DependencyEdge.Negative(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
-          succ.put(body, s + ((head, loc)))
+          succ.put(body.toString, s + ((head, loc)))
       }
     }
 
     // We perform a DFS using recursion to find the cycle.
 
     // A map from symbols to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[Symbol.PredSym, (Symbol.PredSym, SourceLocation)]
+    val pred = mutable.Map.empty[String, (String, SourceLocation)]
 
     // A set of previously seen symbols.
-    val seen = mutable.Set.empty[Symbol.PredSym]
+    val seen = mutable.Set.empty[String]
 
     // Recursively visit the given symbol.
-    def visit(curr: Symbol.PredSym): Unit = {
+    def visit(curr: String): Unit = {
       // Update the set of previously seen nodes.
       seen.add(curr)
 
@@ -835,7 +835,7 @@ object Stratifier extends Phase[Root, Root] {
     visit(dst)
 
     // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: Symbol.PredSym): List[(Symbol.PredSym, SourceLocation)] = pred.get(curr) match {
+    def unroll(curr: String): List[(String, SourceLocation)] = pred.get(curr) match {
       case None => Nil
       case Some((prev, loc)) => (prev, loc) :: unroll(prev)
     }
@@ -875,10 +875,10 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): Set[Symbol.PredSym] = tpe match {
+  private def predicateSymbolsOf(tpe: Type): Set[String] = tpe match {
     case Type.Var(_, _) => Set.empty
     case Type.SchemaEmpty => Set.empty
-    case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym
+    case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym.toString
     case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
   }
 

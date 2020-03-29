@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Symbol.PredSym, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
+case class StratificationError(cycle: List[(String, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = loc.source
   val message: VirtualTerminal = {

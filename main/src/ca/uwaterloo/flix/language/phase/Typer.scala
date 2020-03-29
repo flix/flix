@@ -1514,7 +1514,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.FixpointProject(sym, e, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointProject(sym.toString, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)
@@ -1525,7 +1525,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e1 = visitExp(init, subst0)
         val e2 = visitExp(f, subst0)
         val e3 = visitExp(constraints, subst0)
-        TypedAst.Expression.FixpointFold(sym, e1, e2, e3, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointFold(sym.toString, e1, e2, e3, subst0(tvar), subst0(evar), loc)
     }
 
     /**
@@ -1737,7 +1737,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           Denotation.Latticenal
       }
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      TypedAst.Predicate.Head.Atom(sym, den, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym.toString, den, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1800,7 +1800,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           Denotation.Latticenal
       }
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      TypedAst.Predicate.Body.Atom(sym, den, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym.toString, den, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)

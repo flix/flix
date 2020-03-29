@@ -70,7 +70,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
-        checkUnusedRelations(usedAll)(root) and
         checkUnusedLattices(usedAll)(root) and
         checkUnusedTypeParamsEnums()(root) and
         checkUnusedTypeParamsRelations()(root) and
@@ -210,16 +209,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
-  }
-
-  /**
-    * Checks for unused relation symbols.
-    */
-  private def checkUnusedRelations(used: Redundancy.Used)(implicit root: Root): Used = {
-    val unusedRelSyms = root.relations.collect {
-      case (sym, decl) if deadRel(decl, used) => UnusedRelSym(sym)
-    }
-    used ++ unusedRelSyms
   }
 
   /**
@@ -590,20 +579,19 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0.resetApplies)
 
-    case Expression.FixpointProject(sym, exp, _, _, _) =>
-      val us = visitExp(exp, env0.resetApplies)
-      Used.of(sym) and us
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      visitExp(exp, env0.resetApplies)
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       val used1 = visitExp(exp1, env0.resetApplies)
       val used2 = visitExp(exp2, env0.resetApplies)
       used1 and used2
 
-    case Expression.FixpointFold(sym, exp1, exp2, exp3, _, _, _) =>
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0.resetApplies)
       val us2 = visitExp(exp2, env0.resetApplies)
       val us3 = visitExp(exp3, env0.resetApplies)
-      Used.of(sym) and us1 and us2 and us3
+      us1 and us2 and us3
   }
 
   /**
@@ -629,8 +617,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
-    case Head.Atom(sym, _, terms, _, _) =>
-      Used.of(sym) and visitExps(terms, env0)
+    case Head.Atom(_, _, terms, _, _) =>
+      visitExps(terms, env0)
 
     case Head.Union(exp, _, _) =>
       visitExp(exp, env0)
@@ -640,8 +628,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
-    case Body.Atom(sym, _, _, terms, _, _) =>
-      Used.of(sym)
+    case Body.Atom(_, _, _, terms, _, _) =>
+      Used.empty
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
