@@ -40,10 +40,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    val relations = root.relations.map {
-      case (k, v) => k -> visitRelation(v)
-    }
-
     val lattices = root.lattices.map {
       case (k, v) => k -> visitLattice(v)
     }
@@ -62,7 +58,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -81,11 +77,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       }
       val tpe = visitType(tpe0)
       FinalAst.Enum(mod, sym, cases, tpe, loc)
-  }
-
-  private def visitRelation(relation0: SimplifiedAst.Relation): FinalAst.Relation = relation0 match {
-    case SimplifiedAst.Relation(mod, sym, attr, loc) =>
-      FinalAst.Relation(mod, sym, attr.map(visitAttribute), loc)
   }
 
   private def visitLattice(lattice0: SimplifiedAst.Lattice): FinalAst.Lattice = lattice0 match {

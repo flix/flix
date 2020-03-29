@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
@@ -1072,7 +1072,8 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(sym, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      // TODO: Need the denotation
+      newRelSym(sym.toString, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1970,7 +1971,10 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(sym, mv)
+      den match {
+        case Denotation.Relational => newRelSym(sym.toString, mv)
+        case Denotation.Latticenal => ??? // TODO
+      }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -2005,7 +2009,10 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(sym, mv)
+      den match {
+        case Denotation.Relational => newRelSym(sym.toString, mv)
+        case Denotation.Latticenal => ??? // TODO
+      }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -2034,28 +2041,15 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate symbol `sym`.
-    */
-  private def newPredSym(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit =
-    sym match {
-      case sym: Symbol.RelSym => newRelSym(sym, mv)
-      case sym: Symbol.LatSym => newLatSym(sym, mv)
-    }
-
-  /**
     * Emits code for the given relation symbol `sym`.
     */
-  private def newRelSym(sym: Symbol.RelSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newRelSym(name: String, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
-    mv.visitLdcInsn(sym.toString)
+    mv.visitLdcInsn(name)
 
-    // Emit code for the attributes (if present).
-    root.relations.get(sym) match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(rel) =>
-        newAttributesArray(rel.attr, mv)
-    }
+    // Emit code for the attributes.
+    // Note: Currently always absent.
+    mv.visitInsn(ACONST_NULL)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
@@ -2339,7 +2333,10 @@ object GenExpression {
     // Add every predicate symbol with its stratum.
     for ((predSym, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSym(predSym, mv)
+
+      // TODO: Need denotation
+      newRelSym(predSym.toString, mv)
+
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }

@@ -24,7 +24,6 @@ object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
-                  relations: Map[Symbol.RelSym, FinalAst.Relation],
                   lattices: Map[Symbol.LatSym, FinalAst.Lattice],
                   latticeComponents: Map[MonoType, FinalAst.LatticeComponents],
                   properties: List[FinalAst.Property],
@@ -37,8 +36,6 @@ object FinalAst {
   }
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpe: MonoType, loc: SourceLocation)
-
-  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[FinalAst.Attribute], loc: SourceLocation)
 
   case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[FinalAst.Attribute], loc: SourceLocation)
 

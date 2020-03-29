@@ -885,8 +885,7 @@ object Interpreter {
     */
   private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = {
     val name = sym.toString
-    val attr = root.relations.get(sym).map(_.attr.map(_.name).toArray).orNull
-    RelSym.of(name, attr)
+    RelSym.of(name, null)
   }
 
   /**
