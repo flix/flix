@@ -1362,7 +1362,7 @@ namespace Array {
     /// Render the array `a` as a String. Elements are rendered with the
     /// function `f` and seperated with the string `sep`.
     ///
-    pub def mkStringBy(f: a -> String & e, sep: String, a: Array[a]): String & Impure =
+    pub def formatWith(f: a -> String, sep: String, a: Array[a]): String & Impure =
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)

@@ -3850,32 +3850,44 @@ def updateSequenceInPlace28(): Bool & Impure =
     Array.sameElements(a, [-2, -3, -4, -5, -6, -7, -8])
 
 /////////////////////////////////////////////////////////////////////////////
-// mkStringBy                                                              //
+// formatWith                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def mkStringBy01(): Bool & Impure = 
+def formatWith01(): Bool & Impure =
     let a: Array[Int32] = [];
-    let s = Array.mkStringBy(Int32.toString, ",", a);
+    let s = Array.formatWith(Int32.toString, ",", a);
     s == ""
 
 @test
-def mkStringBy02(): Bool & Impure = 
+def formatWith02(): Bool & Impure =
     let a = [1];
-    let s = Array.mkStringBy(Int32.toString, ",", a);
+    let s = Array.formatWith(Int32.toString, ",", a);
     s == "1"
 
 @test
-def mkStringBy03(): Bool & Impure = 
+def formatWith03(): Bool & Impure =
     let a = [1,2];
-    let s = Array.mkStringBy(Int32.toString, ",", a);
+    let s = Array.formatWith(Int32.toString, ",", a);
     s == "1,2"
 
 @test
-def mkStringBy04(): Bool & Impure = 
+def formatWith04(): Bool & Impure =
     let a = [1,2,3];
-    let s = Array.mkStringBy(Int32.toString, ",", a);
+    let s = Array.formatWith(Int32.toString, ",", a);
     s == "1,2,3"
+
+@test
+def formatWith05(): Bool & Impure =
+    let a = [1,2,3];
+    let s = Array.formatWith(Int32.toString, "", a);
+    s == "123"
+
+@test
+def formatWith06(): Bool & Impure =
+    let a = [1,2,3];
+    let s = Array.formatWith(Int32.toString, "..", a);
+    s == "1..2..3"
 
 /////////////////////////////////////////////////////////////////////////////
 // sortBy                                                                  //
