@@ -1663,22 +1663,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //  P(t_1, ..., t_n): #{ P = P(tpe_1, ..., tpe_n) | fresh }
       //
 
-      // Lookup the declared type of the relation/lattice (if it exists).
-      val declaredType = sym match {
-        case x: Symbol.RelSym => program.relations.get(x) match {
-          case None => Type.freshTypeVar()
-          case Some(rel) => Scheme.instantiate(rel.sc)
-        }
-        case x: Symbol.LatSym => program.lattices.get(x) match {
-          case None => Type.freshTypeVar()
-          case Some(lat) => Scheme.instantiate(lat.sc)
-        }
-      }
-
       for {
         (termTypes, termEffects) <- seqM(terms.map(inferExp(_, program))).map(_.unzip)
         pureTermEffects <- unifyEffM(Type.Pure, mkAnd(termEffects), loc)
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
+        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(sym.toString, den, termTypes, program), loc)
       } yield Type.SchemaExtend(sym.toString, predicateType, Type.freshTypeVar())
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
@@ -1699,16 +1687,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def reassembleHeadPredicate(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
     case ResolvedAst.Predicate.Head.Atom(sym, den0, terms, tvar, loc) =>
-      val den = sym match {
-        case s: Symbol.RelSym =>
-          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
-          Denotation.Relational
-        case s: Symbol.LatSym =>
-          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
-          Denotation.Latticenal
-      }
       val ts = terms.map(t => reassembleExp(t, program, subst0))
-      TypedAst.Predicate.Head.Atom(sym.toString, den, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Head.Atom(sym.toString, den0, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Head.Union(exp, tvar, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1724,24 +1704,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     //  ------------------------------------------------------------
     //  P(t_1, ..., t_n): Schema{ P = P(tpe_1, ..., tpe_n) | fresh }
     //
-    case ResolvedAst.Predicate.Body.Atom(sym, den, polarity, terms, tvar, loc) =>
-
-      // Lookup the declared type of the relation/lattice (if it exists).
-      val declaredType = sym match {
-        case x: Symbol.RelSym => program.relations.get(x) match {
-          case None => Type.freshTypeVar()
-          case Some(rel) => Scheme.instantiate(rel.sc)
-        }
-        case x: Symbol.LatSym => program.lattices.get(x) match {
-          case None => Type.freshTypeVar()
-          case Some(lat) => Scheme.instantiate(lat.sc)
-        }
-      }
-
+    case ResolvedAst.Predicate.Body.Atom(name, den, polarity, terms, tvar, loc) =>
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
-        predicateType <- unifyTypM(tvar, getRelationOrLatticeType(sym, termTypes, program), declaredType, loc)
-      } yield Type.SchemaExtend(sym.toString, predicateType, Type.freshTypeVar())
+        predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, program), loc)
+      } yield Type.SchemaExtend(name.toString, predicateType, Type.freshTypeVar())
 
     //
     //  exp : Bool
@@ -1762,16 +1729,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def reassembleBodyPredicate(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
     case ResolvedAst.Predicate.Body.Atom(sym, den0, polarity, terms, tvar, loc) =>
-      val den = sym match {
-        case s: Symbol.RelSym =>
-          if (den0 != Denotation.Relational) throw InternalCompilerException("Mismatched denotations")
-          Denotation.Relational
-        case s: Symbol.LatSym =>
-          if (den0 != Denotation.Latticenal) throw InternalCompilerException("Mismatched denotations")
-          Denotation.Latticenal
-      }
       val ts = terms.map(t => reassemblePattern(t, program, subst0))
-      TypedAst.Predicate.Body.Atom(sym.toString, den, polarity, ts, subst0(tvar), loc)
+      TypedAst.Predicate.Body.Atom(sym.toString, den0, polarity, ts, subst0(tvar), loc)
 
     case ResolvedAst.Predicate.Body.Guard(exp, loc) =>
       val e = reassembleExp(exp, program, subst0)
@@ -1779,20 +1738,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns the relation or lattice type of `sym` with the term types `ts`.
+    * Returns the relation type of `name` with the term types `ts`.
     */
-  private def getRelationOrLatticeType(sym: Symbol.PredSym, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = sym match {
-    case sym: Symbol.RelSym =>
-      val base = Type.Cst(TypeConstructor.Relation(sym.toString)): Type
+  private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = den match {
+    case Denotation.Relational =>
+      val base = Type.Cst(TypeConstructor.Relation(name)): Type
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x
         case l => Type.mkTuple(l)
       }
       Type.Apply(base, args)
-
-    case sym: Symbol.LatSym =>
-      val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+    case Denotation.Latticenal =>
+      val base = Type.Cst(TypeConstructor.Lattice(???)): Type // TODO
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x
@@ -1806,15 +1764,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def typeCheckAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
     case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
-  }
-
-  /**
-    * Returns the declared types of the terms of the given relation symbol `sym`.
-    */
-  private def getRelationSignature(sym: Symbol.RelSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    program.relations(sym) match {
-      case ResolvedAst.Relation(_, _, _, _, attr, _, _) => Ok(attr.map(_.tpe))
-    }
   }
 
   /**

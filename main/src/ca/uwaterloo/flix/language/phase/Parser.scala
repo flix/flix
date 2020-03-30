@@ -997,11 +997,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
+      SP ~ atomic("project") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
     def FixpointFold: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
+      SP ~ atomic("fold") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
     }
 
     // TODO: We should only allow one variant of these.
@@ -1086,7 +1086,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Head {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedPredicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.Predicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
       def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
@@ -1098,7 +1098,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Body {
 
       def Positive: Rule1[ParsedAst.Predicate.Body.Atom] = rule {
-        SP ~ push(Polarity.Positive) ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+        SP ~ push(Polarity.Positive) ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
@@ -1107,7 +1107,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 
@@ -1422,8 +1422,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Hole: Rule1[Name.Ident] = LowerCaseName
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
-
-    def QualifiedPredicate: Rule1[Name.QName] = UpperCaseQName
 
     def Tag: Rule1[Name.Ident] = UpperCaseName
 

@@ -997,12 +997,12 @@ object ParsedAst {
     /**
       * Fixpoint Project expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the name of the predicate.
-      * @param exp  the constraint expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp   the constraint expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Entails expression.
@@ -1020,7 +1020,7 @@ object ParsedAst {
       * @param exp2 the function to fold.
       * @param exp3 the constraints over which to fold.
       */
-    case class FixpointFold(sp1: SourcePosition, name: Name.QName, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointFold(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1128,12 +1128,12 @@ object ParsedAst {
         * Atom Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param name  the qualified name of the predicate.
+        * @param ident the qualified name of the predicate.
         * @param terms the terms of the predicate.
         * @param term  the optional lattice term (if applicable).
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, ident: Name.Ident, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Union Predicate.
@@ -1155,12 +1155,12 @@ object ParsedAst {
         *
         * @param sp1      the position of the first character in the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
-        * @param name     the qualified name of the predicate.
+        * @param ident    the name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, polarity: Polarity, name: Name.QName, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Polarity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.

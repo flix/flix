@@ -45,7 +45,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      relations = Map.empty,
       lattices = Map.empty,
       latticeComponents = Map.empty,
       named = Map.empty,
@@ -213,44 +212,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Relation.
      */
-    case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
-      val tparams = tparams0 match {
-        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
-      }
-
-      // check if the table already exists.
-      prog0.relations.get(ns0) match {
-        case None =>
-          // Case 1: The namespace does not yet exist. So the table does not yet exist.
-          val sym = Symbol.mkRelSym(ns0, ident)
-          val tenv = getTypeEnv(tparams)
-          val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-          mapN(attrVal) {
-            case attr =>
-              val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
-              val relations = Map(ident.name -> relation)
-              prog0.copy(relations = prog0.relations + (ns0 -> relations))
-          }
-        case Some(relations0) =>
-          // Case 2: The namespace exists. Lookup the table.
-          relations0.get(ident.name) match {
-            case None =>
-              // Case 2.1: The table does not exist in the namespace. Update it.
-              val sym = Symbol.mkRelSym(ns0, ident)
-              val tenv = getTypeEnv(tparams)
-              val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-              mapN(attrVal) {
-                case attr =>
-                  val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
-                  val relations = relations0 + (ident.name -> relation)
-                  prog0.copy(relations = prog0.relations + (ns0 -> relations))
-              }
-            case Some(table) =>
-              // Case 2.2: Duplicate definition.
-              NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
-          }
-      }
+    case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) => prog0.toSuccess // TODO
 
     /*
      * Lattice.
@@ -809,9 +771,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
+    case WeededAst.Expression.FixpointProject(ident, exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case e => NamedAst.Expression.FixpointProject(ident, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
@@ -819,9 +781,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
+    case WeededAst.Expression.FixpointFold(ident, init, f, constraints, loc) =>
       mapN(visitExp(init, env0, uenv0, tenv0), visitExp(f, env0, uenv0, tenv0), visitExp(constraints, env0, uenv0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(ident, e1, e2, e3, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
   }
 
@@ -931,10 +893,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(ident, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(ident, den, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -946,9 +908,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(ident, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
-      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(ident, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {

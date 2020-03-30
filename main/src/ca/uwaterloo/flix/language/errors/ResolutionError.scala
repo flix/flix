@@ -86,31 +86,6 @@ object ResolutionError {
   }
 
   /**
-    * Ambiguous Relation or Lattice Error.
-    *
-    * @param qn   the ambiguous name.
-    * @param ns   the current namespace.
-    * @param locs the locations where the names are defined.
-    * @param loc  the location where the error occurred.
-    */
-  case class AmbiguousRelationOrLattice(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to multiple relations or lattices." << NewLine
-      vt << NewLine
-      vt << Code(loc, "ambiguous name.") << NewLine
-      vt << NewLine
-      for (loc1 <- locs) {
-        vt << Code(loc1, "relation/lattice matches.") << NewLine
-        vt << NewLine
-      }
-      vt
-    }
-  }
-
-  /**
     * Ambiguous Tag Error.
     *
     * @param tag  the tag.
@@ -118,7 +93,6 @@ object ResolutionError {
     * @param locs the source location of the matched tags.
     * @param loc  the location where the error occurred.
     */
-  // TODO: Improve error message.
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
@@ -191,46 +165,6 @@ object ResolutionError {
       vt << Code(loc, "inaccessible enum.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Mark the definition as public." << NewLine
-    }
-  }
-
-  /**
-    * Inaccessible Relation Error.
-    *
-    * @param sym the relation symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
-  case class InaccessibleRelation(sym: Symbol.RelSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Relation '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible relation.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Mark the relation as public." << NewLine
-    }
-  }
-
-  /**
-    * Inaccessible Lattice Error.
-    *
-    * @param sym the lattice symbol.
-    * @param ns  the namespace where the symbol is not accessible.
-    * @param loc the location where the error occurred.
-    */
-  case class InaccessibleLattice(sym: Symbol.LatSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Lattice '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "inaccessible lattice.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Mark the lattice as public." << NewLine
     }
   }
 
@@ -308,26 +242,6 @@ object ResolutionError {
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Possible typo or non-existent effect?" << NewLine
-    }
-  }
-
-  /**
-    * Undefined Table Error.
-    *
-    * @param qn  the table name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UndefinedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined table '" << Red(qn.toString) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "table not found.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent table?" << NewLine
     }
   }
 

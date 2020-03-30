@@ -26,7 +26,6 @@ object NamedAst {
   case class Root(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  relations: Map[Name.NName, Map[String, NamedAst.Relation]],
                   lattices: Map[Name.NName, Map[String, NamedAst.Lattice]],
                   latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
                   named: Map[Symbol.DefnSym, NamedAst.Expression],
@@ -44,8 +43,6 @@ object NamedAst {
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
-
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
 
   case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
 
@@ -205,11 +202,11 @@ object NamedAst {
 
     case class FixpointSolve(exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProject(qname: Name.QName, exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProject(ident: Name.Ident, exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointFold(qname: Name.QName, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointFold(ident: Name.Ident, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
 
@@ -267,7 +264,7 @@ object NamedAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(ident: Name.Ident, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
       case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
@@ -277,7 +274,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
@@ -311,7 +308,7 @@ object NamedAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Relation(sym: Symbol.RelSym, loc: SourceLocation) extends NamedAst.Type
+    case class Relation(name: String, loc: SourceLocation) extends NamedAst.Type
 
     case class Lattice(sym: Symbol.LatSym, loc: SourceLocation) extends NamedAst.Type
 

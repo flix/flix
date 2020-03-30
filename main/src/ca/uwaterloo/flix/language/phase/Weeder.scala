@@ -1152,12 +1152,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProject(sp1, qname, exp, sp2) =>
+    case ParsedAst.Expression.FixpointProject(sp1, ident, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       mapN(visitExp(exp)) {
         case e =>
-          WeededAst.Expression.FixpointProject(qname, e, mkSL(sp1, sp2))
+          WeededAst.Expression.FixpointProject(ident, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1167,12 +1167,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointFold(sp1, qname, init, f, constraints, sp2) =>
+    case ParsedAst.Expression.FixpointFold(sp1, ident, init, f, constraints, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
         case (e1, e2, e3) =>
-          WeededAst.Expression.FixpointFold(qname, e1, e2, e3, loc)
+          WeededAst.Expression.FixpointFold(ident, e1, e2, e3, loc)
       }
   }
 
@@ -1406,18 +1406,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given head predicate.
     */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-    case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, None, sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, ident, terms, None, sp2) =>
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp)) {
-        case ts => WeededAst.Predicate.Head.Atom(qname, Denotation.Relational, ts, loc)
+        case ts => WeededAst.Predicate.Head.Atom(ident, Denotation.Relational, ts, loc)
       }
 
-    case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, Some(term), sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp), visitExp(term)) {
-        case (ts, t) => WeededAst.Predicate.Head.Atom(qname, Denotation.Latticenal, ts ::: t :: Nil, loc)
+        case (ts, t) => WeededAst.Predicate.Head.Atom(ident, Denotation.Latticenal, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
@@ -1430,20 +1430,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, qname, terms, None, sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, None, sp2) =>
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
         case ts =>
-          WeededAst.Predicate.Body.Atom(qname, Denotation.Relational, polarity, ts, loc)
+          WeededAst.Predicate.Body.Atom(ident, Denotation.Relational, polarity, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, qname, terms, Some(term), sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern), visitPattern(term)) {
         case (ts, t) =>
-          WeededAst.Predicate.Body.Atom(qname, Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
+          WeededAst.Predicate.Body.Atom(ident, Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>

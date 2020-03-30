@@ -204,11 +204,11 @@ object WeededAst {
 
     case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointProject(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointProject(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointFold(qname: Name.QName, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointFold(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -266,7 +266,7 @@ object WeededAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(ident: Name.Ident, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -276,7 +276,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
