@@ -510,7 +510,7 @@ namespace Map {
     ///
     /// Returns n < 0 if all mappings in `m1` are lexicographically smaller than `m2`.
     /// Returns n = 0 if all mappings `m1` are equal to `m2`.
-    /// Returns n > 0 if all mapppings in `m1` is lexicographically greater than `m1`.
+    /// Returns n > 0 if all mappings in `m1` is lexicographically greater than `m1`.
     ///
     pub def __cmp(m1: Map[k, v], m2: Map[k, v]): Int32 =
         __cmpHelper(toList(m1), toList(m2))
