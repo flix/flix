@@ -234,6 +234,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (mod, as) =>
           List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
+
+      throw InternalCompilerException("foo"); // TODO: Remove
   }
 
   /**

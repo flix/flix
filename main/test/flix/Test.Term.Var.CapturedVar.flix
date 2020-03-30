@@ -24,8 +24,6 @@ namespace Test/Term/Lit/Var/CapturedVar {
     ///////////////////////////////////////////////////////////////////////////////
     /// Bool                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
-    rel R(x: Bool)
-
     @test
     def testBoolCapturedVar01(): Bool =
         let c = true;
