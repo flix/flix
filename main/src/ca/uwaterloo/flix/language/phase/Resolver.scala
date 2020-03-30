@@ -1051,13 +1051,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
 
-    case NamedAst.Type.SchemaExtend(ident, terms, rest, loc) =>
-      for {
-        ts <- traverse(terms)(lookupType(_, ns0, root))
-        r <- lookupType(rest, ns0, root)
-      } yield Type.SchemaExtend(ident.name, mkRelationType(ts), r)
 
-    case NamedAst.Type.SchemaExtendAlias(ident, rest, loc) =>
+    case NamedAst.Type.SchemaExtendWithAlias(ident, rest, loc) =>
       // TODO: Support namespaces
       lookupTypeAlias(Name.mkQName(ident), ns0, root) match {
         case None => ??? // TODO
@@ -1067,6 +1062,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             r <- lookupType(rest, ns0, root)
           } yield Type.SchemaExtend(ident.name, t, r)
       }
+
+    case NamedAst.Type.SchemaExtendWithTypes(ident, tpes, rest, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        r <- lookupType(rest, ns0, root)
+      } yield Type.SchemaExtend(ident.name, mkRelationType(ts), r)
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {

@@ -1631,12 +1631,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
         case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
       }
-      predicates.foldRight(init: WeededAst.Type) {
-        case (ParsedAst.SchemaPredicateType(ssp1, i, ts, ssp2), acc) =>
-          WeededAst.Type.SchemaExtend(i, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
 
-        case (ParsedAst.SchemaPredicateAlias(ssp1, i, ssp2), acc) =>
-          WeededAst.Type.SchemaExtendAlias(i, acc, mkSL(ssp1, ssp2))
+      predicates.foldRight(init: WeededAst.Type) {
+        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, i, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendByAlias(i, acc, mkSL(ssp1, ssp2))
+
+        case (ParsedAst.PredicateType.PredicateWithTypes(ssp1, i, ts, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendByTypes(i, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
       }
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))

@@ -1670,21 +1670,32 @@ object ParsedAst {
     */
   case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
-  // TODO: DOC and nesting
+  /**
+    * A common super-type for schema predicate types.
+    */
   sealed trait PredicateType
 
-  /**
-    * Schema Predicate Type.
-    *
-    * @param sp1  the position of the first character in the field.
-    * @param name the name of the predicate.
-    * @param tpes the types of the terms of the predicate.
-    * @param sp2  the position of the last character in the field.
-    */
-  case class SchemaPredicateType(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateType
+  object PredicateType {
 
-  // TODO: DOC
-  case class SchemaPredicateAlias(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends PredicateType
+    /**
+      * A Predicate Type that refers to a type alias.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class PredicateWithAlias(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends PredicateType
 
+    /**
+      * A Predicate Type that is equipped wit the types of its terms.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param tpes the types of the terms of the predicate.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class PredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateType
+
+  }
 
 }

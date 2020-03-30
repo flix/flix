@@ -1201,16 +1201,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Schema: Rule1[ParsedAst.Type] = {
-      def SchemaPredicateType: Rule1[ParsedAst.SchemaPredicateType] = rule {
-        SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.SchemaPredicateType
+      def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
+        SP ~ Names.Predicate ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
       }
 
-      def SchemaPredicateAlias: Rule1[ParsedAst.SchemaPredicateAlias] = rule {
-        SP ~ Names.Predicate ~ SP ~> ParsedAst.SchemaPredicateAlias
+      def PredicateWithTypes: Rule1[ParsedAst.PredicateType.PredicateWithTypes] = rule {
+        SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.PredicateWithTypes
       }
 
       rule {
-        SP ~ atomic("#{") ~ optWS ~ zeroOrMore(SchemaPredicateType | SchemaPredicateAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
+        SP ~ atomic("#{") ~ optWS ~ zeroOrMore(PredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
       }
     }
 
