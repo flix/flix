@@ -3,10 +3,14 @@ package flix.runtime.fixpoint.ram.interpreter;
 import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.Constraint;
 import flix.runtime.fixpoint.ConstraintSystem;
-import flix.runtime.fixpoint.ram.*;
+import flix.runtime.fixpoint.ram.RowVariable;
 import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
 import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
+import flix.runtime.fixpoint.ram.exp.relation.TableName;
 import flix.runtime.fixpoint.ram.stmt.*;
+import flix.runtime.fixpoint.ram.term.AttrTerm;
+import flix.runtime.fixpoint.ram.term.RamLitTerm;
+import flix.runtime.fixpoint.ram.term.RamTerm;
 
 import java.io.PrintStream;
 import java.util.HashMap;
