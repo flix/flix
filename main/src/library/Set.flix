@@ -84,7 +84,7 @@ namespace Set {
     ///
     pub def isEmpty(xs: Set[a]): Bool =
         let Set(es) = xs;
-        RedBlackTree.isEmpty(es)
+        es == RedBlackTree.empty()
 
     ///
     /// Returns true if and only if `x` is a member of `xs`.

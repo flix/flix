@@ -63,7 +63,7 @@ namespace Map {
     ///
     pub def isEmpty(m: Map[k, v]): Bool =
         let Map(xs) = m;
-        RedBlackTree.isEmpty(xs)
+        xs == RedBlackTree.empty()
 
     ///
     /// Returns `Some(v)` if `k -> v` is in `m`.
