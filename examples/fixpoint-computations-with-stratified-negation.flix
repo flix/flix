@@ -2,12 +2,6 @@
 /// The Flix compiler will statically ensure that use
 /// of negation is safe and compute its stratification.
 
-/// We declare several relations related to movies:
-rel Movie(title: Str)
-rel Artist(title: Str, name: Str)
-rel Director(title: Str, name: Str)
-rel PureMovie(title: Str)
-
 /// We declare some facts about movies:
 Movie("Interstellar").
 Movie("The Hateful Eight").
