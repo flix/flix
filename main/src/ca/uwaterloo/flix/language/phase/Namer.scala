@@ -960,6 +960,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (ts, r) => NamedAst.Type.SchemaExtend(ident, ts, r, loc)
       }
 
+    case WeededAst.Type.Relation(tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.Type.Relation(ts, loc)
+      }
+
     case WeededAst.Type.Nat(len, loc) =>
       NamedAst.Type.Nat(len, loc).toSuccess
 
@@ -1158,6 +1163,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
     case WeededAst.Type.SchemaExtend(_, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)

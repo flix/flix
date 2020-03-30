@@ -305,7 +305,7 @@ object NamedAst {
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Relation(name: String, loc: SourceLocation) extends NamedAst.Type
+    case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
     case class Lattice(name: String, loc: SourceLocation) extends NamedAst.Type
 

@@ -219,16 +219,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Performs weeding on the given relation `r0`.
+    * Rewrites the given relation declaration `r0` to a type alias.
     */
-  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Relation], WeederError] = r0 match {
+  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = r0 match {
     case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attrs, sp2) =>
       val doc = visitDoc(doc0)
+      val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
 
-
-      throw InternalCompilerException("foo"); // TODO: Remove
+      //
+      // Rewrite the relation declaration to a type alias.
+      //
+      modVal map {
+        case mod =>
+          val tparams = visitTypeParams(tparams0)
+          val termTypes = attrs.map(a => visitType(a.tpe))
+          val tpe = WeededAst.Type.Relation(termTypes.toList, loc)
+          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
+      }
   }
 
   /**
@@ -240,14 +248,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparams = visitTypeParams(tparams0)
 
-      /*
-       * Check for `DuplicateAttribute`.
-       */
-      mapN(modVal) {
-        case mod =>
-          // Split the attributes into keys and element.
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, ???, mkSL(sp1, sp2))) // TODO
-      }
+      // TODO: Copy from relation.
+      ???
   }
 
   /**
