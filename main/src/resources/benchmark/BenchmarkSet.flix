@@ -40,14 +40,14 @@ namespace BenchmarkSet {
     ///
     @benchmark
     pub def benchmark06(): Bool =
-        Set.size(Set.fold((x, y) -> Set.delete(y, x), Set.range(0, 24), Set.range(0, 12))) == 12
+        Set.size(Set.fold((acc, y) -> Set.delete(y, acc), Set.range(0, 24), Set.range(0, 12))) == 12
 
     ///
     /// create a set of integers, delete the upper half of the elements and compute the size.
     ///
     @benchmark
     pub def benchmark07(): Bool =
-        Set.size(Set.fold((x, y) -> Set.delete(y, x), Set.range(0, 24), Set.range(12, 24))) == 12
+        Set.size(Set.fold((acc, y) -> Set.delete(y, acc), Set.range(0, 24), Set.range(12, 24))) == 12
 
     ///
     /// create two sets of integers, find their difference and compute the size.
