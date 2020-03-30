@@ -95,6 +95,7 @@ class LangSuite extends Suites(
   //
   // Term.
   //
+  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix"),
   new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.List.flix"),
   new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix"),
   new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix"),

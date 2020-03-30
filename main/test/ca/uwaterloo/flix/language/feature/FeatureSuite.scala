@@ -133,7 +133,6 @@ class FeatureSuite extends Suites(
   //
   // Terms
   //
-  new FlixTest("Test.Term.Apply", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Apply.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.CapturedVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.CapturedVar.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.flix")(Options.TestWithLibrary),
 
