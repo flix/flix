@@ -27,7 +27,7 @@ public class MySolver {
     private static final Object[] nullArray = new Object[]{null};
     private static int variableCounter = 0;
 
-    public static void solve(ConstraintSystem cs, Stratification stf, Options o) {
+    public static void compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
 
         // First we generate all projections for the facts
@@ -85,7 +85,7 @@ public class MySolver {
             saveLastIteration[i] = new AssignStmt(mergeInto, delta);
 
             if (whileCondition != null) {
-                whileCondition = new BinaryBoolExp(BinaryBoolOperator.OR, whileCondition, new NotBoolExp(new EmptyBoolExp(delta)));
+                whileCondition = new OrBoolExp(whileCondition, new NotBoolExp(new EmptyBoolExp(delta)));
             } else {
                 whileCondition = new NotBoolExp(new EmptyBoolExp(delta));
             }
@@ -316,6 +316,14 @@ public class MySolver {
         return new RowVariable(name + "_" + (variableCounter));
     }
 
+    /**
+     * This functions generates a map from each stratum to RelSyms that must be evaluated in that stratum.
+     * And then for each RelSym is a map to the rules for generating facts for it.
+     *
+     * @param cs  The ConstraintSystem. Her only the rules of it are used
+     * @param stf A Stratification used to find out which stratum each relation is part of
+     * @return A Map from stratum to a map from relations to the rules to derive them
+     */
     private static Map<Integer, Map<RelSym, ArrayList<Constraint>>> findRulesForDerivedInStratum(ConstraintSystem cs, Stratification stf) {
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> result = new HashMap<>();
         for (Constraint c : cs.getRules()) {
