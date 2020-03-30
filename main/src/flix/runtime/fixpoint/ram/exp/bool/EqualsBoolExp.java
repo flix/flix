@@ -1,6 +1,6 @@
 package flix.runtime.fixpoint.ram.exp.bool;
 
-import flix.runtime.fixpoint.ram.RamTerm;
+import flix.runtime.fixpoint.ram.term.RamTerm;
 
 import java.io.PrintStream;
 
@@ -16,7 +16,7 @@ public final class EqualsBoolExp implements BoolExp {
     }
 
     @Override
-    public void prettyPrint(PrintStream stream) {
+    public void prettyPrint(PrintStream stream, int indentLevel) {
         term1.prettyPrint(stream);
         stream.print(" = ");
         term2.prettyPrint(stream);

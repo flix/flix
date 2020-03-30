@@ -1,6 +1,5 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.exp.relation;
 
-import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.io.PrintStream;
@@ -25,7 +24,7 @@ public final class TableName implements RelationExp {
     }
 
     @Override
-    public String toString() {
+    public void prettyPrint(PrintStream stream, int indentLevel) {
         String result = "";
         if (version == TableVersion.DELTA) {
             result += "Δ" + name.getName();
@@ -34,11 +33,6 @@ public final class TableName implements RelationExp {
         } else {
             result += name.getName();
         }
-        return result;
-    }
-
-    @Override
-    public void prettyPrint(PrintStream stream) {
-        stream.print(this);
+        stream.print(result);
     }
 }

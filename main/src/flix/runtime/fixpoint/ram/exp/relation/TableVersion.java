@@ -1,4 +1,4 @@
-package flix.runtime.fixpoint.ram;
+package flix.runtime.fixpoint.ram.exp.relation;
 
 public enum TableVersion {
     NEW, // Delta' or new in litterature. This table holds the values generated on the previous iteration

@@ -17,14 +17,14 @@ public final class BinaryBoolExp implements BoolExp {
     }
 
     @Override
-    public void prettyPrint(PrintStream stream) {
-        exp1.prettyPrint(stream);
-        if (operator == BinaryBoolOperator.AND){
+    public void prettyPrint(PrintStream stream, int indentLevel) {
+        exp1.prettyPrint(stream, indentLevel);
+        if (operator == BinaryBoolOperator.AND) {
             stream.print(" and ");
-        } else if (operator == BinaryBoolOperator.OR){
+        } else if (operator == BinaryBoolOperator.OR) {
             stream.print(" or ");
         }
-        exp2.prettyPrint(stream);
+        exp2.prettyPrint(stream, indentLevel);
 
     }
 }

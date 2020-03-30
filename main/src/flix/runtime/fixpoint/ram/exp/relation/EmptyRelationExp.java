@@ -4,7 +4,7 @@ import java.io.PrintStream;
 
 public final class EmptyRelationExp implements RelationExp {
     @Override
-    public void prettyPrint(PrintStream stream) {
+    public void prettyPrint(PrintStream stream, int indentLevel) {
         stream.print('Ø');
     }
 }

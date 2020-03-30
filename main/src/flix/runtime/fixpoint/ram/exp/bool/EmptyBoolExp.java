@@ -13,8 +13,8 @@ public final class EmptyBoolExp implements BoolExp {
     }
 
     @Override
-    public void prettyPrint(PrintStream stream) {
+    public void prettyPrint(PrintStream stream, int indentLevel) {
         stream.print("Empty ");
-        relExp.prettyPrint(stream);
+        relExp.prettyPrint(stream, indentLevel);
     }
 }

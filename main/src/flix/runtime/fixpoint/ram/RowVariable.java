@@ -5,6 +5,11 @@ import java.util.Objects;
 public final class RowVariable {
     private final String varName;
 
+    public RowVariable(String varName) {
+        if (varName == null) throw new IllegalArgumentException("'varName' must be non-null");
+        this.varName = varName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -16,11 +21,6 @@ public final class RowVariable {
     @Override
     public int hashCode() {
         return Objects.hash(varName);
-    }
-
-    public RowVariable(String varName) {
-        if (varName == null) throw new IllegalArgumentException("'varName' must be non-null");
-        this.varName = varName;
     }
 
     public String getVarName() {

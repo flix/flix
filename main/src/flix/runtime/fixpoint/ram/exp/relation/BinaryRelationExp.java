@@ -2,7 +2,7 @@ package flix.runtime.fixpoint.ram.exp.relation;
 
 import java.io.PrintStream;
 
-public final class BinaryRelationExp implements RelationExp{
+public final class BinaryRelationExp implements RelationExp {
     private final BinaryRelationOperator operator;
     private final RelationExp exp1;
     private final RelationExp exp2;
@@ -17,13 +17,13 @@ public final class BinaryRelationExp implements RelationExp{
     }
 
     @Override
-    public void prettyPrint(PrintStream stream) {
-        exp1.prettyPrint(stream);
-        if (operator == BinaryRelationOperator.UNION){
+    public void prettyPrint(PrintStream stream, int indentLevel) {
+        exp1.prettyPrint(stream, indentLevel);
+        if (operator == BinaryRelationOperator.UNION) {
             stream.print(" U ");
-        } else if (operator == BinaryRelationOperator.SUBTRACT){
+        } else if (operator == BinaryRelationOperator.SUBTRACT) {
             stream.print(" \\ ");
         }
-        exp2.prettyPrint(stream);
+        exp2.prettyPrint(stream, indentLevel);
     }
 }
