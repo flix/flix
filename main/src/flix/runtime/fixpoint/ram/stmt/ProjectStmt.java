@@ -9,6 +9,14 @@ public final class ProjectStmt implements Stmt {
     private final RamTerm[] facts;
     private final TableName table;
 
+    public RamTerm[] getFacts() {
+        return facts.clone();
+    }
+
+    public TableName getTable() {
+        return table;
+    }
+
     public ProjectStmt(RamTerm[] facts, TableName table) {
         if (facts == null || facts.length == 0)
             throw new IllegalArgumentException("'facts' must be non-null and non-empty");

@@ -8,6 +8,14 @@ public final class WhileStmt implements Stmt {
     private final BoolExp condition;
     private final Stmt body;
 
+    public BoolExp getCondition() {
+        return condition;
+    }
+
+    public Stmt getBody() {
+        return body;
+    }
+
     public WhileStmt(BoolExp condition, Stmt body) {
         if (condition == null) throw new IllegalArgumentException("'condition' must be non-null");
         if (body == null) throw new IllegalArgumentException("'body' must be non.null");

@@ -5,23 +5,31 @@ import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
 import java.io.PrintStream;
 
 public final class IfStmt implements Stmt {
-    private final BoolExp boolExp;
-    private final Stmt stmt;
+    private final BoolExp guard;
+    private final Stmt bodyStmt;
 
-    public IfStmt(BoolExp boolExp, Stmt stmt) {
-        if (boolExp == null) throw new IllegalArgumentException("'boolExp' must be non-null");
-        if (stmt == null) throw new IllegalArgumentException("'stmt' must be non-null");
-        this.boolExp = boolExp;
-        this.stmt = stmt;
+    public BoolExp getGuard() {
+        return guard;
+    }
+
+    public Stmt getBodyStmt() {
+        return bodyStmt;
+    }
+
+    public IfStmt(BoolExp guard, Stmt bodyStmt) {
+        if (guard == null) throw new IllegalArgumentException("'boolExp' must be non-null");
+        if (bodyStmt == null) throw new IllegalArgumentException("'stmt' must be non-null");
+        this.guard = guard;
+        this.bodyStmt = bodyStmt;
     }
 
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
         stream.print("\t".repeat(indentLevel));
         stream.print("if (");
-        boolExp.prettyPrint(stream);
+        guard.prettyPrint(stream);
         stream.print(") then {\n");
-        stmt.prettyPrint(stream, indentLevel + 1);
+        bodyStmt.prettyPrint(stream, indentLevel + 1);
         stream.print("\n" + "\t".repeat(indentLevel) + "}");
     }
 }

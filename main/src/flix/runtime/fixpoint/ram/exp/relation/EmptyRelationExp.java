@@ -1,6 +1,4 @@
-package flix.runtime.fixpoint.ram.stmt;
-
-import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
+package flix.runtime.fixpoint.ram.exp.relation;
 
 import java.io.PrintStream;
 

@@ -9,6 +9,14 @@ public final class AssignStmt implements Stmt {
     private final TableName name;
     private final RelationExp relationExp;
 
+    public RelationExp getRelationExp() {
+        return relationExp;
+    }
+
+    public TableName getName() {
+        return name;
+    }
+
     public AssignStmt(TableName name, RelationExp relationExp) {
         if (name == null) throw new IllegalArgumentException("'name' must be non-null");
         if (relationExp == null) throw new IllegalArgumentException("'relationExp' must be non-null");

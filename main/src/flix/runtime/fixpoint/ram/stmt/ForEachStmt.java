@@ -10,6 +10,18 @@ public final class ForEachStmt implements Stmt {
     private final RowVariable localVar;
     private final Stmt body;
 
+    public TableName getName() {
+        return name;
+    }
+
+    public RowVariable getLocalVar() {
+        return localVar;
+    }
+
+    public Stmt getBody() {
+        return body;
+    }
+
     public ForEachStmt(TableName name, RowVariable localVar, Stmt body) {
         if (name == null) throw new IllegalArgumentException("'name' must be non-null");
         if (localVar == null) throw new IllegalArgumentException("'localVar' must be non-null");

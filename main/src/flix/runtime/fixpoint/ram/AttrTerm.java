@@ -7,8 +7,16 @@ public final class AttrTerm implements RamTerm {
     private final RowVariable localVar;
     private final int index;
 
+    public RowVariable getLocalVar() {
+        return localVar;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
     public AttrTerm(RowVariable localVar, int index) {
-        if (localVar == null){
+        if (localVar == null) {
             throw new IllegalArgumentException("'localVar' must be non-null");
         }
         this.localVar = localVar;
@@ -19,14 +27,6 @@ public final class AttrTerm implements RamTerm {
     public void prettyPrint(PrintStream stream) {
         stream.print('$' + localVar.getVarName() +
                 "[" + index + ']');
-    }
-
-    public RowVariable getLocalVar() {
-        return localVar;
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     @Override
