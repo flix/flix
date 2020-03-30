@@ -169,7 +169,7 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `tree` is the empty tree.
     ///
-    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def reduceLeft(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
         reduceLeftHelper((x: Option[(k, v)], y: (k, v)) -> match x {
             case Some((k, v)) => Some(f(k, v, fst(y), snd(y)))
             case None => Some(y)
@@ -182,7 +182,7 @@ namespace RedBlackTree {
     ///
     /// Returns `None` if `tree` is the empty tree.
     ///
-    pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] =
+    pub def reduceRight(f: (k, v, k, v) -> (k, v) & e, tree: RedBlackTree[k, v]): Option[(k, v)] & e =
         reduceRightHelper((x: Option[(k, v)], y: (k, v)) -> match x {
             case Some((k, v)) => Some(f(fst(y), snd(y), k, v))
             case None => Some(y)
