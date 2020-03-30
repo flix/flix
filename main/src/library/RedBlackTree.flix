@@ -95,11 +95,6 @@ namespace RedBlackTree {
     pub def delete(k: k, tree: RedBlackTree[k, v]): RedBlackTree[k, v] = redden(deleteHelper(k, tree))
 
     ///
-    /// Returns `true` if and only if `tree` is the empty tree.
-    ///
-    pub def isEmpty(tree: RedBlackTree[k, v]): Bool = tree == empty()
-
-    ///
     /// Returns `Some(v)` if `k -> v` is in `tree`.
     ///
     /// Otherwise returns `None`.
