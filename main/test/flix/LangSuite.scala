@@ -63,7 +63,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Constraint.Compose", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
   new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix"),
   new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix"),
-  new FlixTest("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix"),
   new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix"),
 

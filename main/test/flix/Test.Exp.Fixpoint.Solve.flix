@@ -1,8 +1,8 @@
 namespace Test/Exp/Fixpoint/Solve {
 
     @test
-    def testFixpointSolve01(): Unit = solve {
-        true.
+    def testFixpointSolve01(): #{ A() } = solve {
+        A().
     }
 
 }
