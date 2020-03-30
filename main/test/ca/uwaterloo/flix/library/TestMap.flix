@@ -203,19 +203,19 @@ def valuesOf01(): Bool = Map.valuesOf(Map#{}) `assertEq!` Nil
 def valuesOf02(): Bool = Map.valuesOf(Map#{1 -> 2}) `assertEq!` 2 :: Nil
 
 @test
-def valuesOf03(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4}) `assertEq!` 4 :: 2 :: Nil
+def valuesOf03(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4}) `assertEq!` 2 :: 4 :: Nil
 
 @test
-def valuesOf04(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6}) `assertEq!` 6 :: 4 :: 2 :: Nil
+def valuesOf04(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6}) `assertEq!` 2 :: 4 :: 6 :: Nil
 
 @test
-def valuesOf05(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) `assertEq!` 8 :: 6 :: 4 :: 2 :: Nil
+def valuesOf05(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8}) `assertEq!` 2 :: 4 :: 6 :: 8 :: Nil
 
 @test
-def valuesOf06(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `assertEq!` 10 :: 8 :: 6 :: 4 :: 2 :: Nil
+def valuesOf06(): Bool = Map.valuesOf(Map#{1 -> 2, 2 -> 4, 3 -> 6, 4 -> 8, 5 -> 10}) `assertEq!` 2 :: 4 :: 6 :: 8 :: 10 :: Nil
 
 @test
-def valuesOf07(): Bool = Map.valuesOf(Map#{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) `assertEq!` -5 :: 7 :: -5 :: 4 :: -11 :: Nil
+def valuesOf07(): Bool = Map.valuesOf(Map#{1 -> -11, 2 -> 4, 3 -> -5, 4 -> 7, 5 -> -5}) `assertEq!` -11 :: 4 :: -5 :: 7 :: -5 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // insert                                                                  //
@@ -551,7 +551,7 @@ def find05(): Bool = Map.find((k, v) -> k == v, Map#{1 -> 1, 2 -> 3}) `assertEq!
 def find06(): Bool = Map.find((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) `assertEq!` Some((2, 2))
 
 @test
-def find07(): Bool = Map.find((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) `assertEq!` Some((2, 2))
+def find07(): Bool = Map.find((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) `assertEq!` Some((1, 1))
 
 /////////////////////////////////////////////////////////////////////////////
 // findLeft                                                                //
@@ -575,7 +575,7 @@ def findLeft05(): Bool = Map.findLeft((k, v) -> k == v, Map#{1 -> 1, 2 -> 3}) `a
 def findLeft06(): Bool = Map.findLeft((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) `assertEq!` Some((2, 2))
 
 @test
-def findLeft07(): Bool = Map.findLeft((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) `assertEq!` Some((2, 2))
+def findLeft07(): Bool = Map.findLeft((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) `assertEq!` Some((1, 1))
 
 /////////////////////////////////////////////////////////////////////////////
 // findRight                                                               //
@@ -599,7 +599,7 @@ def findRight05(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 1, 2 -> 3}) 
 def findRight06(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 2, 2 -> 2}) `assertEq!` Some((2, 2))
 
 @test
-def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) `assertEq!` Some((1, 1))
+def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 -> 1, 2 -> 2}) `assertEq!` Some((2, 2))
 
 /////////////////////////////////////////////////////////////////////////////
 // filter                                                                  //
@@ -735,16 +735,16 @@ def foldLeft04(): Bool = Map.foldLeft((s, v) -> s + v, 0, Map#{1 -> 2, 3 -> 4, 5
 // foldLeftWithKey                                                         //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeftWithKey01(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{}) `assertEq!` 0
+def foldLeftWithKey01(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{}) `assertEq!` 0
 
 @test
-def foldLeftWithKey02(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2}) `assertEq!` 3
+def foldLeftWithKey02(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2}) `assertEq!` 3
 
 @test
-def foldLeftWithKey03(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4}) `assertEq!` 10
+def foldLeftWithKey03(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4}) `assertEq!` 10
 
 @test
-def foldLeftWithKey04(): Bool = Map.foldLeftWithKey((k, s, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) `assertEq!` 21
+def foldLeftWithKey04(): Bool = Map.foldLeftWithKey((s, k, v) -> k + s + v, 0, Map#{1 -> 2, 3 -> 4, 5 -> 6}) `assertEq!` 21
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
@@ -786,10 +786,10 @@ def reduce01(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{}: Map[Int32, Int32]
 def reduce02(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2}) `assertEq!` Some(2)
 
 @test
-def reduce03(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) `assertEq!` Some(1)
+def reduce03(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) `assertEq!` Some(-1)
 
 @test
-def reduce04(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(-1)
+def reduce04(): Bool = Map.reduce((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(-5)
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceWithKey                                                           //
@@ -801,10 +801,10 @@ def reduceWithKey01(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1
 def reduceWithKey02(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2}) `assertEq!` Some((1, 2))
 
 @test
-def reduceWithKey03(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) `assertEq!` Some((1, 1))
+def reduceWithKey03(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) `assertEq!` Some((-1, -1))
 
 @test
-def reduceWithKey04(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((0, -1))
+def reduceWithKey04(): Bool = Map.reduceWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((-4, -5))
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -816,10 +816,10 @@ def reduceLeft01(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{}: Map[Int32
 def reduceLeft02(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2}) `assertEq!` Some(2)
 
 @test
-def reduceLeft03(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) `assertEq!` Some(1)
+def reduceLeft03(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) `assertEq!` Some(-1)
 
 @test
-def reduceLeft04(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(-1)
+def reduceLeft04(): Bool = Map.reduceLeft((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(-5)
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeftWithKey                                                       //
@@ -831,10 +831,10 @@ def reduceLeftWithKey01(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 
 def reduceLeftWithKey02(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2}) `assertEq!` Some((1, 2))
 
 @test
-def reduceLeftWithKey03(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) `assertEq!` Some((1, 1))
+def reduceLeftWithKey03(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) `assertEq!` Some((-1, -1))
 
 @test
-def reduceLeftWithKey04(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((0, -1))
+def reduceLeftWithKey04(): Bool = Map.reduceLeftWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((-4, -5))
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceRight                                                             //
@@ -846,7 +846,7 @@ def reduceRight01(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{}: Map[Int
 def reduceRight02(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{1 -> 2}) `assertEq!` Some(2)
 
 @test
-def reduceRight03(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) `assertEq!` Some(1)
+def reduceRight03(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3}) `assertEq!` Some(-1)
 
 @test
 def reduceRight04(): Bool = Map.reduceRight((v1, v2) -> v1 - v2, Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some(3)
@@ -861,7 +861,7 @@ def reduceRightWithKey01(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k
 def reduceRightWithKey02(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2}) `assertEq!` Some((1, 2))
 
 @test
-def reduceRightWithKey03(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) `assertEq!` Some((1, 1))
+def reduceRightWithKey03(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3}) `assertEq!` Some((-1, -1))
 
 @test
 def reduceRightWithKey04(): Bool = Map.reduceRightWithKey((k1, v1, k2, v2) -> (k1 - k2, v1 - v2), Map#{1 -> 2, 2 -> 3, 3 -> 4}) `assertEq!` Some((2 , 3))
@@ -1461,10 +1461,10 @@ def toList01(): Bool = Map.toList(Map#{}) `assertEq!` Nil
 def toList02(): Bool = Map.toList(Map#{1 -> 2}) `assertEq!` (1, 2) :: Nil
 
 @test
-def toList03(): Bool = Map.toList(Map#{1 -> 2, 3 -> 4}) `assertEq!` (3, 4) :: (1, 2) :: Nil
+def toList03(): Bool = Map.toList(Map#{1 -> 2, 3 -> 4}) `assertEq!` (1, 2) :: (3, 4) :: Nil
 
 @test
-def toList04(): Bool = Map.toList(Map#{1 -> 2, 2 -> 2, 3 -> 4}) `assertEq!` (3, 4) :: (2, 2) :: (1, 2) :: Nil
+def toList04(): Bool = Map.toList(Map#{1 -> 2, 2 -> 2, 3 -> 4}) `assertEq!` (1, 2) :: (2, 2) :: (3, 4) :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // eq                                                                      //
