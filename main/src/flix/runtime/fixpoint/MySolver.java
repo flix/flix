@@ -34,7 +34,7 @@ public class MySolver {
         Stmt[] factProjections = generateFactProjectionStmts(cs, relHasFact);
 
         // Then find all the rules and map them to what they derive, and in which stratum they should be evaluated
-        Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratum(cs, stf);
+        Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratums(cs, stf);
 
         // And then all stratum are evaluated
         Stmt[] stratumStmts = new Stmt[0];
@@ -153,7 +153,7 @@ public class MySolver {
     }
 
     /**
-     * Vi har brug for at vi kan have en tuble som type datatype som hvor vi kan spørge om  eksistens i en tabel og indsætte i en tabel
+     * Vi har brug for at vi kan have en tuple som type datatype som hvor vi kan spørge om  eksistens i en tabel og indsætte i en tabel
      * Hvad nu hvis der optræder en literal (konstant) i Head eller body af en regel
      *
      * @param relSym  The RelSym we evaluate rules for
@@ -223,7 +223,7 @@ public class MySolver {
                         }
                     }
                     TableName name = new TableName(TableVersion.RESULT, currentPred.getSym());
-                    boolRestrictions.add(new NotBoolExp(new TubleInRelBoolExp(ramTerms, name)));
+                    boolRestrictions.add(new NotBoolExp(new TupleInRelBoolExp(ramTerms, name)));
                 }
 
                 // Since it is not negated we might have to traverse the values of this table
@@ -272,7 +272,7 @@ public class MySolver {
         }
         Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableVersion.DELTA, headSym));
         // Now I need to check that this element does not exist already
-        BoolExp checkBool = new NotBoolExp(new TubleInRelBoolExp(headRamTerms, new TableName(TableVersion.RESULT, headSym)));
+        BoolExp checkBool = new NotBoolExp(new TupleInRelBoolExp(headRamTerms, new TableName(TableVersion.RESULT, headSym)));
         resultStmt = new IfStmt(checkBool, resultStmt);
 
         // I can then generate the list of if statements
@@ -324,7 +324,7 @@ public class MySolver {
      * @param stf A Stratification used to find out which stratum each relation is part of
      * @return A Map from stratum to a map from relations to the rules to derive them
      */
-    private static Map<Integer, Map<RelSym, ArrayList<Constraint>>> findRulesForDerivedInStratum(ConstraintSystem cs, Stratification stf) {
+    private static Map<Integer, Map<RelSym, ArrayList<Constraint>>> findRulesForDerivedInStratums(ConstraintSystem cs, Stratification stf) {
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> result = new HashMap<>();
         for (Constraint c : cs.getRules()) {
             Predicate hPred = c.getHeadPredicate();
