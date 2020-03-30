@@ -1491,7 +1491,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * NB: Does not return a tuple type if the list is a singleton.
     */
   private def mkTupleNoSingleton(ts: List[Type]): Type = ts match {
-    case Nil => throw InternalCompilerException(s"Unexpected type: '$ts'.")
+    case Nil => Type.Unit
     case x :: Nil => x
     case xs => Type.mkTuple(xs)
   }

@@ -1,4 +1,4 @@
-namespace Test/Term/Lit {
+namespace Test/Predicate/Filter {
 
     @test
     def testFilter01(): #{ R(String) } = solve {
