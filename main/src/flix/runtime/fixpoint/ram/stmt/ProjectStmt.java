@@ -36,6 +36,7 @@ public final class ProjectStmt implements Stmt {
                 stream.print(", ");
             }
         }
-        stream.print(") into " + table);
+        stream.print(") into ");
+        table.prettyPrint(stream, indentLevel);
     }
 }

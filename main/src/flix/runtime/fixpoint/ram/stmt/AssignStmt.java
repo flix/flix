@@ -26,7 +26,9 @@ public final class AssignStmt implements Stmt {
 
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
-        stream.print("\t".repeat(indentLevel) + name.toString() + " := ");
+        stream.print("\t".repeat(indentLevel));
+        name.prettyPrint(stream, indentLevel);
+        stream.print(" := ");
         relationExp.prettyPrint(stream, indentLevel);
     }
 }

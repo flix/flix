@@ -34,7 +34,9 @@ public final class ForEachStmt implements Stmt {
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
         stream.print("\t".repeat(indentLevel));
-        stream.print("for each " + name + " as " +
+        stream.print("for each ");
+        name.prettyPrint(stream, indentLevel);
+        stream.print(" as " +
                 localVar.getVarName() + " do {\n");
         body.prettyPrint(stream, indentLevel + 1);
         stream.print('\n' + "\t".repeat(indentLevel) + '}');

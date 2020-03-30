@@ -181,6 +181,9 @@ public class MySolver {
      * @return A statement evaluating c
      */
     private static Stmt evalRule(Constraint c, PredSym newSym) {
+
+        variableCounter = 0;
+
         Predicate head = c.getHeadPredicate();
         assert head instanceof AtomPredicate;
         PredSym headSym = ((AtomPredicate) head).getSym();
