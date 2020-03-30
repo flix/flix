@@ -955,9 +955,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.SchemaEmpty(loc) =>
       NamedAst.Type.SchemaEmpty(loc).toSuccess
 
-    case WeededAst.Type.SchemaExtendByAlias(ident, rest, loc) =>
+    case WeededAst.Type.SchemaExtendByAlias(qname, rest, loc) =>
+
+      // TODO: Need to perform case analysis on the qname.
+      val name = qname
+
+
       mapN(visitType(rest, uenv0, tenv0)) {
-        case r => NamedAst.Type.SchemaExtendWithAlias(ident, r, loc)
+        case r => NamedAst.Type.SchemaExtendWithAlias(name, r, loc)
       }
 
     case WeededAst.Type.SchemaExtendByTypes(ident, tpes, rest, loc) =>

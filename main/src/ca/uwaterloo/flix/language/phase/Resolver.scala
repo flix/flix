@@ -1051,16 +1051,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
 
-
-    case NamedAst.Type.SchemaExtendWithAlias(ident, rest, loc) =>
-      // TODO: Support namespaces
-      lookupTypeAlias(Name.mkQName(ident), ns0, root) match {
+    case NamedAst.Type.SchemaExtendWithAlias(qname, rest, loc) =>
+      // TODO: Lookup in the namespace.
+      lookupTypeAlias(qname, ns0, root) match {
         case None => ??? // TODO
         case Some(typealias) =>
           for {
             t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
             r <- lookupType(rest, ns0, root)
-          } yield Type.SchemaExtend(ident.name, t, r)
+          } yield Type.SchemaExtend(qname.ident.name, t, r)
       }
 
     case NamedAst.Type.SchemaExtendWithTypes(ident, tpes, rest, loc) =>

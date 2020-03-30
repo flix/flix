@@ -302,9 +302,9 @@ object WeededAst {
 
     case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class SchemaExtendByTypes(name: Name.Ident, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class SchemaExtendByAlias(qname: Name.QName, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class SchemaExtendByAlias(name: Name.Ident, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class SchemaExtendByTypes(name: Name.Ident, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 

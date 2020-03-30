@@ -1680,11 +1680,11 @@ object ParsedAst {
     /**
       * A Predicate Type that refers to a type alias.
       *
-      * @param sp1  the position of the first character in the field.
-      * @param name the name of the predicate symbol.
-      * @param sp2  the position of the last character in the field.
+      * @param sp1   the position of the first character in the field.
+      * @param qname the fully-qualified name of the type alias.
+      * @param sp2   the position of the last character in the field.
       */
-    case class PredicateWithAlias(sp1: SourcePosition, name: Name.Ident, sp2: SourcePosition) extends PredicateType
+    case class PredicateWithAlias(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends PredicateType
 
     /**
       * A Predicate Type that is equipped wit the types of its terms.

@@ -1202,7 +1202,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Schema: Rule1[ParsedAst.Type] = {
       def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
-        SP ~ Names.Predicate ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
+        SP ~ Names.QualifiedPredicate ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
       }
 
       def PredicateWithTypes: Rule1[ParsedAst.PredicateType.PredicateWithTypes] = rule {
@@ -1432,6 +1432,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Hole: Rule1[Name.Ident] = LowerCaseName
 
     def Predicate: Rule1[Name.Ident] = UpperCaseName
+
+    def QualifiedPredicate: Rule1[Name.QName] = UpperCaseQName
 
     def Tag: Rule1[Name.Ident] = UpperCaseName
 
