@@ -145,7 +145,7 @@ namespace RedBlackTree {
     ///
     /// Applies `f` to a start value `s` and all key-value pairs in `tree` going from left to right.
     ///
-    /// That is, the result is of the form: `f(...f(k2, f(k1, s, v1), v2)..., vn)`.
+    /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
     pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RedBlackTree[k, v]): b = match tree {
         case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
