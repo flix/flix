@@ -5,97 +5,130 @@ use RedBlackTree.Color.{Red, Black};
 namespace TestRedBlackTree {
 
     @test
-    def testSize01(): Bool = RedBlackTree.size(RedBlackTree.empty()) == 0
+    def testSize01(): Bool =
+        RedBlackTree.size(RedBlackTree.empty()) == 0
 
     @test
-    def testSize02(): Bool = RedBlackTree.size(RedBlackTree.insert(1, (), RedBlackTree.empty())) == 1
+    def testSize02(): Bool =
+        RedBlackTree.size(RedBlackTree.insert(1, (), RedBlackTree.empty())) == 1
 
     @test
-    def testSize03(): Bool = RedBlackTree.size(range(0, 3)) == 3
+    def testSize03(): Bool =
+        RedBlackTree.size(toTree(List.range(0, 3))) == 3
 
     @test
-    def testSize04(): Bool = RedBlackTree.size(range(0, 7)) == 7
+    def testSize04(): Bool =
+        RedBlackTree.size(toTree(List.range(0, 7))) == 7
 
     @test
-    def testSize05(): Bool = RedBlackTree.size(range(0, 100)) == 100
+    def testSize05(): Bool =
+        RedBlackTree.size(toTree(List.range(0, 100))) == 100
 
     @test
-    def testDelete01(): Bool = RedBlackTree.size(RedBlackTree.delete(1, range(0, 100))) == 99
+    def testDelete01(): Bool =
+        !RedBlackTree.memberOf(1, RedBlackTree.delete(1, toTree(List.range(0, 100))))
 
     @test
-    def testDelete02(): Bool = RedBlackTree.size(RedBlackTree.delete(50, range(0, 100))) == 99
+    def testDelete02(): Bool =
+        !RedBlackTree.memberOf(50, RedBlackTree.delete(50, toTree(List.range(0, 100))))
 
     @test
-    def testDelete03(): Bool = RedBlackTree.size(RedBlackTree.delete(99, range(0, 100))) == 99
+    def testDelete03(): Bool =
+        !RedBlackTree.memberOf(99, RedBlackTree.delete(99, toTree(List.range(0, 100))))
 
     @test
-    def testBinarySearchTreeInvariant01(): Bool = checkBinarySearchTreeInvariant(range(0, 10))
+    def testBinarySearchTreeInvariant01(): Bool =
+        checkBinarySearchTreeInvariant(toTree(List.range(0, 10)))
 
     @test
     def testBinarySearchTreeInvariant02(): Bool =
-        let tree = List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), 9 :: 8 :: 7 :: 6 :: 5 :: 4  :: 3 :: 2 :: 1 :: 0 :: Nil);
-        checkBinarySearchTreeInvariant(tree)
+        checkBinarySearchTreeInvariant(toTree(9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @test
-    def testBinarySearchTreeInvariant03(): Bool = checkBinarySearchTreeInvariant(range(0, 100))
+    def testBinarySearchTreeInvariant03(): Bool =
+        checkBinarySearchTreeInvariant(toTree(2 :: 7 :: 1 :: 8 :: 0 :: 3 :: 5 :: 4 :: 9 :: 6 :: Nil))
 
     @test
-    def testBinarySearchTreeInvariant04(): Bool = checkBinarySearchTreeInvariant(range(0, 1000))
+    def testBinarySearchTreeInvariant04(): Bool =
+        checkBinarySearchTreeInvariant(toTree(List.range(0, 100)))
 
     @test
     def testBinarySearchTreeInvariant05(): Bool =
-        let tree = List.fold((acc, x) -> RedBlackTree.delete(x, acc), range(0, 10), 1 :: 2 :: 3 :: Nil);
-        checkBinarySearchTreeInvariant(tree)
+        checkBinarySearchTreeInvariant(toTree(List.range(0, 1000)))
 
     @test
     def testBinarySearchTreeInvariant06(): Bool =
+        checkBinarySearchTreeInvariant(RedBlackTree.delete(0, toTree(List.range(0, 100))))
+
+    @test
+    def testBinarySearchTreeInvariant07(): Bool =
+        checkBinarySearchTreeInvariant(RedBlackTree.delete(49, toTree(List.range(0, 100))))
+
+    @test
+    def testBinarySearchTreeInvariant08(): Bool =
+        checkBinarySearchTreeInvariant(RedBlackTree.delete(99, toTree(List.range(0, 100))))
+
+    @test
+    def testBinarySearchTreeInvariant09(): Bool =
         let tree =
-        List.fold((acc, x) -> RedBlackTree.delete(x, acc), range(0, 100), 19 :: 78 :: 58 :: 4 :: 1 :: 15 :: 94 :: Nil);
+        List.fold((acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkBinarySearchTreeInvariant(tree)
 
     @test
-    def testBinarySearchTreeInvariant07(): Bool & Impure = checkBinarySearchTreeInvariant(random(10))
+    def testBinarySearchTreeInvariant10(): Bool & Impure = checkBinarySearchTreeInvariant(random(10))
 
     @test
-    def testBinarySearchTreeInvariant08(): Bool & Impure = checkBinarySearchTreeInvariant(random(100))
+    def testBinarySearchTreeInvariant11(): Bool & Impure = checkBinarySearchTreeInvariant(random(100))
 
     @test
-    def testBinarySearchTreeInvariant09(): Bool & Impure = checkBinarySearchTreeInvariant(random(1000))
+    def testBinarySearchTreeInvariant12(): Bool & Impure = checkBinarySearchTreeInvariant(random(1000))
 
     @test
-    def testRedParentInvariant01(): Bool = checkRedParentInvariant(range(0, 10))
+    def testRedParentInvariant01(): Bool =
+        checkRedParentInvariant(toTree(List.range(0, 10)))
 
     @test
     def testRedParentInvariant02(): Bool =
-        let tree = List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), 9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2   :: 1 :: 0 :: Nil);
-        checkRedParentInvariant(tree)
+        checkRedParentInvariant(toTree(9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @test
-    def testRedParentInvariant03(): Bool = checkRedParentInvariant(range(0, 100))
+    def testRedParentInvariant03(): Bool =
+        checkRedParentInvariant(toTree(2 :: 7 :: 1 :: 8 :: 0 :: 3 :: 5 :: 4 :: 9 :: 6 :: Nil))
 
     @test
-    def testRedParentInvariant04(): Bool = checkRedParentInvariant(range(0, 1000))
+    def testRedParentInvariant04(): Bool =
+        checkRedParentInvariant(toTree(List.range(0, 100)))
 
     @test
     def testRedParentInvariant05(): Bool =
-        let tree =
-        List.foldLeft((acc, x) -> RedBlackTree.delete(x, acc), range(0, 10), 1 :: 2 :: 3 :: Nil);
-        checkRedParentInvariant(tree)
+        checkRedParentInvariant(toTree(List.range(0, 1000)))
 
     @test
     def testRedParentInvariant06(): Bool =
+        checkRedParentInvariant(RedBlackTree.delete(0, toTree(List.range(0, 100))))
+
+    @test
+    def testRedParentInvariant07(): Bool =
+        checkRedParentInvariant(RedBlackTree.delete(49, toTree(List.range(0, 100))))
+
+    @test
+    def testRedParentInvariant08(): Bool =
+        checkRedParentInvariant(RedBlackTree.delete(99, toTree(List.range(0, 100))))
+
+    @test
+    def testRedParentInvariant09(): Bool =
         let tree =
-        List.foldLeft((acc, x) -> RedBlackTree.delete(x, acc), range(0, 100), 19 :: 78 :: 58 :: 4 :: 1 :: 15 :: 94    :: Nil);
+        List.fold((acc, x) -> RedBlackTree.delete(x, acc), toTree(List.range(0, 20)), 12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
         checkRedParentInvariant(tree)
 
     @test
-    def testRedParentInvariant07(): Bool & Impure = checkRedParentInvariant(random(10))
+    def testRedParentInvariant10(): Bool & Impure = checkRedParentInvariant(random(10))
 
     @test
-    def testRedParentInvariant08(): Bool & Impure = checkRedParentInvariant(random(100))
+    def testRedParentInvariant11(): Bool & Impure = checkRedParentInvariant(random(100))
 
     @test
-    def testRedParentInvariant09(): Bool & Impure = checkRedParentInvariant(random(1000))
+    def testRedParentInvariant12(): Bool & Impure = checkRedParentInvariant(random(1000))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -124,18 +157,10 @@ namespace TestRedBlackTree {
     def checkRedParentInvariant(tree: RedBlackTree[k, v]): Bool = checkRedParentInvariantHelper(tree, Black)
 
     ///
-    /// Helper function for `range`.
+    /// Returns a tree with mappings `x -> ()` for all `x` in `xs`.
     ///
-    def rangeHelper(b: Int32, n: Int32, acc: RedBlackTree[Int32, Unit]): RedBlackTree[Int32, Unit] =
-        if (n < b) acc else rangeHelper(b, n - 1, RedBlackTree.insert(n, (), acc))
-
-    ///
-    /// Returns a tree of all integers between `b` (inclusive) and `e` (exclusive) as keys, and () as values.
-    ///
-    /// Returns `empty()` if `b >= e`.
-    ///
-    def range(b: Int32, e: Int32): RedBlackTree[Int32, Unit] =
-        if (b >= e) RedBlackTree.empty() else rangeHelper(b, e - 1, RedBlackTree.empty())
+    def toTree(xs: List[Int32]): RedBlackTree[Int32, Unit]
+        = List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), xs)
 
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
@@ -146,7 +171,7 @@ namespace TestRedBlackTree {
             case _ => panic "no seed given"
         };
         let r = Random.newWithSeed(seed);
-        List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r),     List.range(0, n)))
+        List.fold((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(), List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }
 
 }
