@@ -100,6 +100,12 @@ class LangSuite extends Suites(
   new FlixTest("Test.Predicate.Nullary.True", "main/test/flix/Test.Predicate.Nullary.True.flix"),
 
   //
+  // Stratified Negation.
+  //
+  new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix"),
+
+
+  //
   // Term.
   //
   new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix"),
