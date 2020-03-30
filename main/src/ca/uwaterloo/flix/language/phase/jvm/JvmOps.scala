@@ -1068,7 +1068,7 @@ object JvmOps {
     }
 
     def visitConstraint(c0: Constraint): Set[MonoType] = c0 match {
-      case Constraint(cparams, head, body) =>
+      case Constraint(cparams, head, body, _) =>
         visitHeadPred(head) ++ body.flatMap(visitBodyPred)
     }
 

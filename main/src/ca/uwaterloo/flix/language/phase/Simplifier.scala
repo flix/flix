@@ -48,7 +48,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       val head = visitHeadPred(constraint0.head, constraint0.cparams)
       val body = constraint0.body.map(p => visitBodyPred(p, constraint0.cparams))
 
-      SimplifiedAst.Constraint(cparams, head, body)
+      SimplifiedAst.Constraint(cparams, head, body, constraint0.loc)
     }
 
     /**
@@ -1433,10 +1433,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     def visitConstraint(c0: SimplifiedAst.Constraint): SimplifiedAst.Constraint = c0 match {
-      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+      case SimplifiedAst.Constraint(cparams, head0, body0, loc) =>
         val head = visitHeadPred(head0)
         val body = body0.map(visitBodyPred)
-        SimplifiedAst.Constraint(cparams, head, body)
+        SimplifiedAst.Constraint(cparams, head, body, loc)
     }
 
     def visitHeadPred(h0: SimplifiedAst.Predicate.Head): SimplifiedAst.Predicate.Head = h0 match {

@@ -105,7 +105,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val tpe = visitType(tpe0)
         FinalAst.ConstraintParam.RuleParam(sym, tpe, loc)
     }
-    FinalAst.Constraint(cparams, head, body)
+    FinalAst.Constraint(cparams, head, body, constraint0.loc)
   }
 
   private def visitLatticeComponents(lc: SimplifiedAst.LatticeComponents, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeComponents = lc match {
