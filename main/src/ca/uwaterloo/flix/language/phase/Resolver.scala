@@ -1055,10 +1055,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         ts <- traverse(terms)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
-      } yield Type.SchemaExtend(ident.name, Type.Apply(Type.Cst(TypeConstructor.Relation), mkTupleNoSingleton(ts)), r)
+      } yield Type.SchemaExtend(ident.name, mkRelationType(ts), r)
 
     case NamedAst.Type.Relation(tpes, loc) =>
-      ??? // TODO: use tech from above.
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+      } yield mkRelationType(ts)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
@@ -1105,6 +1107,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case (t1, t2) => Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or), t1), t2)
       }
 
+  }
+
+  /**
+    * Returns a relation type for the given term types `ts`.
+    */
+  private def mkRelationType(ts: List[Type]): Type = {
+    val t = ts match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => Type.mkTuple(xs)
+    }
+    Type.Apply(Type.Cst(TypeConstructor.Relation), t)
   }
 
   /**
@@ -1448,17 +1462,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val sp2 = SourcePosition.Unknown
     val idents = parts.map(s => Name.Ident(sp1, s, sp2))
     Name.NName(sp1, idents, sp2)
-  }
-
-  /**
-    * Returns a tuple type for the given list of types `ts`.
-    *
-    * NB: Does not return a tuple type if the list is a singleton.
-    */
-  private def mkTupleNoSingleton(ts: List[Type]): Type = ts match {
-    case Nil => Type.Unit
-    case x :: Nil => x
-    case xs => Type.mkTuple(xs)
   }
 
 }
