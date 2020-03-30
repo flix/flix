@@ -384,9 +384,9 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given head predicate `head0`.
     */
   private def visitHeadPredicate(head0: Predicate.Head)(implicit flix: Flix): Predicate.Head = head0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
       val ts = terms map visitHeadTerm
-      Predicate.Head.Atom(sym, den, ts, tpe, loc)
+      Predicate.Head.Atom(name, den, ts, tpe, loc)
 
     case Predicate.Head.Union(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -397,9 +397,9 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given body predicate `body0`.
     */
   private def visitBodyPredicate(body0: Predicate.Body)(implicit flix: Flix): Predicate.Body = body0 match {
-    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
       val ts = terms map visitBodyTerm
-      Predicate.Body.Atom(sym, den, polarity, ts, tpe, loc)
+      Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
 
     case Predicate.Body.Guard(exp0, loc) =>
       val e = visitExp(exp0)
@@ -571,7 +571,7 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given head predicate `head0`.
     */
   private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
 
     case Predicate.Head.Union(exp, tpe, loc) =>
@@ -582,7 +582,7 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
 
     case Predicate.Body.Guard(exp, loc) =>
@@ -934,9 +934,9 @@ object ClosureConv extends Phase[Root, Root] {
     }
 
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.Atom(sym, den, ts, tpe, loc)
+        Predicate.Head.Atom(name, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -944,9 +944,9 @@ object ClosureConv extends Phase[Root, Root] {
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
         val ts = terms map visitBodyTerm
-        Predicate.Body.Atom(sym, den, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

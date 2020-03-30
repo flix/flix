@@ -360,7 +360,7 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
           getOrMkEq(term.tpe)
@@ -368,7 +368,7 @@ object Synthesize extends Phase[Root, Root] {
           getOrMkToString(term.tpe)
         }
         val ts = terms.map(visitExp)
-        Predicate.Head.Atom(sym, den, ts, tpe, loc)
+        Predicate.Head.Atom(name, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -379,14 +379,14 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
         // Introduce equality, hash code, and toString for the types of the terms.
         for (term <- terms) {
           getOrMkEq(term.tpe)
           getOrMkHash(term.tpe)
           getOrMkToString(term.tpe)
         }
-        Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc)
+        Predicate.Body.Atom(name, den, polarity, terms, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

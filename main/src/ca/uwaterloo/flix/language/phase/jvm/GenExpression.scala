@@ -1966,13 +1966,13 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(sym.toString, mv)
+        case Denotation.Relational => newRelSym(name.toString, mv)
         case Denotation.Latticenal => ??? // TODO
       }
 
@@ -2004,13 +2004,13 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(sym.toString, mv)
+        case Denotation.Relational => newRelSym(name.toString, mv)
         case Denotation.Latticenal => ??? // TODO
       }
 
