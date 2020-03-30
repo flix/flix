@@ -137,7 +137,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Term.CapturedVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.CapturedVar.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.List.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit.Option", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Option.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.Result", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Result.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.Lit.Set", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix")(Options.TestWithLibrary),
