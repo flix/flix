@@ -21,8 +21,8 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -76,14 +76,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     }
 
-    val latticesVal = prog0.lattices.flatMap {
-      case (ns0, lattices) => lattices.map {
-        case (_, lattice) => resolveLattice(lattice, ns0, prog0) map {
-          case t => t.sym -> t
-        }
-      }
-    }
-
     val latticeComponentsVal = prog0.latticeComponents.map {
       case (tpe0, lattice0) =>
         for {
@@ -100,11 +92,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       definitions <- sequence(definitionsVal)
       named <- sequence(namedVal)
       enums <- sequence(enumsVal)
-      lattices <- sequence(latticesVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Program(
-      definitions.toMap ++ named.toMap, enums.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
+      definitions.toMap ++ named.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -179,35 +170,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       lub <- Expressions.resolve(l0.lub, tenv0, ns0, prog0)
       glb <- Expressions.resolve(l0.glb, tenv0, ns0, prog0)
     } yield ResolvedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
-  }
-
-  /**
-    * Performs name resolution on the given table `t0` in the given namespace `ns0`.
-    */
-  def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
-    case NamedAst.Lattice(doc, mod, sym, tparams0, attr, loc) =>
-      for {
-        tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield {
-        val ts = attributes.map(_.tpe)
-        val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-        val args: Type = ts match {
-          case Nil => Type.Unit
-          case x :: Nil => x
-          case l =>
-            val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
-            ts.foldLeft(init) {
-              case (acc, t) => Type.Apply(acc, t)
-            }
-        }
-        val tpe = Type.Apply(base, args)
-
-        val quantifiers = tparams.map(_.tpe)
-        val scheme = Scheme(quantifiers, tpe)
-
-        ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
-      }
   }
 
   /**

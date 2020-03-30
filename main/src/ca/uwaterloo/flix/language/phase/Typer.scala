@@ -37,12 +37,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val result = for {
       defs <- typeDefs(program)
       enums <- typeEnums(program)
-      lattices <- typeLattices(program)
       latticeComponents <- typeLatticeComponents(program)
       properties <- typeProperties(program)
     } yield {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, enums, lattices, latticeComponents, properties, specialOps, program.reachable, program.sources)
+      TypedAst.Root(defs, enums, latticeComponents, properties, specialOps, program.reachable, program.sources)
     }
 
     result match {
@@ -104,21 +103,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // Visit every enum in the program.
     val result = program.enums.toList.map {
       case (_, enum) => visitEnum(enum)
-    }
-
-    // Sequence the results and convert them back to a map.
-    Result.sequence(result).map(_.toMap)
-  }
-
-  /**
-    * Performs type inference and reassembly on all lattices in the given program.
-    *
-    * Returns [[Err]] if type resolution fails.
-    */
-  private def typeLattices(program: ResolvedAst.Program): Result[Map[Symbol.LatSym, TypedAst.Lattice], TypeError] = {
-    // Visit every relation in the program.
-    val result = program.lattices.toList.map {
-      case (_, lat) => typeCheckLat(lat)
     }
 
     // Sequence the results and convert them back to a map.
@@ -256,19 +240,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Err(e) => Err(e)
         }
     }
-  }
-
-  /**
-    * Performs type resolution on the given lattice `l`.
-    *
-    * Returns [[Err]] if a type is unresolved.
-    */
-  private def typeCheckLat(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-    case ResolvedAst.Lattice(doc, mod, sym, tparams0, attr0, sc0, loc) =>
-      val tparams = getTypeParams(tparams0)
-      for {
-        attr <- Result.sequence(attr0.map(a => typeCheckAttribute(a)))
-      } yield sym -> TypedAst.Lattice(doc, mod, sym, tparams, attr, loc)
   }
 
   /**
@@ -1764,15 +1735,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   private def typeCheckAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
     case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
-  }
-
-  /**
-    * Returns the declared types of the terms of the given lattice symbol `sym`.
-    */
-  private def getLatticeSignature(sym: Symbol.LatSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    program.lattices(sym) match {
-      case ResolvedAst.Lattice(_, _, _, _, attr, _, _) => Ok(attr.map(_.tpe))
-    }
   }
 
   /**

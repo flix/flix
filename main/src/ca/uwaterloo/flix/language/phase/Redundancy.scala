@@ -70,8 +70,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
-        checkUnusedTypeParamsEnums()(root) and
-        checkUnusedTypeParamsLattices()(root)
+        checkUnusedTypeParamsEnums()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -175,20 +174,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       case (acc, (_, decl)) =>
         val usedTypeVars = decl.cases.foldLeft(Set.empty[Type.Var]) {
           case (sacc, (_, Case(_, _, tpe, _))) => sacc ++ tpe.typeVars
-        }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
-        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
-    }
-  }
-
-  /**
-    * Checks for unused type parameters in lattices.
-    */
-  private def checkUnusedTypeParamsLattices()(implicit root: Root): Used = {
-    root.lattices.foldLeft(Used.empty) {
-      case (acc, (_, decl)) =>
-        val usedTypeVars = decl.attr.foldLeft(Set.empty[Type.Var]) {
-          case (sacc, Attribute(_, tpe, _)) => sacc ++ tpe.typeVars
         }
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))

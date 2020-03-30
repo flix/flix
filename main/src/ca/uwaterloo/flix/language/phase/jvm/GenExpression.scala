@@ -2056,21 +2056,18 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given lattice symbol `sym`.
+    * Emits code for the given lattice symbol `name`.
     */
-  private def newLatSym(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newLatSym(name: String, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
-    mv.visitLdcInsn(sym.toString)
+    mv.visitLdcInsn(name)
 
     // Emit code for the attributes (if present).
-    root.lattices.get(sym) match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(lat) => newAttributesArray(lat.attr, mv)
-    }
+    // Note: Currently always absent.
+    mv.visitInsn(ACONST_NULL)
 
     // Emit code for the lattice operations.
-    newLatticeOps(sym, mv)
+    newLatticeOps(???, mv) // TODO
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
@@ -2099,10 +2096,10 @@ object GenExpression {
   /**
     * Emits code to construct a lattice operations object for the given symbol `sym`.
     */
-  private def newLatticeOps(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newLatticeOps(sym: String, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Lookup the declaration.
-    val decl = root.lattices(sym)
-    val ops = root.latticeComponents(decl.attr.last.tpe)
+    val decl = ??? // TODO
+    val ops: FinalAst.LatticeComponents = ??? // TODO
 
     // The bottom object.
     AsmOps.compileDefSymbol(ops.bot, mv)

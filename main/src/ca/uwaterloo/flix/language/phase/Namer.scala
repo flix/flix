@@ -45,7 +45,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      lattices = Map.empty,
       latticeComponents = Map.empty,
       named = Map.empty,
       properties = Map.empty,
@@ -217,44 +216,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Lattice.
      */
-    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
-      val tparams = tparams0 match {
-        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
-      }
-
-      // check if the table already exists.
-      prog0.lattices.get(ns0) match {
-        case None =>
-          // Case 1: The namespace does not yet exist. So the table does not yet exist.
-          val sym = Symbol.mkLatSym(ns0, ident)
-          val tenv = getTypeEnv(tparams)
-          val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-          mapN(attrVal) {
-            case attr =>
-              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
-              val lattices = Map(ident.name -> lattice)
-              prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
-          }
-        case Some(lattices0) =>
-          // Case 2: The namespace exists. Lookup the table.
-          lattices0.get(ident.name) match {
-            case None =>
-              // Case 2.1: The table does not exist in the namespace. Update it.
-              val sym = Symbol.mkLatSym(ns0, ident)
-              val tenv = getTypeEnv(tparams)
-              val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-              mapN(attrVal) {
-                case attr =>
-                  val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
-                  val lattices = lattices0 + (ident.name -> lattice)
-                  prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
-              }
-            case Some(table) =>
-              // Case 2.2: Duplicate definition.
-              NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
-          }
-      }
+    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) => prog0.toSuccess // TODO
 
   }
 

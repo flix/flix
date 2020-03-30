@@ -707,14 +707,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Translates the given `lattice0` to the SimplifiedAst.
-      */
-    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
-      case TypedAst.Lattice(doc, mod, sym, tparams, attributes, loc) =>
-        SimplifiedAst.Lattice(mod, sym, attributes.map(visitAttribute), loc)
-    }
-
-    /**
       * Translates the given attribute `a` to the SimplifiedAst.
       */
     def visitAttribute(a: TypedAst.Attribute): SimplifiedAst.Attribute =
@@ -1160,12 +1152,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
     val latticeComponents = root.latticeComponents.map { case (k, v) => k -> visitLatticeComponents(v) }
-    val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   /**

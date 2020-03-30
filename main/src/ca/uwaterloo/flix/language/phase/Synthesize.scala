@@ -1417,45 +1417,15 @@ object Synthesize extends Phase[Root, Root] {
     }.toSet
 
     /*
-     * (b) Every type that appears as an attribute in some relation or lattice.
-     */
-    // TODO: Need to deal with polymorphic attributes.
-    val typesInLats = root.lattices.flatMap {
-      case (_, Lattice(_, _, _, _, attributes, _)) =>
-        attributes.map {
-          case Attribute(_, tpe, _) => tpe
-        }
-    }
-    val typesInTables = typesInLats
-
-    /*
-     * (c) Every type that appears as some lattice type.
+     * (b) Every type that appears as some lattice type.
      */
     val typesInLattices: Set[Type] = root.latticeComponents.keySet
-
-    /*
-     * Introduce Equality special operators.
-     */
-    // TODO: Refactor these
-    (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkEq(tpe))
-      case (macc, tpe) => macc
-    }
-
-    /*
-     * Introduce Hash special operators.
-     */
-    // TODO: Refactor these
-    (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkHash(tpe))
-      case (macc, tpe) => macc
-    }
 
     /*
      * Introduce ToString special operators.
      */
     // TODO: Refactor these
-    (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }

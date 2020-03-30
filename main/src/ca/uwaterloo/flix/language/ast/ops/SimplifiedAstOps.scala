@@ -509,16 +509,6 @@ object SimplifiedAstOps {
       checkExp(exp0 = exp, env0 = Set.empty, ienv0 = Set.empty)
     }
 
-    //
-    // Check all lattices in the program.
-    //
-    for ((sym1, Lattice(_, sym2, attr, _)) <- root.lattices) {
-      assert(sym1 == sym2)
-      for (attribute <- attr) {
-        checkAttribute(attribute)
-      }
-    }
-
     // Success :)
     root
   }

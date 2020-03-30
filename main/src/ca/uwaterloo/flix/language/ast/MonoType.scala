@@ -76,7 +76,7 @@ object MonoType {
 
   case class Relation(name: String, attr: List[MonoType]) extends MonoType
 
-  case class Lattice(sym: Symbol.LatSym, attr: List[MonoType]) extends MonoType
+  case class Lattice(name: String, attr: List[MonoType]) extends MonoType
 
   case class Native(clazz: Class[_]) extends MonoType
 

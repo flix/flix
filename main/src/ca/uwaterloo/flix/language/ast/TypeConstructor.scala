@@ -151,8 +151,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents a relation.
     *
-    * @param name the name of the relation.
+    * @param name the name of the relation predicate symbol.
     */
+  // TODO: Remove name?
   case class Relation(name: String) extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
@@ -160,9 +161,10 @@ object TypeConstructor {
   /**
     * A type constructor that represents a lattice.
     *
-    * @param sym the symbol of the lattice.
+    * @param name the name of the lattice predicate symbol.
     */
-  case class Lattice(sym: Symbol.LatSym) extends TypeConstructor {
+  // TODO: Remove name?
+  case class Lattice(name: String) extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 
