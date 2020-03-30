@@ -149,22 +149,16 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents a relation.
-    *
-    * @param name the name of the relation predicate symbol.
+    * A type constructor for relations.
     */
-  // TODO: Remove name?
-  case class Relation(name: String) extends TypeConstructor {
+  case object Relation extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 
   /**
-    * A type constructor that represents a lattice.
-    *
-    * @param name the name of the lattice predicate symbol.
+    * A type constructor for lattices.
     */
-  // TODO: Remove name?
-  case class Lattice(name: String) extends TypeConstructor {
+  case object Lattice extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 

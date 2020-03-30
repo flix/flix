@@ -555,8 +555,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Cst(TypeConstructor.Int64) => MonoType.Int64
       case Type.Cst(TypeConstructor.BigInt) => MonoType.BigInt
       case Type.Cst(TypeConstructor.Str) => MonoType.Str
-      case Type.Cst(TypeConstructor.Relation(sym)) => MonoType.Relation(sym, args)
-      case Type.Cst(TypeConstructor.Lattice(sym)) => MonoType.Lattice(sym, args)
+      case Type.Cst(TypeConstructor.Relation) => MonoType.Relation(args)
+      case Type.Cst(TypeConstructor.Lattice) => MonoType.Lattice(args)
 
       // Compound Types.
       case Type.Cst(TypeConstructor.Array) => MonoType.Array(args.head)

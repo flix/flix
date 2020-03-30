@@ -1711,9 +1711,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns the relation type of `name` with the term types `ts`.
     */
+  // TODO
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = den match {
     case Denotation.Relational =>
-      val base = Type.Cst(TypeConstructor.Relation(name)): Type
+      val base = Type.Cst(TypeConstructor.Relation): Type
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x
@@ -1721,7 +1722,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
       Type.Apply(base, args)
     case Denotation.Latticenal =>
-      val base = Type.Cst(TypeConstructor.Lattice(???)): Type // TODO
+      val base = Type.Cst(TypeConstructor.Lattice): Type
       val args = ts match {
         case Nil => Type.Unit
         case x :: Nil => x

@@ -68,7 +68,7 @@ object JvmOps {
     case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
+    case MonoType.Relation(attr) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) =>
       // TODO: Ugly hack.
       val fqn = clazz.getCanonicalName.replace('.', '/')
@@ -813,16 +813,16 @@ object JvmOps {
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, Type.Pure, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
 
-    case MonoType.Relation(sym, attr) =>
-      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+    case MonoType.Relation(attr) =>
+      val base = Type.Cst(TypeConstructor.Relation): Type
       val init = Type.Cst(TypeConstructor.Tuple(attr.length)): Type
       val args = attr.foldLeft(init) {
         case (acc, t) => Type.Apply(acc, hackMonoType2Type(t))
       }
       Type.Apply(base, args)
 
-    case MonoType.Lattice(sym, attr) =>
-      val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+    case MonoType.Lattice(attr) =>
+      val base = Type.Cst(TypeConstructor.Lattice): Type
       val init = Type.Cst(TypeConstructor.Tuple(attr.length)): Type
       val args = attr.foldLeft(init) {
         case (acc, t) => Type.Apply(acc, hackMonoType2Type(t))
@@ -1157,8 +1157,8 @@ object JvmOps {
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
-      case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Relation(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Lattice(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
     }

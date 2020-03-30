@@ -1055,7 +1055,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         ts <- traverse(terms)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
-      } yield Type.SchemaExtend(ident.name, Type.Apply(Type.Cst(TypeConstructor.Relation(ident.name)), mkTupleNoSingleton(ts)), r)
+      } yield Type.SchemaExtend(ident.name, Type.Apply(Type.Cst(TypeConstructor.Relation), mkTupleNoSingleton(ts)), r)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
