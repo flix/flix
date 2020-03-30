@@ -1,4 +1,4 @@
-namespace Test/Term/Lit/WildVar {
+namespace Test/Term/Lit/Var/WildVar {
 
     @test
     def testWildVar01(): #{ A(Bool, Char, Int), B(Bool, Char, Int), C(Bool, Char, Int) } =

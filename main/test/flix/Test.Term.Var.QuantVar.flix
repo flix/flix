@@ -1,4 +1,4 @@
-namespace Test/Term/Lit/QuantVar {
+namespace Test/Term/Lit/Var/QuantVar {
 
     @test
     def testQuantVar01(): #{ A(Int) } =

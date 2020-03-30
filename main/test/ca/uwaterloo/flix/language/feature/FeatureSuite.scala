@@ -128,11 +128,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Predicate.Union", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Union.flix")(Options.TestWithLibrary),
 
   //
-  // Terms
-  //
-  new FlixTest("Test.Term.CapturedVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.CapturedVar.flix")(Options.TestWithLibrary),
-
-  //
   // Equality
   //
   new FlixTest("Test.Equality", "main/test/ca/uwaterloo/flix/language/feature/Test.Equality.flix")(Options.TestWithLibrary),
