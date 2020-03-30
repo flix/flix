@@ -79,10 +79,7 @@ namespace Map {
     ///
     /// Otherwise, returns `d`.
     ///
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v = match get(k, m) {
-        case None    => d
-        case Some(v) => v
-    }
+    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v = Option.getWithDefault(get(k, m), d)
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
