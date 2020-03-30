@@ -96,8 +96,8 @@ class LangSuite extends Suites(
   // Predicate.
   //
   new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix"),
+  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix"),
   new FlixTest("Test.Predicate.Nullary.False", "main/test/flix/Test.Predicate.Nullary.False.flix"),
-  new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix"),
   new FlixTest("Test.Predicate.Nullary.True", "main/test/flix/Test.Predicate.Nullary.True.flix"),
 
   //

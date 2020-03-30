@@ -26,8 +26,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UnsafeFact.01") {
     val input =
       s"""
-         |rel R(x: Int)
-         |
          |R(x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -37,8 +35,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UnsafeFact.02") {
     val input =
       s"""
-         |rel R(x: Int, y: Int)
-         |
          |R(42, x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -48,8 +44,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UnsafeFact.03") {
     val input =
       s"""
-         |rel R(x: Int, y: Int, z: Int)
-         |
          |R(42, x, 21).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -59,8 +53,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UnsafeRule.01") {
     val input =
       s"""
-         |rel R(x: Int)
-         |
          |R(x) :- R(y).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -70,8 +62,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UnsafeRule.02") {
     val input =
       s"""
-         |rel R(x: Int, y: Int)
-         |
          |R(x, y) :- R(x, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -81,8 +71,6 @@ class TestResolver extends FunSuite with TestUtils {
   test("UnsafeRule.03") {
     val input =
       s"""
-         |rel R(x: Int, y: Int, z: Int)
-         |
          |R(x, y, z) :- R(x, w, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()

@@ -1,10 +1,5 @@
 namespace Test/Term/Lit/Option {
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
     @test
     def test01(): #{ R(Option[Int]) } =
         let x = R(None).;
@@ -28,5 +23,10 @@ namespace Test/Term/Lit/Option {
         let y = R(Some(123)).;
         let z = R(Some(456)).;
         solve x <+> y <+> z
+
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
 
 }

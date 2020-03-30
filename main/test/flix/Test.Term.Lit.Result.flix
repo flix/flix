@@ -1,10 +1,5 @@
 namespace Test/Term/Lit/Result {
 
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
     @test
     def test01(): #{ R(Result[Int, String]) } =
         let x = R(Ok(123)).;
@@ -42,5 +37,10 @@ namespace Test/Term/Lit/Result {
         let z = R(Err("hello world!")).;
         let w = R(Err("Goodbye world!")).;
         solve x <+> y <+> z <+> w
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
 
 }

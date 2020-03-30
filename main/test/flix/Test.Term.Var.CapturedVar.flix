@@ -1,15 +1,5 @@
 namespace Test/Term/Lit/Var/CapturedVar {
 
-    enum Option[t] {
-        case None,
-        case Some(t)
-    }
-
-    enum Result[t, e] {
-        case Ok(t),
-        case Err(e)
-    }
-
     ///////////////////////////////////////////////////////////////////////////////
     /// Unit                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////
@@ -339,5 +329,15 @@ namespace Test/Term/Lit/Var/CapturedVar {
         let y = R(c) :- R(c).;
         let r = solve x <+> y;
         r |= R(c).
+
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
 
 }

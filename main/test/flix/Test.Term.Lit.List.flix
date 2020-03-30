@@ -1,10 +1,5 @@
 namespace Test/Term/Lit/List {
 
-    enum List[t] {
-        case Nil,
-        case Cons(t, List[t])
-    }
-
     @test
     def test01(): #{ R(List[Int]) } =
         let x = R(Nil).;
@@ -35,5 +30,10 @@ namespace Test/Term/Lit/List {
         let z = R(1 :: 2 :: Nil).;
         let w = R(1 :: 2 :: 3 :: Nil).;
         solve x <+> y <+> z <+> w
+
+    enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
 
 }
