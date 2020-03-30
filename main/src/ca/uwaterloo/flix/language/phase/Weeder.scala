@@ -1634,6 +1634,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       predicates.foldRight(init: WeededAst.Type) {
         case (ParsedAst.SchemaPredicateType(ssp1, i, ts, ssp2), acc) =>
           WeededAst.Type.SchemaExtend(i, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+
+        case (ParsedAst.SchemaPredicateAlias(ssp1, i, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendAlias(i, acc, mkSL(ssp1, ssp2))
       }
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))

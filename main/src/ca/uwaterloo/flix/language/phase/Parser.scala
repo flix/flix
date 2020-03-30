@@ -1205,8 +1205,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.SchemaPredicateType
       }
 
+      def SchemaPredicateAlias: Rule1[ParsedAst.SchemaPredicateAlias] = rule {
+        SP ~ Names.Predicate ~ SP ~> ParsedAst.SchemaPredicateAlias
+      }
+
       rule {
-        SP ~ atomic("#{") ~ optWS ~ zeroOrMore(SchemaPredicateType).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
+        SP ~ atomic("#{") ~ optWS ~ zeroOrMore(SchemaPredicateType | SchemaPredicateAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
       }
     }
 

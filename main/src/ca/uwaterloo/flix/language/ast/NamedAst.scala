@@ -301,6 +301,8 @@ object NamedAst {
 
     case class SchemaExtend(ident: Name.Ident, ts: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
+    case class SchemaExtendAlias(ident: Name.Ident, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type

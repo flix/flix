@@ -304,6 +304,8 @@ object WeededAst {
 
     case class SchemaExtend(name: Name.Ident, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
+    case class SchemaExtendAlias(name: Name.Ident, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
     case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type

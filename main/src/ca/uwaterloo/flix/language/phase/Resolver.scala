@@ -1057,6 +1057,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         r <- lookupType(rest, ns0, root)
       } yield Type.SchemaExtend(ident.name, mkRelationType(ts), r)
 
+    case NamedAst.Type.SchemaExtendAlias(ident, rest, loc) =>
+      // TODO: Support namespaces
+      lookupTypeAlias(Name.mkQName(ident), ns0, root) match {
+        case None => ??? // TODO
+        case Some(typealias) =>
+          for {
+            t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
+            r <- lookupType(rest, ns0, root)
+          } yield Type.SchemaExtend(ident.name, t, r)
+      }
+
     case NamedAst.Type.Relation(tpes, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
