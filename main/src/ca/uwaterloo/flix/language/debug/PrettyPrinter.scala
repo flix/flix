@@ -474,9 +474,9 @@ object PrettyPrinter {
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointProject(sym, exp, tpe, loc) =>
+        case Expression.FixpointProject(name, exp, tpe, loc) =>
           vt.text("project ")
-          vt.text(sym.toString)
+          vt.text(name.toString)
           vt.text(" ")
           visitExp(exp)
 

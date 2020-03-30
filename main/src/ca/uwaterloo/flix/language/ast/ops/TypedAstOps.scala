@@ -220,7 +220,7 @@ object TypedAstOps {
       case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
