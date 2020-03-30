@@ -122,7 +122,6 @@ class FeatureSuite extends Suites(
   //
   // Predicates
   //
-  new FlixTest("Test.Predicate.Nullary", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Nullary.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Predicate.Guard", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Guard.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Predicate.Union", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Union.flix")(Options.TestWithLibrary),
 
