@@ -26,10 +26,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.01") {
     val input =
       """
-        |rel A(x: Int)
-        |rel B(x: Int)
-        |
-        |def main(): #{ A, B } = solve {
+        |def main(): #{ A(Int), B(Int) } = solve {
         |    A(x) :- not B(x).
         |}
         |
@@ -40,11 +37,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.02") {
     val input =
       """
-        |rel A(x: Int)
-        |rel B(x: Int)
-        |rel R(k: Int)
-        |
-        |def main(): #{ A, B, R } = solve {
+        |def main(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(x) :- A(x), not B(y).
         |}
         |
@@ -55,11 +48,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.03") {
     val input =
       """
-        |rel A(x: Int)
-        |rel B(x: Int)
-        |rel R(k: Int)
-        |
-        |def main(): #{ A, B, R } = solve {
+        |def main(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(x) :- not A(x), not B(x).
         |}
         |
@@ -70,11 +59,7 @@ class TestSafety extends FunSuite with TestUtils {
   test("NonPositivelyBoundVariable.04") {
     val input =
       """
-        |rel A(x: Int)
-        |rel B(x: Int)
-        |rel R(k: Int)
-        |
-        |def main(): #{ A, B, R } = solve {
+        |def main(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(1) :- not A(x), not B(y).
         |}
         |

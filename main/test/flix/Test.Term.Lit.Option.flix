@@ -1,5 +1,10 @@
 namespace Test/Term/Lit/Option {
 
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
     @test
     def test01(): #{ R(Option[Int]) } =
         let x = R(None).;
