@@ -329,14 +329,9 @@ object Symbol {
   }
 
   /**
-    * A common super-type for predicate symbols.
-    */
-  trait PredSym
-
-  /**
     * Lattice Symbol.
     */
-  final class LatSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends PredSym {
+  final class LatSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

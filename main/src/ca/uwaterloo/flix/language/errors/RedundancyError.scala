@@ -177,31 +177,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that the given lattice symbol `sym` is not used.
-    *
-    * @param sym the unused lattice symbol.
-    */
-  case class UnusedLatSym(sym: Symbol.LatSym) extends RedundancyError {
-    val source: Source = sym.loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unused lattice '" << Red(sym.name) << "'. The lattice is never referenced." << NewLine
-      vt << NewLine
-      vt << Code(sym.loc, "unused relation.") << NewLine
-      vt << NewLine
-      vt << "Possible fixes:" << NewLine
-      vt << NewLine
-      vt << "  (1)  Use the lattice." << NewLine
-      vt << "  (2)  Remove the lattice." << NewLine
-      vt << "  (3)  Mark the lattice as public." << NewLine
-      vt << "  (4)  Prefix the lattice name with an underscore." << NewLine
-      vt << NewLine
-      vt
-    }
-  }
-
-  /**
     * An error raised to indicate that the given type parameter `ident` is not used.
     *
     * @param ident the unused type variable.

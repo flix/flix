@@ -70,7 +70,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
-        checkUnusedLattices(usedAll)(root) and
         checkUnusedTypeParamsEnums()(root) and
         checkUnusedTypeParamsLattices()(root)
 
@@ -194,16 +193,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
-  }
-
-  /**
-    * Checks for unused lattice symbols.
-    */
-  private def checkUnusedLattices(used: Redundancy.Used)(implicit root: Root): Used = {
-    val unusedLatSyms = root.lattices.collect {
-      case (sym, decl) if deadLat(decl, used) => UnusedLatSym(sym)
-    }
-    used ++ unusedLatSyms
   }
 
   /**
@@ -680,14 +669,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !root.reachable.contains(decl.sym)
 
   /**
-    * Returns `true` if the given lattice `decl` is unused according to `used`.
-    */
-  private def deadLat(decl: Lattice, used: Used): Boolean =
-    !decl.mod.isPublic &&
-      !decl.sym.name.startsWith("_") &&
-      !used.predSyms.contains(decl.sym)
-
-  /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
     */
   private def deadTypeVar(tvar: Type.Var, used: Set[Type.Var]): Boolean =
@@ -759,7 +740,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -779,11 +760,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
 
     /**
-      * Returns an object where the given predicate symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
-
-    /**
       * Returns an object where the given variable symbol `sym` is marked as used.
       */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
@@ -795,7 +771,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
                           defSyms: Set[Symbol.DefnSym],
-                          predSyms: Set[Symbol.PredSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
@@ -815,7 +790,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.predSyms ++ that.predSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses && that.unconditionallyRecurses,
@@ -837,7 +811,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.predSyms ++ that.predSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses || that.unconditionallyRecurses,
