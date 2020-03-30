@@ -227,13 +227,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparams = visitTypeParams(tparams0)
 
-      /*
-       * Check for `DuplicateAttribute`.
-       */
-      mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) =>
-          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
-      }
 
       throw InternalCompilerException("foo"); // TODO: Remove
   }
@@ -250,10 +243,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       /*
        * Check for `DuplicateAttribute`.
        */
-      mapN(modVal, checkDuplicateAttribute(attr)) {
-        case (mod, as) =>
+      mapN(modVal) {
+        case mod =>
           // Split the attributes into keys and element.
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, ???, mkSL(sp1, sp2))) // TODO
       }
   }
 
@@ -1999,24 +1992,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
     case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
-  }
-
-  /**
-    * Checks that no attributes are repeated.
-    */
-  private def checkDuplicateAttribute(attrs: Seq[ParsedAst.Attribute]): Validation[List[WeededAst.Attribute], WeederError] = {
-    val seen = mutable.Map.empty[String, ParsedAst.Attribute]
-    traverse(attrs) {
-      case attr@ParsedAst.Attribute(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> attr)
-          WeededAst.Attribute(ident, visitType(tpe), mkSL(sp1, sp2)).toSuccess
-        case Some(otherAttr) =>
-          val loc1 = mkSL(otherAttr.sp1, otherAttr.sp2)
-          val loc2 = mkSL(attr.sp1, attr.sp2)
-          DuplicateAttribute(ident.name, loc1, loc2).toFailure
-      }
-    }
   }
 
   /**

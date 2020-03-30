@@ -54,28 +54,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that the attribute `name` was declared multiple times.
-    *
-    * @param name the name of the attribute.
-    * @param loc1 the location of the first attribute.
-    * @param loc2 the location of the second attribute.
-    */
-  case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple declarations of the attribute '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first declaration was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second declaration was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the attributes to avoid the name clash." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that the formal parameter `name` was declared multiple times.
     *
     * @param name the name of the parameter.

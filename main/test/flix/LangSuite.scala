@@ -60,8 +60,11 @@ class LangSuite extends Suites(
   ///
   /// Fixpoint.
   ///
+  new FlixTest("Test.Exp.Constraint.Compose", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
   new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix"),
   new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix"),
   new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix"),
 
   //
@@ -106,6 +109,7 @@ class LangSuite extends Suites(
   new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix"),
   new FlixTest("Test.Predicate.Nullary.False", "main/test/flix/Test.Predicate.Nullary.False.flix"),
   new FlixTest("Test.Predicate.Nullary.True", "main/test/flix/Test.Predicate.Nullary.True.flix"),
+  new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix"),
 
   //
   // Stratified Negation.
