@@ -368,8 +368,8 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
-    ts.foldLeft(tuple: Type) {
+    val init = Type.Cst(TypeConstructor.Tuple(ts.length))
+    ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x)
     }
   }

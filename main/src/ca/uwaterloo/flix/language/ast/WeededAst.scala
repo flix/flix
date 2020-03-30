@@ -302,7 +302,7 @@ object WeededAst {
 
     case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class Schema(ts: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class SchemaExtend(name: Name.Ident, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 

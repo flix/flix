@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -1089,27 +1089,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
 
-    case NamedAst.Type.Schema(ts, rest, loc) =>
-      // Translate the type into a schema row type.
-      val init = lookupType(rest, ns0, root)
-
-      // Fold over the predicate types and check that they are relations or lattices.
-      Validation.foldRight(ts)(init) {
-        case (predType, acc) =>
-          // Lookup the type and check that is either a relation or lattice type.
-          flatMapN(lookupType(predType, ns0, root)) {
-            case t =>
-              // Simplify the type. Required to get the appropriate type constructor.
-              val s = simplify(t)
-
-              // Determine the type of predicate symbol.
-              s.typeConstructor match {
-                case Type.Cst(TypeConstructor.Relation(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
-                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.SchemaExtend(sym.toString, s, acc).toSuccess
-                case nonRelationOrLatticeType => ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
-              }
-          }
-      }
+    case NamedAst.Type.SchemaExtend(ident, terms, rest, loc) =>
+      for {
+        ts <- traverse(terms)(lookupType(_, ns0, root))
+        r <- lookupType(rest, ns0, root)
+      } yield Type.SchemaExtend(ident.name, Type.Apply(Type.Cst(TypeConstructor.Relation(ident.name)), mkTupleNoSingleton(ts)), r)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
@@ -1499,6 +1483,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val sp2 = SourcePosition.Unknown
     val idents = parts.map(s => Name.Ident(sp1, s, sp2))
     Name.NName(sp1, idents, sp2)
+  }
+
+  /**
+    * Returns a tuple type for the given list of types `ts`.
+    *
+    * NB: Does not return a tuple type if the list is a singleton.
+    */
+  private def mkTupleNoSingleton(ts: List[Type]): Type = ts match {
+    case Nil => throw InternalCompilerException(s"Unexpected type: '$ts'.")
+    case x :: Nil => x
+    case xs => Type.mkTuple(xs)
   }
 
 }
