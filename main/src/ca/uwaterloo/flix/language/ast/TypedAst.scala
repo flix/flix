@@ -25,7 +25,7 @@ object TypedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, TypedAst.Def],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
-                  lattices: Map[Type, TypedAst.LatticeOps],
+                  latticeOps: Map[Type, TypedAst.LatticeOps],
                   properties: List[TypedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],

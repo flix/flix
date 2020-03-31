@@ -1419,7 +1419,7 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * (b) Every type that appears as some lattice type.
      */
-    val typesInLattices: Set[Type] = root.lattices.keySet
+    val typesInLattices: Set[Type] = root.latticeOps.keySet
 
     /*
      * Introduce ToString special operators.
