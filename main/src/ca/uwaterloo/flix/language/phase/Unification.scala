@@ -233,7 +233,7 @@ object Unification {
     /**
       * An unification error due the predicate `sym` of type `predType` missing from the type `schemaType`.
       *
-      * @param name       the symbol of the missing predicate.
+      * @param name       the name of the missing predicate.
       * @param predType   the type of the missing predicate.
       * @param schemaType the schema type where the predicate is missing.
       */
