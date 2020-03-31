@@ -45,7 +45,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      lattices = Map.empty,
+      latticesOps = Map.empty,
       named = Map.empty,
       properties = Map.empty,
       reachable = program.reachable,
@@ -205,7 +205,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
         case (bot, top, equ, leq, lub, glb, tpe) =>
           val lattice = NamedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
-          prog0.copy(lattices = prog0.lattices + (tpe -> lattice)) // NB: This just overrides any existing binding.
+          prog0.copy(latticesOps = prog0.latticesOps + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
     case WeededAst.Declaration.Relation(_, _, _, _, _, _) => prog0.toSuccess

@@ -76,7 +76,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     }
 
-    val latticeComponentsVal = prog0.lattices.map {
+    val latticeComponentsVal = prog0.latticesOps.map {
       case (tpe0, lattice0) =>
         for {
           tpe <- lookupType(tpe0, lattice0.ns, prog0)

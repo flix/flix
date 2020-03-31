@@ -26,7 +26,7 @@ object NamedAst {
   case class Root(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  lattices: Map[NamedAst.Type, NamedAst.LatticeOps],
+                  latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
                   named: Map[Symbol.DefnSym, NamedAst.Expression],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
