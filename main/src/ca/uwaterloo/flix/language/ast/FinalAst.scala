@@ -24,7 +24,7 @@ object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
-                  lattices: Map[MonoType, FinalAst.LatticeOps],
+                  latticeOps: Map[MonoType, FinalAst.LatticeOps],
                   properties: List[FinalAst.Property],
                   specialOps: Map[SpecialOperator, Map[MonoType, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
