@@ -167,7 +167,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
 
     // Visit every lattice in the program.
-    val result = program.lattices.toList.map {
+    val result = program.latticeOps.toList.map {
       case (_, lattice) => visitLatticeOps(lattice)
     }
 

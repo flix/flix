@@ -27,7 +27,7 @@ object ResolvedAst {
 
   case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                      enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                     lattices: Map[Type, ResolvedAst.LatticeOps],
+                     latticeOps: Map[Type, ResolvedAst.LatticeOps],
                      properties: List[ResolvedAst.Property],
                      reachable: Set[Symbol.DefnSym],
                      sources: Map[Source, SourceLocation])
