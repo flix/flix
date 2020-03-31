@@ -912,6 +912,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
+        // Disambiguate the qname.
         (tenv0.get(name), uenv0.tpes.get(name)) match {
           case (None, None) =>
             // Case 1: the name is top-level type.
@@ -950,10 +951,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.Type.SchemaEmpty(loc).toSuccess
 
     case WeededAst.Type.SchemaExtendByAlias(qname, rest, loc) =>
-
-      // TODO: Need to perform case analysis on the qname.
-      val name = qname
-
+      // Disambiguate the qname.
+      val name = if (qname.isUnqualified) {
+        uenv0.tpes.getOrElse(qname.ident.name, qname)
+      } else {
+        qname
+      }
 
       mapN(visitType(rest, uenv0, tenv0)) {
         case r => NamedAst.Type.SchemaExtendWithAlias(name, r, loc)
