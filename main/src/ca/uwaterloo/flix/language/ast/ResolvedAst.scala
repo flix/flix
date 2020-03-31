@@ -27,7 +27,7 @@ object ResolvedAst {
 
   case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                      enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
-                     latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
+                     lattices: Map[Type, ResolvedAst.LatticeOps],
                      properties: List[ResolvedAst.Property],
                      reachable: Set[Symbol.DefnSym],
                      sources: Map[Source, SourceLocation])
@@ -38,7 +38,7 @@ object ResolvedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
 
-  case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
+  case class LatticeOps(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: Type

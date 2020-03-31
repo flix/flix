@@ -676,8 +676,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
-    def visitLatticeComponents(lattice0: TypedAst.LatticeComponents): SimplifiedAst.LatticeComponents = lattice0 match {
-      case TypedAst.LatticeComponents(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+    def visitLatticeComponents(lattice0: TypedAst.LatticeOps): SimplifiedAst.LatticeOps = lattice0 match {
+      case TypedAst.LatticeOps(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
 
         /**
           * Introduces a unit function for the given expression `exp0`.
@@ -703,7 +703,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val leq = visitExp(leq0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         val lub = visitExp(lub0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         val glb = visitExp(glb0).asInstanceOf[SimplifiedAst.Expression.Def].sym
-        SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
+        SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
     }
 
     /**
@@ -1151,7 +1151,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
-    val latticeComponents = root.latticeComponents.map { case (k, v) => k -> visitLatticeComponents(v) }
+    val latticeComponents = root.lattices.map { case (k, v) => k -> visitLatticeComponents(v) }
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable

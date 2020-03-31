@@ -2098,7 +2098,7 @@ object GenExpression {
     */
   private def newLatticeOps(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Lookup the declaration.
-    val ops = root.latticeComponents(tpe)
+    val ops = root.lattices(tpe)
 
     // The bottom object.
     AsmOps.compileDefSymbol(ops.bot, mv)

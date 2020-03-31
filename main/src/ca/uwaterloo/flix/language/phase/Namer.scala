@@ -45,7 +45,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      latticeComponents = Map.empty,
+      lattices = Map.empty,
       named = Map.empty,
       properties = Map.empty,
       reachable = program.reachable,
@@ -193,7 +193,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * BoundedLattice (deprecated).
      */
-    case WeededAst.Declaration.LatticeComponents(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+    case WeededAst.Declaration.LatticeOps(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
       val botVal = visitExp(bot0, Map.empty, uenv0, Map.empty)
       val topVal = visitExp(top0, Map.empty, uenv0, Map.empty)
       val equVal = visitExp(equ0, Map.empty, uenv0, Map.empty)
@@ -204,8 +204,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
         case (bot, top, equ, leq, lub, glb, tpe) =>
-          val lattice = NamedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
-          prog0.copy(latticeComponents = prog0.latticeComponents + (tpe -> lattice)) // NB: This just overrides any existing binding.
+          val lattice = NamedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
+          prog0.copy(lattices = prog0.lattices + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
     case WeededAst.Declaration.Relation(_, _, _, _, _, _) => prog0.toSuccess

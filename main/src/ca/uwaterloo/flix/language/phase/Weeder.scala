@@ -96,7 +96,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Constraint => Nil.toSuccess
 
-    case d: ParsedAst.Declaration.LatticeComponents => visitLatticeComponents(d)
+    case d: ParsedAst.Declaration.LatticeComponents => visitLatticeOps(d)
 
     case d: ParsedAst.Declaration.Class => Nil.toSuccess
 
@@ -277,11 +277,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given lattice components `lc0`.
     */
-  private def visitLatticeComponents(lc0: ParsedAst.Declaration.LatticeComponents)(implicit flix: Flix): Validation[List[WeededAst.Declaration.LatticeComponents], WeederError] = lc0 match {
+  private def visitLatticeOps(lc0: ParsedAst.Declaration.LatticeComponents)(implicit flix: Flix): Validation[List[WeededAst.Declaration.LatticeOps], WeederError] = lc0 match {
     case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
       val elmsVal = traverse(elms)(e => visitExp(e))
       elmsVal flatMap {
-        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeComponents(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeOps(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
         case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
       }
   }
