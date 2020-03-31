@@ -962,9 +962,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case r => NamedAst.Type.SchemaExtendWithAlias(name, r, loc)
       }
 
-    case WeededAst.Type.SchemaExtendByTypes(ident, tpes, rest, loc) =>
+    case WeededAst.Type.SchemaExtendByTypes(ident, den, tpes, rest, loc) =>
       mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
-        case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, ts, r, loc)
+        case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, den, ts, r, loc)
       }
 
     case WeededAst.Type.Relation(tpes, loc) =>
@@ -1174,7 +1174,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.SchemaExtendByTypes(_, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.SchemaExtendByAlias(_, r, _) => freeVars(r)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)

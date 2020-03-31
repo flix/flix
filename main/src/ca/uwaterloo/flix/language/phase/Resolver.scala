@@ -1065,11 +1065,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield Type.SchemaExtend(qname.ident.name, t, r)
       }
 
-    case NamedAst.Type.SchemaExtendWithTypes(ident, tpes, rest, loc) =>
+    case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
         r <- lookupType(rest, ns0, root)
-      } yield Type.SchemaExtend(ident.name, mkRelationType(ts), r)
+      } yield den match {
+        case Ast.Denotation.Relational =>
+          Type.SchemaExtend(ident.name, mkRelationType(ts), r)
+        case Ast.Denotation.Latticenal =>
+          Type.SchemaExtend(ident.name, mkLatticeType(ts), r)
+      }
 
     case NamedAst.Type.Relation(tpes, loc) =>
       for {

@@ -298,7 +298,7 @@ object NamedAst {
 
     case class SchemaExtendWithAlias(qname: Name.QName, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
-    case class SchemaExtendWithTypes(ident: Name.Ident, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class SchemaExtendWithTypes(ident: Name.Ident, den: Ast.Denotation, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 

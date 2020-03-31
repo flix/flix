@@ -1645,8 +1645,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, i, ssp2), acc) =>
           WeededAst.Type.SchemaExtendByAlias(i, acc, mkSL(ssp1, ssp2))
 
-        case (ParsedAst.PredicateType.PredicateWithTypes(ssp1, i, ts, ssp2), acc) =>
-          WeededAst.Type.SchemaExtendByTypes(i, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+        case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+
+        case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
       }
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))

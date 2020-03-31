@@ -1687,14 +1687,24 @@ object ParsedAst {
     case class PredicateWithAlias(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends PredicateType
 
     /**
-      * A Predicate Type that is equipped wit the types of its terms.
+      * A Relational Predicate Type that is equipped wit the types of its terms.
       *
       * @param sp1  the position of the first character in the field.
       * @param name the name of the predicate symbol.
       * @param tpes the types of the terms of the predicate.
       * @param sp2  the position of the last character in the field.
       */
-    case class PredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateType
+    case class RelPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateType
+
+    /**
+      * A Latticenal Predicate Type that is equipped wit the types of its terms.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param tpes the types of the terms of the predicate.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
 
   }
 
