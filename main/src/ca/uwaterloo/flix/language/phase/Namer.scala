@@ -208,15 +208,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           prog0.copy(latticeComponents = prog0.latticeComponents + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
-    /*
-     * Relation.
-     */
-    case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) => prog0.toSuccess // TODO
+    case WeededAst.Declaration.Relation(_, _, _, _, _, _) => prog0.toSuccess
 
-    /*
-     * Lattice.
-     */
-    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) => prog0.toSuccess // TODO
+    case WeededAst.Declaration.Lattice(_, _, _, _, _, _) => prog0.toSuccess
 
   }
 

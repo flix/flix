@@ -1052,10 +1052,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       Type.SchemaEmpty.toSuccess
 
     case NamedAst.Type.SchemaExtendWithAlias(qname, rest, loc) =>
-      // TODO: Lookup in the namespace.
+      // Lookup the type alias.
       lookupTypeAlias(qname, ns0, root) match {
-        case None => ??? // TODO
+        case None =>
+          // Case 1: The type alias was not found. Report an error.
+          ResolutionError.UndefinedName(qname, ns0, loc).toFailure
         case Some(typealias) =>
+          // Case 2: The type alias was found. Use it.
           for {
             t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
             r <- lookupType(rest, ns0, root)
@@ -1072,6 +1075,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         ts <- traverse(tpes)(lookupType(_, ns0, root))
       } yield mkRelationType(ts)
+
+    case NamedAst.Type.Lattice(tpes, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+      } yield mkLatticeType(ts)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
@@ -1130,6 +1138,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case xs => Type.mkTuple(xs)
     }
     Type.Apply(Type.Cst(TypeConstructor.Relation), t)
+  }
+
+  /**
+    * Returns a lattice type for the given term types `ts`.
+    */
+  private def mkLatticeType(ts: List[Type]): Type = {
+    val t = ts match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => Type.mkTuple(xs)
+    }
+    Type.Apply(Type.Cst(TypeConstructor.Lattice), t)
   }
 
   /**

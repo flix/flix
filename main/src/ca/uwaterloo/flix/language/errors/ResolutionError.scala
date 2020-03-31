@@ -169,23 +169,6 @@ object ResolutionError {
   }
 
   /**
-    * Non Relation or Lattice Error.
-    *
-    * @param tpe the non-relation, non-lattice type.
-    * @param loc the location where the error occurred.
-    */
-  case class NonRelationOrLattice(tpe: Type, loc: SourceLocation) extends ResolutionError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Non-relation, non-lattice type '" << Red(tpe.show) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc, "non-relation, non-lattice type.") << NewLine
-    }
-  }
-
-  /**
     * Recursion Limit Error.
     *
     * @param ident the type alias symbol.

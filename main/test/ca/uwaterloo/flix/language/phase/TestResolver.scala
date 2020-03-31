@@ -23,60 +23,6 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
 
-  test("UnsafeFact.01") {
-    val input =
-      s"""
-         |R(x).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeFact.02") {
-    val input =
-      s"""
-         |R(42, x).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeFact.03") {
-    val input =
-      s"""
-         |R(42, x, 21).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeRule.01") {
-    val input =
-      s"""
-         |R(x) :- R(y).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeRule.02") {
-    val input =
-      s"""
-         |R(x, y) :- R(x, z).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeRule.03") {
-    val input =
-      s"""
-         |R(x, y, z) :- R(x, w, z).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
   test("AmbiguousTag.01") {
     val input =
       s"""
@@ -289,6 +235,15 @@ class TestResolver extends FunSuite with TestUtils {
          |namespace A {
          |  def f(x: Int, y: Int): Int = x + y + z
          |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.03") {
+    val input =
+      s"""
+         |def main(): #{ R } = #{}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedName](result)

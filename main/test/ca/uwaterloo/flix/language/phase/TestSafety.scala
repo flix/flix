@@ -29,7 +29,6 @@ class TestSafety extends FunSuite with TestUtils {
         |def main(): #{ A(Int), B(Int) } = solve {
         |    A(x) :- not B(x).
         |}
-        |
       """.stripMargin
     expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
@@ -40,7 +39,6 @@ class TestSafety extends FunSuite with TestUtils {
         |def main(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(x) :- A(x), not B(y).
         |}
-        |
       """.stripMargin
     expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
@@ -51,7 +49,6 @@ class TestSafety extends FunSuite with TestUtils {
         |def main(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(x) :- not A(x), not B(x).
         |}
-        |
       """.stripMargin
     expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
@@ -62,7 +59,6 @@ class TestSafety extends FunSuite with TestUtils {
         |def main(): #{ A(Int), B(Int), R(Int) } = solve {
         |    R(1) :- not A(x), not B(y).
         |}
-        |
       """.stripMargin
     expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
