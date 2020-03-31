@@ -25,7 +25,7 @@ object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
-                  lattices: Map[Type, SimplifiedAst.LatticeOps],
+                  latticeOps: Map[Type, SimplifiedAst.LatticeOps],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],

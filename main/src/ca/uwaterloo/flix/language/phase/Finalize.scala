@@ -40,7 +40,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    val latticesOps = root.lattices.map {
+    val latticesOps = root.latticeOps.map {
       case (k, v) => visitType(k) -> visitLatticeOps(v, m)
     }
 

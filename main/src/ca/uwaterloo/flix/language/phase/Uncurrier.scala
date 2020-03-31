@@ -47,13 +47,13 @@ object Uncurrier extends Phase[Root, Root] {
     val newDefs: TopLevel = mutable.Map.empty
 
     // Uncurry lattice operations.
-    val newLatticeOps = visitLatticeOps(root.lattices, newDefs, root)
+    val newLatticeOps = visitLatticeOps(root.latticeOps, newDefs, root)
 
     // Uncurry special operations.
     val newSpecialOps = visitSpecialOps(root.specialOps, newDefs, root)
 
     // Reassemble the ast.
-    root.copy(defs = root.defs ++ newDefs, lattices = newLatticeOps, specialOps = newSpecialOps).toSuccess
+    root.copy(defs = root.defs ++ newDefs, latticeOps = newLatticeOps, specialOps = newSpecialOps).toSuccess
   }
 
   /**

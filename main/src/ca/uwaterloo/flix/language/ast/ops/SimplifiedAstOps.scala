@@ -496,7 +496,7 @@ object SimplifiedAstOps {
     //
     // Check all lattices in the program.
     //
-    for ((tpe1, LatticeOps(tpe2, bot, top, equ, leq, lub, glb, loc)) <- root.lattices) {
+    for ((tpe1, LatticeOps(tpe2, bot, top, equ, leq, lub, glb, loc)) <- root.latticeOps) {
       assert(tpe1 == tpe2)
       checkType(tpe1)
       checkType(tpe2)
