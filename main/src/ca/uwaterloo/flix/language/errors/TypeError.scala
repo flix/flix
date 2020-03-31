@@ -160,14 +160,14 @@ object TypeError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing predicate '" << Red(name.toString) << "' of type '" << Cyan(predType.show) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(name) << "' of type '" << Cyan(predType.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing predicate.") << NewLine
       vt << "The schema type: " << Indent << NewLine
       vt << NewLine
       vt << schemaType.show << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the predicate '" << Red(name.toString) << "' of type " << Cyan(predType.show) << "." << NewLine
+      vt << "does not contain the predicate '" << Red(name) << "' of type " << Cyan(predType.show) << "." << NewLine
     }
   }
 

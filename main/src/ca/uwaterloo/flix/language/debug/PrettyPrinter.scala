@@ -476,7 +476,7 @@ object PrettyPrinter {
 
         case Expression.FixpointProject(name, exp, tpe, loc) =>
           vt.text("project ")
-          vt.text(name.toString)
+          vt.text(name)
           vt.text(" ")
           visitExp(exp)
 
@@ -485,9 +485,9 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
-        case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+        case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
           vt.text("fold ")
-          vt.text(sym.toString)
+          vt.text(name)
           vt.text(" ")
           visitExp(exp1)
           vt.text(" ")

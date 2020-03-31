@@ -557,7 +557,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.FixpointFold(sym1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(sym2, exp21, exp22, exp23, _, _, _)) if sym1 == sym2 =>
+    case (Expression.FixpointFold(name1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(name2, exp21, exp22, exp23, _, _, _)) if name1 == name2 =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
@@ -976,11 +976,11 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e2 = apply(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         val e3 = apply(exp3)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 

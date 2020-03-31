@@ -1117,7 +1117,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointFold(sym, exp1, exp2, exp3, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tvar, evar, loc) =>
         //
         // exp3 : #{P : a | c}    init : b   exp2 : a' -> b -> b
         // where a' is the tuple reification of relation a
@@ -1132,7 +1132,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (fType, eff2) <- visitExp(exp2)
           (constraintsType, eff3) <- visitExp(exp3)
           // constraints should have the form {pred.sym : R(tupleType) | freshRestTypeVar}
-          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(sym.toString, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
+          constraintsType2 <- unifyTypM(constraintsType, Type.SchemaExtend(name, Type.Apply(freshPredicateNameTypeVar, tupleType), freshRestTypeVar), loc)
           // f is of type tupleType -> initType -> initType. It cannot have any effect.
           fType2 <- unifyTypM(fType, Type.mkPureArrow(tupleType, Type.mkPureArrow(initType, initType)), loc)
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2, eff3), loc)
@@ -1463,11 +1463,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e2 = visitExp(exp2, subst0)
         TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.FixpointFold(sym, init, f, constraints, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointFold(name, init, f, constraints, tvar, evar, loc) =>
         val e1 = visitExp(init, subst0)
         val e2 = visitExp(f, subst0)
         val e3 = visitExp(constraints, subst0)
-        TypedAst.Expression.FixpointFold(sym.toString, e1, e2, e3, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointFold(name, e1, e2, e3, subst0(tvar), subst0(evar), loc)
     }
 
     /**
@@ -1679,7 +1679,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       for {
         termTypes <- seqM(terms.map(inferPattern(_, program)))
         predicateType <- unifyTypM(tvar, mkRelationOrLatticeType(name, den, termTypes, program), loc)
-      } yield Type.SchemaExtend(name.toString, predicateType, Type.freshTypeVar())
+      } yield Type.SchemaExtend(name, predicateType, Type.freshTypeVar())
 
     //
     //  exp : Bool

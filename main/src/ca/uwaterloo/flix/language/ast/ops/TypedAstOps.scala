@@ -226,7 +226,7 @@ object TypedAstOps {
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0) ++ visitExp(exp3, env0)
     }
 

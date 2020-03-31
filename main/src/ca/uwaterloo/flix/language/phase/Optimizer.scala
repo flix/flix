@@ -338,11 +338,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2, env0)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         val e3 = visitExp(exp3, env0)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, loc)
 
       case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
 

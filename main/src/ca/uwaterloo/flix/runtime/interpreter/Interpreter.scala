@@ -313,7 +313,7 @@ object Interpreter {
       if (Solver.entails(v1, v2))
         Value.True else Value.False
 
-    case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+    case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
       throw new UnsupportedOperationException()
 
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)

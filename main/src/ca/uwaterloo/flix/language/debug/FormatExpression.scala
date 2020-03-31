@@ -80,7 +80,7 @@ object FormatExpression {
     case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) => s"FixpointSolve($exp, $stf)"
     case TypedAst.Expression.FixpointProject(name, exp, tpe, eff, loc) => s"FixpointProject($name, $exp)"
     case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => s"FixpointEntails($exp1, $exp2)"
-    case TypedAst.Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) => s"FixpointFold($sym, $exp1, $exp2, $exp3)"
+    case TypedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) => s"FixpointFold($name, $exp1, $exp2, $exp3)"
   }
 
 }

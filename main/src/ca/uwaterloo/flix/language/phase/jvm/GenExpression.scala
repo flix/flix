@@ -1094,7 +1094,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(sym, init, f, constraints, tpe, loc) =>
+    case Expression.FixpointFold(name, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1972,7 +1972,7 @@ object GenExpression {
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(name.toString, mv)
+        case Denotation.Relational => newRelSym(name, mv)
         case Denotation.Latticenal => ??? // TODO
       }
 
@@ -2010,7 +2010,7 @@ object GenExpression {
 
       // Emit code for the predicate symbol.
       den match {
-        case Denotation.Relational => newRelSym(name.toString, mv)
+        case Denotation.Relational => newRelSym(name, mv)
         case Denotation.Latticenal => ??? // TODO
       }
 
