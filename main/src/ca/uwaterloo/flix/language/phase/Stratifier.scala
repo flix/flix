@@ -655,7 +655,7 @@ object Stratifier extends Phase[Root, Root] {
       getPredicateSym(head) match {
         case None => DependencyGraph.empty
         case Some(headSym) =>
-          val dependencies = body flatMap (b => visitDependencyEdge(headSym.toString, b))
+          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
           DependencyGraph(dependencies.toSet)
       }
   }
@@ -776,7 +776,7 @@ object Stratifier extends Phase[Root, Root] {
             if (!(headStratum > bodyStratum)) {
               // Put the head in one stratum above the body stratum.
               val newHeadStratum = bodyStratum + 1
-              stratumOf.put(headSym.toString.toString, newHeadStratum)
+              stratumOf.put(headSym, newHeadStratum)
               changed = true
 
               // Check if we have found a negative cycle.
