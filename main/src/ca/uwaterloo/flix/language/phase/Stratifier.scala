@@ -759,19 +759,19 @@ object Stratifier extends Phase[Root, Root] {
         edge match {
           case DependencyEdge.Positive(headSym, bodySym, _) =>
             // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
-            val headStratum = stratumOf.getOrElseUpdate(headSym.toString, 0)
-            val bodyStratum = stratumOf.getOrElseUpdate(bodySym.toString, 0)
+            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
+            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
 
             if (!(headStratum >= bodyStratum)) {
               // Put the head in the same stratum as the body.
-              stratumOf.put(headSym.toString, bodyStratum)
+              stratumOf.put(headSym, bodyStratum)
               changed = true
             }
 
           case DependencyEdge.Negative(headSym, bodySym, edgeLoc) =>
             // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
-            val headStratum = stratumOf.getOrElseUpdate(headSym.toString, 0)
-            val bodyStratum = stratumOf.getOrElseUpdate(bodySym.toString, 0)
+            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
+            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
 
             if (!(headStratum > bodyStratum)) {
               // Put the head in one stratum above the body stratum.
@@ -781,7 +781,7 @@ object Stratifier extends Phase[Root, Root] {
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(bodySym.toString, headSym, g, edgeLoc), tpe, loc).toFailure
+                return StratificationError(findNegativeCycle(bodySym, headSym, g, edgeLoc), tpe, loc).toFailure
               }
             }
         }
@@ -801,11 +801,11 @@ object Stratifier extends Phase[Root, Root] {
     for (edge <- g.xs) {
       edge match {
         case DependencyEdge.Positive(head, body, loc) =>
-          val s = succ.getOrElse(body.toString, Set.empty)
-          succ.put(body.toString, s + ((head, loc)))
+          val s = succ.getOrElse(body, Set.empty)
+          succ.put(body, s + ((head, loc)))
         case DependencyEdge.Negative(head, body, loc) =>
           val s = succ.getOrElse(body, Set.empty)
-          succ.put(body.toString, s + ((head, loc)))
+          succ.put(body, s + ((head, loc)))
       }
     }
 
@@ -878,7 +878,7 @@ object Stratifier extends Phase[Root, Root] {
   private def predicateSymbolsOf(tpe: Type): Set[String] = tpe match {
     case Type.Var(_, _) => Set.empty
     case Type.SchemaEmpty => Set.empty
-    case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym.toString
+    case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym
     case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")
   }
 
