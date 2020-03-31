@@ -308,6 +308,8 @@ object WeededAst {
 
     case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
+    case class Lattice(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 
     case class Native(fqn: String, loc: SourceLocation) extends WeededAst.Type

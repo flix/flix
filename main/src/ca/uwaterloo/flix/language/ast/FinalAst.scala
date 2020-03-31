@@ -266,7 +266,9 @@ object FinalAst {
 
   object Term {
 
-    sealed trait Head
+    sealed trait Head {
+      def tpe: MonoType
+    }
 
     object Head {
 
@@ -280,7 +282,9 @@ object FinalAst {
 
     }
 
-    sealed trait Body
+    sealed trait Body {
+      def tpe: MonoType
+    }
 
     object Body {
 

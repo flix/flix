@@ -309,7 +309,7 @@ object NamedAst {
 
     case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Lattice(name: String, loc: SourceLocation) extends NamedAst.Type
+    case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
     case class Arrow(tparams: List[NamedAst.Type], eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 

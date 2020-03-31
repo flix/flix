@@ -1973,7 +1973,7 @@ object GenExpression {
       // Emit code for the predicate symbol.
       den match {
         case Denotation.Relational => newRelSym(name, mv)
-        case Denotation.Latticenal => ??? // TODO
+        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
       }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
@@ -2011,7 +2011,7 @@ object GenExpression {
       // Emit code for the predicate symbol.
       den match {
         case Denotation.Relational => newRelSym(name, mv)
-        case Denotation.Latticenal => ??? // TODO
+        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
       }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
@@ -2058,7 +2058,7 @@ object GenExpression {
   /**
     * Emits code for the given lattice symbol `name`.
     */
-  private def newLatSym(name: String, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newLatSym(name: String, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(name)
 
@@ -2067,7 +2067,7 @@ object GenExpression {
     mv.visitInsn(ACONST_NULL)
 
     // Emit code for the lattice operations.
-    newLatticeOps(???, mv) // TODO
+    newLatticeOps(tpe, mv)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
@@ -2094,12 +2094,11 @@ object GenExpression {
   }
 
   /**
-    * Emits code to construct a lattice operations object for the given symbol `sym`.
+    * Emits code to construct a lattice operations object for the given type `tpe`.
     */
-  private def newLatticeOps(sym: String, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newLatticeOps(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Lookup the declaration.
-    val decl = ??? // TODO
-    val ops: FinalAst.LatticeComponents = ??? // TODO
+    val ops = root.latticeComponents(tpe)
 
     // The bottom object.
     AsmOps.compileDefSymbol(ops.bot, mv)

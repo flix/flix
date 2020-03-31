@@ -222,7 +222,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Rewrites the given relation declaration `r0` to a type alias.
     */
   private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = r0 match {
-    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attrs, sp2) =>
+    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
       val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
@@ -233,7 +233,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       modVal map {
         case mod =>
           val tparams = visitTypeParams(tparams0)
-          val termTypes = attrs.map(a => visitType(a.tpe))
+          val termTypes = attr.map(a => visitType(a.tpe))
           val tpe = WeededAst.Type.Relation(termTypes.toList, loc)
           List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
       }
@@ -242,14 +242,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given lattice `r0`.
     */
-  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Lattice], WeederError] = l0 match {
+  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = l0 match {
     case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
+      val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparams = visitTypeParams(tparams0)
 
-      // TODO: Copy from relation.
-      ???
+      //
+      // Rewrite the lattice declaration to a type alias.
+      //
+      modVal map {
+        case mod =>
+          val tparams = visitTypeParams(tparams0)
+          val termTypes = attr.map(a => visitType(a.tpe))
+          val tpe = WeededAst.Type.Lattice(termTypes.toList, loc)
+          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
+      }
   }
 
   /**
