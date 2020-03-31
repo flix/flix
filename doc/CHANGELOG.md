@@ -4,12 +4,13 @@ HEAD:
 
 - Sets and Maps are now backed by Red-Black Trees. 
 - Added mutable sets and maps (backed by immutable sets and maps for now).
-- Added NonEmptyList.
+- Added NonEmptyList (Nel) and Validation.
 - Added spaceship operator.
 - Added binary, octal, and hex literals.
 - Added support for underscores in number literals.
 - Added use construct to import defs/types/tags from other namespaces.
-- Reword relation and lattice types. They now work more like type aliases.
+- Added a check for poorly named type variables.
+- Reworked relation and lattice types. They now work more like type aliases.
 - Improved the performance of the compiler.
 
 Version 0.11.0:
