@@ -205,7 +205,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointProject(sym, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointProject(name, exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 

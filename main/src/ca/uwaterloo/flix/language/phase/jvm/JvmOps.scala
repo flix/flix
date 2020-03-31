@@ -693,7 +693,7 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointProject(name, exp, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
@@ -1056,7 +1056,7 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointProject(name, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 

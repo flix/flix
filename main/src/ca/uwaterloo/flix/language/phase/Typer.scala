@@ -1086,7 +1086,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
-      case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointProject(name, exp, tvar, evar, loc) =>
         //
         //  exp1 : tpe    exp2 : #{ P : a  | b }
         //  -------------------------------------------
@@ -1098,8 +1098,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         for {
           (tpe, eff) <- visitExp(exp)
-          expectedType <- unifyTypM(tpe, Type.SchemaExtend(sym.toString, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(sym.toString, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
+          expectedType <- unifyTypM(tpe, Type.SchemaExtend(name, freshPredicateTypeVar, freshRestSchemaTypeVar), loc)
+          resultTyp <- unifyTypM(tvar, Type.SchemaExtend(name, freshPredicateTypeVar, freshResultSchemaTypeVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 
@@ -1454,9 +1454,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val e = visitExp(exp, subst0)
         TypedAst.Expression.FixpointSolve(e, Stratification.Empty, subst0(tvar), subst0(evar), loc)
 
-      case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, evar, loc) =>
+      case ResolvedAst.Expression.FixpointProject(name, exp, tvar, evar, loc) =>
         val e = visitExp(exp, subst0)
-        TypedAst.Expression.FixpointProject(sym.toString, e, subst0(tvar), subst0(evar), loc)
+        TypedAst.Expression.FixpointProject(name, e, subst0(tvar), subst0(evar), loc)
 
       case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
         val e1 = visitExp(exp1, subst0)

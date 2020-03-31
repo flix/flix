@@ -280,7 +280,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp, i0)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, loc) =>
         visitExp(exp, i0)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>

@@ -551,7 +551,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.FixpointProject(sym1, exp1, _, _, _), Expression.FixpointProject(sym2, exp2, _, _, _)) if sym1 == sym2 =>
+    case (Expression.FixpointProject(name1, exp1, _, _, _), Expression.FixpointProject(name2, exp2, _, _, _)) if name1 == name2 =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
@@ -967,9 +967,9 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.FixpointProject(sym, e, tpe, eff, loc)
+        Expression.FixpointProject(name, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)

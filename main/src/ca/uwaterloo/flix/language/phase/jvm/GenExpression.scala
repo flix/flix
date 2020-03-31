@@ -1067,13 +1067,13 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+    case Expression.FixpointProject(name, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
       // TODO: Need the denotation
-      newRelSym(sym.toString, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newRelSym(name, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
