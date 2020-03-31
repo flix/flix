@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Magnus Madsen
+ * Copyright 2019 Magnus Madsen, Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,17 +68,17 @@ namespace Array {
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def head(a: Array[a]): Option[a] & Pure =
-        if (length(a) > 0) Some(a[0] as & Pure) else None
+    pub def head(a: Array[a]): Option[a] & Impure =
+        if (length(a) > 0) Some(a[0]) else None
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `a`.
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def last(a: Array[a]): Option[a] & Pure =
+    pub def last(a: Array[a]): Option[a] & Impure =
         let len = length(a);
-        if (len > 0) Some(a[len-1] as & Pure) else None
+        if (len > 0) Some(a[len-1]) else None
 
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
@@ -144,7 +144,10 @@ namespace Array {
         if (i < 0)
             -1
         else
-            if (a[i] == x) i else indexOfRightHelper(x, a, i-1)
+            if (a[i] == x)
+                i
+            else
+                indexOfRightHelper(x, a, i-1)
 
     ///
     /// Return the positions of the all the occurences of `x` in `a`.
@@ -206,10 +209,10 @@ namespace Array {
     /// Returns `[]` if `n <= 0`.
     ///
     pub def repeat(x: a, n: Int32): Array[a] & Impure =
-        if (n > 0)
-            new(x, n)
-        else
+        if (n <= 0)
             []
+        else
+            new(x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -357,12 +360,11 @@ namespace Array {
     pub def rotateLeft(n: Int32, a: Array[a]): Array[a] & Impure =
         if (length(a) < 1)
             []
-        else {
+        else
             if (n < 0)
                 rotateRightHelper(Int32.abs(n), a)
             else
                 rotateLeftHelper(n, a)
-        }
 
     ///
     /// Helper function for `rotateLeft`.
@@ -380,12 +382,11 @@ namespace Array {
     pub def rotateRight(n: Int32, a: Array[a]): Array[a] & Impure =
         if (length(a) < 1)
             []
-        else {
+        else
             if (n < 0)
                 rotateLeftHelper(Int32.abs(n), a)
             else
                 rotateRightHelper(n, a)
-        }
 
     ///
     /// Helper function for `rotateRight`.
@@ -545,9 +546,8 @@ namespace Array {
             let jlen = length(a[0]);
             if (jlen == 0 || uniformHelper(a, jlen))
                 a
-            else {
+            else
                 init(i -> init(j -> a[j][i], ilen), jlen)
-            }
         }
 
     ///
@@ -795,12 +795,11 @@ namespace Array {
     def forallHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure=
         if (i >= len)
             true
-        else {
+        else
             if (f(a[i]) == false)
                 false
             else
                 forallHelper(f, a, len, i+1)
-        }
 
     ///
     /// Returns an array of every element in `a` that satisfies the predicate `f`.
@@ -1171,7 +1170,10 @@ namespace Array {
         if (i >= length(a))
             -1
         else
-            if (f(a[i])) i else findIndexOfLeftHelper(f, a, i + 1)
+            if (f(a[i]))
+                i
+            else
+                findIndexOfLeftHelper(f, a, i + 1)
 
     ///
     /// Optionally returns the position of the first element in `a` satisfying `f`
@@ -1191,7 +1193,10 @@ namespace Array {
         if (i < 0)
             -1
         else
-            if (f(a[i])) i else findIndexOfRightHelper(f, a, i - 1)
+            if (f(a[i]))
+                i
+            else
+                findIndexOfRightHelper(f, a, i - 1)
 
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
@@ -1280,16 +1285,21 @@ namespace Array {
     def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
             true
-        else {
-            if (a[i] != b[i]) false else sameElementsHelper(a, b, len, i+1)
-        }
+        else
+            if (a[i] != b[i])
+                false
+            else
+                sameElementsHelper(a, b, len, i+1)
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     pub def foreach(f: a ~> Unit, a: Array[a]): Unit & Impure =
         let len = length(a);
-        if (len < 1) () else foreachHelper(f, a, len, 0)
+        if (len < 1)
+            ()
+        else
+            foreachHelper(f, a, len, 0)
 
     ///
     /// Helper for `foreach`.
@@ -1307,7 +1317,10 @@ namespace Array {
     ///
     pub def foreachWithIndex(f: (a, Int32) ~> Unit, a: Array[a]): Unit & Impure =
         let len = length(a);
-        if (len < 1) () else foreachWithIndexHelper(f, a, len, 0)
+        if (len < 1)
+            ()
+        else
+            foreachWithIndexHelper(f, a, len, 0)
 
     ///
     /// Helper for `foreachWithIndex`.
@@ -1354,7 +1367,8 @@ namespace Array {
         let f = { (_,ix) ->
             if (ix >= i && ix < end)
                 a[ix] = sub[ix-i]
-            else ()
+            else
+                ()
         };
         foreachWithIndex(f, a)
 
@@ -1392,18 +1406,22 @@ namespace Array {
     ///
     pub def sortByInPlace(comparing: (a,a) -> Int32, a: Array[a]): Unit & Impure =
         let len = Array.length(a);
-        if (len == 0) () else sortByInPlaceHelper(comparing, a, 0, len-1)
+        if (len == 0)
+            ()
+        else
+            sortByInPlaceHelper(comparing, a, 0, len-1)
 
     ///
     /// Helper for `sortByInPlace`.
     ///
     def sortByInPlaceHelper(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Unit & Impure =
-        if (lo < hi) {
+        if (lo >= hi)
+            ()
+        else {
             let p = sortByPartition(comparing, a, lo, hi);
             sortByInPlaceHelper(comparing, a, lo, p-1);
             sortByInPlaceHelper(comparing, a, p+1, hi)
         }
-        else ()
 
     ///
     /// Swap the elements at `i` and `j` (helper for sorting).
@@ -1423,10 +1441,12 @@ namespace Array {
     def sortByPartition(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (comparing(a[j], pivot) < 0) {
+            if (comparing(a[j], pivot) >= 0)
+                ix
+            else {
                 swapInPlace(a, ix, j);
                 ix+1
-            } else ix);
+            });
         swapInPlace(a, i, hi);
         i
 

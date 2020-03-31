@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Magnus Madsen
+ * Copyright 2019 Magnus Madsen, Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+namespace TestArray {
 
 /////////////////////////////////////////////////////////////////////////////
 // new                                                                     //
@@ -4039,3 +4041,5 @@ def sortByInPlace13(): Bool & Impure =
     let a = [2,3,0,4,1,2];
     Array.sortByInPlace((x,y) -> if (x > y) -1 else 1, a);
     Array.sameElements(a, [4,3,2,2,1,0])
+
+}
