@@ -1151,12 +1151,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
-    val latticeComponents = root.latticeOps.map { case (k, v) => k -> visitLatticeOps(v) }
+    val latticeOps = root.latticeOps.map { case (k, v) => k -> visitLatticeOps(v) }
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, enums, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, latticeOps, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   /**
