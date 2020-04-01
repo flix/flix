@@ -103,20 +103,20 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a` contains the element `x`.
     ///
-    pub def memberOf(x: a, a: Array[a]): Bool =
+    pub def memberOf(x: a, a: Array[a]): Bool & Impure =
         exists(y -> y == x, a)
 
     ///
     /// Alias for `IndexOfLeft`
     ///
-    pub def indexOf(x: a, a: Array[a]): Option[Int32] = indexOfLeft(x,a)
+    pub def indexOf(x: a, a: Array[a]): Option[Int32] & Impure = indexOfLeft(x,a)
 
     ///
     /// Optionally returns the position of the first occurence of `x` in `a`
     /// searching from left to right.
     ///
-    pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Pure =
-        let i = indexOfLeftHelper(x, a, length(a), 0) as & Pure;
+    pub def indexOfLeft(x: a, a: Array[a]): Option[Int32] & Impure =
+        let i = indexOfLeftHelper(x, a, length(a), 0);
         if (i < 0) None else Some(i)
 
     ///
@@ -132,9 +132,9 @@ namespace Array {
     /// Optionally returns the position of the first occurence of `x` in `a`
     /// searching from right to left.
     ///
-    pub def indexOfRight(x: a, a: Array[a]): Option[Int32] & Pure =
+    pub def indexOfRight(x: a, a: Array[a]): Option[Int32] & Impure =
         let start = length(a) - 1;
-        let i = indexOfRightHelper(x, a, start) as & Pure;
+        let i = indexOfRightHelper(x, a, start);
         if (i < 0) None else Some(i)
 
     ///
@@ -160,17 +160,17 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: a -> Bool, xs: Array[a]): Option[a] = findLeft(f, xs)
+    pub def find(f: a -> Bool, xs: Array[a]): Option[a] & Impure = findLeft(f, xs)
 
     ///
     /// Optionally returns the first element of `a` that satisfies the predicate `f` when searching from left to right.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findLeft(f: a -> Bool, a: Array[a]): Option[a] & Pure =
+    pub def findLeft(f: a -> Bool, a: Array[a]): Option[a] & Impure =
         match findIndexOfLeft(x -> f(x), a) {
             case None => None
-            case Some(i) => Some(a[i] as & Pure)
+            case Some(i) => Some(a[i])
         }
 
     ///
@@ -178,10 +178,10 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findRight(f: a -> Bool, a: Array[a]): Option[a] =
+    pub def findRight(f: a -> Bool, a: Array[a]): Option[a] & Impure =
         match findIndexOfRight(x -> f(x), a) {
             case None => None
-            case Some(i) => Some(a[i] as & Pure)
+            case Some(i) => Some(a[i])
         }
 
     ///
@@ -328,7 +328,7 @@ namespace Array {
     ///
     /// Returns the reverse of `a`.
     ///
-    pub def reverse(a: Array[a]): Array[a] & Impure=
+    pub def reverse(a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let end = len - 1;
         init(i -> a[end - i], len)
@@ -553,18 +553,18 @@ namespace Array {
     ///
     /// Helper function for `transpose`.
     ///
-    def uniformHelper(a: Array[Array[a]], l: Int32): Bool =
+    def uniformHelper(a: Array[Array[a]], l: Int32): Bool & Impure =
         exists(x -> length(x) != l, a)
 
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
-    pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Pure =
+    pub def isPrefixOf(a1: Array[a], a2: Array[a]): Bool & Impure =
         let len1 = length(a1);
         if (len1 > length(a2))
             false
         else
-            isPrefixOfHelper(a1, a2, len1, 0) as & Pure
+            isPrefixOfHelper(a1, a2, len1, 0)
 
     ///
     /// Helper for `isPrefixOf`.
@@ -581,7 +581,7 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
-    pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool =
+    pub def isInfixOf(a1: Array[a], a2: Array[a]): Bool & Impure =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
@@ -590,7 +590,7 @@ namespace Array {
             if (len1 == 0)
                 true
             else
-                isInfixOfSearch(a1, a2, len1, len2, 0) as & Pure
+                isInfixOfSearch(a1, a2, len1, len2, 0)
 
     ///
     /// Helper for `isInfixOf` - scan a2 to find a match with first element of a1.
@@ -626,13 +626,13 @@ namespace Array {
     ///
     /// Returns `true` if and only if `a1` is a prefix of `a2`.
     ///
-    pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Pure =
+    pub def isSuffixOf(a1: Array[a], a2: Array[a]): Bool & Impure =
         let len1 = length(a1);
         let len2 = length(a2);
         if (len1 > len2)
             false
         else
-            isSuffixOfHelper(a1, a2, len1-1, len2-1) as & Pure
+            isSuffixOfHelper(a1, a2, len1-1, len2-1)
 
     ///
     /// Helper for `isSuffixOf`.
@@ -742,8 +742,8 @@ namespace Array {
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
     ///
-    pub def count(f: a -> Bool, a: Array[a]): Int32 =
-        foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a)
+    pub def count(f: a -> Bool, a: Array[a]): Int32 & Impure =
+        foldLeft((b,x) -> if (f(x)) b + 1 else b, 0, a) as & Impure
 
     ///
     /// Returns the concatenation of the arrays of in the array `arrs`.
@@ -766,8 +766,8 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: a -> Bool, a: Array[a]): Bool =
-        existsHelper(f, a, length(a), 0) as & Pure
+    pub def exists(f: a -> Bool, a: Array[a]): Bool & Impure =
+        existsHelper(f, a, length(a), 0)
 
     ///
     /// Helper function for `exists`.
@@ -786,13 +786,13 @@ namespace Array {
     ///
     /// Returns `true` if `a` is empty.
     ///
-    pub def forall(f: a -> Bool, a: Array[a]): Bool =
-        forallHelper(f, a, length(a), 0) as & Pure
+    pub def forall(f: a -> Bool, a: Array[a]): Bool & Impure =
+        forallHelper(f, a, length(a), 0)
 
     ///
     /// Helper function for `forall`.
     ///
-    def forallHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure=
+    def forallHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
             true
         else
@@ -833,7 +833,7 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure=
+    pub def span(f: a -> Bool, a: Array[a]): (Array[a], Array[a]) & Impure =
         match findIndexOfLeft(x -> !(f(x)), a) {
             case None => (takeLeft(length(a), a), [])
             case Some(i) => (takeLeft(i, a), dropLeft(i, a))
@@ -995,7 +995,11 @@ namespace Array {
             reverseInPlace(a);
             (a, List.reverse(ns))
         }
-        case x :: rs => if (agreeHelper(f, x, ps)) extractHelper(f, rs, x :: ps, ns) else extractHelper(f, rs, ps, x :: ns)
+        case x :: rs =>
+            if (agreeHelper(f, x, ps))
+                extractHelper(f, rs, x :: ps, ns)
+            else
+                extractHelper(f, rs, ps, x :: ns)
     }
 
     ///
@@ -1112,8 +1116,8 @@ namespace Array {
     ///
     /// Returns `None` if every element of `xs` is `None`.
     ///
-    pub def findMap(f: a -> Option[b] & e, a: Array[a]): Option[b] & e =
-        findMapHelper(f, a, length(a), 0) as & e
+    pub def findMap(f: a -> Option[b] & e, a: Array[a]): Option[b] & Impure =
+        findMapHelper(f, a, length(a), 0)
 
     ///
     /// Helper function for `findMap`.
@@ -1148,18 +1152,18 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findIndexOf(f: a -> Bool, a: Array[a]): Option[Int32] = findIndexOfLeft(f,a)
+    pub def findIndexOf(f: a -> Bool, a: Array[a]): Option[Int32] & Impure = findIndexOfLeft(f,a)
 
     ///
     /// Optionally returns the position of the first element in `x` satisfying `f`.
     ///
     /// The function `f` must be pure.
     ///
-    pub def findIndexOfLeft(f: a -> Bool, a: Array[a]): Option[Int32] =
+    pub def findIndexOfLeft(f: a -> Bool, a: Array[a]): Option[Int32] & Impure =
         if (length(a) < 1)
             None
         else {
-            let i = findIndexOfLeftHelper(f, a, 0) as & Pure;
+            let i = findIndexOfLeftHelper(f, a, 0);
             if (i < 0) None else Some(i)
         }
 
@@ -1181,9 +1185,9 @@ namespace Array {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findIndexOfRight(f: a -> Bool, a: Array[a]): Option[Int32] =
+    pub def findIndexOfRight(f: a -> Bool, a: Array[a]): Option[Int32] & Impure =
         let len = length(a);
-        let i = findIndexOfRightHelper(f, a, len-1) as & Pure;
+        let i = findIndexOfRightHelper(f, a, len-1);
         if (i < 0) None else Some(i)
 
     ///
@@ -1209,7 +1213,7 @@ namespace Array {
     ///
     /// Helper function for `findIndices`.
     ///
-    def findIndicesHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): List[Int32] & Impure=
+    def findIndicesHelper(f: a -> Bool, a: Array[a], len: Int32, i: Int32): List[Int32] & Impure =
         if (i >= len)
             Nil
         else {
@@ -1271,11 +1275,11 @@ namespace Array {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: Array[a], b: Array[b]): Bool & Pure =
+    pub def sameElements(a: Array[a], b: Array[b]): Bool & Impure =
         let alen = Array.length(a);
         let blen = Array.length(b);
         if (alen == blen)
-            sameElementsHelper(a, b, alen, 0) as & Pure
+            sameElementsHelper(a, b, alen, 0)
         else
             false
 
