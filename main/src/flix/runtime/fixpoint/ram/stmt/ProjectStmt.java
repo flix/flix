@@ -9,11 +9,11 @@ public final class ProjectStmt implements Stmt {
     private final RamTerm[] facts;
     private final TableName table;
 
-    public ProjectStmt(RamTerm[] facts, TableName table) {
-        if (facts == null || facts.length == 0)
-            throw new IllegalArgumentException("'facts' must be non-null and non-empty");
+    public ProjectStmt(RamTerm[] terms, TableName table) {
+        if (terms == null || terms.length == 0)
+            throw new IllegalArgumentException("'terms' must be non-null and non-empty");
         if (table == null) throw new IllegalArgumentException("'table' must be non-null");
-        this.facts = facts;
+        this.facts = terms;
         this.table = table;
     }
 
