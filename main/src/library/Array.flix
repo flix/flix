@@ -277,13 +277,13 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a`. Array `a` is mutated.
     ///
-    pub def mapInPlace(f: a -> a, a: Array[a]): Unit & Impure =
+    pub def mapInPlace(f: a -> a, a: mut Array[a]): Unit & Impure =
         mapInPlaceHelper(f, length(a), a, 0)
 
     ///
     /// Helper of `mapInPlace`
     ///
-    def mapInPlaceHelper(f: a -> a, len: Int32, a: Array[a], i: Int32): Unit & Impure =
+    def mapInPlaceHelper(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -304,13 +304,13 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
-    pub def mapWithIndexInPlace(f: (a, Int32) -> a, a: Array[a]): Unit & Impure =
+    pub def mapWithIndexInPlace(f: (a, Int32) -> a, a: mut Array[a]): Unit & Impure =
         mapWithIndexInPlaceHelper(f, length(a), a, 0)
 
     ///
     /// Helper of `mapWithIndexInPlace`
     ///
-    def mapWithIndexInPlaceHelper(f: (a, Int32) -> a, len: Int32, a: Array[a], i: Int32): Unit & Impure =
+    def mapWithIndexInPlaceHelper(f: (a, Int32) -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -336,14 +336,14 @@ namespace Array {
     ///
     /// Returns the reverse of `a`.
     ///
-    pub def reverseInPlace(a: Array[a]): Unit & Impure =
+    pub def reverseInPlace(a: mut Array[a]): Unit & Impure =
         let len = length(a);
         reverseInPlaceHelper(a, len / 2, 0, len - 1)
 
     ///
     /// Helper for `reverseInPlace`.
     ///
-    def reverseInPlaceHelper(a: Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
+    def reverseInPlaceHelper(a: mut Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
         if (i >= halflen)
             ()
         else {
@@ -416,9 +416,9 @@ namespace Array {
         map(e -> if (e == x) y else e, a)
 
     ///
-    /// Replace every occurrence of `x` replaced by `y` in the array `a`.
+    /// Replace every occurrence of `x` by `y` in the array mutable `a`.
     ///
-    pub def replaceInPlace(x: a, y: a, a: Array[a]): Unit & Impure =
+    pub def replaceInPlace(x: a, y: a, a: mut Array[a]): Unit & Impure =
         mapInPlace(e -> if (e == x) y else e, a)
 
     ///
@@ -435,13 +435,13 @@ namespace Array {
         updateSequence(i, sub, b)
 
     ///
-    /// Update `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
+    /// Update mutable array `b` with the `n` elements starting at index `i` replaced with the elements of array `a`.
     ///
     /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patchInPlace(i: Int32, n: Int32, a: Array[a], b: Array[a]): Unit & Impure =
+    pub def patchInPlace(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
         let sub = slice(a, 0, size);
@@ -1367,9 +1367,9 @@ namespace Array {
         init(f, length(a))
 
     ///
-    /// Update `a` with the elements starting at index `i` replaced by `sub`.
+    /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
-    pub def updateSequenceInPlace(i: Int32, sub: Array[a], a: Array[a]): Unit & Impure =
+    pub def updateSequenceInPlace(i: Int32, sub: Array[a], a: mut Array[a]): Unit & Impure =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i && ix < end)
@@ -1411,7 +1411,7 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortByInPlace(comparing: (a,a) -> Int32, a: Array[a]): Unit & Impure =
+    pub def sortByInPlace(comparing: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)
             ()
@@ -1421,7 +1421,7 @@ namespace Array {
     ///
     /// Helper for `sortByInPlace`.
     ///
-    def sortByInPlaceHelper(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    def sortByInPlaceHelper(comparing: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)
             ()
         else {
@@ -1435,7 +1435,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swapInPlace(a: Array[Int32], i: Int32, j: Int32): Unit & Impure =
+    def swapInPlace(a: mut Array[Int32], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
         let y = a[j];
         a[i] = y;
