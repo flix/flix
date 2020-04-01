@@ -472,14 +472,14 @@ namespace Array {
     /// Returns the concatenation of the elements in `arrs` with the elements of `sep` inserted between every two adjacent elements.
     ///
     pub def intercalate(sep: Array[a], arrs: Array[Array[a]]): Array[a] & Impure =
-        let count = Array.length(arrs);
-        let sepLength = Array.length(sep);
+        let count = length(arrs);
+        let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(arrs) + (sepCount * sepLength);
         match headArrays(arrs){
             case None => []
             case Some(x) =>
-                let out = Array.new(x, len);
+                let out = new(x, len);
                 let overwrite = { (a,st) ->
                     let (pos,i) = st;
                     if (i == 0) {
@@ -500,8 +500,8 @@ namespace Array {
     /// Return the new write position which is `pos + length(sub)`.
     ///
     def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
-        Array.updateSequenceInPlace(pos, sub, out);
-        pos + Array.length(sub)
+        updateSequenceInPlace(pos, sub, out);
+        pos + length(sub)
 
 
     ///
@@ -509,8 +509,8 @@ namespace Array {
     ///
     /// Helper for `intercalate` and `flatten`.
     ///
-    def sumLengths(arrs: Array[Array[a]]): Int32 & Pure =
-        Array.foldLeft((ac,a) -> ac + Array.length(a), 0, arrs)
+    def sumLengths(arrs: Array[Array[a]]): Int32 & Impure =
+        foldLeft((ac,a) -> ac + length(a), 0, arrs)
 
     ///
     /// Find the first non-empty array of an array of arrays (left-to-right).
@@ -518,8 +518,7 @@ namespace Array {
     /// Helper for `intercalate` and `flatten`.
     ///
     def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
-        let len = Array.length(arrs);
-        headArraysHelper(arrs, len, 0)
+        headArraysHelper(arrs, length(arrs), 0)
 
     ///
     /// Helper for `headArrays`.
@@ -528,7 +527,7 @@ namespace Array {
         if (i >= len)
             None
         else
-            match Array.head(arrs[i]) {
+            match head(arrs[i]) {
                 case Some(x) => Some(x)
                 case None => headArraysHelper(arrs, len, i+1)
             }
@@ -651,15 +650,15 @@ namespace Array {
     ///
     /// Alias for `foldLeft`.
     ///
-    pub def fold(f: (b, a) -> b & e, s: b, a: Array[a]): b & e = foldLeft(f, s, a)
+    pub def fold(f: (b, a) -> b & e, s: b, a: Array[a]): b & Impure = foldLeft(f, s, a)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
-    pub def foldLeft(f: (b, a) -> b & e, s: b, a: Array[a]): b & e =
-        foldLeftHelper(f, s, a, 0) as & e
+    pub def foldLeft(f: (b, a) -> b & e, s: b, a: Array[a]): b & Impure =
+        foldLeftHelper(f, s, a, 0)
 
     ///
     /// Helper function for `foldLeft`.
@@ -668,7 +667,7 @@ namespace Array {
         if (i >= length(a))
             s
         else {
-            let s1 = f(s, a[i]);
+            let s1 = f(s, a[i]) as & Impure;
             foldLeftHelper(f, s1, a, i + 1)
         }
 
@@ -677,8 +676,8 @@ namespace Array {
     ///
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], s))...)`.
     ///
-    pub def foldRight(f: (a, b) -> b & e, s: b, a: Array[a]): b & e =
-        foldRightHelper(f, s, a, length(a) - 1) as & e
+    pub def foldRight(f: (a, b) -> b & e, s: b, a: Array[a]): b & Impure =
+        foldRightHelper(f, s, a, length(a) - 1)
 
     ///
     /// Helper function for `foldRight`.
@@ -687,25 +686,25 @@ namespace Array {
         if (i < 0)
             s
         else {
-            let s1 = f(a[i], s);
+            let s1 = f(a[i], s) as & Impure;
             foldRightHelper(f, s1, a, i - 1)
         }
 
     ///
     /// Alias for `reduceLeft`.
     ///
-    pub def reduce(f: (a, a) -> a & e, a: Array[a]): Option[a] & e = reduceLeft(f, a)
+    pub def reduce(f: (a, a) -> a & e, a: Array[a]): Option[a] & Impure = reduceLeft(f, a)
 
     ///
     /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a & e, a: Array[a]): Option[a] & e =
+    pub def reduceLeft(f: (a, a) ->  a & e, a: Array[a]): Option[a] & Impure =
         if (length(a) == 0)
             None
         else
-            Some(reduceLeftHelper(f, a, a[0], 1)) as & e
+            Some(reduceLeftHelper(f, a, a[0], 1))
 
     ///
     /// Helper function for `reduceLeft`.
@@ -713,21 +712,23 @@ namespace Array {
     def reduceLeftHelper(f: (a, a) ->  a & e, a: Array[a], x: a, i:Int32): a & Impure =
         if (i >= length(a))
             x
-        else
-            reduceLeftHelper(f, a, f(x, a[i]), i+1)
+        else {
+            let s1 = f(x, a[i]) as & Impure;
+            reduceLeftHelper(f, a, s1, i+1)
+        }
 
     ///
     /// Applies `f` to all elements in `a` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceRight(f: (a, a) -> a & e, a: Array[a]): Option[a] & e =
+    pub def reduceRight(f: (a, a) -> a & e, a: Array[a]): Option[a] & Impure =
         if (length(a) == 0)
             None
         else {
             let end = length(a) - 1;
-            let ac = a[end] as & e;
-            Some(reduceRightHelper(f, a, ac, end-1)) as & e
+            let ac = a[end];
+            Some(reduceRightHelper(f, a, ac, end-1))
         }
 
     ///
@@ -736,8 +737,10 @@ namespace Array {
     def reduceRightHelper(f: (a, a) -> a & e, a: Array[a], x: a, i:Int32): a & Impure =
         if (i < 0)
             x
-        else
-            reduceRightHelper(f, a, f(a[i], x), i-1)
+        else {
+            let s1 = f(a[i], x) as & Impure;
+            reduceRightHelper(f, a, s1, i-1)
+        }
 
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
@@ -753,7 +756,7 @@ namespace Array {
         match headArrays(arrs) {
             case None => []
             case Some(x) => {
-                let out = Array.new(x, len);
+                let out = new(x, len);
                 foreachAccum((a, pos) -> arrayWrites(pos, a, out), 0, arrs);
                 out
             }
@@ -973,7 +976,7 @@ namespace Array {
     /// The function `f` must be pure.
     ///
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
-        let xs = Array.toList(a);
+        let xs = toList(a);
         groupByHelper(f, xs) |> List.toArray
 
     ///
@@ -1056,17 +1059,17 @@ namespace Array {
     ///
     /// Alias for `foldLeft2`.
     ///
-    pub def fold2(f: (c, a, b) -> c & e, c: c, a: Array[a], b: Array[b]): c & e =
+    pub def fold2(f: (c, a, b) -> c & e, c: c, a: Array[a], b: Array[b]): c & Impure =
         foldLeft2(f, c, a, b)
 
     ///
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from left to right.
     ///
-    pub def foldLeft2(f: (c, a, b) ->  c & e, c: c, a: Array[a], b: Array[b]): c & e =
+    pub def foldLeft2(f: (c, a, b) ->  c & e, c: c, a: Array[a], b: Array[b]): c & Impure =
         let lena = length(a);
         let lenb = length(b);
-        foldLeft2Helper(f, c, a, b, lena, lenb, 0) as & e
+        foldLeft2Helper(f, c, a, b, lena, lenb, 0)
 
     ///
     /// Helper function for `foldLeft2`.
@@ -1077,7 +1080,7 @@ namespace Array {
         else {
             let x = a[i];
             let y = b[i];
-            let s1 = f(s, x, y);
+            let s1 = f(s, x, y) as & Impure;
             foldLeft2Helper(f, s1, a, b, lena, lenb, i+1)
         }
 
@@ -1085,10 +1088,10 @@ namespace Array {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from right to left.
     ///
-    pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c & e =
+    pub def foldRight2(f: (a, b, c) -> c & e, c: c, a: Array[a], b: Array[b]): c & Impure =
         let starta = length(a) - 1;
         let startb = length(b) - 1;
-        foldRight2Helper(f, c, a, b, starta, startb) as & e
+        foldRight2Helper(f, c, a, b, starta, startb)
 
     ///
     /// Helper function for `foldRight2`.
@@ -1099,7 +1102,7 @@ namespace Array {
         else {
             let x = a[ia];
             let y = b[ib];
-            let s1 = f(x, y, s);
+            let s1 = f(x, y, s) as & Impure;
             foldRight2Helper(f, s1, a, b, ia - 1, ib - 1)
         }
 
@@ -1136,7 +1139,7 @@ namespace Array {
     ///
     /// Returns the array `a` as a set.
     ///
-    pub def toSet(a: Array[a]): Set[a] = foldRight(Set.insert, Set.empty(), a)
+    pub def toSet(a: Array[a]): Set[a] & Impure = foldRight(Set.insert, Set.empty(), a)
 
     ///
     /// Returns the association list `xs` as a map.
@@ -1144,7 +1147,7 @@ namespace Array {
     /// If `xs` contains multiple mappings with the same key, `toMap` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMap(a: Array[(a, b)]): Map[a, b] =
+    pub def toMap(a: Array[(a, b)]): Map[a, b] & Impure =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
@@ -1276,8 +1279,8 @@ namespace Array {
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(a: Array[a], b: Array[b]): Bool & Impure =
-        let alen = Array.length(a);
-        let blen = Array.length(b);
+        let alen = length(a);
+        let blen = length(b);
         if (alen == blen)
             sameElementsHelper(a, b, alen, 0)
         else
@@ -1398,8 +1401,8 @@ namespace Array {
     /// The sort implementation is quicksort.
     ///
     pub def sortBy(f: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
-        let len = Array.length(a);
-        let b = Array.slice(a, 0, len);
+        let len = length(a);
+        let b = slice(a, 0, len);
         sortByInPlace(f, b);
         b
 
@@ -1409,7 +1412,7 @@ namespace Array {
     /// The sort implementation is quicksort.
     ///
     pub def sortByInPlace(comparing: (a,a) -> Int32, a: Array[a]): Unit & Impure =
-        let len = Array.length(a);
+        let len = length(a);
         if (len == 0)
             ()
         else
@@ -1456,6 +1459,7 @@ namespace Array {
 
     ///
     /// A forloop with an accumulator (helper for sorting).
+    /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi
     ///
