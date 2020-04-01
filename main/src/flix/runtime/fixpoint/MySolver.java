@@ -1,6 +1,7 @@
 package flix.runtime.fixpoint;
 
 import flix.runtime.ProxyObject;
+import flix.runtime.ReifiedSourceLocation;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.RowVariable;
@@ -20,12 +21,12 @@ import flix.runtime.fixpoint.term.VarTerm;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class MySolver {
 
     private static final Object[] nullArray = new Object[]{null};
     private static int variableCounter = 0;
+    private static boolean addLabelStmts = true;
 
     public static void compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
@@ -37,96 +38,138 @@ public class MySolver {
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratums(cs, stf);
 
         // And then all stratum are evaluated
-        Stmt[] stratumStmts = new Stmt[0];
-        for (int stratum : derivedInStratum.keySet()) {
-            Stmt[] fullStratum = evalStratum(derivedInStratum.get(stratum));
-            stratumStmts = Stream.of(stratumStmts, fullStratum).flatMap(Stream::of).toArray(Stmt[]::new);
-        }
+        ArrayList<Stmt> stratums = compileStratums(derivedInStratum);
 
-
-        SeqStmt seqStmt = new SeqStmt(Stream.of(factProjections, stratumStmts).flatMap(Stream::of).toArray(Stmt[]::new));
+        SeqStmt seqStmt = new SeqStmt(stratums);
         PrintStream stream = System.out;
         seqStmt.prettyPrint(stream, 0);
         stream.print('\n');
     }
 
     /**
+     * Responsible for compiling all stratums
+     *
+     * @param stratumMap A map describing relations and how they are derived in the individual stratum
+     * @return An ArrayList of all statements in the compiled version of all stratums
+     */
+    private static ArrayList<Stmt> compileStratums(Map<Integer, Map<RelSym, ArrayList<Constraint>>> stratumMap) {
+        ArrayList<Stmt> result = new ArrayList<>();
+        for (int stratum : stratumMap.keySet()) {
+            if (addLabelStmts) result.add(new LabelStmt("Stratum " + stratum));
+            result.addAll(compileStratum(stratumMap.get(stratum)));
+        }
+        return result;
+    }
+
+    /**
      * Evaluates a stratum
      *
-     * @param derived Is a map to describe the constraints that can be used to derive new facts about the RelSym.
+     * @param ruleMap Is a map to describe the constraints that can be used to derive new facts about the RelSym.
      * @return An array of all Stmt's that is the evaluation of the stratum
      */
-    private static Stmt[] evalStratum(Map<RelSym, ArrayList<Constraint>> derived) {
-        Stmt[][] ramIntoRules = new Stmt[derived.keySet().size()][];
-        Stmt[] mergeStmts = new Stmt[derived.keySet().size()];
+    private static ArrayList<Stmt> compileStratum(Map<RelSym, ArrayList<Constraint>> ruleMap) {
+        // First we compile the initialization of the algorithm where access to all facts is allowed
+        ArrayList<Stmt> result = compileInit(ruleMap);
+        if (addLabelStmts) result.add(new LabelStmt("Fixpoint starts here"));
+        result.add(compileFixpoint(ruleMap));
 
-        int i = 0;
-        for (RelSym relSym : derived.keySet()) {
-            ramIntoRules[i] = eval(relSym, derived);
-            TableName orig = new TableName(TableVersion.RESULT, relSym);
-            RelationExp mergeToOrig = new BinaryRelationExp(BinaryRelationOperator.UNION,
-                    orig,
-                    new TableName(TableVersion.DELTA, relSym));
-            mergeStmts[i] = new AssignStmt(orig, mergeToOrig);
-            i++;
+        return result;
+    }
+
+    private static Stmt compileFixpoint(Map<RelSym, ArrayList<Constraint>> ruleMap) {
+        BoolExp condition = compileWhileCondition(ruleMap.keySet());
+
+        // First part of the while body consists of saving the DELTA tables into the NEW tables and clearing the DELTA table
+        ArrayList<Stmt> whileBody = compileSaveLastIter(ruleMap.keySet());
+        whileBody.addAll(compileClearLastIter(ruleMap.keySet()));
+
+        // Then all relations are evaluated incrementally
+        for (RelSym rel : ruleMap.keySet()) {
+            whileBody.addAll(compileRulesIncr(ruleMap.get(rel)));
         }
-        Stmt[] ramRulesFlat = Stream.of(ramIntoRules).flatMap(Stream::of).toArray(Stmt[]::new);
+        // And then the DELTA tables are saved into the RESULT tables
+        whileBody.addAll(generateMergeStatements(ruleMap.keySet()));
+        return new WhileStmt(condition, new SeqStmt(whileBody));
+    }
 
-        // Now We define the inner while loop that will be the main part of the algorithm
+    private static ArrayList<Stmt> compileClearLastIter(Set<RelSym> rels) {
+        ArrayList<Stmt> result = new ArrayList<>();
+        if (addLabelStmts)
+            result.add(new LabelStmt("Clear Delta tables to make it ready for new facts from this iteration"));
+        for (RelSym relSym : rels) {
+            TableName delta = new TableName(TableVersion.DELTA, relSym);
+            result.add(new AssignStmt(delta, new EmptyRelationExp()));
+        }
 
-        // First we define the condition of the loop
-        i = 0;
-        Stmt[] saveLastIteration = new Stmt[derived.keySet().size()];
-        Stmt[] clearLastIteration = new Stmt[derived.keySet().size()];
-        BoolExp whileCondition = null;
-        for (RelSym rel : derived.keySet()) {
-            TableName mergeInto = new TableName(TableVersion.NEW, rel);
-            TableName delta = new TableName(TableVersion.DELTA, rel);
-            saveLastIteration[i] = new AssignStmt(mergeInto, delta);
+        return result;
+    }
 
-            if (whileCondition != null) {
-                whileCondition = new OrBoolExp(whileCondition, new NotBoolExp(new EmptyBoolExp(delta)));
+    private static ArrayList<Stmt> compileSaveLastIter(Set<RelSym> rels) {
+        ArrayList<Stmt> result = new ArrayList<>();
+        if (addLabelStmts) result.add(new LabelStmt("Remember facts generated in last iteration in NEW"));
+        for (RelSym relSym : rels) {
+            TableName mergeInto = new TableName(TableVersion.NEW, relSym);
+            TableName delta = new TableName(TableVersion.DELTA, relSym);
+            result.add(new AssignStmt(mergeInto, delta));
+        }
+        return result;
+    }
+
+    private static BoolExp compileWhileCondition(Set<RelSym> derived) {
+        BoolExp result = null;
+        for (RelSym relSym : derived) {
+            TableName delta = new TableName(TableVersion.DELTA, relSym);
+            if (result != null) {
+                result = new OrBoolExp(result, new NotBoolExp(new EmptyBoolExp(delta)));
             } else {
-                whileCondition = new NotBoolExp(new EmptyBoolExp(delta));
+                result = new NotBoolExp(new EmptyBoolExp(delta));
             }
-
-            // We should make sure that the tables holding the relations generated in an iteration is cleared at the start of each iteration
-            clearLastIteration[i] = new AssignStmt(new TableName(TableVersion.DELTA, rel), new EmptyRelationExp());
-
-            i++;
         }
+        return result;
+    }
 
-        // Then we define the evaluation TODO: There is no real reason for 3 loops through the keyset, just for convenience while writing
-        Stmt[] iterationEvaluation = new Stmt[0];
-        for (RelSym rel : derived.keySet()) {
-            Stmt[] eval = evalIncr(rel, derived.get(rel));
-            iterationEvaluation = Stream.of(iterationEvaluation, eval).flatMap(Stream::of).toArray(Stmt[]::new);
+    private static ArrayList<Stmt> generateMergeStatements(Set<RelSym> relations) {
+        ArrayList<Stmt> result = new ArrayList<>();
+        if (addLabelStmts) result.add(new LabelStmt("Merge new facts into result"));
+        for (RelSym relSym : relations) {
+            TableName mergeInto = new TableName(TableVersion.RESULT, relSym);
+            RelationExp mergeExp = new BinaryRelationExp(BinaryRelationOperator.UNION,
+                    mergeInto,
+                    new TableName(TableVersion.DELTA, relSym));
+            result.add(new AssignStmt(mergeInto, mergeExp));
         }
+        return result;
+    }
 
-
-        SeqStmt whileBody = new SeqStmt(Stream.of(saveLastIteration, clearLastIteration, iterationEvaluation, mergeStmts).flatMap(Stream::of).toArray(Stmt[]::new));
-        Stmt mainWhile = new WhileStmt(whileCondition, whileBody);
-
-        return Stream.of(ramRulesFlat, mergeStmts, new Stmt[]{mainWhile}).flatMap(Stream::of).toArray(Stmt[]::new);
+    /**
+     * Compiles the initialization of a stratum using the all facts in the relations
+     *
+     * @param ruleMap A map from each relation to the rules to derive them
+     * @return An ArrayList with all the Stmts of the compiled version
+     */
+    private static ArrayList<Stmt> compileInit(Map<RelSym, ArrayList<Constraint>> ruleMap) {
+        ArrayList<Stmt> result = new ArrayList<>();
+        if (addLabelStmts) result.add(new LabelStmt("Init"));
+        for (RelSym relSym : ruleMap.keySet()) {
+            result.addAll(compileRules(ruleMap.get(relSym)));
+        }
+        // The end of init all data is merged into the result tables
+        result.addAll(generateMergeStatements(ruleMap.keySet()));
+        return result;
     }
 
     /**
      * This method creates the statements for incremental evaluation of the rules
      *
-     * @param rel         The relation that is being evaluated
      * @param constraints The constraints defining the rules for the relation
      * @return An array of statements evaluating the rules. Should be 1 ForEachStmt for each rule
      */
-    private static Stmt[] evalIncr(RelSym rel, ArrayList<Constraint> constraints) {
-        Stmt[][] result = new Stmt[constraints.size()][];
-
-        for (int i = 0; i < constraints.size(); i++) {
-            Constraint constraint = constraints.get(i);
-            result[i] = evalRuleIncr(constraint);
+    private static ArrayList<Stmt> compileRulesIncr(ArrayList<Constraint> constraints) {
+        ArrayList<Stmt> result = new ArrayList<>();
+        for (Constraint constraint : constraints) {
+            result.addAll(compileRuleIncr(constraint));
         }
-
-        assert result.length == constraints.size();
-        return Stream.of(result).flatMap(Stream::of).toArray(Stmt[]::new);
+        return result;
     }
 
     /**
@@ -136,14 +179,23 @@ public class MySolver {
      * @param constraint The specific constraint we want to generate Stmts for
      * @return The Stmts
      */
-    private static Stmt[] evalRuleIncr(Constraint constraint) {
+    private static ArrayList<Stmt> compileRuleIncr(Constraint constraint) {
         // Let's start by just dividing on AtomPredicate, TODO: we might need the rest of the bodyPredicate too
         Predicate headPredicate = constraint.getHeadPredicate();
-        Stmt[] result = new Stmt[constraint.getBodyAtoms().length];
+        ArrayList<Stmt> result = new ArrayList<>();
         if (headPredicate instanceof AtomPredicate) {
-            AtomPredicate[] bodyAtoms = constraint.getBodyAtoms();
-            for (int i = 0; i < bodyAtoms.length; i++) {
-                result[i] = evalRule(constraint, bodyAtoms[i].getSym());
+            for (AtomPredicate bodyAtom : constraint.getBodyAtoms()) {
+                if (addLabelStmts) {
+                    ReifiedSourceLocation source = constraint.getSourceLocation();
+                    String label;
+                    if (source.getBeginLine() == source.getEndLine()) {
+                        label = "Compilation of rule defined on line " + source.getBeginLine();
+                    } else {
+                        label = "Compilation of rule defined on lines " + source.getBeginLine() + " - " + source.getEndLine();
+                    }
+                    result.add(new LabelStmt(label + " with " + bodyAtom + " being used from previous iteration"));
+                }
+                result.add(evalRule(constraint, bodyAtom.getSym()));
             }
         } else {
             throw new IllegalArgumentException("The head of a constraint should be an AtomPredicate, right?");
@@ -156,19 +208,15 @@ public class MySolver {
      * Vi har brug for at vi kan have en tuple som type datatype som hvor vi kan spørge om  eksistens i en tabel og indsætte i en tabel
      * Hvad nu hvis der optræder en literal (konstant) i Head eller body af en regel
      *
-     * @param relSym  The RelSym we evaluate rules for
-     * @param derived A map from RelSym to all the rules that is used to derive it
+     * @param rules A list of constraints describing a set of rules to compile
      * @return An array of statements that should evaluate the rules deriving relSym
      */
-    private static Stmt[] eval(RelSym relSym, Map<RelSym, ArrayList<Constraint>> derived) {
+    private static ArrayList<Stmt> compileRules(ArrayList<Constraint> rules) {
         // Generate facts for each rule for the fact
-        Stmt[] result = new Stmt[derived.get(relSym).size()];
-        ArrayList<Constraint> get = derived.get(relSym);
-        for (int i = 0; i < get.size(); i++) {
-            Constraint c = get.get(i);
-            Map<PredSym, TableName> relTableMap = new HashMap<>();
+        ArrayList<Stmt> result = new ArrayList<>(rules.size());
+        for (Constraint constraint : rules) {
             // Evaluate each rule individually
-            result[i] = evalRule(c, null);
+            result.add(evalRule(constraint, null));
         }
         return result;
     }
