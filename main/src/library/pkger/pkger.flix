@@ -1,132 +1,3 @@
-// SemVer has to be a fully qualified version.
-// TODO: Consider adding pre-release identifier and build metadata
-pub type alias SemVer = (Int, Int, Int)
-
-// TODO: Temp public
-pub def isWithinBounds(specific: SemVer, bound: SemVer): Bool = {
-    let (majorZero, boundMajor) = match bound {
-        case (major, _, _) => (major == 0, major)
-    };
-
-    if (!majorZero) {
-        match specific {
-            // SemVer has a tag, and thus all releases are considered breaking
-            case (major, minor, patch) => match bound {
-                case (boundMajor, boundMinor, boundPatch) => major == boundMajor && minor == boundMinor && patch == boundPatch
-                case _ => false
-            }
-            // Only major versions allow backwards incompatibility
-            case (major, _, _) => boundMajor == major
-        }
-    } else {
-        // TODO: Look only for specific version, or allow patch releases? Only specific for now!
-        match (specific, bound) {
-            case ((major, minor, patch), (_, boundMinor, boundPatch)) => major == boundMajor && minor == boundMinor && patch == boundPatch
-            case _ => false
-        }
-    }
-}
-
-enum Ord {
-    case Gt
-    case Eq
-    case Lt
-}
-
-pub def ppOrd(o: Ord): String = match o {
-    case Gt => "Gt",
-    case Eq => "Eq",
-    case Lt => "Lt"
-}
-
-pub def cmpSemVer(left: SemVer, right: SemVer): Ord = match (left, right) {
-    case ((lMajor, lMinor, lPatch), (rMajor, rMinor, rPatch)) => {
-        if (lMajor == rMajor) {
-            if (lMinor == rMinor) {
-                if (lPatch == rPatch) {
-                    Eq
-                } else if (lPatch > rPatch) {
-                    Gt
-                } else {
-                    Lt
-                }
-            } else if (lMajor > rMajor) {
-                Gt
-            } else {
-                Lt
-            }
-        } else if (lMajor > rMajor) {
-            Gt
-        } else {
-            Lt
-        }
-    }
-}
-
-pub enum License {
-    case MIT
-    case GPLv3
-    case Apache2
-    case BSD
-    case Other(String)
-}
-
-pub opaque type Author = { name: String
-                         // Is there an email datatype, or is it just commonly a String?
-                         , email: String
-                         }
-
-pub type alias Package = { name: String
-                         , version: SemVer
-                         , authors: List[Author]
-                         , description: String
-                         // This could be mandatory
-                         , license: Option[License]
-                         // Mapping package dependency names to the semver pattern
-                         , depends: Map[String, SemVer]
-                         , home: Option[String] // Url?
-                         }
-
-pub opaque type LockedPackage = { name: String
-                                // All transitive dependencies, their specific version, and where they were retrieved from.
-                                , transitive: Map[String, List[SemVer]]
-                                }
-
-// Add a new package to the package. Handle superseding old versions
-pub def addDependency(self: Package, package: String, version: SemVer): Package = {
-    use Map.insert;
-    let selfx = self.removeDependency(package);
-    let addedPackage = insert(package, version, selfx.depends);
-    { depends = addedPackage | self }
-}
-
-// Remove a package from the list of dependencies
-pub def removeDependency(self: Package, package: String): Package = {
-    let removedPackage = Map.delete(package, self.depends);
-    { depends = removedPackage | self }
-}
-
-def _packageRepository(package: String, version: SemVer): Map[SemVer, Map[String, SemVer]] & Impure = {
-    use Map.{insert, empty};
-    let package_one_versions = empty()
-        |> insert("0.1.0", empty())
-        |> insert("0.2.0", empty())
-        |> insert("0.2.1", empty() |> insert("package_two", "0.2"));
-
-    let package_two_versions = empty()
-        |> insert("0.1.0", empty())
-        |> insert("0.2.0", empty());
-
-    let packages = empty()
-        |> insert("package_one", package_one_versions)
-        |> insert("package_two", package_two_versions);
-
-    ???
-}
-
-// Resolve dependency tree and create a list of all dependencies and their transitive dependencies
-pub def lockPackage(self: Package): List[LockedPackage] = ???
-
 // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
 pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impure = {
     let getProjectDir = (base) -> Path.add(base, name);
@@ -222,11 +93,11 @@ pub enum ErrorFull {
     case GenericIoError
 }
 
-pub def main(): Result[Path, ErrorFull] & Impure = initPackage("package_test")
+//pub def main(): Result[Path, ErrorFull] & Impure = initPackage("package_test")
 
-pub def semver_main(): Bool = match Parser.runParser(SemVerParser.parseSemVer(), "1.2.3") {
+pub def semver_main(): Bool = match Parser.runParser(SemVer/Parser.parseSemVer(), "1.2.3") {
     case Some(_) => true
     case None => false
 }
 
-pub def test_main(): Int = 0
+pub def main(): Bool & Impure = SemVer/Test.allTests()
