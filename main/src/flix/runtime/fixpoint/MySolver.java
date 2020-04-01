@@ -128,6 +128,12 @@ public class MySolver {
         return result;
     }
 
+    /**
+     * Generates a statements merging from a Delta table into a result table.
+     *
+     * @param relations A set of RelSyms where a merge is required for each of them.
+     * @return A list with a Stmt for each merge
+     */
     private static ArrayList<Stmt> generateMergeStatements(Set<RelSym> relations) {
         ArrayList<Stmt> result = new ArrayList<>();
         if (addLabelStmts) result.add(new LabelStmt("Merge new facts into result"));
@@ -215,6 +221,16 @@ public class MySolver {
         // Generate facts for each rule for the fact
         ArrayList<Stmt> result = new ArrayList<>(rules.size());
         for (Constraint constraint : rules) {
+            if (addLabelStmts) {
+                ReifiedSourceLocation source = constraint.getSourceLocation();
+                String label;
+                if (source.getBeginLine() == source.getEndLine()) {
+                    label = "Compilation of rule defined on line " + source.getBeginLine();
+                } else {
+                    label = "Compilation of rule defined on lines " + source.getBeginLine() + " - " + source.getEndLine();
+                }
+                result.add(new LabelStmt(label + " with all facts used"));
+            }
             // Evaluate each rule individually
             result.add(evalRule(constraint, null));
         }
