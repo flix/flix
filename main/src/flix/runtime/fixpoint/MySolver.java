@@ -355,8 +355,10 @@ public class MySolver {
             resultStmt = new IfStmt(exp, resultStmt);
         }
 
-        // I can now generate all the for each statements for all AtomPredicates
-        for (Predicate pred : c.getBodyPredicates()) {
+        // I can now generate all the for each statements for all AtomPredicates. Reversed for nicer printing
+        Predicate[] bodyPredicates = c.getBodyPredicates();
+        for (int i = bodyPredicates.length - 1; i >= 0; i--) {
+            Predicate pred = bodyPredicates[i];
             if (pred instanceof AtomPredicate) {
                 AtomPredicate currentPred = (AtomPredicate) pred;
                 PredSym predSym = currentPred.getSym();
