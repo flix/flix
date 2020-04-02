@@ -76,6 +76,12 @@ public class MySolver {
         return result;
     }
 
+    /**
+     * Compiles the fixpoint part of the algorithm
+     *
+     * @param ruleMap A map from RelSym to a list of constraints where the constraints are assumed to be rules
+     * @return A WhileStmt for the fixpoint
+     */
     private static Stmt compileFixpoint(Map<RelSym, ArrayList<Constraint>> ruleMap) {
         BoolExp condition = compileWhileCondition(ruleMap.keySet());
 
@@ -92,6 +98,12 @@ public class MySolver {
         return new WhileStmt(condition, new SeqStmt(whileBody));
     }
 
+    /**
+     * Creates statements that clears Delta tables (meaning that they are set to the empty set)
+     *
+     * @param rels A set of RelSyms for the tables to be cleared
+     * @return A list of statements
+     */
     private static ArrayList<Stmt> compileClearLastIter(Set<RelSym> rels) {
         ArrayList<Stmt> result = new ArrayList<>();
         if (addLabelStmts)
@@ -104,6 +116,12 @@ public class MySolver {
         return result;
     }
 
+    /**
+     * Create statements that saves Delta tables in NEW tables (ie. ΔPath' = ΔPath)
+     *
+     * @param rels A set of RelSyms for the tables to be saved
+     * @return A list of statements
+     */
     private static ArrayList<Stmt> compileSaveLastIter(Set<RelSym> rels) {
         ArrayList<Stmt> result = new ArrayList<>();
         if (addLabelStmts) result.add(new LabelStmt("Remember facts generated in last iteration in NEW"));
@@ -115,6 +133,12 @@ public class MySolver {
         return result;
     }
 
+    /**
+     * Generates a BoolExp that tests whether the Delta tables are empty
+     *
+     * @param derived The set of RelSyms for which the Delta tables are tested
+     * @return The compined BookExp
+     */
     private static BoolExp compileWhileCondition(Set<RelSym> derived) {
         BoolExp result = null;
         for (RelSym relSym : derived) {
@@ -377,6 +401,12 @@ public class MySolver {
         return resultStmt;
     }
 
+    /**
+     * Generates a new RowVariable using the variableCounter
+     *
+     * @param name The base name of the new RowVariable
+     * @return A new RowVariable with name
+     */
     private static RowVariable genNewRowVariable(String name) {
         variableCounter++;
         return new RowVariable(name + "_" + (variableCounter));
