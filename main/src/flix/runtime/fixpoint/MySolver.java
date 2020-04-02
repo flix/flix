@@ -201,7 +201,7 @@ public class MySolver {
                     }
                     result.add(new LabelStmt(label + " with " + bodyAtom + " being used from previous iteration"));
                 }
-                result.add(evalRule(constraint, bodyAtom.getSym()));
+                result.add(compileRule(constraint, bodyAtom.getSym()));
             }
         } else {
             throw new IllegalArgumentException("The head of a constraint should be an AtomPredicate, right?");
@@ -231,8 +231,8 @@ public class MySolver {
                 }
                 result.add(new LabelStmt(label + " with all facts used"));
             }
-            // Evaluate each rule individually
-            result.add(evalRule(constraint, null));
+            // Compile each rule individually
+            result.add(compileRule(constraint, null));
         }
         return result;
     }
@@ -244,7 +244,7 @@ public class MySolver {
      * @param newSym Is the symbol of the predicate where we access the data from previous iteration. In the base iteration this is null.
      * @return A statement evaluating c
      */
-    private static Stmt evalRule(Constraint c, PredSym newSym) {
+    private static Stmt compileRule(Constraint c, PredSym newSym) {
 
         variableCounter = 0;
 
@@ -253,9 +253,9 @@ public class MySolver {
         PredSym headSym = ((AtomPredicate) head).getSym();
         Term[] headTerms = ((AtomPredicate) head).getTerms();
 
-        // Map from AtomPredicate to the localvar used to get values to that recursion
+        // Map from AtomPredicate to the TowVariable used to get values to that recursion
         Map<AtomPredicate, RowVariable> atomToLocal = new HashMap<>();
-        // Map from terms to the set of AttrTerms they will be instantiated as
+        // Map from a variable to the set of AttrTerms they will be instantiated as
         Map<VarSym, Set<AttrTerm>> varSymToAttrTerm = new HashMap<>();
         // Define the set for all boolExps describing when a value must be constant
         Set<BoolExp> boolRestrictions = new HashSet<>();
