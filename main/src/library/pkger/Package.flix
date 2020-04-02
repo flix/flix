@@ -91,10 +91,6 @@ namespace Package {
             |> Map.map(findNewest)
             |> Map.filter(Option.isEmpty >> not); // <-- here
 
-        let possibilitiesMap = Map.mapWithKey(packageRepository, dependencies);
-        let newestMap = Map.map(findNewest, possibilitiesMap);
-        let filteredMap = Map.filter(v -> !Option.isEmpty(v));
-
         let list: List[(String, SemVer.SemVer)] = toList(dependencies);
         let possibilities: List[(String, Map[SemVer.SemVer, Map[String, SemVer.SemVer]])] = map(match (k, v) -> (k, packageRepository(k, v)), list);
         let newest: List[(String, Option[(SemVer.SemVer,  Map[String, SemVer.SemVer])])] = map(match (k, v) -> (k, findNewest(v)), possibilities);
