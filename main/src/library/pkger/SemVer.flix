@@ -8,7 +8,7 @@ namespace SemVer {
         case Lt
     }
 
-    pub def isWithinBounds(specific: SemVer, bound: SemVer): Bool = {
+    pub def isWithinBounds(bound: SemVer, specific: SemVer): Bool = {
         let majorIsZero = match bound {
             case (major, _, _) => major == 0
         };
@@ -75,7 +75,7 @@ namespace SemVer {
         }
 
         def test(name: String, f: () -> Bool): Bool & Impure = {
-            Console.print("Testing ... ");
+            Console.print("Testing ::: ");
             Console.print(name);
             Console.print(": ");
             let res = f();
@@ -102,8 +102,27 @@ namespace SemVer {
             largerMinorFails && smallerMinorFails
         }
 
+        def testZeroMajorIsMajorIncompatible(): Bool & Impure = {
+            use SemVer.isWithinBounds;
+
+            let largerMajorFails = test("largerMajorFails", () -> !isWithinBounds((1, 0, 0), (0, 1, 0)));
+
+            largerMajorFails
+        }
+
+        def testNonZerMajorIsPatchCompatible(): Bool & Impure = {
+            use SemVer.isWithinBounds;
+
+            let largerPatch = test("largerPatch", () -> isWithinBounds((1, 2, 3), (1, 2, 0)));
+            let smallerPatch = test("smallerPatch", () -> isWithinBounds((1, 2, 0), (1, 2, 3)));
+            largerPatch && smallerPatch
+        }
+
         pub def allTests(): Bool & Impure = {
-            testZeroMajorIsPatchCompatible() && testZeroMajorIsMinorIncompatible()
+            testZeroMajorIsPatchCompatible()
+                && testZeroMajorIsMinorIncompatible()
+                && testZeroMajorIsMajorIncompatible()
+                && testNonZerMajorIsPatchCompatible()
         }
     }
 }

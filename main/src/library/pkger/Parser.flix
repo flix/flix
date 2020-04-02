@@ -7,16 +7,16 @@ namespace Parser {
     pub def runParser(v: Parser[a], s: String): Option[(String, a)] = v(s)
 
     pub def mapOption(v: Parser[a], f: a -> Option[b]): Parser[b] = input -> {
-        Option.flatMap(tup -> match tup { case (inputx, x) => Option.map(y -> (inputx, y), f(x)) }, runParser(v, input))
+        Option.flatMap(match (inputx, x) -> Option.map(y -> (inputx, y), f(x)), runParser(v, input))
     }
 
     // Functor
-    pub def fmap(f: a -> b, parser: Parser[a]): Parser[b] = input -> Option.flatMap(tup -> match tup { case (inputx, x) => Some((inputx, f(x))) }, runParser(parser, input))
+    pub def fmap(f: a -> b, parser: Parser[a]): Parser[b] = input -> Option.flatMap(match (inputx, x) -> Some((inputx, f(x))), runParser(parser, input))
 
     // Applicative
     pub def pure(x: a): Parser[a] = input -> Some((input, x))
 
-    pub def ap(l: Parser[a -> b], r: Parser[a]): Parser[b] = input -> Option.flatMap(tup -> match tup { case (inputx, f) => Option.flatMap(tupx -> match tupx { case (inputxx, x) => Some((inputxx, f(x))) }, runParser(r, inputx)) }, runParser(l, input))
+    pub def ap(l: Parser[a -> b], r: Parser[a]): Parser[b] = input -> Option.flatMap(match (inputx, f) -> Option.flatMap(match (inputxx, x) -> Some((inputxx, f(x))), runParser(r, inputx)), runParser(l, input))
 
     pub def liftA2(f: a -> b -> c, x: Parser[a], y: Parser[b]): Parser[c] = ap(fmap(f, x), y)
 
