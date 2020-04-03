@@ -833,6 +833,18 @@ namespace List {
     }
 
     ///
+    /// Returns the list `xs` as an array.
+    ///
+    pub def toArray(xs: List[a]) : Array[a] & Impure = match head(xs) {
+        case None => []
+        case Some(x) =>
+            let a = Array.new(x, length(xs));
+            let f = (i,b) -> { a[i] = b; i + 1 };
+            foldLeft(f, 0, xs);
+            a
+        }
+
+    ///
     /// Compares `xs` and `ys` lexicographically.
     ///
     def __cmp(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
