@@ -52,16 +52,18 @@ namespace Array {
     ///
     /// Returns the array `a` as a list.
     ///
-    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, 0)
+    pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, length(a), 0, Nil)
 
     ///
     /// Helper function for `toList`.
     ///
-    def toListHelper(a: Array[a], i: Int32): List[a] & Impure =
-        if (i == length(a))
-            Nil
-        else
-            a[i] :: toListHelper(a, i + 1)
+    def toListHelper(a: Array[a], len: Int32, i: Int32, ac: List[a]): List[a] & Impure =
+        if (i == len)
+            List.reverse(ac)
+        else {
+            let x = a[i];
+            toListHelper(a, len, i + 1, x :: ac)
+        }
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `a`.
@@ -127,7 +129,10 @@ namespace Array {
         if (i >= len)
             -1
         else
-            if (a[i] == x) i else indexOfLeftHelper(x, a, len, i+1)
+            if (a[i] == x)
+                i
+            else
+                indexOfLeftHelper(x, a, len, i+1)
 
     ///
     /// Optionally returns the position of the first occurence of `x` in `a`
@@ -191,12 +196,6 @@ namespace Array {
     /// Returns `[]` if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): Array[Int32] & Impure =
-        rangeHelper(b,e)
-
-    ///
-    /// Helper function for `range`.
-    ///
-    def rangeHelper(b: Int32, e: Int32): Array[Int32] & Impure =
         if (b >= e)
             []
         else {
@@ -279,17 +278,17 @@ namespace Array {
     /// Apply `f` to every element in array `a`. Array `a` is mutated.
     ///
     pub def transform!(f: a -> a, a: mut Array[a]): Unit & Impure =
-        transform!Helper(f, length(a), a, 0)
+        transformHelper!(f, length(a), a, 0)
 
     ///
     /// Helper function for `transform!`
     ///
-    def transform!Helper(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
+    def transformHelper!(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
             a[i] = f(a[i]);
-            transform!Helper(f, len, a, i+1)
+            transformHelper!(f, len, a, i+1)
         }
 
     ///
@@ -451,12 +450,6 @@ namespace Array {
     /// Returns `a` with `x` inserted between every two adjacent elements.
     ///
     pub def intersperse(x: a, a: Array[a]): Array[a] & Impure =
-        intersperseHelper(x, a)
-
-    ///
-    /// Helper function for `intersperse`.
-    ///
-    def intersperseHelper(x: a, a: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = len1 + len1 - 1;
         if (len2 <= 0)
@@ -495,14 +488,15 @@ namespace Array {
         }
 
     ///
-    /// Imperatively write `sub` at position `pos` in array `out` (helper for intercalate).
+    /// Imperatively write `sub` at position `pos` in array `out`
     ///
     /// Return the new write position which is `pos + length(sub)`.
+    ///
+    /// Helper function for `intercalate` which needs to do sucessive writing.
     ///
     def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
         updateSequence!(pos, sub, out);
         pos + length(sub)
-
 
     ///
     /// Sum the lengths of an array of arrays.
@@ -658,17 +652,17 @@ namespace Array {
     /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
     ///
     pub def foldLeft(f: (b, a) -> b & e, s: b, a: Array[a]): b & Impure =
-        foldLeftHelper(f, s, a, 0)
+        foldLeftHelper(f, s, a, length(a), 0)
 
     ///
     /// Helper function for `foldLeft`.
     ///
-    def foldLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], i: Int32): b & Impure =
-        if (i >= length(a))
+    def foldLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], len: Int32, i: Int32): b & Impure =
+        if (i >= len)
             s
         else {
             let s1 = f(s, a[i]) as & Impure;
-            foldLeftHelper(f, s1, a, i + 1)
+            foldLeftHelper(f, s1, a, len, i + 1)
         }
 
     ///
@@ -701,20 +695,21 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def reduceLeft(f: (a, a) ->  a & e, a: Array[a]): Option[a] & Impure =
-        if (length(a) == 0)
+        let len = length(a);
+        if (len == 0)
             None
         else
-            Some(reduceLeftHelper(f, a, a[0], 1))
+            Some(reduceLeftHelper(f, a, a[0], len, 1))
 
     ///
     /// Helper function for `reduceLeft`.
     ///
-    def reduceLeftHelper(f: (a, a) ->  a & e, a: Array[a], x: a, i:Int32): a & Impure =
-        if (i >= length(a))
+    def reduceLeftHelper(f: (a, a) ->  a & e, a: Array[a], x: a, len: Int32, i:Int32): a & Impure =
+        if (i >= len)
             x
         else {
             let s1 = f(x, a[i]) as & Impure;
-            reduceLeftHelper(f, a, s1, i+1)
+            reduceLeftHelper(f, a, s1, len, i+1)
         }
 
     ///
@@ -723,10 +718,11 @@ namespace Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a & e, a: Array[a]): Option[a] & Impure =
-        if (length(a) == 0)
+        let len = length(a);
+        if (len == 0)
             None
         else {
-            let end = length(a) - 1;
+            let end = len - 1;
             let ac = a[end];
             Some(reduceRightHelper(f, a, ac, end-1))
         }
@@ -977,16 +973,16 @@ namespace Array {
     ///
     pub def groupBy(f: (a, a) -> Bool, a: Array[a]): Array[Array[a]] & Impure =
         let xs = toList(a);
-        groupByHelper(f, xs) |> List.toArray
+        groupByHelper(f, xs, Nil) |> List.toArray
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def groupByHelper(f: (a, a) -> Bool, xs: List[a]): List[Array[a]] & Impure = match xs {
-        case Nil => Nil
+    def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Array[a]]): List[Array[a]] & Impure = match xs {
+        case Nil => List.reverse(ac)
         case x :: rs =>
             let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
-            r1 :: groupByHelper(f, r2)
+            groupByHelper(f, r2, r1 :: ac)
     }
 
     ///
@@ -1010,7 +1006,11 @@ namespace Array {
     ///
     def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
         case Nil => true
-        case x :: rs => if (f(x, a) && f(a, x)) agreeHelper(f, a, rs) else false
+        case x :: rs =>
+            if ((f(x, a) && f(a, x)) == false)
+                false
+            else
+                agreeHelper(f, a, rs)
     }
 
     ///
