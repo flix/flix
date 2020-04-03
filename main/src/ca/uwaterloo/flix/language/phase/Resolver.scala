@@ -21,8 +21,8 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -1143,19 +1143,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       ) yield Type.mkTuple(elms)
 
     case NamedAst.Type.RecordEmpty(loc) =>
-      Type.Apply(Type.Cst(TypeConstructor.Record), Type.EmptyRecordRow).toSuccess
+      Type.mkRecord(Type.EmptyRecordRow).toSuccess
 
     case NamedAst.Type.RecordVar(tpe, loc) =>
       for {
         r <- lookupRecordRow(tpe, ns0, root)
-      } yield Type.Apply(Type.Cst(TypeConstructor.Record), r)
+      } yield Type.mkRecord(r)
 
 
     case NamedAst.Type.RecordExtend(label, value, rest, loc) =>
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupRecordRow(rest, ns0, root)
-      } yield Type.mkExtendedRecord(label.name, v, r)
+      } yield Type.mkRecord(Type.mkExtendedRecordRow(label.name, v, r))
 
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
@@ -1239,7 +1239,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       } yield Type.mkExtendedRecordRow(label.name, field1, rest1)
 
     case NamedAst.Type.Var(tpe, _) => tpe.toSuccess
-    case _ => ResolutionError.IllegalType(Type.Unit, SourceLocation.Unknown).toFailure // MATT more specific error here, with real type & location
+    case _ => lookupType(tpe, ns0, root) // pass back to lookupType; handle bad type in Typer
+      // MATT handle immediately instead?
   }
 
   /**

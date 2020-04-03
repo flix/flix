@@ -598,7 +598,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  { } : { }
         //
         for {
-          resultType <- unifyTypM(tvar, Type.Apply(Type.Cst(TypeConstructor.Record), Type.EmptyRecordRow), loc)
+          resultType <- unifyTypM(tvar, Type.mkRecord(Type.EmptyRecordRow), loc)
         } yield (resultType, Type.Pure)
 
       case ResolvedAst.Expression.RecordSelect(exp, label, tvar, evar, loc) =>
@@ -608,7 +608,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // r.label : tpe
         //
         val freshRowVar = Type.freshTypeVarWithKind(Kind.RecordRow)
-        val expectedType = Type.mkExtendedRecord(label, tvar, freshRowVar)
+        val expectedType = Type.mkRecord(Type.mkExtendedRecordRow(label, tvar, freshRowVar))
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, expectedType, loc)
@@ -626,7 +626,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           (tpe1, eff1) <- visitExp(exp1)
           (tpe2, eff2) <- visitExp(exp2)
           restRecordType <- unifyTypM(Type.mkRecord(restRowType), tpe2, loc)
-          resultTyp <- unifyTypM(tvar, Type.mkExtendedRecord(label, tpe1, restRowType), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkRecord(Type.mkExtendedRecordRow(label, tpe1, restRowType)), loc)
           resultEff <- unifyEffM(evar, mkAnd(eff1, eff2), loc)
         } yield (resultTyp, resultEff)
 
@@ -639,8 +639,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val freshRowVar = Type.freshTypeVarWithKind(Kind.RecordRow)
         for {
           (tpe, eff) <- visitExp(exp)
-          recordTyp <- unifyTypM(tpe, Type.mkExtendedRecord(label, freshFieldType, freshRowVar), loc)
-          resultTyp <- unifyTypM(tvar, Type.Apply(Type.Cst(TypeConstructor.Record), freshRowVar), loc)
+          recordTyp <- unifyTypM(tpe, Type.mkRecord(Type.mkExtendedRecordRow(label, freshFieldType, freshRowVar)), loc)
+          resultTyp <- unifyTypM(tvar, Type.mkRecord(freshRowVar), loc)
           resultEff <- unifyEffM(evar, eff, loc)
         } yield (resultTyp, resultEff)
 

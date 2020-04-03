@@ -383,7 +383,6 @@ object Type {
     }
   }
 
-  // MATT maybe we don't need to have all of these
   /**
     * Extends the record row `rest` with the given type and label.
     */
@@ -392,13 +391,8 @@ object Type {
   }
 
   /**
-    * Fully constructs the record row.
+    * Construct a record from a record row.
     */
-  def mkExtendedRecord(label: String, tpe: Type, rest: Type): Type = {
-    mkRecord(mkExtendedRecordRow(label, tpe, rest))
-  }
-
-  // MATT docs
   def mkRecord(row: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.Record), List(row))
   }

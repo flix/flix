@@ -1581,7 +1581,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
       if (fields.isEmpty && restOpt.isDefined) {
-        val tpe = WeededAst.Type.Var(restOpt.get, mkSL(sp1, sp2)) // MATT more precise SL?
+        val tpe = WeededAst.Type.Var(restOpt.get, restOpt.get.loc)
         WeededAst.Type.RecordVar(tpe, mkSL(sp1, sp2))
       } else {
         val init = restOpt match {

@@ -174,17 +174,17 @@ object TypeError {
   /**
     * Unexpected non-record type error.
     *
-    * @param tpe the unexpected non-record type.
+    * @param tpe the unexpected non-record row type.
     * @param loc the location where the error occurred.
     */
-  case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
+  case class NonRecordRowType(tpe: Type, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unexpected non-record type: '" << Red(tpe.show) << "'." << NewLine
+      vt << ">> Unexpected non-record row type: '" << Red(tpe.show) << "'." << NewLine
       vt << NewLine
-      vt << Code(loc, "unexpected non-record type.") << NewLine
+      vt << Code(loc, "unexpected non-record row type.") << NewLine
     }
   }
 

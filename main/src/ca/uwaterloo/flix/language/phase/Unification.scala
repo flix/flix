@@ -238,9 +238,9 @@ object Unification {
     /**
       * An unification error due to an unexpected non-record type.
       *
-      * @param nonRecordType the unexpected non-record type.
+      * @param nonRecordRowType the unexpected non-record type.
       */
-    case class NonRecordType(nonRecordType: Type) extends UnificationError
+    case class NonRecordRowType(nonRecordRowType: Type) extends UnificationError
 
     /**
       * An unification error due to an unexpected non-schema type.
@@ -397,7 +397,7 @@ object Unification {
 
       case _ =>
         // Case 4: The type is not a row.
-        Err(UnificationError.NonRecordType(row2)) // MATT NonRecordRowType
+        Err(UnificationError.NonRecordRowType(row2))
     }
 
     /**
@@ -535,8 +535,8 @@ object Unification {
         case Result.Err(UnificationError.UndefinedLabel(fieldName, fieldType, recordType)) =>
           Err(TypeError.UndefinedField(fieldName, fieldType, recordType, loc))
 
-        case Result.Err(UnificationError.NonRecordType(tpe)) =>
-          Err(TypeError.NonRecordType(tpe, loc))
+        case Result.Err(UnificationError.NonRecordRowType(tpe)) =>
+          Err(TypeError.NonRecordRowType(tpe, loc))
 
         case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
           Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, loc))
