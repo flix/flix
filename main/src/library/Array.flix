@@ -55,7 +55,7 @@ namespace Array {
     pub def toList(a: Array[a]): List[a] & Impure = toListHelper(a, 0)
 
     ///
-    /// Helper for toList.
+    /// Helper function for `toList`.
     ///
     def toListHelper(a: Array[a], i: Int32): List[a] & Impure =
         if (i == length(a))
@@ -87,7 +87,8 @@ namespace Array {
         appendHelper(a, b)
 
     ///
-    /// Helper for `append` (impure).
+    /// Helper function for `append`.
+    ///
     def appendHelper(a: Array[a], b: Array[b]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = length(b);
@@ -95,8 +96,8 @@ namespace Array {
             slice(b, 0, len2)
         else {
             let out = new(a[0], len1 + len2);
-            updateSequenceInPlace(0, a, out);
-            updateSequenceInPlace(len1, b, out);
+            updateSequence!(0, a, out);
+            updateSequence!(len1, b, out);
             out
         }
 
@@ -193,7 +194,7 @@ namespace Array {
         rangeHelper(b,e)
 
     ///
-    /// Helper for `range`.
+    /// Helper function for `range`.
     ///
     def rangeHelper(b: Int32, e: Int32): Array[Int32] & Impure =
         if (b >= e)
@@ -231,7 +232,7 @@ namespace Array {
         b
 
     ///
-    /// Helper for `scanLeft`.
+    /// Helper function for `scanLeft`.
     ///
     def scanLeftHelper(f: (b, a) -> b & e, s: b, a: Array[a], b: Array[b], len: Int32, i: Int32) : Unit & Impure =
         if (i >= len)
@@ -254,7 +255,7 @@ namespace Array {
         b
 
     ///
-    /// Helper for `scanRight`.
+    /// Helper function for `scanRight`.
     ///
     def scanRightHelper(f: (a, b) -> b & e, s: b, a: Array[a], b: Array[b], i: Int32) : Unit & Impure =
         if (i < 0)
@@ -277,18 +278,18 @@ namespace Array {
     ///
     /// Apply `f` to every element in array `a`. Array `a` is mutated.
     ///
-    pub def mapInPlace(f: a -> a, a: mut Array[a]): Unit & Impure =
-        mapInPlaceHelper(f, length(a), a, 0)
+    pub def transform!(f: a -> a, a: mut Array[a]): Unit & Impure =
+        transform!Helper(f, length(a), a, 0)
 
     ///
-    /// Helper of `mapInPlace`
+    /// Helper function for `transform!`
     ///
-    def mapInPlaceHelper(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
+    def transform!Helper(f: a -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
             a[i] = f(a[i]);
-            mapInPlaceHelper(f, len, a, i+1)
+            transform!Helper(f, len, a, i+1)
         }
 
     ///
@@ -300,22 +301,21 @@ namespace Array {
         let len = length(a);
         init(i -> f(a[i], i), len)
 
-
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
     ///
-    pub def mapWithIndexInPlace(f: (a, Int32) -> a, a: mut Array[a]): Unit & Impure =
-        mapWithIndexInPlaceHelper(f, length(a), a, 0)
+    pub def transformWithIndex!(f: (a, Int32) -> a, a: mut Array[a]): Unit & Impure =
+        transformWithIndexHelper!(f, length(a), a, 0)
 
     ///
-    /// Helper of `mapWithIndexInPlace`
+    /// Helper function for `transformWithIndex!`
     ///
-    def mapWithIndexInPlaceHelper(f: (a, Int32) -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
+    def transformWithIndexHelper!(f: (a, Int32) -> a, len: Int32, a: mut Array[a], i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
             a[i] = f(a[i], i);
-            mapWithIndexInPlaceHelper(f, len, a, i+1)
+            transformWithIndexHelper!(f, len, a, i+1)
         }
 
     ///
@@ -334,16 +334,16 @@ namespace Array {
         init(i -> a[end - i], len)
 
     ///
-    /// Returns the reverse of `a`.
+    /// Reverse the array `a`, mutating it in place.
     ///
-    pub def reverseInPlace(a: mut Array[a]): Unit & Impure =
+    pub def reverse!(a: mut Array[a]): Unit & Impure =
         let len = length(a);
-        reverseInPlaceHelper(a, len / 2, 0, len - 1)
+        reverseHelper!(a, len / 2, 0, len - 1)
 
     ///
-    /// Helper for `reverseInPlace`.
+    /// Helper function for `reverse!`.
     ///
-    def reverseInPlaceHelper(a: mut Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
+    def reverseHelper!(a: mut Array[a], halflen: Int32, i: Int32, j: Int32): Unit & Impure =
         if (i >= halflen)
             ()
         else {
@@ -351,7 +351,7 @@ namespace Array {
             let y = a[j];
             put(a, i, y);
             put(a, j, x);
-            reverseInPlaceHelper(a, halflen, i+1, j-1)
+            reverseHelper!(a, halflen, i+1, j-1)
         }
 
     ///
@@ -416,10 +416,10 @@ namespace Array {
         map(e -> if (e == x) y else e, a)
 
     ///
-    /// Replace every occurrence of `x` by `y` in the array mutable `a`.
+    /// Replace every occurrence of `x` by `y` in the array `a`, mutating it in place.
     ///
-    pub def replaceInPlace(x: a, y: a, a: mut Array[a]): Unit & Impure =
-        mapInPlace(e -> if (e == x) y else e, a)
+    pub def replace!(x: a, y: a, a: mut Array[a]): Unit & Impure =
+        transform!(e -> if (e == x) y else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
@@ -435,17 +435,17 @@ namespace Array {
         updateSequence(i, sub, b)
 
     ///
-    /// Update mutable array `b` with the `n` elements starting at index `i` replaced with the elements of array `a`.
+    /// Update the mutable array `b` replacing `n` elements starting at index `i` with the corresponding elements of array `a`.
     ///
     /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `b` then no patching is done at these indices.
     /// If `a` becomes depleted then no further patching is done.
     /// If patching occurs at index `i+j` in `b`, then the element at index `j` in `a` is used.
     ///
-    pub def patchInPlace(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
+    pub def patch!(i: Int32, n: Int32, a: Array[a], b: mut Array[a]): Unit & Impure =
         let len1 = length(a);
         let size = if (n > len1) len1 else n;
         let sub = slice(a, 0, size);
-        updateSequenceInPlace(i, sub, b)
+        updateSequence!(i, sub, b)
 
     ///
     /// Returns `a` with `x` inserted between every two adjacent elements.
@@ -454,7 +454,7 @@ namespace Array {
         intersperseHelper(x, a)
 
     ///
-    /// Helper for `intersperse`.
+    /// Helper function for `intersperse`.
     ///
     def intersperseHelper(x: a, a: Array[a]): Array[a] & Impure =
         let len1 = length(a);
@@ -500,14 +500,14 @@ namespace Array {
     /// Return the new write position which is `pos + length(sub)`.
     ///
     def arrayWrites(pos: Int32, sub: Array[a], out: Array[a]): Int32 & Impure =
-        updateSequenceInPlace(pos, sub, out);
+        updateSequence!(pos, sub, out);
         pos + length(sub)
 
 
     ///
     /// Sum the lengths of an array of arrays.
     ///
-    /// Helper for `intercalate` and `flatten`.
+    /// Helper function for `intercalate` and `flatten`.
     ///
     def sumLengths(arrs: Array[Array[a]]): Int32 & Impure =
         foldLeft((ac,a) -> ac + length(a), 0, arrs)
@@ -515,13 +515,13 @@ namespace Array {
     ///
     /// Find the first non-empty array of an array of arrays (left-to-right).
     ///
-    /// Helper for `intercalate` and `flatten`.
+    /// Helper function for `intercalate` and `flatten`.
     ///
     def headArrays(arrs: Array[Array[a]]): Option[a] & Impure =
         headArraysHelper(arrs, length(arrs), 0)
 
     ///
-    /// Helper for `headArrays`.
+    /// Helper function for `headArrays`.
     ///
     def headArraysHelper(arrs: Array[Array[a]], len: Int32, i: Int32): Option[a] & Impure =
         if (i >= len)
@@ -566,7 +566,7 @@ namespace Array {
             isPrefixOfHelper(a1, a2, len1, 0)
 
     ///
-    /// Helper for `isPrefixOf`.
+    /// Helper function for `isPrefixOf`.
     ///
     def isPrefixOfHelper(a1: Array[a], a2: Array[a], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
@@ -592,7 +592,7 @@ namespace Array {
                 isInfixOfSearch(a1, a2, len1, len2, 0)
 
     ///
-    /// Helper for `isInfixOf` - scan a2 to find a match with first element of a1.
+    /// Helper function for `isInfixOf` - scan a2 to find a match with first element of a1.
     ///
     /// Precondition: len1 (length of a1) > 0
     ///
@@ -606,7 +606,7 @@ namespace Array {
                 isInfixOfSearch(a1, a2, len1, len2, j+1)
 
     ///
-    /// Helper for `isInfixOf` - a1 has started matching, scan to see if it all matches.
+    /// Helper function for `isInfixOf` - a1 has started matching, scan to see if it all matches.
     ///
     def isInfixOfCheck(a1: Array[a], a2: Array[a], len1: Int32, len2: Int32, i: Int32, j: Int32): Bool & Impure =
         if (i >= len1)
@@ -634,7 +634,7 @@ namespace Array {
             isSuffixOfHelper(a1, a2, len1-1, len2-1)
 
     ///
-    /// Helper for `isSuffixOf`.
+    /// Helper function for `isSuffixOf`.
     ///
     /// Precondition: i <= j
     ///
@@ -995,7 +995,7 @@ namespace Array {
     def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a], List[a]) & Impure = match xs {
         case Nil => {
             let a = List.toArray(ps);
-            reverseInPlace(a);
+            reverse!(a);
             (a, List.reverse(ns))
         }
         case x :: rs =>
@@ -1287,7 +1287,7 @@ namespace Array {
             false
 
     ///
-    /// Helper for `sameElements`.
+    /// Helper function for `sameElements`.
     ///
     def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
@@ -1309,7 +1309,7 @@ namespace Array {
             foreachHelper(f, a, len, 0)
 
     ///
-    /// Helper for `foreach`.
+    /// Helper function for `foreach`.
     ///
     def foreachHelper(f: a ~> Unit, a: Array[a], len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
@@ -1330,7 +1330,7 @@ namespace Array {
             foreachWithIndexHelper(f, a, len, 0)
 
     ///
-    /// Helper for `foreachWithIndex`.
+    /// Helper function for `foreachWithIndex`.
     ///
     def foreachWithIndexHelper(f: (a, Int32) ~> Unit, a: Array[a], len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
@@ -1348,7 +1348,7 @@ namespace Array {
         foreachAccumHelper(f, a, length(a), s, 0)
 
     ///
-    /// Helper for `foreachAccum`.
+    /// Helper function for `foreachAccum`.
     ///
     def foreachAccumHelper(f: (a, st) ~> st, a: Array[a], len: Int32, s: st, i: Int32): st & Impure =
         if (i >= len)
@@ -1369,7 +1369,7 @@ namespace Array {
     ///
     /// Update the mutable array `a` with the elements starting at index `i` replaced by `sub`.
     ///
-    pub def updateSequenceInPlace(i: Int32, sub: Array[a], a: mut Array[a]): Unit & Impure =
+    pub def updateSequence!(i: Int32, sub: Array[a], a: mut Array[a]): Unit & Impure =
         let end = i + length(sub);
         let f = { (_,ix) ->
             if (ix >= i && ix < end)
@@ -1396,38 +1396,38 @@ namespace Array {
         StringBuilder.toString(sb)
 
     ///
-    /// Sort array `a` with the comparing function `f`, returning a sorted copy.
+    /// Sort array `a` with the comparing function `cmp`, returning a sorted copy.
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortBy(f: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
+    pub def sortBy(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let b = slice(a, 0, len);
-        sortByInPlace(f, b);
+        sortBy!(cmp, b);
         b
 
     ///
-    /// Sort array `a` with the comparing function `f`, mutating `a` in place.
+    /// Sort array `a` with the comparing function `cmp`. Array `a` is mutated in place.
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortByInPlace(comparing: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
+    pub def sortBy!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)
             ()
         else
-            sortByInPlaceHelper(comparing, a, 0, len-1)
+            sortByHelper!(cmp, a, 0, len-1)
 
     ///
-    /// Helper for `sortByInPlace`.
+    /// Helper function for `sortBy!`.
     ///
-    def sortByInPlaceHelper(comparing: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    def sortByHelper!(cmp: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)
             ()
         else {
-            let p = sortByPartition(comparing, a, lo, hi);
-            sortByInPlaceHelper(comparing, a, lo, p-1);
-            sortByInPlaceHelper(comparing, a, p+1, hi)
+            let p = sortByPartition(cmp, a, lo, hi);
+            sortByHelper!(cmp, a, lo, p-1);
+            sortByHelper!(cmp, a, p+1, hi)
         }
 
     ///
@@ -1435,7 +1435,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swapInPlace(a: mut Array[Int32], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: mut Array[Int32], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1445,16 +1445,16 @@ namespace Array {
     ///
     /// Partition step of the quicksort algorithm (helper for sorting).
     ///
-    def sortByPartition(comparing: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def sortByPartition(cmp: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (comparing(a[j], pivot) >= 0)
+            if (cmp(a[j], pivot) >= 0)
                 ix
             else {
-                swapInPlace(a, ix, j);
+                swap!(a, ix, j);
                 ix+1
             });
-        swapInPlace(a, i, hi);
+        swap!(a, i, hi);
         i
 
     ///
