@@ -15,4 +15,8 @@ public final class NotBoolExp implements BoolExp {
         stream.print("Not ");
         exp.prettyPrint(stream, indentLevel);
     }
+
+    public BoolExp getExp() {
+        return exp;
+    }
 }

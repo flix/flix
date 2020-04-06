@@ -21,4 +21,12 @@ public final class EqualsBoolExp implements BoolExp {
         stream.print(" = ");
         term2.prettyPrint(stream);
     }
+
+    public RamTerm getTerm1() {
+        return term1;
+    }
+
+    public RamTerm getTerm2() {
+        return term2;
+    }
 }

@@ -16,4 +16,12 @@ public class OrBoolExp implements BoolExp {
     public void prettyPrint(PrintStream stream, int indentLevel) {
 
     }
+
+    public BoolExp getLeftExp() {
+        return leftExp;
+    }
+
+    public BoolExp getRightExp() {
+        return rightExp;
+    }
 }

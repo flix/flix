@@ -12,6 +12,10 @@ public final class EmptyBoolExp implements BoolExp {
         this.relExp = relExp;
     }
 
+    public RelationExp getRelExp() {
+        return relExp;
+    }
+
     @Override
     public void prettyPrint(PrintStream stream, int indentLevel) {
         stream.print("Empty ");

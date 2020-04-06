@@ -18,4 +18,12 @@ public class AndBoolExp implements BoolExp {
         stream.print(" and ");
         rightExp.prettyPrint(stream, indentLevel);
     }
+
+    public BoolExp getLeftExp() {
+        return leftExp;
+    }
+
+    public BoolExp getRightExp() {
+        return rightExp;
+    }
 }

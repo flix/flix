@@ -4,7 +4,7 @@ import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.Constraint;
 import flix.runtime.fixpoint.ConstraintSystem;
 import flix.runtime.fixpoint.ram.RowVariable;
-import flix.runtime.fixpoint.ram.exp.bool.BoolExp;
+import flix.runtime.fixpoint.ram.exp.bool.*;
 import flix.runtime.fixpoint.ram.exp.relation.EmptyRelationExp;
 import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 import flix.runtime.fixpoint.ram.exp.relation.TableName;
@@ -124,6 +124,44 @@ public class RamInterpreter {
     }
 
     private static boolean evalBoolExp(BoolExp toEval, Map<TableName, Set<Fact>> interpretation, Map<RowVariable, Fact> environment) {
+        if (toEval instanceof AndBoolExp) {
+            AndBoolExp andExp = (AndBoolExp) toEval;
+            if (evalBoolExp(andExp.getLeftExp(), interpretation, environment)) {
+                return evalBoolExp(andExp.getRightExp(), interpretation, environment);
+            } else {
+                return false;
+            }
+        } else if (toEval instanceof EmptyBoolExp) {
+            EmptyBoolExp emptyExp = (EmptyBoolExp) toEval;
+            Set<Fact> res = evalRelationExp(emptyExp.getRelExp(), interpretation, environment);
+            assert res != null;
+            return res.isEmpty();
+        } else if (toEval instanceof EqualsBoolExp) {
+            EqualsBoolExp equalsExp = (EqualsBoolExp) toEval;
+            ProxyObject term1 = evalRamTerm(equalsExp.getTerm1(), interpretation, environment);
+            ProxyObject term2 = evalRamTerm(equalsExp.getTerm2(), interpretation, environment);
+            assert term1 != null;
+            assert term2 != null;
+            return term1.equals(term2);
+        } else if (toEval instanceof NotBoolExp) {
+            NotBoolExp notExp = (NotBoolExp) toEval;
+            return !evalBoolExp(notExp.getExp(), interpretation, environment);
+        } else if (toEval instanceof OrBoolExp) {
+            OrBoolExp orExp = (OrBoolExp) toEval;
+            if (evalBoolExp(orExp.getLeftExp(), interpretation, environment)) {
+                return true;
+            } else return evalBoolExp(orExp.getRightExp(), interpretation, environment);
+        } else if (toEval instanceof TupleInRelBoolExp) {
+            TupleInRelBoolExp tupleInRelExp = (TupleInRelBoolExp) toEval;
+            Set<Fact> relFacts = evalRelationExp(tupleInRelExp.getExp(), interpretation, environment);
+            RamTerm[] terms = tupleInRelExp.getTerms();
+            ProxyObject[] objects = new ProxyObject[terms.length];
+            for (int i = 0; i < terms.length; i++) {
+                objects[i] = evalRamTerm(terms[i], interpretation, environment);
+            }
+            assert relFacts != null;
+            return relFacts.contains(new Fact(objects));
+        }
         return false;
     }
 

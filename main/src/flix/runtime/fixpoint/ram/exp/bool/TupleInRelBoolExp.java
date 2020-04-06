@@ -1,20 +1,20 @@
 package flix.runtime.fixpoint.ram.exp.bool;
 
-import flix.runtime.fixpoint.ram.exp.relation.TableName;
+import flix.runtime.fixpoint.ram.exp.relation.RelationExp;
 import flix.runtime.fixpoint.ram.term.RamTerm;
 
 import java.io.PrintStream;
 
 public final class TupleInRelBoolExp implements BoolExp {
     private final RamTerm[] terms;
-    private final TableName table;
+    private final RelationExp exp;
 
-    public TupleInRelBoolExp(RamTerm[] terms, TableName table) {
+    public TupleInRelBoolExp(RamTerm[] terms, RelationExp exp) {
         if (terms == null || terms.length == 0)
             throw new IllegalArgumentException("'terms' must be non-null and non-empty");
-        if (table == null) throw new IllegalArgumentException("'table' must be non-null");
+        if (exp == null) throw new IllegalArgumentException("'table' must be non-null");
         this.terms = terms;
-        this.table = table;
+        this.exp = exp;
     }
 
     @Override
@@ -27,6 +27,14 @@ public final class TupleInRelBoolExp implements BoolExp {
             }
         }
         stream.print(") in ");
-        table.prettyPrint(stream, indentLevel);
+        exp.prettyPrint(stream, indentLevel);
+    }
+
+    public RamTerm[] getTerms() {
+        return terms;
+    }
+
+    public RelationExp getExp() {
+        return exp;
     }
 }
