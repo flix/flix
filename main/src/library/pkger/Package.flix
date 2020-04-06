@@ -29,6 +29,10 @@ namespace Package {
                                     , transitive: Map[String, SemVer.SemVer]
                                     }
 
+    def newLockedPackage(name: String, version: SemVer.SemVer, transitive: Map[String, SemVer.SemVer]): LockedPackage = {
+        LockedPackage({name = name, version = version, transitive = transitive})
+    }
+
     // Add a new package to the package. Handle superseding old versions
     pub def addDependency(self: Package, package: String, version: SemVer.SemVer): Package = {
         use Map.insert;
@@ -113,9 +117,6 @@ namespace Package {
                , Map.toList(self.depends) |> List.map(match (p, b) -> lockPackageHelper(p, b))
                )
             |> flattenDependencyTree
-            |> List.map(match (package, version, dependencies) -> LockedPackage({ name = package
-                                                                                , version = version
-                                                                                , transitive = List.toMap(dependencies)
-                                                                                }))
+            |> List.map(match (package, version, dependencies) -> newLockedPackage(package, version, List.toMap(dependencies)))
     }
 }
