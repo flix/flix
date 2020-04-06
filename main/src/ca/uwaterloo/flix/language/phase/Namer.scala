@@ -208,10 +208,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           prog0.copy(latticesOps = prog0.latticesOps + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
-    case WeededAst.Declaration.Relation(_, _, _, _, _, _) => prog0.toSuccess
-
-    case WeededAst.Declaration.Lattice(_, _, _, _, _, _) => prog0.toSuccess
-
   }
 
   /**
