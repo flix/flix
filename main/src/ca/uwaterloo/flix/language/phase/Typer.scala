@@ -1709,9 +1709,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns the relation type of `name` with the term types `ts`.
+    * Returns the relation or lattice type of `name` with the term types `ts`.
     */
-  // TODO
   private def mkRelationOrLatticeType(name: String, den: Denotation, ts: List[Type], program: ResolvedAst.Program)(implicit flix: Flix): Type = den match {
     case Denotation.Relational =>
       val base = Type.Cst(TypeConstructor.Relation): Type
