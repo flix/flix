@@ -32,15 +32,15 @@ public class MySolver {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
 
         // First we generate all projections for the facts
-        Stmt[] factProjections = generateFactProjectionStmts(cs, relHasFact);
+        ArrayList<Stmt> resultStmts = new ArrayList<>(Arrays.asList(generateFactProjectionStmts(cs, relHasFact)));
 
         // Then find all the rules and map them to what they derive, and in which stratum they should be evaluated
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratums(cs, stf);
 
         // And then all stratum are evaluated
-        ArrayList<Stmt> stratums = compileStratums(derivedInStratum);
+        resultStmts.addAll(compileStratums(derivedInStratum));
 
-        SeqStmt seqStmt = new SeqStmt(stratums);
+        SeqStmt seqStmt = new SeqStmt(resultStmts);
         PrintStream stream = System.out;
         seqStmt.prettyPrint(stream, 0);
         stream.print('\n');
