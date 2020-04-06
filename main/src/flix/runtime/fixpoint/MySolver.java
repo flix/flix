@@ -7,6 +7,7 @@ import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.RowVariable;
 import flix.runtime.fixpoint.ram.exp.bool.*;
 import flix.runtime.fixpoint.ram.exp.relation.*;
+import flix.runtime.fixpoint.ram.interpreter.RamInterpreter;
 import flix.runtime.fixpoint.ram.stmt.*;
 import flix.runtime.fixpoint.ram.term.AttrTerm;
 import flix.runtime.fixpoint.ram.term.RamLitTerm;
@@ -44,6 +45,7 @@ public class MySolver {
         PrintStream stream = System.out;
         seqStmt.prettyPrint(stream, 0);
         stream.print('\n');
+        RamInterpreter.run(seqStmt);
     }
 
     /**
@@ -163,9 +165,7 @@ public class MySolver {
         if (addLabelStmts) result.add(new LabelStmt("Merge new facts into result"));
         for (RelSym relSym : relations) {
             TableName mergeInto = new TableName(TableVersion.RESULT, relSym);
-            RelationExp mergeExp = new BinaryRelationExp(BinaryRelationOperator.UNION,
-                    mergeInto,
-                    new TableName(TableVersion.DELTA, relSym));
+            RelationExp mergeExp = new UnionRelationExp(mergeInto, new TableName(TableVersion.DELTA, relSym));
             result.add(new AssignStmt(mergeInto, mergeExp));
         }
         return result;
