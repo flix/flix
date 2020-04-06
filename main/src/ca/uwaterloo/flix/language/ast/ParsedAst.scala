@@ -1016,9 +1016,12 @@ object ParsedAst {
     /**
       * Fixpoint Fold expression.
       *
-      * @param exp1 the initial value.
-      * @param exp2 the function to fold.
-      * @param exp3 the constraints over which to fold.
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp1  the initial value.
+      * @param exp2  the function to fold.
+      * @param exp3  the constraints over which to fold.
+      * @param sp2   the position of the last character in the expression.
       */
     case class FixpointFold(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
@@ -1241,7 +1244,7 @@ object ParsedAst {
       * Schema Type.
       *
       * @param sp1        the position of the first character in the type.
-      * @param predicates the sequences of predicate types.
+      * @param predicates the sequence of predicate types.
       * @param sp2        the position of the last character in the type.
       */
     case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
