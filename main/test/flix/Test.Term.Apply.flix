@@ -1,4 +1,4 @@
-namespace Test/Term/Lit/QuantVar {
+namespace Test/Term/Apply {
 
     @test
     def testTermApply01(): #{ R(Int) } = solve #{
