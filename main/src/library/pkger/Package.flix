@@ -24,6 +24,7 @@ namespace Package {
                              }
 
     pub opaque type LockedPackage = { name: String
+                                    , version: SemVer.SemVer
                                     // All transitive dependencies, their specific version, and where they were retrieved from.
                                     , transitive: Map[String, SemVer.SemVer]
                                     }
@@ -66,53 +67,60 @@ namespace Package {
         compat_versions
     }
 
+    // TODO: Add error node here or return Result from `lockPackageHelper`?
+    enum DependencyTree {
+        case DepNode(String, SemVer.SemVer, List[DependencyTree])
+    }
+
     def newer(k: SemVer.SemVer, v: a, kx: SemVer.SemVer, vx: a): (SemVer.SemVer,  a) = {
         use SemVer.{cmpSemVer, Ord};
         let cmp = cmpSemVer(k, kx);
         if (cmp == Ord.Lt) (kx, vx) else (k, v)
     }
 
-    def findNewest(versions:  Map[SemVer.SemVer, a]): Option[(SemVer.SemVer,  a)] = {
-        use Map.reduceWithKey;
-
-        reduceWithKey(newer, versions)
-    }
-
-    def lockPackageHelper(_name: String, dependencies: Map[String, SemVer.SemVer]): List[(String, Map[String, SemVer.SemVer])] = {
+    def lockPackageHelper(package: String, bound: SemVer.SemVer): DependencyTree = {
         use Map.toList;
         use List.{map, find, filterMap};
 
-        let not = b -> !b;
+        let dependencies: Option[(SemVer.SemVer,  Map[String, SemVer.SemVer])] = packageRepository(package, bound)
+            |> Map.reduceWithKey(newer);
 
-        // Re-implementation without manually re-implementing Map methods
-        // TODO: This silently ignores not-present dependencies in the filtering step
-        let packageDependencies: Map[String, Option[(SemVer.SemVer, Map[String, SemVer.SemVer])]] = dependencies
-            |> Map.mapWithKey(packageRepository)
-            |> Map.map(findNewest)
-            |> Map.filter(Option.isEmpty >> not); // <-- here
+        match dependencies {
+            case None => {
+                // TODO: No packages with that name and version combo
+                ???
+            }
+            case Some((version, dependencies)) => {
+                DepNode(package, version, toList(dependencies) |> map(match (p, b) -> lockPackageHelper(p, b)))
+            }
+        }
+    }
 
-        let list: List[(String, SemVer.SemVer)] = toList(dependencies);
-        let possibilities: List[(String, Map[SemVer.SemVer, Map[String, SemVer.SemVer]])] = map(match (k, v) -> (k, packageRepository(k, v)), list);
-        let newest: List[(String, Option[(SemVer.SemVer,  Map[String, SemVer.SemVer])])] = map(match (k, v) -> (k, findNewest(v)), possibilities);
-
-        // TODO: Report errors silently ignored by `filterMap`
-        let filtered: List[(String, Map[String, SemVer.SemVer])] = filterMap(match (k, v) -> Option.map(vx -> (k, snd(vx)), v), newest);
-        let package_dependencies: List[Map[String, SemVer.SemVer]] = map(match (k, v) -> v, filtered);
-
-        let flattened = map(kv -> {
-            let k = fst(kv);
-            let v = fst(kv);
-            ???
-        }, filtered);
-
-        ???
+    def flattenDependencyTree(tree: DependencyTree): List[(String, SemVer.SemVer, List[(String, SemVer.SemVer)])] = {
+        match tree {
+            case DepNode(package, version, dependencies) => {
+                let x = List.flatMap(flattenDependencyTree, dependencies);
+                let flatDep = List.flatMap(match (p, v, d) -> (p, v) :: d, x);
+                (package, version, flatDep) :: x
+            }
+        }
     }
 
     // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
     pub def lockPackage(self: Package): List[LockedPackage] = {
-        let dependencies = lockPackageHelper(self.name, self.depends);
-        //let added = () :: dependencies;
+        let dependencyTree = DepNode( self.name
+                                    , self.version
+                                    , Map.toList(self.depends) |> List.map(match (p, b) -> lockPackageHelper(p, b))
+                                    );
 
-        ???
+        let flattened = flattenDependencyTree(dependencyTree);
+
+        let locked = List.map( match (package, version, dependencies) -> LockedPackage({ name = package,
+                                                                             version = version,
+                                                                             transitive = List.toMap(dependencies)
+                                                                         })
+                             , flattened);
+
+        locked
     }
 }

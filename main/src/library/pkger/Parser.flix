@@ -4,7 +4,7 @@ pub type alias Parsec[s, a] = s -> Option[(s, a)]
 pub type alias Parser[a] = Parsec[String, a]
 
 namespace Parser {
-    pub def runParser(): Option[(String, a)] = v(s)
+    pub def runParser(v: Parser[a], s: String): Option[(String, a)] = v(s)
 
     pub def mapOption(v: Parser[a], f: a -> Option[b]): Parser[b] = input -> {
         Option.flatMap(match (inputx, x) -> Option.map(y -> (inputx, y), f(x)), runParser(v, input))
@@ -94,7 +94,7 @@ pub def >>=(v: Parser[a], f: a -> Parser[b]): Parser[b] = Parser.bind(v, f)
 namespace SemVerParser {
     def parseNumber(): Parser[Int] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), s -> Result.toOption(Int32.fromString(s)))
 
-    pub def parseSemVer(): Parser[SemVer] = Parser.bind(parseNumber(), major -> {
+    pub def parseSemVer(): Parser[SemVer.SemVer] = Parser.bind(parseNumber(), major -> {
         Parser.bind(Parser.char('.') *> parseNumber(), minor -> {
             Parser.bind(Parser.char('.') *> parseNumber(), patch -> {
                 Parser.return((major, minor, patch))
