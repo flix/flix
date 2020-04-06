@@ -32,7 +32,7 @@ public class MySolver {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
 
         // First we generate all projections for the facts
-        ArrayList<Stmt> resultStmts = new ArrayList<>(Arrays.asList(generateFactProjectionStmts(cs, relHasFact)));
+        ArrayList<Stmt> resultStmts = generateFactProjectionStmts(cs, relHasFact);
 
         // Then find all the rules and map them to what they derive, and in which stratum they should be evaluated
         Map<Integer, Map<RelSym, ArrayList<Constraint>>> derivedInStratum = findRulesForDerivedInStratums(cs, stf);
@@ -476,10 +476,9 @@ public class MySolver {
      * @param cs Is the constraint system
      * @return an array of ProjectStmt representing the projection of the facts
      */
-    private static Stmt[] generateFactProjectionStmts(ConstraintSystem cs, ArrayList<RelSym> predHasFacts) {
-        Stmt[] stmts = new Stmt[cs.getFacts().length];
-        for (int factI = 0; factI < cs.getFacts().length; factI++) {
-            Constraint c = cs.getFacts()[factI];
+    private static ArrayList<Stmt> generateFactProjectionStmts(ConstraintSystem cs, ArrayList<RelSym> predHasFacts) {
+        ArrayList<Stmt> resultStmts = new ArrayList<>(cs.getFacts().length);
+        for (Constraint c : cs.getFacts()) {
             assert c.getBodyPredicates().length == 0;
 
             Predicate pred = c.getHeadPredicate();
@@ -489,18 +488,21 @@ public class MySolver {
             PredSym predSym = atom.getSym();
             assert predSym instanceof RelSym;
             predHasFacts.add((RelSym) predSym);
+
+            // Go through all terms of the AtomPredicate to generate ramTerms for the ProjectStmt
             RamTerm[] ramTerms = new RamTerm[atom.getTerms().length];
             for (int termI = 0; termI < atom.getTerms().length; termI++) {
                 Term term = atom.getTerms()[termI];
+                // TODO: CAn also be AppTerm
                 assert term instanceof LitTerm;
 
                 LitTerm litTerm = (LitTerm) term;
                 ProxyObject proxy = litTerm.getFunction().apply(nullArray);
                 ramTerms[termI] = new RamLitTerm(proxy);
             }
-            stmts[factI] = new ProjectStmt(ramTerms
-                    , new TableName(TableVersion.RESULT, atom.getSym()));
+            resultStmts.add(new ProjectStmt(ramTerms
+                    , new TableName(TableVersion.RESULT, atom.getSym())));
         }
-        return stmts;
+        return resultStmts;
     }
 }
