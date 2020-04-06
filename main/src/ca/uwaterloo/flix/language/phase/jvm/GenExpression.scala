@@ -1072,7 +1072,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      // TODO: Need the denotation
+      // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
       newRelSym(name, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
@@ -2327,11 +2327,11 @@ object GenExpression {
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
 
     // Add every predicate symbol with its stratum.
-    for ((predSym, stratum) <- stf.m) {
+    for ((name, stratum) <- stf.m) {
       mv.visitInsn(DUP)
 
-      // TODO: Need denotation
-      newRelSym(predSym.toString, mv)
+      // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
+      newRelSym(name, mv)
 
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
