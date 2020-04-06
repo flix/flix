@@ -1642,8 +1642,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
       predicates.foldRight(init: WeededAst.Type) {
-        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, i, ssp2), acc) =>
-          WeededAst.Type.SchemaExtendByAlias(i, acc, mkSL(ssp1, ssp2))
+        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
+          val ts = targs match {
+            case None => Nil
+            case Some(xs) => xs.map(visitType).toList
+          }
+          WeededAst.Type.SchemaExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
 
         case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
           WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))

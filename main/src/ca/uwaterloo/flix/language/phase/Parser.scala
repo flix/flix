@@ -1202,7 +1202,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Schema: Rule1[ParsedAst.Type] = {
       def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
-        SP ~ Names.QualifiedPredicate ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
+        SP ~ Names.QualifiedPredicate ~ optional(TypeArguments) ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
       }
 
       def RelPredicateWithTypes: Rule1[ParsedAst.PredicateType.RelPredicateWithTypes] = rule {

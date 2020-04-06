@@ -1682,9 +1682,10 @@ object ParsedAst {
       *
       * @param sp1   the position of the first character in the field.
       * @param qname the fully-qualified name of the type alias.
+      * @param targs the optional type arguments.
       * @param sp2   the position of the last character in the field.
       */
-    case class PredicateWithAlias(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends PredicateType
+    case class PredicateWithAlias(sp1: SourcePosition, qname: Name.QName, targs: Option[Seq[ParsedAst.Type]], sp2: SourcePosition) extends PredicateType
 
     /**
       * A Relational Predicate Type that is equipped wit the types of its terms.

@@ -1051,7 +1051,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
 
-    case NamedAst.Type.SchemaExtendWithAlias(qname, rest, loc) =>
+    case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
       // Lookup the type alias.
       lookupTypeAlias(qname, ns0, root) match {
         case None =>
@@ -1061,8 +1061,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           // Case 2: The type alias was found. Use it.
           for {
             t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
+            ts <- traverse(targs)(lookupType(_, ns0, root))
             r <- lookupType(rest, ns0, root)
-          } yield Type.SchemaExtend(qname.ident.name, t, r)
+          } yield {
+            val tpe = simplify(ts.foldLeft(t)(Type.Apply))
+            Type.SchemaExtend(qname.ident.name, tpe, r)
+          }
       }
 
     case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>

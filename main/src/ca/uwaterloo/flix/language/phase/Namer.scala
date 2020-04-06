@@ -950,7 +950,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.SchemaEmpty(loc) =>
       NamedAst.Type.SchemaEmpty(loc).toSuccess
 
-    case WeededAst.Type.SchemaExtendByAlias(qname, rest, loc) =>
+    case WeededAst.Type.SchemaExtendByAlias(qname, targs, rest, loc) =>
       // Disambiguate the qname.
       val name = if (qname.isUnqualified) {
         uenv0.tpes.getOrElse(qname.ident.name, qname)
@@ -958,8 +958,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         qname
       }
 
-      mapN(visitType(rest, uenv0, tenv0)) {
-        case r => NamedAst.Type.SchemaExtendWithAlias(name, r, loc)
+      mapN(traverse(targs)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
+        case (ts, r) => NamedAst.Type.SchemaExtendWithAlias(name, ts, r, loc)
       }
 
     case WeededAst.Type.SchemaExtendByTypes(ident, den, tpes, rest, loc) =>
@@ -1175,7 +1175,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
     case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
-    case WeededAst.Type.SchemaExtendByAlias(_, r, _) => freeVars(r)
+    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
     case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Nat(n, loc) => Nil
