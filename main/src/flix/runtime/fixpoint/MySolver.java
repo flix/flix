@@ -277,7 +277,7 @@ public class MySolver {
         PredSym headSym = ((AtomPredicate) head).getSym();
         Term[] headTerms = ((AtomPredicate) head).getTerms();
 
-        // Map from AtomPredicate to the TowVariable used to get values to that recursion
+        // Map from AtomPredicate to the RowVariable used to get values to that recursion
         Map<AtomPredicate, RowVariable> atomToLocal = new HashMap<>();
         // Map from a variable to the set of AttrTerms they will be instantiated as
         Map<VarSym, Set<AttrTerm>> varSymToAttrTerm = new HashMap<>();
@@ -293,8 +293,9 @@ public class MySolver {
                     sure that it holds. This must be done before we add the predicate to atomToLocal, since the values
                     cannot be determined by this predicate
                     TODO: Make sure that we do not traverse a negated predicate, since this is never necessary
+                    //TODO: Never add names from a negated predicate to varSymToAttrTerm
                  */
-                if (!currentPred.isPositive()) {
+                if (currentPred.isNegative()) {
                     // This could perhaps be moved to the already existing loop across the terms
                     Term[] terms = currentPred.getTerms();
                     RamTerm[] ramTerms = new RamTerm[terms.length];
@@ -312,34 +313,34 @@ public class MySolver {
                     }
                     TableName name = new TableName(TableVersion.RESULT, currentPred.getSym());
                     boolRestrictions.add(new NotBoolExp(new TupleInRelBoolExp(ramTerms, name)));
-                }
-
-                // Since it is not negated we might have to traverse the values of this table
-                RowVariable localVar = genNewRowVariable(currentPred.getSym().getName());
-                atomToLocal.put(currentPred, localVar);
-                Term[] terms = currentPred.getTerms();
-                for (int i = 0; i < terms.length; i++) {
-                    Term currentTerm = terms[i];
-                    AttrTerm attrTerm = new AttrTerm(localVar, i);
-                    // We now split on what kind of term it is.
-                    if (currentTerm instanceof VarTerm) {
-                        VarSym currentSym = ((VarTerm) currentTerm).getSym();
-                        if (varSymToAttrTerm.containsKey(currentSym)) {
-                            varSymToAttrTerm.get(currentSym).add(attrTerm);
-                        } else {
-                            HashSet<AttrTerm> attrSet = new HashSet<>();
-                            attrSet.add(attrTerm);
-                            varSymToAttrTerm.put(currentSym, attrSet);
+                } else {
+                    // Since it is not negated we might have to traverse the values of this table
+                    RowVariable localVar = genNewRowVariable(currentPred.getSym().getName());
+                    atomToLocal.put(currentPred, localVar);
+                    Term[] terms = currentPred.getTerms();
+                    for (int i = 0; i < terms.length; i++) {
+                        Term currentTerm = terms[i];
+                        AttrTerm attrTerm = new AttrTerm(localVar, i);
+                        // We now split on what kind of term it is.
+                        if (currentTerm instanceof VarTerm) {
+                            VarSym currentSym = ((VarTerm) currentTerm).getSym();
+                            if (varSymToAttrTerm.containsKey(currentSym)) {
+                                varSymToAttrTerm.get(currentSym).add(attrTerm);
+                            } else {
+                                HashSet<AttrTerm> attrSet = new HashSet<>();
+                                attrSet.add(attrTerm);
+                                varSymToAttrTerm.put(currentSym, attrSet);
+                            }
+                        } else if (currentTerm instanceof LitTerm) {
+                            RamLitTerm literal = new RamLitTerm(((LitTerm) currentTerm).getFunction().apply(nullArray));
+                            boolRestrictions.add(new EqualsBoolExp(attrTerm, literal));
+                        } else if (currentTerm instanceof AppTerm) {
+                            throw new UnsupportedOperationException("Right now the terms of predicates in the body" +
+                                    " of a rule cannot be AppTerm");
+                            //TODO: Should it be possible? And what to do then?
                         }
-                    } else if (currentTerm instanceof LitTerm) {
-                        RamLitTerm literal = new RamLitTerm(((LitTerm) currentTerm).getFunction().apply(nullArray));
-                        boolRestrictions.add(new EqualsBoolExp(attrTerm, literal));
-                    } else if (currentTerm instanceof AppTerm) {
-                        throw new UnsupportedOperationException("Right now the terms of predicates in the body" +
-                                " of a rule cannot be AppTerm");
-                        //TODO: Should it be possible? And what to do then?
+                        //TODO: Is it necessary to do something with WildTerm?
                     }
-                    //TODO: Is it necessary to do something with WildTerm?
                 }
             } else {
                 throw new UnsupportedOperationException("We only support AtomPredicates");
@@ -375,31 +376,50 @@ public class MySolver {
                 resultStmt = new IfStmt(equalsBool, resultStmt);
             }
         }
+
         for (BoolExp exp : boolRestrictions) {
             resultStmt = new IfStmt(exp, resultStmt);
         }
+        // I can now generate all the for each statements for all AtomPredicates.
+        resultStmt = generateForEach(resultStmt, c.getBodyAtoms(), newSym, atomToLocal);
 
-        // I can now generate all the for each statements for all AtomPredicates. Reversed for nicer printing
-        Predicate[] bodyPredicates = c.getBodyPredicates();
-        for (int i = bodyPredicates.length - 1; i >= 0; i--) {
-            Predicate pred = bodyPredicates[i];
-            if (pred instanceof AtomPredicate) {
-                AtomPredicate currentPred = (AtomPredicate) pred;
-                PredSym predSym = currentPred.getSym();
-                TableName name;
-                if (predSym == newSym) {
-                    name = new TableName(TableVersion.NEW, predSym);
-                } else {
-                    name = new TableName(TableVersion.RESULT, predSym);
-                }
-                resultStmt = new ForEachStmt(name,
-                        atomToLocal.get(currentPred),
-                        resultStmt);
-            }
-        }
 
         return resultStmt;
     }
+
+    /**
+     * Generates a ForEach statement for each positive Atom. Each ForEach containing another, and the innermost containing 'body'
+     * The first ForEach will match the last Atom in atoms.
+     *
+     * @param body        The body of the innermost ForEach generated
+     * @param atoms       The Atoms for which the ForEach statements are made
+     * @param newSym      The symbol that is in focus in the incremental part of the algorithm. If null ot does nothing
+     * @param atomToLocal A map from the AtomPredicate to the RowVariable it will be represented with in the body
+     * @return The resulting ForEachStmt
+     */
+    private static Stmt generateForEach(Stmt body, AtomPredicate[] atoms, PredSym newSym, Map<AtomPredicate, RowVariable> atomToLocal) {
+        Stmt resultStmt = body;
+        // Reversed for nicer printing. They now come in the same order as in the  rule
+        for (int i = atoms.length - 1; i >= 0; i--) {
+            AtomPredicate pred = atoms[i];
+
+            // We do not need a ForEach when it's a negated Atom, since all possible values will be in other tables
+            if (pred.isNegative()) continue;
+
+            PredSym predSym = pred.getSym();
+            TableName name;
+            if (predSym == newSym) {
+                name = new TableName(TableVersion.NEW, predSym);
+            } else {
+                name = new TableName(TableVersion.RESULT, predSym);
+            }
+            resultStmt = new ForEachStmt(name,
+                    atomToLocal.get(pred),
+                    resultStmt);
+        }
+        return resultStmt;
+    }
+
 
     /**
      * Generates a new RowVariable using the variableCounter
