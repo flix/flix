@@ -108,19 +108,14 @@ namespace Package {
 
     // Resolve dependency tree and create a list of all dependencies and their transitive dependencies
     pub def lockPackage(self: Package): List[LockedPackage] = {
-        let dependencyTree = DepNode( self.name
-                                    , self.version
-                                    , Map.toList(self.depends) |> List.map(match (p, b) -> lockPackageHelper(p, b))
-                                    );
-
-        let flattened = flattenDependencyTree(dependencyTree);
-
-        let locked = List.map( match (package, version, dependencies) -> LockedPackage({ name = package,
-                                                                             version = version,
-                                                                             transitive = List.toMap(dependencies)
-                                                                         })
-                             , flattened);
-
-        locked
+        DepNode( self.name
+               , self.version
+               , Map.toList(self.depends) |> List.map(match (p, b) -> lockPackageHelper(p, b))
+               )
+            |> flattenDependencyTree
+            |> List.map(match (package, version, dependencies) -> LockedPackage({ name = package
+                                                                                , version = version
+                                                                                , transitive = List.toMap(dependencies)
+                                                                                }))
     }
 }
