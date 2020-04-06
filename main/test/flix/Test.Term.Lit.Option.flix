@@ -1,29 +1,32 @@
 namespace Test/Term/Lit/Option {
 
-    rel R(x: Option[Int])
-    
     @test
-    def test01(): #{ R } =
+    def test01(): #{ R(Option[Int]) } =
         let x = R(None).;
         solve x
-    
+
     @test
-    def test02(): #{ R } =
+    def test02(): #{ R(Option[Int]) } =
         let x = R(Some(123)).;
         solve x
-    
+
+
     @test
-    def test03(): #{ R } =
+    def test03(): #{ R(Option[Int]) } =
         let x = R(None).;
         let y = R(Some(123)).;
         solve x <+> y
-    
+
     @test
-    def test04(): #{ R } =
+    def test04(): #{ R(Option[Int]) } =
         let x = R(None).;
         let y = R(Some(123)).;
         let z = R(Some(456)).;
         solve x <+> y <+> z
 
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
 
 }

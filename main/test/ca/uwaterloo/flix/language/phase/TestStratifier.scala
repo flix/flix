@@ -29,8 +29,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.01") {
     val input =
       """
-        |rel A(c: Int)
-        |rel X(c: Int)
         |A(c) :- X(c), !A(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
@@ -39,9 +37,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.02") {
     val input =
       """
-        |rel A(c: Int)
-        |rel B(c: Int)
-        |rel X(c: Int)
         |A(c) :- X(c), B(c).
         |B(c) :- X(c), !A(c).
       """.stripMargin
@@ -51,9 +46,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.03") {
     val input =
       """
-        |rel A(c: Int)
-        |rel B(c: Int)
-        |rel X(c: Int)
         |A(c) :- X(c), !B(c).
         |B(c) :- X(c), A(c).
       """.stripMargin
@@ -63,18 +55,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.04") {
     val input =
       """
-        |rel A(c: Int)
-        |rel B(c: Int)
-        |rel C(c: Int)
-        |rel D(c: Int)
-        |rel E(c: Int)
-        |rel F(c: Int)
-        |rel G(c: Int)
-        |rel H(c: Int)
-        |rel I(c: Int)
-        |rel J(c: Int)
-        |rel K(c: Int)
-        |rel X(c: Int)
         |A(c) :- B(c).
         |B(c) :- C(c).
         |C(c) :- D(c).
@@ -93,10 +73,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.05") {
     val input =
       """
-        |rel A(c: Int)
-        |rel B(c: Int)
-        |rel C(c: Int)
-        |rel X(c: Int)
         |C(c) :- X(c), !A(c).
         |A(c) :- B(c), C(c).
       """.stripMargin
@@ -106,9 +82,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.06") {
     val input =
       """
-        |rel A(c: Int)
-        |rel B(c: Int)
-        |rel X(c: Int)
         |A(c) :- X(c), !A(c).
         |B(c) :- X(c), !B(c).
       """.stripMargin
@@ -118,11 +91,6 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.07") {
     val input =
       """
-        |rel A(c: Int)
-        |rel B(c: Int)
-        |rel C(c: Int)
-        |rel D(c: Int)
-        |rel X(c: Int)
         |A(c) :- X(c), B(c).
         |B(c) :- X(c), C(c).
         |C(c) :- X(c), !A(c).

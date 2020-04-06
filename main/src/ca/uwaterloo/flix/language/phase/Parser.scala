@@ -997,11 +997,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
+      SP ~ atomic("project") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
     def FixpointFold: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("fold") ~ WS ~ Names.QualifiedPredicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
+      SP ~ atomic("fold") ~ WS ~ Names.Predicate ~ WS ~ Expression ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointFold
     }
 
     // TODO: We should only allow one variant of these.
@@ -1086,7 +1086,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Head {
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedPredicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.Predicate ~ optWS ~ Predicates.TermList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
       def Union: Rule1[ParsedAst.Predicate.Head.Union] = rule {
@@ -1098,7 +1098,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     object Body {
 
       def Positive: Rule1[ParsedAst.Predicate.Body.Atom] = rule {
-        SP ~ push(Polarity.Positive) ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+        SP ~ push(Polarity.Positive) ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Atom] = {
@@ -1107,7 +1107,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+          SP ~ push(Polarity.Negative) ~ Not ~ optWS ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
         }
       }
 
@@ -1200,8 +1200,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Schema: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("#{") ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
+    def Schema: Rule1[ParsedAst.Type] = {
+      def PredicateWithAlias: Rule1[ParsedAst.PredicateType.PredicateWithAlias] = rule {
+        SP ~ Names.QualifiedPredicate ~ optional(TypeArguments) ~ SP ~> ParsedAst.PredicateType.PredicateWithAlias
+      }
+
+      def RelPredicateWithTypes: Rule1[ParsedAst.PredicateType.RelPredicateWithTypes] = rule {
+        SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.RelPredicateWithTypes
+      }
+
+      def LatPredicateWithTypes: Rule1[ParsedAst.PredicateType.LatPredicateWithTypes] = rule {
+        SP ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ";" ~ optWS ~ Type ~ optWS ~ ")" ~ SP ~> ParsedAst.PredicateType.LatPredicateWithTypes
+      }
+
+      rule {
+        SP ~ atomic("#{") ~ optWS ~ zeroOrMore(RelPredicateWithTypes | LatPredicateWithTypes | PredicateWithAlias).separatedBy(optWS ~ "," ~ optWS) ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
+      }
     }
 
     def Native: Rule1[ParsedAst.Type] = rule {

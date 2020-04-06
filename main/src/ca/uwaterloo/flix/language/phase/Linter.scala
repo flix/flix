@@ -551,13 +551,13 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
     case (Expression.FixpointSolve(exp1, _, _, _, _), Expression.FixpointSolve(exp2, _, _, _, _)) =>
       unifyExp(exp1, exp2, metaVars)
 
-    case (Expression.FixpointProject(sym1, exp1, _, _, _), Expression.FixpointProject(sym2, exp2, _, _, _)) if sym1 == sym2 =>
+    case (Expression.FixpointProject(name1, exp1, _, _, _), Expression.FixpointProject(name2, exp2, _, _, _)) if name1 == name2 =>
       unifyExp(exp1, exp2, metaVars)
 
     case (Expression.FixpointEntails(exp11, exp12, _, _, _), Expression.FixpointEntails(exp21, exp22, _, _, _)) =>
       unifyExp(exp11, exp12, exp21, exp22, metaVars)
 
-    case (Expression.FixpointFold(sym1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(sym2, exp21, exp22, exp23, _, _, _)) if sym1 == sym2 =>
+    case (Expression.FixpointFold(name1, exp11, exp12, exp13, _, _, _), Expression.FixpointFold(name2, exp21, exp22, exp23, _, _, _)) if name1 == name2 =>
       unifyExp(exp11, exp12, exp13, exp21, exp22, exp23, metaVars)
 
     case _ => None
@@ -967,20 +967,20 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
         val e = apply(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
         val e = apply(exp)
-        Expression.FixpointProject(sym, e, tpe, eff, loc)
+        Expression.FixpointProject(name, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = apply(exp1)
         val e2 = apply(exp2)
         val e3 = apply(exp3)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
 
       case Expression.Existential(_, _, _) => throw InternalCompilerException(s"Unexpected expression: $exp0.")
 
@@ -1056,7 +1056,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the head predicate `head0`.
       */
     private def apply(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Head.Atom(sym, den, terms, tpe, loc) => Head.Atom(sym, den, terms.map(apply), tpe, loc)
+      case Head.Atom(name, den, terms, tpe, loc) => Head.Atom(name, den, terms.map(apply), tpe, loc)
       case Head.Union(exp, tpe, loc) => Head.Union(apply(exp), tpe, loc)
     }
 
@@ -1064,7 +1064,7 @@ object Linter extends Phase[TypedAst.Root, TypedAst.Root] {
       * Applies the substitution to the body predicate `body0`.
       */
     private def apply(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Body.Atom(sym, den, polarity, terms, tpe, loc) => Body.Atom(sym, den, polarity, terms.map(apply), tpe, loc)
+      case Body.Atom(name, den, polarity, terms, tpe, loc) => Body.Atom(name, den, polarity, terms.map(apply), tpe, loc)
       case Body.Guard(exp, loc) => Body.Guard(apply(exp), loc)
     }
 

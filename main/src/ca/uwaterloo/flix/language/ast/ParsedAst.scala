@@ -997,12 +997,12 @@ object ParsedAst {
     /**
       * Fixpoint Project expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the name of the predicate.
-      * @param exp  the constraint expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp   the constraint expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Entails expression.
@@ -1016,11 +1016,14 @@ object ParsedAst {
     /**
       * Fixpoint Fold expression.
       *
-      * @param exp1 the initial value.
-      * @param exp2 the function to fold.
-      * @param exp3 the constraints over which to fold.
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp1  the initial value.
+      * @param exp2  the function to fold.
+      * @param exp3  the constraints over which to fold.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class FixpointFold(sp1: SourcePosition, name: Name.QName, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointFold(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1128,12 +1131,12 @@ object ParsedAst {
         * Atom Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param name  the qualified name of the predicate.
+        * @param ident the qualified name of the predicate.
         * @param terms the terms of the predicate.
         * @param term  the optional lattice term (if applicable).
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, ident: Name.Ident, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Union Predicate.
@@ -1155,12 +1158,12 @@ object ParsedAst {
         *
         * @param sp1      the position of the first character in the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
-        * @param name     the qualified name of the predicate.
+        * @param ident    the name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, polarity: Polarity, name: Name.QName, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Polarity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.
@@ -1240,11 +1243,11 @@ object ParsedAst {
     /**
       * Schema Type.
       *
-      * @param sp1 the position of the first character in the type.
-      * @param ts  the types of the predicates in schema.
-      * @param sp2 the position of the last character in the type.
+      * @param sp1        the position of the first character in the type.
+      * @param predicates the sequence of predicate types.
+      * @param sp2        the position of the last character in the type.
       */
-    case class Schema(sp1: SourcePosition, ts: Seq[ParsedAst.Type], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+    case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.
@@ -1669,5 +1672,44 @@ object ParsedAst {
     * @param sp2   the position of the last character in the field.
     */
   case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+
+  /**
+    * A common super-type for schema predicate types.
+    */
+  sealed trait PredicateType
+
+  object PredicateType {
+
+    /**
+      * A Predicate Type that refers to a type alias.
+      *
+      * @param sp1   the position of the first character in the field.
+      * @param qname the fully-qualified name of the type alias.
+      * @param targs the optional type arguments.
+      * @param sp2   the position of the last character in the field.
+      */
+    case class PredicateWithAlias(sp1: SourcePosition, qname: Name.QName, targs: Option[Seq[ParsedAst.Type]], sp2: SourcePosition) extends PredicateType
+
+    /**
+      * A Relational Predicate Type that is equipped wit the types of its terms.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param tpes the types of the terms of the predicate.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class RelPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateType
+
+    /**
+      * A Latticenal Predicate Type that is equipped wit the types of its terms.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param tpes the types of the terms of the predicate.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
+
+  }
 
 }

@@ -40,16 +40,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case (sym, enum) => sym -> visitEnum(enum, m)
     }
 
-    val relations = root.relations.map {
-      case (k, v) => k -> visitRelation(v)
-    }
-
-    val lattices = root.lattices.map {
-      case (k, v) => k -> visitLattice(v)
-    }
-
-    val latticeComponents = root.latticeComponents.map {
-      case (k, v) => visitType(k) -> visitLatticeComponents(v, m)
+    val latticesOps = root.latticeOps.map {
+      case (k, v) => visitType(k) -> visitLatticeOps(v, m)
     }
 
     val properties = root.properties.map(p => visitProperty(p, m))
@@ -62,7 +54,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, enums, relations, lattices, latticeComponents, properties, specialOps, reachable, root.sources).toSuccess
+    FinalAst.Root(defs ++ m, enums, latticesOps, properties, specialOps, reachable, root.sources).toSuccess
   }
 
   private def visitDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -83,16 +75,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       FinalAst.Enum(mod, sym, cases, tpe, loc)
   }
 
-  private def visitRelation(relation0: SimplifiedAst.Relation): FinalAst.Relation = relation0 match {
-    case SimplifiedAst.Relation(mod, sym, attr, loc) =>
-      FinalAst.Relation(mod, sym, attr.map(visitAttribute), loc)
-  }
-
-  private def visitLattice(lattice0: SimplifiedAst.Lattice): FinalAst.Lattice = lattice0 match {
-    case SimplifiedAst.Lattice(mod, sym, attr, loc) =>
-      FinalAst.Lattice(mod, sym, attr.map(visitAttribute), loc)
-  }
-
   private def visitConstraint(constraint0: SimplifiedAst.Constraint, m: TopLevel)(implicit flix: Flix): FinalAst.Constraint = {
     val head = visitHeadPredicate(constraint0.cparams, constraint0.head, m)
     val body = constraint0.body.map(b => visitBodyPredicate(constraint0.cparams, b, m))
@@ -108,10 +90,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     FinalAst.Constraint(cparams, head, body, constraint0.loc)
   }
 
-  private def visitLatticeComponents(lc: SimplifiedAst.LatticeComponents, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeComponents = lc match {
-    case SimplifiedAst.LatticeComponents(tpe0, bot, top, equ, leq, lub, glb, loc) =>
+  private def visitLatticeOps(lc: SimplifiedAst.LatticeOps, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeOps = lc match {
+    case SimplifiedAst.LatticeOps(tpe0, bot, top, equ, leq, lub, glb, loc) =>
       val tpe = visitType(tpe0)
-      FinalAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
+      FinalAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)
   }
 
   private def visitExp(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): FinalAst.Expression = {
@@ -440,10 +422,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointSolve(e, stf, t, loc)
 
-      case SimplifiedAst.Expression.FixpointProject(sym, exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointProject(name, exp, tpe, loc) =>
         val e = visit(exp)
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointProject(sym, e, t, loc)
+        FinalAst.Expression.FixpointProject(name, e, t, loc)
 
       case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
@@ -451,12 +433,12 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val t = visitType(tpe)
         FinalAst.Expression.FixpointEntails(e1, e2, t, loc)
 
-      case SimplifiedAst.Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visit(exp1).asInstanceOf[FinalAst.Expression.Var]
         val e2 = visit(exp2).asInstanceOf[FinalAst.Expression.Var]
         val e3 = visit(exp3).asInstanceOf[FinalAst.Expression.Var]
         val t = visitType(tpe)
-        FinalAst.Expression.FixpointFold(sym, e1, e2, e3, t, loc)
+        FinalAst.Expression.FixpointFold(name, e1, e2, e3, t, loc)
 
       case SimplifiedAst.Expression.HoleError(sym, tpe, loc) =>
         val t = visitType(tpe)
@@ -476,10 +458,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   private def visitHeadPredicate(cparams0: List[SimplifiedAst.ConstraintParam], head0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = head0 match {
-    case SimplifiedAst.Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+    case SimplifiedAst.Predicate.Head.Atom(name, den, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
       val t = visitType(tpe)
-      FinalAst.Predicate.Head.Atom(sym, den, ts, t, loc)
+      FinalAst.Predicate.Head.Atom(name, den, ts, t, loc)
 
     case SimplifiedAst.Predicate.Head.Union(exp, tpe, loc) =>
       val e = visitExp(exp, m)
@@ -489,10 +471,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   private def visitBodyPredicate(cparams0: List[SimplifiedAst.ConstraintParam], body0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = body0 match {
-    case SimplifiedAst.Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+    case SimplifiedAst.Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val t = visitType(tpe)
-      FinalAst.Predicate.Body.Atom(sym, den, polarity, ts, t, loc)
+      FinalAst.Predicate.Body.Atom(name, den, polarity, ts, t, loc)
 
     case SimplifiedAst.Predicate.Body.Guard(exp, loc) =>
       val e = visitExp(exp, m)
@@ -573,8 +555,8 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case Type.Cst(TypeConstructor.Int64) => MonoType.Int64
       case Type.Cst(TypeConstructor.BigInt) => MonoType.BigInt
       case Type.Cst(TypeConstructor.Str) => MonoType.Str
-      case Type.Cst(TypeConstructor.Relation(sym)) => MonoType.Relation(sym, args)
-      case Type.Cst(TypeConstructor.Lattice(sym)) => MonoType.Lattice(sym, args)
+      case Type.Cst(TypeConstructor.Relation) => MonoType.Relation(args)
+      case Type.Cst(TypeConstructor.Lattice) => MonoType.Lattice(args)
 
       // Compound Types.
       case Type.Cst(TypeConstructor.Array) => MonoType.Array(args.head)

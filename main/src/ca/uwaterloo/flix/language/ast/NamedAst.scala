@@ -26,9 +26,7 @@ object NamedAst {
   case class Root(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                   typealiases: Map[Name.NName, Map[String, NamedAst.TypeAlias]],
-                  relations: Map[Name.NName, Map[String, NamedAst.Relation]],
-                  lattices: Map[Name.NName, Map[String, NamedAst.Lattice]],
-                  latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
+                  latticesOps: Map[NamedAst.Type, NamedAst.LatticeOps],
                   named: Map[Symbol.DefnSym, NamedAst.Expression],
                   properties: Map[Name.NName, List[NamedAst.Property]],
                   reachable: Set[Symbol.DefnSym],
@@ -36,20 +34,13 @@ object NamedAst {
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: NamedAst.Type, loc: SourceLocation)
 
-  // TODO
-  case class Law()
-
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[NamedAst.TypeParam], tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
-
-  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
-
-  case class LatticeComponents(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation)
+  case class LatticeOps(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
   sealed trait Use
 
@@ -205,11 +196,11 @@ object NamedAst {
 
     case class FixpointSolve(exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointProject(qname: Name.QName, exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointProject(ident: Name.Ident, exp: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class FixpointFold(qname: Name.QName, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class FixpointFold(ident: Name.Ident, exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, evar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
 
@@ -267,7 +258,7 @@ object NamedAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(ident: Name.Ident, den: Denotation, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
       case class Union(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
@@ -277,7 +268,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Guard(exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Predicate.Body
 
@@ -305,15 +296,17 @@ object NamedAst {
 
     case class SchemaEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class Schema(ts: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class SchemaExtendWithAlias(qname: Name.QName, targs: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class SchemaExtendWithTypes(ident: Name.Ident, den: Ast.Denotation, tpes: List[NamedAst.Type], rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: String, loc: SourceLocation) extends NamedAst.Type
 
-    case class Relation(sym: Symbol.RelSym, loc: SourceLocation) extends NamedAst.Type
+    case class Relation(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Lattice(sym: Symbol.LatSym, loc: SourceLocation) extends NamedAst.Type
+    case class Lattice(tpes: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
     case class Arrow(tparams: List[NamedAst.Type], eff: NamedAst.Type, tresult: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 

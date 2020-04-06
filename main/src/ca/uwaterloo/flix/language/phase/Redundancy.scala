@@ -34,7 +34,7 @@ import scala.collection.parallel.CollectionConverters._
   * For example, the redundancy phase ensures that there are no:
   *
   * - unused local variables.
-  * - unused enums, definitions, relations, lattices, ...
+  * - unused enums, definitions, ...
   * - useless expressions.
   *
   * and so on.
@@ -58,8 +58,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     }, _ and _)
 
     // Computes all used symbols in all lattices.
-    val usedLats = root.latticeComponents.values.foldLeft(Used.empty) {
-      case (acc, LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)) =>
+    val usedLats = root.latticeOps.values.foldLeft(Used.empty) {
+      case (acc, LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc)) =>
         acc and visitExps(bot :: top :: equ :: leq :: lub :: glb :: Nil, Env.empty)
     }
 
@@ -70,11 +70,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     val usedRes =
       checkUnusedDefs(usedAll)(root) and
         checkUnusedEnumsAndTags(usedAll)(root) and
-        checkUnusedRelations(usedAll)(root) and
-        checkUnusedLattices(usedAll)(root) and
-        checkUnusedTypeParamsEnums()(root) and
-        checkUnusedTypeParamsRelations()(root) and
-        checkUnusedTypeParamsLattices()(root)
+        checkUnusedTypeParamsEnums()(root)
 
     // Return the root if successful, otherwise returns all redundancy errors.
     usedRes.toValidation(root)
@@ -182,54 +178,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
         acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
     }
-  }
-
-  /**
-    * Checks for unused type parameters in relations.
-    */
-  private def checkUnusedTypeParamsRelations()(implicit root: Root): Used = {
-    root.relations.foldLeft(Used.empty) {
-      case (acc, (_, decl)) =>
-        val usedTypeVars = decl.attr.foldLeft(Set.empty[Type.Var]) {
-          case (sacc, Attribute(_, tpe, _)) => sacc ++ tpe.typeVars
-        }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
-        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
-    }
-  }
-
-  /**
-    * Checks for unused type parameters in lattices.
-    */
-  private def checkUnusedTypeParamsLattices()(implicit root: Root): Used = {
-    root.lattices.foldLeft(Used.empty) {
-      case (acc, (_, decl)) =>
-        val usedTypeVars = decl.attr.foldLeft(Set.empty[Type.Var]) {
-          case (sacc, Attribute(_, tpe, _)) => sacc ++ tpe.typeVars
-        }
-        val unusedTypeParams = decl.tparams.filter(tparam => !usedTypeVars.contains(tparam.tpe))
-        acc ++ unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name))
-    }
-  }
-
-  /**
-    * Checks for unused relation symbols.
-    */
-  private def checkUnusedRelations(used: Redundancy.Used)(implicit root: Root): Used = {
-    val unusedRelSyms = root.relations.collect {
-      case (sym, decl) if deadRel(decl, used) => UnusedRelSym(sym)
-    }
-    used ++ unusedRelSyms
-  }
-
-  /**
-    * Checks for unused lattice symbols.
-    */
-  private def checkUnusedLattices(used: Redundancy.Used)(implicit root: Root): Used = {
-    val unusedLatSyms = root.lattices.collect {
-      case (sym, decl) if deadLat(decl, used) => UnusedLatSym(sym)
-    }
-    used ++ unusedLatSyms
   }
 
   /**
@@ -590,20 +538,19 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     case Expression.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0.resetApplies)
 
-    case Expression.FixpointProject(sym, exp, _, _, _) =>
-      val us = visitExp(exp, env0.resetApplies)
-      Used.of(sym) and us
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      visitExp(exp, env0.resetApplies)
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       val used1 = visitExp(exp1, env0.resetApplies)
       val used2 = visitExp(exp2, env0.resetApplies)
       used1 and used2
 
-    case Expression.FixpointFold(sym, exp1, exp2, exp3, _, _, _) =>
+    case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0.resetApplies)
       val us2 = visitExp(exp2, env0.resetApplies)
       val us3 = visitExp(exp3, env0.resetApplies)
-      Used.of(sym) and us1 and us2 and us3
+      us1 and us2 and us3
   }
 
   /**
@@ -629,8 +576,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given head predicate `h0` under the given environment `env0`.
     */
   private def visitHeadPred(h0: Predicate.Head, env0: Env): Used = h0 match {
-    case Head.Atom(sym, _, terms, _, _) =>
-      Used.of(sym) and visitExps(terms, env0)
+    case Head.Atom(_, _, terms, _, _) =>
+      visitExps(terms, env0)
 
     case Head.Union(exp, _, _) =>
       visitExp(exp, env0)
@@ -640,8 +587,8 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the symbols used in the given body predicate `h0` under the given environment `env0`.
     */
   private def visitBodyPred(b0: Predicate.Body, env0: Env): Used = b0 match {
-    case Body.Atom(sym, _, _, terms, _, _) =>
-      Used.of(sym)
+    case Body.Atom(_, _, _, terms, _, _) =>
+      Used.empty
 
     case Body.Guard(exp, _) =>
       visitExp(exp, env0)
@@ -705,22 +652,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
       !decl.sym.name.startsWith("_") &&
       !used.defSyms.contains(decl.sym) &&
       !root.reachable.contains(decl.sym)
-
-  /**
-    * Returns `true` if the given relation `decl` is unused according to `used`.
-    */
-  private def deadRel(decl: Relation, used: Used): Boolean =
-    !decl.mod.isPublic &&
-      !decl.sym.name.startsWith("_") &&
-      !used.predSyms.contains(decl.sym)
-
-  /**
-    * Returns `true` if the given lattice `decl` is unused according to `used`.
-    */
-  private def deadLat(decl: Lattice, used: Used): Boolean =
-    !decl.mod.isPublic &&
-      !decl.sym.name.startsWith("_") &&
-      !used.predSyms.contains(decl.sym)
 
   /**
     * Returns `true` if the type variable `tvar` is unused according to the argument `used`.
@@ -794,7 +725,7 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Represents the empty set of used symbols.
       */
-    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
+    val empty: Used = Used(MultiMap.empty, Set.empty, Set.empty, Set.empty, unconditionallyRecurses = false, Set.empty)
 
     /**
       * Returns an object where the given enum symbol `sym` and `tag` are marked as used.
@@ -814,11 +745,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     def of(sym: Symbol.HoleSym): Used = empty.copy(holeSyms = Set(sym))
 
     /**
-      * Returns an object where the given predicate symbol `sym` is marked as used.
-      */
-    def of(sym: Symbol.PredSym): Used = empty.copy(predSyms = Set(sym))
-
-    /**
       * Returns an object where the given variable symbol `sym` is marked as used.
       */
     def of(sym: Symbol.VarSym): Used = empty.copy(varSyms = Set(sym))
@@ -830,7 +756,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   private case class Used(enumSyms: MultiMap[Symbol.EnumSym, String],
                           defSyms: Set[Symbol.DefnSym],
-                          predSyms: Set[Symbol.PredSym],
                           holeSyms: Set[Symbol.HoleSym],
                           varSyms: Set[Symbol.VarSym],
                           unconditionallyRecurses: Boolean,
@@ -850,7 +775,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.predSyms ++ that.predSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses && that.unconditionallyRecurses,
@@ -872,7 +796,6 @@ object Redundancy extends Phase[TypedAst.Root, TypedAst.Root] {
         Used(
           this.enumSyms ++ that.enumSyms,
           this.defSyms ++ that.defSyms,
-          this.predSyms ++ that.predSyms,
           this.holeSyms ++ that.holeSyms,
           this.varSyms ++ that.varSyms,
           this.unconditionallyRecurses || that.unconditionallyRecurses,

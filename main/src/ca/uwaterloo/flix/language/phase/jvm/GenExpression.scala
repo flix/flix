@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
@@ -1067,12 +1067,13 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+    case Expression.FixpointProject(name, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(sym, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
+      newRelSym(name, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1093,7 +1094,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(sym, init, f, constraints, tpe, loc) =>
+    case Expression.FixpointFold(name, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1965,12 +1966,15 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(sym, mv)
+      den match {
+        case Denotation.Relational => newRelSym(name, mv)
+        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+      }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -2000,12 +2004,15 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(sym, mv)
+      den match {
+        case Denotation.Relational => newRelSym(name, mv)
+        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+      }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -2034,49 +2041,33 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate symbol `sym`.
-    */
-  private def newPredSym(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit =
-    sym match {
-      case sym: Symbol.RelSym => newRelSym(sym, mv)
-      case sym: Symbol.LatSym => newLatSym(sym, mv)
-    }
-
-  /**
     * Emits code for the given relation symbol `sym`.
     */
-  private def newRelSym(sym: Symbol.RelSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newRelSym(name: String, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
-    mv.visitLdcInsn(sym.toString)
+    mv.visitLdcInsn(name)
 
-    // Emit code for the attributes (if present).
-    root.relations.get(sym) match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(rel) =>
-        newAttributesArray(rel.attr, mv)
-    }
+    // Emit code for the attributes.
+    // Note: Currently always absent.
+    mv.visitInsn(ACONST_NULL)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
   }
 
   /**
-    * Emits code for the given lattice symbol `sym`.
+    * Emits code for the given lattice symbol `name`.
     */
-  private def newLatSym(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newLatSym(name: String, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
-    mv.visitLdcInsn(sym.toString)
+    mv.visitLdcInsn(name)
 
     // Emit code for the attributes (if present).
-    root.lattices.get(sym) match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(lat) => newAttributesArray(lat.attr, mv)
-    }
+    // Note: Currently always absent.
+    mv.visitInsn(ACONST_NULL)
 
     // Emit code for the lattice operations.
-    newLatticeOps(sym, mv)
+    newLatticeOps(tpe, mv)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
@@ -2103,12 +2094,11 @@ object GenExpression {
   }
 
   /**
-    * Emits code to construct a lattice operations object for the given symbol `sym`.
+    * Emits code to construct a lattice operations object for the given type `tpe`.
     */
-  private def newLatticeOps(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newLatticeOps(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Lookup the declaration.
-    val decl = root.lattices(sym)
-    val ops = root.latticeComponents(decl.attr.last.tpe)
+    val ops = root.latticeOps(tpe)
 
     // The bottom object.
     AsmOps.compileDefSymbol(ops.bot, mv)
@@ -2337,9 +2327,12 @@ object GenExpression {
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
 
     // Add every predicate symbol with its stratum.
-    for ((predSym, stratum) <- stf.m) {
+    for ((name, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSym(predSym, mv)
+
+      // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
+      newRelSym(name, mv)
+
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }

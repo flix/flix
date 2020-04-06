@@ -161,9 +161,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.BigInt => "BigInt"
         case TypeConstructor.Str => "Str"
 
-        case TypeConstructor.Relation(sym) => sym.toString
+        case TypeConstructor.Relation => "Relation"
 
-        case TypeConstructor.Lattice(sym) => sym.toString
+        case TypeConstructor.Lattice => "Lattice"
 
         case TypeConstructor.Array => "Array" + "[" + args.map(format).mkString(", ") + "]"
 

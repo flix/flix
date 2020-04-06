@@ -150,24 +150,24 @@ object TypeError {
   /**
     * Undefined predicate error.
     *
-    * @param sym        the missing predicate.
+    * @param name       the missing predicate.
     * @param predType   the type of the missing predicate.
     * @param schemaType the schema type where the predicate is missing.
     * @param loc        the location where the error occurred.
     */
-  case class UndefinedPredicate(sym: Symbol.PredSym, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
+  case class UndefinedPredicate(name: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Missing predicate '" << Red(sym.toString) << "' of type '" << Cyan(predType.show) << "'." << NewLine
+      vt << ">> Missing predicate '" << Red(name) << "' of type '" << Cyan(predType.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "missing predicate.") << NewLine
       vt << "The schema type: " << Indent << NewLine
       vt << NewLine
       vt << schemaType.show << NewLine
       vt << Dedent << NewLine
-      vt << "does not contain the predicate '" << Red(sym.toString) << "' of type " << Cyan(predType.show) << "." << NewLine
+      vt << "does not contain the predicate '" << Red(name) << "' of type " << Cyan(predType.show) << "." << NewLine
     }
   }
 

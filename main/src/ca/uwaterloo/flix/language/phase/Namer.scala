@@ -45,9 +45,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       defs = Map.empty,
       enums = Map.empty,
       typealiases = Map.empty,
-      relations = Map.empty,
-      lattices = Map.empty,
-      latticeComponents = Map.empty,
+      latticesOps = Map.empty,
       named = Map.empty,
       properties = Map.empty,
       reachable = program.reachable,
@@ -195,7 +193,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * BoundedLattice (deprecated).
      */
-    case WeededAst.Declaration.LatticeComponents(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+    case WeededAst.Declaration.LatticeOps(tpe0, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
       val botVal = visitExp(bot0, Map.empty, uenv0, Map.empty)
       val topVal = visitExp(top0, Map.empty, uenv0, Map.empty)
       val equVal = visitExp(equ0, Map.empty, uenv0, Map.empty)
@@ -206,92 +204,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal, tpeVal) {
         case (bot, top, equ, leq, lub, glb, tpe) =>
-          val lattice = NamedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
-          prog0.copy(latticeComponents = prog0.latticeComponents + (tpe -> lattice)) // NB: This just overrides any existing binding.
-      }
-
-    /*
-     * Relation.
-     */
-    case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
-      val tparams = tparams0 match {
-        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
-      }
-
-      // check if the table already exists.
-      prog0.relations.get(ns0) match {
-        case None =>
-          // Case 1: The namespace does not yet exist. So the table does not yet exist.
-          val sym = Symbol.mkRelSym(ns0, ident)
-          val tenv = getTypeEnv(tparams)
-          val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-          mapN(attrVal) {
-            case attr =>
-              val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
-              val relations = Map(ident.name -> relation)
-              prog0.copy(relations = prog0.relations + (ns0 -> relations))
-          }
-        case Some(relations0) =>
-          // Case 2: The namespace exists. Lookup the table.
-          relations0.get(ident.name) match {
-            case None =>
-              // Case 2.1: The table does not exist in the namespace. Update it.
-              val sym = Symbol.mkRelSym(ns0, ident)
-              val tenv = getTypeEnv(tparams)
-              val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-              mapN(attrVal) {
-                case attr =>
-                  val relation = NamedAst.Relation(doc, mod, sym, tparams, attr, loc)
-                  val relations = relations0 + (ident.name -> relation)
-                  prog0.copy(relations = prog0.relations + (ns0 -> relations))
-              }
-            case Some(table) =>
-              // Case 2.2: Duplicate definition.
-              NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
-          }
-      }
-
-    /*
-     * Lattice.
-     */
-    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
-      val tparams = tparams0 match {
-        case TypeParams.Elided => getImplicitTypeParams(attr, loc)
-        case TypeParams.Explicit(tps) => getExplicitTypeParams(tps)
-      }
-
-      // check if the table already exists.
-      prog0.lattices.get(ns0) match {
-        case None =>
-          // Case 1: The namespace does not yet exist. So the table does not yet exist.
-          val sym = Symbol.mkLatSym(ns0, ident)
-          val tenv = getTypeEnv(tparams)
-          val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-          mapN(attrVal) {
-            case attr =>
-              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
-              val lattices = Map(ident.name -> lattice)
-              prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
-          }
-        case Some(lattices0) =>
-          // Case 2: The namespace exists. Lookup the table.
-          lattices0.get(ident.name) match {
-            case None =>
-              // Case 2.1: The table does not exist in the namespace. Update it.
-              val sym = Symbol.mkLatSym(ns0, ident)
-              val tenv = getTypeEnv(tparams)
-              val attrVal = traverse(attr)(visitAttribute(_, uenv0, tenv))
-              mapN(attrVal) {
-                case attr =>
-                  val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attr, loc)
-                  val lattices = lattices0 + (ident.name -> lattice)
-                  prog0.copy(lattices = prog0.lattices + (ns0 -> lattices))
-              }
-            case Some(table) =>
-              // Case 2.2: Duplicate definition.
-              NameError.DuplicateDef(ident.name, table.loc, ident.loc).toFailure
-          }
+          val lattice = NamedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, loc)
+          prog0.copy(latticesOps = prog0.latticesOps + (tpe -> lattice)) // NB: This just overrides any existing binding.
       }
 
   }
@@ -809,9 +723,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointProject(qname, exp, loc) =>
+    case WeededAst.Expression.FixpointProject(ident, exp, loc) =>
       mapN(visitExp(exp, env0, uenv0, tenv0)) {
-        case e => NamedAst.Expression.FixpointProject(qname, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case e => NamedAst.Expression.FixpointProject(ident, e, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
@@ -819,9 +733,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
 
-    case WeededAst.Expression.FixpointFold(qname, init, f, constraints, loc) =>
+    case WeededAst.Expression.FixpointFold(ident, init, f, constraints, loc) =>
       mapN(visitExp(init, env0, uenv0, tenv0), visitExp(f, env0, uenv0, tenv0), visitExp(constraints, env0, uenv0, tenv0)) {
-        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(qname, e1, e2, e3, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (e1, e2, e3) => NamedAst.Expression.FixpointFold(ident, e1, e2, e3, Type.freshTypeVar(), Type.freshEffectVar(), loc)
       }
   }
 
@@ -931,10 +845,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given head predicate `head` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
-    case WeededAst.Predicate.Head.Atom(qname, den, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(ident, den, terms, loc) =>
       for {
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, uenv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, den, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(ident, den, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Head.Union(exp, loc) =>
       for {
@@ -946,9 +860,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Names the given body predicate `body` under the given environments `env0`, `uenv0`, and `tenv0`.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], uenv0: UseEnv, tenv0: Map[String, Type.Var])(implicit flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, den, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(ident, den, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0, uenv0))
-      NamedAst.Predicate.Body.Atom(qname, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Predicate.Body.Atom(ident, den, polarity, ts, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Predicate.Body.Guard(exp, loc) =>
       for {
@@ -994,6 +908,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
         val name = qname.ident.name
+        // Disambiguate the qname.
         (tenv0.get(name), uenv0.tpes.get(name)) match {
           case (None, None) =>
             // Case 1: the name is top-level type.
@@ -1031,9 +946,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.SchemaEmpty(loc) =>
       NamedAst.Type.SchemaEmpty(loc).toSuccess
 
-    case WeededAst.Type.Schema(ps, rest, loc) =>
-      mapN(traverse(ps)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
-        case (ts, t) => NamedAst.Type.Schema(ts, t, loc)
+    case WeededAst.Type.SchemaExtendByAlias(qname, targs, rest, loc) =>
+      // Disambiguate the qname.
+      val name = if (qname.isUnqualified) {
+        uenv0.tpes.getOrElse(qname.ident.name, qname)
+      } else {
+        qname
+      }
+
+      mapN(traverse(targs)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
+        case (ts, r) => NamedAst.Type.SchemaExtendWithAlias(name, ts, r, loc)
+      }
+
+    case WeededAst.Type.SchemaExtendByTypes(ident, den, tpes, rest, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0)), visitType(rest, uenv0, tenv0)) {
+        case (ts, r) => NamedAst.Type.SchemaExtendWithTypes(ident, den, ts, r, loc)
+      }
+
+    case WeededAst.Type.Relation(tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.Type.Relation(ts, loc)
+      }
+
+    case WeededAst.Type.Lattice(tpes, loc) =>
+      mapN(traverse(tpes)(visitType(_, uenv0, tenv0))) {
+        case ts => NamedAst.Type.Lattice(ts, loc)
       }
 
     case WeededAst.Type.Nat(len, loc) =>
@@ -1233,7 +1170,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.RecordEmpty(loc) => Nil
     case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
     case WeededAst.Type.SchemaEmpty(loc) => Nil
-    case WeededAst.Type.Schema(ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.SchemaExtendByTypes(_, _, ts, r, loc) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.SchemaExtendByAlias(_, ts, r, _) => ts.flatMap(freeVars) ::: freeVars(r)
+    case WeededAst.Type.Relation(ts, loc) => ts.flatMap(freeVars)
+    case WeededAst.Type.Lattice(ts, loc) => ts.flatMap(freeVars)
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, eff, tresult, loc) => tparams.flatMap(freeVars) ::: freeVars(eff) ::: freeVars(tresult)

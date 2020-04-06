@@ -68,7 +68,7 @@ object JvmOps {
     case MonoType.RecordExtend(label, value, rest) => getRecordInterfaceType()
     case MonoType.Enum(sym, kind) => getEnumInterfaceType(tpe)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Relation(sym, attr) => JvmType.Reference(JvmName.PredSym)
+    case MonoType.Relation(attr) => JvmType.Reference(JvmName.PredSym)
     case MonoType.Native(clazz) =>
       // TODO: Ugly hack.
       val fqn = clazz.getCanonicalName.replace('.', '/')
@@ -693,11 +693,11 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointProject(name, exp, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.HoleError(sym, tpe, loc) => Set.empty
 
@@ -813,16 +813,16 @@ object JvmOps {
     case MonoType.Arrow(targs, tresult) => Type.mkArrow(targs map hackMonoType2Type, Type.Pure, hackMonoType2Type(tresult))
     case MonoType.Enum(sym, args) => Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.Star)), args map hackMonoType2Type)
 
-    case MonoType.Relation(sym, attr) =>
-      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
+    case MonoType.Relation(attr) =>
+      val base = Type.Cst(TypeConstructor.Relation): Type
       val init = Type.Cst(TypeConstructor.Tuple(attr.length)): Type
       val args = attr.foldLeft(init) {
         case (acc, t) => Type.Apply(acc, hackMonoType2Type(t))
       }
       Type.Apply(base, args)
 
-    case MonoType.Lattice(sym, attr) =>
-      val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
+    case MonoType.Lattice(attr) =>
+      val base = Type.Cst(TypeConstructor.Lattice): Type
       val init = Type.Cst(TypeConstructor.Tuple(attr.length)): Type
       val args = attr.foldLeft(init) {
         case (acc, t) => Type.Apply(acc, hackMonoType2Type(t))
@@ -1056,11 +1056,11 @@ object JvmOps {
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointProject(name, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
 
@@ -1073,7 +1073,7 @@ object JvmOps {
     }
 
     def visitHeadPred(h0: Predicate.Head): Set[MonoType] = h0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
         Set(tpe) ++ terms.flatMap(visitHeadTerm)
 
       case Predicate.Head.Union(exp, terms, tpe, loc) =>
@@ -1082,7 +1082,7 @@ object JvmOps {
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[MonoType] = b0 match {
-      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
         terms.flatMap(visitBodyTerm).toSet
 
       case Predicate.Body.Guard(exp, terms, loc) =>
@@ -1157,8 +1157,8 @@ object JvmOps {
       case MonoType.SchemaEmpty() => Set(tpe)
       case MonoType.SchemaExtend(sym, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
 
-      case MonoType.Relation(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Lattice(sym, attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Relation(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
+      case MonoType.Lattice(attr) => attr.flatMap(nestedTypesOf).toSet + tpe
       case MonoType.Native(_) => Set(tpe)
       case MonoType.Var(_) => Set.empty
     }

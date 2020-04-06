@@ -270,7 +270,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointEntails(exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, _, _) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, _, _) =>
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.HoleError(_, _, _) =>
@@ -374,8 +374,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * (c) A function that appears in a lattice component.
      */
-    reachableFunctions ++= root.latticeComponents.values.map {
-      case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
+    reachableFunctions ++= root.latticeOps.values.map {
+      case SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
         Set(bot, top, equ, leq, lub, glb)
     }.fold(Set())(_ ++ _)
 

@@ -330,20 +330,20 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(sym, e, tpe, eff, loc)
+        Expression.FixpointProject(name, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
     }
 
     /**
@@ -360,9 +360,15 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
-        val ts = terms map visitExp
-        Predicate.Head.Atom(sym, den, ts, tpe, loc)
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+        // Introduce equality, hash code, and toString for the types of the terms.
+        for (term <- terms) {
+          getOrMkEq(term.tpe)
+          getOrMkHash(term.tpe)
+          getOrMkToString(term.tpe)
+        }
+        val ts = terms.map(visitExp)
+        Predicate.Head.Atom(name, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -373,8 +379,14 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc) =>
-        Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc)
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+        // Introduce equality, hash code, and toString for the types of the terms.
+        for (term <- terms) {
+          getOrMkEq(term.tpe)
+          getOrMkHash(term.tpe)
+          getOrMkToString(term.tpe)
+        }
+        Predicate.Body.Atom(name, den, polarity, terms, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
@@ -1324,7 +1336,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a relation type.
       */
     def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Relation(sym)) => true
+      case Type.Cst(TypeConstructor.Relation) => true
       case _ => false
     }
 
@@ -1332,7 +1344,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a lattice type.
       */
     def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Lattice(sym)) => true
+      case Type.Cst(TypeConstructor.Lattice) => true
       case _ => false
     }
 
@@ -1405,47 +1417,15 @@ object Synthesize extends Phase[Root, Root] {
     }.toSet
 
     /*
-     * (b) Every type that appears as an attribute in some relation or lattice.
+     * (b) Every type that appears as some lattice type.
      */
-    // TODO: Need to deal with polymorphic attributes.
-    val typesInRels = root.relations.flatMap {
-      case (_, Relation(_, _, _, _, attributes, _)) => attributes.map {
-        case Attribute(_, tpe, _) => tpe
-      }
-    }
-    val typesInLats = root.lattices.flatMap {
-      case (_, Lattice(_, _, _, _, attributes, _)) =>
-        attributes.map {
-          case Attribute(_, tpe, _) => tpe
-        }
-    }
-    val typesInTables = typesInRels.toSet ++ typesInLats
-
-    /*
-     * (c) Every type that appears as some lattice type.
-     */
-    val typesInLattices: Set[Type] = root.latticeComponents.keySet
-
-    /*
-     * Introduce Equality special operators.
-     */
-    val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkEq(tpe))
-      case (macc, tpe) => macc
-    }
-
-    /*
-     * Introduce Hash special operators.
-     */
-    val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkHash(tpe))
-      case (macc, tpe) => macc
-    }
+    val typesInLattices: Set[Type] = root.latticeOps.keySet
 
     /*
      * Introduce ToString special operators.
      */
-    val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    // TODO: Refactor these
+    typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }
@@ -1461,9 +1441,9 @@ object Synthesize extends Phase[Root, Root] {
      * Construct the map of special operators.
      */
     val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
-      SpecialOperator.Equality -> equalityOps,
-      SpecialOperator.HashCode -> hashOps,
-      SpecialOperator.ToString -> toStringOps
+      SpecialOperator.Equality -> mutEqualityOps.toMap,
+      SpecialOperator.HashCode -> mutHashOps.toMap,
+      SpecialOperator.ToString -> mutToStringOps.toMap
     )
 
     // Reassemble the ast with the new definitions.

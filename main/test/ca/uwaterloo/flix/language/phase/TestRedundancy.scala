@@ -579,54 +579,6 @@ class TestRedundancy extends FunSuite with TestUtils {
     expectError[RedundancyError.UnusedTypeParam](result)
   }
 
-  test("UnusedTypeParam.Relation.01") {
-    val input =
-      s"""
-         |rel R[a](x: Int)
-         |
-         |def main(): #{ R[Int] } = R(123).
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
-  }
-
-  test("UnusedTypeParam.Relation.02") {
-    val input =
-      s"""
-         |rel R[a, b](x: a)
-         |
-         |def main(): #{ R[Int, Int] } = R(123).
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
-  }
-
-  test("UnusedTypeParam.Relation.03") {
-    val input =
-      s"""
-         |rel R[a, b](x: b)
-         |
-         |def main(): #{ R[Int, Int] } = R(123).
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
-  }
-
-  test("UnusedTypeParam.Relation.04") {
-    val input =
-      s"""
-         |rel R[a, b, c](x: a, y: c)
-         |
-         |def main(): #{ R[Int, Int, Int] } = R(123, 456).
-         |
-       """.stripMargin
-    val result = compile(input, DefaultOptions)
-    expectError[RedundancyError.UnusedTypeParam](result)
-  }
-
   test("UnusedVarSym.Let.01") {
     val input =
       s"""

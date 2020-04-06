@@ -233,11 +233,11 @@ object Unification {
     /**
       * An unification error due the predicate `sym` of type `predType` missing from the type `schemaType`.
       *
-      * @param predSym    the symbol of the missing predicate.
+      * @param name       the name of the missing predicate.
       * @param predType   the type of the missing predicate.
       * @param schemaType the schema type where the predicate is missing.
       */
-    case class UndefinedPredicate(predSym: Symbol.PredSym, predType: Type, schemaType: Type) extends UnificationError
+    case class UndefinedPredicate(name: String, predType: Type, schemaType: Type) extends UnificationError
 
     /**
       * An unification error due to an unexpected non-record type.
@@ -411,7 +411,7 @@ object Unification {
       * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
       */
     // TODO: This is a copy of the above function. It would be nice if it could be the same function, but the shape of labels is different.
-    def rewriteSchemaRow(row2: Type, label1: Symbol.PredSym, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
+    def rewriteSchemaRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
       case Type.SchemaExtend(label2, fieldType2, restRow2) =>
         // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
         if (label1 == label2) {

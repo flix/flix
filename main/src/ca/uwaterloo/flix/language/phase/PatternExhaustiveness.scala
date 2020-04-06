@@ -120,8 +120,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param tast The expression to check
     * @param root The AST root
     */
-  def checkPats(tast: TypedAst.LatticeComponents, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.LatticeComponents, CompilationError] = tast match {
-    case TypedAst.LatticeComponents(_, bot0, top0, equ0, leq0, lub0, glb0, _) =>
+  def checkPats(tast: TypedAst.LatticeOps, root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.LatticeOps, CompilationError] = tast match {
+    case TypedAst.LatticeOps(_, bot0, top0, equ0, leq0, lub0, glb0, _) =>
       for {
         _ <- Expressions.checkPats(bot0, root)
         _ <- Expressions.checkPats(top0, root)
@@ -730,8 +730,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Cst(TypeConstructor.BigInt) => 0
       case Type.Cst(TypeConstructor.Str) => 0
       case Type.Cst(TypeConstructor.Ref) => 0
-      case Type.Cst(TypeConstructor.Relation(_)) => 0
-      case Type.Cst(TypeConstructor.Lattice(_)) => 0
+      case Type.Cst(TypeConstructor.Relation) => 0
+      case Type.Cst(TypeConstructor.Lattice) => 0
       case Type.Arrow(length, _) => length
       case Type.Cst(TypeConstructor.Array) => 1
       case Type.Cst(TypeConstructor.Channel) => 1

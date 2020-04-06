@@ -21,8 +21,8 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -76,23 +76,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     }
 
-    val relationsVal = prog0.relations.flatMap {
-      case (ns0, relations) => relations.map {
-        case (_, relation) => resolveRelation(relation, ns0, prog0) map {
-          case t => t.sym -> t
-        }
-      }
-    }
-
-    val latticesVal = prog0.lattices.flatMap {
-      case (ns0, lattices) => lattices.map {
-        case (_, lattice) => resolveLattice(lattice, ns0, prog0) map {
-          case t => t.sym -> t
-        }
-      }
-    }
-
-    val latticeComponentsVal = prog0.latticeComponents.map {
+    val latticeComponentsVal = prog0.latticesOps.map {
       case (tpe0, lattice0) =>
         for {
           tpe <- lookupType(tpe0, lattice0.ns, prog0)
@@ -108,13 +92,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       definitions <- sequence(definitionsVal)
       named <- sequence(namedVal)
       enums <- sequence(enumsVal)
-      relations <- sequence(relationsVal)
-      lattices <- sequence(latticesVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Program(
-      definitions.toMap ++ named.toMap, enums.toMap,
-      relations.toMap, lattices.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
+      definitions.toMap ++ named.toMap, enums.toMap, latticeComponents.toMap, properties.flatten, prog0.reachable, prog0.sources
     )
   }
 
@@ -178,7 +159,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
     */
-  def resolve(l0: NamedAst.LatticeComponents, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.LatticeComponents, ResolutionError] = {
+  def resolve(l0: NamedAst.LatticeOps, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.LatticeOps, ResolutionError] = {
     val tenv0 = Map.empty[Symbol.VarSym, Type]
     for {
       tpe <- lookupType(l0.tpe, ns0, prog0)
@@ -188,65 +169,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       leq <- Expressions.resolve(l0.leq, tenv0, ns0, prog0)
       lub <- Expressions.resolve(l0.lub, tenv0, ns0, prog0)
       glb <- Expressions.resolve(l0.glb, tenv0, ns0, prog0)
-    } yield ResolvedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
-  }
-
-  /**
-    * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
-    */
-  def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
-    case NamedAst.Relation(doc, mod, sym, tparams0, attr, loc) =>
-      for {
-        tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield {
-        val ts = attributes.map(_.tpe)
-        val base = Type.Cst(TypeConstructor.Relation(sym)): Type
-        val args: Type = ts match {
-          case Nil => Type.Unit
-          case x :: Nil => x
-          case l =>
-            val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
-            ts.foldLeft(init) {
-              case (acc, t) => Type.Apply(acc, t)
-            }
-        }
-
-        val tpe = Type.Apply(base, args)
-        val quantifiers = tparams.map(_.tpe)
-        val scheme = Scheme(quantifiers, tpe)
-
-        ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
-      }
-  }
-
-  /**
-    * Performs name resolution on the given table `t0` in the given namespace `ns0`.
-    */
-  def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
-    case NamedAst.Lattice(doc, mod, sym, tparams0, attr, loc) =>
-      for {
-        tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield {
-        val ts = attributes.map(_.tpe)
-        val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-        val args: Type = ts match {
-          case Nil => Type.Unit
-          case x :: Nil => x
-          case l =>
-            val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
-            ts.foldLeft(init) {
-              case (acc, t) => Type.Apply(acc, t)
-            }
-        }
-        val tpe = Type.Apply(base, args)
-
-        val quantifiers = tparams.map(_.tpe)
-        val scheme = Scheme(quantifiers, tpe)
-
-        ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
-      }
+    } yield ResolvedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
   }
 
   /**
@@ -715,11 +638,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointSolve(e, tvar, evar, loc)
 
-        case NamedAst.Expression.FixpointProject(qname, exp, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointProject(ident, exp, tvar, evar, loc) =>
           for {
-            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.FixpointProject(sym, e, tvar, evar, loc)
+          } yield ResolvedAst.Expression.FixpointProject(ident.name, e, tvar, evar, loc)
 
         case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, evar, loc) =>
           for {
@@ -727,13 +649,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, evar, loc)
 
-        case NamedAst.Expression.FixpointFold(qname, exp1, exp2, exp3, tvar, evar, loc) =>
+        case NamedAst.Expression.FixpointFold(ident, exp1, exp2, exp3, tvar, evar, loc) =>
           for {
-            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
             e3 <- visit(exp3, tenv0)
-          } yield ResolvedAst.Expression.FixpointFold(sym, e1, e2, e3, tvar, evar, loc)
+          } yield ResolvedAst.Expression.FixpointFold(ident.name, e1, e2, e3, tvar, evar, loc)
       }
 
       visit(exp0, Map.empty)
@@ -816,11 +737,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
       def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
-        case NamedAst.Predicate.Head.Atom(qname, den, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(ident, den, terms, tvar, loc) =>
           for {
-            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, tenv0, ns0, prog0))
-          } yield ResolvedAst.Predicate.Head.Atom(sym, den, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(ident.name, den, ts, tvar, loc)
 
         case NamedAst.Predicate.Head.Union(exp, tvar, loc) =>
           for {
@@ -834,11 +754,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(qname, den, polarity, terms, tvar, loc) =>
+        case NamedAst.Predicate.Body.Atom(ident, den, polarity, terms, tvar, loc) =>
           for {
-            sym <- lookupPredicateSymbol(qname, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
-          } yield ResolvedAst.Predicate.Body.Atom(sym, den, polarity, ts, tvar, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(ident.name, den, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
           for {
@@ -1044,54 +963,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Finds the table of the given `qname` in the namespace `ns`.
-    */
-  def lookupPredicateSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[Symbol.PredSym, ResolutionError] = {
-    // Lookup the relation and lattice.
-    val relationOpt = lookupRelSymbol(qname, ns, prog0)
-    val latticeOpt = lookupLatSymbol(qname, ns, prog0)
-
-    (relationOpt, latticeOpt) match {
-      case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
-      case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc)
-      case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc)
-      case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
-    }
-  }
-
-  /**
-    * Finds the relation of the given `qname` in the namespace `ns`.
-    */
-  private def lookupRelSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Relation] = {
-    if (qname.isUnqualified) {
-      // Lookup in the current namespace.
-      prog0.relations.getOrElse(ns, Map.empty).get(qname.ident.name).orElse {
-        // Lookup in the global namespace.
-        prog0.relations.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Lookup in the qualified namespace.
-      prog0.relations.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
-    * Finds the lattice of the given `qname` in the namespace `ns`.
-    */
-  private def lookupLatSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Option[NamedAst.Lattice] = {
-    if (qname.isUnqualified) {
-      // Lookup in the current namespace.
-      prog0.lattices.getOrElse(ns, Map.empty).get(qname.ident.name).orElse {
-        // Lookup in the global namespace.
-        prog0.lattices.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
-      }
-    } else {
-      // Lookup in the qualified namespace.
-      prog0.lattices.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
     * Returns `true` iff the given type `tpe0` is the Unit type.
     */
   def isUnitType(tpe: NamedAst.Type): Boolean = tpe match {
@@ -1130,29 +1001,21 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
       // Disambiguate type.
       case typeName =>
-        (lookupEnum(qname, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
+        (lookupEnum(qname, ns0, root), lookupTypeAlias(qname, ns0, root)) match {
           // Case 1: Not Found.
-          case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+          case (None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None, None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
 
-          // Case 3: Relation.
-          case (None, Some(rel), None, None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
+          // Case 3: TypeAlias.
+          case (None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
 
-          // Case 4: Lattice.
-          case (None, None, Some(lat), None) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
-
-          // Case 5: TypeAlias.
-          case (None, None, None, Some(typealias)) => getTypeAliasIfAccessible(typealias, ns0, root, ns0.loc)
-
-          // Case 6: Errors.
-          case (x, y, z, w) =>
+          // Case 4: Errors.
+          case (x, y) =>
             val loc1 = x.map(_.loc)
             val loc2 = y.map(_.loc)
-            val loc3 = z.map(_.loc)
-            val loc4 = w.map(_.loc)
-            val locs = List(loc1, loc2, loc3, loc4).flatten
+            val locs = List(loc1, loc2).flatten
             ResolutionError.AmbiguousType(typeName, ns0, locs, loc).toFailure
         }
     }
@@ -1188,27 +1051,44 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.SchemaEmpty(loc) =>
       Type.SchemaEmpty.toSuccess
 
-    case NamedAst.Type.Schema(ts, rest, loc) =>
-      // Translate the type into a schema row type.
-      val init = lookupType(rest, ns0, root)
-
-      // Fold over the predicate types and check that they are relations or lattices.
-      Validation.foldRight(ts)(init) {
-        case (predType, acc) =>
-          // Lookup the type and check that is either a relation or lattice type.
-          flatMapN(lookupType(predType, ns0, root)) {
-            case t =>
-              // Simplify the type. Required to get the appropriate type constructor.
-              val s = simplify(t)
-
-              // Determine the type of predicate symbol.
-              s.typeConstructor match {
-                case Type.Cst(TypeConstructor.Relation(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
-                case Type.Cst(TypeConstructor.Lattice(sym)) => Type.SchemaExtend(sym, s, acc).toSuccess
-                case nonRelationOrLatticeType => ResolutionError.NonRelationOrLattice(nonRelationOrLatticeType, loc).toFailure
-              }
+    case NamedAst.Type.SchemaExtendWithAlias(qname, targs, rest, loc) =>
+      // Lookup the type alias.
+      lookupTypeAlias(qname, ns0, root) match {
+        case None =>
+          // Case 1: The type alias was not found. Report an error.
+          ResolutionError.UndefinedName(qname, ns0, loc).toFailure
+        case Some(typealias) =>
+          // Case 2: The type alias was found. Use it.
+          for {
+            t <- getTypeAliasIfAccessible(typealias, ns0, root, loc)
+            ts <- traverse(targs)(lookupType(_, ns0, root))
+            r <- lookupType(rest, ns0, root)
+          } yield {
+            val tpe = simplify(ts.foldLeft(t)(Type.Apply))
+            Type.SchemaExtend(qname.ident.name, tpe, r)
           }
       }
+
+    case NamedAst.Type.SchemaExtendWithTypes(ident, den, tpes, rest, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+        r <- lookupType(rest, ns0, root)
+      } yield den match {
+        case Ast.Denotation.Relational =>
+          Type.SchemaExtend(ident.name, mkRelationType(ts), r)
+        case Ast.Denotation.Latticenal =>
+          Type.SchemaExtend(ident.name, mkLatticeType(ts), r)
+      }
+
+    case NamedAst.Type.Relation(tpes, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+      } yield mkRelationType(ts)
+
+    case NamedAst.Type.Lattice(tpes, loc) =>
+      for {
+        ts <- traverse(tpes)(lookupType(_, ns0, root))
+      } yield mkLatticeType(ts)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
@@ -1258,6 +1138,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
+    * Returns a relation type for the given term types `ts`.
+    */
+  private def mkRelationType(ts: List[Type]): Type = {
+    val t = ts match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => Type.mkTuple(xs)
+    }
+    Type.Apply(Type.Cst(TypeConstructor.Relation), t)
+  }
+
+  /**
+    * Returns a lattice type for the given term types `ts`.
+    */
+  private def mkLatticeType(ts: List[Type]): Type = {
+    val t = ts match {
+      case Nil => Type.Unit
+      case x :: Nil => x
+      case xs => Type.mkTuple(xs)
+    }
+    Type.Apply(Type.Cst(TypeConstructor.Lattice), t)
+  }
+
+  /**
     * Optionally returns the enum with the given `name` in the given namespace `ns0`.
     */
   private def lookupEnum(qname: Name.QName, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
@@ -1272,28 +1176,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     } else {
       // Case 2: The name is qualified. Look it up in its namespace.
       root.enums.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-    }
-  }
-
-  /**
-    * Optionally returns the relation with the given `name` in the given namespace `ns0`.
-    */
-  private def lookupRelation(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Relation] = {
-    val relationsInNS = root.relations.getOrElse(ns0, Map.empty)
-    relationsInNS.get(typeName) orElse {
-      val relationsInRootNS = root.relations.getOrElse(Name.RootNS, Map.empty)
-      relationsInRootNS.get(typeName)
-    }
-  }
-
-  /**
-    * Optionally returns the lattice with the given `name` in the given namespace `ns0`.
-    */
-  private def lookupLattice(name: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Lattice] = {
-    val latticesInNS = root.lattices.getOrElse(ns0, Map.empty)
-    latticesInNS.get(name) orElse {
-      val latticesInRootNS = root.lattices.getOrElse(Name.RootNS, Map.empty)
-      latticesInRootNS.get(name)
     }
   }
 
@@ -1377,67 +1259,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc).toFailure
   }
 
-  /**
-    * Successfully returns the given relation `rel0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
-    *
-    * A relation `rel0` is accessible from a namespace `ns0` if:
-    *
-    * (a) the relation is marked public, or
-    * (b) the relation is defined in the namespace `ns0` itself or in a parent of `ns0`.
-    */
-  def getRelationIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.RelSym, ResolutionError] = {
-    //
-    // Check if the relation is marked public.
-    //
-    if (rel0.mod.isPublic)
-      return rel0.sym.toSuccess
-
-    //
-    // Check if the relation is defined in `ns0` or in a parent of `ns0`.
-    //
-    val prefixNs = rel0.sym.namespace
-    val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return rel0.sym.toSuccess
-
-    //
-    // The relation is not accessible.
-    //
-    ResolutionError.InaccessibleRelation(rel0.sym, ns0, loc).toFailure
-  }
-
-  /**
-    * Successfully returns the given lattice `lat0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
-    *
-    * A relation `lat0` is accessible from a namespace `ns0` if:
-    *
-    * (a) the lattice is marked public, or
-    * (b) the lattice is defined in the namespace `ns0` itself or in a parent of `ns0`.
-    */
-  def getLatticeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.LatSym, ResolutionError] = {
-    //
-    // Check if the lattice is marked public.
-    //
-    if (lat0.mod.isPublic)
-      return lat0.sym.toSuccess
-
-    //
-    // Check if the lattice is defined in `ns0` or in a parent of `ns0`.
-    //
-    val prefixNs = lat0.sym.namespace
-    val targetNs = ns0.idents.map(_.name)
-    if (targetNs.startsWith(prefixNs))
-      return lat0.sym.toSuccess
-
-    //
-    // The lattice is not accessible.
-    //
-    ResolutionError.InaccessibleLattice(lat0.sym, ns0, loc).toFailure
-  }
 
   /**
     * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
@@ -1448,67 +1269,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => Type.Cst(TypeConstructor.Enum(enum.sym, Kind.Star))
     }
-
-  /**
-    * Successfully returns the type of the given `rel0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
-    */
-  def getRelationTypeIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    // NB: This is a small hack because the attribute types should be resolved according to the namespace of the relation.
-    val declNS = getNS(rel0.sym.namespace)
-    getRelationIfAccessible(rel0, ns0, loc) flatMap {
-      case sym => traverse(rel0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => mkRelationOrLattice(sym, rel0.tparams, attr)
-      }
-    }
-  }
-
-  /**
-    * Successfully returns the type of the given `lat0` if it is accessible from the given namespace `ns0`.
-    *
-    * Otherwise fails with a resolution error.
-    */
-  def getLatticeTypeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
-    // NB: This is a small hack because the attribute types should be resolved according to the namespace of the relation.
-    val declNS = getNS(lat0.sym.namespace)
-    getLatticeIfAccessible(lat0, ns0, loc) flatMap {
-      case sym => traverse(lat0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => mkRelationOrLattice(sym, lat0.tparams, attr)
-      }
-    }
-  }
-
-  /**
-    * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
-    */
-  private def mkRelationOrLattice(predSym: Symbol.PredSym, tparams: List[NamedAst.TypeParam], ts: List[Type]): Type = predSym match {
-    case sym: Symbol.RelSym =>
-      val base = Type.Cst(TypeConstructor.Relation(sym)): Type
-      val args: Type = ts match {
-        case Nil => Type.Unit
-        case x :: Nil => x
-        case l =>
-          val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
-          ts.foldLeft(init) {
-            case (acc, t) => Type.Apply(acc, t)
-          }
-      }
-      mkTypeLambda(tparams, Type.Apply(base, args))
-
-    case sym: Symbol.LatSym =>
-      val base = Type.Cst(TypeConstructor.Lattice(sym)): Type
-      val args: Type = ts match {
-        case Nil => Type.Unit
-        case x :: Nil => x
-        case l =>
-          val init = Type.Cst(TypeConstructor.Tuple(l.length)): Type
-          ts.foldLeft(init) {
-            case (acc, t) => Type.Apply(acc, t)
-          }
-      }
-      mkTypeLambda(tparams, Type.Apply(base, args))
-  }
 
   /**
     * Successfully returns the type of the given type alias `alia0` if it is accessible from the given namespace `ns0`.

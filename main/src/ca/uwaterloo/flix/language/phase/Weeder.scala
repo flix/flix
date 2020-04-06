@@ -96,7 +96,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Constraint => Nil.toSuccess
 
-    case d: ParsedAst.Declaration.LatticeComponents => visitLatticeComponents(d)
+    case d: ParsedAst.Declaration.LatticeComponents => visitLatticeOps(d)
 
     case d: ParsedAst.Declaration.Class => Nil.toSuccess
 
@@ -219,39 +219,45 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Performs weeding on the given relation `r0`.
+    * Rewrites the given relation declaration `r0` to a type alias.
     */
-  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Relation], WeederError] = r0 match {
-    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attrs, sp2) =>
+  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = r0 match {
+    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
+      val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val tparams = visitTypeParams(tparams0)
 
-      /*
-       * Check for `DuplicateAttribute`.
-       */
-      mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) =>
-          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+      //
+      // Rewrite the relation declaration to a type alias.
+      //
+      modVal map {
+        case mod =>
+          val tparams = visitTypeParams(tparams0)
+          val termTypes = attr.map(a => visitType(a.tpe))
+          val tpe = WeededAst.Type.Relation(termTypes.toList, loc)
+          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
       }
   }
 
   /**
     * Performs weeding on the given lattice `r0`.
     */
-  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Lattice], WeederError] = l0 match {
+  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = l0 match {
     case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
+      val loc = mkSL(sp1, sp2)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparams = visitTypeParams(tparams0)
 
-      /*
-       * Check for `DuplicateAttribute`.
-       */
-      mapN(modVal, checkDuplicateAttribute(attr)) {
-        case (mod, as) =>
-          // Split the attributes into keys and element.
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+      //
+      // Rewrite the lattice declaration to a type alias.
+      //
+      modVal map {
+        case mod =>
+          val tparams = visitTypeParams(tparams0)
+          val termTypes = attr.map(a => visitType(a.tpe))
+          val tpe = WeededAst.Type.Lattice(termTypes.toList, loc)
+          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc))
       }
   }
 
@@ -271,11 +277,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given lattice components `lc0`.
     */
-  private def visitLatticeComponents(lc0: ParsedAst.Declaration.LatticeComponents)(implicit flix: Flix): Validation[List[WeededAst.Declaration.LatticeComponents], WeederError] = lc0 match {
+  private def visitLatticeOps(lc0: ParsedAst.Declaration.LatticeComponents)(implicit flix: Flix): Validation[List[WeededAst.Declaration.LatticeOps], WeederError] = lc0 match {
     case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
       val elmsVal = traverse(elms)(e => visitExp(e))
       elmsVal flatMap {
-        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeComponents(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeOps(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
         case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
       }
   }
@@ -1152,12 +1158,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointProject(sp1, qname, exp, sp2) =>
+    case ParsedAst.Expression.FixpointProject(sp1, ident, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       mapN(visitExp(exp)) {
         case e =>
-          WeededAst.Expression.FixpointProject(qname, e, mkSL(sp1, sp2))
+          WeededAst.Expression.FixpointProject(ident, e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
@@ -1167,12 +1173,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.FixpointFold(sp1, qname, init, f, constraints, sp2) =>
+    case ParsedAst.Expression.FixpointFold(sp1, ident, init, f, constraints, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       mapN(visitExp(init), visitExp(f), visitExp(constraints)) {
         case (e1, e2, e3) =>
-          WeededAst.Expression.FixpointFold(qname, e1, e2, e3, loc)
+          WeededAst.Expression.FixpointFold(ident, e1, e2, e3, loc)
       }
   }
 
@@ -1406,18 +1412,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given head predicate.
     */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
-    case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, None, sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, ident, terms, None, sp2) =>
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp)) {
-        case ts => WeededAst.Predicate.Head.Atom(qname, Denotation.Relational, ts, loc)
+        case ts => WeededAst.Predicate.Head.Atom(ident, Denotation.Relational, ts, loc)
       }
 
-    case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, Some(term), sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitExp), visitExp(term)) {
-        case (ts, t) => WeededAst.Predicate.Head.Atom(qname, Denotation.Latticenal, ts ::: t :: Nil, loc)
+        case (ts, t) => WeededAst.Predicate.Head.Atom(ident, Denotation.Latticenal, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Head.Union(sp1, exp, sp2) =>
@@ -1430,20 +1436,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, qname, terms, None, sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, None, sp2) =>
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
         case ts =>
-          WeededAst.Predicate.Body.Atom(qname, Denotation.Relational, polarity, ts, loc)
+          WeededAst.Predicate.Body.Atom(ident, Denotation.Relational, polarity, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Atom(sp1, polarity, qname, terms, Some(term), sp2) =>
+    case ParsedAst.Predicate.Body.Atom(sp1, polarity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
       val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern), visitPattern(term)) {
         case (ts, t) =>
-          WeededAst.Predicate.Body.Atom(qname, Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
+          WeededAst.Predicate.Body.Atom(ident, Denotation.Latticenal, polarity, ts ::: t :: Nil, loc)
       }
 
     case ParsedAst.Predicate.Body.Guard(sp1, exp, sp2) =>
@@ -1629,13 +1635,26 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
       }
 
-    case ParsedAst.Type.Schema(sp1, ps, restOpt, sp2) =>
-      val zero = restOpt match {
+    case ParsedAst.Type.Schema(sp1, predicates, restOpt, sp2) =>
+      val init = restOpt match {
         case None => WeededAst.Type.SchemaEmpty(mkSL(sp1, sp2))
         case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
       }
-      val ts = ps.map(visitType).toList
-      WeededAst.Type.Schema(ts, zero, mkSL(sp1, sp2))
+
+      predicates.foldRight(init: WeededAst.Type) {
+        case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
+          val ts = targs match {
+            case None => Nil
+            case Some(xs) => xs.map(visitType).toList
+          }
+          WeededAst.Type.SchemaExtendByAlias(qname, ts, acc, mkSL(ssp1, ssp2))
+
+        case (ParsedAst.PredicateType.RelPredicateWithTypes(ssp1, name, ts, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Relational, ts.toList.map(visitType), acc, mkSL(ssp1, ssp2))
+
+        case (ParsedAst.PredicateType.LatPredicateWithTypes(ssp1, name, ts, tpe, ssp2), acc) =>
+          WeededAst.Type.SchemaExtendByTypes(name, Ast.Denotation.Latticenal, ts.toList.map(visitType) ::: visitType(tpe) :: Nil, acc, mkSL(ssp1, ssp2))
+      }
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 
@@ -1995,24 +2014,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Pure(sp1, _) => sp1
     case ParsedAst.Type.Impure(sp1, _) => sp1
     case ParsedAst.Type.And(tpe1, _) => leftMostSourcePosition(tpe1)
-  }
-
-  /**
-    * Checks that no attributes are repeated.
-    */
-  private def checkDuplicateAttribute(attrs: Seq[ParsedAst.Attribute]): Validation[List[WeededAst.Attribute], WeederError] = {
-    val seen = mutable.Map.empty[String, ParsedAst.Attribute]
-    traverse(attrs) {
-      case attr@ParsedAst.Attribute(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> attr)
-          WeededAst.Attribute(ident, visitType(tpe), mkSL(sp1, sp2)).toSuccess
-        case Some(otherAttr) =>
-          val loc1 = mkSL(otherAttr.sp1, otherAttr.sp2)
-          val loc2 = mkSL(attr.sp1, attr.sp2)
-          DuplicateAttribute(ident.name, loc1, loc2).toFailure
-      }
-    }
   }
 
   /**

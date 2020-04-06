@@ -63,7 +63,6 @@ class FeatureSuite extends Suites(
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix")(Options.TestWithLibrary),
 
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix")(Options.TestWithLibrary),
-  new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix")(Options.TestWithLibrary),
 
   new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix")(Options.TestWithLibrary),
@@ -83,7 +82,6 @@ class FeatureSuite extends Suites(
   // Declarations.
   //
   new FlixTest("Test.Decl.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Def.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Decl.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Constraint.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Decl.OpaqueType", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.OpaqueType.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Decl.TypeAlias", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.TypeAlias.flix")(Options.TestWithLibrary),
 
@@ -107,41 +105,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Record.Update", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.Record.Multiple", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Multiple.flix")(Options.TestWithLibrary),
   new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")(Options.TestWithLibrary),
-
-  //
-  // Constraints.
-  //
-  new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix")(Options.TestWithLibrary),
-
-  //
-  // Fixpoints
-  //
-  new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Expression.FixpointFold", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointFold.flix")(Options.TestWithLibrary),
-
-  //
-  // Predicates
-  //
-  new FlixTest("Test.Predicate.True", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.True.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.False", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.False.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Nullary", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Nullary.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Guard", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Guard.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Union", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Union.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Predicate.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Filter.flix")(Options.TestWithLibrary),
-
-  //
-  // Terms
-  //
-  new FlixTest("Test.Term.Apply", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Apply.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.CapturedVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.CapturedVar.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.List.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit.Option", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Option.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit.Result", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Result.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.Lit.Set", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix")(Options.TestWithLibrary),
-  new FlixTest("Test.Term.WildVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.WildVar.flix")(Options.TestWithLibrary),
 
   //
   // Equality

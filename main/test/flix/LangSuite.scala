@@ -57,6 +57,16 @@ class LangSuite extends Suites(
   new FlixTest("Test.Exp.Concurrency.Select", "main/test/flix/Test.Exp.Concurrency.Select.flix")(Options.DefaultTest.copy(xallowredundancies = true)),
   new FlixTest("Test.Exp.Concurrency.Spawn", "main/test/flix/Test.Exp.Concurrency.Spawn.flix")(Options.TestWithLibrary),
 
+  ///
+  /// Fixpoint.
+  ///
+  new FlixTest("Test.Exp.Fixpoint.Constraint", "main/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Compose", "main/test/flix/Test.Exp.Fixpoint.Compose.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Entails", "main/test/flix/Test.Exp.Fixpoint.Entails.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Fold", "main/test/flix/Test.Exp.Fixpoint.Fold.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Exp.Fixpoint.Project", "main/test/flix/Test.Exp.Fixpoint.Project.flix"),
+  new FlixTest("Test.Exp.Fixpoint.Solve", "main/test/flix/Test.Exp.Fixpoint.Solve.flix"),
+
   //
   // JVM.
   //
@@ -91,6 +101,33 @@ class LangSuite extends Suites(
   // Stm.
   //
   new FlixTest("Test.Exp.Stm", "main/test/flix/Test.Exp.Stm.flix"),
+
+  //
+  // Predicate.
+  //
+  new FlixTest("Test.Predicate.Filter", "main/test/flix/Test.Predicate.Filter.flix"),
+  new FlixTest("Test.Predicate.Guard", "main/test/flix/Test.Predicate.Guard.flix"),
+  new FlixTest("Test.Predicate.Nullary", "main/test/flix/Test.Predicate.Nullary.flix"),
+  new FlixTest("Test.Predicate.Union", "main/test/flix/Test.Predicate.Union.flix"),
+
+  //
+  // Stratified Negation.
+  //
+  new FlixTest("Test.Stratification", "main/test/flix/Test.Stratification.flix"),
+
+
+  //
+  // Term.
+  //
+  new FlixTest("Test.Term.Apply", "main/test/flix/Test.Term.Apply.flix"),
+  new FlixTest("Test.Term.Lit", "main/test/flix/Test.Term.Lit.flix"),
+  new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.List.flix"),
+  new FlixTest("Test.Term.Lit.Option", "main/test/flix/Test.Term.Lit.Option.flix"),
+  new FlixTest("Test.Term.Lit.Result", "main/test/flix/Test.Term.Lit.Result.flix"),
+  new FlixTest("Test.Term.Lit.Set", "main/test/flix/Test.Term.Lit.Set.flix")(Options.TestWithLibrary),
+  new FlixTest("Test.Term.Var.CapturedVar", "main/test/flix/Test.Term.Var.CapturedVar.flix"),
+  new FlixTest("Test.Term.Var.QuantVar", "main/test/flix/Test.Term.Var.QuantVar.flix"),
+  new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix"),
 
   //
   // Use.

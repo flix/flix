@@ -450,28 +450,4 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Rel.01") {
-    val input = "rel R[a](x: b)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedTypeVar](result)
-  }
-
-  test("UndefinedTypeVar.Rel.02") {
-    val input = "rel R[a, b, c](x: a, y: d, z: c)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedTypeVar](result)
-  }
-
-  test("UndefinedTypeVar.Lat.01") {
-    val input = "lat R[a](x: b)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedTypeVar](result)
-  }
-
-  test("UndefinedTypeVar.Lat.02") {
-    val input = "lat R[a, b, c](x: a, y: d, z: c)"
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.UndefinedTypeVar](result)
-  }
-
 }

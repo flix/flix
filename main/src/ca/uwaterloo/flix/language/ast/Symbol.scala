@@ -148,36 +148,6 @@ object Symbol {
   }
 
   /**
-    * Returns the relation symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkRelSym(ns: NName, ident: Ident): RelSym = {
-    new RelSym(ns.parts, ident.name, ident.loc)
-  }
-
-  /**
-    * Returns the relation symbol for the given fully qualified name.
-    */
-  def mkRelSym(fqn: String): RelSym = split(fqn) match {
-    case None => new RelSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new RelSym(ns, name, SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns the lattice symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkLatSym(ns: NName, ident: Ident): LatSym = {
-    new LatSym(ns.parts, ident.name, ident.loc)
-  }
-
-  /**
-    * Returns the lattice symbol for the given fully qualified name.
-    */
-  def mkLatSym(fqn: String): LatSym = split(fqn) match {
-    case None => new LatSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new LatSym(ns, name, SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the type alias symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkTypeAliasSym(ns: NName, ident: Ident): TypeAliasSym = {
@@ -341,57 +311,6 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + name
-  }
-
-  /**
-    * A common super-type for predicate symbols.
-    */
-  trait PredSym
-
-  /**
-    * Relation Symbol.
-    */
-  final class RelSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends PredSym {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: RelSym => this.namespace == that.namespace && this.name == that.name
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
-  }
-
-  /**
-    * Lattice Symbol.
-    */
-  final class LatSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends PredSym {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: LatSym => this.namespace == that.namespace && this.name == that.name
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
   /**

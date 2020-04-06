@@ -44,11 +44,7 @@ object WeededAst {
 
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
-
-    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: WeededAst.TypeParams, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
-
-    case class LatticeComponents(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
+    case class LatticeOps(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
@@ -204,11 +200,11 @@ object WeededAst {
 
     case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointProject(qname: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointProject(ident: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class FixpointFold(qname: Name.QName, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointFold(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
   }
 
@@ -266,7 +262,7 @@ object WeededAst {
 
     object Head {
 
-      case class Atom(name: Name.QName, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(ident: Name.Ident, den: Denotation, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
       case class Union(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Head
 
@@ -276,7 +272,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(ident: Name.Ident, den: Denotation, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Guard(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Predicate.Body
 
@@ -302,7 +298,13 @@ object WeededAst {
 
     case class SchemaEmpty(loc: SourceLocation) extends WeededAst.Type
 
-    case class Schema(ts: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class SchemaExtendByAlias(qname: Name.QName, targs: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class SchemaExtendByTypes(name: Name.Ident, den: Ast.Denotation, tpes: List[WeededAst.Type], rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Relation(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+
+    case class Lattice(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 

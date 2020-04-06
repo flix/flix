@@ -23,84 +23,6 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
 
-  test("UnsafeFact.01") {
-    val input =
-      s"""
-         |rel R(x: Int)
-         |
-         |R(x).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeFact.02") {
-    val input =
-      s"""
-         |rel R(x: Int, y: Int)
-         |
-         |R(42, x).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeFact.03") {
-    val input =
-      s"""
-         |rel R(x: Int, y: Int, z: Int)
-         |
-         |R(42, x, 21).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeRule.01") {
-    val input =
-      s"""
-         |rel R(x: Int)
-         |
-         |R(x) :- R(y).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeRule.02") {
-    val input =
-      s"""
-         |rel R(x: Int, y: Int)
-         |
-         |R(x, y) :- R(x, z).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UnsafeRule.03") {
-    val input =
-      s"""
-         |rel R(x: Int, y: Int, z: Int)
-         |
-         |R(x, y, z) :- R(x, w, z).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("AmbiguousRelationOrLattice.01") {
-    val input =
-      s"""
-         |rel R(x: Int)
-         |lat R(x: Int)
-         |
-         |R(42).
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.AmbiguousRelationOrLattice](result)
-  }
-
   test("AmbiguousTag.01") {
     val input =
       s"""
@@ -237,66 +159,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  test("InaccessibleRelation.01") {
-    val input =
-      s"""
-         |namespace A {
-         |  rel R(x: Int)
-         |}
-         |
-         |namespace B {
-         |  A.R(42).
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleRelation](result)
-  }
-
-  test("InaccessibleRelation.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  A/B/C.R(42).
-         |
-         |  namespace B/C {
-         |    rel R(x: Int)
-         |  }
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleRelation](result)
-  }
-
-  test("InaccessibleLattice.01") {
-    val input =
-      s"""
-         |namespace A {
-         |  lat R(x: Int)
-         |}
-         |
-         |namespace B {
-         |  A.R(42).
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleLattice](result)
-  }
-
-  test("InaccessibleLattice.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  A/B/C.R(42).
-         |
-         |  namespace B/C {
-         |    lat R(x: Int)
-         |  }
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleLattice](result)
-  }
-
   test("RecursionLimit.01") {
     val input =
       s"""
@@ -373,6 +235,15 @@ class TestResolver extends FunSuite with TestUtils {
          |namespace A {
          |  def f(x: Int, y: Int): Int = x + y + z
          |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.03") {
+    val input =
+      s"""
+         |def main(): #{ R } = #{}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedName](result)
@@ -656,22 +527,6 @@ class TestResolver extends FunSuite with TestUtils {
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedTag](result)
-  }
-
-  test("UndefinedTable.01") {
-    val input = "VarPointsTo(1, 2)."
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedTable](result)
-  }
-
-  test("UndefinedTable.02") {
-    val input =
-      s"""namespace A {
-         |  VarPointsTo(1, 2).
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedTable](result)
   }
 
   test("UndefinedType.01") {

@@ -266,7 +266,7 @@ object Type {
   /**
     * A type constructor that represents a schema extension type.
     */
-  case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
+  case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Type {
     def kind: Kind = Kind.Star -> Kind.Schema
   }
 
@@ -368,8 +368,8 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
-    ts.foldLeft(tuple: Type) {
+    val init = Type.Cst(TypeConstructor.Tuple(ts.length))
+    ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x)
     }
   }
