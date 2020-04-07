@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017 Esben Bjerre
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 namespace RedBlackTree {
 
     ///
@@ -147,7 +163,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(...f(f(s, k1, v1), k2, v2)..., vn)`.
     ///
-    pub def foldLeft(f: (b, k, v) -> b, s: b, tree: RedBlackTree[k, v]): b = match tree {
+    pub def foldLeft(f: (b, k, v) -> b & e, s: b, tree: RedBlackTree[k, v]): b & e = match tree {
         case Node(_, a, k, v, b) => foldLeft(f, f(foldLeft(f, s, a), k, v), b)
         case _ => s
     }
@@ -157,7 +173,7 @@ namespace RedBlackTree {
     ///
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
-    pub def foldRight(f: (k, v, b) -> b, s: b, tree: RedBlackTree[k, v]): b = match tree {
+    pub def foldRight(f: (k, v, b) -> b & e, s: b, tree: RedBlackTree[k, v]): b & e = match tree {
         case Node(_, a, k, v, b) => foldRight(f, f(k, v, foldRight(f, s, b)), a)
         case _ => s
     }
@@ -370,7 +386,7 @@ namespace RedBlackTree {
     ///
     /// Helper function for `reduceLeft`.
     ///
-    def reduceLeftHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)], s: Option[(k, v)], tree: RedBlackTree[k, v]): Option[(k, v)] =
+    def reduceLeftHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)] & e, s: Option[(k, v)], tree: RedBlackTree[k, v]): Option[(k, v)] & e =
         match tree {
             case Node(_, a, k, v, b) => reduceLeftHelper(f, f(reduceLeftHelper(f, s, a), (k, v)), b)
             case _ => s
@@ -379,7 +395,7 @@ namespace RedBlackTree {
     ///
     /// Helper function for `reduceRight`.
     ///
-    def reduceRightHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)], s: Option[(k, v)], tree: RedBlackTree[k, v]): Option[(k, v)] =
+    def reduceRightHelper(f: (Option[(k, v)], (k, v)) -> Option[(k, v)] & e, s: Option[(k, v)], tree: RedBlackTree[k, v]): Option[(k, v)] & e =
         match tree {
             case Node(_, a, k, v, b) => reduceRightHelper(f, f(reduceRightHelper(f, s, b), (k, v)), a)
             case _ => s
