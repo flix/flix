@@ -114,6 +114,33 @@ namespace Test/Exp/Fixpoint/Solve {
         };
         m |= Path(Ok("d"), Ok("b")).
 
+    @test
+    def testFixpointSolvePoly01(): Bool =
+        let m = solve closure() <+> #{
+            Edge(1i32, 2i32). Edge(2i32, 3i32). Edge(3i32, 4i32). Edge(4i32, 5i32).
+        };
+        m |= Path(4i32, 2i32).
+
+    @test
+    def testFixpointSolvePoly02(): Bool =
+        let m = solve closure() <+> #{
+            Edge(1i64, 2i64). Edge(2i64, 3i64). Edge(3i64, 4i64). Edge(4i64, 5i64).
+        };
+        m |= Path(4i64, 2i64).
+
+    @test
+    def testFixpointSolvePoly03(): Bool =
+        let m = solve closure() <+> #{
+            Edge("a", "b"). Edge("b", "c"). Edge("c", "d"). Edge("d", "e").
+        };
+        m |= Path("d", "b").
+
+    def closure(): #{Edge(a, a), Path(a, a)} = #{
+        Edge(y, x) :- Edge(x, y).
+        Path(x, y) :- Edge(x, y).
+        Path(x, z) :- Path(x, y), Edge(y, z).
+    }
+
     enum Option[t] {
         case None,
         case Some(t)
