@@ -40,4 +40,25 @@ namespace Test/TypeAlias/Rel {
         C("x"). C("x"). C("x").
     }
 
+    @test
+    def testMixed01(): #{A, B(String), C(String)} = #{
+        A(1). A(2). A(3).
+        B("x"). B("x"). B("x").
+        C("x"). C("x"). C("x").
+    }
+
+    @test
+    def testMixed02(): #{A(String), B, C(String)} = #{
+        A("x"). A("x"). A("x").
+        B(1, 2). B(2, 3).
+        C("x"). C("x"). C("x").
+    }
+
+    @test
+    def testMixed03(): #{A(String), B(String), C} = #{
+        A("x"). A("x"). A("x").
+        B("x"). B("x"). B("x").
+        C(1, 2, 3).
+    }
+
 }
