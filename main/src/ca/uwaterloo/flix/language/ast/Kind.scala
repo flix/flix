@@ -33,6 +33,25 @@ sealed trait Kind {
     */
   override def toString: String = Kind.ShowInstance.show(this)
 
+  /**
+    * The kind this kind extends.
+    */
+  protected val superKind: Option[Kind] = None
+
+  /**
+    * Returns true iff this kind extends `that` kind directly or indirectly.
+    */
+  def extendsKind(that: Kind): Boolean = {
+    if (this == that) {
+      true
+    } else {
+      superKind match {
+        case None => false
+        case Some(other) => other.extendsKind(that)
+      }
+    }
+  }
+
 }
 
 object Kind {
@@ -45,7 +64,9 @@ object Kind {
   /**
     * The kind of records.
     */
-  case object Record extends Kind
+  case object Record extends Kind {
+    override val superKind: Option[Kind] = Some(Star)
+  }
 
   /**
     * The kind of schemas.
@@ -67,6 +88,14 @@ object Kind {
     */
   case class Arrow(kparams: List[Kind], kr: Kind) extends Kind {
     assert(kparams.nonEmpty)
+
+    override def extendsKind(that: Kind): Boolean = {
+      that match {
+        case Arrow(kparam1, kr1) =>
+          kparams.corresponds(kparam1)(_.extendsKind(_)) && kr.extendsKind(kr1)
+        case _ => false
+      }
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////

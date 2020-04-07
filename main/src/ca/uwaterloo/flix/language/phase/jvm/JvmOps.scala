@@ -831,7 +831,7 @@ object JvmOps {
 
     case MonoType.Tuple(length) => Type.Cst(TypeConstructor.Tuple(0)) // hack
     case MonoType.RecordEmpty() => Type.RecordEmpty
-    case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
+    case MonoType.RecordExtend(label, value, rest) => Type.mkRecordExtend(label, hackMonoType2Type(value), hackMonoType2Type(rest))
     case MonoType.SchemaEmpty() => Type.SchemaEmpty
     case MonoType.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, hackMonoType2Type(t), hackMonoType2Type(rest))
   }

@@ -149,6 +149,23 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the type of empty records.
+    */
+  case object RecordEmpty extends TypeConstructor {
+    def kind: Kind = Kind.Record
+  }
+
+  /**
+    * A type constructor that represents the type of extended records.
+    */
+  case class RecordExtend(label: String) extends TypeConstructor {
+    /**
+      * The shape of an extended record is Record[t;r]
+      */
+    def kind: Kind = Kind.Star -> Kind.Record -> Kind.Record
+  }
+
+  /**
     * A type constructor that represents a relation.
     *
     * @param sym the symbol of the relation.

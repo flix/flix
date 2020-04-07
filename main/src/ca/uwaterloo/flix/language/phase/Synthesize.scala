@@ -1293,8 +1293,8 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a record type.
       */
     def isRecord(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.RecordEmpty => true
-      case Type.RecordExtend(base, label, value) => true
+      case Type.Cst(TypeConstructor.RecordEmpty) => true
+      case Type.Cst(TypeConstructor.RecordExtend(_)) => true
       case _ => false
     }
 

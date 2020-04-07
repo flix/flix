@@ -160,6 +160,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.Int64 => "Int64"
         case TypeConstructor.BigInt => "BigInt"
         case TypeConstructor.Str => "Str"
+        case TypeConstructor.RecordEmpty => "{ }"
 
         case TypeConstructor.Relation(sym) => sym.toString
 
@@ -182,6 +183,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.Tuple(l) => "(" + args.map(format).mkString(", ") + ")"
 
         case TypeConstructor.Vector => "Vector" + "[" + args.map(format).mkString(", ") + "]"
+
+        case TypeConstructor.RecordExtend(label) =>
+          "{" + label + " = " + format(args(0)) + " | " + format(args(1)) + "}"
 
         case TypeConstructor.Pure => "Pure"
 
@@ -207,11 +211,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         } else {
           "(" + argumentTypes.map(format).mkString(", ") + ") -> " + format(resultType)
         }
-
-      case Type.RecordEmpty => "{ }"
-
-      case Type.RecordExtend(label, value, rest) =>
-        "{" + label + " = " + format(value) + " | " + format(rest) + "}"
 
       case Type.SchemaEmpty => "Schema { }"
 

@@ -43,8 +43,6 @@ object Scheme {
       case Type.Var(x, k) => freshVars.getOrElse(x, t0)
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
-      case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visitType(value), visitType(rest))
       case Type.SchemaEmpty => Type.SchemaEmpty
       case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visitType(t), visitType(rest))
       case Type.Zero => Type.Zero

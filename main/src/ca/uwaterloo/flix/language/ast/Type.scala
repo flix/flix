@@ -42,7 +42,6 @@ sealed trait Type {
     case Type.Succ(n, t) => t.typeVars
     case Type.Arrow(_, eff) => eff.typeVars
     case Type.RecordEmpty => SortedSet.empty
-    case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.SchemaEmpty => SortedSet.empty
     case Type.SchemaExtend(sym, tpe, rest) => tpe.typeVars ++ rest.typeVars
     case Type.Lambda(tvar, tpe) => tpe.typeVars - tvar
@@ -97,7 +96,6 @@ sealed trait Type {
     case Type.Cst(tc) => 1
     case Type.Arrow(_, eff) => eff.size + 1
     case Type.RecordEmpty => 1
-    case Type.RecordExtend(_, value, rest) => value.size + rest.size
     case Type.SchemaEmpty => 1
     case Type.SchemaExtend(_, tpe, rest) => tpe.size + rest.size
     case Type.Zero => 1
@@ -175,6 +173,11 @@ object Type {
   val Str: Type = Type.Cst(TypeConstructor.Str)
 
   /**
+    * Represents the Empty Record type.
+    */
+  val RecordEmpty: Type = Type.Cst(TypeConstructor.RecordEmpty)
+
+  /**
     * Represents the Pure effect. (TRUE in the Boolean algebra.)
     */
   val Pure: Type = Type.Cst(TypeConstructor.Pure)
@@ -243,20 +246,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents the empty record type.
-    */
-  case object RecordEmpty extends Type {
-    def kind: Kind = Kind.Record
-  }
-
-  /**
-    * A type constructor that represents a record extension type.
-    */
-  case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Record
-  }
-
-  /**
     * A type constructor that represents the empty schema type.
     */
   case object SchemaEmpty extends Type {
@@ -320,6 +309,10 @@ object Type {
     */
   def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
 
+  // MATT docs
+  def mkRecordExtend(label: String, tpe: Type, rest: Type): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest))
+  }
   /**
     * Constructs an arrow with the given effect type A ->eff B.
     */
@@ -410,6 +403,10 @@ object Type {
         case Type.Cst(TypeConstructor.Tuple(l)) =>
           "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
+        case Type.Cst(TypeConstructor.RecordEmpty) => "{ }"
+
+        case Type.Cst(TypeConstructor.RecordExtend(label)) => "{" + label + " = " + visit(args(0), m) + " | " + visit(args(1), m) + "}"
+
         case Type.Cst(TypeConstructor.Pure) => "Pure"
 
         case Type.Cst(TypeConstructor.Impure) => "Impure"
@@ -469,10 +466,6 @@ object Type {
 
           // Put everything together.
           argPart + arrowPart + resultPart + effPart
-
-        case Type.RecordEmpty => "{ }"
-
-        case Type.RecordExtend(label, value, rest) => "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
 
         case Type.SchemaEmpty => "#{ }"
 
