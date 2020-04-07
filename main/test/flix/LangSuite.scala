@@ -130,6 +130,11 @@ class LangSuite extends Suites(
   new FlixTest("Test.Term.Var.WildVar", "main/test/flix/Test.Term.Var.WildVar.flix"),
 
   //
+  // Type Alias.
+  //
+  new FlixTest("Test.TypeAlias.Rel", "main/test/flix/Test.TypeAlias.Rel.flix"),
+
+  //
   // Use.
   //
   new FlixTest("Test.Use.Def", "main/test/flix/Test.Use.Def.flix"),
