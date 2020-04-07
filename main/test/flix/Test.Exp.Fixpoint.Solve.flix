@@ -80,7 +80,48 @@ namespace Test/Exp/Fixpoint/Solve {
         };
         m |= Path(4ii, 3ii).
 
+    @test
+    def testFixpointSolveString(): Bool =
+        let m = solve #{
+            Edge("a", "b"). Edge("b", "c"). Edge("c", "d"). Edge("d", "e").
+            Edge(y, x) :- Edge(x, y).
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+        };
+        m |= Path("d", "b").
 
+    @test
+    def testFixpointOption(): Bool =
+        let m = solve #{
+            Edge(Some("a"), Some("b")). Edge(Some("b"), Some("c")). Edge(Some("c"), Some("d")). Edge(Some("d"), Some("e")).
+            Edge(None, Some("a")).
+            Edge(Some("a"), None).
+            Edge(y, x) :- Edge(x, y).
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+        };
+        m |= Path(Some("d"), Some("b")).
 
+    @test
+    def testFixpointSolveResult(): Bool =
+        let m = solve #{
+            Edge(Ok("a"), Ok("b")). Edge(Ok("b"), Ok("c")). Edge(Ok("c"), Ok("d")). Edge(Ok("d"), Ok("e")).
+            Edge(Ok("a"), Err("a")).
+            Edge(Err("a"), Ok("a")).
+            Edge(y, x) :- Edge(x, y).
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+        };
+        m |= Path(Ok("d"), Ok("b")).
+
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
 
 }
