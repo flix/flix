@@ -1,0 +1,147 @@
+namespace Test/TypeAlias/Rel {
+
+    rel A(x: Int)
+    rel B(x: Int, y: Int)
+    rel C(x: Int, y: Int, z: Int)
+
+    @test
+    def testTypeAlias01(): #{A} = #{
+        A(1). A(2). A(3).
+    }
+
+    @test
+    def testTypeAlias02(): #{A, B} = #{
+        A(1). A(2). A(3).
+        B(1, 2). B(2, 3).
+    }
+
+    @test
+    def testTypeAlias03(): #{A, B, C} = #{
+        A(1). A(2). A(3).
+        B(1, 2). B(2, 3).
+        C(1, 2, 3).
+    }
+
+    rel D(x: List[Int])
+    rel E(x: Option[Int])
+    rel F(x: Result[Bool, String])
+
+    @test
+    def testTypeAlias04(): #{D} = #{
+        D(Nil). D(1 :: Nil).
+    }
+
+    @test
+    def testTypeAlias05(): #{D, E} = #{
+        D(Nil). D(1 :: Nil).
+        E(None). E(Some(123)).
+    }
+
+    @test
+    def testTypeAlias06(): #{D, E, F} = #{
+        D(Nil). D(1 :: Nil).
+        E(None). E(Some(123)).
+        F(Ok(true)). F(Err("Hello World!")).
+    }
+
+    rel G[a](x: a)
+    rel H[a, b](x: a, y: b)
+    rel I[a, b, c](x: a, y: b, z: c)
+
+    @test
+    def testPolyTypeAlias01(): #{G[Int]} = #{
+        G(1). G(2). G(3).
+    }
+
+    @test
+    def testPolyTypeAlias02(): #{G[String]} = #{
+        G("x"). G("x"). G("x").
+    }
+
+    @test
+    def testPolyTypeAlias03(): #{H[Bool, Int]} = #{
+        H(true, 21). H(false, 42).
+    }
+
+    @test
+    def testPolyTypeAlias04(): #{H[Int, Bool]} = #{
+        H(21, true). H(42, false).
+    }
+
+    @test
+    def testPolyTypeAlias05(): #{I[Bool, Int, String]} = #{
+        I(true, 21, "Hello"). I(false, 42, "World!").
+    }
+
+    @test
+    def testPolyTypeAlias06(): #{I[Int, String, Bool]} = #{
+        I(21, "Hello", true). I(42, "World!", false).
+    }
+
+    @test
+    def testPolyTypeAlias07(): #{G[Option[Int]]} = #{
+        G(None). G(Some(21)). G(Some(42)).
+    }
+
+    @test
+    def testPolyTypeAlias08(): #{G[Int], H[Bool, Int], I[Bool, Int, String]} = #{
+        G(1). G(2). G(3).
+        H(true, 21). H(false, 42).
+        I(true, 21, "Hello"). I(false, 42, "World!").
+    }
+
+    @test
+    def testIgnoredTypeAlias01(): #{A(String)} = #{
+        A("x"). A("x"). A("x").
+    }
+
+    @test
+    def testIgnoredTypeAlias02(): #{A(String), B(String)} = #{
+        A("x"). A("x"). A("x").
+        B("x"). B("x"). B("x").
+    }
+
+    @test
+    def testIgnoredTypeAlias03(): #{A(String), B(String), C(String)} = #{
+        A("x"). A("x"). A("x").
+        B("x"). B("x"). B("x").
+        C("x"). C("x"). C("x").
+    }
+
+    @test
+    def testMixed01(): #{A, B(String), C(String)} = #{
+        A(1). A(2). A(3).
+        B("x"). B("x"). B("x").
+        C("x"). C("x"). C("x").
+    }
+
+    @test
+    def testMixed02(): #{A(String), B, C(String)} = #{
+        A("x"). A("x"). A("x").
+        B(1, 2). B(2, 3).
+        C("x"). C("x"). C("x").
+    }
+
+    @test
+    def testMixed03(): #{A(String), B(String), C} = #{
+        A("x"). A("x"). A("x").
+        B("x"). B("x"). B("x").
+        C(1, 2, 3).
+    }
+
+    enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
+
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
+    }
+
+}

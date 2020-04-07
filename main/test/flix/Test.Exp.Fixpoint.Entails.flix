@@ -1,7 +1,5 @@
 namespace Test/Exp/Fixpoint/Entails {
 
-    // TODO: Normalize when to use #{}
-
     @test
     def testFixpointEntails01(): Bool =
         #{ A(0, 0). } |= #{ A(0, 0). }
