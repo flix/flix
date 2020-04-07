@@ -261,6 +261,7 @@ class Flix {
       Monomorph |>
       Synthesize |>
       Simplifier |>
+      Uncurrier2 |>
       Uncurrier |>
       ClosureConv |>
       LambdaLift |>

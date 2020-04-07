@@ -16,8 +16,10 @@
 
 package ca.uwaterloo.flix.language.ast.ops
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object SimplifiedAstOps {
 
@@ -512,5 +514,292 @@ object SimplifiedAstOps {
     // Success :)
     root
   }
+
+  def renameBoundVars(exp0: Expression, vars0: Map[Symbol.VarSym, Symbol.VarSym], labels0: Map[Symbol.LabelSym, Symbol.LabelSym])(implicit flix: Flix): Expression =
+    exp0 match {
+      case Expression.Unit => exp0
+      case Expression.True => exp0
+      case Expression.False => exp0
+      case Expression.Char(lit) => exp0
+      case Expression.Float32(lit) => exp0
+      case Expression.Float64(lit) => exp0
+      case Expression.Int8(lit) => exp0
+      case Expression.Int16(lit) => exp0
+      case Expression.Int32(lit) => exp0
+      case Expression.Int64(lit) => exp0
+      case Expression.BigInt(lit) => exp0
+      case Expression.Str(lit) => exp0
+
+      case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
+
+      case Expression.Var(sym, tpe, loc) =>
+        val s = vars0.getOrElse(sym, sym) // sym might not have been renamed e.g. if it's a free variable.
+        Expression.Var(s, tpe, loc)
+
+      case Expression.Lambda(args0, body, tpe, loc) =>
+        val args1 = args0.map(fparam => fparam.copy(sym = Symbol.freshVarSym(fparam.sym)))
+        val vars1 = args0.zip(args1).map {
+          case (oldParam, newParam) => oldParam.sym -> newParam.sym
+        }
+        val b = renameBoundVars(body, vars1.toMap ++ vars0, labels0)
+        Expression.Lambda(args1, b, tpe, loc)
+
+      case Expression.Apply(exp, args, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        val as = args map (renameBoundVars(_, vars0, labels0))
+        Expression.Apply(e, as, tpe, loc)
+
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Unary(sop, op, e, tpe, loc)
+
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        Expression.Binary(sop, op, e1, e2, tpe, loc)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        val cond = renameBoundVars(exp1, vars0, labels0)
+        val consequent = renameBoundVars(exp2, vars0, labels0)
+        val alternative = renameBoundVars(exp3, vars0, labels0)
+        Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
+
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        // Need to rename all cases before we rename their bodies
+        // because they can refer to each other.
+        val labels1 = branches.foldLeft(labels0) {
+          case (acc, (sym0, br)) =>
+            val sym1 = Symbol.freshLabel(sym0)
+            acc + (sym0 -> sym1)
+        }
+        val bs = branches map {
+          case (sym, br) =>
+            val b = renameBoundVars(br, vars0, labels1)
+            labels1(sym) -> b
+        }
+        val e = renameBoundVars(exp, vars0, labels1)
+        Expression.Branch(e, bs, tpe, loc)
+
+      case Expression.JumpTo(sym, tpe, loc) =>
+        val s = labels0(sym) // Jumps don't occur outside branch blocks
+        Expression.JumpTo(s, tpe, loc)
+
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        val s = Symbol.freshVarSym(sym)
+        val vars1 = vars0 + (sym -> s)
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars1, labels0)
+        Expression.Let(s, e1, e2, tpe, loc)
+
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        val s = Symbol.freshVarSym(sym)
+        val vars1 = vars0 + (sym -> s)
+        val e1 = renameBoundVars(exp1, vars1, labels0)
+        val e2 = renameBoundVars(exp2, vars1, labels0)
+        Expression.LetRec(s, e1, e2, tpe, loc)
+
+      case Expression.Is(sym, tag, exp, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Is(sym, tag, e, loc)
+
+      case Expression.Tag(sym, tag, exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Tag(sym, tag, e, tpe, loc)
+
+      case Expression.Untag(sym, tag, exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Untag(sym, tag, e, tpe, loc)
+
+      case Expression.Index(base, offset, tpe, loc) =>
+        val b = renameBoundVars(base, vars0, labels0)
+        Expression.Index(b, offset, tpe, loc)
+
+      case Expression.Tuple(elms, tpe, loc) =>
+        val es = elms map (renameBoundVars(_, vars0, labels0))
+        Expression.Tuple(es, tpe, loc)
+
+      case Expression.RecordEmpty(tpe, loc) => Expression.RecordEmpty(tpe, loc)
+
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.RecordSelect(e, label, tpe, loc)
+
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        val v = renameBoundVars(value, vars0, labels0)
+        val r = renameBoundVars(rest, vars0, labels0)
+        Expression.RecordExtend(label, v, r, tpe, loc)
+
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        val r = renameBoundVars(rest, vars0, labels0)
+        Expression.RecordRestrict(label, r, tpe, loc)
+
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        val es = elms map (renameBoundVars(_, vars0, labels0))
+        Expression.ArrayLit(es, tpe, loc)
+
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = renameBoundVars(elm, vars0, labels0)
+        val ln = renameBoundVars(len, vars0, labels0)
+        Expression.ArrayNew(e, ln, tpe, loc)
+
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = renameBoundVars(base, vars0, labels0)
+        val i = renameBoundVars(index, vars0, labels0)
+        Expression.ArrayLoad(b, i, tpe, loc)
+
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = renameBoundVars(base, vars0, labels0)
+        val i = renameBoundVars(index, vars0, labels0)
+        val e = renameBoundVars(elm, vars0, labels0)
+        Expression.ArrayStore(b, i, e, tpe, loc)
+
+      case Expression.ArrayLength(base, tpe, loc) =>
+        val b = renameBoundVars(base, vars0, labels0)
+        Expression.ArrayLength(b, tpe, loc)
+
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        val b = renameBoundVars(base, vars0, labels0)
+        val i1 = renameBoundVars(startIndex, vars0, labels0)
+        val i2 = renameBoundVars(endIndex, vars0, labels0)
+        Expression.ArraySlice(b, i1, i2, tpe, loc)
+
+      case Expression.Ref(exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Ref(e, tpe, loc)
+
+      case Expression.Deref(exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Deref(e, tpe, loc)
+
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        Expression.Assign(e1, e2, tpe, loc)
+
+      case Expression.Existential(fparam0, exp, loc) =>
+        val fparam1 = fparam0.copy(sym = Symbol.freshVarSym(fparam0.sym))
+        val vars1 = vars0 + (fparam0.sym -> fparam1.sym)
+        val e = renameBoundVars(exp, vars1, labels0)
+        Expression.Existential(fparam1, e, loc)
+
+      case Expression.Universal(fparam0, exp, loc) =>
+        val fparam1 = fparam0.copy(sym = Symbol.freshVarSym(fparam0.sym))
+        val vars1 = vars0 + (fparam0.sym -> fparam1.sym)
+        val e = renameBoundVars(exp, vars1, labels0)
+        Expression.Universal(fparam1, e, loc)
+
+      case Expression.Cast(exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.Cast(e, tpe, loc)
+
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
+        // TODO: is this right or do we need to handle it like Branch?
+        val e = renameBoundVars(exp, vars0, labels0)
+        val rs = rules map {
+          case CatchRule(sym, clazz, body) =>
+            val s = Symbol.freshVarSym(sym)
+            val vars1 = vars0 + (sym -> s)
+            val b = renameBoundVars(body, vars1, labels0)
+            CatchRule(s, clazz, b)
+        }
+        Expression.TryCatch(e, rs, tpe, loc)
+
+      case Expression.InvokeConstructor(constructor, args, tpe, loc) =>
+        val as = args map (renameBoundVars(_, vars0, labels0))
+        Expression.InvokeConstructor(constructor, as, tpe, loc)
+
+      case Expression.InvokeMethod(method, exp, args, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        val as = args map (renameBoundVars(_, vars0, labels0))
+        Expression.InvokeMethod(method, e, as, tpe, loc)
+
+      case Expression.InvokeStaticMethod(method, args, tpe, loc) =>
+        val as = args map (renameBoundVars(_, vars0, labels0))
+        Expression.InvokeStaticMethod(method, as, tpe, loc)
+
+      case Expression.GetField(field, exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.GetField(field, e, tpe, loc)
+
+      case Expression.PutField(field, exp1, exp2, tpe, loc) =>
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        Expression.PutField(field, e1, e2, tpe, loc)
+
+      case Expression.GetStaticField(field, tpe, loc) => Expression.GetStaticField(field, tpe, loc)
+
+      case Expression.PutStaticField(field, exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.PutStaticField(field, e, tpe, loc)
+
+      case Expression.NewChannel(exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.NewChannel(e, tpe, loc)
+
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.GetChannel(e, tpe, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        Expression.PutChannel(e1, e2, tpe, loc)
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        // TODO: is this right or do we need to handle it like Branch?
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val s = Symbol.freshVarSym(sym)
+            val vars1 = vars0 + (sym -> s)
+            val c = renameBoundVars(chan, vars0, labels0) // TODO: can sym occur in chan?
+            val e = renameBoundVars(exp, vars1, labels0)
+            SelectChannelRule(s, c, e)
+        }
+        val d = default.map(renameBoundVars(_, vars0, labels0))
+        Expression.SelectChannel(rs, d, tpe, loc)
+
+      case Expression.ProcessSpawn(exp, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.ProcessSpawn(e, tpe, loc)
+
+      case Expression.ProcessPanic(msg, tpe, loc) => Expression.ProcessPanic(msg, tpe, loc)
+
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) => Expression.FixpointConstraintSet(cs0, tpe, loc)
+
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        Expression.FixpointCompose(e1, e2, tpe, loc)
+
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.FixpointSolve(e, stf, tpe, loc)
+
+      case Expression.FixpointProject(sym, exp, tpe, loc) =>  // TODO: rename?
+        val e = renameBoundVars(exp, vars0, labels0)
+        Expression.FixpointProject(sym, e, tpe, loc)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        Expression.FixpointEntails(e1, e2, tpe, loc)
+
+      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => // TODO: rename?
+        val e1 = renameBoundVars(exp1, vars0, labels0)
+        val e2 = renameBoundVars(exp2, vars0, labels0)
+        val e3 = renameBoundVars(exp3, vars0, labels0)
+        Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
+
+      case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
+      case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
+
+      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.Closure(sym, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+    }
 
 }
