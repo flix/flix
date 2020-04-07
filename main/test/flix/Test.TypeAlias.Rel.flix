@@ -22,6 +22,28 @@ namespace Test/TypeAlias/Rel {
         C(1, 2, 3).
     }
 
+    rel D(x: List[Int])
+    rel E(x: Option[Int])
+    rel F(x: Result[Bool, String])
+
+    @test
+    def testTypeAlias04(): #{D} = #{
+        D(Nil). D(1 :: Nil).
+    }
+
+    @test
+    def testTypeAlias05(): #{D, E} = #{
+        D(Nil). D(1 :: Nil).
+        E(None). E(Some(123)).
+    }
+
+    @test
+    def testTypeAlias06(): #{D, E, F} = #{
+        D(Nil). D(1 :: Nil).
+        E(None). E(Some(123)).
+        F(Ok(true)). F(Err("Hello World!")).
+    }
+
     @test
     def testIgnoredTypeAlias01(): #{A(String)} = #{
         A("x"). A("x"). A("x").
@@ -59,6 +81,21 @@ namespace Test/TypeAlias/Rel {
         A("x"). A("x"). A("x").
         B("x"). B("x"). B("x").
         C(1, 2, 3).
+    }
+
+    enum List[t] {
+        case Nil,
+        case Cons(t, List[t])
+    }
+
+    enum Option[t] {
+        case None,
+        case Some(t)
+    }
+
+    enum Result[t, e] {
+        case Ok(t),
+        case Err(e)
     }
 
 }
