@@ -6,10 +6,10 @@ namespace PackageParser {
         case ListVariant(List[Parsed])
     }
 
-    opaque type ParseError = String
+    pub opaque type ParseError = String
 
     pub def parse(input: String): Result[Parsed, ParseError] = {
-        dontEvenKnowWhatTryThisIsAgain(String.toList(input))
+       Ok(dontEvenKnowWhatTryThisIsAgain(String.toList(input)))
     }
 
     def dontEvenKnowWhatTryThisIsAgain(input: List[Char]): Parsed = match List.head(input) {
@@ -45,6 +45,7 @@ namespace PackageParser {
         } else {
             ???
         }
+        case None => ???
     }
     
     // State 2
@@ -54,7 +55,7 @@ namespace PackageParser {
         acc: Parsed
     ): (List[Char], Parsed) = match List.head(input) {
         case Some(x) => if (isAlphaNumric(x)) {
-            parseKey(List.drop(1, input), x :: keyAcc)
+            parseKey(List.drop(1, input), x :: keyAcc, acc)
         } else if (Char.isWhiteSpace(x)) {
             parseWhiteSpaceBeforeValue(List.drop(1, input), List.toString(keyAcc), acc)
         } else if (x == '"') {
@@ -78,7 +79,7 @@ namespace PackageParser {
         acc: Parsed
     ): (List[Char], Parsed) = match List.head(input) {
         case Some(x) => if (Char.isWhiteSpace(x)) {
-            parseValue(List.drop(1, input), key, acc)
+            parseRecValue(List.drop(1, input), key, acc)
         } else if (isAlphaNumric(x)) {
             // State 8
             let rec = parseMapEntry(List.drop(1, input), acc);
@@ -120,6 +121,7 @@ namespace PackageParser {
             // Parse error!
             ???
         }
+        case None => ???
     }
 
     def state12(
@@ -138,6 +140,7 @@ namespace PackageParser {
             // Parse error!
             ???
         }
+        case None => ???
     }
 
     def state13(
@@ -147,13 +150,14 @@ namespace PackageParser {
         acc: Parsed
     ): (List[Char], Parsed) = match List.head(input) {
         case Some(x) => if (Char.isWhiteSpace(x)) {
-            state13(List.drop(1, input), listAcc, acc)
+            state13(List.drop(1, input), key, listAcc, acc)
         } else if (x == '(') {
             parseList(List.drop(1, input), key, listAcc, acc)
         } else {
             //Parse error!
             ???
         }
+        case None => ???
     }
 
     // State 3
@@ -163,13 +167,13 @@ namespace PackageParser {
         acc: Parsed
     ): (List[Char], Parsed) = match List.head(input) {
         case Some(x) => if (Char.isWhiteSpace(x)) {
-            parseWhiteSpaceBeforeValue(List.drop(1, input), key)
+            parseWhiteSpaceBeforeValue(List.drop(1, input), key, acc)
         } else if (isAlphaNumric(x)) {
-            parseValue(List.drop(1, x), key, x :: Nil, acc)
+            parseValue(List.drop(1, input), key, x :: Nil, acc)
         } else if (x == '"') {
-            parseQuotedValue(List.drop(1, x), key, Nil, acc)
+            parseQuotedValue(List.drop(1, input), key, Nil, acc)
         } else if (x == '(') {
-            parseRecValue(List.drop(1, x), key, acc)
+            parseRecValue(List.drop(1, input), key, acc)
         } else {
             // Parse error!
             ???
@@ -185,7 +189,7 @@ namespace PackageParser {
         acc: Parsed
     ): (List[Char], Parsed) = match List.head(input) {
         case Some(x) => if (Char.isWhiteSpace(x)) {
-            parseWhiteSpaceAfterValue(List.drop(1, input), key, List.toString(valueAcc), acc)
+            parseWhiteSpaceAfterValue(List.drop(1, input), key, StringVariant(List.toString(valueAcc)), acc)
         } else if (isAlphaNumric(x)) {
             parseValue(List.drop(1, input), key, x :: valueAcc, acc)
         } else if (x == ')') {
@@ -220,9 +224,9 @@ namespace PackageParser {
         acc: Parsed
     ): (List[Char], Parsed) = match List.head(input) {
         case Some(x) => if (Char.isWhiteSpace(x)) {
-            parseWhiteSpaceAfterValue(List.drop(1), key, value, acc)
+            parseWhiteSpaceAfterValue(List.drop(1, input), key, value, acc)
         } else if (x == ')') {
-            appendToMap(List.drop(1), key, value, acc)
+            appendToMap(List.drop(1, input), key, value, acc)
         } else {
             //Parse error
             ???
@@ -237,8 +241,8 @@ namespace PackageParser {
         value: Parsed,
         acc: Parsed
     ): (List[Char], Parsed) = match acc {
-        case Empty => parseAfterAppend(input, Map.insert(key, value, Map.empty())) 
-        case MapVariant(map) => parseAfterAppend(input, Map.insert(key, value, map))
+        case Empty => parseAfterAppend(input, MapVariant(Map.insert(key, value, Map.empty())))
+        case MapVariant(map) => parseAfterAppend(input, MapVariant(Map.insert(key, value, map)))
         case StringVariant(_) => {
             // Unreachable!
             ???
@@ -260,6 +264,7 @@ namespace PackageParser {
         } else {
             (input, acc)
         }
+        case None => ???
     }
 
     def isAlphaNumric(c: Char): Bool = Char.isLetter(c) || Char.isDigit(c)
