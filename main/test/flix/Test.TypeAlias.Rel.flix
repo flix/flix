@@ -44,6 +44,52 @@ namespace Test/TypeAlias/Rel {
         F(Ok(true)). F(Err("Hello World!")).
     }
 
+    rel G[a](x: a)
+    rel H[a, b](x: a, y: b)
+    rel I[a, b, c](x: a, y: b, z: c)
+
+    @test
+    def testPolyTypeAlias01(): #{G[Int]} = #{
+        G(1). G(2). G(3).
+    }
+
+    @test
+    def testPolyTypeAlias02(): #{G[String]} = #{
+        G("x"). G("x"). G("x").
+    }
+
+    @test
+    def testPolyTypeAlias03(): #{H[Bool, Int]} = #{
+        H(true, 21). H(false, 42).
+    }
+
+    @test
+    def testPolyTypeAlias04(): #{H[Int, Bool]} = #{
+        H(21, true). H(42, false).
+    }
+
+    @test
+    def testPolyTypeAlias05(): #{I[Bool, Int, String]} = #{
+        I(true, 21, "Hello"). I(false, 42, "World!").
+    }
+
+    @test
+    def testPolyTypeAlias06(): #{I[Int, String, Bool]} = #{
+        I(21, "Hello", true). I(42, "World!", false).
+    }
+
+    @test
+    def testPolyTypeAlias07(): #{G[Option[Int]]} = #{
+        G(None). G(Some(21)). G(Some(42)).
+    }
+
+    @test
+    def testPolyTypeAlias08(): #{G[Int], H[Bool, Int], I[Bool, Int, String]} = #{
+        G(1). G(2). G(3).
+        H(true, 21). H(false, 42).
+        I(true, 21, "Hello"). I(false, 42, "World!").
+    }
+
     @test
     def testIgnoredTypeAlias01(): #{A(String)} = #{
         A("x"). A("x"). A("x").
