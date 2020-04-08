@@ -47,7 +47,14 @@ object Scheme {
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme): Boolean = false
+  def lessThanEqual(sc1: Scheme, sc2: Scheme): Boolean = {
+    if (sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty) {
+      sc1.base == sc2.base
+    } else {
+      // TODO
+      false
+    }
+  }
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`

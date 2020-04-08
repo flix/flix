@@ -233,7 +233,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Ok((subst, resultType)) =>
             val inferredScheme = Scheme.generalize(resultType, subst)
             val leq = Scheme.lessThanEqual(declaredScheme, inferredScheme)
-            println(s"${defn0.sym}: inferredScheme: Works: $leq")
+            if(!leq) {
+              println(s"${defn0.sym}: mismatch. Declared: $declaredScheme, Inferred: $inferredScheme")
+            }
 
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
