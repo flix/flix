@@ -27,7 +27,7 @@ namespace Validation {
     ///
     /// Applies the function in `v1` to the value in `v2`.
     ///
-    pub def ap(v1: Validation[t -> u & f, e], v2: Validation[t, e]): Validation[u, e] & f = match (v1, v2) {
+    pub def apply(v1: Validation[t -> u & f, e], v2: Validation[t, e]): Validation[u, e] & f = match (v1, v2) {
         case (Success(f), Success(v)) => Success(f(v))
         case (Success(_), Failure(e)) => Failure(e)
         case (Failure(e), Success(_)) => Failure(e)
