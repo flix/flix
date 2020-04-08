@@ -45,6 +45,11 @@ object Scheme {
   }
 
   /**
+    * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
+    */
+  def lessThanEqual(sc1: Scheme, sc2: Scheme): Boolean = false
+
+  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */

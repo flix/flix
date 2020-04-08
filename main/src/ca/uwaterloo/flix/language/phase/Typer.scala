@@ -231,8 +231,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
           case Ok((subst, resultType)) =>
-            val gen = Scheme.generalize(resultType, subst)
-            println(s"${defn0.sym}: $gen")
+            val inferredScheme = Scheme.generalize(resultType, subst)
+            val leq = Scheme.lessThanEqual(declaredScheme, inferredScheme)
+            println(s"${defn0.sym}: inferredScheme: Works: $leq")
 
             val exp = reassembleExp(defn0.exp, program, subst)
             val tparams = getTypeParams(defn0.tparams)
