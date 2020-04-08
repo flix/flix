@@ -18,6 +18,8 @@ package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
+import flix.runtime.fixpoint.ram.interpreter.RamInterpreter;
+import flix.runtime.fixpoint.ram.stmt.Stmt;
 import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.util.Arrays;
@@ -64,9 +66,8 @@ public final class Solver {
      */
     public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, Options o) {
         ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
-        MySolver.compileProgram(cs, stf, o);
-        ConstraintSystem result = solver.solve();
-        return result;
+        Stmt compiled = MySolver.compileProgram(cs, stf, o);
+        return RamInterpreter.run(compiled);
     }
 
     /**

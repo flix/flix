@@ -29,7 +29,7 @@ public class MySolver {
     private static int variableCounter = 0;
     private static boolean addLabelStmts = true;
 
-    public static void compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
+    public static Stmt compileProgram(ConstraintSystem cs, Stratification stf, Options o) {
         ArrayList<RelSym> relHasFact = new ArrayList<>();
 
         // First we generate all projections for the facts
@@ -45,7 +45,7 @@ public class MySolver {
         PrintStream stream = System.out;
         seqStmt.prettyPrint(stream, 0);
         stream.print('\n');
-        RamInterpreter.run(seqStmt);
+        return seqStmt;
     }
 
     /**

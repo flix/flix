@@ -3,6 +3,8 @@ package flix.runtime.fixpoint.ram.interpreter;
 import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.Constraint;
 import flix.runtime.fixpoint.ConstraintSystem;
+import flix.runtime.fixpoint.predicate.AtomPredicate;
+import flix.runtime.fixpoint.predicate.Predicate;
 import flix.runtime.fixpoint.ram.RowVariable;
 import flix.runtime.fixpoint.ram.exp.bool.*;
 import flix.runtime.fixpoint.ram.exp.relation.EmptyRelationExp;
@@ -13,12 +15,12 @@ import flix.runtime.fixpoint.ram.stmt.*;
 import flix.runtime.fixpoint.ram.term.AttrTerm;
 import flix.runtime.fixpoint.ram.term.RamLitTerm;
 import flix.runtime.fixpoint.ram.term.RamTerm;
+import flix.runtime.fixpoint.symbol.VarSym;
+import flix.runtime.fixpoint.term.LitTerm;
+import flix.runtime.fixpoint.term.Term;
 
 import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class RamInterpreter {
 
@@ -30,7 +32,7 @@ public class RamInterpreter {
         Map<RowVariable, Fact> environment = new HashMap<>();
 
         evalStmt(toInterpret, interpretation, environment);
-        Constraint[] result = new Constraint[0];
+        ArrayList<Constraint> resultConstraints = new ArrayList<>();
         for (TableName table : interpretation.keySet()) {
             if (!interpretation.containsKey(table)) {
                 printStream.println("Something wrong");
@@ -42,12 +44,23 @@ public class RamInterpreter {
                 printStream.print('\n');
             } else {
                 for (Fact fact : tableFacts) {
-
+                    Term[] terms = factToTermArray(fact);
+                    AtomPredicate headPredicate = AtomPredicate.of(table.getName(),true, terms);
+                    resultConstraints.add(Constraint.of(new VarSym[0], headPredicate, new Predicate[0], null));
                 }
             }
         }
 
-        return ConstraintSystem.of(new Constraint[0]);
+        return ConstraintSystem.of(resultConstraints.toArray(Constraint[]::new));
+    }
+
+    private static Term[] factToTermArray(Fact fact) {
+        Term[] result = new Term[fact.factSize()];
+        for (int i = 0; i < fact.factSize(); i++) {
+            ProxyObject object = fact.getElement(i);
+            result[i] = LitTerm.of((o) -> object);
+        }
+        return result;
     }
 
     private static void evalStmt(Stmt toEval, Map<TableName, Set<Fact>> interpretation, Map<RowVariable, Fact> environment) {

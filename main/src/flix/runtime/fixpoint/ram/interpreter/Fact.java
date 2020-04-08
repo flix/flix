@@ -19,6 +19,10 @@ public final class Fact {
         return elements[index];
     }
 
+    public int factSize(){
+        return elements.length;
+    }
+
     @Override
     public String toString() {
         return "Fact" + Arrays.toString(elements);
