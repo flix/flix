@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
@@ -26,6 +27,22 @@ object Scheme {
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
   def instantiate(sc: Scheme)(implicit flix: Flix): Type = refreshTypeVars(sc.quantifiers, sc.base)
+
+  /**
+    * Generalizes the given type `tpe0` w.r.t. the given type environment `subst0`.
+    */
+  def generalize(tpe0: Type, subst0: Unification.Substitution): Scheme = {
+    // Compute all the free type variables in `tpe0`.
+    val freeVars = tpe0.typeVars
+
+    // Compute all the bound type variables in the type environment `subst0`.
+    val boundVars = subst0.m
+
+    // Compute the variables that may be quantified.
+    val quantifiers = freeVars -- boundVars.keySet // TODO: Is this correct?
+
+    Scheme(quantifiers.toList, tpe0)
+  }
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`
@@ -66,6 +83,11 @@ case class Scheme(quantifiers: List[Type.Var], base: Type) {
   /**
     * Returns a human readable representation of the polytype.
     */
-  override def toString: String = s"∀(${quantifiers.mkString(", ")}). ${base.show}"
+  override def toString: String = {
+    if (quantifiers.isEmpty)
+      base.show
+    else
+      s"∀(${quantifiers.map(tvar => tvar.getText.getOrElse(tvar.id)).mkString(", ")}). ${base.show}"
+  }
 
 }
