@@ -3,6 +3,7 @@ package flix.runtime.fixpoint.ram.exp.relation;
 import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.io.PrintStream;
+import java.util.Objects;
 
 public final class TableName implements RelationExp {
     private final TableVersion version;
@@ -34,5 +35,19 @@ public final class TableName implements RelationExp {
             result += name.getName();
         }
         stream.print(result);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TableName tableName = (TableName) o;
+        return version == tableName.version &&
+                name.equals(tableName.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, name);
     }
 }

@@ -22,8 +22,8 @@ import java.util.Set;
 
 public class RamInterpreter {
 
-    private static boolean printNewFacts = true;
-    private static PrintStream printStream = System.out;
+    private static final boolean printNewFacts = true;
+    private static final PrintStream printStream = System.out;
 
     public static ConstraintSystem run(Stmt toInterpret) {
         Map<TableName, Set<Fact>> interpretation = new HashMap<>();
