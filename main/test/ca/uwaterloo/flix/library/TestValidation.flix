@@ -5,25 +5,25 @@ namespace Validation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def apply01(): Bool = apply(Success(x -> x + 1), Success(123)) == Success(124)
+    def ap1(): Bool = ap(Success(x -> x + 1), Success(123)) == Success(124)
 
     @test
-    def apply02(): Bool = apply(Success(x -> x + 1), Failure(Nel(42, Nil))) == Failure(Nel(42, Nil))
+    def ap2(): Bool = ap(Success(x -> x + 1), Failure(Nel(42, Nil))) == Failure(Nel(42, Nil))
 
     @test
-    def apply03(): Bool = apply(Failure(Nel(42, Nil)), Success(123)) == Failure(Nel(42, Nil))
+    def ap3(): Bool = ap(Failure(Nel(42, Nil)), Success(123)) == Failure(Nel(42, Nil))
 
     @test
-    def apply04(): Bool = apply(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))) == Failure(Nel(123, 456 :: Nil))
+    def ap4(): Bool = ap(Failure(Nel(123, Nil)), (Failure(Nel(456, Nil)))) == Failure(Nel(123, 456 :: Nil))
 
     @test
-    def apply05(): Bool = apply(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
+    def ap5(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
 
     @test
-    def apply06(): Bool = apply(Failure(Nel(1, Nil)), (Failure(Nel(2, 3 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
+    def ap6(): Bool = ap(Failure(Nel(1, Nil)), (Failure(Nel(2, 3 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: Nil))
 
     @test
-    def apply07(): Bool = apply(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, 4 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: 4 :: Nil))
+    def ap7(): Bool = ap(Failure(Nel(1, 2 :: Nil)), (Failure(Nel(3, 4 :: Nil)))) == Failure(Nel(1, 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
