@@ -1387,10 +1387,10 @@ namespace Array {
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)
-                StringBuilder.appendString(sb, f(x))
+                StringBuilder.appendString!(sb, f(x))
             else {
-                StringBuilder.appendString(sb, sep);
-                StringBuilder.appendString(sb, f(x))
+                StringBuilder.appendString!(sb, sep);
+                StringBuilder.appendString!(sb, f(x))
             };
         foreachWithIndex(step, a);
         StringBuilder.toString(sb)
