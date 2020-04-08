@@ -36,14 +36,14 @@ namespace MutSet {
     ///
     /// Adds the element `x` to the mutable set `s`.
     ///
-    pub def add(x: a, s: mut MutSet[a]): Unit & Impure =
+    pub def add!(x: a, s: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         ms := Set.insert(x, deref ms)
 
     ///
     /// Adds all elements in the mutable set `s1` to the mutable set `s2`.
     ///
-    pub def addAll(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
+    pub def addAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.union(deref ms1, deref ms2)
@@ -51,28 +51,21 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s`.
     ///
-    pub def clear(s: mut MutSet[a]): Unit & Impure =
+    pub def clear!(s: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         ms := Set.empty()
 
     ///
-    /// Returns a shallow copy of the mutable set `s`.
-    ///
-    pub def copy(s: MutSet[a]): MutSet[a] & Impure =
-        let MutSet(ms) = s;
-        MutSet(ref (deref ms))
-
-    ///
     /// Removes the element `x` from the mutable set `s`.
     ///
-    pub def remove(x: a, s: mut MutSet[a]): Unit & Impure =
+    pub def remove!(x: a, s: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         ms := Set.delete(x, deref ms)
 
     ///
     /// Removes all elements in the mutable set `s1` from the mutable set `s2`.
     ///
-    pub def removeAll(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
+    pub def removeAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.difference(deref ms2, deref ms1)
@@ -80,7 +73,7 @@ namespace MutSet {
     ///
     /// Removes all elements from the mutable set `s2` that are not in the mutable set `s1`.
     ///
-    pub def retainAll(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
+    pub def retainAll!(s1: MutSet[a], s2: mut MutSet[a]): Unit & Impure =
         let MutSet(ms1) = s1;
         let MutSet(ms2) = s2;
         ms2 := Set.intersection(deref ms1, deref ms2)
@@ -90,9 +83,25 @@ namespace MutSet {
     ///
     /// The function `f` must be pure.
     ///
-    pub def refine(f: a -> Bool, s: mut MutSet[a]): Unit & Impure =
+    pub def refine!(f: a -> Bool, s: mut MutSet[a]): Unit & Impure =
         let MutSet(ms) = s;
         ms := Set.filter(f, deref ms)
+
+    ///
+    /// Replaces the element `x` with the element `y` if `x` is in the mutable set `s`.
+    ///
+    /// The mutable set `s` is unchanged if the element `x` is not in it.
+    ///
+    pub def replace!(x: a, y: a, s: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms) = s;
+        ms := Set.replace(x, y, deref ms)
+
+    ///
+    /// Applies the function `f` to every element in the mutable set `s`.
+    ///
+    pub def transform!(f: a -> a & e, s: mut MutSet[a]): Unit & Impure =
+        let MutSet(ms) = s;
+        ms := Set.map(f, deref ms)
 
     ///
     /// Returns true if and only if `s` is the empty set.
@@ -240,20 +249,11 @@ namespace MutSet {
             Set.forall(f, deref ms)
 
     ///
-    /// Applies the function `f` to every element in the mutable set `s`.
+    /// Returns a shallow copy of the mutable set `s`.
     ///
-    pub def transform(f: a -> a & e, s: mut MutSet[a]): Unit & Impure =
+    pub def copy(s: MutSet[a]): MutSet[a] & Impure =
         let MutSet(ms) = s;
-        ms := Set.map(f, deref ms)
-
-    ///
-    /// Replaces the element `x` with the element `y` if `x` is in the mutable set `s`.
-    ///
-    /// The mutable set `s` is unchanged if the element `x` is not in it.
-    ///
-    pub def replace(x: a, y: a, s: mut MutSet[a]): Unit & Impure =
-        let MutSet(ms) = s;
-        ms := Set.replace(x, y, deref ms)
+        MutSet(ref (deref ms))
 
     ///
     /// Returns a pair of mutable sets `(s1, s2)` such that:
