@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.phase.Unification
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
@@ -47,12 +47,20 @@ object Scheme {
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
     if (sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty) {
       sc1.base == sc2.base
     } else {
-      // TODO
-      false
+      // TODO: Is this correct?
+      val tpe1 = instantiate(sc1)
+      val tpe2 = instantiate(sc2)
+      Unification.unifyTypes(tpe1, tpe2) match {
+        case Result.Ok(subst) =>
+          // TODO: Is this correct?
+          subst(tpe1) == tpe2
+        case Result.Err(_) =>
+          false
+      }
     }
   }
 
