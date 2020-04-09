@@ -11,46 +11,26 @@ class LspServer {
 
   def toLoc(loc: SourceLocation): Location = ???
 
-  class Index(root: Root) {
+  class Tree(root: Root) {
 
     private val m = mutable.Map.empty[Location, Expression]
     private val types = mutable.Map.empty[Location, Type]
     private val defn = mutable.Map.empty[Location, Symbol.DefnSym]
 
-    object Tree {
-      def singleton(e: Expression): Tree = ???
-    }
 
-    trait Tree {
-      def ++(that: Tree): Tree = ???
-    }
+    def visitExp(exp0: Expression): Index = exp0 match {
+      case Expression.Unit(_) => Index.of(exp0)
 
-    def visitExp(exp0: Expression): Unit = exp0 match {
-      case Expression.Unit(_) => Tree.singleton(exp0)
+      case Expression.True(_) => Index.of(exp0)
 
-      case Expression.True(_) => Tree.singleton(exp0)
+      case Expression.False(_) => Index.of(exp0)
 
-      case Expression.False(_) => Tree.singleton(exp0)
+      case Expression.Char(_, _) => Index.of(exp0)
 
-      //
-      //        case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
-      //          def tpe: Type = Type.Char
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
-      //          def tpe: Type = Type.Float32
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-      //
-      //        case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
-      //          def tpe: Type = Type.Float64
-      //
-      //          def eff: Type = Type.Pure
-      //        }
-      //
+      case Expression.Float32(_, _) => Index.of(exp0)
+
+      case Expression.Float64(_, _) => Index.of(exp0)
+
       //        case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
       //          def tpe: Type = Type.Int8
       //
@@ -87,10 +67,9 @@ class LspServer {
       //          def eff: Type = Type.Pure
       //        }
       //
-      //        case class Wild(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-      //          def eff: Type = Type.Pure
-      //        }
-      //
+
+      case Expression.Wild(_, _) => Index.of(exp0)
+
       //        case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
       //          def eff: Type = Type.Pure
       //        }
@@ -109,6 +88,9 @@ class LspServer {
       //
       //        case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
+      case Expression.Unary(_, exp, _, _, _) =>
+        visitExp(exp) + exp0
+
       //        case class Binary(op: BinaryOperator, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
       //
       //        case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
