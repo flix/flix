@@ -100,4 +100,4 @@ pub def semver_main(): Bool = match Parser.runParser(SemVer/Parser.parseSemVer()
     case None => false
 }
 
-pub def main(): Bool & Impure = SemVer/Test.allTests()
+pub def main(): Bool & Impure = Test.runAllTests()

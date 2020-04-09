@@ -7,10 +7,10 @@ namespace Package {
         case Other(String)
     }
 
-    pub opaque type Author = { name: String
-                             // Is there an email datatype, or is it just commonly a String?
-                             , email: String
-                             }
+    pub type alias Author = { name: String
+                            // Is there an email datatype, or is it just commonly a String?
+                            , email: String
+                            }
 
     pub type alias Package = { name: String
                              , version: SemVer.SemVer
@@ -23,14 +23,14 @@ namespace Package {
                              , home: Option[String] // Url?
                              }
 
-    pub opaque type LockedPackage = { name: String
-                                    , version: SemVer.SemVer
-                                    // All transitive dependencies, their specific version, and where they were retrieved from.
-                                    , transitive: Map[String, SemVer.SemVer]
-                                    }
+    pub type alias LockedPackage = { name: String
+                                   , version: SemVer.SemVer
+                                   // All transitive dependencies, their specific version, and where they were retrieved from.
+                                   , transitive: Map[String, SemVer.SemVer]
+                                   }
 
     def newLockedPackage(name: String, version: SemVer.SemVer, transitive: Map[String, SemVer.SemVer]): LockedPackage = {
-        LockedPackage({name = name, version = version, transitive = transitive})
+        {name = name, version = version, transitive = transitive}
     }
 
     // Add a new package to the package. Handle superseding old versions
@@ -53,12 +53,13 @@ namespace Package {
 
         let package_one_versions = empty()
             |> insert((0, 1, 0), empty())
+            |> insert((0, 1, 1), empty())
             |> insert((0, 2, 0), empty())
-            |> insert((0, 2, 1), empty() |> insert("package_two", (0, 2, 0)));
+            |> insert((0, 2, 1), empty() |> insert("package_two", (0, 1, 0)));
 
         let package_two_versions = empty()
             |> insert((0, 1, 0), empty())
-            |> insert((0, 2, 0), empty());
+            |> insert((0, 2, 0), empty() |> insert("package_one", (0, 1, 0)));
 
         let all_packages = empty()
             |> insert("package_one", package_one_versions)
@@ -83,19 +84,19 @@ namespace Package {
     }
 
     def lockPackageHelper(package: String, bound: SemVer.SemVer): DependencyTree = {
-        use Map.toList;
+        use Map.{toList, mapWithKey, valuesOf};
         use List.{map, find, filterMap};
 
-        let dependencies: Option[(SemVer.SemVer,  Map[String, SemVer.SemVer])] = packageRepository(package, bound)
+        let dependencies = packageRepository(package, bound)
             |> Map.reduceWithKey(newer);
 
         match dependencies {
+            case Some((version, dependencies)) => {
+                DepNode(package, version, dependencies |> mapWithKey((p, b) -> lockPackageHelper(p, b)) |> valuesOf)
+            }
             case None => {
                 // TODO: No packages with that name and version combo
                 ???
-            }
-            case Some((version, dependencies)) => {
-                DepNode(package, version, toList(dependencies) |> map(match (p, b) -> lockPackageHelper(p, b)))
             }
         }
     }
@@ -118,5 +119,52 @@ namespace Package {
                )
             |> flattenDependencyTree
             |> List.map(match (package, version, dependencies) -> newLockedPackage(package, version, List.toMap(dependencies)))
+    }
+
+    namespace Test {
+        def transitiveContains(mx: Map[String, SemVer.SemVer], m: (String, SemVer.SemVer)): Bool = {
+            Map.exists((k, v) -> match m { case (p, s) => p == k && s == v }, mx)
+        }
+
+        def containedIn(xs: List[Package.LockedPackage], package: Package.LockedPackage): Bool = {
+            use Package.LockedPackage;
+
+            let transitive = (p) -> Map.forall((k, v) -> transitiveContains(p.transitive, (k, v)), package.transitive);
+
+            List.exists(p -> {
+                p.name == package.name
+                    && p.version == package.version
+                    && transitive(p)
+            }, xs)
+        }
+
+        def testLocking(): Bool & Impure = {
+            use Test.test;
+            use Package.{License, LockedPackage, lockPackage, newLockedPackage};
+            use Map.{empty, insert};
+
+            let package = { name = "some_package"
+                          , version = (0, 1, 0)
+                          , authors = {name = "Some Guy", email = "test@test.com"} :: Nil
+                          , description = "Some package"
+                          // This could be mandatory
+                          , license = Some(License.MIT)
+                          // Mapping package dependency names to the semver pattern
+                          , depends = empty() |> insert("package_one", (0, 1, 0))
+                          , home = None
+                          };
+
+            let locked = lockPackage(package);
+
+            let check = newLockedPackage("some_package",  (0,1,0), empty() |> insert("package_one", (0, 1, 1)))
+                :: newLockedPackage("package_one", (0,1,1), empty())
+                :: Nil;
+
+            test("lockingIsExpected", () -> List.forall(containedIn(locked), check))
+        }
+
+        pub def allTests(): Bool & Impure = {
+            testLocking()
+        }
     }
 }

@@ -69,22 +69,9 @@ namespace SemVer {
     }
 
     namespace Test {
-        def ppBool(b: Bool): String = match b {
-            case true => "true"
-            case false => "false"
-        }
-
-        def test(name: String, f: () -> Bool): Bool & Impure = {
-            Console.print("Testing ::: ");
-            Console.print(name);
-            Console.print(": ");
-            let res = f();
-            Console.printLine(ppBool(res));
-            res
-        }
-
         def testZeroMajorIsPatchCompatible(): Bool & Impure = {
             use SemVer.isWithinBounds;
+            use Test.test;
 
             let higherPatchInSpecific = test("higherPatchInSpecific", () -> isWithinBounds((0, 1, 2), (0, 1, 0)));
             let higherPatchInBound = test("higherPatchInBound", () -> isWithinBounds((0, 1, 0), (0, 1, 2)));
@@ -95,6 +82,7 @@ namespace SemVer {
 
         def testZeroMajorIsMinorIncompatible(): Bool & Impure = {
             use SemVer.isWithinBounds;
+            use Test.test;
 
             let largerMinorFails = test("largerMinorFails", () -> !isWithinBounds((0, 2, 1), (0, 1, 0)));
             let smallerMinorFails = test("smallerMinorFails", () -> !isWithinBounds((0, 1, 1), (0, 2, 0)));
@@ -104,14 +92,16 @@ namespace SemVer {
 
         def testZeroMajorIsMajorIncompatible(): Bool & Impure = {
             use SemVer.isWithinBounds;
+            use Test.test;
 
             let largerMajorFails = test("largerMajorFails", () -> !isWithinBounds((1, 0, 0), (0, 1, 0)));
 
             largerMajorFails
         }
 
-        def testNonZerMajorIsPatchCompatible(): Bool & Impure = {
+        def testNonZeroMajorIsPatchCompatible(): Bool & Impure = {
             use SemVer.isWithinBounds;
+            use Test.test;
 
             let largerPatch = test("largerPatch", () -> isWithinBounds((1, 2, 3), (1, 2, 0)));
             let smallerPatch = test("smallerPatch", () -> isWithinBounds((1, 2, 0), (1, 2, 3)));
@@ -122,7 +112,7 @@ namespace SemVer {
             testZeroMajorIsPatchCompatible()
                 && testZeroMajorIsMinorIncompatible()
                 && testZeroMajorIsMajorIncompatible()
-                && testNonZerMajorIsPatchCompatible()
+                && testNonZeroMajorIsPatchCompatible()
         }
     }
 }
