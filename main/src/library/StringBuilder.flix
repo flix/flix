@@ -128,8 +128,7 @@ namespace StringBuilder {
         sb.appendLineSeparator!()
 
     ///
-    /// Use the function `f` to converted the element `x` to a string with `f` append it, followed by the
-    /// system line separator, to the StringBuilder `sb`.
+    /// Appends `f(x)` to the string builder `sb`.
     ///
     pub def appendLineWith!(sb: StringBuilder, f: a -> String, x: a): Unit & Impure =
         sb.appendString!(f(x));
@@ -142,7 +141,7 @@ namespace StringBuilder {
         Array.foreach(appendLine!(sb), a)
 
     ///
-    /// Appends `f(x)` to the string builder `sb`.
+    /// Appends `f(x)` for each x in array `a` to the string builder `sb`.
     ///
     pub def appendLinesWith!(sb: StringBuilder, f: a -> String, a: Array[a]): Unit & Impure =
         Array.foreach(appendLineWith!(sb, f), a)
