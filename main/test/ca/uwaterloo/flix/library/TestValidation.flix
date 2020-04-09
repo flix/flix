@@ -216,7 +216,7 @@ def lift303(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123),
 def lift304(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Failure(Nel("e1", Nil)), Success(1), Success(2)) == Failure(Nel("e1", Nil))
 
 @test
-def lift305(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil))) == Failure(Nel("e1", "e2", Nil))
+def lift305(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Failure(Nel("e1", Nil)), Failure(Nel("e2", Nil))) == Failure(Nel("e1", "e2" :: Nil))
 
 @test
 def lift306(): Bool = Validation.lift3((x1,x2,x3) -> x1 + x2 + x3, Failure(Nel("e1", Nil)), Success(1), Failure(Nel("e2", Nil))) == Failure(Nel("e1", "e2" :: Nil))

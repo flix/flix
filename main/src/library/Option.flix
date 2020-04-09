@@ -230,7 +230,6 @@ namespace Option {
         case Some(e)    => Err(e)
     }
 
-
     ///
     /// Returns the Validation value `Success(v) if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
