@@ -136,14 +136,13 @@ namespace StringBuilder {
         sb.appendLineSeparator!()
 
     ///
-    /// Append the each string in array `a` as a separate line to the StringBuilder `sb`.
+    /// Appends each string in the array `a` to the string builder `sb`.
     ///
     pub def appendLines!(sb: StringBuilder, a: Array[String]): Unit & Impure =
         Array.foreach(appendLine!(sb), a)
 
     ///
-    /// Append the each element in array `a` as a separate line to the StringBuilder `sb`, using `f`.
-    /// to convert each element of `a` to a String.
+    /// Appends `f(x)` to the string builder `sb`.
     ///
     pub def appendLinesWith!(sb: StringBuilder, f: a -> String, a: Array[a]): Unit & Impure =
         Array.foreach(appendLineWith!(sb, f), a)
