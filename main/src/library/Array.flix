@@ -1387,10 +1387,10 @@ namespace Array {
         let sb = StringBuilder.new();
         let step = (x,i) ->
             if (i == 0)
-                StringBuilder.appendString(sb, f(x))
+                StringBuilder.appendString!(sb, f(x))
             else {
-                StringBuilder.appendString(sb, sep);
-                StringBuilder.appendString(sb, f(x))
+                StringBuilder.appendString!(sb, sep);
+                StringBuilder.appendString!(sb, f(x))
             };
         foreachWithIndex(step, a);
         StringBuilder.toString(sb)
@@ -1400,10 +1400,10 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortBy(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
+    pub def sortWith(cmp: (a,a) -> Int32, a: Array[a]): Array[a] & Impure =
         let len = length(a);
         let b = slice(a, 0, len);
-        sortBy!(cmp, b);
+        sortWith!(cmp, b);
         b
 
     ///
@@ -1411,23 +1411,23 @@ namespace Array {
     ///
     /// The sort implementation is quicksort.
     ///
-    pub def sortBy!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
+    pub def sortWith!(cmp: (a,a) -> Int32, a: mut Array[a]): Unit & Impure =
         let len = length(a);
         if (len == 0)
             ()
         else
-            sortByHelper!(cmp, a, 0, len-1)
+            sortWithHelper!(cmp, a, 0, len-1)
 
     ///
-    /// Helper function for `sortBy!`.
+    /// Helper function for `sortWith!`.
     ///
-    def sortByHelper!(cmp: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
+    def sortWithHelper!(cmp: (a,a) -> Int32, a: mut Array[a], lo: Int32, hi: Int32): Unit & Impure =
         if (lo >= hi)
             ()
         else {
-            let p = sortByPartition(cmp, a, lo, hi);
-            sortByHelper!(cmp, a, lo, p-1);
-            sortByHelper!(cmp, a, p+1, hi)
+            let p = sortWithPartition(cmp, a, lo, hi);
+            sortWithHelper!(cmp, a, lo, p-1);
+            sortWithHelper!(cmp, a, p+1, hi)
         }
 
     ///
@@ -1445,7 +1445,7 @@ namespace Array {
     ///
     /// Partition step of the quicksort algorithm (helper for sorting).
     ///
-    def sortByPartition(cmp: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
+    def sortWithPartition(cmp: (a,a) -> Int32, a: Array[a], lo: Int32, hi: Int32): Int32 & Impure =
         let pivot = a[hi];
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
             if (cmp(a[j], pivot) >= 0)
