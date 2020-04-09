@@ -95,6 +95,7 @@ class Flix {
     "Core/Io/ZipOutput.flix" -> LocalResource.get("/library/Core/Io/ZipOutput.flix"),
 
     "Pkger/SemVer.flix" -> LocalResource.get("/library/Pkger/SemVer.flix"),
+    "Pkger/Parser.flix" -> LocalResource.get("/library/Pkger/Parser.flix"),
 
     "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
     "JoinLattice.flix" -> LocalResource.get("/library/JoinLattice.flix"),
