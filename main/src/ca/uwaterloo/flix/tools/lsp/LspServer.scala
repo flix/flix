@@ -7,6 +7,10 @@ import scala.collection.mutable
 
 class LspServer {
 
+  // TODO: Start socket server on port.
+  // TODO: Accept request telling what files to compile, return compilation status.
+  // TODO: Accept queries.
+
   case class Location(line: Int, col: Int)
 
   def toLoc(loc: SourceLocation): Location = ???
