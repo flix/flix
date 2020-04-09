@@ -32,7 +32,7 @@ class LspServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) 
     * Invoked when the server is started.
     */
   override def onStart(): Unit = {
-    Console.println(s"WebSocket server listening on: ws://localhost:$port")
+    Console.println(s"LSP listening on: ws://localhost:$port")
   }
 
   /**
