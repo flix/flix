@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.util.lsp
+package ca.uwaterloo.flix.tools.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
