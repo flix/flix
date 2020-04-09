@@ -1,15 +1,123 @@
 package ca.uwaterloo.flix.tools.lsp
 
+import java.net.InetSocketAddress
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options}
+import org.java_websocket.WebSocket
+import org.java_websocket.handshake.ClientHandshake
+import org.java_websocket.server.WebSocketServer
+import org.json4s.JsonAST.{JBool, JString}
+import org.json4s.ParserUtil.ParseException
+import org.json4s.native.JsonMethods.parse
 
 import scala.collection.mutable
 
-class LspServer {
+// TODO: DOC
+class LspServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
   // TODO: Start socket server on port.
   // TODO: Accept request telling what files to compile, return compilation status.
   // TODO: Accept queries.
+
+  /**
+    * The custom date format to use for logging.
+    */
+  val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
+
+  /**
+    * Invoked when the server is started.
+    */
+  override def onStart(): Unit = {
+    Console.println(s"WebSocket server listening on: ws://localhost:$port")
+  }
+
+  /**
+    * Invoked when a client connects.
+    */
+  override def onOpen(ws: WebSocket, ch: ClientHandshake): Unit = {
+    log("Client Connected.")(ws)
+  }
+
+  /**
+    * Invoked when a client disconnects.
+    */
+  override def onClose(ws: WebSocket, i: Int, s: String, b: Boolean): Unit = {
+    log("Client Disconnected.")(ws)
+  }
+
+  /**
+    * Invoked when a client sends a message.
+    */
+  override def onMessage(ws: WebSocket, data: String): Unit = {
+    // Log the length and size of the received data.
+    log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
+
+    // Parse and process request.
+    for {
+      request <- parseRequest(data)(ws)
+    } yield {
+      processRequest(request)(ws)
+    }
+  }
+
+  /**
+    * Invoked when an error occurs.
+    */
+  override def onError(ws: WebSocket, e: Exception): Unit = e match {
+    case ex: InternalCompilerException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex: InternalRuntimeException =>
+      log(s"Unexpected error: ${e.getMessage}")(ws)
+      e.printStackTrace()
+    case ex => throw ex
+  }
+
+  /**
+    * Parse the request.
+    */
+  private def parseRequest(s: String)(implicit ws: WebSocket): Option[Request] = try {
+    // Parse the string into a json object.
+    val json = parse(s)
+
+    val requestType = json \\ "type" match {
+      case JString(s) => s
+      case _ => ""
+    }
+
+    // TODO
+    None
+  } catch {
+    case ex: ParseException =>
+      val msg = s"Malformed request. Unable to parse JSON: '${ex.getMessage}'."
+      log(msg)
+      ws.closeConnection(5000, msg)
+      None
+  }
+
+  /**
+    * Process the request.
+    */
+  private def processRequest(request: Request)(implicit ws: WebSocket): Unit = {
+    // TODO
+  }
+
+  /**
+    * Logs the given message `msg` along with information about the connection `ws`.
+    */
+  private def log(msg: String)(implicit ws: WebSocket): Unit = {
+    val dateFormat = new SimpleDateFormat(DateFormat)
+    val datePart = dateFormat.format(new Date())
+    val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
+    Console.println(s"[$datePart] [$clientPart]: $msg")
+  }
+
+
+
 
   case class Location(line: Int, col: Int)
 
