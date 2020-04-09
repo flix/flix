@@ -347,18 +347,8 @@ public class MySolver {
             }
         }
         // I can now generate the project statement since the values of each term is known
-        RamTerm[] headRamTerms = new RamTerm[headTerms.length];
-        for (int i = 0; i < headTerms.length; i++) {
-            Term term = headTerms[i];
-            if (term instanceof VarTerm) {
-                VarSym sym = ((VarTerm) term).getSym();
-                Set<AttrTerm> a = varSymToAttrTerm.get(sym);
-                headRamTerms[i] = varSymToAttrTerm.get(sym).iterator().next();
-            } else if (term instanceof LitTerm) {
-                headRamTerms[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
-            }
+        RamTerm[] headRamTerms = termsToRamterms(headTerms, varSymToAttrTerm);
 
-        }
         Stmt resultStmt = new ProjectStmt(headRamTerms, new TableName(TableVersion.DELTA, headSym));
         // Now I need to check that this element does not exist already
         BoolExp checkBool = new NotBoolExp(new TupleInRelBoolExp(headRamTerms, new TableName(TableVersion.RESULT, headSym)));
@@ -385,6 +375,28 @@ public class MySolver {
 
 
         return resultStmt;
+    }
+
+    /**
+     * Translates terms to their RamTerm equivalents
+     * @param inputTerms The Terms to translate
+     * @param varSymToAttrTerm A mapping from VarSym to AttrTerm that is used to find intantiations of variables
+     * @return The RamTerm array holding the translation
+     */
+    private static RamTerm[] termsToRamterms(Term[] inputTerms, Map<VarSym, Set<AttrTerm>> varSymToAttrTerm) {
+        RamTerm[] result = new RamTerm[inputTerms.length];
+        for (int i = 0; i < inputTerms.length; i++) {
+            Term term = inputTerms[i];
+            if (term instanceof VarTerm) {
+                VarSym sym = ((VarTerm) term).getSym();
+                Set<AttrTerm> a = varSymToAttrTerm.get(sym);
+                result[i] = varSymToAttrTerm.get(sym).iterator().next();
+            } else if (term instanceof LitTerm) {
+                result[i] = new RamLitTerm(((LitTerm) term).getFunction().apply(nullArray));
+            }
+            //TODO: only handles LitTerm and VarTerm
+        }
+        return result;
     }
 
     /**
