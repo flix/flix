@@ -360,10 +360,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       visitExp(exp) + exp0
 
     case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
 
     case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp2) + exp0
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
 
     //        case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
@@ -384,32 +384,34 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.Deref(exp1, _, _, _) =>
       visitExp(exp1) + exp0
 
-    //        case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Bool
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Bool
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Cast(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.Assign(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.Existential(_, exp, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Universal(_, exp, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Ascribe(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Cast(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
     //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class InvokeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class InvokeMethod(method: Method, exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class InvokeStaticMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.InvokeConstructor(_, args, _, _, _) =>
+      visitExps(args) + exp0
+
+    case Expression.InvokeMethod(_, exp, args, _, _, _) =>
+      visitExp(exp) ++ visitExps(args) + exp0
+
+    case Expression.InvokeStaticMethod(_, args, _, _, _) =>
+      visitExps(args) + exp0
+
+
+
     //        case class GetField(field: Field, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class PutField(field: Field, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
