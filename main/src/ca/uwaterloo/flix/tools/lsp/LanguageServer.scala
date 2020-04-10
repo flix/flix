@@ -19,7 +19,7 @@ import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Predicate, Root, SelectChannelRule}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -140,16 +140,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         flix.addPath(path)
       }
 
+      // Measure elapsed time.
+      val t = System.nanoTime()
+
       // Run the compiler up to the type checking phase.
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse the reverse index.
           index = visitRoot(root)
 
+          // Compute elapsed time.
+          val e = System.nanoTime() - t
+
           // Send back a status message.
-          JObject(
-            JField("status", JString("success"))
-          )
+          Reply.Ready(e, Version.CurrentVersion.toString).toJSON
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal

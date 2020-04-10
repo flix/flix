@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools.lsp
 
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonAST.{JField, JLong, JObject, JString}
 
 /**
   * A common super-type for language server replies.
@@ -15,6 +15,19 @@ trait Reply {
 }
 
 object Reply {
+
+  /**
+    * A reply that represents a successful initialization and compilation.
+    */
+  case class Ready(time: Long, version: String) extends Reply {
+    def toJSON: JObject = {
+      JObject(
+        JField("status", JString("success")),
+        JField("time", JString(time.toString)),
+        JField("version", JString(version))
+      )
+    }
+  }
 
   /**
     * A reply that represents the type and effect of an expression.
