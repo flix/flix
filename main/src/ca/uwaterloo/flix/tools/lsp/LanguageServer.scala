@@ -47,6 +47,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   // TODO: Start socket server on port.
   // TODO: Accept request telling what files to compile, return compilation status.
   // TODO: Accept queries.
+  // TODO: Add Range?
+  // TODO: Add LocationLink?
+  // TODO: Add diagonostic?
+
 
   /**
     * The custom date format to use for logging.
