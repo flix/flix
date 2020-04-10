@@ -16,12 +16,20 @@
 package ca.uwaterloo.flix.tools.lsp
 
 import org.json4s.JValue
+import org.json4s.JsonAST.JInt
 
 object Position {
-  def parse(value: JValue) = ???
-
+  def parse(json: JValue): Position = {
+    val line = json \\ "line" match {
+      case JInt(i) => i.toInt
+      case v => throw new RuntimeException(s"Unexpected value: '$v'.")
+    }
+    val col = json \\ "col" match {
+      case JInt(i) => i.toInt
+      case v => throw new RuntimeException(s"Unexpected value: '$v'.")
+    }
+    Position(line, col)
+  }
 }
 
-class Position {
-
-}
+case class Position(line: Int, col: Int)

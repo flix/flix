@@ -17,10 +17,12 @@ package ca.uwaterloo.flix.tools.lsp
 
 import org.json4s.JValue
 
+// TODO
 object Document {
-  def parse(value: JValue) = ???
+  def parse(json: JValue): Document = new Document
 
 }
+
 class Document {
 
 }

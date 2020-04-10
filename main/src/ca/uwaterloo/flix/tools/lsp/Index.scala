@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 
 object Index {
@@ -39,9 +40,14 @@ case class Index(m: Map[Int, List[(Int, Expression)]]) {
   def query(doc: Document, pos: Position): Option[Expression] = {
     // TODO: Currently ignores the document
 
-    //val candidates = m.getOrElse(line, Nil).filter(p => p._1 >= column)
-    // TODO: Compute some notion of span. candidates.sortBy()
-    None
+    // TODO: Document
+    m.get(pos.line).flatMap {
+      case candidates =>
+        val filtered = candidates.filter(p => p._1 >= pos.col)
+        val sorted = filtered.sortBy(p => range(p._2.loc))
+        println(sorted.map(_._2.loc.format).mkString("\n"))
+        sorted.headOption.map(_._2)
+    }
   }
 
   /**
@@ -68,5 +74,12 @@ case class Index(m: Map[Int, List[(Int, Expression)]]) {
     }
     Index(m3)
   }
+
+  // TODO: DOC
+  private def range(loc: SourceLocation): Int =
+    if (loc.beginLine == loc.endLine)
+      loc.endCol - loc.beginCol
+    else
+      1000 // TODO
 
 }
