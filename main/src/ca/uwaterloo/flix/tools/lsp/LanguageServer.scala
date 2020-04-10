@@ -181,12 +181,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Returns a reverse index for the given AST `root`.
     */
-  def visitRoot(root: Root): Index = ???
+  def visitRoot(root: Root): Index = root.defs.foldLeft(Index.Empty) {
+    case (index, (_, def0)) => index ++ visitDef(def0)
+  }
 
   /**
     * Returns a reverse index for the given definition `def0`.
     */
-  def visitDef(def0: Def): Index = ???
+  def visitDef(def0: Def): Index = visitExp(def0.exp)
 
   /**
     * Returns a reverse index for the given expression `exp0`.

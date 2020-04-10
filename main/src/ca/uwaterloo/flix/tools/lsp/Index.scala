@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.tools.lsp
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 
 object Index {
+  val Empty: Index = ???
+
   def of(e: Expression): Index = ???
 }
 
