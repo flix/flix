@@ -17,7 +17,7 @@ import org.json4s.native.JsonMethods.parse
 import scala.collection.mutable
 
 // TODO: DOC
-class LspServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
+class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
   // TODO: Start socket server on port.
   // TODO: Accept request telling what files to compile, return compilation status.
