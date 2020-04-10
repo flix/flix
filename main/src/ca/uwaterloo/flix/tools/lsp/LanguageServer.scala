@@ -168,21 +168,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Request.GotoDef(doc, pos) =>
       index.query(doc, pos) match {
         case None => Reply.NotFound().toJSON
-
         case Some(exp) =>
+          // Determine if the position is a variable or definition.
           exp match {
             case Expression.Var(sym, _, _) =>
               JObject(
                 JField("status", JString("success")),
                 JField("result", JString(sym.loc.format))
               )
-
             case Expression.Def(sym, _, _) =>
               JObject(
                 JField("status", JString("success")),
                 JField("result", JString(sym.loc.format))
               )
-
             case _ => Reply.NotFound().toJSON
           }
       }
