@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, MatchRule, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
@@ -129,6 +129,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         val pos = Position.parse(json \\ "position")
         Some(Request.TypeOf(doc, pos))
 
+      case JString("jumpToDef") =>
+        // TODO: Errors
+        val doc = Document.parse(json \\ "document")
+        val pos = Position.parse(json \\ "position")
+        Some(Request.JumpToDef(doc, pos))
+
       case s =>
         log(s"Unsupported request: '$s'.")
         None
@@ -173,11 +179,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.TypeOf(doc, pos) =>
       index.query(doc, pos) match {
-        case None =>
-          JObject(
-            JField("status", JString("success")),
-            JField("result", JString("unknown"))
-          )
+        case None => JObject(
+          JField("status", JString("success")),
+          JField("result", JString("unknown"))
+        )
 
         case Some(exp) =>
           val tpe = exp.tpe.toString
@@ -186,6 +191,35 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             JField("status", JString("success")),
             JField("result", JString(s"$tpe & $eff"))
           )
+      }
+
+    case Request.JumpToDef(doc, pos) =>
+      index.query(doc, pos) match {
+        case None => JObject(
+          JField("status", JString("success")),
+          JField("result", JString("unknown"))
+        )
+
+        case Some(exp) =>
+          exp match {
+            case Expression.Var(sym, _, _) =>
+              JObject(
+                JField("status", JString("success")),
+                JField("result", JString(sym.loc.format))
+              )
+
+            case Expression.Def(sym, _, _) =>
+              JObject(
+                JField("status", JString("success")),
+                JField("result", JString(sym.loc.format))
+              )
+
+            case _ =>
+              JObject(
+                JField("status", JString("success")),
+                JField("result", JString("unknown"))
+              )
+          }
       }
   }
 
@@ -276,10 +310,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
 
-    //        case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.Let(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.LetRec(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
@@ -287,8 +322,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    //        case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.Match(exp, rules, _, _, _) =>
+      val i0 = visitExp(exp) + exp0
+      rules.foldLeft(i0) {
+        case (index, MatchRule(_, guard, exp)) => index ++ visitExp(guard) ++ visitExp(exp)
+      }
 
     case Expression.Tag(_, _, exp, _, _, _) =>
       visitExp(exp) + exp0

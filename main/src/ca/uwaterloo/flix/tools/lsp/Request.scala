@@ -29,5 +29,7 @@ object Request {
     */
   case class TypeOf(doc: Document, pos: Position) extends Request
 
+  case class JumpToDef(doc: Document, pos: Position) extends Request
+
 }
 
