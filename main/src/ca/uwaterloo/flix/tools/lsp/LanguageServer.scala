@@ -203,7 +203,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Returns a reverse index for the given AST `root`.
     */
-  private def visitRoot(root: Root): Index = root.defs.foldLeft(Index.Empty) {
+  private def visitRoot(root: Root): Index = root.defs.foldLeft(Index.empty) {
     case (index, (_, def0)) => index ++ visitDef(def0)
   }
 
@@ -384,11 +384,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       visitExp(exp) + exp0
 
     case Expression.ProcessPanic(_, _, _, _) =>
-      Index.Empty
+      Index.empty
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
       // TODO
-      Index.Empty
+      Index.empty
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -404,13 +404,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
+
+    // TODO: Remove
+    case _ => Index.empty
   }
 
   /**
     * Returns a reverse index for the given expressions `exps0`.
     */
   private def visitExps(exps0: List[Expression]): Index =
-    exps0.foldLeft(Index.Empty) {
+    exps0.foldLeft(Index.empty) {
       case (index, exp0) => index ++ visitExp(exp0)
     }
 
