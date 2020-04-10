@@ -78,4 +78,3 @@ object Request {
     } yield Request.GotoDef(doc, pos)
 
 }
-

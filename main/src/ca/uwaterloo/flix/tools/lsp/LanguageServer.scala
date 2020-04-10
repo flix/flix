@@ -25,12 +25,12 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expr
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
-import ca.uwaterloo.flix.util.vt.TerminalContext.{AnsiTerminal, NoTerminal}
+import ca.uwaterloo.flix.util.vt.TerminalContext.NoTerminal
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JArray, JBool, JField, JLong, JObject, JString}
+import org.json4s.JsonAST.{JArray, JField, JObject, JString}
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
@@ -38,7 +38,7 @@ import org.json4s.native.JsonMethods.parse
 /**
   * A Compiler Interface for the Language Server Protocol.
   *
-  * Does not implement the LSP protocol itself, but relies on a JavaScript/TypeScript intermediary.
+  * Does not implement the LSP protocol directly, but relies on an intermediate TypeScript server.
   */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
@@ -423,8 +423,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       Index.empty
 
     case Expression.FixpointConstraintSet(cs, _, _) =>
-      // TODO
-      Index.empty
+      cs.foldLeft(Index.empty) {
+        case (index, c) => index ++ visitConstraint(c)
+      }
 
     case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -450,24 +451,29 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case (index, exp0) => index ++ visitExp(exp0)
     }
 
-
   /**
     * Returns a reverse index for the given constraint `c0`.
     */
   private def visitConstraint(c0: Constraint): Index = {
-
-    visitHead(c0.head) // TODO
+    val i = visitHead(c0.head)
+    c0.body.foldLeft(i) {
+      case (index, b0) => index ++ visitBody(b0)
+    }
   }
 
-  // TODO: DOC
+  /**
+    * Returns a reverse index for the given head predicate `h0`.
+    */
   private def visitHead(h0: Predicate.Head): Index = h0 match {
-    case Head.Atom(name, den, terms, tpe, loc) => ??? // TODO
+    case Head.Atom(_, _, terms, _, _) => visitExps(terms)
     case Head.Union(exp, _, _) => visitExp(exp)
   }
 
-  // TODO: DOC
+  /**
+    * Returns a reverse index for the given body predicate `b0`.
+    */
   private def visitBody(b0: Predicate.Body): Index = b0 match {
-    case Body.Atom(name, den, polarity, terms, _, _) => ??? // TODO
+    case Body.Atom(_, _, _, _, _, _) => Index.empty
     case Body.Guard(exp, _) => visitExp(exp)
   }
 
