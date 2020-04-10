@@ -38,6 +38,11 @@ object Request {
 
   case class JumpToDef(doc: Document, pos: Position) extends Request
 
+  /**
+    * A request to shutdown the language server.
+    */
+  case object Shutdown extends Request
+
   // TODO: Shutdown message.
   // TODO: Get type/effect/typeandeffect
   // TODO: completion?

@@ -121,6 +121,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       case JString("compile") => Request.parseCompile(json)
       case JString("typeOf") => Request.parseTypeOf(json)
       case JString("jumpToDef") => Request.parseJumpToDef(json)
+      case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
@@ -191,6 +192,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             case _ => Reply.NotFound().toJSON
           }
       }
+
+    case Request.Shutdown =>
+      ws.close(1000, "Shutting down...")
+      System.exit(0)
+      null
   }
 
   /**
