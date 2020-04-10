@@ -15,21 +15,12 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import org.json4s.JValue
 
-object Index {
-  def of(e: Expression): Index = ???
+object Document {
+  def parse(value: JValue) = ???
+
 }
+class Document {
 
-class Index(m: Map[Int, List[(Int, Expression)]]) {
-
-  def query(doc: Document, pos: Position): Option[Expression] = {
-    //val candidates = m.getOrElse(line, Nil).filter(p => p._1 >= column)
-    // TODO: Compute some notion of span. candidates.sortBy()
-    None
-  }
-
-  def ++(that: Index): Index = ???
-
-  def +(e: Expression): Index = ???
 }

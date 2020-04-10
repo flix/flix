@@ -21,5 +21,7 @@ object Request {
 
   case class Compile() extends Request
 
+  case class TypeOf(doc: Document, pos: Position) extends Request
+
 }
 
