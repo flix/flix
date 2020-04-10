@@ -358,20 +358,25 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     //
     //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //        case class ProcessSpawn(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class ProcessPanic(msg: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class FixpointConstraintSet(cs: List[TypedAst.Constraint], tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class FixpointCompose(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class FixpointSolve(exp: TypedAst.Expression, stf: Ast.Stratification, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class FixpointProject(name: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.ProcessSpawn(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.ProcessPanic(_, _, _, _) =>
+      Index.Empty
+
+    case Expression.FixpointConstraintSet(cs, _, _) =>
+      // TODO
+      Index.Empty
+
+    case Expression.FixpointCompose(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.FixpointSolve(exp, _, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.FixpointProject(_, exp, _, _, _) =>
+      visitExp(exp) + exp0
 
     case Expression.FixpointEntails(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
