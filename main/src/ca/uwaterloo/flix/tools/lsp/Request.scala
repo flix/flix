@@ -25,16 +25,16 @@ sealed trait Request
 
 object Request {
 
-
   /**
-    * A request to compile the source files denoted by the given `paths`.
+    * A request to compile the `path` source files.
     */
   case class Compile(paths: List[String]) extends Request
 
   /**
-    * A requests to get the type and effect of the expression denoted by `doc` and `pos`.
+    * A requests to get the type and effect in the document `doc` at position `pos`.
     */
   case class TypeOf(doc: Document, pos: Position) extends Request
+
 
   case class JumpToDef(doc: Document, pos: Position) extends Request
 

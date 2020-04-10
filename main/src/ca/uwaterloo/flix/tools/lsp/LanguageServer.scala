@@ -135,6 +135,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       // Configure the Flix compiler.
       val flix = new Flix()
       for (path <- paths) {
+        log(s"Adding path: '$path'.")
         flix.addPath(path)
       }
 
