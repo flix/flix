@@ -63,12 +63,12 @@ object Reply {
   /**
     * A reply that represents a link to a definition.
     */
-  case class GotoDef(sym: Symbol.DefnSym) extends Reply {
+  case class GotoDef(targetRange: Range, targetSelectionRange: Range) extends Reply {
     def toJSON: JObject = {
       JObject(
         JField("status", JString("success")),
-        JField("targetRange", JString(sym.loc.format)),
-        JField("targetSelectionRange", JString(sym.loc.format))
+        JField("targetRange", targetRange.toJSON),
+        JField("targetSelectionRange", targetSelectionRange.toJSON)
       )
     }
   }
@@ -76,12 +76,12 @@ object Reply {
   /**
     * A reply that represents a link to a variable.
     */
-  case class GotoVar(sym: Symbol.VarSym) extends Reply {
+  case class GotoVar(targetRange: Range, targetSelectionRange: Range) extends Reply {
     def toJSON: JObject = {
       JObject(
         JField("status", JString("success")),
-        JField("targetRange", JString(sym.loc.format)),
-        JField("targetSelectionRange", JString(sym.loc.format))
+        JField("targetRange", targetRange.toJSON),
+        JField("targetSelectionRange", targetSelectionRange.toJSON)
       )
     }
   }

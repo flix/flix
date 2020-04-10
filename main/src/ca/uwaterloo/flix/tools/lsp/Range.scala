@@ -15,7 +15,22 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JsonAST.{JField, JObject}
+
+/**
+  * Companion object of [[Range]].
+  */
+object Range {
+
+  /**
+    * Returns a range from the given source location `loc`.
+    */
+  def from(loc: SourceLocation): Range = {
+    Range(Position(loc.beginLine, loc.beginCol), Position(loc.endLine, loc.endCol))
+  }
+
+}
 
 /**
   * Represents a range in a document.
