@@ -20,7 +20,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, MatchRule, Root, SelectChannelRule}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Predicate, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
@@ -489,5 +490,26 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     exps0.foldLeft(Index.empty) {
       case (index, exp0) => index ++ visitExp(exp0)
     }
+
+
+  /**
+    * Returns a reverse index for the given constraint `c0`.
+    */
+  private def visitConstraint(c0: Constraint): Index = {
+
+    visitHead(c0.head) // TODO
+  }
+
+  // TODO: DOC
+  private def visitHead(h0: Predicate.Head): Index = h0 match {
+    case Head.Atom(name, den, terms, tpe, loc) => ??? // TODO
+    case Head.Union(exp, _, _) => visitExp(exp)
+  }
+
+  // TODO: DOC
+  private def visitBody(b0: Predicate.Body): Index = b0 match {
+    case Body.Atom(name, den, polarity, terms, _, _) => ??? // TODO
+    case Body.Guard(exp, _) => visitExp(exp)
+  }
 
 }
