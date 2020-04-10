@@ -22,12 +22,10 @@ import java.util.Date
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Predicate, Root, SelectChannelRule}
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.vt.TerminalContext.{AnsiTerminal, NoTerminal}
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -35,8 +33,6 @@ import org.json4s.JsonAST.{JArray, JBool, JField, JLong, JObject, JString}
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
-
-import scala.collection.mutable
 
 /**
   * A Compiler Interface for the Language Server Protocol.
@@ -64,7 +60,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   val DateFormat: String = "yyyy-MM-dd HH:mm:ss"
 
-  var index: Index = null
+  /**
+    * The current reverse index. The index is empty until the source code is compiled.
+    */
+  var index: Index = Index.empty
 
   /**
     * Invoked when the server is started.
@@ -243,8 +242,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     val clientPart = if (ws == null) "n/a" else ws.getRemoteSocketAddress
     Console.println(s"[$datePart] [$clientPart]: $msg")
   }
-
-  // TODO: Need to somehow track variables in scope?
 
   /**
     * Returns a reverse index for the given AST `root`.
