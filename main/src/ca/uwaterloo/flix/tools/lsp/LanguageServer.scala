@@ -136,13 +136,23 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   private def processRequest(request: Request)(implicit ws: WebSocket): JObject = request match {
     case Request.Compile() =>
       ??? // TODO
+
     case Request.TypeOf(doc, pos) =>
-      index.query(doc, pos)
-      JObject(
-        JField("status", JString("success")),
-        JField("result", JString("TODO"))
-      )
-    case _ => ???
+      index.query(doc, pos) match {
+        case None =>
+          JObject(
+            JField("status", JString("success")),
+            JField("result", JString("unknown"))
+          )
+
+        case Some(exp) =>
+          val tpe = exp.tpe.toString
+          val eff = exp.eff.toString
+          JObject(
+            JField("status", JString("success")),
+            JField("result", JString(s"$tpe & $eff"))
+          )
+      }
   }
 
   /**

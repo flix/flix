@@ -15,12 +15,15 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
-trait Request
+sealed trait Request
 
 object Request {
 
   case class Compile() extends Request
 
+  /**
+    * Requests the type and effect of the expression in the given document `doc` at the given position `pos`.
+    */
   case class TypeOf(doc: Document, pos: Position) extends Request
 
 }
