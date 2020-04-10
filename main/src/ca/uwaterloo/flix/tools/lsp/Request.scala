@@ -15,9 +15,15 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.Ok
+import org.json4s
+import org.json4s.JsonAST.{JArray, JObject, JValue}
+
 sealed trait Request
 
 object Request {
+
 
   /**
     * A request to compile the source files denoted by the given `paths`.
@@ -30,6 +36,41 @@ object Request {
   case class TypeOf(doc: Document, pos: Position) extends Request
 
   case class JumpToDef(doc: Document, pos: Position) extends Request
+
+  // TODO: Shutdown message.
+  // TODO: Get type/effect/typeandeffect
+  // TODO: completion?
+  // TODO: signature help?
+  // TODO: GoTODef
+  // TODO: Goto type def.
+  // TODO: FindUsages.
+
+
+  def parseCompile(json: JValue): Result[Request, String] = {
+    val paths = json \\ "paths" match {
+      case JArray(arr) =>
+        // TODO
+        Nil
+      case _ => ???
+    }
+    Ok(Request.Compile(paths))
+  }
+
+  def parseTypeOf(json: json4s.JValue): Result[Request, String] = {
+
+    // TODO: Errors
+    val doc = Document.parse(json \\ "document")
+    val pos = Position.parse(json \\ "position")
+    Ok(Request.TypeOf(doc, pos))
+  }
+
+  def parseJumpToDef(json: json4s.JValue): Result[Request, String] = {
+
+    // TODO: Errors
+    val doc = Document.parse(json \\ "document")
+    val pos = Position.parse(json \\ "position")
+    Ok(Request.JumpToDef(doc, pos))
+  }
 
 }
 

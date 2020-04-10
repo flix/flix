@@ -22,10 +22,11 @@ import java.util.Date
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Constraint, Def, Expression, MatchRule, Predicate, Root, SelectChannelRule}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util.vt.TerminalContext.{AnsiTerminal, NoTerminal}
-import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Result}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -41,19 +42,9 @@ import org.json4s.native.JsonMethods.parse
   */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
-  // TODO: Start socket server on port.
-  // TODO: Accept request telling what files to compile, return compilation status.
-  // TODO: Accept queries.
   // TODO: Add Range?
   // TODO: Add LocationLink?
   // TODO: Add diagonostic?
-  // TODO: Shutdown message.
-  // TODO: Get type/effect/typeandeffect
-  // TODO: completion?
-  // TODO: signature help?
-  // TODO: GoTODef
-  // TODO: Goto type def.
-  // TODO: FindUsages.
 
   /**
     * The custom date format to use for logging.
@@ -94,12 +85,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     log(s"Received ${data.length} characters of input (${data.getBytes.length} bytes).")(ws)
 
     // Parse and process request.
-    for {
-      request <- parseRequest(data)(ws)
-    } yield {
-      val result = processRequest(request)(ws)
-      val json = JsonMethods.pretty(JsonMethods.render(result))
-      ws.send(json)
+    parseRequest(data)(ws) match {
+      case Ok(request) =>
+        val result = processRequest(request)(ws)
+        val json = JsonMethods.pretty(JsonMethods.render(result))
+        ws.send(json)
+      case Err(msg) =>
+        log(msg)(ws)
+        ws.closeConnection(5000, msg)
     }
   }
 
@@ -119,42 +112,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Parse the request.
     */
-  private def parseRequest(s: String)(implicit ws: WebSocket): Option[Request] = try {
-    // Parse the string into a json object.
+  private def parseRequest(s: String)(implicit ws: WebSocket): Result[Request, String] = try {
+    // Parse the string `s` into a json value.
     val json = parse(s)
 
+    // Determine the type of request.
     json \\ "request" match {
-      case JString("compile") =>
-        val paths = json \\ "paths" match {
-          case JArray(arr) =>
-            // TODO
-            Nil
-          case _ => ???
-        }
-        Some(Request.Compile(paths))
-
-      case JString("typeOf") =>
-        // TODO: Errors
-        val doc = Document.parse(json \\ "document")
-        val pos = Position.parse(json \\ "position")
-        Some(Request.TypeOf(doc, pos))
-
-      case JString("jumpToDef") =>
-        // TODO: Errors
-        val doc = Document.parse(json \\ "document")
-        val pos = Position.parse(json \\ "position")
-        Some(Request.JumpToDef(doc, pos))
-
-      case s =>
-        log(s"Unsupported request: '$s'.")
-        None
+      case JString("compile") => Request.parseCompile(json)
+      case JString("typeOf") => Request.parseTypeOf(json)
+      case JString("jumpToDef") => Request.parseJumpToDef(json)
+      case s => Err(s"Unsupported request: '$s'.")
     }
   } catch {
-    case ex: ParseException =>
-      val msg = s"Malformed request. Unable to parse JSON: '${ex.getMessage}'."
-      log(msg)
-      ws.closeConnection(5000, msg)
-      None
+    case ex: ParseException => Err(s"Malformed request. Unable to parse JSON: '${ex.getMessage}'.")
   }
 
   /**
