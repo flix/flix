@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.tools.lsp
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.DefaultFormats
-import org.json4s.JsonAST.{JArray, JObject, JString, JValue}
+import org.json4s.JsonAST.{JArray, JString, JValue}
 
+/**
+  * A common super-type for language server requests.
+  */
 sealed trait Request
 
 object Request {
@@ -31,25 +33,17 @@ object Request {
   case class Compile(paths: List[String]) extends Request
 
   /**
-    * A requests to get the type and effect in the document `doc` at position `pos`.
+    * A request to get the type and effect of an expression.
     */
-  case class TypeOf(doc: Document, pos: Position) extends Request
+  case class TypeAndEffectOf(doc: Document, pos: Position) extends Request
 
 
-  case class JumpToDef(doc: Document, pos: Position) extends Request
+  case class GotoDef(doc: Document, pos: Position) extends Request
 
   /**
     * A request to shutdown the language server.
     */
   case object Shutdown extends Request
-
-  // TODO: Shutdown message.
-  // TODO: Get type/effect/typeandeffect
-  // TODO: completion?
-  // TODO: signature help?
-  // TODO: GoTODef
-  // TODO: Goto type def.
-  // TODO: FindUsages.
 
   /**
     * Tries to parse the given `json` value as a [[Compile]] request.
@@ -65,21 +59,23 @@ object Request {
     }
   }
 
-  def parseTypeOf(json: json4s.JValue): Result[Request, String] = {
+  /**
+    * Tries to parse the given `json` value as a [[TypeAndEffectOf]] request.
+    */
+  def parseTypeAndEffectOf(json: JValue): Result[Request, String] =
+    for {
+      doc <- Document.parse(json \\ "document")
+      pos <- Position.parse(json \\ "position")
+    } yield Request.TypeAndEffectOf(doc, pos)
 
-    // TODO: Errors
-    val doc = Document.parse(json \\ "document")
-    val pos = Position.parse(json \\ "position")
-    Ok(Request.TypeOf(doc, pos))
-  }
-
-  def parseJumpToDef(json: json4s.JValue): Result[Request, String] = {
-
-    // TODO: Errors
-    val doc = Document.parse(json \\ "document")
-    val pos = Position.parse(json \\ "position")
-    Ok(Request.JumpToDef(doc, pos))
-  }
+  /**
+    * Tries to parse the given `json` value as a [[GotoDef]] request.
+    */
+  def parseGotoDef(json: json4s.JValue): Result[Request, String] =
+    for {
+      doc <- Document.parse(json \\ "document")
+      pos <- Position.parse(json \\ "position")
+    } yield Request.GotoDef(doc, pos)
 
 }
 

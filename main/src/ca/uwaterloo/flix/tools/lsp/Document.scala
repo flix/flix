@@ -15,11 +15,13 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.Ok
 import org.json4s.JValue
 
 // TODO
 object Document {
-  def parse(json: JValue): Document = new Document
+  def parse(json: JValue): Result[Document, String] = Ok(new Document)
 
 }
 

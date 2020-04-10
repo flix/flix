@@ -119,8 +119,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     // Determine the type of request.
     json \\ "request" match {
       case JString("compile") => Request.parseCompile(json)
-      case JString("typeOf") => Request.parseTypeOf(json)
-      case JString("jumpToDef") => Request.parseJumpToDef(json)
+      case JString("typeOf") => Request.parseTypeAndEffectOf(json)
+      case JString("jumpToDef") => Request.parseGotoDef(json)
       case JString("shutdown") => Ok(Request.Shutdown)
       case s => Err(s"Unsupported request: '$s'.")
     }
@@ -159,7 +159,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           )
       }
 
-    case Request.TypeOf(doc, pos) =>
+    case Request.TypeAndEffectOf(doc, pos) =>
       index.query(doc, pos) match {
         case None => Reply.NotFound().toJSON
         case Some(exp) =>
@@ -171,7 +171,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           )
       }
 
-    case Request.JumpToDef(doc, pos) =>
+    case Request.GotoDef(doc, pos) =>
       index.query(doc, pos) match {
         case None => Reply.NotFound().toJSON
 

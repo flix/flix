@@ -15,20 +15,22 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
+import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.Result.Ok
 import org.json4s.JValue
 import org.json4s.JsonAST.JInt
 
 object Position {
-  def parse(json: JValue): Position = {
+  def parse(json: JValue): Result[Position, String] = {
     val line = json \\ "line" match {
       case JInt(i) => i.toInt
-      case v => throw new RuntimeException(s"Unexpected value: '$v'.")
+      case v => throw new RuntimeException(s"Unexpected value: '$v'.") // TODO
     }
     val col = json \\ "col" match {
       case JInt(i) => i.toInt
-      case v => throw new RuntimeException(s"Unexpected value: '$v'.")
+      case v => throw new RuntimeException(s"Unexpected value: '$v'.") // TODO
     }
-    Position(line, col)
+    Ok(Position(line, col))
   }
 }
 
