@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeExcepti
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JArray, JField, JObject, JString}
+import org.json4s.JsonAST.{JField, JObject, JString}
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
@@ -42,8 +42,6 @@ import org.json4s.native.JsonMethods.parse
   */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
-  // TODO: Add Range?
-  // TODO: Add LocationLink?
   // TODO: Add diagonostic?
 
   /**
@@ -88,7 +86,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
-        val json = JsonMethods.pretty(JsonMethods.render(result))
+        val json = JsonMethods.pretty(JsonMethods.render(result.toJSON))
         ws.send(json)
       case Err(msg) =>
         log(msg)(ws)
@@ -131,7 +129,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Process the request.
     */
-  private def processRequest(request: Request)(implicit ws: WebSocket): JObject = request match {
+  private def processRequest(request: Request)(implicit ws: WebSocket): Reply = request match {
     case Request.Compile(paths) =>
       // Configure the Flix compiler.
       val flix = new Flix()
@@ -153,25 +151,27 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val e = System.nanoTime() - t
 
           // Send back a status message.
-          Reply.Ready(e, Version.CurrentVersion.toString).toJSON
+          Reply.Ready(e, Version.CurrentVersion.toString)
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal
-          JObject(
-            JField("status", JString("success")),
-            JField("result", JString(errors.head.message.fmt))
-          )
+          val error = errors.head
+          val range = Range(Position(0, 0), Position(0, 0)) // TODO
+          val code = error.kind
+          val message = error.message.fmt
+          val diagnostic = Diagnostic(range, code, message)
+          Reply.CompilationError(diagnostic)
       }
 
     case Request.TypeAndEffectOf(doc, pos) =>
       index.query(doc, pos) match {
-        case None => Reply.NotFound().toJSON
-        case Some(exp) => Reply.EffAndTypeOf(exp).toJSON
+        case None => Reply.NotFound()
+        case Some(exp) => Reply.EffAndTypeOf(exp)
       }
 
     case Request.GotoDef(doc, pos) =>
       index.query(doc, pos) match {
-        case None => Reply.NotFound().toJSON
+        case None => Reply.NotFound()
         case Some(exp) => exp match {
           case Expression.Def(sym, _, originLoc) =>
             val originSelectionRange = Range.from(originLoc)
@@ -179,7 +179,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val targetRange = Range.from(sym.loc)
             val targetSelectionRange = Range.from(sym.loc)
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoDef(locationLink).toJSON
+            Reply.GotoDef(locationLink)
 
           case Expression.Var(sym, _, originLoc) =>
             val originSelectionRange = Range.from(originLoc)
@@ -187,9 +187,9 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val targetRange = Range.from(sym.loc)
             val targetSelectionRange = Range.from(sym.loc)
             val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
-            Reply.GotoVar(locationLink).toJSON
+            Reply.GotoVar(locationLink)
 
-          case _ => Reply.NotFound().toJSON
+          case _ => Reply.NotFound()
         }
       }
 

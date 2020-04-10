@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 
 import org.json4s.JsonAST.{JField, JObject, JString}
@@ -46,6 +45,17 @@ object Reply {
   }
 
   /**
+    * A reply that represents a compilation error.
+    */
+  case class CompilationError(diagnostic: Diagnostic) extends Reply {
+    def toJSON: JObject =
+      JObject(
+        JField("status", JString("failure")),
+        JField("diagnostic", diagnostic.toJSON)
+      )
+  }
+
+  /**
     * A reply that represents the type and effect of an expression.
     */
   case class EffAndTypeOf(exp: Expression) extends Reply {
@@ -64,36 +74,33 @@ object Reply {
     * A reply that represents a link to a definition.
     */
   case class GotoDef(locationLink: LocationLink) extends Reply {
-    def toJSON: JObject = {
+    def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
         JField("locationLink", locationLink.toJSON),
       )
-    }
   }
 
   /**
     * A reply that represents a link to a variable.
     */
   case class GotoVar(locationLink: LocationLink) extends Reply {
-    def toJSON: JObject = {
+    def toJSON: JObject =
       JObject(
         JField("status", JString("success")),
         JField("locationLink", locationLink.toJSON),
       )
-    }
   }
 
   /**
     * A reply that represents that the specified entity was not found.
     */
   case class NotFound() extends Reply {
-    def toJSON: JObject = {
+    def toJSON: JObject =
       JObject(
         JField("status", JString("failure")),
         JField("result", JString("Not Found"))
       )
-    }
   }
 
 }
