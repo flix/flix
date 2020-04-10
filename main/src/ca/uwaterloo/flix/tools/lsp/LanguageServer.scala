@@ -50,7 +50,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   // TODO: Add Range?
   // TODO: Add LocationLink?
   // TODO: Add diagonostic?
-
+  // TODO: Shutdown message.
+  // TODO: Get type/effect/typeandeffect
+  // TODO: completion?
+  // TODO: signature help?
+  // TODO: GoTODef
+  // TODO: Goto type def.
+  // TODO: FindUsages.
 
   /**
     * The custom date format to use for logging.
