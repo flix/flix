@@ -233,6 +233,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     Console.println(s"[$datePart] [$clientPart]: $msg")
   }
 
+  // TODO: Need to somehow track variables in scope?
 
   /**
     * Returns a reverse index for the given AST `root`.
@@ -349,16 +350,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.ArrayLit(exps, _, _, _) =>
       visitExps(exps)
 
-    //        case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.ArrayNew(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.ArrayLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.ArrayLength(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp2) + exp0
+
+    case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp2) + exp0
+
     //        case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
@@ -371,10 +377,13 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     //
     //        case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //        case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.Ref(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Deref(exp1, _, _, _) =>
+      visitExp(exp1) + exp0
+
     //        case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Expression {
