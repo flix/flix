@@ -173,15 +173,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       index.query(doc, pos) match {
         case None => Reply.NotFound().toJSON
         case Some(exp) => exp match {
-          case Expression.Def(sym, _, _) =>
-            val targetRange = Range.from(sym.loc) // TODO
+          case Expression.Def(sym, _, originLoc) =>
+            val originSelectionRange = Range.from(originLoc)
+            val targetUri = sym.loc.source.name
+            val targetRange = Range.from(sym.loc)
             val targetSelectionRange = Range.from(sym.loc)
-            Reply.GotoDef(targetRange, targetSelectionRange).toJSON
+            Reply.GotoDef(originSelectionRange, targetUri, targetRange, targetSelectionRange).toJSON
 
-          case Expression.Var(sym, _, _) =>
-            val targetRange = Range.from(sym.loc) // TODO
+          case Expression.Var(sym, _, originLoc) =>
+            val originSelectionRange = Range.from(originLoc)
+            val targetUri = sym.loc.source.name
+            val targetRange = Range.from(sym.loc)
             val targetSelectionRange = Range.from(sym.loc)
-            Reply.GotoVar(targetRange, targetSelectionRange).toJSON
+            Reply.GotoVar(originSelectionRange, targetUri, targetRange, targetSelectionRange).toJSON
 
           case _ => Reply.NotFound().toJSON
         }
