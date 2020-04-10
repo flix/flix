@@ -19,8 +19,11 @@ import java.net.InetSocketAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Root}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -135,7 +138,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JObject = request match {
     case Request.Compile() =>
-      ??? // TODO
+      val flix = new Flix()
+      flix.addPath("foo")
+      flix.compile() match {
+        case Success(t) =>
+          val root: Root = null
+          index = visitRoot(root)
+          ??? // TODO
+        case Failure(errors) =>
+          ??? // TODO
+      }
 
     case Request.TypeOf(doc, pos) =>
       index.query(doc, pos) match {
@@ -165,6 +177,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     Console.println(s"[$datePart] [$clientPart]: $msg")
   }
 
+
+  /**
+    * Returns a reverse index for the given AST `root`.
+    */
+  def visitRoot(root: Root): Index = ???
+
+  /**
+    * Returns a reverse index for the given definition `def0`.
+    */
+  def visitDef(def0: Def): Index = ???
+
+  /**
+    * Returns a reverse index for the given expression `exp0`.
+    */
   def visitExp(exp0: Expression): Index = exp0 match {
     case Expression.Unit(_) => Index.of(exp0)
 
