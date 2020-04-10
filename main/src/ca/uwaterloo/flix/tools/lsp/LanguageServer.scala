@@ -156,11 +156,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal
           val error = errors.head
-          val range = Range(Position(0, 0), Position(0, 0)) // TODO
+          val range = Range(Position(0, 0), Position(0, 0)) // TODO: Need the source location.
           val code = error.kind
           val message = error.message.fmt
           val diagnostic = Diagnostic(range, code, message)
-          Reply.CompilationError(diagnostic)
+          Reply.CompilationError(diagnostic :: Nil) // TODO: Process all errors
       }
 
     case Request.TypeAndEffectOf(doc, pos) =>

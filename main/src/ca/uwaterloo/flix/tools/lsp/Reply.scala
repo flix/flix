@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.tools.lsp
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
-
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonAST.{JArray, JField, JObject, JString}
 
 /**
   * A common super-type for language server replies.
@@ -47,11 +46,11 @@ object Reply {
   /**
     * A reply that represents a compilation error.
     */
-  case class CompilationError(diagnostic: Diagnostic) extends Reply {
+  case class CompilationError(diagnostic: List[Diagnostic]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("failure")),
-        JField("diagnostic", diagnostic.toJSON)
+        JField("diagnostic", JArray(diagnostic.map(_.toJSON)))
       )
   }
 
