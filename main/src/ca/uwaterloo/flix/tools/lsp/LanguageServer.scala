@@ -1,3 +1,18 @@
+/*
+ * Copyright 2020 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.tools.lsp
 
 import java.net.InetSocketAddress
@@ -16,7 +31,11 @@ import org.json4s.native.JsonMethods.parse
 
 import scala.collection.mutable
 
-// TODO: DOC
+/**
+  * A Compiler Interface for the Language Server Protocol.
+  *
+  * Does not implement the LSP protocol itself, but relies on a JavaScript/TypeScript intermediary.
+  */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
   // TODO: Start socket server on port.
@@ -118,17 +137,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
 
 
-
-  case class Location(line: Int, col: Int)
-
-  def toLoc(loc: SourceLocation): Location = ???
-
   class Tree(root: Root) {
-
-    private val m = mutable.Map.empty[Location, Expression]
-    private val types = mutable.Map.empty[Location, Type]
-    private val defn = mutable.Map.empty[Location, Symbol.DefnSym]
-
 
     def visitExp(exp0: Expression): Index = exp0 match {
       case Expression.Unit(_) => Index.of(exp0)
@@ -318,13 +327,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       //        case class FixpointFold(name: String, exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
 
     }
-
-    def getSym(loc: Location): Option[Symbol.DefnSym] = ???
-
-    def getTyp(loc: Location): Option[Type] = ???
-
-    def getExp(loc: Location): Option[Expression] = ???
-
 
   }
 

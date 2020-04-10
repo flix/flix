@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.tools.lsp.LanguageServer
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -58,6 +59,18 @@ object Main {
             Console.println("Retrying in 10 seconds.")
             Thread.sleep(10_000)
         }
+      }
+      System.exit(0)
+    }
+
+    // check if the --lsp flag was passed.
+    if (cmdOpts.lsp.nonEmpty) {
+      try {
+        val languageServer = new LanguageServer(cmdOpts.lsp.get)
+        languageServer.run()
+      } catch {
+        case ex: BindException =>
+          Console.println(ex.getMessage)
       }
       System.exit(0)
     }
@@ -209,6 +222,7 @@ object Main {
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
+                     lsp: Option[Int] = None,
                      quickchecker: Boolean = false,
                      release: Boolean = false,
                      test: Boolean = false,
@@ -303,7 +317,12 @@ object Main {
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
-        text("listens on the given port.")
+        text("starts the socket server and listens on the given port.")
+
+      // LSP.
+      opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
+        valueName("<port>").
+        text("starts the LSP server and listens on the given port.")
 
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
