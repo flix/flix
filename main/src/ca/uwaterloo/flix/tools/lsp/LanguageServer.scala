@@ -159,11 +159,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.TypeOf(doc, pos) =>
       index.query(doc, pos) match {
-        case None => JObject(
-          JField("status", JString("success")),
-          JField("result", JString("unknown"))
-        )
-
+        case None => Reply.NotFound().toJSON
         case Some(exp) =>
           val tpe = exp.tpe.toString
           val eff = exp.eff.toString
@@ -175,10 +171,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Request.JumpToDef(doc, pos) =>
       index.query(doc, pos) match {
-        case None => JObject(
-          JField("status", JString("success")),
-          JField("result", JString("unknown"))
-        )
+        case None => Reply.NotFound().toJSON
 
         case Some(exp) =>
           exp match {
@@ -194,11 +187,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
                 JField("result", JString(sym.loc.format))
               )
 
-            case _ =>
-              JObject(
-                JField("status", JString("success")),
-                JField("result", JString("unknown"))
-              )
+            case _ => Reply.NotFound().toJSON
           }
       }
   }
