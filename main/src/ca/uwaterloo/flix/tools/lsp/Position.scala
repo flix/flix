@@ -16,22 +16,35 @@
 package ca.uwaterloo.flix.tools.lsp
 
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.Ok
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s.JValue
 import org.json4s.JsonAST.JInt
 
+/**
+  * Companion object for [[Position]].
+  */
 object Position {
+
+  /**
+    * Tries to parse the given `json` value as a [[Position]].
+    */
   def parse(json: JValue): Result[Position, String] = {
-    val line = json \\ "line" match {
-      case JInt(i) => i.toInt
-      case v => throw new RuntimeException(s"Unexpected value: '$v'.") // TODO
+    val lineResult: Result[Int, String] = json \\ "line" match {
+      case JInt(i) => Ok(i.toInt)
+      case v => Err(s"Unexpected line number: '$v'.")
     }
-    val col = json \\ "col" match {
-      case JInt(i) => i.toInt
-      case v => throw new RuntimeException(s"Unexpected value: '$v'.") // TODO
+    val columnResult: Result[Int, String] = json \\ "col" match {
+      case JInt(i) => Ok(i.toInt)
+      case v => Err(s"Unexpected column number: '$v'.")
     }
-    Ok(Position(line, col))
+    for {
+      line <- lineResult
+      column <- columnResult
+    } yield Position(line, column)
   }
 }
 
+/**
+  * Represents a position in a document.
+  */
 case class Position(line: Int, col: Int)
