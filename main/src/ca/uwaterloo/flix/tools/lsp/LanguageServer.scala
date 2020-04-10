@@ -24,11 +24,13 @@ import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, Root}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util.vt.TerminalContext.{AnsiTerminal, NoTerminal}
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException, Options}
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JBool, JField, JLong, JObject, JString}
+import org.json4s.JsonAST.{JArray, JBool, JField, JLong, JObject, JString}
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
@@ -111,20 +113,26 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     // Parse the string into a json object.
     val json = parse(s)
 
-    val request = json \\ "request" match {
+    json \\ "request" match {
       case JString("compile") =>
-        // TODO
-        ???
+        val paths = json \\ "paths" match {
+          case JArray(arr) =>
+            // TODO
+            Nil
+          case _ => ???
+        }
+        Some(Request.Compile(paths))
+
       case JString("typeOf") =>
         // TODO: Errors
         val doc = Document.parse(json \\ "document")
         val pos = Position.parse(json \\ "position")
-        Request.TypeOf(doc, pos)
-      case s => log(s"Unsupported request: '$s'.")
-    }
+        Some(Request.TypeOf(doc, pos))
 
-    // TODO
-    None
+      case s =>
+        log(s"Unsupported request: '$s'.")
+        None
+    }
   } catch {
     case ex: ParseException =>
       val msg = s"Malformed request. Unable to parse JSON: '${ex.getMessage}'."
@@ -137,16 +145,30 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): JObject = request match {
-    case Request.Compile() =>
+    case Request.Compile(paths) =>
+      // Configure the Flix compiler.
       val flix = new Flix()
-      flix.addPath("foo")
-      flix.compile() match {
-        case Success(t) =>
-          val root: Root = null
+      for (path <- paths) {
+        flix.addPath(path)
+      }
+
+      // Run the compiler up to the type checking phase.
+      flix.check() match {
+        case Success(root) =>
+          // Case 1: Compilation was successful. Build the reverse the reverse index.
           index = visitRoot(root)
-          ??? // TODO
+
+          // Send back a status message.
+          JObject(
+            JField("status", JString("success"))
+          )
         case Failure(errors) =>
-          ??? // TODO
+          // Case 2: Compilation failed. Send back the error messages.
+          implicit val ctx: TerminalContext = NoTerminal
+          JObject(
+            JField("status", JString("success")),
+            JField("result", JString(errors.head.message.fmt))
+          )
       }
 
     case Request.TypeOf(doc, pos) =>
@@ -224,11 +246,10 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.Def(_, _, _) => Index.of(exp0)
 
-    //        case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //          def eff: Type = Type.Pure
-    //        }
+    case Expression.Hole(_, _, _, _) => Index.of(exp0)
+
+    case Expression.Lambda(_, exp, _, _) =>
+      visitExp(exp) + exp0
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -259,7 +280,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.RecordEmpty(tpe, loc) => Index.of(exp0)
 
-      
+
 
     //        case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
