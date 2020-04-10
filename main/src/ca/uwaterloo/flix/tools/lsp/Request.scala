@@ -37,7 +37,9 @@ object Request {
     */
   case class TypeAndEffectOf(doc: Document, pos: Position) extends Request
 
-
+  /**
+    * A request to go to a definition or local variable.
+    */
   case class GotoDef(doc: Document, pos: Position) extends Request
 
   /**
