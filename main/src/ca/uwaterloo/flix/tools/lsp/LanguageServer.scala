@@ -203,19 +203,19 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
   /**
     * Returns a reverse index for the given AST `root`.
     */
-  def visitRoot(root: Root): Index = root.defs.foldLeft(Index.Empty) {
+  private def visitRoot(root: Root): Index = root.defs.foldLeft(Index.Empty) {
     case (index, (_, def0)) => index ++ visitDef(def0)
   }
 
   /**
     * Returns a reverse index for the given definition `def0`.
     */
-  def visitDef(def0: Def): Index = visitExp(def0.exp)
+  private def visitDef(def0: Def): Index = visitExp(def0.exp)
 
   /**
     * Returns a reverse index for the given expression `exp0`.
     */
-  def visitExp(exp0: Expression): Index = exp0 match {
+  private def visitExp(exp0: Expression): Index = exp0 match {
     case Expression.Unit(_) => Index.of(exp0)
 
     case Expression.True(_) => Index.of(exp0)
@@ -273,10 +273,12 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     //        case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //        case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.Tag(_, _, exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.Tuple(elms, tpe, eff, loc) =>
+      visitExps(elms) + exp0
 
     case Expression.RecordEmpty(tpe, loc) => Index.of(exp0)
 
@@ -383,7 +385,14 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
-
   }
+
+  /**
+    * Returns a reverse index for the given expressions `exps0`.
+    */
+  private def visitExps(exps0: List[Expression]): Index =
+    exps0.foldLeft(Index.Empty) {
+      case (index, exp0) => index ++ visitExp(exp0)
+    }
 
 }
