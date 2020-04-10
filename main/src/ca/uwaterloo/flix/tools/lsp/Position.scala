@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools.lsp
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s.JValue
-import org.json4s.JsonAST.JInt
+import org.json4s.JsonAST.{JField, JInt, JObject, JString}
 
 /**
   * Companion object for [[Position]].
@@ -46,5 +46,13 @@ object Position {
 
 /**
   * Represents a position in a document.
+  *
+  * @param line the line number.
+  * @param col  the column number.
   */
-case class Position(line: Int, col: Int)
+case class Position(line: Int, col: Int) {
+  def toJSON: JObject = JObject(
+    JField("line", JInt(line)),
+    JField("character", JInt(col))
+  )
+}
