@@ -45,10 +45,7 @@ object Position {
 }
 
 /**
-  * Represents a position in a document.
-  *
-  * @param line the line number.
-  * @param col  the column number.
+  * Represent a `Position` in LSP.
   */
 case class Position(line: Int, col: Int) {
   def toJSON: JObject = JObject(

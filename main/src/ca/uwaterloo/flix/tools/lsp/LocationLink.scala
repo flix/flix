@@ -15,7 +15,18 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
-// TODO
-class LocationLink {
+import org.json4s.JsonAST.{JField, JObject, JString}
 
+/**
+  * Represent a `LocationLink` in LSP.
+  */
+case class LocationLink(originSelectionRange: Range, targetUri: String, targetRange: Range, targetSelectionRange: Range) {
+  def toJSON: JObject = {
+    JObject(
+      JField("originSelectionRange", originSelectionRange.toJSON),
+      JField("targetUri", JString(targetUri)),
+      JField("targetRange", targetRange.toJSON),
+      JField("targetSelectionRange", targetSelectionRange.toJSON)
+    )
+  }
 }

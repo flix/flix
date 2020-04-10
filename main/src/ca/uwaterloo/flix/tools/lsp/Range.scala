@@ -33,10 +33,7 @@ object Range {
 }
 
 /**
-  * Represents a range in a document.
-  *
-  * @param start the start position of the range.
-  * @param end   the end position of the range.
+  * Represent a `Range` in LSP.
   */
 case class Range(start: Position, end: Position) {
   def toJSON: JObject = JObject(

@@ -178,14 +178,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
             val targetUri = sym.loc.source.name
             val targetRange = Range.from(sym.loc)
             val targetSelectionRange = Range.from(sym.loc)
-            Reply.GotoDef(originSelectionRange, targetUri, targetRange, targetSelectionRange).toJSON
+            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+            Reply.GotoDef(locationLink).toJSON
 
           case Expression.Var(sym, _, originLoc) =>
             val originSelectionRange = Range.from(originLoc)
             val targetUri = sym.loc.source.name
             val targetRange = Range.from(sym.loc)
             val targetSelectionRange = Range.from(sym.loc)
-            Reply.GotoVar(originSelectionRange, targetUri, targetRange, targetSelectionRange).toJSON
+            val locationLink = LocationLink(originSelectionRange, targetUri, targetRange, targetSelectionRange)
+            Reply.GotoVar(locationLink).toJSON
 
           case _ => Reply.NotFound().toJSON
         }
