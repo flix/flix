@@ -15,7 +15,9 @@
  */
 package ca.uwaterloo.flix.tools.lsp
 
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+
 import org.json4s.JsonAST.{JField, JObject, JString}
 
 /**
@@ -46,7 +48,7 @@ object Reply {
   /**
     * A reply that represents the type and effect of an expression.
     */
-  case class EffAndTypeOf(exp: Expression) {
+  case class EffAndTypeOf(exp: Expression) extends Reply {
     def toJSON: JObject = {
       val tpe = exp.tpe.toString
       val eff = exp.eff.toString
@@ -54,6 +56,32 @@ object Reply {
       JObject(
         JField("status", JString("success")),
         JField("result", JString(result))
+      )
+    }
+  }
+
+  /**
+    * A reply that represents a link to a definition.
+    */
+  case class GotoDef(sym: Symbol.DefnSym) extends Reply {
+    def toJSON: JObject = {
+      JObject(
+        JField("status", JString("success")),
+        JField("targetRange", JString(sym.loc.format)),
+        JField("targetSelectionRange", JString(sym.loc.format))
+      )
+    }
+  }
+
+  /**
+    * A reply that represents a link to a variable.
+    */
+  case class GotoVar(sym: Symbol.VarSym) extends Reply {
+    def toJSON: JObject = {
+      JObject(
+        JField("status", JString("success")),
+        JField("targetRange", JString(sym.loc.format)),
+        JField("targetSelectionRange", JString(sym.loc.format))
       )
     }
   }
