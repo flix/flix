@@ -20,7 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expression, MatchRule, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{CatchRule, Def, Expression, MatchRule, Root, SelectChannelRule}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
@@ -399,7 +399,11 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.Cast(exp, _, _, _) =>
       visitExp(exp) + exp0
 
-    //        case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
+    case Expression.TryCatch(exp, rules, _, _, _) =>
+      val i0 = visitExp(exp) + exp0
+      rules.foldLeft(i0) {
+        case (index, CatchRule(_, _, exp)) => index ++ visitExp(exp)
+      }
 
     case Expression.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args) + exp0
@@ -422,16 +426,20 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp) + exp0
 
+    case Expression.NewChannel(exp, _, _, _) =>
+      visitExp(exp) + exp0
 
+    case Expression.GetChannel(exp, _, _, _) =>
+      visitExp(exp) + exp0
 
-    //        case class NewChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class GetChannel(exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.SelectChannel(rules, default, _, _, _) =>
+      val i0 = default.map(visitExp).getOrElse(Index.empty) + exp0
+      rules.foldLeft(i0) {
+        case (index, SelectChannelRule(_, _, exp)) => index ++ visitExp(exp)
+      }
 
     case Expression.ProcessSpawn(exp, _, _, _) =>
       visitExp(exp) + exp0
@@ -457,9 +465,6 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.FixpointFold(_, exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
-
-    // TODO: Remove
-    case _ => Index.empty
   }
 
   /**
