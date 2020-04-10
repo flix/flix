@@ -243,20 +243,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     //
     //        case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //        case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Stm(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
+
+    case Expression.Stm(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
     //        case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
-    //        case class RecordEmpty(tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //          def eff: Type = Type.Pure
-    //        }
-    //
+
+    case Expression.RecordEmpty(tpe, loc) => Index.of(exp0)
+
+      
+
     //        case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
