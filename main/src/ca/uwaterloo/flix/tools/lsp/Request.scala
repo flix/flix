@@ -35,12 +35,12 @@ object Request {
   /**
     * A request to get the type and effect of an expression.
     */
-  case class TypeAndEffectOf(doc: Document, pos: Position) extends Request
+  case class TypeAndEffectOf(uri: String, pos: Position) extends Request
 
   /**
     * A request to go to a definition or local variable.
     */
-  case class GotoDef(doc: Document, pos: Position) extends Request
+  case class GotoDef(uri: String, pos: Position) extends Request
 
   /**
     * A request to shutdown the language server.
@@ -64,19 +64,29 @@ object Request {
   /**
     * Tries to parse the given `json` value as a [[TypeAndEffectOf]] request.
     */
-  def parseTypeAndEffectOf(json: JValue): Result[Request, String] =
+  def parseTypeAndEffectOf(json: JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
     for {
-      doc <- Document.parse(json \\ "document")
+      doc <- docRes
       pos <- Position.parse(json \\ "position")
     } yield Request.TypeAndEffectOf(doc, pos)
+  }
 
   /**
     * Tries to parse the given `json` value as a [[GotoDef]] request.
     */
-  def parseGotoDef(json: json4s.JValue): Result[Request, String] =
+  def parseGotoDef(json: json4s.JValue): Result[Request, String] = {
+    val docRes: Result[String, String] = json \\ "uri" match {
+      case JString(s) => Ok(s)
+      case s => Err(s"Unexpected uri: '$s'.")
+    }
     for {
-      doc <- Document.parse(json \\ "document")
+      doc <- docRes
       pos <- Position.parse(json \\ "position")
     } yield Request.GotoDef(doc, pos)
+  }
 
 }

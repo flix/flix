@@ -31,9 +31,9 @@ trait Reply {
 object Reply {
 
   /**
-    * A reply that represents a successful initialization and compilation.
+    * A reply that represents that compilation succeeded.
     */
-  case class Ready(time: Long, version: String) extends Reply {
+  case class CompilationSuccess(time: Long, version: String) extends Reply {
     def toJSON: JObject = {
       JObject(
         JField("status", JString("success")),
@@ -44,9 +44,9 @@ object Reply {
   }
 
   /**
-    * A reply that represents a compilation error.
+    * A reply that represents that compilation failed.
     */
-  case class CompilationError(diagnostic: List[Diagnostic]) extends Reply {
+  case class CompilationFailure(diagnostic: List[Diagnostic]) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("failure")),

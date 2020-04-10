@@ -151,7 +151,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val e = System.nanoTime() - t
 
           // Send back a status message.
-          Reply.Ready(e, Version.CurrentVersion.toString)
+          Reply.CompilationSuccess(e, Version.CurrentVersion.toString)
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal
@@ -160,7 +160,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val code = error.kind
           val message = error.message.fmt
           val diagnostic = Diagnostic(range, code, message)
-          Reply.CompilationError(diagnostic :: Nil) // TODO: Process all errors
+          Reply.CompilationFailure(diagnostic :: Nil) // TODO: Process all errors
       }
 
     case Request.TypeAndEffectOf(doc, pos) =>

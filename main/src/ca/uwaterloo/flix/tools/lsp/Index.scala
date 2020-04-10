@@ -37,7 +37,7 @@ object Index {
 case class Index(m: Map[Int, List[(Int, Expression)]]) {
 
   // TODO: DOC
-  def query(doc: Document, pos: Position): Option[Expression] = {
+  def query(uri: String, pos: Position): Option[Expression] = {
     // TODO: Currently ignores the document
 
     // TODO: Document
