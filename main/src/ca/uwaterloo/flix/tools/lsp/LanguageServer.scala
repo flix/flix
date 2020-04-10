@@ -216,32 +216,23 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.BigInt(_, _) => Index.of(exp0)
 
-    case Expression.Float32(_, _) => Index.of(exp0)
-
-    case Expression.Float64(_, _) => Index.of(exp0)
-
     case Expression.Str(_, _) => Index.of(exp0)
 
     case Expression.Wild(_, _) => Index.of(exp0)
 
-    //        case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
-    //          def eff: Type = Type.Pure
-    //        }
-    //
+    case Expression.Var(_, _, _) => Index.of(exp0)
+
+    case Expression.Def(_, _, _) => Index.of(exp0)
+
     //        case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class Lambda(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, tpe: Type, loc: SourceLocation) extends TypedAst.Expression {
     //          def eff: Type = Type.Pure
     //        }
-    //
-    //        case class Apply(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class Unary(op: UnaryOperator, exp: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.Apply(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
     case Expression.Unary(_, exp, _, _, _) =>
       visitExp(exp) + exp0
 
