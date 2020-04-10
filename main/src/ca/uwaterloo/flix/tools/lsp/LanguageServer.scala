@@ -216,37 +216,53 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Returns a reverse index for the given expression `exp0`.
     */
   private def visitExp(exp0: Expression): Index = exp0 match {
-    case Expression.Unit(_) => Index.of(exp0)
+    case Expression.Unit(_) =>
+      Index.of(exp0)
 
-    case Expression.True(_) => Index.of(exp0)
+    case Expression.True(_) =>
+      Index.of(exp0)
 
-    case Expression.False(_) => Index.of(exp0)
+    case Expression.False(_) =>
+      Index.of(exp0)
 
-    case Expression.Char(_, _) => Index.of(exp0)
+    case Expression.Char(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Float32(_, _) => Index.of(exp0)
+    case Expression.Float32(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Float64(_, _) => Index.of(exp0)
+    case Expression.Float64(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Int8(_, _) => Index.of(exp0)
+    case Expression.Int8(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Int16(_, _) => Index.of(exp0)
+    case Expression.Int16(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Int32(_, _) => Index.of(exp0)
+    case Expression.Int32(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Int64(_, _) => Index.of(exp0)
+    case Expression.Int64(_, _) =>
+      Index.of(exp0)
 
-    case Expression.BigInt(_, _) => Index.of(exp0)
+    case Expression.BigInt(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Str(_, _) => Index.of(exp0)
+    case Expression.Str(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Wild(_, _) => Index.of(exp0)
+    case Expression.Wild(_, _) =>
+      Index.of(exp0)
 
-    case Expression.Var(_, _, _) => Index.of(exp0)
+    case Expression.Var(_, _, _) =>
+      Index.of(exp0)
 
-    case Expression.Def(_, _, _) => Index.of(exp0)
+    case Expression.Def(_, _, _) =>
+      Index.of(exp0)
 
-    case Expression.Hole(_, _, _, _) => Index.of(exp0)
+    case Expression.Hole(_, _, _, _) =>
+      Index.of(exp0)
 
     case Expression.Lambda(_, exp, _, _) =>
       visitExp(exp) + exp0
@@ -277,21 +293,24 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.Tag(_, _, exp, _, _, _) =>
       visitExp(exp) + exp0
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      visitExps(elms) + exp0
+    case Expression.Tuple(exps, tpe, eff, loc) =>
+      visitExps(exps) + exp0
 
-    case Expression.RecordEmpty(tpe, loc) => Index.of(exp0)
+    case Expression.RecordEmpty(tpe, loc) =>
+      Index.of(exp0)
 
+    case Expression.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp) + exp0
 
+    case Expression.RecordExtend(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
 
-    //        case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.RecordRestrict(_, exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.ArrayLit(exps, _, _, _) =>
+      visitExps(exps)
+
     //        case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
     //
     //        case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
