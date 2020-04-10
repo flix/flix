@@ -204,42 +204,21 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     case Expression.Float64(_, _) => Index.of(exp0)
 
-    //        case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Int8
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Int16
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Int32
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Int64
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.BigInt
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
-    //        case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
-    //          def tpe: Type = Type.Str
-    //
-    //          def eff: Type = Type.Pure
-    //        }
-    //
+    case Expression.Int8(_, _) => Index.of(exp0)
+
+    case Expression.Int16(_, _) => Index.of(exp0)
+
+    case Expression.Int32(_, _) => Index.of(exp0)
+
+    case Expression.Int64(_, _) => Index.of(exp0)
+
+    case Expression.BigInt(_, _) => Index.of(exp0)
+
+    case Expression.Float32(_, _) => Index.of(exp0)
+
+    case Expression.Float64(_, _) => Index.of(exp0)
+
+    case Expression.Str(_, _) => Index.of(exp0)
 
     case Expression.Wild(_, _) => Index.of(exp0)
 
