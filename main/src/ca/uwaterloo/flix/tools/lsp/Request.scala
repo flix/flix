@@ -16,9 +16,10 @@
 package ca.uwaterloo.flix.tools.lsp
 
 import ca.uwaterloo.flix.util.Result
-import ca.uwaterloo.flix.util.Result.Ok
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
-import org.json4s.JsonAST.{JArray, JObject, JValue}
+import org.json4s.DefaultFormats
+import org.json4s.JsonAST.{JArray, JObject, JString, JValue}
 
 sealed trait Request
 
@@ -45,15 +46,18 @@ object Request {
   // TODO: Goto type def.
   // TODO: FindUsages.
 
-
+  /**
+    * Tries to parse the given `json` value as a [[Compile]] request.
+    */
   def parseCompile(json: JValue): Result[Request, String] = {
-    val paths = json \\ "paths" match {
+    json \\ "paths" match {
       case JArray(arr) =>
-        // TODO
-        Nil
-      case _ => ???
+        val xs = arr.collect {
+          case JString(s) => s
+        }
+        Ok(Request.Compile(xs))
+      case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
     }
-    Ok(Request.Compile(paths))
   }
 
   def parseTypeOf(json: json4s.JValue): Result[Request, String] = {
