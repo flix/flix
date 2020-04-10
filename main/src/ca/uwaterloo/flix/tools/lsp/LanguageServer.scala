@@ -358,7 +358,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
       visitExp(exp) + exp0
 
     case Expression.ArrayLit(exps, _, _, _) =>
-      visitExps(exps)
+      visitExps(exps) + exp0
 
     case Expression.ArrayNew(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) + exp0
@@ -375,18 +375,23 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + exp0
 
-    //        case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //        case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: Type, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.VectorLit(exps, _, _, _) =>
+      visitExps(exps) + exp0
+
+    case Expression.VectorNew(exp, _, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.VectorLoad(exp, _, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.VectorStore(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2) + exp0
+
+    case Expression.VectorLength(exp, _, _, _) =>
+      visitExp(exp) + exp0
+
+    case Expression.VectorSlice(exp, _, _, _, _, _) =>
+      visitExp(exp) + exp0
 
     case Expression.Ref(exp, _, _, _) =>
       visitExp(exp) + exp0
