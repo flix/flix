@@ -1808,5 +1808,20 @@ def sortWith12(): Bool =
 def sortWith13(): Bool =
     List.sortWith((x,y) -> if (x > y) -1 else 1, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
 
+/////////////////////////////////////////////////////////////////////////////
+// unfold                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfold01(): Bool =
+    List.unfold(s -> if (true) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Nil
+
+@test
+def unfold02(): Bool =
+    List.unfold(s -> if (s > 0) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: Nil
+
+@test
+def unfold03(): Bool =
+    List.unfold(s -> if (s > 1) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: Nil
 
 }

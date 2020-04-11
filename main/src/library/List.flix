@@ -909,13 +909,20 @@ namespace List {
     /// Helper function for `sortWith`.
     ///
     def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a]) : List[a] = match (xs, ys) {
-            case (r :: rs, s :: ss) =>
-                if (cmp(r,s) > 0)
-                    s :: sortMerge(cmp, xs, ss)
-                else
-                    r :: sortMerge(cmp, rs, ys)
-            case (Nil, ss) => ss
-            case (rs, Nil) => rs
+        case (r :: rs, s :: ss) =>
+            if (cmp(r,s) > 0)
+                s :: sortMerge(cmp, xs, ss)
+            else
+                r :: sortMerge(cmp, rs, ys)
+        case (Nil, ss) => ss
+        case (rs, Nil) => rs
+    }
+
+    pub def unfold(f: s -> Option[(a, s)] & e, st: s): List[a] & e = unfoldHelper(f, st, xs -> xs)
+
+    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, cont: List[a] -> List[a]): List[a] & e = match f(st) {
+        case None => cont(Nil)
+        case Some(a, st1) => unfoldHelper(f, st1, xs -> cont(a :: xs))
     }
 
     ///
