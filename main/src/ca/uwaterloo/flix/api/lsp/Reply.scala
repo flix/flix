@@ -46,11 +46,11 @@ object Reply {
   /**
     * A reply that represents that compilation failed.
     */
-  case class CompilationFailure(diagnostic: List[Diagnostic]) extends Reply {
+  case class CompilationFailure(publishDiagnosticsParams: PublishDiagnosticsParams) extends Reply {
     def toJSON: JObject =
       JObject(
         JField("status", JString("failure")),
-        JField("diagnostic", JArray(diagnostic.map(_.toJSON)))
+        JField("publishDiagnosticsParams", publishDiagnosticsParams.toJSON)
       )
   }
 

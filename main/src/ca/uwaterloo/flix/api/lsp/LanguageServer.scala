@@ -158,7 +158,8 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
           val code = error.kind
           val message = error.message.fmt
           val diagnostic = Diagnostic(range, code, message)
-          Reply.CompilationFailure(diagnostic :: Nil) // TODO: Process all errors
+          val publishDiagnosticsParams = PublishDiagnosticsParams("", diagnostic :: Nil) // TODO: URI
+          Reply.CompilationFailure(publishDiagnosticsParams) // TODO: Process all errors
       }
 
     case Request.TypeAndEffectOf(doc, pos) =>
