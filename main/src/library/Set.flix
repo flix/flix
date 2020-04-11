@@ -335,7 +335,11 @@ namespace Set {
         RedBlackTree.foreach((x, _) -> f(x), es)
 
     ///
-    /// TODO
+    /// Build a set by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a,st1)` to signal a new set element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the set.
     ///
     pub def unfold(f: s -> Option[(a, s)] & e, st: s): Set[a] & e = unfoldHelper(f, st, empty())
 

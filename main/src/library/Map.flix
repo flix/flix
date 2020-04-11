@@ -493,6 +493,13 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.foreach(f, xs)
 
+    ///
+    /// Build a map by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(k,v,st1)` to signal a new key-value pair `k` and `v` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the map.
+    ///
     pub def unfold(f: s -> Option[(k, v, s)] & e, st: s): Map[k,v] & e = unfoldHelper(f, st, empty())
 
     ///

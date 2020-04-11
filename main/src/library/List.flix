@@ -919,10 +919,13 @@ namespace List {
     }
 
     ///
-    /// TODO.
+    /// Build a list by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a,st1)` to signal a new list element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the list.
     ///
     pub def unfold(f: s -> Option[(a, s)] & e, st: s): List[a] & e = unfoldHelper(f, st, xs -> xs)
-
 
     ///
     /// Helper function for `unfold`.
