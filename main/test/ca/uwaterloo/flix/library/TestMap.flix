@@ -1588,4 +1588,92 @@ def unfold05(): Bool =
 def unfold06(): Bool =
     Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 2), 0) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
 
+/////////////////////////////////////////////////////////////////////////////
+// unfoldWithIterator                                                      //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldWithIterator01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIterator(step) == Map#{}
+
+@test
+def unfoldWithIterator02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 0)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIterator(step) == Map#{0 -> '0'}
+
+@test
+def unfoldWithIterator03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 1)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIterator(step) == Map#{0 -> '0', 1 -> '1'}
+
+@test
+def unfoldWithIterator04(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIterator(step) == Map#{0 -> '0', 1 -> '1', 2 -> '2', 3 -> '3', 4 -> '4', 5 -> '5', 6 -> '6', 7 -> '7', 8 -> '8', 9 -> '9'}
+
+@test
+def unfoldWithIterator05(): Bool & Impure =
+    let x = ref 5;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIterator(step) == Map#{5 -> '5', 6 -> '6', 7 -> '7', 8 -> '8', 9 -> '9'}
+
+@test
+def unfoldWithIterator06(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 2;
+            Some(k, v)
+        };
+    Map.unfoldWithIterator(step) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
+
 }

@@ -1836,4 +1836,86 @@ def unfold05(): Bool =
 def unfold06(): Bool =
     List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
 
+/////////////////////////////////////////////////////////////////////////////
+// unfoldWithIterator                                                      //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldWithIterator01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIterator(step) == Nil
+
+@test
+def unfoldWithIterator02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 0)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIterator(step) == '0' :: Nil
+
+@test
+def unfoldWithIterator03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 1)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIterator(step) == '0' :: '1' :: Nil
+
+@test
+def unfoldWithIterator04(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIterator(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfoldWithIterator05(): Bool & Impure =
+    let x = ref 5;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIterator(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfoldWithIterator06(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 2;
+            Some(c)
+        };
+    List.unfoldWithIterator(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
+
 }
