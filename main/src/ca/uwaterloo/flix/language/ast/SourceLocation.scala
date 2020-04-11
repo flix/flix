@@ -19,6 +19,9 @@ object SourceLocation {
     */
   val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
 
+  /**
+    * Returns the source location constructed from the source positions `b` and `e.`
+    */
   def mk(b: SourcePosition, e: SourcePosition): SourceLocation = {
     assert(b.source == e.source)
     val lineAt = b.input match {
@@ -59,6 +62,11 @@ case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine
     * Returns a reified source location.
     */
   def reified: ReifiedSourceLocation = new ReifiedSourceLocation(source.format, beginLine, beginCol, endLine, endCol)
+
+  /**
+    * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
+    */
+  def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
 
   /**
     * Returns the hashCode of `this` source location.

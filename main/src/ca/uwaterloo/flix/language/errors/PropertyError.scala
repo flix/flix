@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{FinalAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{FinalAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 case class PropertyError(property: FinalAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: Source = property.defn.loc.source
+  val loc: SourceLocation = property.defn.loc
   val message: VirtualTerminal = {
     val name = property.defn.toString
     val law = property.law.toString

@@ -177,11 +177,16 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
         case Failure(errors) =>
           // Case 2: Compilation failed. Send back the error messages.
           implicit val ctx: TerminalContext = NoTerminal
+
+
+
           val error = errors.head
           val range = Range(Position(0, 0), Position(0, 0)) // TODO: Need the source location.
           val code = error.kind
           val message = error.message.fmt
           val diagnostic = Diagnostic(range, code, message)
+
+
           val publishDiagnosticsParams = PublishDiagnosticsParams("", diagnostic :: Nil) // TODO: URI
           Reply.CompilationFailure(publishDiagnosticsParams) // TODO: Process all errors
       }

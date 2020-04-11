@@ -65,9 +65,10 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedA
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+        val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
   }
 
@@ -80,9 +81,10 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedA
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+        val loc = SourceLocation(source, e.position.line, e.position.column, e.position.line, e.position.column, _ => "")
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), loc).toFailure
       case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SourceLocation.Unknown).toFailure
     }
   }
 

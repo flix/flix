@@ -65,6 +65,7 @@ object NameError {
     */
   case class DuplicateDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -87,6 +88,7 @@ object NameError {
     */
   case class DuplicateUseDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -107,6 +109,7 @@ object NameError {
     */
   case class DuplicateUseTyp(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -127,6 +130,7 @@ object NameError {
     */
   case class DuplicateUseTag(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -147,6 +151,7 @@ object NameError {
     */
   case class DuplicateTypeAlias(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine

@@ -63,6 +63,7 @@ object RedundancyError {
     */
   case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
     val source: Source = sym1.loc.source
+    val loc: SourceLocation = sym1.loc min sym2.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -84,6 +85,7 @@ object RedundancyError {
     */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
     val source: Source = sym.loc.source
+    val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -109,6 +111,7 @@ object RedundancyError {
     */
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
     val source: Source = sym.loc.source
+    val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -135,6 +138,7 @@ object RedundancyError {
     */
   case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Ident) extends RedundancyError {
     val source: Source = tag.loc.source
+    val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -159,6 +163,7 @@ object RedundancyError {
     */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
     val source: Source = sym.loc.source
+    val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -183,6 +188,7 @@ object RedundancyError {
     */
   case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
     val source: Source = ident.loc.source
+    val loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -207,6 +213,7 @@ object RedundancyError {
     */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
     val source: Source = sym.loc.source
+    val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -255,6 +262,7 @@ object RedundancyError {
    */
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends RedundancyError {
     val source: Source = sym.loc.source
+    val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
