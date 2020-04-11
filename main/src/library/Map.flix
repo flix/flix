@@ -493,6 +493,16 @@ namespace Map {
         let Map(xs) = m;
         RedBlackTree.foreach(f, xs)
 
+    pub def unfold(f: s -> Option[(k, v, s)] & e, st: s): Map[k,v] & e = unfoldHelper(f, st, empty())
+
+    ///
+    /// Helper function for `unfold`.
+    ///
+    pub def unfoldHelper(f: s -> Option[(k, v, s)] & e, st: s, ac: Map[k,v]): Map[k,v] & e = match f(st) {
+        case None => ac
+        case Some((k, v, st1)) => unfoldHelper(f, st1, insert(k, v, ac))
+    }
+
     ///
     /// Helper function for `cmp`.
     ///

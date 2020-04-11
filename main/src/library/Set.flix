@@ -335,6 +335,19 @@ namespace Set {
         RedBlackTree.foreach((x, _) -> f(x), es)
 
     ///
+    /// TODO
+    ///
+    pub def unfold(f: s -> Option[(a, s)] & e, st: s): Set[a] & e = unfoldHelper(f, st, empty())
+
+    ///
+    /// Helper function for `unfold`.
+    ///
+    pub def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e = match f(st) {
+        case None => ac
+        case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
+    }
+
+    ///
     /// Helper function for `cmp`.
     ///
     def __cmpHelper(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {

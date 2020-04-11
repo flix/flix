@@ -918,8 +918,15 @@ namespace List {
         case (rs, Nil) => rs
     }
 
+    ///
+    /// TODO.
+    ///
     pub def unfold(f: s -> Option[(a, s)] & e, st: s): List[a] & e = unfoldHelper(f, st, xs -> xs)
 
+
+    ///
+    /// Helper function for `unfold`.
+    ///
     def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, cont: List[a] -> List[a]): List[a] & e = match f(st) {
         case None => cont(Nil)
         case Some(a, st1) => unfoldHelper(f, st1, xs -> cont(a :: xs))

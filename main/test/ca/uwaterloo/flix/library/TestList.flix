@@ -1824,4 +1824,16 @@ def unfold02(): Bool =
 def unfold03(): Bool =
     List.unfold(s -> if (s > 1) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: Nil
 
+@test
+def unfold04(): Bool =
+    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfold05(): Bool =
+    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 5) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfold06(): Bool =
+    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
+
 }
