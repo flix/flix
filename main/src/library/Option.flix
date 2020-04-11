@@ -215,7 +215,7 @@ namespace Option {
     }
 
     ///
-    /// Returns the Option value `Ok(v) if `o` is `Some(v)`. Otherwise returns `Err(e)`.
+    /// Returns the Option value `Ok(v)` if `o` is `Some(v)`. Otherwise returns `Err(e)`.
     ///
     pub def toOk(o: Option[t], e: e): Result[t, e] = match o {
         case None       => Err(e)
@@ -223,7 +223,7 @@ namespace Option {
     }
 
     ///
-    /// Returns the Option value `Err(e) if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
+    /// Returns the Option value `Err(e)` if `o` is `Some(e)`. Otherwise returns `Ok(d)`.
     ///
     pub def toErr(o: Option[e], d: t): Result[t, e] = match o {
         case None       => Ok(d)
@@ -231,7 +231,7 @@ namespace Option {
     }
 
     ///
-    /// Returns the Validation value `Success(v) if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
+    /// Returns the Validation value `Success(v)` if `o` is `Some(v)`. Otherwise lifts `e` into Validation's `Failure`.
     ///
     pub def toSuccess(o: Option[t], e: e): Validation[t, e] = match o {
         case None       => Failure(Nel(e, Nil))

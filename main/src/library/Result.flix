@@ -187,11 +187,11 @@ namespace Result {
     /// Applies the function in `r1` to the value in `r2`.
     ///
     pub def ap(r1: Result[t -> u & f, e], r2: Result[t, e]): Result[u, e] & f = match r1 {
-        case Err(e)     => Err(e)
-        case Ok(f)      => match r2 {
-            case Err(e)     => Err(e)
-            case Ok(a)    => Ok(f(a))
+        case Ok(f)  => match r2 {
+            case Ok(a)  => Ok(f(a))
+            case Err(e) => Err(e)
         }
+        case Err(e) => Err(e)
     }
 
     ///
