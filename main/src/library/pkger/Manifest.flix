@@ -1,4 +1,4 @@
-namespace Package {
+namespace Manifest {
     pub enum License {
         case MIT
         case GPLv3
@@ -59,6 +59,7 @@ namespace Package {
 
         let package_two_versions = empty()
             |> insert((0, 1, 0), empty())
+            |> insert((0, 1, 1), empty())
             |> insert((0, 2, 0), empty() |> insert("package_one", (0, 1, 0)));
 
         let all_packages = empty()
@@ -121,13 +122,108 @@ namespace Package {
             |> List.map(match (package, version, dependencies) -> newLockedPackage(package, version, List.toMap(dependencies)))
     }
 
+    // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
+    pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impure = {
+        let getProjectDir = (base) -> Path.add(base, name);
+
+        // Project directories
+        let getBuildDir = (base) -> Path.add(getProjectDir(base), "build");
+        let getSourceDir = (base) -> Path.add(getProjectDir(base), "src");
+        let getTestDir = (base) -> Path.add(getProjectDir(base), "test");
+
+        // Top-level files
+        let getPackageFile = (base) -> Path.add(getProjectDir(base), "package.sn");
+        let getHistoryFile = (base) -> Path.add(getProjectDir(base), "HISTORY.md");
+        let getLicenseFile = (base) -> Path.add(getProjectDir(base), "LICENSE.md");
+        let getReadmeFile = (base) -> Path.add(getProjectDir(base), "README.md");
+
+        // Source files
+        let getMainSourceFile = (base) -> Path.add(getSourceDir(base), "Main.flix");
+        let getMainTestFile = (base) -> Path.add(getTestDir(base), "TestMain.flix");
+
+        let newFile = (content) -> (path) -> {
+            Path.writeLines(path, Array.toList(content))
+        };
+
+        let workingDir = Path.workingDirectory();
+
+        let files = Array.toList([getPackageFile, getHistoryFile, getLicenseFile, getReadmeFile, getMainSourceFile, getMainTestFile]);
+        let dirs = Array.toList([getBuildDir, getSourceDir, getTestDir]);
+
+        // Ensure that none of the paths the init process creates are currently present on the system
+        let pathExists = [files, dirs]
+            |> Array.toList
+            |> List.flatten
+            |> List.map(f -> {
+                    let dir = Result.map(f, workingDir);
+                    match Result.flatMap(Path.exists, dir) {
+                        case Ok(exists) => exists,
+                        case _ => true
+                    }
+                })
+            |> List.find(x -> x);
+
+        if (Option.isEmpty(pathExists)) {
+            // Create all directories required for the package
+            List.map(f -> {
+                let dir = Result.map(f, workingDir);
+                Result.flatMap(Path.mkdirs, dir)
+            }, dirs);
+
+            let quote = (s) -> Char.toString('"') + s + Char.toString('"');
+
+            // TODO: Abstract this
+            let newPackageFile = newFile([
+                "(package",
+                "  (name " + name + ")",
+                "  (version " + quote("0.1.0") + ")",
+                // Empty list/empty value?
+                "  (authors ((name " + quote("Rasmus Larsen") + ") (email " + quote("doctorherbstein@gmail.com") + ")))",
+                // Should description be quoted?
+                "  (description " + quote(name) + ")",
+             // "  (license GPLv3)",
+             // "  (license (name LGPLv2)",
+                "  (license (file " + quote("LICENSE") + ")",
+                "  (depends (other_package " + quote("1.2.3") + "))",
+                "  (home " + quote("https://github.com/Herbstein/package_one") + ")",
+                ")"
+            ]);
+            Result.flatMap(newPackageFile, Result.map(getPackageFile, workingDir));
+
+            let newHistoryFile = newFile(["### v0.1.0", "  Initial Release"]);
+            Result.flatMap(newHistoryFile, Result.map(getHistoryFile, workingDir));
+
+            let newLicenseFile = newFile(["<<ENTER LICENSE INFORMATION>>"]);
+            Result.flatMap(newLicenseFile, Result.map(getLicenseFile, workingDir));
+
+            let newReadmeFile = newFile(["# " + name, "", "Enter some useful information", ""]);
+            Result.flatMap(newReadmeFile, Result.map(getReadmeFile, workingDir));
+
+            let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
+            Result.flatMap(newMainSourceFile, Result.map(getMainSourceFile, workingDir));
+
+            let newMainTestFile = newFile(["@test", "def testMain01(): Bool & Impure = main() == ()"]);
+            Result.flatMap(newMainTestFile, Result.map(getMainTestFile, workingDir));
+
+            // Output something that can be distinguished easily
+            Result.mapErr(_ -> GenericIoError, Result.map(getSourceDir, workingDir))
+        } else {
+            Err(GenericIoError)
+        }
+    }
+
+    pub enum ErrorFull {
+        case ProjectDirExists
+        case GenericIoError
+    }
+
     namespace Test {
         def transitiveContains(mx: Map[String, SemVer.SemVer], m: (String, SemVer.SemVer)): Bool = {
             Map.exists((k, v) -> match m { case (p, s) => p == k && s == v }, mx)
         }
 
-        def containedIn(xs: List[Package.LockedPackage], package: Package.LockedPackage): Bool = {
-            use Package.LockedPackage;
+        def containedIn(xs: List[Manifest.LockedPackage], package: Manifest.LockedPackage): Bool = {
+            use Manifest.LockedPackage;
 
             let transitive = (p) -> Map.forall((k, v) -> transitiveContains(p.transitive, (k, v)), package.transitive);
 
@@ -140,7 +236,7 @@ namespace Package {
 
         def testLocking(): Bool & Impure = {
             use Test.test;
-            use Package.{License, LockedPackage, lockPackage, newLockedPackage};
+            use Manifest.{License, LockedPackage, lockPackage, newLockedPackage};
             use Map.{empty, insert};
 
             let package = { name = "some_package"
@@ -160,7 +256,28 @@ namespace Package {
                 :: newLockedPackage("package_one", (0,1,1), empty())
                 :: Nil;
 
-            test("lockingIsExpected", () -> List.forall(containedIn(locked), check))
+            let first = test("lockingIsExpected1", () -> List.forall(containedIn(locked), check));
+
+            let package2 = {
+                name = "another_package",
+                version = (0, 1, 0),
+                authors = {name = "Some Guy", email = "test@test.com"} :: Nil,
+                description = "Some package",
+                license = Some(License.MIT),
+                depends = empty() |> insert("package_one", (0, 2, 0)),
+                home = None
+            };
+
+            let locked2 = lockPackage(package2);
+
+            let check2 = newLockedPackage("another_package", (0, 1, 0), empty() |> insert("package_one", (0, 2, 1)) |> insert("package_two", (0, 1, 1)))
+                :: newLockedPackage("package_one", (0, 2, 1), empty() |> insert("package_two", (0, 1, 1)))
+                :: newLockedPackage("package_two", (0, 1, 1), empty())
+                :: Nil;
+
+            let second = test("lockingIsExpected2", () -> List.forall(containedIn(locked2), check2));
+
+            first && second
         }
 
         pub def allTests(): Bool & Impure = {
