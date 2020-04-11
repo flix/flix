@@ -23,7 +23,7 @@ import java.nio.file.Paths
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
-import ca.uwaterloo.flix.tools.lsp.LanguageServer
+import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError

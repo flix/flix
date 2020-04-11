@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.lsp
+package ca.uwaterloo.flix.api.lsp
 
-import org.json4s.JsonAST.{JField, JInt, JObject, JString}
+import org.json4s.JsonAST.{JField, JObject, JString}
 
 /**
-  * Represent a `Diagnostic` in LSP.
+  * Represent a `LocationLink` in LSP.
   */
-case class Diagnostic(range: Range, code: String, message: String) {
-  def toJSON: JObject =
+case class LocationLink(originSelectionRange: Range, targetUri: String, targetRange: Range, targetSelectionRange: Range) {
+  def toJSON: JObject = {
     JObject(
-      JField("range", range.toJSON),
-      JField("severity", JInt(1)),
-      JField("code", JString(code)),
-      JField("message", JString(message)),
+      JField("originSelectionRange", originSelectionRange.toJSON),
+      JField("targetUri", JString(targetUri)),
+      JField("targetRange", targetRange.toJSON),
+      JField("targetSelectionRange", targetSelectionRange.toJSON)
     )
+  }
 }
