@@ -511,6 +511,24 @@ namespace Map {
     }
 
     ///
+    /// Build a map by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(k,v)` to signal a new key-value pair `k` and `v`.
+    ///
+    /// `next` should return `None` to signal the end of building the map.
+    ///
+    pub def unfoldWithIterator(next: () -> Option[(k, v)] & e): Map[k, v] & e = unfoldWithIteratorHelper(next, empty())
+
+    ///
+    /// Helper function for `unfoldWithIterator`.
+    ///
+    def unfoldWithIteratorHelper(next: () -> Option[(k, v)] & e, ac: Map[k, v]): Map[k, v] & e = match next() {
+        case None => ac
+        case Some(k, v) => unfoldWithIteratorHelper(next, insert(k, v, ac))
+    }
+
+    ///
     /// Helper function for `cmp`.
     ///
     def __cmpHelper(m1: List[(k, v)], m2: List[(k, v)]): Int32 = match (m1, m2) {

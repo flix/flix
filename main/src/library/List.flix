@@ -936,6 +936,24 @@ namespace List {
     }
 
     ///
+    /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a new list element `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the list.
+    ///
+    pub def unfoldWithIterator(next: () -> Option[a] & e): List[a] & e = unfoldWithIteratorHelper(next, xs -> xs)
+
+    ///
+    /// Helper function for `unfoldWithIterator`.
+    ///
+    def unfoldWithIteratorHelper(next: () -> Option[a] & e, cont: List[a] -> List[a]): List[a] & e = match next() {
+        case None => cont(Nil)
+        case Some(a) => unfoldWithIteratorHelper(next, xs -> cont(a :: xs))
+    }
+
+    ///
     /// Compares `xs` and `ys` lexicographically.
     ///
     def __cmp(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {

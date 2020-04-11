@@ -352,6 +352,24 @@ namespace Set {
     }
 
     ///
+    /// Build a set by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a value pair `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the set.
+    ///
+    pub def unfoldWithIterator(next: () -> Option[a] & e): Set[a] & e = unfoldWithIteratorHelper(next, empty())
+
+    ///
+    /// Helper function for `unfoldWithIterator`.
+    ///
+    def unfoldWithIteratorHelper(next: () -> Option[a] & e, ac: Set[a]): Set[a] & e = match next() {
+        case None => ac
+        case Some(a) => unfoldWithIteratorHelper(next, insert(a, ac))
+    }
+
+    ///
     /// Helper function for `cmp`.
     ///
     def __cmpHelper(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
