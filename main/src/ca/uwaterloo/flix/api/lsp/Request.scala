@@ -28,9 +28,9 @@ sealed trait Request
 object Request {
 
   /**
-    * A request to compile the `path` source files.
+    * A request to validate the source files in `paths`.
     */
-  case class Compile(paths: List[String]) extends Request
+  case class Validate(paths: List[String]) extends Request
 
   /**
     * A request to get the type and effect of an expression.
@@ -48,15 +48,15 @@ object Request {
   case object Shutdown extends Request
 
   /**
-    * Tries to parse the given `json` value as a [[Compile]] request.
+    * Tries to parse the given `json` value as a [[Validate]] request.
     */
-  def parseCompile(json: JValue): Result[Request, String] = {
+  def parseValidate(json: JValue): Result[Request, String] = {
     json \\ "paths" match {
       case JArray(arr) =>
         val xs = arr.collect {
           case JString(s) => s
         }
-        Ok(Request.Compile(xs))
+        Ok(Request.Validate(xs))
       case _ => Err("Cannot find property 'paths'. Missing or incorrect type?")
     }
   }

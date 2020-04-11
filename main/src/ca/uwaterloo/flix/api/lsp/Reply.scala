@@ -31,7 +31,7 @@ trait Reply {
 object Reply {
 
   /**
-    * A reply that represents that compilation succeeded.
+    * A reply that represents that compilation was successful.
     */
   case class CompilationSuccess(time: Long, version: String) extends Reply {
     def toJSON: JObject = {
@@ -44,7 +44,7 @@ object Reply {
   }
 
   /**
-    * A reply that represents that compilation failed.
+    * A reply that represents that compilation was unsuccessful.
     */
   case class CompilationFailure(publishDiagnosticsParams: PublishDiagnosticsParams) extends Reply {
     def toJSON: JObject =

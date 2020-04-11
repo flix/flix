@@ -114,7 +114,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
 
     // Determine the type of request.
     json \\ "request" match {
-      case JString("compile") => Request.parseCompile(json)
+      case JString("validate") => Request.parseValidate(json)
       case JString("typeAndEffOf") => Request.parseTypeAndEffectOf(json)
       case JString("gotoDef") => Request.parseGotoDef(json)
       case JString("shutdown") => Ok(Request.Shutdown)
@@ -128,7 +128,7 @@ class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(po
     * Process the request.
     */
   private def processRequest(request: Request)(implicit ws: WebSocket): Reply = request match {
-    case Request.Compile(paths) =>
+    case Request.Validate(paths) =>
       // Configure the Flix compiler.
       val flix = new Flix()
       for (path <- paths) {
