@@ -33,20 +33,30 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-case class Index(m: Map[(String, Int), List[(Int, Expression)]]) {
+case class Index(m: Map[(String, Int), List[Expression]]) {
 
   /**
     * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
     */
+  // TODO: Add support for multi-line expressions.
   def query(uri: String, pos: Position): Option[Expression] = {
-    // TODO: DEbug and cleanup.
+    // A key consists of a uri and a line number.
     val key = (uri, pos.line)
     m.get(key).flatMap {
       case candidates =>
-        val filtered = candidates.filter(p => p._1 >= pos.col)
-        val sorted = filtered.sortBy(p => range(p._2.loc))
-        println(sorted.map(_._2.loc.format).mkString("\n"))
-        sorted.headOption.map(_._2)
+        // We have all expressions on that uri and on that line.
+
+        // Step 1: Compute all whole range overlap with the given position.
+        val filtered = candidates.filter(e => e.loc.beginCol <= pos.col && pos.col <= e.loc.endCol)
+
+        // Step 2: Sort the expressions by their span (i.e. their length).
+        val sorted = filtered.sortBy(e => span(e.loc))
+
+        // Print all candidates.
+        // println(sorted.map(_.loc.format).mkString("\n"))
+
+        // Step 3: Return the candidate with the smallest span.
+        sorted.headOption
     }
   }
 
@@ -54,13 +64,19 @@ case class Index(m: Map[(String, Int), List[(Int, Expression)]]) {
     * Adds the given expression `exp0` to `this` index.
     */
   def +(exp0: Expression): Index = {
+    // Compute the uri, line, and column of the expression.
     val uri = exp0.loc.source.name
     val beginLine = exp0.loc.beginLine
     val beginCol = exp0.loc.beginCol
-    val onLine = m.getOrElse((uri, beginLine), Nil)
-    val newOnLine = (beginCol, exp0) :: onLine
-    val m2 = m + ((uri, beginLine) -> newOnLine)
-    Index(m2)
+
+    // Compute the other expressions already on that uri and line.
+    val otherExps = m.getOrElse((uri, beginLine), Nil)
+
+    // Prepend the current expression to the other expressions on that uri and line.
+    val newExps = exp0 :: otherExps
+
+    // Returns an updated map.
+    Index(m + ((uri, beginLine) -> newExps))
   }
 
   /**
@@ -68,19 +84,21 @@ case class Index(m: Map[(String, Int), List[(Int, Expression)]]) {
     */
   def ++(that: Index): Index = {
     val m3 = that.m.foldLeft(this.m) {
-      case (macc, (line, onLine2)) =>
-        val onLine = macc.getOrElse(line, Nil)
-        val result = onLine ::: onLine2
+      case (macc, (line, exps1)) =>
+        val exps2 = macc.getOrElse(line, Nil)
+        val result = exps1 ::: exps2
         macc + (line -> result)
     }
     Index(m3)
   }
 
-  // TODO: DOC
-  private def range(loc: SourceLocation): Int =
+  /**
+    * Returns the span (i.e. length) of the given source location `loc`.
+    */
+  private def span(loc: SourceLocation): Int =
     if (loc.beginLine == loc.endLine)
       loc.endCol - loc.beginCol
     else
-      1000 // TODO
+      1000 // TODO: Add support for multi-line expressions.
 
 }
