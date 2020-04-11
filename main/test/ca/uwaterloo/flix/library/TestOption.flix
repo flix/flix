@@ -167,6 +167,42 @@ def toMap01(): Bool = Option.toMap(None) `assertEq!` Map#{}
 def toMap02(): Bool = Option.toMap(Some((1, true))) `assertEq!` Map#{1 -> true}
 
 /////////////////////////////////////////////////////////////////////////////
+// toOk                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toOk01(): Bool = Option.toOk(None, "err") == Err("err")
+
+@test
+def toOk02(): Bool = Option.toOk(Some(1), "err") == Ok(1)
+
+/////////////////////////////////////////////////////////////////////////////
+// toErr                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toErr01(): Bool = Option.toErr(None, "default") == Ok("default")
+
+@test
+def toErr02(): Bool = Option.toErr(Some("err"), "default") == Err("err")
+
+/////////////////////////////////////////////////////////////////////////////
+// toSuccess                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toSuccess01(): Bool = Option.toSuccess(None, "err") == Failure(Nel("err", Nil))
+
+@test
+def toSuccess02(): Bool = Option.toSuccess(Some(1), "err") == Success(1)
+
+/////////////////////////////////////////////////////////////////////////////
+// toFailure                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toFailure01(): Bool = Option.toFailure(None, "default") == Success("default")
+
+@test
+def toFailure02(): Bool = Option.toFailure(Some("err"), "default") == Failure(Nel("err", Nil))
+
+/////////////////////////////////////////////////////////////////////////////
 // withDefault                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -359,5 +395,279 @@ def foreach02(): Bool & Impure =
     let r = ref 21;
     Option.foreach(x -> r := x, Some(42));
     42 == deref r
+
+/////////////////////////////////////////////////////////////////////////////
+// ap                                                                      //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def ap01(): Bool = Option.ap(Some(x -> x + 1), Some(123)) == Some(124)
+
+@test
+def ap02(): Bool = Option.ap(Some(x -> x + 1), None) == None
+
+@test
+def ap03(): Bool = Option.ap(None, Some(123)) == None
+
+@test
+def ap04(): Bool = Option.ap(None, None) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift2                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift201(): Bool = Option.lift2((x1,x2) -> x1 + x2, Some(123), Some(1)) == Some(124)
+
+@test
+def lift202(): Bool = Option.lift2((x1,x2) -> x1 + x2, Some(123), None) == None
+
+@test
+def lift203(): Bool = Option.lift2((x1,x2) -> x1 + x2, None, Some(1)) == None
+
+@test
+def lift204(): Bool = Option.lift2((x1,x2) -> x1 + x2, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift3                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift301(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, Some(123), Some(1), Some(2)) == Some(126)
+
+@test
+def lift302(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, Some(123), Some(1), None) == None
+
+@test
+def lift303(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, Some(123), None, Some(2)) == None
+
+@test
+def lift304(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, None, Some(1), Some(2)) == None
+
+@test
+def lift305(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, Some(123), None, None) == None
+
+@test
+def lift306(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, None, Some(1), None) == None
+
+@test
+def lift307(): Bool = Option.lift3((x1,x2,x3) -> x1 + x2 + x3, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift4                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift401(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Some(123), Some(1), Some(2), Some(3)) == Some(129)
+
+@test
+def lift402(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Some(123), Some(1), Some(2), None) == None
+
+@test
+def lift403(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Some(123), Some(1), None, Some(3)) == None
+
+@test
+def lift404(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Some(123), None, Some(2), Some(3)) == None
+
+@test
+def lift405(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, None, Some(1), Some(2), Some(3)) == None
+
+@test
+def lift406(): Bool = Option.lift4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, None, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift5                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift501(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Some(123), Some(1), Some(2), Some(3), Some(4)) == Some(133)
+
+@test
+def lift502(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Some(123), Some(1), Some(2), Some(3), None) == None
+
+@test
+def lift503(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Some(123), Some(1), Some(2), None, Some(4)) == None
+
+@test
+def lift504(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Some(123), Some(1), None, Some(3), Some(4)) == None
+
+@test
+def lift505(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Some(123), None, Some(2), Some(3), Some(4)) == None
+
+@test
+def lift506(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, None, Some(1), Some(2), Some(3), Some(4)) == None
+
+@test
+def lift507(): Bool = Option.lift5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, None, None, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift6                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift601(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5)) == Some(138)
+
+@test
+def lift602(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), Some(1), Some(2), Some(3), Some(4), None) == None
+
+@test
+def lift603(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), Some(1), Some(2), Some(3), None, Some(5)) == None
+
+@test
+def lift604(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), Some(1), Some(2), None, Some(4), Some(5)) == None
+
+@test
+def lift605(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), Some(1), None, Some(3), Some(4), Some(5)) == None
+
+@test
+def lift606(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Some(123), None, Some(2), Some(3), Some(4), Some(5)) == None
+
+@test
+def lift607(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, None, Some(1), Some(2), Some(3), Some(4), Some(5)) == None
+
+@test
+def lift608(): Bool = Option.lift6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, None, None, None, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift7                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift701(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6)) == Some(144)
+
+@test
+def lift702(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), None) == None
+
+@test
+def lift703(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), Some(2), Some(3), Some(4), None, Some(6)) == None
+
+@test
+def lift704(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), Some(2), Some(3), None, Some(5), Some(6)) == None
+
+@test
+def lift705(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), Some(2), None, Some(4), Some(5), Some(6)) == None
+
+@test
+def lift706(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), Some(1), None, Some(3), Some(4), Some(5), Some(6)) == None
+
+@test
+def lift707(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Some(123), None, Some(2), Some(3), Some(4), Some(5), Some(6)) == None
+
+@test
+def lift708(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, None, Some(1), Some(2), Some(3), Some(4), Some(5), Some(6)) == None
+
+@test
+def lift709(): Bool = Option.lift7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, None, None, None, None, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift8                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift801(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7)) == Some(151)
+
+@test
+def lift802(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), None) == None
+
+@test
+def lift803(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), None, Some(7)) == None
+
+@test
+def lift804(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), Some(3), Some(4), None, Some(6), Some(7)) == None
+
+@test
+def lift805(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), Some(3), None, Some(5), Some(6), Some(7)) == None
+
+@test
+def lift806(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), Some(2), None, Some(4), Some(5), Some(6), Some(7)) == None
+
+@test
+def lift807(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), Some(1), None, Some(3), Some(4), Some(5), Some(6), Some(7)) == None
+
+@test
+def lift808(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Some(123), None, Some(2), Some(3), Some(4), Some(5), Some(6), Some(7)) == None
+
+@test
+def lift809(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, None, Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7)) == None
+
+@test
+def lift810(): Bool = Option.lift8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, None, None, None, None, None, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift9                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift901(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8)) == Some(159)
+
+@test
+def lift902(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), None) == None
+
+@test
+def lift903(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), None, Some(8)) == None
+
+@test
+def lift904(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), None, Some(7), Some(8)) == None
+
+@test
+def lift905(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), Some(4), None, Some(6), Some(7), Some(8)) == None
+
+@test
+def lift906(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), Some(3), None, Some(5), Some(6), Some(7), Some(8)) == None
+
+@test
+def lift907(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), Some(2), None, Some(4), Some(5), Some(6), Some(7), Some(8)) == None
+
+@test
+def lift908(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), Some(1), None, Some(3), Some(4), Some(5), Some(6), Some(7), Some(8)) == None
+
+@test
+def lift909(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Some(123), None, Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8)) == None
+
+@test
+def lift910(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, None, Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8)) == None
+
+@test
+def lift911(): Bool = Option.lift9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, None, None, None, None, None, None, None, None, None: Option[Int32]) == None
+
+/////////////////////////////////////////////////////////////////////////////
+// lift10                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def lift1001(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8), Some(9)) == Some(168)
+
+@test
+def lift1002(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8), None) == None
+
+@test
+def lift1003(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), None, Some(9)) == None
+
+@test
+def lift1004(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), None, Some(8), Some(9)) == None
+
+@test
+def lift1005(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), Some(5), None, Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1006(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), Some(4), None, Some(6), Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1007(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), Some(3), None, Some(5), Some(6), Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1008(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), Some(2), None, Some(4), Some(5), Some(6), Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1009(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), Some(1), None, Some(3), Some(4), Some(5), Some(6), Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1010(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Some(123), None, Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1011(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, None, Some(1), Some(2), Some(3), Some(4), Some(5), Some(6), Some(7), Some(8), Some(9)) == None
+
+@test
+def lift1012(): Bool = Option.lift10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, None, None, None, None, None, None, None, None, None, None: Option[Int32]) == None
 
 }
