@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeExcepti
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
-import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonAST.JString
 import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.parse
@@ -41,8 +41,6 @@ import org.json4s.native.JsonMethods.parse
   * Does not implement the LSP protocol directly, but relies on an intermediate TypeScript server.
   */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
-
-  // TODO: Add diagonostic?
 
   /**
     * The custom date format to use for logging.
