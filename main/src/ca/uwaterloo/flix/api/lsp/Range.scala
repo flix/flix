@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2020 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,36 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp
 
-package ca.uwaterloo.flix.language
-
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import org.json4s.JsonAST.{JField, JObject}
 
 /**
-  * A common super-type for compilation errors.
+  * Companion object of [[Range]].
   */
-trait CompilationError {
+object Range {
 
   /**
-    * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
+    * Returns a range from the given source location `loc`.
     */
-  def kind: String
+  def from(loc: SourceLocation): Range = {
+    Range(Position(loc.beginLine, loc.beginCol), Position(loc.endLine, loc.endCol))
+  }
 
-  /**
-    * Returns the input source of the error message.
-    */
-  final def source: Source =  loc.source
+}
 
-  /**
-    * Returns the primary source location of the error.
-    */
-  def loc: SourceLocation
-
-  /**
-    * Returns the formatted error message.
-    */
-  def message: VirtualTerminal
-
+/**
+  * Represent a `Range` in LSP.
+  */
+case class Range(start: Position, end: Position) {
+  def toJSON: JObject = JObject(
+    JField("start", start.toJSON),
+    JField("end", end.toJSON)
+  )
 }

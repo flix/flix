@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -43,7 +42,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -64,7 +62,6 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedEffects(eff1: Type, eff2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -89,7 +86,6 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MismatchedArity(tpe1: Type, tpe2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -109,7 +105,6 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -132,7 +127,6 @@ object TypeError {
     * @param loc        the location where the error occurred.
     */
   case class UndefinedField(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -156,7 +150,6 @@ object TypeError {
     * @param loc        the location where the error occurred.
     */
   case class UndefinedPredicate(name: String, predType: Type, schemaType: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -178,7 +171,6 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class NonRecordType(tpe: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -195,7 +187,6 @@ object TypeError {
     * @param loc the location where the error occurred.
     */
   case class NonSchemaType(tpe: Type, loc: SourceLocation) extends TypeError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
