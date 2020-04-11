@@ -39,6 +39,30 @@ import org.json4s.native.JsonMethods.parse
   * A Compiler Interface for the Language Server Protocol.
   *
   * Does not implement the LSP protocol directly, but relies on an intermediate TypeScript server.
+  *
+  *
+  * Examples:
+  *
+  * When connecting or whenever a source file is changed, the client must issue the request:
+  *
+  * -   {"request":"validate", "paths":[]}
+  *
+  * If this is successful then the following requests can be made:
+  *
+  * Get the type and effect of an expression:
+  *
+  * -   {"request": "typeAndEffOf", "uri": "Option.flix", "position": {"line": 35, "col": 22}}
+  *
+  * Get the location of a definition or variable:
+  *
+  * -   {"request": "gotoDef", "uri": "Option.flix", "position": {"line": 214, "col": 40}}
+  *
+  * Shutdown the server:
+  *
+  * -   {"request": "shutdown"}
+  *
+  *
+  * The NPM package "wscat" is useful for experimenting with these commands from the shell.
   */
 class LanguageServer(port: Int) extends WebSocketServer(new InetSocketAddress(port)) {
 
