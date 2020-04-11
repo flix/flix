@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -38,7 +37,6 @@ object RedundancyError {
     * @param loc the source location of the use.
     */
   case class HiddenVarSym(sym: Symbol.VarSym, loc: SourceLocation) extends RedundancyError {
-    val source: Source = sym.loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -62,7 +60,6 @@ object RedundancyError {
     * @param sym2 the shadowing variable.
     */
   case class ShadowedVar(sym1: Symbol.VarSym, sym2: Symbol.VarSym) extends RedundancyError {
-    val source: Source = sym1.loc.source
     val loc: SourceLocation = sym1.loc min sym2.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -84,7 +81,6 @@ object RedundancyError {
     * @param sym the unused enum symbol.
     */
   case class UnusedDefSym(sym: Symbol.DefnSym) extends RedundancyError {
-    val source: Source = sym.loc.source
     val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -110,7 +106,6 @@ object RedundancyError {
     * @param sym the unused enum symbol.
     */
   case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError {
-    val source: Source = sym.loc.source
     val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -137,7 +132,6 @@ object RedundancyError {
     * @param tag the unused tag.
     */
   case class UnusedEnumTag(sym: Symbol.EnumSym, tag: Name.Ident) extends RedundancyError {
-    val source: Source = tag.loc.source
     val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -162,7 +156,6 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedFormalParam(sym: Symbol.VarSym) extends RedundancyError {
-    val source: Source = sym.loc.source
     val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -187,7 +180,6 @@ object RedundancyError {
     * @param ident the unused type variable.
     */
   case class UnusedTypeParam(ident: Name.Ident) extends RedundancyError {
-    val source: Source = ident.loc.source
     val loc: SourceLocation = SourceLocation.mk(ident.sp1, ident.sp2)
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -212,7 +204,6 @@ object RedundancyError {
     * @param sym the unused variable symbol.
     */
   case class UnusedVarSym(sym: Symbol.VarSym) extends RedundancyError {
-    val source: Source = sym.loc.source
     val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
@@ -237,7 +228,6 @@ object RedundancyError {
     * @param loc the location of the expression.
     */
   case class UselessExpression(loc: SourceLocation) extends RedundancyError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -261,7 +251,6 @@ object RedundancyError {
    * @param sym the unconditionally recursive definition.
    */
   case class UnconditionalRecursion(sym: Symbol.DefnSym) extends RedundancyError {
-    val source: Source = sym.loc.source
     val loc: SourceLocation = sym.loc
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal

@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -30,7 +29,6 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class ParseError(msg: String, loc: SourceLocation) extends CompilationError {
   val kind = "Parse Error"
-  val source: Source = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine

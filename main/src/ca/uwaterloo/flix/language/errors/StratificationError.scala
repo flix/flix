@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.debug.FormatType
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -28,7 +27,6 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class StratificationError(cycle: List[(String, SourceLocation)], tpe: Type, loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
-  val source: Source = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
