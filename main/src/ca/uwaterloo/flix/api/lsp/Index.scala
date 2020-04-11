@@ -33,15 +33,15 @@ object Index {
 /**
   * Represents a reserve index from documents to line numbers to expressions.
   */
-// TODO: Currently ignores the document
-case class Index(m: Map[Int, List[(Int, Expression)]]) {
+case class Index(m: Map[(String, Int), List[(Int, Expression)]]) {
 
-  // TODO: DOC
+  /**
+    * Optionally returns the expression in the document at the given `uri` at the given position `pos`.
+    */
   def query(uri: String, pos: Position): Option[Expression] = {
-    // TODO: Currently ignores the document
-
-    // TODO: Document
-    m.get(pos.line).flatMap {
+    // TODO: DEbug and cleanup.
+    val key = (uri, pos.line)
+    m.get(key).flatMap {
       case candidates =>
         val filtered = candidates.filter(p => p._1 >= pos.col)
         val sorted = filtered.sortBy(p => range(p._2.loc))
@@ -54,11 +54,12 @@ case class Index(m: Map[Int, List[(Int, Expression)]]) {
     * Adds the given expression `exp0` to `this` index.
     */
   def +(exp0: Expression): Index = {
+    val uri = exp0.loc.source.name
     val beginLine = exp0.loc.beginLine
     val beginCol = exp0.loc.beginCol
-    val onLine = m.getOrElse(beginLine, Nil)
+    val onLine = m.getOrElse((uri, beginLine), Nil)
     val newOnLine = (beginCol, exp0) :: onLine
-    val m2 = m + (beginLine -> newOnLine)
+    val m2 = m + ((uri, beginLine) -> newOnLine)
     Index(m2)
   }
 
