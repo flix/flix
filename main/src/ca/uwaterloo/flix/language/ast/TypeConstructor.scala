@@ -135,7 +135,7 @@ object TypeConstructor {
     /**
       * The shape of a tuple is (t1, ..., tn).
       */
-    def kind: Kind = ??? // TODO
+    def kind: Kind = Kind.Arrow(List.fill(l)(Kind.Star), Kind.Star)
   }
 
   /**

@@ -61,7 +61,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Type.freshTypeVar()
+          val eff = Type.freshTypeVar() // MATT should be effect?
           val loc = SourceLocation.Unknown
           val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
           sym -> defn
@@ -1398,7 +1398,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     */
   def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum => Type.Cst(TypeConstructor.Enum(enum.sym, Kind.Star))
+      case enum =>
+        val kind = Seq.fill(enum.tparams.length + 1)(Kind.Star: Kind).reduce(_ -> _) // MATT not necessary if we add tparams to Type.Enum
+        Type.Cst(TypeConstructor.Enum(enum.sym, kind))
     }
 
   /**

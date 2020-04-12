@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -69,12 +69,20 @@ object Unification {
       * Applies `this` substitution to the given type `tpe0`.
       */
     def apply(tpe0: Type): Type = {
+
+      // MATT generify, fix param names, docs
+      def canSubstituteKind(varKind: Kind, realKind: Kind): Boolean = (varKind, realKind) match {
+        case (vkind, rkind) if vkind == rkind => true
+        case (Kind.Star, Kind.Record) => true
+        case _ => false
+      }
+
       def visit(t: Type): Type =
         t match {
           case x: Type.Var =>
             m.get(x) match {
               case None => x
-              case Some(y) if x.kind == t.kind => y
+              case Some(y) if canSubstituteKind(x.kind, t.kind) => y
               case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
             }
           case Type.Cst(tc) => Type.Cst(tc)
@@ -278,9 +286,9 @@ object Unification {
       }
 
       // TODO: Kinds disabled for now. Requires changed to the previous phase to associated type variables with their kinds.
-      //if (x.kind != tpe.kind) {
-      //  return Result.Err(TypeError.KindError())
-      //}
+      if (x.kind != tpe.kind) {
+        throw InternalCompilerException("MATT YOU MESSED UP!") // MATT
+      }
 
       // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
       if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
@@ -392,7 +400,7 @@ object Unification {
       case tvar: Type.Var =>
         // Case 2: The row is a type variable.
         // Introduce a fresh type variable to represent one more level of the row.
-        val restRow2 = Type.freshTypeVar()
+        val restRow2 = Type.freshTypeVarWithKind(Kind.Record)
         val type2 = Type.mkRecordExtend(label1, fieldType1, restRow2)
         val subst = Unification.Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
@@ -427,7 +435,7 @@ object Unification {
       case tvar: Type.Var =>
         // Case 2: The row is a type variable.
         // Introduce a fresh type variable to represent one more level of the row.
-        val restRow2 = Type.freshTypeVar()
+        val restRow2 = Type.freshTypeVarWithKind(Kind.Record)
         val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
         val subst = Unification.Substitution.singleton(tvar, type2)
         Ok((subst, restRow2))
@@ -583,7 +591,7 @@ object Unification {
     */
   def unifyTypAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
-      liftM(Type.freshTypeVar())
+      liftM(Type.freshTypeVar()) // MATT right?
     else
       unifyTypM(ts, loc)
   }

@@ -33,7 +33,7 @@ object Scheme {
     */
   private def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
     val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
+      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVarWithKind(tvar.kind))
     }
 
     /**

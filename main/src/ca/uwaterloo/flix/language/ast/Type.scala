@@ -104,10 +104,11 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
   }
 
-  /**
-    * Returns a human readable string representation of `this` type.
-    */
-  override def toString: String = Type.fmtType(this, renameVars = false)
+//  /**
+//    * Returns a human readable string representation of `this` type.
+//    */
+//  override def toString: String = Type.fmtType(this, renameVars = false)
+  // MATT
 
 }
 
@@ -290,9 +291,15 @@ object Type {
       * The kind of a type application can unique be determined
       * from the kind of the first type argument `t1`.
       */
-    def kind: Kind = tpe1.kind match {
-      case Kind.Arrow(_, k) => k
-      case _ => throw InternalCompilerException("Illegal kind.")
+    def kind: Kind = {
+      tpe1.kind match {
+        case Kind.Arrow(kparams, k) => kparams match { // MATT can this kind be simplified?
+          case _ :: Nil => k
+          case _ :: tail => Kind.Arrow(tail, k)
+          case _ => throw InternalCompilerException("Illegal kind.") // MATT include kind info
+        }
+        case _ => throw InternalCompilerException("Illegal kind.")
+      }
     }
   }
 
@@ -300,9 +307,14 @@ object Type {
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * Returns a fresh type variable.
+    * Returns a fresh type variable of kind Star.
     */
-  def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
+  def freshTypeVar()(implicit flix: Flix): Type.Var = freshTypeVarWithKind(Kind.Star)(flix)
+
+  /**
+    * Returns a fresh type variable of the given kind.
+    */
+  def freshTypeVarWithKind(k: Kind)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
 
   /**
     * Returns a fresh type variable of effect kind.

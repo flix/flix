@@ -128,7 +128,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
           val enumType = if (quantifiers.isEmpty)
             NamedAst.Type.Enum(sym)
-          else {
+          else { // MATT change to Enum(sym, params)?
             val base = NamedAst.Type.Enum(sym)
             quantifiers.foldLeft(base: NamedAst.Type) {
               case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
@@ -157,7 +157,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val tparams = tparams0 match {
             case TypeParams.Elided => Nil
             case TypeParams.Explicit(tps) => tps map {
-              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc)
+              case p => NamedAst.TypeParam(p, Type.freshTypeVar(), loc);
             }
           }
           val tenv = getTypeEnv(tparams)
@@ -371,7 +371,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit flix: Flix): Map[String, Type.Var] =
     idents.foldLeft(Map.empty[String, Type.Var]) {
       case (macc, ident) => macc.get(ident.name) match {
-        case None => macc + (ident.name -> Type.freshTypeVar())
+        case None => macc + (ident.name -> Type.freshTypeVar()) // MATT not used, so I didn't think a lot about this one
         case Some(tvar) => macc
       }
     }
@@ -501,7 +501,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
     case WeededAst.Expression.RecordEmpty(loc) =>
-      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), loc).toSuccess
+      NamedAst.Expression.RecordEmpty(Type.freshTypeVarWithKind(Kind.Record), loc).toSuccess
 
     case WeededAst.Expression.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, env0, tenv0)) {
@@ -510,12 +510,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
       mapN(visitExp(value, env0, tenv0), visitExp(rest, env0, tenv0)) {
-        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVarWithKind(Kind.Record), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.RecordRestrict(label, rest, loc) =>
       mapN(visitExp(rest, env0, tenv0)) {
-        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVar(), Type.freshEffectVar(), loc)
+        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVarWithKind(Kind.Record), Type.freshEffectVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>

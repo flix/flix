@@ -607,7 +607,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // -------------------------
         // r.label : tpe
         //
-        val freshRowVar = Type.freshTypeVar()
+        val freshRowVar = Type.freshTypeVarWithKind(Kind.Record)
         val expectedType = Type.mkRecordExtend(label, tvar, freshRowVar)
         for {
           (tpe, eff) <- visitExp(exp)
@@ -634,7 +634,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // { -label | r } : { r }
         //
         val freshFieldType = Type.freshTypeVar()
-        val freshRowVar = Type.freshTypeVar()
+        val freshRowVar = Type.freshTypeVarWithKind(Kind.Record)
         for {
           (tpe, eff) <- visitExp(exp)
           recordType <- unifyTypM(tpe, Type.mkRecordExtend(label, freshFieldType, freshRowVar), loc)
