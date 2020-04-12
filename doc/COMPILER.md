@@ -1,34 +1,36 @@
 # Compiler
 
-## Maturity of Features
+## Feature Maturity
 
-The following ranks the maturity/quaity of Flix features.
+The following table ranks the maturity of features in the Flix programming language.
 
-A score of 10 means excellent. A score 0 means terrible.
+A score of 10 means that feature is stable, well-documented, and well-tested. 
+A score of 5 means that the feature is unstable, likely not well-documented, and not yet battle tested.
+A score of 0 means that the feature is experimental and should probably not yet be used.
 
-| Feature                 | Score | Comment                                      |
+| Feature                 | Score | Comments                                     |
 |-------------------------|-------|----------------------------------------------|
-| Algebraic Data Types    | 8     |                                              |
-| Arrays                  | 8     |                                              |
-| Concurrency             | 5     | Issues w.r.t. lambdas and channels           |
-| JVM Interop             | 7     | Issues w.r.t. arrays, exceptions, and null   |
-| References              | 9     |                                              |
-| Namespaces              | 6     | No import/use mechanism                      |
-| Equality                | 5     | Works, but ad-hoc and inefficient            |
-| Arithemetic             | 9     |                                              |
-| Strings                 | 10    |                                              |
-| String Interpolation    | 5     | Lacks coercion of primitive types to strings |
-| Lambdas                 | 8     |                                              |
+| Standard Library        | 10    |                                              |
+| Algebraic Data Types    | 9     |                                              |
+| Arithmetic              | 9     |                                              |
+| Arrays                  | 9     |                                              |
 | Pattern Matching        | 9     |                                              |
+| Records                 | 9     |                                              |
+| References              | 9     |                                              |
 | UFCS                    | 9     |                                              |
-| Records                 | 9     | Disallow duplicate labels?                   |
-| First-Class Constraints | 9     |                                              |
-| Datalog Engine          | 6     | Being replaced                               |
-|                         |       |                                              |
-
-Just because a feature does not have a score of 8, does not make that it doesn't work.
-It just means that its implementation may be suboptimal. If something has a score of 10
-that means it essentially cannot be improved.
+| Stratified Negation     | 9     |                                              |
+| JVM interoperability    | 8     | No support for null, exceptions, or anonymous classes. |
+| Opaque Types            | 8     | Not yet optimized by backend.                |
+| Parametric Polymorphism | 8     | A few issues left to be worked out.          |
+| Polymorphic Effects     | 8     |                                              |
+| Namespaces              | 8     |                                              |
+| First-Class Constraints | 7     |                                              |
+| Type Aliases            | 7     | Not yet well-tested.                         |
+| Datalog Solver          | 6     | Being rewritten.                             |
+| Concurrency             | 5     | Run-time based on threads. Closures must not be moved between threads. |
+| Equality                | 5     | Works, but ad-hoc.                           |
+| Interactive Mode        | 4     | Experimental.                                |
+| LSP Server              | 1     | Experimental.                                |
 
 ## Maturity of Phases
 

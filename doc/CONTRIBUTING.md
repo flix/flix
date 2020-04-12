@@ -1,14 +1,17 @@
-# Contributors Guide
+# Guide to Contributing
 
 Hello and thank you for your interest in working on Flix!
 
-This document is to help you get started.
+The purpose of this document is to help you get started.
 
 ## The Standard Process
 
-The "standard" process to contribute usually follows the steps:
+The standard process to contribute usually follows the steps:
 
-1. You pick an issue on GitHub issue tracker that you are interested in. It could be for a new feature, a reported bug, or some architectural change to the Flix compiler.
+1. You pick an issue on GitHub issue tracker that you are interested in. 
+
+    It could be adding a new feature to the language, fixing a bug in the compiler, extending the standard library, and so forth.
+
 2. You express interest in the issue on the tracker and pose any questions you might have. 
 3. There is a discussions of the problem to be solved and how to best solve it.
 4. You fork the flix repository to your own account on GitHub.
