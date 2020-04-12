@@ -10,7 +10,7 @@ We don't actually have a standardized process, but usually the following steps h
 
 1. You pick an issue on GitHub that you are interested in. 
 
-    It could be for adding a new feature, fixing a bug in the compiler, and so forth.
+    It could be adding a new feature, fixing a bug in the compiler, and so forth.
 
 2. You express interest in the issue on GitHub.
 
@@ -26,16 +26,19 @@ We don't actually have a standardized process, but usually the following steps h
 
 6. You make the required changes, add test cases, documentation, and so forth.
 
-7. You push the local changes to your GitHub repository and creat a new pull request (PR).
+7. You push the local changes to your GitHub repository and create a new pull request (PR).
 
-8. Travis CI compiles and tests the PR. Be sure to check the results!
+8. Travis CI automatically compiles and tests the PR. Be sure to check the results!
 
-9. We review the changes, and we iterate on the implementation.
+9. We perform a code review and iterate on the implementation.
 
 10. If the code is of sufficient quality it is merged in!
 
-*Note:* You must agree to release your contributions under the Apache 2.0 license.
-You can affirm this by adding yourself to AUTHORS.md.
+*Note:* 
+
+You must agree to release your contributions under the Apache 2.0 license.
+
+You affirm this by adding yourself to AUTHORS.md.
 
 
 
