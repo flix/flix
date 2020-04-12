@@ -518,14 +518,14 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIterator(next: () -> Option[(k, v)] & e): Map[k, v] & e = unfoldWithIteratorHelper(next, empty())
+    pub def unfoldWithIter(next: () -> Option[(k, v)] & e): Map[k, v] & e = unfoldWithIterHelper(next, empty())
 
     ///
-    /// Helper function for `unfoldWithIterator`.
+    /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIteratorHelper(next: () -> Option[(k, v)] & e, ac: Map[k, v]): Map[k, v] & e = match next() {
+    def unfoldWithIterHelper(next: () -> Option[(k, v)] & e, ac: Map[k, v]): Map[k, v] & e = match next() {
         case None => ac
-        case Some(k, v) => unfoldWithIteratorHelper(next, insert(k, v, ac))
+        case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
     }
 
     ///

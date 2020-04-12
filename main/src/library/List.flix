@@ -943,14 +943,14 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIterator(next: () -> Option[a] & e): List[a] & e = unfoldWithIteratorHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: () -> Option[a] & e): List[a] & e = unfoldWithIterHelper(next, xs -> xs)
 
     ///
-    /// Helper function for `unfoldWithIterator`.
+    /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIteratorHelper(next: () -> Option[a] & e, cont: List[a] -> List[a]): List[a] & e = match next() {
+    def unfoldWithIterHelper(next: () -> Option[a] & e, cont: List[a] -> List[a]): List[a] & e = match next() {
         case None => cont(Nil)
-        case Some(a) => unfoldWithIteratorHelper(next, xs -> cont(a :: xs))
+        case Some(a) => unfoldWithIterHelper(next, xs -> cont(a :: xs))
     }
 
     ///

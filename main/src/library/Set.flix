@@ -359,14 +359,14 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIterator(next: () -> Option[a] & e): Set[a] & e = unfoldWithIteratorHelper(next, empty())
+    pub def unfoldWithIter(next: () -> Option[a] & e): Set[a] & e = unfoldWithIterHelper(next, empty())
 
     ///
-    /// Helper function for `unfoldWithIterator`.
+    /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIteratorHelper(next: () -> Option[a] & e, ac: Set[a]): Set[a] & e = match next() {
+    def unfoldWithIterHelper(next: () -> Option[a] & e, ac: Set[a]): Set[a] & e = match next() {
         case None => ac
-        case Some(a) => unfoldWithIteratorHelper(next, insert(a, ac))
+        case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
 
     ///

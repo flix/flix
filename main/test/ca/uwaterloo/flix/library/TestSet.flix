@@ -1054,11 +1054,11 @@ def unfold06(): Bool =
     Set.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == Set#{'0', '2', '4', '6', '8'}
 
 /////////////////////////////////////////////////////////////////////////////
-// unfoldWithIterator                                                      //
+// unfoldWithIter                                                          //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def unfoldWithIterator01(): Bool & Impure =
+def unfoldWithIter01(): Bool & Impure =
     let x = ref 0;
     let step = () ->
         if (true)
@@ -1068,10 +1068,10 @@ def unfoldWithIterator01(): Bool & Impure =
             x := deref x + 1;
             Some(c)
         };
-    Set.unfoldWithIterator(step) == Set#{}
+    Set.unfoldWithIter(step) == Set#{}
 
 @test
-def unfoldWithIterator02(): Bool & Impure =
+def unfoldWithIter02(): Bool & Impure =
     let x = ref 0;
     let step = () ->
         if (deref x > 0)
@@ -1081,10 +1081,10 @@ def unfoldWithIterator02(): Bool & Impure =
             x := deref x + 1;
             Some(c)
         };
-    Set.unfoldWithIterator(step) == Set#{'0'}
+    Set.unfoldWithIter(step) == Set#{'0'}
 
 @test
-def unfoldWithIterator03(): Bool & Impure =
+def unfoldWithIter03(): Bool & Impure =
     let x = ref 0;
     let step = () ->
         if (deref x > 1)
@@ -1094,10 +1094,10 @@ def unfoldWithIterator03(): Bool & Impure =
             x := deref x + 1;
             Some(c)
         };
-    Set.unfoldWithIterator(step) == Set#{'0', '1'}
+    Set.unfoldWithIter(step) == Set#{'0', '1'}
 
 @test
-def unfoldWithIterator04(): Bool & Impure =
+def unfoldWithIter04(): Bool & Impure =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1107,10 +1107,10 @@ def unfoldWithIterator04(): Bool & Impure =
             x := deref x + 1;
             Some(c)
         };
-    Set.unfoldWithIterator(step) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+    Set.unfoldWithIter(step) == Set#{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 
 @test
-def unfoldWithIterator05(): Bool & Impure =
+def unfoldWithIter05(): Bool & Impure =
     let x = ref 5;
     let step = () ->
         if (deref x >= 10)
@@ -1120,10 +1120,10 @@ def unfoldWithIterator05(): Bool & Impure =
             x := deref x + 1;
             Some(c)
         };
-    Set.unfoldWithIterator(step) == Set#{'5', '6', '7', '8', '9'}
+    Set.unfoldWithIter(step) == Set#{'5', '6', '7', '8', '9'}
 
 @test
-def unfoldWithIterator06(): Bool & Impure =
+def unfoldWithIter06(): Bool & Impure =
     let x = ref 0;
     let step = () ->
         if (deref x >= 10)
@@ -1133,5 +1133,5 @@ def unfoldWithIterator06(): Bool & Impure =
             x := deref x + 2;
             Some(c)
         };
-    Set.unfoldWithIterator(step) == Set#{'0', '2', '4', '6', '8'}
+    Set.unfoldWithIter(step) == Set#{'0', '2', '4', '6', '8'}
 }
