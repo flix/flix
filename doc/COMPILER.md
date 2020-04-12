@@ -4,9 +4,9 @@
 
 The following table ranks the maturity of features in the Flix programming language.
 
-A score of 10 means that feature is stable, well-documented, and well-tested. 
-A score of 5 means that the feature is unstable, likely not well-documented, and not yet battle tested.
-A score of 0 means that the feature is experimental and should probably not yet be used.
+- A score of 10 means that the feature is stable, well-documented, and well-tested. 
+- A score of 5 means that the feature is unstable, likely not well-documented, and not yet battle tested.
+- A score of 0 means that the feature is experimental and should be used with care.
 
 | Feature                 | Score | Comments                                     |
 |-------------------------|-------|----------------------------------------------|
@@ -32,11 +32,9 @@ A score of 0 means that the feature is experimental and should probably not yet 
 | Interactive Mode        | 4     | Experimental.                                |
 | LSP Server              | 1     | Experimental.                                |
 
-## Maturity of Phases
+## Phase Maturity
 
-The following ranks the maturity/quality of the compiler phases.
-
-A score of 10 means excellent. A score 0 means terrible.
+The following table ranks the maturity of each compiler phase.
 
 | Phase       | Score | Comment |
 |-------------|-------|---------|
@@ -46,9 +44,9 @@ A score of 10 means excellent. A score 0 means terrible.
 | Resolver    |     8 |         |
 | Typer       |     7 |         |
 | Stratifier  |     9 |         |
-| PatternExh  |     2 | Needs a rewrite |
+| PatternExh  |     2 | Works well, but rewrite planned. |
 | Redundancy  |     9 |         |
-| Linter      |     0 | Planned |
+| Linter      |     0 | Not yet implemented. |
 | Safety      |    10 |         |
 | Monomorph   |     6 |         |
 | Synthesize  |     5 |         |
@@ -56,7 +54,7 @@ A score of 10 means excellent. A score 0 means terrible.
 | ClosureConv |     7 |         |
 | LambdaLift  |     7 |         |
 | Tailrec     |     8 |         |
-| Inliner     |     0 | Planned |
+| Inliner     |     0 | Not yet implemented. |
 | Optimizer   |     8 |         |
 | TreeShaker  |     7 |         |
 | VarNumber   |     5 |         |
