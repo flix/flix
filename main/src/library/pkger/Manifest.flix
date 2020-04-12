@@ -39,17 +39,18 @@ namespace Manifest {
     def packageRepository(package: String, version: SemVer.SemVer): Map[SemVer.SemVer, Map[String, SemVer.SemVer]] = {
         use Map.{empty, filterWithKey, getWithDefault, insert};
         use SemVer.isWithinBounds;
+        use SemVer.SemVer;
 
         let package_one_versions = empty()
-            |> insert((0, 1, 0), empty())
-            |> insert((0, 1, 1), empty())
-            |> insert((0, 2, 0), empty())
-            |> insert((0, 2, 1), empty() |> insert("package_two", (0, 1, 0)));
+            |> insert(SemVer.SemVer(0, 1, 0), empty())
+            |> insert(SemVer.SemVer(0, 1, 1), empty())
+            |> insert(SemVer.SemVer(0, 2, 0), empty())
+            |> insert(SemVer.SemVer(0, 2, 1), empty() |> insert("package_two", SemVer.SemVer(0, 1, 0)));
 
         let package_two_versions = empty()
-            |> insert((0, 1, 0), empty())
-            |> insert((0, 1, 1), empty())
-            |> insert((0, 2, 0), empty() |> insert("package_one", (0, 1, 0)));
+            |> insert(SemVer.SemVer(0, 1, 0), empty())
+            |> insert(SemVer.SemVer(0, 1, 1), empty())
+            |> insert(SemVer.SemVer(0, 2, 0), empty() |> insert("package_one", SemVer.SemVer(0, 1, 0)));
 
         let all_packages = empty()
             |> insert("package_one", package_one_versions)
@@ -229,41 +230,42 @@ namespace Manifest {
             use Test.test;
             use Manifest.{LockedPackage, lockPackage, newLockedPackage};
             use Map.{empty, insert};
+            use SemVer.SemVer;
 
             let package = { name = "some_package"
-                          , version = (0, 1, 0)
+                          , version = SemVer.SemVer(0, 1, 0)
                           , authors = {name = "Some Guy", email = "test@test.com"} :: Nil
                           , description = "Some package"
                           // This could be mandatory
                           , license = "MIT"
                           // Mapping package dependency names to the semver pattern
-                          , depends = empty() |> insert("package_one", (0, 1, 0))
+                          , depends = empty() |> insert("package_one", SemVer.SemVer(0, 1, 0))
                           , home = None
                           };
 
             let locked = lockPackage(package);
 
-            let check = newLockedPackage("some_package",  (0,1,0), empty() |> insert("package_one", (0, 1, 1)))
-                :: newLockedPackage("package_one", (0,1,1), empty())
+            let check = newLockedPackage("some_package",  SemVer.SemVer(0,1,0), empty() |> insert("package_one", SemVer.SemVer(0, 1, 1)))
+                :: newLockedPackage("package_one", SemVer.SemVer(0,1,1), empty())
                 :: Nil;
 
             let first = test("lockingIsExpected1", () -> List.forall(containedIn(locked), check));
 
             let package2 = {
                 name = "another_package",
-                version = (0, 1, 0),
+                version = SemVer.SemVer(0, 1, 0),
                 authors = {name = "Some Guy", email = "test@test.com"} :: Nil,
                 description = "Some package",
                 license = "MIT",
-                depends = empty() |> insert("package_one", (0, 2, 0)),
+                depends = empty() |> insert("package_one", SemVer.SemVer(0, 2, 0)),
                 home = None
             };
 
             let locked2 = lockPackage(package2);
 
-            let check2 = newLockedPackage("another_package", (0, 1, 0), empty() |> insert("package_one", (0, 2, 1)) |> insert("package_two", (0, 1, 1)))
-                :: newLockedPackage("package_one", (0, 2, 1), empty() |> insert("package_two", (0, 1, 1)))
-                :: newLockedPackage("package_two", (0, 1, 1), empty())
+            let check2 = newLockedPackage("another_package", SemVer.SemVer(0, 1, 0), empty() |> insert("package_one", SemVer.SemVer(0, 2, 1)) |> insert("package_two", SemVer.SemVer(0, 1, 1)))
+                :: newLockedPackage("package_one", SemVer.SemVer(0, 2, 1), empty() |> insert("package_two", SemVer.SemVer(0, 1, 1)))
+                :: newLockedPackage("package_two", SemVer.SemVer(0, 1, 1), empty())
                 :: Nil;
 
             let second = test("lockingIsExpected2", () -> List.forall(containedIn(locked2), check2));

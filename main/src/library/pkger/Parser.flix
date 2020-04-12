@@ -90,15 +90,3 @@ pub def *>(l: Parser[a], r: Parser[b]): Parser[b] = ((x -> x) <& l) <*> r
 pub def <|>(l: Parser[a], r: Parser[a]): Parser[a] = Parser.choose(l, r)
 
 pub def >>=(v: Parser[a], f: a -> Parser[b]): Parser[b] = Parser.bind(v, f)
-
-namespace SemVerParser {
-    def parseNumber(): Parser[Int] = Parser.mapOption(Parser.failOn(Parser.span(Char.isDigit), String.isEmpty), s -> Result.toOption(Int32.fromString(s)))
-
-    pub def parseSemVer(): Parser[SemVer.SemVer] = Parser.bind(parseNumber(), major -> {
-        Parser.bind(Parser.char('.') *> parseNumber(), minor -> {
-            Parser.bind(Parser.char('.') *> parseNumber(), patch -> {
-                Parser.return((major, minor, patch))
-            })
-        })
-    })
-}
