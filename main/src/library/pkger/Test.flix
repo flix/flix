@@ -14,6 +14,6 @@ namespace Test {
     }
 
     pub def runAllTests(): Bool & Impure = {
-        SemVer/Test.allTests() && Manifest/Test.allTests()
+        Manifest/Test.allTests()
     }
 }

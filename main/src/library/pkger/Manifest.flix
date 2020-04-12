@@ -38,8 +38,7 @@ namespace Manifest {
 
     def packageRepository(package: String, version: SemVer.SemVer): Map[SemVer.SemVer, Map[String, SemVer.SemVer]] = {
         use Map.{empty, filterWithKey, getWithDefault, insert};
-        use SemVer.isWithinBounds;
-        use SemVer.SemVer;
+        use SemVer.{isCompatible, SemVer};
 
         let package_one_versions = empty()
             |> insert(SemVer.SemVer(0, 1, 0), empty())
@@ -58,7 +57,7 @@ namespace Manifest {
 
         let versions = getWithDefault(package, empty(), all_packages);
 
-        let compat_versions = filterWithKey((k, _) -> isWithinBounds(version, k), versions);
+        let compat_versions = filterWithKey((k, _) -> isCompatible(version, k), versions);
 
         compat_versions
     }
@@ -69,9 +68,8 @@ namespace Manifest {
     }
 
     def newer(k: SemVer.SemVer, v: a, kx: SemVer.SemVer, vx: a): (SemVer.SemVer,  a) = {
-        use SemVer.{cmpSemVer, Ord};
-        let cmp = cmpSemVer(k, kx);
-        if (cmp == Ord.Lt) (kx, vx) else (k, v)
+        let cmp = k <=> kx;
+        if (cmp < 0) (kx, vx) else (k, v)
     }
 
     def lockPackageHelper(package: String, bound: SemVer.SemVer): DependencyTree = {
