@@ -1,14 +1,5 @@
 namespace Manifest {
-    pub enum License {
-        case MIT
-        case GPLv3
-        case Apache2
-        case BSD
-        case Other(String)
-    }
-
     pub type alias Author = { name: String
-                            // Is there an email datatype, or is it just commonly a String?
                             , email: String
                             }
 
@@ -16,11 +7,9 @@ namespace Manifest {
                              , version: SemVer.SemVer
                              , authors: List[Author]
                              , description: String
-                             // This could be mandatory
-                             , license: Option[License]
-                             // Mapping package dependency names to the semver pattern
+                             , license: String
                              , depends: Map[String, SemVer.SemVer]
-                             , home: Option[String] // Url?
+                             , home: Option[String]
                              }
 
     pub type alias LockedPackage = { name: String
@@ -123,23 +112,25 @@ namespace Manifest {
     }
 
     // Create a new package. Everything but the name of the package can be populated with sensible defaults from the environment
-    pub def initPackage(name: String): /* Package */ Result[Path, ErrorFull] & Impure = {
-        let getProjectDir = (base) -> Path.add(base, name);
+    pub def initPackage(name: String): /* Package */ Result[Path, InitError] & Impure = {
+        use Path.add;
+
+        let getProjectDir = (base) -> base.add(name);
 
         // Project directories
-        let getBuildDir = (base) -> Path.add(getProjectDir(base), "build");
-        let getSourceDir = (base) -> Path.add(getProjectDir(base), "src");
-        let getTestDir = (base) -> Path.add(getProjectDir(base), "test");
+        let getBuildDir = (base) -> getProjectDir(base).add("build");
+        let getSourceDir = (base) -> getProjectDir(base).add("src");
+        let getTestDir = (base) -> getProjectDir(base).add("test");
 
         // Top-level files
-        let getPackageFile = (base) -> Path.add(getProjectDir(base), "package.sn");
-        let getHistoryFile = (base) -> Path.add(getProjectDir(base), "HISTORY.md");
-        let getLicenseFile = (base) -> Path.add(getProjectDir(base), "LICENSE.md");
-        let getReadmeFile = (base) -> Path.add(getProjectDir(base), "README.md");
+        let getPackageFile = (base) -> getProjectDir(base).add("package.sn");
+        let getHistoryFile = (base) -> getProjectDir(base).add("HISTORY.md");
+        let getLicenseFile = (base) -> getProjectDir(base).add("LICENSE.md");
+        let getReadmeFile = (base) -> getProjectDir(base).add("README.md");
 
         // Source files
-        let getMainSourceFile = (base) -> Path.add(getSourceDir(base), "Main.flix");
-        let getMainTestFile = (base) -> Path.add(getTestDir(base), "TestMain.flix");
+        let getMainSourceFile = (base) -> getSourceDir(base).add("Main.flix");
+        let getMainTestFile = (base) -> getTestDir(base).add("TestMain.flix");
 
         let newFile = (content) -> (path) -> {
             Path.writeLines(path, Array.toList(content))
@@ -155,65 +146,65 @@ namespace Manifest {
             |> Array.toList
             |> List.flatten
             |> List.map(f -> {
-                    let dir = Result.map(f, workingDir);
-                    match Result.flatMap(Path.exists, dir) {
-                        case Ok(exists) => exists,
-                        case _ => true
-                    }
+                    use Result.flatMap;
+                    let* path: Path = Result.map(f, workingDir);
+                    let* exists: Bool = Path.exists(path);
+                    Ok((path, exists))
                 })
-            |> List.find(x -> x);
+            |> List.filterMap(Result.toOption)
+            |> List.find(snd);
 
-        if (Option.isEmpty(pathExists)) {
-            // Create all directories required for the package
-            List.map(f -> {
-                let dir = Result.map(f, workingDir);
-                Result.flatMap(Path.mkdirs, dir)
-            }, dirs);
+        match pathExists {
+            case None => {
+                // Create all directories required for the package
+                List.map(f -> {
+                    let dir = Result.map(f, workingDir);
+                    Result.flatMap(Path.mkdirs, dir)
+                }, dirs);
 
-            let quote = (s) -> Char.toString('"') + s + Char.toString('"');
+                let quote = (s) -> Char.toString('"') + s + Char.toString('"');
 
-            // TODO: Abstract this
-            let newPackageFile = newFile([
-                "(package",
-                "  (name " + name + ")",
-                "  (version " + quote("0.1.0") + ")",
-                // Empty list/empty value?
-                "  (authors ((name " + quote("Rasmus Larsen") + ") (email " + quote("doctorherbstein@gmail.com") + ")))",
-                // Should description be quoted?
-                "  (description " + quote(name) + ")",
-             // "  (license GPLv3)",
-             // "  (license (name LGPLv2)",
-                "  (license (file " + quote("LICENSE") + ")",
-                "  (depends (other_package " + quote("1.2.3") + "))",
-                "  (home " + quote("https://github.com/Herbstein/package_one") + ")",
-                ")"
-            ]);
-            Result.flatMap(newPackageFile, Result.map(getPackageFile, workingDir));
+                // TODO: Abstract this
+                let newPackageFile = newFile([
+                    "(package",
+                    "  (name " + name + ")",
+                    "  (version " + quote("0.1.0") + ")",
+                    // Empty list/empty value?
+                    "  (authors ((name " + quote("Rasmus Larsen") + ") (email " + quote("doctorherbstein@gmail.com") + ")))",
+                    // Should description be quoted?
+                    "  (description " + quote(name) + ")",
+                    // "  (license GPLv3)",
+                    // "  (license (name LGPLv2)",
+                    "  (license (file " + quote("LICENSE") + ")",
+                    "  (depends (other_package " + quote("1.2.3") + "))",
+                    "  (home " + quote("https://github.com/Herbstein/package_one") + ")",
+                    ")"
+                ]);
+                Result.flatMap(newPackageFile, Result.map(getPackageFile, workingDir));
 
-            let newHistoryFile = newFile(["### v0.1.0", "  Initial Release"]);
-            Result.flatMap(newHistoryFile, Result.map(getHistoryFile, workingDir));
+                let newHistoryFile = newFile(["### v0.1.0", "  Initial Release"]);
+                Result.flatMap(newHistoryFile, Result.map(getHistoryFile, workingDir));
 
-            let newLicenseFile = newFile(["<<ENTER LICENSE INFORMATION>>"]);
-            Result.flatMap(newLicenseFile, Result.map(getLicenseFile, workingDir));
+                let newLicenseFile = newFile(["<<ENTER LICENSE INFORMATION>>"]);
+                Result.flatMap(newLicenseFile, Result.map(getLicenseFile, workingDir));
 
-            let newReadmeFile = newFile(["# " + name, "", "Enter some useful information", ""]);
-            Result.flatMap(newReadmeFile, Result.map(getReadmeFile, workingDir));
+                let newReadmeFile = newFile(["# " + name, "", "Enter some useful information", ""]);
+                Result.flatMap(newReadmeFile, Result.map(getReadmeFile, workingDir));
 
-            let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
-            Result.flatMap(newMainSourceFile, Result.map(getMainSourceFile, workingDir));
+                let newMainSourceFile = newFile(["// The main entry point.", "def main(): Unit & Impure = Console.printLine(" + quote("Hello, World") + ")"]);
+                Result.flatMap(newMainSourceFile, Result.map(getMainSourceFile, workingDir));
 
-            let newMainTestFile = newFile(["@test", "def testMain01(): Bool & Impure = main() == ()"]);
-            Result.flatMap(newMainTestFile, Result.map(getMainTestFile, workingDir));
+                let newMainTestFile = newFile(["@test", "def testMain01(): Bool & Impure = main() == ()"]);
+                Result.flatMap(newMainTestFile, Result.map(getMainTestFile, workingDir));
 
-            // Output something that can be distinguished easily
-            Result.mapErr(_ -> GenericIoError, Result.map(getSourceDir, workingDir))
-        } else {
-            Err(GenericIoError)
+                Result.mapErr(_ -> GenericIoError, Result.map(getSourceDir, workingDir))
+            }
+            case Some((d, _)) => Err(PathAlreadyExists(d))
         }
     }
 
-    pub enum ErrorFull {
-        case ProjectDirExists
+    pub enum InitError {
+        case PathAlreadyExists(Path)
         case GenericIoError
     }
 
@@ -236,7 +227,7 @@ namespace Manifest {
 
         def testLocking(): Bool & Impure = {
             use Test.test;
-            use Manifest.{License, LockedPackage, lockPackage, newLockedPackage};
+            use Manifest.{LockedPackage, lockPackage, newLockedPackage};
             use Map.{empty, insert};
 
             let package = { name = "some_package"
@@ -244,7 +235,7 @@ namespace Manifest {
                           , authors = {name = "Some Guy", email = "test@test.com"} :: Nil
                           , description = "Some package"
                           // This could be mandatory
-                          , license = Some(License.MIT)
+                          , license = "MIT"
                           // Mapping package dependency names to the semver pattern
                           , depends = empty() |> insert("package_one", (0, 1, 0))
                           , home = None
@@ -263,7 +254,7 @@ namespace Manifest {
                 version = (0, 1, 0),
                 authors = {name = "Some Guy", email = "test@test.com"} :: Nil,
                 description = "Some package",
-                license = Some(License.MIT),
+                license = "MIT",
                 depends = empty() |> insert("package_one", (0, 2, 0)),
                 home = None
             };
