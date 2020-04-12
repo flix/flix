@@ -177,11 +177,6 @@ object SymbolicEvaluator {
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
-        * Apply Eff.
-        */
-      case Expression.ApplyEff(sym, args, _, _) => ??? // TODO
-
-      /**
         * Apply Closure Tail.
         */
       case Expression.ApplyCloTail(exp, args, _, _) =>
@@ -192,11 +187,6 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyDefTail(sym, args, _, _) =>
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
-
-      /**
-        * Apply Eff Tail.
-        */
-      case Expression.ApplyEffTail(sym, args, _, _) => ??? // TODO
 
       /**
         * Apply Self Tail.
@@ -485,6 +475,8 @@ object SymbolicEvaluator {
               case (pc1, qua1, SymVal.False) => lift(pc1, qua1, SymVal.True)
               case (_, _, v) => throw InternalCompilerException(s"MonoType Error: Unexpected value:'$v'.")
             }
+
+            case BinaryOperator.Spaceship => throw InternalCompilerException(s"Unexpected operator.")
 
             /**
               * Logical And.
@@ -819,11 +811,6 @@ object SymbolicEvaluator {
       case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
       /**
-        * HandleWith.
-        */
-      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
-
-      /**
         * Existential Quantifier.
         */
       case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
@@ -865,9 +852,9 @@ object SymbolicEvaluator {
       case Expression.FixpointConstraintSet(cs, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointProject(sym, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointProject(name, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Hole Error.
@@ -878,11 +865,6 @@ object SymbolicEvaluator {
         * Match Error.
         */
       case Expression.MatchError(tpe, loc) => throw new MatchError(loc.reified)
-
-      /**
-        * Switch Error
-        */
-      case Expression.SwitchError(tpe, loc) => throw new SwitchError(loc.reified)
 
     }
 

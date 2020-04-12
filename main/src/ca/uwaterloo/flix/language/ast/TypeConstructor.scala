@@ -149,20 +149,16 @@ object TypeConstructor {
   }
 
   /**
-    * A type constructor that represents a relation.
-    *
-    * @param sym the symbol of the relation.
+    * A type constructor for relations.
     */
-  case class Relation(sym: Symbol.RelSym) extends TypeConstructor {
+  case object Relation extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 
   /**
-    * A type constructor that represents a lattice.
-    *
-    * @param sym the symbol of the lattice.
+    * A type constructor for lattices.
     */
-  case class Lattice(sym: Symbol.LatSym) extends TypeConstructor {
+  case object Lattice extends TypeConstructor {
     def kind: Kind = Kind.Star -> Kind.Star
   }
 

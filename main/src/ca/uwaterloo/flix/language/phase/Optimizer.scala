@@ -77,8 +77,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
-      case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
-
       case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
           case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), varType)
@@ -94,10 +92,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val as = args map (visitExp(_, env0))
         Expression.ApplyDef(sym, as, tpe, loc)
 
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyEff(sym, as, tpe, loc)
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
@@ -106,10 +100,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyDefTail(sym, as, tpe, loc)
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyEffTail(sym, as, tpe, loc)
 
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         val as = actuals map (visitExp(_, env0))
@@ -244,13 +234,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler, env0))
-        }
-        Expression.HandleWith(e, bs, tpe, loc)
-
       case Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp, env0)
         Expression.Existential(fparam, e, loc)
@@ -346,26 +329,24 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp, env0)
         Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.FixpointProject(sym, e, tpe, loc)
+        Expression.FixpointProject(name, e, tpe, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         val e3 = visitExp(exp3, env0)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, loc)
 
       case Expression.HoleError(sym, tpe, loc) => Expression.HoleError(sym, tpe, loc)
 
       case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
-
-      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
 
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
 
@@ -378,19 +359,19 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the given constraint `c0`.
       */
     def visitConstraint(c0: SimplifiedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Constraint = c0 match {
-      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+      case SimplifiedAst.Constraint(cparams, head0, body0, loc) =>
         val head = visitHeadPred(head0, env0)
         val body = body0.map(visitBodyPred(_, env0))
-        SimplifiedAst.Constraint(cparams, head, body)
+        SimplifiedAst.Constraint(cparams, head, body, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the terms of the given head predicate `p0`.
       */
     def visitHeadPred(p0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = p0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
         val ts = terms.map(visitHeadTerm(_, env0))
-        Predicate.Head.Atom(sym, den, ts, tpe, loc)
+        Predicate.Head.Atom(name, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
@@ -401,9 +382,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
     def visitBodyPred(p0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = p0 match {
-      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(visitBodyTerm(_, env0))
-        Predicate.Body.Atom(sym, den, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp, env0)

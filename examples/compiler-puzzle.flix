@@ -1,6 +1,3 @@
-rel Compiler(src: Str, dst: Str, impl: Str)
-rel Interpreter(lang: Str)
-
 // C1: an “optimizing” compiler from Scala to x86, implemented in MiniScala
 // C2: a “quick-and-dirty” compiler from MiniScala to C++, implemented in C++
 // C3: a compiler from C++ to x86 implemented in x86

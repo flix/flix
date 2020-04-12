@@ -42,7 +42,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * A type alias for the stratification cache.
     */
-  type Cache = mutable.Map[Set[Symbol.PredSym], Ast.Stratification]
+  type Cache = mutable.Map[Set[String], Ast.Stratification]
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -118,13 +118,11 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Def(_, _, _) => exp0.toSuccess
 
-    case Expression.Eff(_, _, _, _) => exp0.toSuccess
-
     case Expression.Hole(_, _, _, _) => exp0.toSuccess
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+    case Expression.Lambda(fparam, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lambda(fparam, e, tpe, eff, loc)
+        case e => Expression.Lambda(fparam, e, tpe, loc)
       }
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
@@ -173,16 +171,6 @@ object Stratifier extends Phase[Root, Root] {
         case (m, rs) => Expression.Match(m, rs, tpe, eff, loc)
       }
 
-    case Expression.Switch(rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case (e1, e2) => mapN(visitExp(e1), visitExp(e2)) {
-          case (x, y) => (x, y)
-        }
-      }
-      mapN(rulesVal) {
-        case rs => Expression.Switch(rs, tpe, eff, loc)
-      }
-
     case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
@@ -193,8 +181,8 @@ object Stratifier extends Phase[Root, Root] {
         case es => Expression.Tuple(es, tpe, eff, loc)
       }
 
-    case Expression.RecordEmpty(tpe, eff, loc) =>
-      Expression.RecordEmpty(tpe, eff, loc).toSuccess
+    case Expression.RecordEmpty(tpe, loc) =>
+      Expression.RecordEmpty(tpe, loc).toSuccess
 
     case Expression.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
@@ -286,22 +274,14 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
       }
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
-      val bindingsVal = traverse(bindings) {
-        case HandlerBinding(sym, b) => visitExp(exp).map(HandlerBinding(sym, _))
-      }
-      mapN(visitExp(exp), bindingsVal) {
-        case (e, bs) => Expression.HandleWith(e, bs, tpe, eff, loc)
+    case Expression.Existential(fparam, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Existential(fparam, e, loc)
       }
 
-    case Expression.Existential(fparam, exp, eff, loc) =>
+    case Expression.Universal(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, eff, loc)
-      }
-
-    case Expression.Universal(fparam, exp, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, eff, loc)
+        case e => Expression.Universal(fparam, e, loc)
       }
 
     case Expression.Ascribe(exp, tpe, eff, loc) =>
@@ -396,14 +376,14 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ProcessPanic(msg, tpe, eff, loc) =>
       Expression.ProcessPanic(msg, tpe, eff, loc).toSuccess
 
-    case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+    case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratifyWithCache(dg, tpe, loc)
 
       mapN(stf) {
         case _ =>
           val cs = cs0.map(reorder)
-          Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+          Expression.FixpointConstraintSet(cs, tpe, loc)
       }
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
@@ -422,18 +402,18 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+    case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.FixpointProject(sym, e, tpe, eff, loc)
+        case e => Expression.FixpointProject(name, e, tpe, eff, loc)
       }
 
     case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => Expression.FixpointEntails(e1, e2, tpe, eff, loc)
       }
-    case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
       }
   }
 
@@ -476,11 +456,9 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Def(_, _, _) => DependencyGraph.empty
 
-    case Expression.Eff(_, _, _, _) => DependencyGraph.empty
-
     case Expression.Hole(_, _, _, _) => DependencyGraph.empty
 
-    case Expression.Lambda(_, exp, _, _, _) =>
+    case Expression.Lambda(_, exp, _, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Apply(exp1, exp2, _, _, _) =>
@@ -510,11 +488,6 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, MatchRule(_, g, b)) => acc + dependencyGraphOfExp(g) + dependencyGraphOfExp(b)
       }
 
-    case Expression.Switch(rules, _, _, _) =>
-      rules.foldLeft(DependencyGraph.empty) {
-        case (acc, (e1, e2)) => acc + dependencyGraphOfExp(e1) + dependencyGraphOfExp(e2)
-      }
-
     case Expression.Tag(_, _, exp, _, _, _) =>
       dependencyGraphOfExp(exp)
 
@@ -523,7 +496,7 @@ object Stratifier extends Phase[Root, Root] {
         case (acc, e) => acc + dependencyGraphOfExp(e)
       }
 
-    case Expression.RecordEmpty(_, _, _) =>
+    case Expression.RecordEmpty(_, _) =>
       DependencyGraph.empty
 
     case Expression.RecordSelect(base, _, _, _, _) =>
@@ -584,15 +557,10 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.Assign(exp1, exp2, _, _, _) =>
       dependencyGraphOfExp(exp1) + dependencyGraphOfExp(exp2)
 
-    case Expression.HandleWith(exp, bindings, _, _, _) =>
-      bindings.foldLeft(dependencyGraphOfExp(exp)) {
-        case (acc, HandlerBinding(_, e)) => acc + dependencyGraphOfExp(e)
-      }
-
-    case Expression.Existential(_, exp, _, _) =>
+    case Expression.Existential(_, exp, _) =>
       dependencyGraphOfExp(exp)
 
-    case Expression.Universal(_, exp, _, _) =>
+    case Expression.Universal(_, exp, _) =>
       dependencyGraphOfExp(exp)
 
     case Expression.Ascribe(exp, _, _, _) =>
@@ -658,7 +626,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ProcessPanic(_, _, _, _) =>
       DependencyGraph.empty
 
-    case Expression.FixpointConstraintSet(cs, _, _, _) =>
+    case Expression.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(DependencyGraph.empty) {
         case (dg, c) => dg + dependencyGraphOfConstraint(c)
       }
@@ -695,8 +663,8 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns the predicate symbol of the given head atom `head0`.
     */
-  private def getPredicateSym(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) => Some(sym)
+  private def getPredicateSym(head0: Predicate.Head): Option[String] = head0 match {
+    case Predicate.Head.Atom(name, den, terms, tpe, loc) => Some(name)
     case Predicate.Head.Union(exp, tpe, loc) =>
       // NB: The situation is actually more complicated.
       // If the union expressions evaluates to predicate symbols A, B, C it could
@@ -707,10 +675,10 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns a dependency edge of the right type for the given head symbol `head` and body predicate `body0`.
     */
-  private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym, loc))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym, loc))
+  private def visitDependencyEdge(head: String, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, name, loc))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, name, loc))
     }
 
     case Predicate.Body.Guard(exp, loc) => None
@@ -762,7 +730,7 @@ object Stratifier extends Phase[Root, Root] {
     //
     // Any predicate symbol not explicitly in the map has a default value of zero.
     //
-    val stratumOf = mutable.Map.empty[Symbol.PredSym, Int]
+    val stratumOf = mutable.Map.empty[String, Int]
 
     //
     // Compute the number of dependency edges.
@@ -827,9 +795,9 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph, loc: SourceLocation): List[(Symbol.PredSym, SourceLocation)] = {
+  private def findNegativeCycle(src: String, dst: String, g: DependencyGraph, loc: SourceLocation): List[(String, SourceLocation)] = {
     // Computes a map from symbols to their successors.
-    val succ = mutable.Map.empty[Symbol.PredSym, Set[(Symbol.PredSym, SourceLocation)]]
+    val succ = mutable.Map.empty[String, Set[(String, SourceLocation)]]
     for (edge <- g.xs) {
       edge match {
         case DependencyEdge.Positive(head, body, loc) =>
@@ -844,13 +812,13 @@ object Stratifier extends Phase[Root, Root] {
     // We perform a DFS using recursion to find the cycle.
 
     // A map from symbols to their immediate predecessor in the DFS.
-    val pred = mutable.Map.empty[Symbol.PredSym, (Symbol.PredSym, SourceLocation)]
+    val pred = mutable.Map.empty[String, (String, SourceLocation)]
 
     // A set of previously seen symbols.
-    val seen = mutable.Set.empty[Symbol.PredSym]
+    val seen = mutable.Set.empty[String]
 
     // Recursively visit the given symbol.
-    def visit(curr: Symbol.PredSym): Unit = {
+    def visit(curr: String): Unit = {
       // Update the set of previously seen nodes.
       seen.add(curr)
 
@@ -867,7 +835,7 @@ object Stratifier extends Phase[Root, Root] {
     visit(dst)
 
     // Recursively constructs a path from `src` and backwards through the graph.
-    def unroll(curr: Symbol.PredSym): List[(Symbol.PredSym, SourceLocation)] = pred.get(curr) match {
+    def unroll(curr: String): List[(String, SourceLocation)] = pred.get(curr) match {
       case None => Nil
       case Some((prev, loc)) => (prev, loc) :: unroll(prev)
     }
@@ -907,7 +875,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
-  private def predicateSymbolsOf(tpe: Type): Set[Symbol.PredSym] = tpe match {
+  private def predicateSymbolsOf(tpe: Type): Set[String] = tpe match {
     case Type.Var(_, _) => Set.empty
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym

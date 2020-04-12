@@ -38,10 +38,11 @@ object ParsedAst {
     * Root. A collection of imports and declarations.
     *
     * @param sp1   the position of the first character in the source.
+    * @param uses  the uses in the abstract syntax tree.
     * @param decls the declarations in the abstract syntax tree.
     * @param sp2   the position of the last character in the source.
     */
-  case class Root(sp1: SourcePosition, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
+  case class Root(sp1: SourcePosition, uses: Seq[ParsedAst.Use], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Declarations.
@@ -75,36 +76,6 @@ object ParsedAst {
       * @param sp2        the position of the last character in the declaration.
       */
     case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Effect Declaration.
-      *
-      * @param doc        the optional comment associated with the definition.
-      * @param ann        the associated annotations.
-      * @param mod        the associated modifiers.
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the definition.
-      * @param tparams    the type parameters.
-      * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
-      * @param sp2        the position of the last character in the declaration.
-      */
-    case class Eff(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Handler Declaration.
-      *
-      * @param doc        the optional comment associated with the definition.
-      * @param ann        the associated annotations.
-      * @param mod        the associated modifiers.
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the definition.
-      * @param tparams    the type parameters.
-      * @param fparamsOpt the formal parameters.
-      * @param tpe        the declared type.
-      * @param sp2        the position of the last character in the declaration.
-      */
-    case class Handler(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -249,6 +220,65 @@ object ParsedAst {
   }
 
   /**
+    * Uses.
+    */
+  sealed trait Use
+
+  object Use {
+
+    /**
+      * A use of a single name from a namespace.
+      *
+      * @param sp1   the position of the first character.
+      * @param nname the namespace.
+      * @param ident the name.
+      * @param sp2   the position of the last character.
+      */
+    case class UseOne(sp1: SourcePosition, nname: Name.NName, ident: Name.Ident, sp2: SourcePosition) extends Use
+
+    /**
+      * A use of multiple names from a namespace.
+      *
+      * @param sp1   the position of the first character.
+      * @param nname the namespace.
+      * @param names the names.
+      * @param sp2   the position of the last character.
+      */
+    case class UseMany(sp1: SourcePosition, nname: Name.NName, names: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+
+    /**
+      * A use of a single tag.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the name of the enum.
+      * @param tag   the name of the tag.
+      * @param sp2   the position of the last character.
+      */
+    case class UseOneTag(sp1: SourcePosition, qname: Name.QName, tag: Name.Ident, sp2: SourcePosition) extends Use
+
+    /**
+      * A use of multiple tags.
+      *
+      * @param sp1   the position of the first character.
+      * @param qname the name of the enum.
+      * @param tags  the names of the tags.
+      * @param sp2   the position of the last character.
+      */
+    case class UseManyTag(sp1: SourcePosition, qname: Name.QName, tags: Seq[ParsedAst.Use.NameAndAlias], sp2: SourcePosition) extends Use
+
+    /**
+      * A name with an optional alias.
+      *
+      * @param sp1   the position of the first character.
+      * @param ident the name.
+      * @param alias the optional alias.
+      * @param sp2   the position of the last character.
+      */
+    case class NameAndAlias(sp1: SourcePosition, ident: Name.Ident, alias: Option[Name.Ident], sp2: SourcePosition)
+
+  }
+
+  /**
     * Literals.
     */
   sealed trait Literal
@@ -313,52 +343,57 @@ object ParsedAst {
     /**
       * Int8 Literal (signed 8-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
-      * @param lit  the int8 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
+      * @param radix the radix of the literal.
+      * @param lit   the int8 literal.
+      * @param sp2   the position of the last character in the literal.
       */
-    case class Int8(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int8(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int16 Literal (signed 16-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
-      * @param lit  the int16 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
+      * @param radix the radix of the literal.
+      * @param lit   the int16 literal.
+      * @param sp2   the position of the last character in the literal.
       */
-    case class Int16(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int16(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int32 Literal (signed 32-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
-      * @param lit  the int32 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
+      * @param radix the radix of the literal.
+      * @param lit   the int32 literal.
+      * @param sp2   the position of the last character in the literal.
       */
-    case class Int32(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int32(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * Int64 Literal (signed 64-bit integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
-      * @param lit  the int64 literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
+      * @param radix the radix of the literal.
+      * @param lit   the int64 literal.
+      * @param sp2   the position of the last character in the literal.
       */
-    case class Int64(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class Int64(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * BigInt Literal (arbitrary sized integer).
       *
-      * @param sp1  the position of the first character in the literal.
-      * @param sign the sign (true if signed).
-      * @param lit  the big int literal.
-      * @param sp2  the position of the last character in the literal.
+      * @param sp1   the position of the first character in the literal.
+      * @param sign  the sign (true if signed).
+      * @param radix the radix of the literal.
+      * @param lit   the big int literal.
+      * @param sp2   the position of the last character in the literal.
       */
-    case class BigInt(sp1: SourcePosition, sign: Boolean, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
+    case class BigInt(sp1: SourcePosition, sign: Boolean, radix: Int, lit: String, sp2: SourcePosition) extends ParsedAst.Literal
 
     /**
       * String Literal.
@@ -404,6 +439,16 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Hole(sp1: SourcePosition, ident: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Use Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param use the use.
+      * @param exp the body expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Use(sp1: SourcePosition, use: ParsedAst.Use, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Literal Expression.
@@ -561,15 +606,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Switch Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param rules the rules of the switch.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class Switch(sp1: SourcePosition, rules: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Tag Expression.
@@ -815,16 +851,6 @@ object ParsedAst {
     case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * HandleWith expression.
-      *
-      * @param sp1      the position of the first character in the expression.
-      * @param exp      the base expression.
-      * @param bindings the effect handler bindings.
-      * @param sp2      the position of the last character in the expression.
-      */
-    case class HandleWith(sp1: SourcePosition, exp: ParsedAst.Expression, bindings: Seq[ParsedAst.HandlerBinding], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Existentially Quantified Expression.
       *
       * @param sp1     the position of the first character in the expression.
@@ -971,12 +997,12 @@ object ParsedAst {
     /**
       * Fixpoint Project expression.
       *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the name of the predicate.
-      * @param exp  the constraint expression.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp   the constraint expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProject(sp1: SourcePosition, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Entails expression.
@@ -990,11 +1016,14 @@ object ParsedAst {
     /**
       * Fixpoint Fold expression.
       *
-      * @param exp1 the initial value.
-      * @param exp2 the function to fold.
-      * @param exp3 the constraints over which to fold.
+      * @param sp1   the position of the first character in the expression.
+      * @param ident the name of the predicate.
+      * @param exp1  the initial value.
+      * @param exp2  the function to fold.
+      * @param exp3  the constraints over which to fold.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class FixpointFold(sp1: SourcePosition, name: Name.QName, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointFold(sp1: SourcePosition, ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 
@@ -1102,12 +1131,12 @@ object ParsedAst {
         * Atom Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param name  the qualified name of the predicate.
+        * @param ident the qualified name of the predicate.
         * @param terms the terms of the predicate.
         * @param term  the optional lattice term (if applicable).
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, ident: Name.Ident, terms: Seq[ParsedAst.Expression], term: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
         * Union Predicate.
@@ -1129,12 +1158,12 @@ object ParsedAst {
         *
         * @param sp1      the position of the first character in the predicate.
         * @param polarity the polarity of the predicate (positive/negative).
-        * @param name     the qualified name of the predicate.
+        * @param ident    the name of the predicate.
         * @param terms    the terms of the predicate.
         * @param term     the optional lattice term (if applicable).
         * @param sp2      the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, polarity: Polarity, name: Name.QName, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Atom(sp1: SourcePosition, polarity: Polarity, ident: Name.Ident, terms: Seq[ParsedAst.Pattern], term: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Guard Predicate.
@@ -1214,11 +1243,11 @@ object ParsedAst {
     /**
       * Schema Type.
       *
-      * @param sp1 the position of the first character in the type.
-      * @param ts  the types of the predicates in schema.
-      * @param sp2 the position of the last character in the type.
+      * @param sp1        the position of the first character in the type.
+      * @param predicates the sequence of predicate types.
+      * @param sp2        the position of the last character in the type.
       */
-    case class Schema(sp1: SourcePosition, ts: Seq[ParsedAst.Type], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+    case class Schema(sp1: SourcePosition, predicates: Seq[ParsedAst.PredicateType], rest: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.
@@ -1228,15 +1257,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the type.
       */
     case class Nat(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Unary Pure Arrow Type.
-      *
-      * @param tpe1 the argument type.
-      * @param tpe2 the result type.
-      * @param sp2  the position of the last character in the type.
-      */
-    case class UnaryPureArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Unary Impure Arrow Type.
@@ -1251,21 +1271,11 @@ object ParsedAst {
       * Unary Polymorphic Arrow Type.
       *
       * @param tpe1 the argument type.
-      * @param eff  the optional effect.
       * @param tpe2 the result type.
+      * @param eff  the optional effect.
       * @param sp2  the position of the last character in the type.
       */
-    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, eff: Option[ParsedAst.Type], tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Pure Arrow Type.
-      *
-      * @param sp1     the position of the first character in the type.
-      * @param tparams the arguments types.
-      * @param tresult the result type.
-      * @param sp2     the position of the last character in the type.
-      */
-    case class PureArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class UnaryPolymorphicArrow(tpe1: ParsedAst.Type, tpe2: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Impure Arrow Type.
@@ -1286,7 +1296,7 @@ object ParsedAst {
       * @param eff     the optional effect.
       * @param sp2     the position of the last character in the type.
       */
-    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], eff: Option[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    case class PolymorphicArrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, eff: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Native Type.
@@ -1321,6 +1331,14 @@ object ParsedAst {
       * @param sp2 the position of the last character in the type.
       */
     case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * And Effect.
+      *
+      * @param eff1 the 1st effect.
+      * @param eff2 the 2nd effect.
+      */
+    case class And(eff1: ParsedAst.Type, eff2: ParsedAst.Type) extends ParsedAst.Type
 
   }
 
@@ -1449,14 +1467,6 @@ object ParsedAst {
     * @param sp2   the position of the last character in the formal parameter.
     */
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
-
-  /**
-    * A binding of an effect to an effect handler expression.
-    *
-    * @param qname the fully-qualified name of the effect.
-    * @param exp   the expression with which to handle the effect.
-    */
-  case class HandlerBinding(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * A catch rule consists of an identifier, a Java name, and a body expression.
@@ -1662,5 +1672,44 @@ object ParsedAst {
     * @param sp2   the position of the last character in the field.
     */
   case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
+
+  /**
+    * A common super-type for schema predicate types.
+    */
+  sealed trait PredicateType
+
+  object PredicateType {
+
+    /**
+      * A Predicate Type that refers to a type alias.
+      *
+      * @param sp1   the position of the first character in the field.
+      * @param qname the fully-qualified name of the type alias.
+      * @param targs the optional type arguments.
+      * @param sp2   the position of the last character in the field.
+      */
+    case class PredicateWithAlias(sp1: SourcePosition, qname: Name.QName, targs: Option[Seq[ParsedAst.Type]], sp2: SourcePosition) extends PredicateType
+
+    /**
+      * A Relational Predicate Type that is equipped wit the types of its terms.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param tpes the types of the terms of the predicate.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class RelPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends PredicateType
+
+    /**
+      * A Latticenal Predicate Type that is equipped wit the types of its terms.
+      *
+      * @param sp1  the position of the first character in the field.
+      * @param name the name of the predicate symbol.
+      * @param tpes the types of the terms of the predicate.
+      * @param sp2  the position of the last character in the field.
+      */
+    case class LatPredicateWithTypes(sp1: SourcePosition, name: Name.Ident, tpes: Seq[ParsedAst.Type], tpe: ParsedAst.Type, sp2: SourcePosition) extends PredicateType
+
+  }
 
 }

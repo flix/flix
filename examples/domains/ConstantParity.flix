@@ -43,11 +43,11 @@ namespace Domain/ConstantParity {
     def lub(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
         case (Bot, x)           => x
         case (x, Bot)           => x
-        case (Cst(n1), Cst(n2)) => switch {
-            case (n1 == n2)                 => Cst(n1)
-            case (isOdd(n1) && isOdd(n2))   => Odd
-            case (isEven(n1) && isEven(n2)) => Even
-            case true                       => Top
+        case (Cst(n1), Cst(n2)) => {
+            if      (n1 == n2)                  Cst(n1)
+            else if (isOdd(n1) && isOdd(n2))    Odd
+            else if (isEven(n1) && isEven(n2))  Even
+            else                                Top
         }
         case (Cst(n), Odd)      => if (isOdd(n))  Odd else Top
         case (Odd, Cst(n))      => if (isOdd(n))  Odd else Top

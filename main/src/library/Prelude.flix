@@ -18,19 +18,19 @@ pub def constant(y: a): b -> a = _ -> y
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
-pub def flip(f: (a, b) -> c): (b, a) -> c = (x, y) -> f(y, x)
+pub def flip(f: (a, b) -> c & e): (b, a) -> c & e = (x, y) -> f(y, x)
 
 ///
 /// Returns the result of currying the function `f`.
 /// That is, given the function `f: (a, b) -> c`, returns a function `a -> b -> c`
 ///
-pub def curry(f: (a, b) -> c): a -> b -> c = x -> y -> f(x, y)
+pub def curry(f: (a, b) -> c & e): a -> (b -> c & e) = x -> y -> f(x, y)
 
 ///
 /// Returns the result of uncurrying the function `f`.
 /// That is, given the function `f: a -> b -> c`, returns a function `(a, b) -> c`
 ///
-pub def uncurry(f: a -> b -> c): (a, b) -> c = (x, y) -> (y |> f(x))
+pub def uncurry(f: a -> (b -> c & e1) & e2): (a, b) -> c & {e1, e2} = (x, y) -> (y |> f(x))
 
 ///
 /// Returns the first component of `t`.
@@ -59,42 +59,42 @@ pub def swap(p: (a, b)): (b, a) =
 ///
 /// Given the functions `f: b -> c` and `g: a -> b` returns a function `a -> c`
 ///
-pub def <<(f: b -> c, g: a -> b): a -> c = x -> f(g(x))
+pub def <<(f: b -> c & e1, g: a -> b & e2): a -> c & {e1, e2} = x -> f(g(x))
 
 ///
 /// Forwards function composition. Applies the function on the left first.
 ///
 /// Given the functions `f: a -> b` and `g: b -> c` returns a function `a -> c`
 ///
-pub def >>(f: a -> b, g: b -> c): a -> c = x -> g(f(x))
+pub def >>(f: a -> b & e1, g: b -> c & e2): a -> c & {e1, e2} = x -> g(f(x))
 
 ///
 /// Pipes the given value `x` into the function `f`.
 ///
 /// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
 ///
-pub def |>(x: a, f: a ->{e} b): b @ e = f(x)
+pub def |>(x: a, f: a -> b & e): b & e = f(x)
 
 ///
 /// Pipes the given pair `p` into the function `f`.
 ///
 /// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
 ///
-pub def ||>(x: (a1, a2), f: ((a1, a2)) -> b): b = f(x)
+pub def ||>(x: (a1, a2), f: ((a1, a2)) -> b & e): b & e = f(x)
 
 ///
 /// Pipes the given value `x` into the function `f`.
 ///
 /// Given a value `x: a` and a function `f: a -> b` returns `f(x)`.
 ///
-pub def <|(f: a -> b, x: a): b = f(x)
+pub def <|(f: a -> b & e, x: a): b & e = f(x)
 
 ///
 /// Pipes the given pair `p` into the function `f`.
 ///
 /// Given a pair `x: (a1, a1)` and a function `f: ((a1, a2)) -> b` returns `f(x)`.
 ///
-pub def <||(f: ((a1, a2)) -> b, x: (a1, a2)): b = f(x)
+pub def <||(f: ((a1, a2)) -> b & e, x: (a1, a2)): b & e = f(x)
 
 ///
 /// Alias for logical conjunction.
@@ -133,7 +133,7 @@ pub def ↑(x: Bool, y: Bool): Bool = !(x ∧ y)
 ///
 pub def isNull(x: a): Bool =
     import java.util.Objects:isNull(##java.lang.Object);
-    isNull(x as ##java.lang.Object) as Bool @ Pure
+    isNull(x as ##java.lang.Object) as & Pure
 
 ///
 /// Asserts that the given boolean `b` is `true`.
@@ -197,3 +197,89 @@ law nonNegative(h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
 /// the height assigned to `x` is stricty greater than the height assigned to `y`.
 ///
 law decreasing(h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). (x ⊑ y && !equ(x, y)) → (h(x) > h(y))
+
+///
+/// Asserts that the expression `x` is contextually equivalent to the expression `y`.
+///
+def ===(x: a, y: a): Bool = ???
+
+namespace Tuple2 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq(t1: (a, b), t2: (a, b)): Bool =
+        let (a1, b1) = t1;
+        let (a2, b2) = t2;
+            a1 == a2 && b1 == b2
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    def __cmp(t1: (a, b), t2: (a, b)): Int32 =
+        let (a1, b1) = t1;
+        let (a2, b2) = t2;
+            let cmp1 = a1 <=> a2;
+            if (cmp1 != 0)
+                cmp1
+            else
+                b1 <=> b2
+}
+
+namespace Tuple3 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq(t1: (a, b, c), t2: (a, b, c)): Bool =
+        let (a1, b1, c1) = t1;
+        let (a2, b2, c2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    def __cmp(t1: (a, b, c), t2: (a, b, c)): Int32 =
+        let (a1, b1, c1) = t1;
+        let (a2, b2, c2) = t2;
+            let cmp1 = a1 <=> a2;
+            if (cmp1 != 0)
+                cmp1
+            else
+                let cmp2 = b1 <=> b2;
+                if (cmp2 != 0)
+                    cmp2
+                else
+                    c1 <=> c2
+}
+
+namespace Tuple4 {
+
+    ///
+    /// Returns `true` if and only if `t1` and `t2` and equal.
+    ///
+    def __eq(t1: (a, b, c, d), t2: (a, b, c, d)): Bool =
+        let (a1, b1, c1, d1) = t1;
+        let (a2, b2, c2, d2) = t2;
+            a1 == a2 && b1 == b2 && c1 == c2 && d1 == d2
+
+    ///
+    /// Compares `t1` and `t2` lexicographically.
+    ///
+    def __cmp(t1: (a, b, c, d), t2: (a, b, c, d)): Int32 =
+        let (a1, b1, c1, d1) = t1;
+        let (a2, b2, c2, d2) = t2;
+            let cmp1 = a1 <=> a2;
+            if (cmp1 != 0)
+                cmp1
+            else
+                let cmp2 = b1 <=> b2;
+                if (cmp2 != 0)
+                    cmp2
+                else
+                    let cmp3 = c1 <=> c2;
+                    if (cmp3 != 0)
+                        cmp3
+                    else
+                        d1 <=> d2
+}

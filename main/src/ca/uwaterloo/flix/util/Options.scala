@@ -42,6 +42,7 @@ object Options {
     loadClassFiles = true,
     writeClassFiles = true,
     xallowredundancies = false,
+    xlinter = false,
     xnoeffects = false,
     xnostratifier = false,
     xstatistics = false
@@ -51,6 +52,16 @@ object Options {
     * Default test options.
     */
   val DefaultTest: Options = Default.copy(core = false, test = true, verbosity = Verbosity.Silent)
+
+  /**
+    * Default test options with the standard library.
+    */
+  val TestWithLibrary: Options = DefaultTest
+
+  /**
+    * Default test options without the standard library.
+    */
+  val TestWithoutLibrary: Options = DefaultTest.copy(core = true)
 }
 
 /**
@@ -73,6 +84,7 @@ object Options {
   * @param loadClassFiles     loads the generated class files into the JVM.
   * @param writeClassFiles    enables output of class files.
   * @param xallowredundancies disables the redundancy checker.
+  * @param xlinter            enables the semantic linter.
   * @param xnoeffects         disables effect checking.
   * @param xnostratifier      disables computation of stratification.
   * @param xstatistics        prints compiler statistics.
@@ -95,6 +107,7 @@ case class Options(core: Boolean,
                    loadClassFiles: Boolean,
                    writeClassFiles: Boolean,
                    xallowredundancies: Boolean,
+                   xlinter: Boolean,
                    xnoeffects: Boolean,
                    xnostratifier: Boolean,
                    xstatistics: Boolean

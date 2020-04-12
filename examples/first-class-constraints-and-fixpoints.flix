@@ -1,9 +1,6 @@
-/// Declare two predicate symbols.
-rel ParentOf(x: Str, y: Str)
-rel AncestorOf(x: Str, y: Str)
-
 /// Returns a collection of facts.
-def getFacts(): #{ ParentOf, AncestorOf } = #{
+def getFacts(): #{ParentOf(String, String), AncestorOf(String, String)} =
+#{
     ParentOf("Pompey", "Strabo").
     ParentOf("Gnaeus", "Pompey").
     ParentOf("Pompeia", "Pompey").
@@ -11,11 +8,12 @@ def getFacts(): #{ ParentOf, AncestorOf } = #{
 }
 
 /// Returns a collection of rules to compute ancestors.
-def getRules(): #{ ParentOf, AncestorOf } = #{
+def getRules(): #{ParentOf(String, String), AncestorOf(String, String)} =
+#{
     AncestorOf(x, y) :- ParentOf(x, y).
     AncestorOf(x, z) :- AncestorOf(x, y), AncestorOf(y, z).
 }
 
 /// Composes the facts and rules, and computes the lfp.
-def main(): #{ ParentOf, AncestorOf } =
+def main(): #{ParentOf(String, String), AncestorOf(String, String)} =
     solve getFacts() <+> getRules()

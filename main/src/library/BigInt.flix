@@ -39,10 +39,10 @@ namespace BigInt {
     ///
     /// Returns `1` if `x > y`, `-1` if `x < y`, and `0` if `x = y`.
     ///
-    pub def compare(x: BigInt, y: BigInt): Int32 = switch {
-        case x == y  => 0
-        case x < y   => -1
-        case x > y   => 1
+    pub def compare(x: BigInt, y: BigInt): Int32 = {
+        if (x == y)     0
+        else if (x < y) -1
+        else            1
     }
 
     ///
@@ -83,7 +83,7 @@ namespace BigInt {
     ///
     pub def toString(x: BigInt): String =
         import java.math.BigInteger.toString();
-        x.toString() as String @ Pure
+        x.toString() as & Pure
 
     ///
     /// Parse the string `s` as an BigInt, leading or trailing whitespace is trimmed.
@@ -92,8 +92,68 @@ namespace BigInt {
     pub def fromString(s: String): Result[BigInt, String] = try {
         import java.lang.String.strip();
         import new java.math.BigInteger(String) as parseBigInt;
-        Ok(s.strip().parseBigInt()) as _ @ Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
-     }
+        Ok(s.strip().parseBigInt()) as & Pure
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: BigInt).
+            (0ii + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: BigInt).
+            (x + 0ii) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: BigInt).
+            (x - 0ii) === 0ii
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: BigInt).
+            (x - x) === 0ii
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: BigInt).
+            (0ii * x) === 0ii
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: BigInt).
+            (x * 0ii) === 0ii
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: BigInt).
+            (1ii * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: BigInt).
+            (x * 1ii) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: BigInt).
+            (x / 0ii) === 0ii
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: BigInt).
+            (x / 1ii) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: BigInt).
+            (x / x) === 1ii
+
 }

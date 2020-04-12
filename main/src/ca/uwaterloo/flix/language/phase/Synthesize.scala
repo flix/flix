@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.{CompilationError, ast}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -66,7 +66,6 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Wild(tpe, loc) => exp0
       case Expression.Var(sym, tpe, loc) => exp0
       case Expression.Def(sym, tpe, loc) => exp0
-      case Expression.Eff(sym, tpe, eff, loc) => exp0
       case Expression.Hole(sym, tpe, eff, loc) => exp0
       case Expression.Unit(loc) => exp0
       case Expression.True(loc) => exp0
@@ -81,9 +80,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.BigInt(lit, loc) => exp0
       case Expression.Str(lit, loc) => exp0
 
-      case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.Lambda(fparams, e, tpe, eff, loc)
+        Expression.Lambda(fparams, e, tpe, loc)
 
       case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -95,11 +94,6 @@ object Synthesize extends Phase[Root, Root] {
         Expression.Unary(op, e, tpe, eff, loc)
 
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
-        // Return the expression unchanged if it only compares primitive values.
-        if (isPrimitive(exp1.tpe) && isPrimitive(exp2.tpe)) {
-          return exp0
-        }
-
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
 
@@ -112,6 +106,7 @@ object Synthesize extends Phase[Root, Root] {
         op match {
           case BinaryOperator.Equal => mkApplyEq(e1, e2)
           case BinaryOperator.NotEqual => mkApplyNeq(e1, e2)
+          case BinaryOperator.Spaceship => mkSpaceship(e1, e2, loc)
           case _ => Expression.Binary(op, e1, e2, tpe, eff, loc)
         }
 
@@ -143,12 +138,6 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
-      case Expression.Switch(rules, tpe, eff, loc) =>
-        val rs = rules map {
-          case (cond, body) => (visitExp(cond), visitExp(body))
-        }
-        Expression.Switch(rs, tpe, eff, loc)
-
       case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Tag(sym, tag, e, tpe, eff, loc)
@@ -157,8 +146,8 @@ object Synthesize extends Phase[Root, Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
 
-      case Expression.RecordEmpty(tpe, eff, loc) =>
-        Expression.RecordEmpty(tpe, eff, loc)
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
 
       case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
@@ -242,20 +231,13 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
 
-      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+      case Expression.Existential(fparam, exp, loc) =>
         val e = visitExp(exp)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
-        }
-        Expression.HandleWith(e, bs, tpe, eff, loc)
+        Expression.Existential(fparam, e, loc)
 
-      case Expression.Existential(fparam, exp, eff, loc) =>
+      case Expression.Universal(fparam, exp, loc) =>
         val e = visitExp(exp)
-        Expression.Existential(fparam, e, eff, loc)
-
-      case Expression.Universal(fparam, exp, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.Universal(fparam, e, eff, loc)
+        Expression.Universal(fparam, e, loc)
 
       case Expression.Ascribe(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -335,9 +317,9 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.ProcessPanic(msg, tpe, eff, loc) =>
         Expression.ProcessPanic(msg, tpe, eff, loc)
 
-      case Expression.FixpointConstraintSet(cs0, tpe, eff, loc) =>
+      case Expression.FixpointConstraintSet(cs0, tpe, loc) =>
         val cs = cs0.map(visitConstraint)
-        Expression.FixpointConstraintSet(cs, tpe, eff, loc)
+        Expression.FixpointConstraintSet(cs, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -348,20 +330,20 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(sym, e, tpe, eff, loc)
+        Expression.FixpointProject(name, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, eff, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, eff, loc)
     }
 
     /**
@@ -378,9 +360,15 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given head predicate `h0`.
       */
     def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
-        val ts = terms map visitExp
-        Predicate.Head.Atom(sym, den, ts, tpe, loc)
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
+        // Introduce equality, hash code, and toString for the types of the terms.
+        for (term <- terms) {
+          getOrMkEq(term.tpe)
+          getOrMkHash(term.tpe)
+          getOrMkToString(term.tpe)
+        }
+        val ts = terms.map(visitExp)
+        Predicate.Head.Atom(name, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -391,8 +379,14 @@ object Synthesize extends Phase[Root, Root] {
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc) =>
-        Predicate.Body.Atom(sym, den, polarity, pats, tpe, loc)
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
+        // Introduce equality, hash code, and toString for the types of the terms.
+        for (term <- terms) {
+          getOrMkEq(term.tpe)
+          getOrMkHash(term.tpe)
+          getOrMkToString(term.tpe)
+        }
+        Predicate.Body.Atom(name, den, polarity, terms, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)
@@ -432,6 +426,57 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /**
+      * Returns an expression that performs a three-way comparison between `e1` and `e2`.
+      */
+    def mkSpaceship(exp1: Expression, exp2: Expression, loc: SourceLocation): Expression = exp1.tpe match {
+      case Type.Cst(TypeConstructor.Unit) =>
+        // There Unit value is equal to itself.
+        Expression.Int32(0, loc)
+
+      case Type.Cst(TypeConstructor.Bool) =>
+        val method = classOf[java.lang.Boolean].getMethod("compare", classOf[Boolean], classOf[Boolean])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Char) =>
+        val method = classOf[java.lang.Character].getMethod("compare", classOf[Char], classOf[Char])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Float32) =>
+        val method = classOf[java.lang.Float].getMethod("compare", classOf[Float], classOf[Float])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Float64) =>
+        val method = classOf[java.lang.Double].getMethod("compare", classOf[Double], classOf[Double])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int8) =>
+        val method = classOf[java.lang.Byte].getMethod("compare", classOf[Byte], classOf[Byte])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int16) =>
+        val method = classOf[java.lang.Short].getMethod("compare", classOf[Short], classOf[Short])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int32) =>
+        val method = classOf[java.lang.Integer].getMethod("compare", classOf[Int], classOf[Int])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Int64) =>
+        val method = classOf[java.lang.Long].getMethod("compare", classOf[Long], classOf[Long])
+        Expression.InvokeStaticMethod(method, List(exp1, exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.BigInt) =>
+        val method = classOf[java.math.BigInteger].getMethod("compareTo", classOf[java.math.BigInteger])
+        Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
+
+      case Type.Cst(TypeConstructor.Str) =>
+        val method = classOf[java.lang.String].getMethod("compareTo", classOf[java.lang.String])
+        Expression.InvokeMethod(method, exp1, List(exp2), Type.Int32, Type.Pure, loc)
+
+      case tpe => throw InternalCompilerException(s"No comparator function '__cmp' found for the type: '$tpe'.")
+    }
+
+    /**
       * Returns the symbol of the equality operator associated with the given type `tpe`.
       *
       * If no such definition exists, it is created.
@@ -467,7 +512,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), Type.Pure, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkPureArrow(tpe, Type.Bool), sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Pure, Type.Bool)
@@ -1291,7 +1336,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a relation type.
       */
     def isRelation(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Relation(sym)) => true
+      case Type.Cst(TypeConstructor.Relation) => true
       case _ => false
     }
 
@@ -1299,7 +1344,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a lattice type.
       */
     def isLattice(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Cst(TypeConstructor.Lattice(sym)) => true
+      case Type.Cst(TypeConstructor.Lattice) => true
       case _ => false
     }
 
@@ -1372,47 +1417,15 @@ object Synthesize extends Phase[Root, Root] {
     }.toSet
 
     /*
-     * (b) Every type that appears as an attribute in some relation or lattice.
+     * (b) Every type that appears as some lattice type.
      */
-    // TODO: Need to deal with polymorphic attributes.
-    val typesInRels = root.relations.flatMap {
-      case (_, Relation(_, _, _, _, attributes, _)) => attributes.map {
-        case Attribute(_, tpe, _) => tpe
-      }
-    }
-    val typesInLats = root.lattices.flatMap {
-      case (_, Lattice(_, _, _, _, attributes, _)) =>
-        attributes.map {
-          case Attribute(_, tpe, _) => tpe
-        }
-    }
-    val typesInTables = typesInRels.toSet ++ typesInLats
-
-    /*
-     * (c) Every type that appears as some lattice type.
-     */
-    val typesInLattices: Set[Type] = root.latticeComponents.keySet
-
-    /*
-     * Introduce Equality special operators.
-     */
-    val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkEq(tpe))
-      case (macc, tpe) => macc
-    }
-
-    /*
-     * Introduce Hash special operators.
-     */
-    val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkHash(tpe))
-      case (macc, tpe) => macc
-    }
+    val typesInLattices: Set[Type] = root.latticeOps.keySet
 
     /*
      * Introduce ToString special operators.
      */
-    val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    // TODO: Refactor these
+    typesInDefs.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !isArrow(tpe) && !isVar(tpe) => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }
@@ -1428,9 +1441,9 @@ object Synthesize extends Phase[Root, Root] {
      * Construct the map of special operators.
      */
     val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
-      SpecialOperator.Equality -> equalityOps,
-      SpecialOperator.HashCode -> hashOps,
-      SpecialOperator.ToString -> toStringOps
+      SpecialOperator.Equality -> mutEqualityOps.toMap,
+      SpecialOperator.HashCode -> mutHashOps.toMap,
+      SpecialOperator.ToString -> mutToStringOps.toMap
     )
 
     // Reassemble the ast with the new definitions.

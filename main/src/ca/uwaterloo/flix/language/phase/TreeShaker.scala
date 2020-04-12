@@ -105,9 +105,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, _, _) =>
         Set(sym)
 
-      case Expression.Eff(_, _, _) =>
-        Set.empty
-
       case Expression.Lambda(_, exp, _, _) =>
         visitExp(exp)
 
@@ -120,17 +117,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDef(sym, args, _, _) =>
         Set(sym) ++ visitExps(args)
 
-      case Expression.ApplyEff(_, args, _, _) =>
-        visitExps(args)
-
       case Expression.ApplyCloTail(exp, args, _, _) =>
         visitExp(exp) ++ visitExps(args)
 
       case Expression.ApplyDefTail(sym, args, _, _) =>
         Set(sym) ++ visitExps(args)
-
-      case Expression.ApplyEffTail(_, args, _, _) =>
-        visitExps(args)
 
       case Expression.ApplySelfTail(sym, _, args, _, _) =>
         Set(sym) ++ visitExps(args)
@@ -210,9 +201,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Assign(exp1, exp2, tpe, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.HandleWith(exp, bindings, _, _) =>
-        visitExp(exp) ++ visitExps(bindings.map(_.exp))
-
       case Expression.Existential(_, exp, _) =>
         visitExp(exp)
 
@@ -282,16 +270,13 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointEntails(exp1, exp2, _, _) =>
         visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, _, _) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, _, _) =>
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.HoleError(_, _, _) =>
         Set.empty
 
       case Expression.MatchError(_, _) =>
-        Set.empty
-
-      case Expression.SwitchError(_, _) =>
         Set.empty
 
       case Expression.LambdaClosure(_, _, _, _, _) =>
@@ -389,8 +374,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * (c) A function that appears in a lattice component.
      */
-    reachableFunctions ++= root.latticeComponents.values.map {
-      case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
+    reachableFunctions ++= root.latticeOps.values.map {
+      case SimplifiedAst.LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc) =>
         Set(bot, top, equ, leq, lub, glb)
     }.fold(Set())(_ ++ _)
 

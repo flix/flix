@@ -73,7 +73,10 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def exists(f: t ->> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), false)
+    pub def exists(f: t -> Bool, r: Result[t, e]): Bool = match r {
+        case Ok(t)  => f(t)
+        case Err(_) => false
+    }
 
     ///
     /// Returns `true` if `r` is `Ok(v)` and the predicate `f(v)` evaluates to `true` or if `r` is `Err(w)`.
@@ -81,12 +84,15 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def forall(f: t ->> Bool, r: Result[t, e]): Bool = getWithDefault(map(f, r), true)
+    pub def forall(f: t -> Bool, r: Result[t, e]): Bool = match r {
+        case Ok(t)  => f(t)
+        case Err(_) => true
+    }
 
     ///
     /// Returns `Ok(f(v))` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def map(f: t1 ->{f} t2, r: Result[t1, e]): Result[t2, e] @ f = match r {
+    pub def map(f: t1 -> t2 & f, r: Result[t1, e]): Result[t2, e] & f = match r {
         case Ok(v) => Ok(f(v))
         case Err(w) => Err(w)
     }
@@ -94,7 +100,7 @@ namespace Result {
     ///
     /// Returns `f(v)` if `r` is `Ok(v)`. Returns `Err(w)` if `r` is `Err(w)`.
     ///
-    pub def flatMap(f: t1 ->{f} Result[t2, e], r: Result[t1, e]): Result[t2, e] @ f = match r {
+    pub def flatMap(f: t1 -> Result[t2, e] & f, r: Result[t1, e]): Result[t2, e] & f = match r {
         case Ok(v) => f(v)
         case Err(w) => Err(w)
     }
@@ -104,7 +110,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def count(f: t ->> Bool, r: Result[t, e]): Int32 = match r {
+    pub def count(f: t -> Bool, r: Result[t, e]): Int32 = match r {
         case Ok(v) => if (f(v)) 1 else 0
         case Err(_) => 0
     }
@@ -114,7 +120,7 @@ namespace Result {
     ///
     /// The function `f` must be pure.
     ///
-    pub def find(f: t ->> Bool, r: Result[t, e]): Option[t] = match r {
+    pub def find(f: t -> Bool, r: Result[t, e]): Option[t] = match r {
         case Ok(v) => if (f(v)) Some(v) else None
         case Err(_) => None
     }
@@ -122,7 +128,7 @@ namespace Result {
     ///
     /// Returns `f(z, v)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldLeft(f: (a, t) ->{f} a, z: a, r: Result[t, e]): a @ f = match r {
+    pub def foldLeft(f: (a, t) -> a & f, z: a, r: Result[t, e]): a & f = match r {
         case Ok(v) => f(z, v)
         case Err(_) => z
     }
@@ -130,7 +136,7 @@ namespace Result {
     ///
     /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
     ///
-    pub def foldRight(f: (t, a) ->{f} a, r: Result[t, e], z: a): a @ f = match r {
+    pub def foldRight(f: (t, a) -> a & f, r: Result[t, e], z: a): a & f = match r {
         case Ok(v) => f(v, z)
         case Err(_) => z
     }
@@ -172,10 +178,93 @@ namespace Result {
     ///
     /// The function `f` must be impure.
     ///
-    pub def foreach(f: a ~>> Unit, r: Result[t, e]): Unit @ Impure = match r {
+    pub def foreach(f: a ~> Unit, r: Result[t, e]): Unit & Impure = match r {
         case Ok(v)  => f(v)
         case Err(_) => ()
     }
+
+    ///
+    /// Applies the function in `r1` to the value in `r2`.
+    ///
+    pub def ap(r1: Result[t -> u & f, e], r2: Result[t, e]): Result[u, e] & f = match r1 {
+        case Ok(f)  => match r2 {
+            case Ok(a)  => Ok(f(a))
+            case Err(e) => Err(e)
+        }
+        case Err(e) => Err(e)
+    }
+
+    ///
+    /// Applies the binary function `f` to the values in `r1` and `r2`.
+    ///
+    /// Returns the first `Err(e)` value if either of `r1` and `r2` are `Err(e)`.
+    ///
+    pub def lift2(f: (t1, t2) -> u & f, r1: Result[t1, e], r2: Result[t2, e]): Result[u, e] & f =
+        ap(map(f, r1), r2)
+
+    ///
+    /// Applies the ternary function `f` to the values in `r1`, `r2` and `r3`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2` and `r3` are `Err(e)`.
+    ///
+    pub def lift3(f: (t1, t2, t3) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e]): Result[u, e] & f =
+        ap(lift2(f, r1, r2), r3)
+
+    ///
+    /// Applies the 4-ary function `f` to the values in `r1`, `r2`, `r3` and `r4`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, `r3` and `r4` are `Err(e)`.
+    ///
+    pub def lift4(f: (t1, t2, t3, t4) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e]): Result[u, e] & f =
+        ap(lift3(f, r1, r2, r3), r4)
+
+    ///
+    /// Applies the 5-ary function `f` to the values in `r1`, `r2`, ... `r5`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r5` are `Err(e)`.
+    ///
+    pub def lift5(f: (t1, t2, t3, t4, t5) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e]): Result[u, e] & f =
+        ap(lift4(f, r1, r2, r3, r4), r5)
+
+    ///
+    /// Applies the 6-ary function `f` to the values in `r1`, `r2`, ... `r6`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r6` are `Err(e)`.
+    ///
+    pub def lift6(f: (t1, t2, t3, t4, t5, t6) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e]): Result[u, e] & f =
+        ap(lift5(f, r1, r2, r3, r4, r5), r6)
+
+    ///
+    /// Applies the 7-ary function `f` to the values in `r1`, `r2`, ... `r7`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r7` are `Err(e)`.
+    ///
+    pub def lift7(f: (t1, t2, t3, t4, t5, t6, t7) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e]): Result[u, e] & f=
+        ap(lift6(f, r1, r2, r3, r4, r5, r6), r7)
+
+    ///
+    /// Applies the 8-ary function `f` to the values in `r1`, `r2`, ... `r8`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r8` are `Err(e)`.
+    ///
+    pub def lift8(f: (t1, t2, t3, t4, t5, t6, t7, t8) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e]): Result[u, e] & f =
+        ap(lift7(f, r1, r2, r3, r4, r5, r6, r7), r8)
+
+    ///
+    /// Applies the 9-ary function `f` to the values in `r1`, `r2`, ... `r9`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r9` are `Err(e)`.
+    ///
+    pub def lift9(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e]): Result[u, e] & f =
+        ap(lift8(f, r1, r2, r3, r4, r5, r6, r7, r8), r9)
+
+    ///
+    /// Applies the 10-ary function `f` to the values in `r1`, `r2`, ... `r10`.
+    ///
+    /// Returns the first `Err(e)` value if any of `r1`, `r2`, ... `r10` are `Err(e)`.
+    ///
+    pub def lift10(f: (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) -> u & f, r1: Result[t1, e], r2: Result[t2, e], r3: Result[t3, e], r4: Result[t4, e], r5: Result[t5, e], r6: Result[t6, e], r7: Result[t7, e], r8: Result[t8, e], r9: Result[t9, e], r10: Result[t10, e]): Result[u, e] & f =
+        ap(lift9(f, r1, r2, r3, r4, r5, r6, r7, r8, r9), r10)
 
     ///
     /// Returns `true` if and only if `r1` and `r2` and equal.
@@ -185,4 +274,38 @@ namespace Result {
         case (Err(w1), Err(w2)) => w1 == w2
         case _ => false
     }
+
+    ///
+    /// Returns the result of a three-way comparison between `r1` and `r2`.
+    ///
+    /// Returns n < 0 if `r1` is smaller than `r2`.
+    /// Returns n = 0 if `r1` is equal to `r2`.
+    /// Returns n > 0 if `r1` is greater than `r2`.
+    ///
+    def __cmp(r1: Result[t, e], r2: Result[t, e]): Int32 = match (r1, r2) {
+        case (Ok(v1), Ok(v2))   =>  v1 <=> v2
+        case (Err(v1), Err(v2)) =>  v1 <=> v2
+        case (Ok(_), Err(_))    =>  -1
+        case (Err(_), Ok(_))    =>  +1
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Use Cases                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def useExists(): Bool =
+        forall [t, e] (f: t -> Bool, r: Result[t, e]).
+            getWithDefault(map(f, r), false) === exists(f, r)
+
+    @lint
+    def useForall(): Bool =
+        forall [t, e] (f: t -> Bool, r: Result[t, e]).
+            getWithDefault(map(f, r), true) === forall(f, r)
+
 }

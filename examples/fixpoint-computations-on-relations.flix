@@ -1,9 +1,5 @@
 /// We can use Flix as an ordinary Datalog solver.
 
-/// Declare two predicate symbols.
-rel DirectedEdge(x: Int, y: Int)
-rel Connected(x: Int, y: Int)
-
 /// Declare some edge facts.
 DirectedEdge(1, 2).
 DirectedEdge(2, 3).

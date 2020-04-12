@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -39,7 +38,7 @@ object WeederError {
     * @param loc2 the location of the second annotation.
     */
   case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -54,28 +53,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that the attribute `name` was declared multiple times.
-    *
-    * @param name the name of the attribute.
-    * @param loc1 the location of the first attribute.
-    * @param loc2 the location of the second attribute.
-    */
-  case class DuplicateAttribute(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Multiple declarations of the attribute '" << Red(name) << "'." << NewLine
-      vt << NewLine
-      vt << Code(loc1, "the first declaration was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second declaration was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove or rename one of the attributes to avoid the name clash." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that the formal parameter `name` was declared multiple times.
     *
     * @param name the name of the parameter.
@@ -83,7 +60,7 @@ object WeederError {
     * @param loc2 the location of the second parameter.
     */
   case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -105,7 +82,7 @@ object WeederError {
     * @param loc2 the location of the second modifier.
     */
   case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -126,7 +103,7 @@ object WeederError {
     * @param loc2     the location of the second tag.
     */
   case class DuplicateTag(enumName: String, tagName: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -146,7 +123,6 @@ object WeederError {
     * @param loc the location where the illegal array length occurs.
     */
   case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -163,7 +139,6 @@ object WeederError {
     * @param loc  the location of the formal parameter.
     */
   case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -181,7 +156,6 @@ object WeederError {
     * @param loc the location where the illegal effect occurs.
     */
   case class IllegalEffect(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -197,7 +171,6 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalExistential(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -215,7 +188,6 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalUniversal(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -233,7 +205,6 @@ object WeederError {
     * @param loc the location where the illegal float occurs.
     */
   case class IllegalFloat(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -251,7 +222,6 @@ object WeederError {
     * @param loc the location where the illegal int occurs.
     */
   case class IllegalInt(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -269,7 +239,6 @@ object WeederError {
     * @param loc the location where the illegal expression occurs.
     */
   case class IllegalHole(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -287,7 +256,6 @@ object WeederError {
     * @param loc the location where the illegal definition occurs.
     */
   case class IllegalLattice(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -310,7 +278,6 @@ object WeederError {
     * @param loc the location where the illegal modifier occurs.
     */
   case class IllegalModifier(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -326,7 +293,6 @@ object WeederError {
     * @param loc the location of the name.
     */
   case class IllegalJvmFieldOrMethodName(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -342,7 +308,6 @@ object WeederError {
     * @param loc the location where the illegal wildcard occurs.
     */
   case class IllegalWildcard(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -360,7 +325,7 @@ object WeederError {
     * @param loc2 the location of the second use of the variable.
     */
   case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
-    val source: Source = loc1.source
+    val loc: SourceLocation = loc1 min loc2
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -381,7 +346,6 @@ object WeederError {
     * @param loc  the location of the annotation.
     */
   case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -392,7 +356,6 @@ object WeederError {
   }
 
   case class IllegalVectorLength(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -403,7 +366,6 @@ object WeederError {
   }
 
   case class IllegalVectorIndex(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine

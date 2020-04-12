@@ -77,10 +77,6 @@ object SimplifiedAstOps {
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
         checkType(tpe)
 
-      case Expression.Eff(sym, tpe, loc) =>
-        assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
-        checkType(tpe)
-
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         checkExp(exp, env0 ++ fparams.map(_.sym), ienv0)
 
@@ -112,13 +108,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         for (arg <- args) {
@@ -128,13 +117,6 @@ object SimplifiedAstOps {
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
-        checkType(tpe)
-
-      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
-        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
@@ -271,13 +253,6 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        for (HandlerBinding(sym, handler) <- bindings) {
-          checkExp(handler, env0, ienv0)
-        }
-        checkType(tpe)
-
       case Expression.Existential(fparam, exp, loc) =>
         checkFormalParam(fparam)
         checkExp(exp, env0 + fparam.sym, ienv0)
@@ -372,7 +347,7 @@ object SimplifiedAstOps {
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
@@ -381,7 +356,7 @@ object SimplifiedAstOps {
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkExp(exp3, env0, ienv0)
@@ -391,9 +366,6 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       case Expression.MatchError(tpe, loc) =>
-        checkType(tpe)
-
-      case Expression.SwitchError(tpe, loc) =>
         checkType(tpe)
     }
 
@@ -431,7 +403,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given head predicate `h0`.
       */
     def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = h0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
@@ -447,7 +419,7 @@ object SimplifiedAstOps {
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = b0 match {
-      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
@@ -524,7 +496,7 @@ object SimplifiedAstOps {
     //
     // Check all lattices in the program.
     //
-    for ((tpe1, LatticeComponents(tpe2, bot, top, equ, leq, lub, glb, loc)) <- root.latticeComponents) {
+    for ((tpe1, LatticeOps(tpe2, bot, top, equ, leq, lub, glb, loc)) <- root.latticeOps) {
       assert(tpe1 == tpe2)
       checkType(tpe1)
       checkType(tpe2)
@@ -535,26 +507,6 @@ object SimplifiedAstOps {
     //
     for (Property(law, defn, exp) <- root.properties) {
       checkExp(exp0 = exp, env0 = Set.empty, ienv0 = Set.empty)
-    }
-
-    //
-    // Check all relations in the program.
-    //
-    for ((sym1, Relation(_, sym2, attr, _)) <- root.relations) {
-      assert(sym1 == sym2)
-      for (attribute <- attr) {
-        checkAttribute(attribute)
-      }
-    }
-
-    //
-    // Check all lattices in the program.
-    //
-    for ((sym1, Lattice(_, sym2, attr, _)) <- root.lattices) {
-      assert(sym1 == sym2)
-      for (attribute <- attr) {
-        checkAttribute(attribute)
-      }
     }
 
     // Success :)

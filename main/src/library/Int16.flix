@@ -45,32 +45,32 @@ namespace Int16 {
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    pub def abs(x: Int16): Int16 = switch {
-        case x >= 0i16          => x
-        case x == minValue()    => -1i16
-        case x != minValue()    => -x
+    pub def abs(x: Int16): Int16 = {
+        if      (x >= 0i16)         x
+        else if (x == minValue())   -1i16
+        else                        -x
     }
 
     ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    pub def dist(x: Int16, y: Int16): Int16 = switch {
-        case x >= 0i16 && y >= 0i16                 => abs(x - y)
-        case x < 0i16 && y < 0i16                   => abs(x - y)
-        case x == minValue() || y == minValue()     => -1i16
-        case minValue() + abs(x) + abs(y) >= 0i16   => -1i16
-        case minValue() + abs(x) + abs(y) < 0i16    => abs(x - y)
+    pub def dist(x: Int16, y: Int16): Int16 = {
+        if      (x >= 0i16 && y >= 0i16)                abs(x - y)
+        else if (x < 0i16 && y < 0i16)                  abs(x - y)
+        else if (x == minValue() || y == minValue())    -1i16
+        else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
+        else                                            abs(x - y)
     }
 
     ///
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    pub def compare(x: Int16, y: Int16): Int32 = switch {
-        case x == y  => 0
-        case x < y   => -1
-        case x > y   => 1
+    pub def compare(x: Int16, y: Int16): Int32 = {
+        if      (x == y)    0
+        else if (x < y)     -1
+        else                1
     }
 
     ///
@@ -94,10 +94,10 @@ namespace Int16 {
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    pub def bitCount(x: Int16): Int32 = switch {
-        case x == 0i16        => 0
-        case x % 2i16 != 0i16 => bitCount(logicalRightShift(x, 1)) + 1
-        case x % 2i16 == 0i16 => bitCount(logicalRightShift(x, 1))
+    pub def bitCount(x: Int16): Int32 = {
+        if      (x == 0i16)         0
+        else if (x % 2i16 != 0i16)  bitCount(logicalRightShift(x, 1)) + 1
+        else                        bitCount(logicalRightShift(x, 1))
     }
 
     ///
@@ -162,12 +162,12 @@ namespace Int16 {
     /// If `x` has a one-bit at `position`, return that position.
     /// Otherwise recursively check the next bit in the same way.
     ///
-    def oneBitPositionHelper(x: Int16, position: Int32, delta: Int32): Int32 = switch {
-        case position < 0                   => -1
-        case position > (size() - 1)        => -1
-        case getBit(x, position) == 1          => position
-        case delta == 0                     => -1
-        case getBit(x, position) == 0          => oneBitPositionHelper(x, position + delta, delta)
+    def oneBitPositionHelper(x: Int16, position: Int32, delta: Int32): Int32 = {
+        if      (position < 0)              -1
+        else if (position > (size() - 1))   -1
+        else if (getBit(x, position) == 1)  position
+        else if (delta == 0)                -1
+        else                                oneBitPositionHelper(x, position + delta, delta)
     }
 
     ///
@@ -244,7 +244,7 @@ namespace Int16 {
     ///
     pub def toString(x: Int16): String =
         import java.lang.Short:toString(Int16);
-        x.toString() as String @ Pure
+        x.toString() as & Pure
 
     ///
     /// Parse the string `s` as an Int16, leading or trailing whitespace is trimmed.
@@ -253,8 +253,68 @@ namespace Int16 {
     pub def fromString(s: String): Result[Int16, String] = try {
         import java.lang.String.strip();
         import java.lang.Short:parseShort(String);
-        Ok(s.strip().parseShort()) as _ @ Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
-     }
+        Ok(s.strip().parseShort()) as & Pure
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Lints: Simplifications                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @lint
+    def leftAdditionByZero(): Bool =
+        forall (x: Int16).
+            (0i16 + x) === x
+
+    @lint
+    def rightAdditionByZero(): Bool =
+        forall (x: Int16).
+            (x + 0i16) === x
+
+    @lint
+    def subtractionByZero(): Bool =
+        forall (x: Int16).
+            (x - 0i16) === 0i16
+
+    @lint
+    def subtractionBySelf(): Bool =
+        forall (x: Int16).
+            (x - x) === 0i16
+
+    @lint
+    def leftMultiplicationByZero(): Bool =
+        forall (x: Int16).
+            (0i16 * x) === 0i16
+
+    @lint
+    def rightMultiplicationByZero(): Bool =
+        forall (x: Int16).
+            (x * 0i16) === 0i16
+
+    @lint
+    def leftMultiplicationByOne(): Bool =
+        forall (x: Int16).
+            (1i16 * x) === x
+
+    @lint
+    def rightMultiplicationByOne(): Bool =
+        forall (x: Int16).
+            (x * 1i16) === x
+
+    @lint
+    def divisionByZero(): Bool =
+        forall (x: Int16).
+            (x / 0i16) === 0i16
+
+    @lint
+    def divisionByOne(): Bool =
+        forall (x: Int16).
+            (x / 1i16) === x
+
+    @lint
+    def divisionBySelf(): Bool =
+        forall (x: Int16).
+            (x / x) === 1i16
+
 }

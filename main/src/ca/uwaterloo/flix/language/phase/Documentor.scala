@@ -122,7 +122,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       * Returns the formal parameters of the lambda expressions in the given expression `exp0`.
       */
     def uncurry(exp0: Expression): List[FormalParam] = exp0 match {
-      case Expression.Lambda(fparam, exp, _, _, _) => fparam :: uncurry(exp)
+      case Expression.Lambda(fparam, exp, _, _) => fparam :: uncurry(exp)
       case _ => Nil
     }
 
@@ -161,9 +161,9 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
         case TypeConstructor.BigInt => "BigInt"
         case TypeConstructor.Str => "Str"
 
-        case TypeConstructor.Relation(sym) => sym.toString
+        case TypeConstructor.Relation => "Relation"
 
-        case TypeConstructor.Lattice(sym) => sym.toString
+        case TypeConstructor.Lattice => "Lattice"
 
         case TypeConstructor.Array => "Array" + "[" + args.map(format).mkString(", ") + "]"
 

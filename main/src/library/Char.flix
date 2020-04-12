@@ -19,58 +19,72 @@ namespace Char {
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
-    pub def isAscii(c: Char): Bool =
-        import flix.runtime.library.Char:isAscii(Char);
-        c.isAscii() as Bool @ Pure
+    pub def isAscii(c: Char): Bool = match toInt32(c) {
+        case i if i >= 0x0000 && i <= 0x007F => true        // 'NUL'..'DEL'
+        case _ => false
+    }
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
     ///
     pub def isLetter(c: Char): Bool =
         import java.lang.Character:isLetter(Char);
-        c.isLetter() as Bool @ Pure
+        c.isLetter() as & Pure
 
     ///
-    /// Returns `true` if the given char `c` is in the range 0...9.
+    /// Returns `true` if the given char `c` is a recognized Unicode digit.
+    /// This includes the ASCII range 0..9 but also Arabic-Indic digits, Devagari digits and Fullwidth digits.
     ///
     pub def isDigit(c: Char): Bool =
         import java.lang.Character:isDigit(Char);
-        c.isDigit() as Bool @ Pure
+        c.isDigit() as & Pure
+
+    ///
+    /// Returns `true` if the given char `c` is strictly in the range of ASCII digits 0...9.
+    ///
+    pub def isAsciiDigit(c: Char): Bool = match toInt32(c) {
+        case i if i >= 0x0030 && i <= 0x0039 => true        // '0'..'9'
+        case _ => false
+    }
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
-    pub def isOctDigit(c: Char): Bool =
-        import flix.runtime.library.Char:isOctDigit(Char);
-        c.isOctDigit() as Bool @ Pure
+    pub def isOctDigit(c: Char): Bool = match toInt32(c) {
+        case i if i >= 0x0030 && i <= 0x0037 => true        // '0'..'7'
+        case _ => false
+    }
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
-    pub def isHexDigit(c: Char): Bool =
-        import flix.runtime.library.Char:isHexDigit(Char);
-        c.isHexDigit() as Bool @ Pure
+    pub def isHexDigit(c: Char): Bool = match toInt32(c) {
+        case i if i >= 0x0030 && i <= 0x0039 => true        // '0'..'9'
+        case i if i >= 0x0041 && i <= 0x0046 => true        // 'A'..'F'
+        case i if i >= 0x0061 && i <= 0x0066 => true        // 'a'..'f'
+        case _ => false
+    }
 
     ///
     /// Returns `true` if the given char `c` is lowercase.
     ///
     pub def isLowerCase(c: Char): Bool =
         import java.lang.Character:isLowerCase(Char);
-        c.isLowerCase() as Bool @ Pure
+        c.isLowerCase() as & Pure
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
     pub def isUpperCase(c: Char): Bool =
         import java.lang.Character:isUpperCase(Char);
-        c.isUpperCase() as Bool @ Pure
+        c.isUpperCase() as & Pure
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
     pub def isWhiteSpace(c: Char): Bool =
         import java.lang.Character:isWhitespace(Char);
-        c.isWhitespace() as Bool @ Pure
+        c.isWhitespace() as & Pure
 
     ///
     /// Converts a letter to its lowercase version.
@@ -79,7 +93,7 @@ namespace Char {
     ///
     pub def toLowerCase(c: Char): Char =
         import java.lang.Character:toLowerCase(Char);
-        c.toLowerCase() as Char @ Pure
+        c.toLowerCase() as & Pure
 
     ///
     /// Converts a letter to its uppercase version.
@@ -88,13 +102,25 @@ namespace Char {
     ///
     pub def toUpperCase(c: Char): Char =
         import java.lang.Character:toUpperCase(Char);
-        c.toUpperCase() as Char @ Pure
+        c.toUpperCase() as & Pure
 
     ///
     /// Returns the character `c` as a string.
     ///
     pub def toString(c: Char): String =
         import java.lang.Character:toString(Char);
-        c.toString() as String @ Pure
+        c.toString() as & Pure
+
+    ///
+    /// Returns the character `c` as an Int32.
+    ///
+    pub def toInt32(c: Char): Int32 =
+        c as Int32
+
+    ///
+    /// Returns the respective character for the int `i`.
+    ///
+    pub def fromInt32(i: Int32): Char =
+        i as Char
 
 }

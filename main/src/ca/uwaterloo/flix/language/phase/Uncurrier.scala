@@ -47,27 +47,27 @@ object Uncurrier extends Phase[Root, Root] {
     val newDefs: TopLevel = mutable.Map.empty
 
     // Uncurry lattice operations.
-    val newLatticeOps = visitLatticeOps(root.latticeComponents, newDefs, root)
+    val newLatticeOps = visitLatticeOps(root.latticeOps, newDefs, root)
 
     // Uncurry special operations.
     val newSpecialOps = visitSpecialOps(root.specialOps, newDefs, root)
 
     // Reassemble the ast.
-    root.copy(defs = root.defs ++ newDefs, latticeComponents = newLatticeOps, specialOps = newSpecialOps).toSuccess
+    root.copy(defs = root.defs ++ newDefs, latticeOps = newLatticeOps, specialOps = newSpecialOps).toSuccess
   }
 
   /**
     * Uncurries lattice operations.
     */
-  def visitLatticeOps(lattices: Map[Type, LatticeComponents], newDefs: TopLevel, root: Root)(implicit flix: Flix): Map[Type, LatticeComponents] = {
-    lattices.foldLeft(Map.empty[Type, LatticeComponents]) {
-      case (macc, (_, LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc))) =>
+  def visitLatticeOps(lattices: Map[Type, LatticeOps], newDefs: TopLevel, root: Root)(implicit flix: Flix): Map[Type, LatticeOps] = {
+    lattices.foldLeft(Map.empty[Type, LatticeOps]) {
+      case (macc, (_, LatticeOps(tpe, bot, top, equ, leq, lub, glb, loc))) =>
         // Uncurry the four lattice operations.
         val uncurriedEqu = mkUncurried2(equ, newDefs, root)
         val uncurriedLeq = mkUncurried2(leq, newDefs, root)
         val uncurriedLub = mkUncurried2(lub, newDefs, root)
         val uncurriedGlb = mkUncurried2(glb, newDefs, root)
-        macc + (tpe -> LatticeComponents(tpe, bot, top, uncurriedEqu, uncurriedLeq, uncurriedLub, uncurriedGlb, loc))
+        macc + (tpe -> LatticeOps(tpe, bot, top, uncurriedEqu, uncurriedLeq, uncurriedLub, uncurriedGlb, loc))
     }
   }
 

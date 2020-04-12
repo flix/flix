@@ -23,36 +23,24 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Source}
 object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
-                  effs: Map[Symbol.EffSym, FinalAst.Eff],
-                  handlers: Map[Symbol.EffSym, FinalAst.Handler],
                   enums: Map[Symbol.EnumSym, FinalAst.Enum],
-                  relations: Map[Symbol.RelSym, FinalAst.Relation],
-                  lattices: Map[Symbol.LatSym, FinalAst.Lattice],
-                  latticeComponents: Map[MonoType, FinalAst.LatticeComponents],
+                  latticeOps: Map[MonoType, FinalAst.LatticeOps],
                   properties: List[FinalAst.Property],
                   specialOps: Map[SpecialOperator, Map[MonoType, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) {
-    var method: Method = null
+    var method: Method = _
   }
 
-  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[FinalAst.FormalParam], tpe: MonoType, loc: SourceLocation)
-
-  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation)
-
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpe: MonoType, loc: SourceLocation)
-
-  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[FinalAst.Attribute], loc: SourceLocation)
-
-  case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[FinalAst.Attribute], loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: FinalAst.Expression) {
     def loc: SourceLocation = defn.loc
   }
 
-  case class LatticeComponents(tpe: MonoType, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
+  case class LatticeOps(tpe: MonoType, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
 
   sealed trait Expression {
     def tpe: MonoType
@@ -131,13 +119,9 @@ object FinalAst {
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class ApplyEff(sym: Symbol.EffSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class ApplyCloTail(exp: FinalAst.Expression, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class ApplyEffTail(sym: Symbol.EffSym, args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], actuals: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
@@ -194,8 +178,6 @@ object FinalAst {
 
     case class Assign(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class HandleWith(exp: FinalAst.Expression, bindings: List[FinalAst.HandlerBinding], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
     case class Existential(fparam: FinalAst.FormalParam, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression {
       def tpe: MonoType = MonoType.Bool
     }
@@ -205,7 +187,7 @@ object FinalAst {
     }
 
     case class Cast(exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-    
+
     case class TryCatch(exp: FinalAst.Expression, rules: List[FinalAst.CatchRule], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class InvokeConstructor(constructor: Constructor[_], args: List[FinalAst.Expression], tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
@@ -240,17 +222,15 @@ object FinalAst {
 
     case class FixpointSolve(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointProject(name: String, exp: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointFold(sym: Symbol.PredSym, init: FinalAst.Expression.Var, f: FinalAst.Expression.Var, constraints: FinalAst.Expression.Var, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointFold(name: String, init: FinalAst.Expression.Var, f: FinalAst.Expression.Var, constraints: FinalAst.Expression.Var, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
     case class MatchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
-
-    case class SwitchError(tpe: MonoType, loc: SourceLocation) extends FinalAst.Expression
 
   }
 
@@ -266,7 +246,7 @@ object FinalAst {
 
     object Head {
 
-      case class Atom(sym: Symbol.PredSym, den: Denotation, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class Atom(name: String, den: Denotation, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 
       case class Union(exp: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Head
 
@@ -276,7 +256,7 @@ object FinalAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, den: Denotation, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class Atom(name: String, den: Denotation, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: MonoType, loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Guard(exp: FinalAst.Expression, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 
@@ -286,7 +266,9 @@ object FinalAst {
 
   object Term {
 
-    sealed trait Head
+    sealed trait Head {
+      def tpe: MonoType
+    }
 
     object Head {
 
@@ -300,7 +282,9 @@ object FinalAst {
 
     }
 
-    sealed trait Body
+    sealed trait Body {
+      def tpe: MonoType
+    }
 
     object Body {
 
@@ -322,7 +306,7 @@ object FinalAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body])
+  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym
@@ -339,7 +323,5 @@ object FinalAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: MonoType)
 
   case class FreeVar(sym: Symbol.VarSym, tpe: MonoType)
-
-  case class HandlerBinding(sym: Symbol.EffSym, exp: FinalAst.Expression)
 
 }

@@ -80,6 +80,12 @@ class TestMain extends FunSuite {
     assert(opts.listen.nonEmpty)
   }
 
+  test("--lsp") {
+    val args = Array("--lsp", "8080", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.lsp.nonEmpty)
+  }
+
   test("--quickchecker") {
     val args = Array("--quickchecker")
     val opts = Main.parseCmdOpts(args).get
@@ -150,6 +156,12 @@ class TestMain extends FunSuite {
     val args = Array("--Xinvariants", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xinvariants)
+  }
+
+  test("--Xlinter") {
+    val args = Array("--Xlinter", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xlinter)
   }
 
   test("--Xno-effects") {

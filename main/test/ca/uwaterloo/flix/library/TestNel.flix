@@ -1,0 +1,477 @@
+namespace Nel {
+
+    /////////////////////////////////////////////////////////////////////////////
+    // head                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def head01(): Bool = head(Nel(123, Nil)) == 123
+
+    @test
+    def head02(): Bool = head(Nel(123, 1 :: Nil)) == 123
+
+    @test
+    def head03(): Bool = head(Nel(123, 1 :: 2 :: Nil)) == 123
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def last01(): Bool = last(Nel(123, Nil)) == 123
+
+    @test
+    def last02(): Bool = last(Nel(123, 1 :: Nil)) == 1
+
+    @test
+    def last03(): Bool = last(Nel(123, 1 :: 2 :: Nil)) == 2
+
+    /////////////////////////////////////////////////////////////////////////////
+    // init                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def init01(): Bool = init(Nel(1, Nil)) == Nil
+
+    @test
+    def init02(): Bool = init(Nel(1, 2 :: Nil)) == 1 :: Nil
+
+    @test
+    def init03(): Bool = init(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // tail                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def tail01(): Bool = tail(Nel(1, Nil)) == Nil
+
+    @test
+    def tail02(): Bool = tail(Nel(1, 2 :: Nil)) == 2 :: Nil
+
+    @test
+    def tail03(): Bool = tail(Nel(1, 2 :: 3 :: Nil)) == 2 :: 3 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def length01(): Bool = length(Nel(1, Nil)) == 1
+
+    @test
+    def length02(): Bool = length(Nel(1, 2 :: Nil)) == 2
+
+    @test
+    def length03(): Bool = length(Nel(1, 2 :: 3 :: Nil)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
+    // append                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def append01(): Bool = Nel(1, Nil) `append` Nel(2, Nil) == Nel(1, 2 :: Nil)
+
+    @test
+    def append02(): Bool = Nel(1, 2 :: Nil) `append` Nel(3, Nil) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def append03(): Bool = Nel(1, Nil) `append` Nel(2, 3 :: Nil) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def append04(): Bool = Nel(1, 2 :: Nil) `append` Nel(3, 4 :: Nil) == Nel(1, 2 :: 3 :: 4 :: Nil)
+
+    @test
+    def append05(): Bool = Nel(1, 2 :: 3 :: Nil) `append` Nel(4, 5 :: 6 :: Nil) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // memberOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def memberOf01(): Bool = memberOf(0, Nel(1, Nil)) == false
+
+    @test
+    def memberOf02(): Bool = memberOf(0, Nel(1, 2 :: Nil)) == false
+
+    @test
+    def memberOf03(): Bool = memberOf(0, Nel(1, 2 :: 3 :: Nil)) == false
+
+    @test
+    def memberOf04(): Bool = memberOf(1, Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def memberOf05(): Bool = memberOf(2, Nel(1, 2 :: 3 :: Nil))
+
+    @test
+    def memberOf06(): Bool = memberOf(3, Nel(1, 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findLeft01(): Bool = findLeft(x -> x == 0, Nel(1, Nil)) == None
+
+    @test
+    def findLeft02(): Bool = findLeft(x -> x == 0, Nel(1, 2 :: Nil)) == None
+
+    @test
+    def findLeft03(): Bool = findLeft(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
+
+    @test
+    def findLeft04(): Bool = findLeft(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
+
+    @test
+    def findLeft05(): Bool = findLeft(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
+
+    @test
+    def findLeft06(): Bool = findLeft(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def findRight01(): Bool = findRight(x -> x == 0, Nel(1, Nil)) == None
+
+    @test
+    def findRight02(): Bool = findRight(x -> x == 0, Nel(1, 2 :: Nil)) == None
+
+    @test
+    def findRight03(): Bool = findRight(x -> x == 0, Nel(1, 2 :: 3 :: Nil)) == None
+
+    @test
+    def findRight04(): Bool = findRight(x -> x == 1, Nel(1, 2 :: 3 :: Nil)) == Some(1)
+
+    @test
+    def findRight05(): Bool = findRight(x -> x == 2, Nel(1, 2 :: 3 :: Nil)) == Some(2)
+
+    @test
+    def findRight06(): Bool = findRight(x -> x == 3, Nel(1, 2 :: 3 :: Nil)) == Some(3)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def map01(): Bool = map(x -> x + 1, Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def map02(): Bool = map(x -> x + 1, Nel(1, 2 :: Nil)) == Nel(2, 3 :: Nil)
+
+    @test
+    def map03(): Bool = map(x -> x + 1, Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithIndex                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def mapWithIndex01(): Bool = mapWithIndex((_, i) -> i, Nel(21, Nil)) == Nel(0, Nil)
+
+    @test
+    def mapWithIndex02(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: Nil)) == Nel(0, 1 :: Nil)
+
+    @test
+    def mapWithIndex03(): Bool = mapWithIndex((_, i) -> i, Nel(21, 42 :: 84 :: Nil)) == Nel(0, 1 :: 2 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatMap01(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def flatMap02(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: Nil)) == Nel(2, 3 :: Nil)
+
+    @test
+    def flatMap03(): Bool = flatMap(x -> Nel(x + 1, Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(2, 3 :: 4 :: Nil)
+
+    @test
+    def flatMap04(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, Nil)) == Nel(1, 1 :: Nil)
+
+    @test
+    def flatMap05(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: Nil)
+
+    @test
+    def flatMap06(): Bool = flatMap(x -> Nel(x, x :: Nil), Nel(1, 2 :: 3 :: Nil)) == Nel(1, 1 :: 2 :: 2 :: 3 :: 3 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reverse                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reverse01(): Bool = reverse(Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def reverse02(): Bool = reverse(Nel(1, 2 :: Nil)) == Nel(2, 1 :: Nil)
+
+    @test
+    def reverse03(): Bool = reverse(Nel(1, 2 :: 3 :: Nil)) == Nel(3, 2 :: 1 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // replace                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def replace01(): Bool = replace(1, 42, Nel(1, Nil)) == Nel(42, Nil)
+
+    @test
+    def replace02(): Bool = replace(7, 42, Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def replace03(): Bool = replace(2, 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
+
+    @test
+    def replace04(): Bool = replace(7, 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // permutations                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def permutations01(): Bool = permutations(Nel(1, Nil)) == Nel(1 :: Nil, Nil)
+
+    @test
+    def permutations02(): Bool = permutations(Nel(1, 2 :: Nil)) == Nel(1 :: 2 :: Nil, (2 :: 1 :: Nil) :: Nil)
+
+    @test
+    def permutations03(): Bool = permutations(Nel(1, 2 :: 3 :: Nil)) == Nel(1 :: 2 :: 3 :: Nil,
+                                                                           (1 :: 3 :: 2 :: Nil) ::
+                                                                           (2 :: 1 :: 3 :: Nil) ::
+                                                                           (2 :: 3 :: 1 :: Nil) ::
+                                                                           (3 :: 1 :: 2 :: Nil) ::
+                                                                           (3 :: 2 :: 1 :: Nil) :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // subsequences                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def subsequences01(): Bool = subsequences(Nel(1, Nil)) == Nel(1 :: Nil, (Nil) :: Nil)
+
+    @test
+    def subsequences02(): Bool = subsequences(Nel(1, 2 :: Nil)) == Nel(1 :: 2 :: Nil, (1 :: Nil) :: (2 :: Nil) :: (Nil) :: Nil)
+
+    @test
+    def subsequences03(): Bool = subsequences(Nel(1, 2 :: 3 :: Nil)) == Nel(1 :: 2 :: 3 :: Nil,
+                                                                           (1 :: 2 :: Nil) ::
+                                                                           (1 :: 3 :: Nil) ::
+                                                                           (1 :: Nil) ::
+                                                                           (2 :: 3 :: Nil) ::
+                                                                           (2 :: Nil) ::
+                                                                           (3 :: Nil) ::
+                                                                           (Nil) :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // intersperse                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def intersperse01(): Bool = intersperse(7, Nel(1, Nil)) == Nel(1, Nil)
+
+    @test
+    def intersperse02(): Bool = intersperse(7, Nel(1, 2 :: Nil)) == Nel(1, 7 :: 2 :: Nil)
+
+    @test
+    def intersperse03(): Bool = intersperse(7, Nel(1, 2 :: 3 :: Nil)) == Nel(1, 7 :: 2 :: 7 :: 3 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldLeft01(): Bool = foldLeft((acc, x) -> acc - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldLeft02(): Bool = foldLeft((acc, x) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldLeft03(): Bool = foldLeft((acc, x) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def foldRight01(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, Nil)) == -1
+
+    @test
+    def foldRight02(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: Nil)) == -3
+
+    @test
+    def foldRight03(): Bool = foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)) == -6
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceLeft                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceLeft01(): Bool = reduceLeft((acc, x) -> acc - x, Nel(1, Nil)) == 1
+
+    @test
+    def reduceLeft02(): Bool = reduceLeft((acc, x) -> acc - x, Nel(1, 2 :: Nil)) == -1
+
+    @test
+    def reduceLeft03(): Bool = reduceLeft((acc, x) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == -4
+
+    /////////////////////////////////////////////////////////////////////////////
+    // reduceRight                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def reduceRight01(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, Nil)) == 1
+
+    @test
+    def reduceRight02(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, 2 :: Nil)) == 1
+
+    @test
+    def reduceRight03(): Bool = reduceRight((x, acc) -> acc - x, Nel(1, 2 :: 3 :: Nil)) == 0
+
+    /////////////////////////////////////////////////////////////////////////////
+    // count                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def count01(): Bool = count(x -> x == 1, Nel(1, Nil)) == 1
+
+    @test
+    def count02(): Bool = count(x -> x == 2, Nel(1, Nil)) == 0
+
+    @test
+    def count03(): Bool = count(x -> x == 2, Nel(1, 2 :: 1 :: 2 :: Nil)) == 2
+
+    @test
+    def count04(): Bool = count(x -> x == 2, Nel(2, 2 :: 1 :: 2 :: Nil)) == 3
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatten01(): Bool = flatten(Nel(Nel(1, Nil), Nil)) == Nel(1, Nil)
+
+    @test
+    def flatten02(): Bool = flatten(Nel(Nel(1, Nil), Nel(2, Nil) :: Nil)) == Nel(1, 2 :: Nil)
+
+    @test
+    def flatten03(): Bool = flatten(Nel(Nel(1, Nil), Nel(2, Nil) :: Nel(3, Nil) :: Nil)) == Nel(1, 2 :: 3 :: Nil)
+
+    @test
+    def flatten04(): Bool = flatten(Nel(Nel(1, Nil), Nel(2, 3 :: Nil) :: Nel(4, 5 :: Nil) :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: Nil)
+
+    @test
+    def flatten05(): Bool = flatten(Nel(Nel(1, 2 :: 3 :: Nil), Nel(4, 5 :: Nil) :: Nel(6, 7 :: Nil) :: Nil)) == Nel(1, 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def exists01(): Bool = exists(x -> x == 1, Nel(1, Nil)) == true
+
+    @test
+    def exists02(): Bool = exists(x -> x == 2, Nel(1, Nil)) == false
+
+    @test
+    def exists03(): Bool = exists(x -> x == 1, Nel(1, 2 :: Nil)) == true
+
+    @test
+    def exists04(): Bool = exists(x -> x == 2, Nel(1, 2 :: Nil)) == true
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forall                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def forall01(): Bool = forall(x -> x == 1, Nel(1, Nil)) == true
+
+    @test
+    def forall02(): Bool = forall(x -> x == 2, Nel(1, Nil)) == false
+
+    @test
+    def forall03(): Bool = forall(x -> x == 1, Nel(1, 1 :: Nil)) == true
+
+    @test
+    def forall04(): Bool = forall(x -> x == 1, Nel(1, 2 :: Nil)) == false
+
+    @test
+    def forall05(): Bool = forall(x -> x == 1, Nel(2, 1 :: Nil)) == false
+
+    /////////////////////////////////////////////////////////////////////////////
+    // filter                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def filter01(): Bool = filter(x -> x > 0, Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def filter02(): Bool = filter(x -> x > 1, Nel(1, Nil)) == Nil
+
+    @test
+    def filter03(): Bool = filter(x -> x > 0, Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
+
+    @test
+    def filter04(): Bool = filter(x -> x > 1, Nel(1, 2 :: Nil)) == 2 :: Nil
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zip                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zip01(): Bool = zip(Nel(1, Nil), Nel(1, Nil)) == Nel((1, 1), Nil)
+
+    @test
+    def zip02(): Bool = zip(Nel(1, 2 :: Nil), Nel(1, Nil)) == Nel((1, 1), Nil)
+
+    @test
+    def zip03(): Bool = zip(Nel(1, Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), Nil)
+
+    @test
+    def zip04(): Bool = zip(Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel((1, 1), (2, 2) :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // zipWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def zipWith01(): Bool = zipWith((x, y) -> x + y, Nel(1, Nil), Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def zipWith02(): Bool = zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, Nil)) == Nel(2, Nil)
+
+    @test
+    def zipWith03(): Bool = zipWith((x, y) -> x + y, Nel(1, Nil), Nel(1, 2 :: Nil)) == Nel(2, Nil)
+
+    @test
+    def zipWith04(): Bool = zipWith((x, y) -> x + y, Nel(1, 2 :: Nil), Nel(1, 2 :: Nil)) == Nel(2, 4 :: Nil)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // unzip                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def unzip01(): Bool = unzip(Nel((1, 1), Nil)) == (Nel(1, Nil), Nel(1, Nil))
+
+    @test
+    def unzip02(): Bool = unzip(Nel((1, 1), (2, 2) :: Nil)) == (Nel(1, 2 :: Nil), Nel(1, 2 :: Nil))
+
+    @test
+    def unzip03(): Bool = unzip(Nel((1, 1), (2, 2) :: (3, 3) :: Nil)) == (Nel(1, 2 :: 3 :: Nil), Nel(1, 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toList                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def toList01(): Bool = toList(Nel(1, Nil)) == 1 :: Nil
+
+    @test
+    def toList02(): Bool = toList(Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
+
+    @test
+    def toList03(): Bool = toList(Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+
+}

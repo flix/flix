@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
+import ca.uwaterloo.flix.api.lsp.LanguageServer
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
@@ -62,6 +63,18 @@ object Main {
       System.exit(0)
     }
 
+    // check if the --lsp flag was passed.
+    if (cmdOpts.lsp.nonEmpty) {
+      try {
+        val languageServer = new LanguageServer(cmdOpts.lsp.get)
+        languageServer.run()
+      } catch {
+        case ex: BindException =>
+          Console.println(ex.getMessage)
+      }
+      System.exit(0)
+    }
+
     // the default color context.
     implicit val terminal = TerminalContext.AnsiTerminal
 
@@ -83,6 +96,7 @@ object Main {
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive,
       xallowredundancies = cmdOpts.xallowredundancies,
+      xlinter = cmdOpts.xlinter,
       xnoeffects = cmdOpts.xnoeffects,
       xnostratifier = cmdOpts.xnostratifier,
       xstatistics = cmdOpts.xstatistics
@@ -208,6 +222,7 @@ object Main {
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
+                     lsp: Option[Int] = None,
                      quickchecker: Boolean = false,
                      release: Boolean = false,
                      test: Boolean = false,
@@ -221,6 +236,7 @@ object Main {
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
                      xnoeffects: Boolean = false,
+                     xlinter: Boolean = false,
                      xnostratifier: Boolean = false,
                      xnotailcalls: Boolean = false,
                      xstatistics: Boolean = false,
@@ -301,7 +317,12 @@ object Main {
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
-        text("listens on the given port.")
+        text("starts the socket server and listens on the given port.")
+
+      // LSP.
+      opt[Int]("lsp").action((s, c) => c.copy(lsp = Some(s))).
+        valueName("<port>").
+        text("starts the LSP server and listens on the given port.")
 
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
@@ -357,6 +378,10 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xlinter.
+      opt[Unit]("Xlinter").action((_, c) => c.copy(xlinter = true)).
+        text("[experimental] enables the semantic linter.")
 
       // Xno-effects
       opt[Unit]("Xno-effects").action((_, c) => c.copy(xnoeffects = true)).

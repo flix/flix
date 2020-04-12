@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Polarity}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
@@ -159,9 +159,6 @@ object GenExpression {
       visitor.visitInsn(POP)
       AsmOps.compileClosureApplication(visitor, fnType, args.map(_.tpe), tpe)
 
-    case Expression.ApplyEff(sym, args, tpe, loc) =>
-      throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
-
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
@@ -259,8 +256,6 @@ object GenExpression {
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
       pushDummyValue(visitor, tpe)
-
-    case Expression.ApplyEffTail(sym, args, tpe, loc) => ??? // TODO
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
@@ -728,8 +723,6 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
-
     case Expression.Existential(params, exp, loc) =>
       // TODO: Better exception.
       addSourceLine(visitor, loc)
@@ -1074,12 +1067,13 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+    case Expression.FixpointProject(name, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(sym, visitor)(root, flix, currentClass, lenv0, entryPoint)
+      // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
+      newRelSym(name, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -1100,7 +1094,7 @@ object GenExpression {
       // Emit code for the invocation of entails.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
-    case Expression.FixpointFold(sym, init, f, constraints, tpe, loc) =>
+    case Expression.FixpointFold(name, init, f, constraints, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1386,10 +1380,6 @@ object GenExpression {
     case Expression.MatchError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.MatchError, loc)
-
-    case Expression.SwitchError(_, loc) =>
-      addSourceLine(visitor, loc)
-      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.SwitchError, loc)
   }
 
   /*
@@ -1554,6 +1544,10 @@ object GenExpression {
    * Exponentiation takes a separate codepath. Values must be cast to doubles (F2D, I2D, L2D; note that bytes and shorts
    * are represented as ints and so we use I2D), then we invoke the static method `math.pow`, and then we have to cast
    * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
+   *
+   * Division also takes a separate codepath in order to implement the defined integer division by zero: n / 0 == 0.
+   * Float types divide normally, but for integer division, divisors are checked for equality with zero. If the divisor
+   * is equal to zero, operands are popped off and zero is pushed onto the stack. Otherwise division occurs normally.
    */
   private def compileArithmeticExpr(e1: Expression,
                                     e2: Expression,
@@ -1585,6 +1579,72 @@ object GenExpression {
         case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
+    } else if (o == BinaryOperator.Divide) {
+      compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
+      compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
+      val div = new Label()
+      val endDiv = new Label()
+      sop match {
+        case Float32Op.Div => visitor.visitInsn(FDIV)
+        case Float64Op.Div => visitor.visitInsn(DDIV)
+        case Int8Op.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(IDIV)
+          visitor.visitLabel(endDiv)
+          visitor.visitInsn(I2B)
+        case Int16Op.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(IDIV)
+          visitor.visitLabel(endDiv)
+          visitor.visitInsn(I2S)
+        case Int32Op.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(ICONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(IDIV)
+          visitor.visitLabel(endDiv)
+        case Int64Op.Div =>
+          visitor.visitInsn(DUP2)
+          visitor.visitInsn(LCONST_0)
+          visitor.visitInsn(LCMP)
+          visitor.visitJumpInsn(IFNE, div)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(POP2)
+          visitor.visitInsn(LCONST_0)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitInsn(LDIV)
+          visitor.visitLabel(endDiv)
+        case BigIntOp.Div =>
+          visitor.visitInsn(DUP)
+          visitor.visitFieldInsn(GETSTATIC, JvmName.BigInteger.toInternalName, "ZERO",
+            JvmType.BigInteger.toDescriptor)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "equals",
+            AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
+          visitor.visitJumpInsn(IFEQ, div)
+          visitor.visitInsn(POP2)
+          visitor.visitFieldInsn(GETSTATIC, JvmName.BigInteger.toInternalName, "ZERO",
+            JvmType.BigInteger.toDescriptor)
+          visitor.visitJumpInsn(GOTO, endDiv)
+          visitor.visitLabel(div)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.BigInteger.toInternalName, "divide",
+            AsmOps.getMethodDescriptor(List(JvmType.BigInteger), JvmType.BigInteger), false)
+          visitor.visitLabel(endDiv)
+        case _ => InternalCompilerException(s"Unexpected sematic operator: $sop.")
+      }
     } else {
       compileExpression(e1, visitor, currentClassType, jumpLabels, entryPoint)
       compileExpression(e2, visitor, currentClassType, jumpLabels, entryPoint)
@@ -1592,8 +1652,8 @@ object GenExpression {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
         case BinaryOperator.Times => (IMUL, LMUL, FMUL, DMUL, "multiply")
-        case BinaryOperator.Divide => (IDIV, LDIV, FDIV, DDIV, "divide")
         case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
+        case BinaryOperator.Divide => throw InternalCompilerException("BinaryOperator.Divide already handled.")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
       sop match {
@@ -1679,6 +1739,7 @@ object GenExpression {
       case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
       case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
       case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
+      case BinaryOperator.Spaceship => throw InternalCompilerException("Unexpected operator.")
     }
     sop match {
       case StringOp.Eq | StringOp.Neq =>
@@ -1836,7 +1897,7 @@ object GenExpression {
     * Emits code to instantiate a new constraint system for the given constraint `c`.
     */
   private def newConstraintSystem(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
-    case Constraint(cparams, head, body) =>
+    case Constraint(cparams, head, body, _) =>
       // Instantiate the constraint object.
       newConstraint(c, mv)
 
@@ -1871,7 +1932,7 @@ object GenExpression {
     * Emits code to instantiate a new constraint for the given constraint `c`.
     */
   private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
-    case Constraint(cparams, head, body) =>
+    case Constraint(cparams, head, body, loc) =>
       // Emit code for the cparams.
       newVarSyms(c.cparams.map(_.sym), mv)
 
@@ -1893,8 +1954,11 @@ object GenExpression {
         mv.visitInsn(AASTORE)
       }
 
+      // Emit code for the source location.
+      AsmOps.compileReifiedSourceLocation(mv, loc)
+
       // Instantiate a new constraint system object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)Lflix/runtime/fixpoint/Constraint;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;Lflix/runtime/ReifiedSourceLocation;)Lflix/runtime/fixpoint/Constraint;", false);
 
   }
 
@@ -1902,12 +1966,15 @@ object GenExpression {
     * Compiles the given head expression `h0`.
     */
   private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
-    case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+    case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(sym, mv)
+      den match {
+        case Denotation.Relational => newRelSym(name, mv)
+        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+      }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1937,12 +2004,15 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(sym, mv)
+      den match {
+        case Denotation.Relational => newRelSym(name, mv)
+        case Denotation.Latticenal => newLatSym(name, terms.last.tpe, mv)
+      }
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -1971,49 +2041,33 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate symbol `sym`.
-    */
-  private def newPredSym(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit =
-    sym match {
-      case sym: Symbol.RelSym => newRelSym(sym, mv)
-      case sym: Symbol.LatSym => newLatSym(sym, mv)
-    }
-
-  /**
     * Emits code for the given relation symbol `sym`.
     */
-  private def newRelSym(sym: Symbol.RelSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newRelSym(name: String, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
-    mv.visitLdcInsn(sym.toString)
+    mv.visitLdcInsn(name)
 
-    // Emit code for the attributes (if present).
-    root.relations.get(sym) match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(rel) =>
-        newAttributesArray(rel.attr, mv)
-    }
+    // Emit code for the attributes.
+    // Note: Currently always absent.
+    mv.visitInsn(ACONST_NULL)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
   }
 
   /**
-    * Emits code for the given lattice symbol `sym`.
+    * Emits code for the given lattice symbol `name`.
     */
-  private def newLatSym(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+  private def newLatSym(name: String, tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the name of the predicate symbol.
-    mv.visitLdcInsn(sym.toString)
+    mv.visitLdcInsn(name)
 
     // Emit code for the attributes (if present).
-    root.lattices.get(sym) match {
-      case None =>
-        mv.visitInsn(ACONST_NULL)
-      case Some(lat) => newAttributesArray(lat.attr, mv)
-    }
+    // Note: Currently always absent.
+    mv.visitInsn(ACONST_NULL)
 
     // Emit code for the lattice operations.
-    newLatticeOps(sym, mv)
+    newLatticeOps(tpe, mv)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;[Ljava/lang/String;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
@@ -2040,12 +2094,11 @@ object GenExpression {
   }
 
   /**
-    * Emits code to construct a lattice operations object for the given symbol `sym`.
+    * Emits code to construct a lattice operations object for the given type `tpe`.
     */
-  private def newLatticeOps(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newLatticeOps(tpe: MonoType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Lookup the declaration.
-    val decl = root.lattices(sym)
-    val ops = root.latticeComponents(decl.attr.last.tpe)
+    val ops = root.latticeOps(tpe)
 
     // The bottom object.
     AsmOps.compileDefSymbol(ops.bot, mv)
@@ -2274,9 +2327,12 @@ object GenExpression {
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
 
     // Add every predicate symbol with its stratum.
-    for ((predSym, stratum) <- stf.m) {
+    for ((name, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSym(predSym, mv)
+
+      // TODO: Need denotation. For now it will probably work to assume its always a relation sym.
+      newRelSym(name, mv)
+
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }

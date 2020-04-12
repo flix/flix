@@ -95,6 +95,15 @@ object Ast {
     }
 
     /**
+      * An AST node that represents a `@lint` annotation.
+      *
+      * @param loc the source location of the annotation.
+      */
+    case class Lint(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@lint"
+    }
+
+    /**
       * An AST node that represents a `@test` annotation.
       *
       * A function marked with `test` is evaluated as part of the test framework.
@@ -103,17 +112,6 @@ object Ast {
       */
     case class Test(loc: SourceLocation) extends Annotation {
       override def toString: String = "@test"
-    }
-
-    /**
-      * An AST node that represents a `@theorem` annotation.
-      *
-      * A function marked with `theorem` is used for code patterns.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Theorem(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@theorem"
     }
 
     /**
@@ -160,14 +158,14 @@ object Ast {
     def isLaw: Boolean = annotations exists (_.isInstanceOf[Annotation.Law])
 
     /**
+      * Returns `true` if `this` sequence contains the `@lint` annotation.
+      */
+    def isLint: Boolean = annotations exists (_.isInstanceOf[Annotation.Lint])
+
+    /**
       * Returns `true` if `this` sequence contains the `@test` annotation.
       */
     def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@theorem` annotation.
-      */
-    def isTheorem: Boolean = annotations exists (_.isInstanceOf[Annotation.Theorem])
 
     /**
       * Returns `true` if `this` sequence contains the `@unchecked` annotation.
@@ -297,12 +295,12 @@ object Ast {
     /**
       * Represents a positive labelled edge.
       */
-    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym, loc: SourceLocation) extends DependencyEdge
+    case class Positive(head: String, body: String, loc: SourceLocation) extends DependencyEdge
 
     /**
       * Represents a negative labelled edge.
       */
-    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym, loc: SourceLocation) extends DependencyEdge
+    case class Negative(head: String, body: String, loc: SourceLocation) extends DependencyEdge
 
   }
 
@@ -333,7 +331,7 @@ object Ast {
     /**
       * Returns `this` dependency graph including only the edges where both the source and destination are in `syms`.
       */
-    def restrict(syms: Set[Symbol.PredSym]): DependencyGraph =
+    def restrict(syms: Set[String]): DependencyGraph =
       DependencyGraph(xs.filter {
         case DependencyEdge.Positive(x, y, _) => syms.contains(x) && syms.contains(y)
         case DependencyEdge.Negative(x, y, _) => syms.contains(x) && syms.contains(y)
@@ -350,7 +348,7 @@ object Ast {
   /**
     * Represents a stratification that maps every predicate symbol to its stratum.
     */
-  case class Stratification(m: Map[Symbol.PredSym, Int])
+  case class Stratification(m: Map[String, Int])
 
   /**
     * A hole context consists of a hole symbol and its type together with the local environment.

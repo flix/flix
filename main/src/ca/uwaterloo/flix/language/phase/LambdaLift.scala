@@ -44,18 +44,13 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case (sym, decl) => sym -> liftDef(decl, m)
     }
 
-    // Handlers.
-    val handlers = root.handlers.map {
-      case (sym, handler) => sym -> liftHandler(handler, m)
-    }
-
     // Properties.
     val properties = root.properties.map {
       property => liftProperty(property, m)
     }
 
     // Return the updated AST root.
-    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties).toSuccess
+    root.copy(defs = definitions ++ m, properties = properties).toSuccess
   }
 
   /**
@@ -67,17 +62,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Reassemble the definition.
     def0.copy(exp = liftedExp)
-  }
-
-  /**
-    * Performs lambda lifting on the given handler `handler0`.
-    */
-  private def liftHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Handler = {
-    // Lift the closure converted expression.
-    val liftedExp = liftExp(handler0.exp, "handler", m)
-
-    // Reassemble the handler.
-    handler0.copy(exp = liftedExp)
   }
 
   /**
@@ -127,8 +111,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Def(sym, tpe, loc) => e
 
-      case Expression.Eff(sym, tpe, loc) => e
-
       case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
@@ -164,10 +146,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visitExp
         Expression.ApplyDef(sym, as, tpe, loc)
-
-      case Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map visitExp
-        Expression.ApplyEff(sym, as, tpe, loc)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -283,13 +261,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visitExp(exp)
-        val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
-        }
-        Expression.HandleWith(e, bs, tpe, loc)
-
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visitExp(exp), loc)
 
@@ -383,32 +354,29 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      case Expression.FixpointProject(name, exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointProject(sym, e, tpe, loc)
+        Expression.FixpointProject(name, e, tpe, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointEntails(e1, e2, tpe, loc)
 
-      case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+      case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         val e3 = visitExp(exp3)
-        Expression.FixpointFold(sym, e1, e2, e3, tpe, loc)
+        Expression.FixpointFold(name, e1, e2, e3, tpe, loc)
 
 
       case Expression.HoleError(sym, tpe, loc) => e
 
       case Expression.MatchError(tpe, loc) => e
 
-      case Expression.SwitchError(tpe, loc) => e
-
       case Expression.Lambda(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected lambda expression. Every lambda expression should have been converted to a LambdaClosure.")
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 
@@ -416,19 +384,19 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs lambda lifting on the given head predicate `head0`.
       */
     def visitConstraint(c0: SimplifiedAst.Constraint): SimplifiedAst.Constraint = c0 match {
-      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+      case SimplifiedAst.Constraint(cparams, head0, body0, loc) =>
         val head = visitHeadPredicate(head0)
         val body = body0.map(visitBodyPredicate)
-        SimplifiedAst.Constraint(cparams, head, body)
+        SimplifiedAst.Constraint(cparams, head, body, loc)
     }
 
     /**
       * Performs lambda lifting on the given head predicate `head0`.
       */
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
-      case Predicate.Head.Atom(sym, den, terms, tpe, loc) =>
+      case Predicate.Head.Atom(name, den, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.Atom(sym, den, ts, tpe, loc)
+        Predicate.Head.Atom(name, den, ts, tpe, loc)
 
       case Predicate.Head.Union(exp, tpe, loc) =>
         val e = visitExp(exp)
@@ -439,9 +407,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs lambda lifting on the given body predicate `body0`.
       */
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.Atom(sym, den, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(name, den, polarity, terms, tpe, loc) =>
         val ts = terms.map(visitBodyTerm)
-        Predicate.Body.Atom(sym, den, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(name, den, polarity, ts, tpe, loc)
 
       case Predicate.Body.Guard(exp, loc) =>
         val e = visitExp(exp)

@@ -1,8 +1,3 @@
-// Declare three predicate symbols.
-rel ColorEdge(x: Int, c: Str, y: Int)
-rel ColorPath(x: Int, c: Str, y: Int)
-rel ColorlessPath(x: Int, y: Int)
-
 def main(): Bool =
     // Introduce some facts for colored paths.
     let f1 = #{

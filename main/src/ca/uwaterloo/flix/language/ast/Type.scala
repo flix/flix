@@ -109,19 +109,7 @@ sealed trait Type {
   /**
     * Returns a human readable string representation of `this` type.
     */
-  override def toString: String = this match {
-    case tvar@Type.Var(x, k) => tvar.getText.getOrElse("'" + x)
-    case Type.Cst(tc) => tc.toString
-    case Type.Zero => "Zero"
-    case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Arrow(l, eff) => s"Arrow($l, $eff)"
-    case Type.RecordEmpty => "{ }"
-    case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
-    case Type.SchemaEmpty => "Schema { }"
-    case Type.SchemaExtend(sym, tpe, rest) => "Schema { " + sym + " : " + tpe + " | " + rest + " }"
-    case Type.Lambda(tvar, tpe) => s"$tvar => $tpe"
-    case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
-  }
+  override def toString: String = Type.fmtType(this, renameVars = false)
 
 }
 
@@ -278,7 +266,7 @@ object Type {
   /**
     * A type constructor that represents a schema extension type.
     */
-  case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
+  case class SchemaExtend(name: String, tpe: Type, rest: Type) extends Type {
     def kind: Kind = Kind.Star -> Kind.Schema
   }
 
@@ -380,128 +368,142 @@ object Type {
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: List[Type]): Type = {
-    val tuple = Type.Cst(TypeConstructor.Tuple(ts.length))
-    ts.foldLeft(tuple: Type) {
+    val init = Type.Cst(TypeConstructor.Tuple(ts.length))
+    ts.foldLeft(init: Type) {
       case (acc, x) => Apply(acc, x)
     }
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Type Class Instances                                                    //
-  /////////////////////////////////////////////////////////////////////////////
   /**
-    * Show instance for Type.
+    * Returns a human readable representation of the given type `tpe0`.
+    *
+    * @param renameVars whether to use human readable variable names.
     */
-  implicit object ShowInstance extends Show[Type] {
-    def show(a: Type): String = {
+  def fmtType(tpe0: Type, renameVars: Boolean): String = {
+    def visit(tpe: Type, m: Map[Int, String]): String = {
+      // Retrieve the type constructor and type arguments.
+      val base = tpe.typeConstructor
+      val args = tpe.typeArguments
 
-      /**
-        * Local visitor.
-        */
-      def visit(tpe: Type, m: Map[Int, String]): String = {
-        // Retrieve the type constructor and type arguments.
-        val base = tpe.typeConstructor
-        val args = tpe.typeArguments
+      base match {
+        case Type.Var(id, kind) =>
+          // Lookup the human-friendly name in `m`.
+          m.get(id) match {
+            case None =>
+              // No human-friendly name. Return the id. Use ' for types and '' for effects.
+              if (kind != Kind.Effect) "'" + id.toString else "''" + id.toString
+            case Some(s) => s
+          }
 
-        base match {
-          //
-          // Type Variable.
-          //
-          case Type.Var(id, kind) => m.getOrElse(id, id.toString)
+        case Type.Cst(TypeConstructor.Array) =>
+          s"Array[${args.map(visit(_, m)).mkString(", ")}]"
 
-          //
-          // Array
-          //
-          case Type.Cst(TypeConstructor.Array) =>
-            "Array" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+        case Type.Cst(TypeConstructor.Channel) =>
+          s"Channel[${args.map(visit(_, m)).mkString(", ")}]"
 
-          //
-          // Channel
-          //
-          case Type.Cst(TypeConstructor.Channel) =>
-            "Channel" + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+        case Type.Cst(TypeConstructor.Enum(sym, _)) =>
+          if (args.isEmpty)
+            sym.toString
+          else
+            sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
-          //
-          // Enum.
-          //
-          case Type.Cst(TypeConstructor.Enum(sym, _)) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+        case Type.Cst(TypeConstructor.Tuple(l)) =>
+          "(" + args.map(visit(_, m)).mkString(", ") + ")"
 
-          //
-          // Tuple.
-          //
-          case Type.Cst(TypeConstructor.Tuple(l)) =>
-            "(" + args.map(visit(_, m)).mkString(", ") + ")"
+        case Type.Cst(TypeConstructor.Pure) => "Pure"
 
-          //
-          // Type Constructors.
-          //
-          case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
+        case Type.Cst(TypeConstructor.Impure) => "Impure"
 
-          //
-          // Primitive Types.
-          //
-          case Type.Zero => "Zero"
-          case Type.Succ(n, t) => n.toString + " " + t.toString
-
-          //
-          // Arrow.
-          //
-          case Type.Arrow(l, _) =>
-            val argumentTypes = args.init
-            val resultType = args.last
-            if (argumentTypes.length == 1) {
-              visit(argumentTypes.head, m) + " -> " + visit(resultType, m)
-            } else {
-              "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
-            }
-
-          //
-          // RecordEmpty.
-          //
-          case Type.RecordEmpty => "{ }"
-
-          //
-          // RecordExtension.
-          //
-          case Type.RecordExtend(label, value, rest) =>
-            "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
-
-          //
-          // SchemaEmpty.
-          //
-          case Type.SchemaEmpty => "Schema { }"
-
-          //
-          // SchemaExtend.
-          //
-          case Type.SchemaExtend(sym, t, rest) =>
-            "{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
-
-          //
-          // Abstraction.
-          //
-          case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
-
-          //
-          // Application.
-          //
-          case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"
+        case Type.Cst(TypeConstructor.Not) => args match {
+          case (t1: Type.Var) :: Nil => s"¬${visit(t1, m)}"
+          case t1 :: Nil => s"¬(${visit(t1, m)})"
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
         }
-      }
 
-      //
-      // Compute a mapping from type variables to human readable variable names.
-      //
-      // E.g. the type variable 8192 might be mapped to 'a'.
-      //  and the type variable 8193 might be mapped to 'b'.
-      //
-      val var2str = a.typeVars.toList.sortBy(_.id).zipWithIndex.map {
+        case Type.Cst(TypeConstructor.And) => args match {
+          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∧ ${visit(t2, m)}"
+          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∧ (${visit(t2, m)})"
+          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∧ ${visit(t2, m)}"
+          case t1 :: t2 :: Nil => s"(${visit(t1, m)}) ∧ (${visit(t2, m)})"
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+        }
+
+        case Type.Cst(TypeConstructor.Or) => args match {
+          case (t1: Type.Var) :: (t2: Type.Var) :: Nil => s"${visit(t1, m)} ∨ ${visit(t2, m)}"
+          case (t1: Type.Var) :: t2 :: Nil => s"${visit(t1, m)} ∨ (${visit(t2, m)})"
+          case t1 :: (t2: Type.Var) :: Nil => s"(${visit(t1, m)}) ∨ ${visit(t2, m)}"
+          case t1 :: t2 :: Nil => s"(${visit(t1, m)}) ∨ (${visit(t2, m)})"
+          case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+        }
+
+        case Type.Cst(tc) => tc.toString + (if (args.isEmpty) "" else "[" + args.map(visit(_, m)).mkString(", ") + "]")
+
+        case Type.Zero => "Zero"
+
+        case Type.Succ(n, t) => n.toString + " " + t.toString
+
+        case Type.Arrow(l, eff) =>
+          // Retrieve the arguments and result types.
+          val argumentTypes = args.init
+          val resultType = args.last
+
+          // Format the arguments.
+          val argPart = if (argumentTypes.length == 1) {
+            visit(argumentTypes.head, m)
+          } else {
+            "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ")"
+          }
+          // Format the arrow.
+          val arrowPart = eff match {
+            case Type.Cst(TypeConstructor.Impure) => " ~> "
+            case _ => " -> "
+          }
+          // Format the effect.
+          val effPart = eff match {
+            case Type.Cst(TypeConstructor.Pure) => ""
+            case Type.Cst(TypeConstructor.Impure) => ""
+            case _ => " & (" + visit(eff, m) + ")"
+          }
+          // Format the result type.
+          val resultPart = visit(resultType, m)
+
+          // Put everything together.
+          argPart + arrowPart + resultPart + effPart
+
+        case Type.RecordEmpty => "{ }"
+
+        case Type.RecordExtend(label, value, rest) => "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
+
+        case Type.SchemaEmpty => "#{ }"
+
+        case Type.SchemaExtend(sym, t, rest) => "#{" + sym + " = " + visit(t, m) + " | " + visit(rest, m) + "}"
+
+        case Type.Lambda(tvar, tpe) => m.getOrElse(tvar.id, tvar.id.toString) + " => " + visit(tpe, m)
+
+        case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"
+      }
+    }
+
+    /**
+      * Computes a mapping from type variables to human readable variable names.
+      *
+      * E.g. the type variable 8192 might be mapped to 'a'and the type variable 8193 might be mapped to 'b'.
+      */
+    def alphaRenameVars(tpe0: Type): Map[Int, String] = {
+      tpe0.typeVars.toList.sortBy(_.id).zipWithIndex.map {
         case (tvar, index) => tvar.id -> (index + 'a').toChar.toString
       }.toMap
-
-      visit(a, var2str)
     }
+
+    // Determine whether to use human readable variables.
+    if (renameVars)
+      visit(tpe0, alphaRenameVars(tpe0))
+    else
+      visit(tpe0, Map.empty)
+  }
+
+  implicit object ShowInstance extends Show[Type] {
+    def show(tpe: Type): String = fmtType(tpe, renameVars = true)
   }
 
 }

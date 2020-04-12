@@ -76,8 +76,6 @@ object PrettyPrinter {
 
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
 
-        case Expression.Eff(sym, tpe, loc) => fmtSym(sym, vt)
-
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
           for (fparam <- fparams) {
@@ -136,15 +134,6 @@ object PrettyPrinter {
           vt.text(")")
           vt.text(")")
 
-        case Expression.ApplyEff(sym, args, tpe, loc) =>
-          fmtSym(sym, vt)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
         case Expression.ApplyCloTail(exp, args, tpe, loc) =>
           visitExp(exp)
           vt.text("*(")
@@ -155,15 +144,6 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-          fmtSym(sym, vt)
-          vt.text("*(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
-        case Expression.ApplyEffTail(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("*(")
           for (arg <- args) {
@@ -352,19 +332,6 @@ object PrettyPrinter {
           vt.text(" := ")
           visitExp(exp2)
 
-        case Expression.HandleWith(exp, bindings, tpe, loc) =>
-          vt << "do" << Indent << NewLine
-          visitExp(exp)
-          vt.text("with {")
-          for (HandlerBinding(sym, handler) <- bindings) {
-            vt << "eff "
-            fmtSym(sym, vt)
-            vt << " = "
-            visitExp(handler)
-          }
-          vt.text("}")
-          vt << Dedent << NewLine
-
         case Expression.Existential(fparam, exp, loc) =>
           vt.text("∃(")
           fmtParam(fparam, vt)
@@ -507,9 +474,9 @@ object PrettyPrinter {
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointProject(sym, exp, tpe, loc) =>
+        case Expression.FixpointProject(name, exp, tpe, loc) =>
           vt.text("project ")
-          vt.text(sym.toString)
+          vt.text(name)
           vt.text(" ")
           visitExp(exp)
 
@@ -518,9 +485,9 @@ object PrettyPrinter {
           vt.text("|=")
           visitExp(exp2)
 
-        case Expression.FixpointFold(sym, exp1, exp2, exp3, tpe, loc) =>
+        case Expression.FixpointFold(name, exp1, exp2, exp3, tpe, loc) =>
           vt.text("fold ")
-          vt.text(sym.toString)
+          vt.text(name)
           vt.text(" ")
           visitExp(exp1)
           vt.text(" ")
@@ -530,7 +497,6 @@ object PrettyPrinter {
 
         case Expression.HoleError(sym, tpe, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
-        case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
       }
 
       visitExp(exp0)
@@ -550,8 +516,8 @@ object PrettyPrinter {
     }
 
     def fmtHeadAtom(p0: Predicate.Head, vt: VirtualTerminal): Unit = p0 match {
-      case Predicate.Head.Atom(sym, _, terms, _, _) =>
-        vt.text(sym.toString)
+      case Predicate.Head.Atom(name, _, terms, _, _) =>
+        vt.text(name)
         vt.text("(")
         for (term <- terms) {
           fmtHeadTerm(term, vt)
@@ -598,10 +564,6 @@ object PrettyPrinter {
       vt << Blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.EffSym, vt: VirtualTerminal): Unit = {
-      vt << Yellow(sym.toString)
-    }
-
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {
       vt << Magenta(sym.toString)
     }
@@ -626,6 +588,7 @@ object PrettyPrinter {
       case BinaryOperator.GreaterEqual => vt.text(">=")
       case BinaryOperator.Equal => vt.text("==")
       case BinaryOperator.NotEqual => vt.text("!=")
+      case BinaryOperator.Spaceship => vt.text("<=>")
       case BinaryOperator.LogicalAnd => vt.text("&&")
       case BinaryOperator.LogicalOr => vt.text("||")
       case BinaryOperator.BitwiseAnd => vt.text("&&&")

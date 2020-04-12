@@ -2,8 +2,27 @@
 
 HEAD:
 
+Version 0.12.0:
+
+- Sets and Maps are now backed by Red-Black Trees. 
+- Added mutable sets and maps (backed by immutable sets and maps for now).
+- Added NonEmptyList (Nel) and Validation.
+- Added spaceship operator.
+- Added binary, octal, and hex literals.
+- Added support for underscores in number literals.
+- Added use construct to import defs/types/tags from other namespaces.
+- Added a check for poorly named type variables.
+- Reworked relation and lattice types. They now work more like type aliases.
+- Improved the performance of the compiler.
+- Extended the standard library.
+
+Version 0.11.0:
+
 - Added light-weight polymorphic effects.
+- Defined division by zero to yield zero.
+- Added check for unconditional recursion.
 - Reworked array length from `length[x]` to `x.length`.
+- Removed switch expression.
 
 Version 0.10.0:
 
