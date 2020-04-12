@@ -1,4 +1,4 @@
-# Guide to Contributing
+# Guide to Contributors
 
 Hello and thank you for your interest in working on Flix!
 
@@ -6,24 +6,36 @@ The purpose of this document is to help you get started.
 
 ## The Standard Process
 
-The standard process to contribute usually follows the steps:
+We don't actually have a standardized process, but usually the following steps happen:
 
-1. You pick an issue on GitHub issue tracker that you are interested in. 
+1. You pick an issue on GitHub that you are interested in. 
 
-    It could be adding a new feature to the language, fixing a bug in the compiler, extending the standard library, and so forth.
+    It could be for adding a new feature, fixing a bug in the compiler, and so forth.
 
-2. You express interest in the issue on the tracker and pose any questions you might have. 
-3. There is a discussions of the problem to be solved and how to best solve it.
-4. You fork the flix repository to your own account on GitHub.
+2. You express interest in the issue on GitHub.
+
+    We try to ensure that multiple people are not working on the same issue -- at least not without being aware of it.
+ 
+3. We discuss the issue and how best to fix it.
+
+    The idea is to come up with an implementation plan and to hash out any design choices.
+
+4. You fork the Flix repository to your own account on GitHub.
+
 5. You clone this repository to your local machine.
-6. At this point most people setup Intellij IDEA, but you can of course use any tool you would like. (Flix has a limited number of open source licenses for Intellij IDEA available.)
-7. You implement the changes locally, push to GitHub, and create a new pull request (PR).
-8. Travis CI will automatically build and test the project. Make sure to check the Travis CI results on the PR page.
-9. You get some feedback on and iterate on the design.
 
-Finally, if the code is of appropriate quality, it is merged in.
+6. You make the required changes, add test cases, documentation, and so forth.
 
-NB: To get code merged in, you must agree to release your contributions under the Apache 2.0 license.
-You indicate this agreement by adding yourself to AUTHORS.md.
+7. You push the local changes to your GitHub repository and creat a new pull request (PR).
+
+8. Travis CI compiles and tests the PR. Be sure to check the results!
+
+9. We review the changes, and we iterate on the implementation.
+
+10. If the code is of sufficient quality it is merged in!
+
+*Note:* You must agree to release your contributions under the Apache 2.0 license.
+You can affirm this by adding yourself to AUTHORS.md.
+
 
 
