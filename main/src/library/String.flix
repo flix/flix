@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2017 Magnus Madsen, Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace String {
 
     ///
@@ -28,13 +29,6 @@ namespace String {
     pub def concat(s1: String, s2: String): String =
         import java.lang.String.concat(String);
         s1.concat(s2) as & Pure
-
-    ///
-    /// Returns `true` if the string `s1` ends with the string `s2`.
-    ///
-    pub def endsWith(s1: String, s2: String): Bool =
-        import java.lang.String.endsWith(String);
-        s1.endsWith(s2) as & Pure
 
     ///
     /// Returns `true` if the string `s` is the empty string.
@@ -56,6 +50,13 @@ namespace String {
     pub def startsWith(s1: String, s2: String): Bool =
         import java.lang.String.startsWith(String);
         s1.startsWith(s2) as & Pure
+
+    ///
+    /// Returns `true` if the string `s1` ends with the string `s2`.
+    ///
+    pub def endsWith(s1: String, s2: String): Bool =
+        import java.lang.String.endsWith(String);
+        s1.endsWith(s2) as & Pure
 
     ///
     /// Splits the string `s` around matches of the regular expression `r`.
@@ -98,6 +99,943 @@ namespace String {
     pub def lineSeparator(): String =
         import java.lang.System:lineSeparator();
         lineSeparator() as & Pure
+
+    ///
+    /// Returns the given string `s` as an array of characters.
+    ///
+    pub def toArray(s: String): Array[Char] & Impure =
+        Array.init(i -> charAt(i, s), length(s))
+
+    ///
+    /// Build a string of length `len` by applying `f` to the successive indices.
+    ///
+    pub def init(f: Int32 -> Char, len: Int32): String = initHelper(f, len) as & Pure
+
+    ///
+    /// Helper function for `init`.
+    ///
+    def initHelper(f: Int32 -> Char, len: Int32): String & Impure =
+        if (len <= 0)
+            ""
+        else {
+            let sb = StringBuilder.new();
+            initWorker(sb, f, len, 0);
+            StringBuilder.toString(sb)
+        }
+
+    ///
+    /// Helper function for `init`.
+    ///
+    def initWorker(sb: StringBuilder, f: Int32 -> Char, len: Int32, i: Int32): Unit & Impure =
+        if (i >= len)
+            ()
+        else {
+            StringBuilder.appendChar!(sb, f(i));
+            initWorker(sb, f, len, i+1)
+        }
+
+    ///
+    /// Concatenate a list of strings into a single string.
+    ///
+    pub def flatten(xs: List[String]): String & Pure = flattenHelper(xs) as & Pure
+
+    ///
+    /// Helper for `flatten`.
+    ///
+    def flattenHelper(xs: List[String]): String & Impure =
+        let sb = StringBuilder.new();
+        List.foreach(StringBuilder.appendString!(sb), xs);
+        StringBuilder.toString(sb)
+
+    ///
+    /// Concatenate a list of strings into a single string, inserting the separator `sep` between
+    /// each pair of strings.
+    ///
+    pub def flattenWithSep(sep: String, xs: List[String]): String & Pure = flattenWithSepHelper(sep, xs) as & Pure
+
+    ///
+    /// Helper for `flattenWithSep`.
+    ///
+    def flattenWithSepHelper(sep: String, xs: List[String]): String & Impure = match xs {
+        case Nil => ""
+        case x :: rs => {
+            let sb = StringBuilder.new();
+            StringBuilder.appendString!(sb, x);
+            let append = s -> { StringBuilder.appendString!(sb, sep); StringBuilder.appendString!(sb, s) };
+            List.foreach(append, rs);
+            StringBuilder.toString(sb)
+        }
+    }
+
+    ///
+    /// Concatenate a list of strings into a single string, inserting the separator `sep` between
+    /// each pair of strings.
+    ///
+    pub def flattenWithSepChar(sep: Char, xs: List[String]): String & Pure = flattenWithSepCharHelper(sep, xs) as & Pure
+
+    ///
+    /// Helper for `flattenWithSep`.
+    ///
+    def flattenWithSepCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
+        case Nil => ""
+        case x :: rs => {
+            let sb = StringBuilder.new();
+            StringBuilder.appendString!(sb, x);
+            let appendStep = s -> { StringBuilder.appendChar!(sb, sep); StringBuilder.appendString!(sb, s) };
+            List.foreach(appendStep, rs);
+            StringBuilder.toString(sb)
+        }
+    }
+
+    ///
+    /// Returns the result of applying `f` to every character in `s`.
+    ///
+    pub def map(f: Char -> Char, s: String): String =
+        let len = length(s);
+        init(i -> f(charAt(i, s)), len)
+
+    ///
+    /// Returns the result of applying `f` to every character in `s` along with that character's index.
+    ///
+    pub def mapWithIndex(f: (Char, Int32) -> Char, s: String): String =
+        let len = length(s);
+        init(i -> f(charAt(i, s), i), len)
+
+    ///
+    /// Returns a string where the element at index `i` is `f(a, b)` where
+    /// `a` is the element at index `i` in `s` and `b` is the element at index `i` in `t`.
+    ///
+    /// If either `s` or `t` becomes depleted, then no further elements are added to the resulting string.
+    /// Functionally equivalent to zipWith.
+    ///
+    pub def map2(f: (Char, Char) -> Char, s: String, t: String): String =
+        let len = Int32.min(length(s), length(t));
+        init(i -> f(charAt(i, s), charAt(i, t)), len)
+
+    ///
+    /// Returns the reverse of `s`.
+    ///
+    pub def reverse(s: String) : String =
+        let start = length(s) - 1;
+        init(i -> charAt(start - i, s), start+1)
+
+    ///
+    /// Rotate the contents of string `s` by `n` steps to the left.
+    ///
+    pub def rotateLeft(n: Int32, s: String): String =
+        if (length(s) < 1)
+            ""
+        else {
+            if (n < 0)
+                rotateRightHelper(Int32.abs(n), s)
+            else
+                rotateLeftHelper(n, s)
+        }
+
+    ///
+    /// Helper function for `rotateLeft`, `n` must be positive.
+    ///
+    def rotateLeftHelper(n: Int32, s: String): String =
+        let len = length(s);
+        let f = i -> { let i1 = n + i; charAt(i1 % len, s) };
+        init(f, len)
+
+    ///
+    /// Rotate the contents of string `s` by `n` steps to the right.
+    ///
+    pub def rotateRight(n: Int32, s: String): String =
+        if (length(s) < 1)
+            ""
+        else {
+            if (n < 0)
+                rotateLeftHelper(Int32.abs(n), s)
+            else
+                rotateRightHelper(n, s)
+        }
+    ///
+    /// Helper function for `rotateRight`, `n` must be positive.
+    ///
+    def rotateRightHelper(n: Int32, s: String): String =
+        let len = length(s);
+        let n1 = n % len;
+        let start = len - n1;
+        let f = i -> { let i1 = start + i; charAt(i1 % len, s)};
+        init(f, len)
+
+    ///
+    /// Returns `true` if the entire string `s` is matched by the pattern `regex`.
+    ///
+    /// Note - use `isSubmatch` to search for a substring.
+    ///
+    pub def isMatch(regex: String, s: String): Bool =
+        try {
+            import java.lang.String.matches(String);
+            s.matches(regex) as & Pure
+        } catch {
+            case _: ##java.util.regex.PatternSyntaxException => false
+        }
+
+    ///
+    /// Returns `true` if the string `s` is matched by the regular expression `pattern` at any point.
+    ///
+    pub def isSubmatch(pattern: String, s: String): Bool =
+        isSubmatchHelper(pattern, s) as & Pure
+
+    ///
+    /// Helper function for `isSubmatch`.
+    ///
+    def isSubmatchHelper(pattern: String, s: String): Bool & Impure =
+        try {
+            import java.util.regex.Pattern:compile(String);
+            import java.util.regex.Pattern.matcher(##java.lang.CharSequence);
+            import java.util.regex.Matcher.find(Int32);
+            let cs1 = s as ##java.lang.CharSequence;
+            let p1 = compile(pattern);
+            let m1 = p1.matcher(cs1);
+            m1.find(0)
+        } catch {
+            case _: ##java.util.regex.PatternSyntaxException => false
+        }
+
+    ///
+    /// Returns the hash code of the string `s`.
+    ///
+    pub def hashCode(s: String): Int32 =
+        import java.lang.String.hashCode();
+        s.hashCode() as & Pure
+
+    ///
+    /// Returns the substring of `s` from index `b` (inclusive) to index `e` (exclusive).
+    ///
+    /// If `b` or `e` are out-of-bounds, return the empty string.
+    ///
+    pub def slice(s: String, b: Int32, e: Int32): String  = try {
+        import java.lang.String.substring(Int32, Int32);
+        s.substring(b, e) as & Pure
+    } catch {
+        case _: ##java.lang.IndexOutOfBoundsException => ""
+    }
+
+    ///
+    /// Get the substring of `s` to the left of index 'i' (exclusive).
+    ///
+    /// `sliceLeft == slice(s, 0 , i)`
+    ///
+    pub def sliceLeft(s: String, i: Int32): String = match length(s) {
+        case len if i > len => ""
+        case _   if i < 0   => ""
+        case _              => slice(s, 0, i)
+    }
+
+    ///
+    /// Get the substring of `s` to the right starting at index 'i' (inclusive).
+    ///
+    /// `sliceRight == slice(s, i , length(s))`
+    ///
+    pub def sliceRight(s: String, i: Int32): String = match length(s) {
+        case len if i >= len => ""
+        case _   if i < 0 => ""
+        case len => slice(s, i, len)
+    }
+
+
+
+    ///
+    /// Optionally returns the position of the first element in `x` satisfying `f`.
+    ///
+    /// If nothing satisfies `f` return None.
+    ///
+    pub def findIndexOfLeft(f: Char -> Bool, s: String): Option[Int] =
+        let i = findIndexOfLeftHelper(f, s, length(s), 0);
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Helper function for `findIndexOfLeft`.
+    ///
+    def findIndexOfLeftHelper(f: Char -> Bool, s: String, len: Int32, i: Int32): Int32 =
+        if (i >= len)
+            -1
+        else
+            if (f(charAt(i, s)))
+                i
+            else
+                findIndexOfLeftHelper(f, s, len, i+1)
+
+    ///
+    /// Optionally return the position of the first character in `s` satisfying `f`, reading right to left.
+    ///
+    /// If nothing satisfies `f` return None.
+    ///
+    pub def findIndexOfRight(f: Char -> Bool, s: String): Option[Int] =
+        let end = length(s) - 1;
+        let i = findIndexOfRightHelper(f, s, end);
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Helper function for `findIndexOfRight`.
+    ///
+    def findIndexOfRightHelper(f: Char -> Bool, s: String, i: Int32): Int32 =
+        if (i < 0)
+            -1
+        else
+            if (f(charAt(i, s)))
+                i
+            else
+                findIndexOfRightHelper(f, s, i-1)
+
+    ///
+    /// Returns the positions of the all the elements in `s` satisfying `f`.
+    ///
+    /// The function `f` must be pure.
+    ///
+    pub def findIndices(f: a -> Bool, s: String): Array[Int32] & Impure =
+        findIndicesHelper(f, s, length(s), 0) |> List.toArray
+
+    ///
+    /// Helper function for `findIndices`.
+    ///
+    def findIndicesHelper(f: a -> Bool, s: String, len: Int32, i: Int32): List[Int32] & Impure =
+        if (i >= len)
+            Nil
+        else {
+            let r = findIndicesHelper(f, s, len, i+1);
+            if (f(charAt(i, s))) i :: r else r
+        }
+
+    ///
+    /// Return the positions of the all the occurences of `x` in `s`.
+    ///
+    pub def indices(x: Char, s: String): Array[Int32] & Impure =
+        findIndices(y -> x == y, s)
+
+    ///
+    /// Alias for `takeLeft`.
+    ///
+    pub def take(n: Int32, s: String): String = takeLeft(n, s)
+
+    ///
+    /// Take the first `n` characters of string `s` from the left.
+    ///
+    /// If `n` extends past the end of string `s`, return all the characters
+    /// of `s`.
+    ///
+    pub def takeLeft(n: Int32, s: String): String =
+        if (n >= length(s)) s else slice(s, 0, n)
+
+    ///
+    /// Take the last `n` characters of string `s` from the right.
+    ///
+    /// If `n` is greater than the length of string `s`, return all the characters
+    /// of `s`.
+    ///
+    pub def takeRight(n: Int32, s: String): String =
+        let len = length(s);
+        if (n >= len) s else slice(s, len - n, len)
+
+
+    ///
+    /// Alias for `dropLeft`.
+    ///
+    pub def drop(n: Int32, s: String): Str = dropLeft(n, s)
+
+    ///
+    /// Drop the first `n` characters of string `s` from the left.
+    ///
+    /// If `n` extends past the end of string s, return the empty string.
+    ///
+    pub def dropLeft(n: Int32, s: String): String =
+        if (n <= 0)
+            s
+        else
+            slice(s, n, length(s))
+
+
+    ///
+    /// Drop the last `n` characters of string `s` from the right.
+    ///
+    /// If `n` is greater than the length of string `s`, return the empty string.
+    ///
+    pub def dropRight(n: Int32, s: String): String =
+        if (n > 0) {
+            let len = length(s);
+            slice(s, 0, len - n)
+        } else s
+
+    ///
+    /// Alias for `takeWileLeft`.
+    ///
+    pub def takeWhile(f: Char -> Bool, s: String): String = takeWhileLeft(f, s)
+
+    ///
+    /// Returns the initial prefix of string `s` where all the chars satisfy
+    /// the predicate `f`.
+    ///
+    pub def takeWhileLeft(f: Char -> Bool, s: String): String =
+        match findIndexOfLeft(x ->!(f(x)), s) {
+            case None => s
+            case Some(i) => take(i, s)
+        }
+
+    ///
+    /// Returns the suffix of string `s` where all the characters satisfy
+    /// the predicate `f`.
+    ///
+    pub def takeWhileRight(f: Char -> Bool, s: String): String =
+        match findIndexOfRight(x ->!(f(x)), s) {
+            case None => s
+            case Some(i) => slice(s, i+1, length(s))
+        }
+
+    ///
+    /// Alias for `dropWhileLeft`.
+    ///
+    pub def dropWhile(f: Char -> Bool, s: String): String = dropWhileLeft(f, s)
+
+    ///
+    /// Returns the tail of string `s` after dropping all the initial chars
+    /// that satisfy the predicate `f`.
+    ///
+    pub def dropWhileLeft(f: Char -> Bool, s: String): String =
+        match findIndexOfLeft(x -> !(f(x)), s) {
+            case None => ""
+            case Some(i) => drop(i, s)
+        }
+
+    ///
+    /// Returns the front of string `s` after dropping all the characters
+    /// from the right end that satisfy the predicate `f`.
+    ///
+    pub def dropWhileRight(f: Char -> Bool, s: String): String =
+        match findIndexOfRight(x -> !(f(x)), s) {
+            case None => ""
+            case Some(i) => slice(s, 0, i+1)
+        }
+
+    ///
+    /// Split the string `s` at the position `n` returning the left and
+    /// right parts.
+    ///
+    /// If `n` exceeds the length of string `s`, return the whole string
+    /// paired with the empty string.
+    ///
+    pub def splitAt(n: Int32, s: String): (String, String) =
+        match length(s) {
+            case _   if n <= 0  => ("", s)
+            case len if n > len => (s, "")
+            case _              => (sliceLeft(s, n), sliceRight(s, n))
+        }
+
+
+    ///
+    /// Applies `f` to a start value `x` and all elements in `s` going from left to right.
+    ///
+    pub def foldLeft(f: (b, Char) -> b, x: b, s: String): b =
+        let len = length(s);
+        foldLeftHelper(f, x, len, s, 0)
+
+    ///
+    /// Helper function for `foldLeft`.
+    ///
+    def foldLeftHelper(f: (b, Char) -> b, x: b, len: Int32, s: String, i: Int32): b =
+        if (i >= len)
+            x
+        else {
+            let x1 = f(x, charAt(i, s));
+            foldLeftHelper(f, x1, len, s, i+1)
+        }
+
+    ///
+    /// Applies `f` to a start value `x and all elements in `s` going from right to left.
+    ///
+    pub def foldRight(f: (Char, b) -> b, x: b, s: String): b =
+        let end = length(s) - 1;
+        foldRightHelper(f, x, s, end)
+
+    ///
+    /// Helper function for `foldRight`.
+    ///
+    def foldRightHelper(f: (Char, b) -> b, x: b, s: String, i: Int32): b =
+        if (i < 0)
+            x
+        else {
+            let x1 = f(charAt(i, s), x);
+            foldRightHelper(f, x1, s, i-1)
+        }
+
+    ///
+    /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
+    /// starting with the initial value `x` and going from left to right.
+    ///
+    pub def foldLeft2(f: (b, Char, Char) -> b, x: b, s: String, t: String): b =
+        let len = Int32.min(length(s), length(t));
+        foldLeft2Helper(f, x, len, s, t, 0)
+
+    ///
+    /// Helper function for `foldLeft2`.
+    ///
+    def foldLeft2Helper(f: (b, Char, Char) -> b, x: b, len: Int32, s: String, t: String, i: Int32): b =
+        if (i >= len)
+            x
+        else {
+            let x1 = f(x, charAt(i, s), charAt(i, t));
+            foldLeft2Helper(f, x1, len, s, t, i+1)
+        }
+
+    ///
+    /// Accumulates the result of applying `f` pairwise to the elements of `s` and `t`
+    /// starting with the initial value `x` and going from right to left.
+    ///
+    pub def foldRight2(f: (Char, Char, b) -> b, x: b, s: String, t: String) : b =
+        let sn = length(s) - 1;
+        let tn = length(t) - 1;
+        foldRight2Helper(f, x, s, t, sn, tn)
+
+    ///
+    /// Helper function for `foldRight2`.
+    ///
+    def foldRight2Helper(f: (Char, Char, b) -> b, x: b, s: String, t: String, i: Int32, j: Int32) : b =
+        if (i < 0 || j < 0 )
+            x
+        else {
+            let x1 = f(charAt(i, s), charAt(j, t), x);
+            foldRight2Helper(f, x1, s, t, i-1, j-1)
+        }
+
+    ///
+    /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
+    ///
+    pub def unfold(f: b -> Option[(Char, b)], x: b) : String =
+        unfoldHelper(f, x) |> List.toString
+
+    ///
+    /// Helper function for `unfold`.
+    ///
+    def unfoldHelper(f: b -> Option[(Char, b)], x: b) : List[Char] = match f(x) {
+        case None => Nil
+        case Some(c, st1) => c :: unfoldHelper(f, st1)
+    }
+
+    ///
+    /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
+    ///
+    /// Returns `false` if `a` is empty.
+    ///
+    pub def exists(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(f, s) {
+        case None => false
+        case Some(_) => true
+    }
+
+    ///
+    /// Returns `true` if and only if all chars in `s` satisfy the predicate `f`.
+    ///
+    /// Returns `true` if `s` is empty.
+    ///
+    pub def forall(f: Char -> Bool, s: String): Bool = match findIndexOfLeft(x -> !(f(x)), s) {
+        case None => true
+        case Some(_) => false
+    }
+
+    ///
+    /// Returns `true` if and only if all chars in `s` are ascii characters.
+    ///
+    /// Returns `true` if `s` is empty.
+    ///
+    pub def isAscii(s: String): Bool =
+        forall(Char.isAscii, s)
+
+    ///
+    /// Returns `true` if and only if all chars in `s` are white space characters.
+    ///
+    /// Returns `true` if `s` is empty.
+    ///
+    pub def isWhiteSpace(s: String): Bool =
+        forall(Char.isWhiteSpace, s)
+
+    ///
+    /// Returns string `s` with all leading space characters removed.
+    ///
+    pub def trimLeft(s: String): String = dropWhileLeft(Char.isWhiteSpace, s)
+
+    ///
+    /// Returns string `s` with all trailing space characters removed.
+    ///
+    pub def trimRight(s: String): String = dropWhileRight(Char.isWhiteSpace, s)
+
+    ///
+    /// Returns a string with the string `s` repeated `n` times.
+    ///
+    /// Returns the empty string if `n < 0`.
+    ///
+    pub def repeat(s: String, n: Int32): String =
+        import java.lang.String.repeat(Int32);
+        if (n < 0)
+            ""
+        else
+            s.repeat(n) as & Pure
+
+    ///
+    /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
+    ///
+    pub def padLeft(w: Int32, c: Char, s: String): String =
+        let len = length(s);
+        if (len >= w)
+            s
+        else
+            repeat(Char.toString(c), w - len) + s
+
+    ///
+    /// Pad the string `s` at the right with the supplied char `c` to fit the width `w`.
+    ///
+    pub def padRight(w: Int32, c: Char, s: String): String =
+        let len = length(s);
+        if (len >= w)
+            s
+        else
+            s + repeat(Char.toString(c), w - len)
+
+    ///
+    /// Returns `s` with every match of the substring `target` replaced by the string `rep`.
+    ///
+    pub def replace(target: String, rep: String, s: String): String =
+        import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence);
+        let t = target as ##java.lang.CharSequence;
+        let r = rep as ##java.lang.CharSequence;
+        s.replace(t, r) as & Pure
+
+    ///
+    /// Returns `s` with every match of the character `target` replaced by the character `rep`.
+    ///
+    pub def replaceChar(target: Char, rep: Char, s: String): String =
+        import java.lang.String.replace(Char, Char);
+        s.replace(target, rep) as & Pure
+
+    ///
+    /// Returns `s` with every match of the regular expression `patt` replaced by the string `rep`.
+    ///
+    pub def replaceMatches(patt: String, rep: String, s: String): String =
+        import java.lang.String.replaceAll(String, String);
+        s.replaceAll(patt, rep) as & Pure
+
+    ///
+    /// Returns `s` with the first match of the regular expression `patt` replaced by the string `rep`.
+    ///
+    pub def replaceFirstMatch(patt: String, rep: String, s: String): String =
+        import java.lang.String.replaceFirst(String, String);
+        s.replaceFirst(patt, rep) as & Pure
+
+    ///
+    /// Returns `s` with the element at index `i` replaced by `a`.
+    ///
+    /// Returns `s` if `i < 0` or `i > length(xs)-1`.
+    ///
+    pub def update(i: Int32, a: Char, s: String): String =
+        let f = ix -> if (ix == i) a else charAt(ix, s);
+        init(f, length(s))
+
+    ///
+    /// Returns `s` with the `n` elements starting at index `i` replaced with the elements of `sub`.
+    ///
+    /// If any of the indices `i, i+1, i+2, ... , i+n-1` are out of range in `s` then no patching is done at these indices.
+    /// If `s` becomes depleted then no further patching is done.
+    /// If patching occurs at index `i+j` in `s`, then the element at index `j` in `sub` is used.
+    ///
+    pub def patch(i: Int32, n: Int32, sub: String, s: String): String =
+        let sublen = length(sub);
+        let f = ix ->
+            if (ix >= i && ix < i + n) {
+                let offset = ix - i;
+                if (offset < 0 || offset >= sublen) charAt(ix,s) else charAt(offset, sub)
+            } else charAt(ix, s);
+        init(f, length(s))
+
+
+    ///
+    /// Indent every line in string `s` by `n` spaces. `n` must be greater than `0`.
+    ///
+    /// If the string `s` in nonempty, the returned string normalizes line
+    /// termination characters and adds a line terminator to the last line
+    /// of the string if it does not already end with a newline.
+    ///
+    /// If the string `s` is empty, then the empty string is returned.
+    ///
+    pub def indent(n: Int32, s: String): String =
+        if (n <= 0 || length(s) == 0)
+            s
+        else
+            indentHelper(n, s)
+
+
+    ///
+    /// Helper function for `indent` and `stripIndent`.
+    ///
+    /// if n > 0 the Java function `indent` indents with spaces.
+    /// if n < 0 the Java function `indent` strips spaces.
+    ///
+    /// Note, Java indent appears to use only line feed (0x000A) as a terminator.
+    /// `indentHelper` calls replaceMatches to change the result to use the System
+    /// lineSeparator.
+    ///
+    def indentHelper(n: Int32, s: String): String =
+        import java.lang.String.indent(Int32);
+        let s1 = s.indent(n) as & Pure;
+        replaceMatches("\r?\n", lineSeparator(), s1)
+
+    ///
+    /// Strip every indented line in string `s` by `n` spaces. `n` must be greater than `0`.
+    /// Note, tabs are counted as a single space.
+    ///
+    /// If the string `s` in nonempty, the returned string normalizes line
+    /// termination characters and adds a line terminator to the last line
+    /// of the string if it does not already end with a newline.
+    ///
+    /// If the string `s` is empty, then the empty string is returned.
+    ///
+    pub def stripIndent(n: Int32, s: String): String =
+        if (n <= 0 || length(s) == 0)
+            s
+        else
+            indentHelper(-n, s)
+
+    ///
+    /// Split the string `s` into an array of lines, breaking on newline.
+    ///
+    /// Newline is recognized as either Windows (carriage return, line feed) or Unix (line feed).
+    ///
+    pub def lines(s: String): Array[String] & Impure =
+        if (isEmpty(s))
+            []
+        else
+            split(s, "\r?\n")
+
+    ///
+    /// Join the array of strings `a` separating each pair of strings and
+    /// ending the result string with the system dependent line separator.
+    ///
+    pub def unlines(a: Array[String]): String = unlinesHelper(a) as & Pure
+
+    ///
+    /// Helper function for `unlines`.
+    ///
+    def unlinesHelper(a: Array[String]): String & Impure =
+        let sb = StringBuilder.new();
+        Array.foreach(StringBuilder.appendLine!(sb), a);
+        StringBuilder.toString(sb)
+
+    ///
+    /// Split the string `s` into an array of words, dividing on one or more white space characters.
+    /// Leading and trailing spaces are trimmed.
+    ///
+    pub def words(s: String): Array[String] & Impure = match trim(s) {
+        case s1 if isEmpty(s1) => []
+        case s1 => split(s1, "\s+")
+    }
+
+    ///
+    /// Join the array of strings `a` separating each pair of strings with a
+    /// single space character.
+    ///
+    pub def unwords(a: Array[String]): String = unwordsImpure(a) as & Pure
+
+   ///
+   /// Helper function for `unlines`.
+   ///
+   def unwordsImpure(a: Array[String]): String & Impure =
+        let sb = StringBuilder.new();
+        StringBuilder.appendSeparated!(sb, " ", a);
+        StringBuilder.toString(sb)
+
+    ///
+    /// Alias for `indexOfLeft`.
+    ///
+    pub def indexOf(sub: String, s: String): Option[Int32] = indexOfLeft(sub, s)
+
+    ///
+    /// Return the index of the first occurence of `sub` in `s` from the left.
+    ///
+    /// If `substring` is not present in `s` return None.
+    ///
+    pub def indexOfLeft(sub: String, s: String): Option[Int32] =
+        import java.lang.String.indexOf(String);
+        let i = s.indexOf(sub) as & Pure;
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Return the index of the first occurence of `sub` in `s` from the right.
+    ///
+    /// If `substring` is not present in `s` return None.
+    ///
+    pub def indexOfRight(sub: String, s: String): Option[Int32] =
+        import java.lang.String.lastIndexOf(String);
+        let i = s.lastIndexOf(sub) as & Pure;
+        if (i < 0) None else Some(i)
+
+    ///
+    /// Test if the string `s` contains the substring `sub`.
+    ///
+    pub def isSubstringOf(sub: String, s: String): Bool =
+        if (isEmpty(sub))
+            true
+        else {
+            let a = indexOfLeft(sub, s);
+            !Option.isEmpty(a)
+        }
+
+    ///
+    /// Return the common prefix of strings `s` and `s2`.
+    ///
+    pub def commonPrefix(s1: String, s2: String): String =
+        commonPrefixHelper(s1, s2, length(s1), length(s2), 0)
+
+    ///
+    /// Helper function for `commonPrefix`.
+    ///
+    def commonPrefixHelper(s1: String, s2: String, len1: Int32, len2: Int32, ix: Int32): String =
+        if (ix >= len1 || ix >= len2)
+            takeLeft(ix, s1)
+        else {
+            let c1 = charAt(ix, s1);
+            let c2 = charAt(ix, s2);
+            if (c1 != c2)
+                takeLeft(ix, s1)
+            else
+                commonPrefixHelper(s1, s2, len1, len2, ix+1)
+        }
+
+    ///
+    /// Return the common suffix of strings `s` and `s2`.
+    ///
+    pub def commonSuffix(s1: String, s2: String): String =
+        let start1 = length(s1) - 1;
+        let start2 = length(s2) - 1;
+        commonSuffixHelper(s1, s2, start1, start2, 0)
+
+    ///
+    /// Helper function for `commonSuffix`.
+    ///
+    def commonSuffixHelper(s1: String, s2: String, ix1: Int32, ix2: Int32, ac: Int32): String =
+        if (ix1 < 0)
+            s1
+        else if (ix2 < 0)
+            s2
+        else {
+            let c1 = charAt(ix1, s1);
+            let c2 = charAt(ix2, s2);
+            if (c1 != c2)
+                takeRight(ac, s1)
+            else
+                commonSuffixHelper(s1, s2, ix1-1, ix2-1, ac+1)
+       }
+
+    ///
+    /// Abbreviate the string `s` if it exceeds the width `w`.
+    ///
+    /// If the length of `s` exceeds `w` and `w >= 3" then `s` is truncated and the first
+    /// three characters are replaced with ellipses.
+    ///
+    /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
+    ///
+    pub def abbreviateLeft(w: Int32, s: String): String =
+        match length(s) {
+            case len if len < w => s
+            case _   if w < 3   => ""
+            case len            => {
+                let start = len - w + 3;
+                "..." + slice(s, start, len)
+            }
+        }
+
+    ///
+    /// Abbreviate the string `s` if it exceeds the width `w`.
+    ///
+    /// If the length of `s` exceeds `w` and `w >= 3" then `s` is truncated and the last
+    /// three characters are replaced with ellipses.
+    ///
+    /// If the length of `s` exceeds `w` and `w < 3" then the empty string is returned.
+    ///
+    pub def abbreviateRight(w: Int32, s: String): String =
+        match length(s) {
+            case len if len < w => s
+            case _   if w < 3   => ""
+            case _              => slice(s, 0, w - 3) + "..."
+        }
+
+    ///
+    /// Calculate the Levenshtein distance between the strings `s` and `t`.
+    ///
+    /// The answer is the number deletions, insertions or substitutions needed to turn
+    /// string `s` into string `t`.
+    ///
+    pub def levenshteinDistance(s: String, t: String) : Int32 = levenshteinDistanceHelper(s, t) as & Pure
+
+    ///
+    /// Helper for `levenshteinDistance`.
+    ///
+    /// This is the Wikipedia two-matrix rows algorithm
+    /// https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_two_matrix_rows
+    ///
+    def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
+        let m = length(s);
+        let n = length(t);
+        let v0 = Array.new(0, n+1);
+        let v1 = Array.new(0, n+1);
+        forIndex(0, n, i -> v0[i] = i );
+        forIndex(0, m-1, i -> {
+            v1[0] = i + 1;
+            forIndex(0, n-1, j -> {
+                let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
+                let a = v1[j] + 1;
+                let b = v0[j + 1] + 1;
+                let c = v0[j] + substitutionCost;
+                v1[j+1] = Int32.min(a, Int32.min(b, c))
+            });
+            arraySwap(v0,v1)
+        });
+        v0[n]
+
+    ///
+    /// Helper for `levenshteinDistance`.
+    ///
+    /// This implements a forloop, the end point `e` is inclusive.
+    ///
+    def forIndex(b: Int32, e: Int32, f: Int32 ~> Unit): Unit & Impure =
+        if (b <= e) { f(b); forIndex(b+1, e, f) } else ()
+
+    ///
+    /// Helper for `levenshteinDistance`.
+    ///
+    def arraySwap(a: Array[Int32], b : Array[Int32]): Unit & Impure =
+        forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
+
+
+    ///
+    /// Test equality of strings `s1` and `s2` ignoring case.
+    ///
+    /// TODO - name?
+    /// TODO - should we use Collator?
+    ///
+    pub def equalsCI(s1: String, s2: String): Bool =
+         import java.lang.String.equalsIgnoreCase(String);
+         s1.equalsIgnoreCase(s2) as & Pure
+
+    ///
+    /// Returns an array where the element at index `i` is `(x, y)` where
+    /// `x` is the element at index `i` in `a` and `y` is the element at index `i` in `b`.
+    ///
+    /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
+    ///
+    pub def zip(a: String, b: String): Array[(Char, Char)] & Impure =
+        let len = Int32.min(length(a), length(b));
+        Array.init(i -> (charAt(i, a), charAt(i, b)), len)
+
+    ///
+    /// Returns a string where the element at index `i` is `f(x, y)` where
+    /// `x` is the element at index `i` in `a` and `y` is the element at index `i` in `b`.
+    ///
+    /// If either `a` or `b` becomes depleted, then no further elements are added to the resulting array.
+    ///
+    pub def zipWith(f: (Char, Char) -> Char & e, a: String, b: String): String & e =
+        let len = Int32.min(length(a), length(b));
+        init(i -> f(charAt(i, a), charAt(i, b)), len)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints                                                                   //

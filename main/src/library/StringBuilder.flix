@@ -147,6 +147,37 @@ namespace StringBuilder {
         Array.foreach(appendLineWith!(sb, f), a)
 
     ///
+    /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
+    ///
+    /// TODO - add tests...
+    ///
+    pub def appendSeparated!(sb: StringBuilder, sep: String, a: Array[String]): Unit & Impure =
+        let append1! = (s,i) ->
+            if (i > 0) {
+                appendString!(sb, sep);
+                appendString!(sb, s)
+            } else {
+                appendString!(sb, s)
+            };
+       Array.foreachWithIndex(append1!, a)
+
+    ///
+    /// Append the array `a` separating each pair of string with `sep` to the StringBuilder `sb`, using `f`
+    /// to convert each element of `a` to a String.
+    ///
+    /// TODO - add tests...
+    ///
+    pub def appendSeparatedWith!(sb: StringBuilder, f: a -> String, sep: String, a: Array[a]): Unit & Impure =
+        let append1! = (x,i) ->
+            if (i > 0) {
+                appendString!(sb, sep);
+                appendString!(sb, f(x))
+            } else {
+                appendString!(sb, f(x))
+            };
+       Array.foreachWithIndex(append1!, a)
+
+    ///
     /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder): Int32 =
