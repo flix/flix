@@ -1560,4 +1560,120 @@ def foreach02(): Bool & Impure =
     Map.foreach((k, _) -> r := k, Map#{1 -> "Hello World!"});
     1 == deref r
 
+/////////////////////////////////////////////////////////////////////////////
+// unfold                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfold01(): Bool =
+    Map.unfold(s -> if (true) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{}
+
+@test
+def unfold02(): Bool =
+    Map.unfold(s -> if (s > 0) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{0 -> '0'}
+
+@test
+def unfold03(): Bool =
+    Map.unfold(s -> if (s > 1) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{0 -> '0', 1 -> '1'}
+
+@test
+def unfold04(): Bool =
+    Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 1), 0) == Map#{0 -> '0', 1 -> '1', 2 -> '2', 3 -> '3', 4 -> '4', 5 -> '5', 6 -> '6', 7 -> '7', 8 -> '8', 9 -> '9'}
+
+@test
+def unfold05(): Bool =
+    Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 1), 5) == Map#{5 -> '5', 6 -> '6', 7 -> '7', 8 -> '8', 9 -> '9'}
+
+@test
+def unfold06(): Bool =
+    Map.unfold(s -> if (s >= 10) None else Some(s, Char.fromInt32(s + 48), s + 2), 0) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
+
+/////////////////////////////////////////////////////////////////////////////
+// unfoldWithIter                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldWithIter01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIter(step) == Map#{}
+
+@test
+def unfoldWithIter02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 0)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIter(step) == Map#{0 -> '0'}
+
+@test
+def unfoldWithIter03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 1)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIter(step) == Map#{0 -> '0', 1 -> '1'}
+
+@test
+def unfoldWithIter04(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIter(step) == Map#{0 -> '0', 1 -> '1', 2 -> '2', 3 -> '3', 4 -> '4', 5 -> '5', 6 -> '6', 7 -> '7', 8 -> '8', 9 -> '9'}
+
+@test
+def unfoldWithIter05(): Bool & Impure =
+    let x = ref 5;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 1;
+            Some(k, v)
+        };
+    Map.unfoldWithIter(step) == Map#{5 -> '5', 6 -> '6', 7 -> '7', 8 -> '8', 9 -> '9'}
+
+@test
+def unfoldWithIter06(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let k = deref x;
+            let v = Char.fromInt32(k + 48);
+            x := deref x + 2;
+            Some(k, v)
+        };
+    Map.unfoldWithIter(step) == Map#{0 -> '0', 2 -> '2', 4 -> '4', 6 -> '6', 8 -> '8'}
+
 }

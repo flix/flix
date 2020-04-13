@@ -1752,5 +1752,170 @@ def toArray04(): Bool & Impure =
     let a = List.toArray(1 :: 2 :: 3 :: Nil);
     Array.sameElements(a, [1,2,3])
 
+/////////////////////////////////////////////////////////////////////////////
+// sortWith                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def sortWith01(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, Nil: List[Int32]) == Nil
+
+@test
+def sortWith02(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 0 :: Nil) == 0 :: Nil
+
+@test
+def sortWith03(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 0 :: 1 :: Nil) == 0 :: 1 :: Nil
+
+@test
+def sortWith04(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 1 :: 0 :: Nil) == 0 :: 1 :: Nil
+
+@test
+def sortWith05(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 1 :: 1 :: Nil) == 1 :: 1 :: Nil
+
+@test
+def sortWith06(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def sortWith07(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def sortWith08(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+
+@test
+def sortWith09(): Bool =
+    List.sortWith((x,y) -> if (x < y) -1 else 1, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil
+
+@test
+def sortWith10(): Bool =
+    List.sortWith((x,y) -> if (x > y) -1 else 1, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+
+@test
+def sortWith11(): Bool =
+    List.sortWith((x,y) -> if (x > y) -1 else 1, 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+
+@test
+def sortWith12(): Bool =
+    List.sortWith((x,y) -> if (x > y) -1 else 1, 5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil
+
+@test
+def sortWith13(): Bool =
+    List.sortWith((x,y) -> if (x > y) -1 else 1, 2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil) == 4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// unfold                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfold01(): Bool =
+    List.unfold(s -> if (true) None else Some(Char.fromInt32(s + 48), s + 1), 0) == Nil
+
+@test
+def unfold02(): Bool =
+    List.unfold(s -> if (s > 0) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: Nil
+
+@test
+def unfold03(): Bool =
+    List.unfold(s -> if (s > 1) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: Nil
+
+@test
+def unfold04(): Bool =
+    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 0) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfold05(): Bool =
+    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 1), 5) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfold06(): Bool =
+    List.unfold(s -> if (s >= 10) None else Some(Char.fromInt32(s + 48), s + 2), 0) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// unfoldWithIter                                                          //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def unfoldWithIter01(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (true)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIter(step) == Nil
+
+@test
+def unfoldWithIter02(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 0)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIter(step) == '0' :: Nil
+
+@test
+def unfoldWithIter03(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x > 1)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIter(step) == '0' :: '1' :: Nil
+
+@test
+def unfoldWithIter04(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIter(step) == '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfoldWithIter05(): Bool & Impure =
+    let x = ref 5;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 1;
+            Some(c)
+        };
+    List.unfoldWithIter(step) == '5' :: '6' :: '7' :: '8' :: '9' :: Nil
+
+@test
+def unfoldWithIter06(): Bool & Impure =
+    let x = ref 0;
+    let step = () ->
+        if (deref x >= 10)
+            None
+        else {
+            let c = Char.fromInt32(deref x + 48);
+            x := deref x + 2;
+            Some(c)
+        };
+    List.unfoldWithIter(step) == '0' :: '2' :: '4' :: '6' :: '8' :: Nil
 
 }

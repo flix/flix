@@ -494,6 +494,41 @@ namespace Map {
         RedBlackTree.foreach(f, xs)
 
     ///
+    /// Build a map by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(k,v,st1)` to signal a new key-value pair `k` and `v` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the map.
+    ///
+    pub def unfold(f: s -> Option[(k, v, s)] & e, st: s): Map[k,v] & e = unfoldHelper(f, st, empty())
+
+    ///
+    /// Helper function for `unfold`.
+    ///
+    def unfoldHelper(f: s -> Option[(k, v, s)] & e, st: s, ac: Map[k,v]): Map[k,v] & e = match f(st) {
+        case None => ac
+        case Some((k, v, st1)) => unfoldHelper(f, st1, insert(k, v, ac))
+    }
+
+    ///
+    /// Build a map by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(k,v)` to signal a new key-value pair `k` and `v`.
+    ///
+    /// `next` should return `None` to signal the end of building the map.
+    ///
+    pub def unfoldWithIter(next: () ~> Option[(k, v)]): Map[k, v] & Impure = unfoldWithIterHelper(next, empty())
+
+    ///
+    /// Helper function for `unfoldWithIter`.
+    ///
+    def unfoldWithIterHelper(next: () ~> Option[(k, v)], ac: Map[k, v]): Map[k, v] & Impure = match next() {
+        case None => ac
+        case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
+    }
+
+    ///
     /// Helper function for `cmp`.
     ///
     def __cmpHelper(m1: List[(k, v)], m2: List[(k, v)]): Int32 = match (m1, m2) {

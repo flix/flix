@@ -845,6 +845,115 @@ namespace List {
         }
 
     ///
+    /// Sort list `xs` with the comparing function `cmp`.
+    ///
+    /// The sort implementation is a mergesort.
+    /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
+    ///
+    pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
+        sortGenerateSequences(cmp, xs) |> sortMergeAll(cmp)
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortGenerateSequences(cmp: (a,a) -> Int32, xs: List[a]): List[List[a]] = match xs {
+        case a :: b :: rs =>
+            if (cmp(a, b) > 0)
+                sortDescendingStep(cmp, b, a :: Nil, rs)
+            else
+                sortAscendingStep(cmp, b, vs -> a :: vs, rs)
+        case rs => rs :: Nil
+    }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortDescendingStep(cmp: (a,a) -> Int32, x: a, xs: List[a], ys: List[a]): List[List[a]] = match ys {
+        case r1 :: rs if (cmp(x, r1) > 0) =>
+            sortDescendingStep(cmp, r1, x :: xs, rs)
+        case rs =>
+            (x :: xs) :: sortGenerateSequences(cmp, rs)
+    }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortAscendingStep(cmp: (a,a) -> Int32, x: a, xsf: List[a] -> List[a], ys: List[a]): List[List[a]] = match ys {
+        case r1 :: rs if (cmp(x, r1) <= 0)  =>
+            sortAscendingStep(cmp, r1, vs -> xsf(x :: vs), rs)
+        case rs =>
+            let x1 = xsf( x :: Nil);
+            x1 :: sortGenerateSequences(cmp, rs)
+        }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortMergeAll(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[a] = match xss {
+        case x :: Nil => x
+        case rs => sortMergeAll(cmp, sortMergePairs(cmp, rs))
+    }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortMergePairs(cmp: (a,a) -> Int32, xss: List[List[a]]) : List[List[a]] = match xss {
+        case a :: b :: rs => {
+            let x = sortMerge(cmp, a, b);
+            x :: sortMergePairs(cmp, rs)
+        }
+        case rs => rs
+    }
+
+    ///
+    /// Helper function for `sortWith`.
+    ///
+    def sortMerge(cmp: (a,a) -> Int32, xs: List[a], ys: List[a]) : List[a] = match (xs, ys) {
+        case (r :: rs, s :: ss) =>
+            if (cmp(r,s) > 0)
+                s :: sortMerge(cmp, xs, ss)
+            else
+                r :: sortMerge(cmp, rs, ys)
+        case (Nil, ss) => ss
+        case (rs, Nil) => rs
+    }
+
+    ///
+    /// Build a list by applying `f` to the seed value `st`.
+    ///
+    /// `f` should return `Some(a,st1)` to signal a new list element `a` and a new seed value `st1`.
+    ///
+    /// `f` should return `None` to signal the end of building the list.
+    ///
+    pub def unfold(f: s -> Option[(a, s)] & e, st: s): List[a] & e = unfoldHelper(f, st, xs -> xs)
+
+    ///
+    /// Helper function for `unfold`.
+    ///
+    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, k: List[a] -> List[a]): List[a] & e = match f(st) {
+        case None => k(Nil)
+        case Some(a, st1) => unfoldHelper(f, st1, xs -> k(a :: xs))
+    }
+
+    ///
+    /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
+    /// a stateful resource such as a file handle that can be iterated.
+    ///
+    /// `next` should return `Some(a)` to signal a new list element `a`.
+    ///
+    /// `next` should return `None` to signal the end of building the list.
+    ///
+    pub def unfoldWithIter(next: () ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
+
+    ///
+    /// Helper function for `unfoldWithIter`.
+    ///
+    def unfoldWithIterHelper(next: () ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+        case None => k(Nil)
+        case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
+    }
+
+    ///
     /// Compares `xs` and `ys` lexicographically.
     ///
     def __cmp(xs: List[a], ys: List[a]): Int32 = match (xs, ys) {
