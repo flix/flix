@@ -848,7 +848,7 @@ namespace List {
     /// Sort list `xs` with the comparing function `cmp`.
     ///
     /// The sort implementation is a mergesort.
-    /// Acknowlegdement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
+    /// Acknowledgement: derived from Thomas Nordin's `sortBy` in the Haskell base libraries.
     ///
     pub def sortWith(cmp: (a,a) -> Int32, xs: List[a]): List[a] =
         sortGenerateSequences(cmp, xs) |> sortMergeAll(cmp)
@@ -930,9 +930,9 @@ namespace List {
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, cont: List[a] -> List[a]): List[a] & e = match f(st) {
-        case None => cont(Nil)
-        case Some(a, st1) => unfoldHelper(f, st1, xs -> cont(a :: xs))
+    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, k: List[a] -> List[a]): List[a] & e = match f(st) {
+        case None => k(Nil)
+        case Some(a, st1) => unfoldHelper(f, st1, xs -> k(a :: xs))
     }
 
     ///
@@ -943,14 +943,14 @@ namespace List {
     ///
     /// `next` should return `None` to signal the end of building the list.
     ///
-    pub def unfoldWithIter(next: () -> Option[a] & e): List[a] & e = unfoldWithIterHelper(next, xs -> xs)
+    pub def unfoldWithIter(next: () ~> Option[a]): List[a] & Impure = unfoldWithIterHelper(next, xs -> xs)
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () -> Option[a] & e, cont: List[a] -> List[a]): List[a] & e = match next() {
-        case None => cont(Nil)
-        case Some(a) => unfoldWithIterHelper(next, xs -> cont(a :: xs))
+    def unfoldWithIterHelper(next: () ~> Option[a], k: List[a] -> List[a]): List[a] & Impure = match next() {
+        case None => k(Nil)
+        case Some(a) => unfoldWithIterHelper(next, xs -> k(a :: xs))
     }
 
     ///

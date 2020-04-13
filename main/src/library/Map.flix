@@ -505,7 +505,7 @@ namespace Map {
     ///
     /// Helper function for `unfold`.
     ///
-    pub def unfoldHelper(f: s -> Option[(k, v, s)] & e, st: s, ac: Map[k,v]): Map[k,v] & e = match f(st) {
+    def unfoldHelper(f: s -> Option[(k, v, s)] & e, st: s, ac: Map[k,v]): Map[k,v] & e = match f(st) {
         case None => ac
         case Some((k, v, st1)) => unfoldHelper(f, st1, insert(k, v, ac))
     }
@@ -518,12 +518,12 @@ namespace Map {
     ///
     /// `next` should return `None` to signal the end of building the map.
     ///
-    pub def unfoldWithIter(next: () -> Option[(k, v)] & e): Map[k, v] & e = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: () ~> Option[(k, v)]): Map[k, v] & Impure = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () -> Option[(k, v)] & e, ac: Map[k, v]): Map[k, v] & e = match next() {
+    def unfoldWithIterHelper(next: () ~> Option[(k, v)], ac: Map[k, v]): Map[k, v] & Impure = match next() {
         case None => ac
         case Some(k, v) => unfoldWithIterHelper(next, insert(k, v, ac))
     }

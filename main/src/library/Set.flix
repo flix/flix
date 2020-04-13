@@ -346,7 +346,7 @@ namespace Set {
     ///
     /// Helper function for `unfold`.
     ///
-    pub def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e = match f(st) {
+    def unfoldHelper(f: s -> Option[(a, s)] & e, st: s, ac: Set[a]): Set[a] & e = match f(st) {
         case None => ac
         case Some((a, st1)) => unfoldHelper(f, st1, insert(a, ac))
     }
@@ -359,12 +359,12 @@ namespace Set {
     ///
     /// `next` should return `None` to signal the end of building the set.
     ///
-    pub def unfoldWithIter(next: () -> Option[a] & e): Set[a] & e = unfoldWithIterHelper(next, empty())
+    pub def unfoldWithIter(next: () ~> Option[a]): Set[a] & Impure = unfoldWithIterHelper(next, empty())
 
     ///
     /// Helper function for `unfoldWithIter`.
     ///
-    def unfoldWithIterHelper(next: () -> Option[a] & e, ac: Set[a]): Set[a] & e = match next() {
+    def unfoldWithIterHelper(next: () ~> Option[a], ac: Set[a]): Set[a] & Impure = match next() {
         case None => ac
         case Some(a) => unfoldWithIterHelper(next, insert(a, ac))
     }
