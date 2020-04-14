@@ -138,4 +138,16 @@ namespace Test/Def/Generalization {
     @test
     def testLeq24(): {x: Int} -> {x: Int} = r -> {x = 21 | r}
 
+    @test
+    def testLeq25(): (Unit -> b & e) -> b & e = f -> f()
+
+    @test
+    def testLeq26(): (Unit -> b) -> b = f -> f()
+
+    @test
+    def testLeq27(): (Unit ~> b) ~> b = f -> f()
+
+    @test
+    def testLeq28(): (Unit -> b & {e1, e2, e3}) -> b & {e3, e2, e1} = f -> f()
+
 }
