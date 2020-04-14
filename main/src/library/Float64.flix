@@ -101,7 +101,44 @@ namespace Float64 {
         import java.lang.String.strip();
         import java.lang.Double:parseDouble(String);
         Ok(s.strip().parseDouble()) as & Pure
-     } catch {
-         case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
-     }
+    } catch {
+        case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
+    }
+
+    /// Narrowing!
+    pub def toInt8(x: Float64): Int8 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.byteValue();
+        valueOf(x).byteValue() as & Pure
+
+    /// Narrowing!
+    pub def toInt16(x: Float64): Int16 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.shortValue();
+        valueOf(x).shortValue() as & Pure
+
+    /// Narrowing!
+    pub def toInt32(x: Float64): Int32 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.intValue();
+        valueOf(x).intValue() as & Pure
+
+    /// Narrowing!
+    pub def toInt64(x: Float64): Int64 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.longValue();
+        valueOf(x).longValue() as & Pure
+
+    /// Narrowing!
+    pub def toBigInt(x: Float64): BigInt =
+        import java.lang.Double:valueOf(Float64) as f64ValueOf;
+        import java.lang.Double.longValue();
+        import java.math.BigInteger:valueOf(Int64) as asBigInt;
+        f64ValueOf(x).longValue().asBigInt() as & Pure
+
+    /// Narrowing!
+    pub def toFloat32(x: Float64): Float32 =
+        import java.lang.Double:valueOf(Float64);
+        import java.lang.Double.floatValue();
+        valueOf(x).floatValue() as & Pure
 }

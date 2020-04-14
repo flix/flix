@@ -97,6 +97,36 @@ namespace BigInt {
         case _: ##java.lang.NumberFormatException => Err("BigInt.fromString")
     }
 
+    /// Narrowing!
+    pub def toInt8(x: BigInt): Int8 =
+        import java.lang.Number.byteValue();
+        byteValue(x as ##java.lang.Number) as & Pure
+
+    /// Narrowing!
+    pub def toInt16(x: BigInt): Int16 =
+        import java.lang.Number.shortValue();
+        shortValue(x as ##java.lang.Number) as & Pure
+
+    /// Narrowing!
+    pub def toInt32(x: BigInt): Int32 =
+        import java.lang.Number.intValue();
+        intValue(x as ##java.lang.Number) as & Pure
+
+    /// Narrowing!
+    pub def toInt64(x: BigInt): Int64 =
+        import java.lang.Number.longValue();
+        longValue(x as ##java.lang.Number) as & Pure
+
+    /// Narrowing!
+    pub def toFloat32(x: BigInt): Float32 =
+        import java.lang.Number.floatValue();
+        floatValue(x as ##java.lang.Number) as & Pure
+
+    /// Narrowing!
+    pub def toFloat64(x: BigInt): Float64 =
+        import java.lang.Number.doubleValue();
+        doubleValue(x as ##java.lang.Number) as & Pure
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////

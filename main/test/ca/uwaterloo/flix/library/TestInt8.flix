@@ -703,4 +703,16 @@ namespace TestInt8 {
     @test
     def fromString08(): Bool = Int8.fromString("-128") == Ok(-128i8)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt16                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt1601(): Bool = Int8.toInt16(0i8) == 0i16
+
+    @test
+    def toInt1602(): Bool = Int8.toInt16(1i8) == 1i16
+
+    @test
+    def toInt1603(): Bool = Int8.toInt16(-1i8) == -1i16
+
 }
