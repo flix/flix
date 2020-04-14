@@ -151,21 +151,25 @@ namespace String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    pub def intercalate(sep: String, xs: List[String]): String = intercalateHelper(sep, xs) as & Pure
+    pub def intercalate(sep: String, xs: List[String]): String =
+        intercalateHelper(sep, xs) as & Pure
 
     ///
     /// Helper for `intercalate`.
     ///
-    def intercalateHelper(sep: String, xs: List[String]): String & Impure = match xs {
-        case Nil => ""
-        case x :: rs => {
-            let sb = StringBuilder.new();
-            StringBuilder.appendString!(sb, x);
-            let append = s -> { StringBuilder.appendString!(sb, sep); StringBuilder.appendString!(sb, s) };
-            List.foreach(append, rs);
-            StringBuilder.toString(sb)
-        }
-    }
+    def intercalateHelper(sep: String, xs: List[String]): String & Impure =
+        let sb = StringBuilder.new();
+        let xsr = ref xs;
+        let step = () ->
+            match (deref xsr) {
+                case Nil => None
+                case x :: rs => {
+                    xsr := rs;
+                    Some(x)
+                }
+            };
+        StringBuilder.intercalateWithIter!(sb, sep, step);
+        StringBuilder.toString(sb)
 
     ///
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
@@ -848,7 +852,7 @@ namespace String {
    ///
    def unwordsImpure(a: Array[String]): String & Impure =
         let sb = StringBuilder.new();
-        StringBuilder.appendSeparated!(sb, " ", a);
+        StringBuilder.intercalate!(sb, " ", a);
         StringBuilder.toString(sb)
 
     ///

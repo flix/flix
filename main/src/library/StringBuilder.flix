@@ -149,9 +149,7 @@ namespace StringBuilder {
     ///
     /// Append the array of strings `a` separating each pair of string with `sep` to the StringBuilder `sb`.
     ///
-    /// TODO - add tests...
-    ///
-    pub def appendSeparated!(sb: StringBuilder, sep: String, a: Array[String]): Unit & Impure =
+    pub def intercalate!(sb: StringBuilder, sep: String, a: Array[String]): Unit & Impure =
         let append1! = (s,i) ->
             if (i > 0) {
                 appendString!(sb, sep);
@@ -162,20 +160,27 @@ namespace StringBuilder {
        Array.foreachWithIndex(append1!, a)
 
     ///
-    /// Append the array `a` separating each pair of string with `sep` to the StringBuilder `sb`, using `f`
-    /// to convert each element of `a` to a String.
+    /// Append the strings produced by the iterator `next` separating each pair of strings
+    /// with `sep` to the StringBuilder `sb`.
     ///
-    /// TODO - add tests...
+    pub def intercalateWithIter!(sb: StringBuilder, sep: String, next: () ~> Option[String]): Unit & Impure =
+        intercalateWithIterHelper!(sb, sep, 0, next)
+
     ///
-    pub def appendSeparatedWith!(sb: StringBuilder, f: a -> String, sep: String, a: Array[a]): Unit & Impure =
-        let append1! = (x,i) ->
-            if (i > 0) {
+    /// Helper function for `intercalateWithIter!`.
+    ///
+    def intercalateWithIterHelper!(sb: StringBuilder, sep: String, ix: Int32, next: () ~> Option[a]): Unit & Impure = match next() {
+        case None => ()
+        case Some(a) => {
+            if (ix == 0)
+                appendString!(sb, a)
+            else {
                 appendString!(sb, sep);
-                appendString!(sb, f(x))
-            } else {
-                appendString!(sb, f(x))
+                appendString!(sb, a)
             };
-       Array.foreachWithIndex(append1!, a)
+            intercalateWithIterHelper!(sb, sep, ix + 1, next)
+        }
+    }
 
     ///
     /// Return the length of the StringBuilder `sb`.
