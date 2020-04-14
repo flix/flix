@@ -255,16 +255,22 @@ namespace Int32 {
     }
 
     /// Narrowing!
-    pub def toInt8(x: Int32): Int8 =
+    pub def toInt8(x: Int32): Option[Int8] =
         import java.lang.Integer:valueOf(Int32);
         import java.lang.Integer.byteValue();
-        valueOf(x).byteValue() as & Pure
+        if (x < Int8.toInt32(Int8.minValue()) || x > Int8.toInt32(Int8.maxValue()))
+            None
+        else
+            Some(valueOf(x).byteValue()) as & Pure
 
     /// Narrowing!
-    pub def toInt16(x: Int32): Int16 =
+    pub def toInt16(x: Int32): Option[Int16] =
         import java.lang.Integer:valueOf(Int32);
         import java.lang.Integer.shortValue();
-        valueOf(x).shortValue() as & Pure
+        if (x < Int16.toInt32(Int16.minValue()) || x > Int16.toInt32(Int16.maxValue()))
+            None
+        else
+            Some(valueOf(x).shortValue()) as & Pure
 
     pub def toInt64(x: Int32): Int64 =
         import java.lang.Integer:valueOf(Int32);

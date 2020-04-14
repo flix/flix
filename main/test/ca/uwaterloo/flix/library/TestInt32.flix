@@ -644,37 +644,41 @@ namespace TestInt32 {
     // toInt8                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = Int32.toInt8(0) == 0i8
+    def toInt801(): Bool = Int32.toInt8(0) == Some(0i8)
 
     @test
-    def toInt802(): Bool = Int32.toInt8(1) == 1i8
+    def toInt802(): Bool = Int32.toInt8(1) == Some(1i8)
 
     @test
-    def toInt803(): Bool = Int32.toInt8(-1) == -1i8
+    def toInt803(): Bool = Int32.toInt8(-1) == Some(-1i8)
 
-//    @test
-//    def toInt804(): Bool = Int32.toInt8(2147483647) == ??
+    /// TODO - check boundaries
 
-//    @test
-//    def toInt805(): Bool = Int32.toInt8(-2147483648) == ??
+    @test
+    def toInt804(): Bool = Int32.toInt8(2147483647) == None
+
+    @test
+    def toInt805(): Bool = Int32.toInt8(-2147483648) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt1601(): Bool = Int32.toInt16(0) == 0i16
+    def toInt1601(): Bool = Int32.toInt16(0) == Some(0i16)
 
     @test
-    def toInt1602(): Bool = Int32.toInt16(1) == 1i16
+    def toInt1602(): Bool = Int32.toInt16(1) == Some(1i16)
 
     @test
-    def toInt1603(): Bool = Int32.toInt16(-1) == -1i16
+    def toInt1603(): Bool = Int32.toInt16(-1) == Some(-1i16)
 
-//    @test
-//    def toInt1604(): Bool = Int32.toInt16(2147483647) == ??
+    /// TODO - check boundaries
 
-//    @test
-//    def toInt1605(): Bool = Int32.toInt16(-2147483648) == ??
+    @test
+    def toInt1604(): Bool = Int32.toInt16(2147483647) == None
+
+    @test
+    def toInt1605(): Bool = Int32.toInt16(-2147483648) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt64                                                                 //
