@@ -764,7 +764,6 @@ namespace String {
         else
             indentHelper(n, s)
 
-
     ///
     /// Helper function for `indent` and `stripIndent`.
     ///
@@ -1036,6 +1035,43 @@ namespace String {
     pub def zipWith(f: (Char, Char) -> Char & e, a: String, b: String): String & e =
         let len = Int32.min(length(a), length(b));
         init(i -> f(charAt(i, a), charAt(i, b)), len)
+
+    ///
+    /// Splits the string `s` on matches of `sub`.
+    ///
+    pub def splitOn(s: String, sub: String): List[String] =
+        let maxlen = length(s);
+        let sublen = length(sub);
+        let step = ix ->
+            // Note - to stop we have to be greater than maxlen.
+            // We want to return a final empty string if `s` terminates with `sub`.
+            if (ix > maxlen)
+                None
+            else {
+                match indexOf2(sub, ix, s) {
+                    case None => {
+                        let s1 = sliceRight(s, ix);
+                        Some(s1, maxlen + 1)
+                    }
+                    case Some(ix2) => {
+                        let s1 = slice(s, ix, ix2);
+                        Some(s1, ix2 + sublen)
+                    }
+                }
+            };
+        List.unfold(step, 0)
+
+
+    ///
+    /// Helper function for `splitOn`.
+    ///
+    /// This is `indexOfLeft` with a start offset.
+    ///
+    def indexOf2(sub: String, offset: Int32, s: String): Option[Int32] =
+        import java.lang.String.indexOf(String, Int32);
+        let ix = s.indexOf(sub, offset) as & Pure;
+        if (ix < 0) None else Some(ix)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints                                                                   //
