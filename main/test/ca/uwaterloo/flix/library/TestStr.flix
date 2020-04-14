@@ -208,6 +208,7 @@ def lineSeparator02(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 // toArray                                                                 //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def toArray01(): Bool & Impure = Array.sameElements(String.toArray(""), []: Array[Char])
 
@@ -220,6 +221,7 @@ def toArray03(): Bool & Impure = Array.sameElements(String.toArray("1 2 3"), ['1
 /////////////////////////////////////////////////////////////////////////////
 // init                                                                    //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def init01(): Bool = String.init(_ -> 'A', 0) == ""
 
@@ -240,6 +242,7 @@ def init05(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def flatten01(): Bool = String.flatten(Nil) == ""
 
@@ -271,86 +274,89 @@ def flatten09(): Bool = String.flatten("ab" :: "cde" :: Nil) == "abcde"
 def flatten10(): Bool = String.flatten("a" :: "bc" :: "d" :: Nil) == "abcd"
 
 /////////////////////////////////////////////////////////////////////////////
-// flattenWithSep                                                          //
+// intercalate                                                             //
 /////////////////////////////////////////////////////////////////////////////
-@test
-def flattenWithSep01(): Bool = String.flattenWithSep("-", Nil) == ""
 
 @test
-def flattenWithSep02(): Bool = String.flattenWithSep("-", "" :: Nil) == ""
+def intercalate01(): Bool = String.intercalate("-", Nil) == ""
 
 @test
-def flattenWithSep03(): Bool = String.flattenWithSep("-", "a" :: Nil) == "a"
+def intercalate02(): Bool = String.intercalate("-", "" :: Nil) == ""
 
 @test
-def flattenWithSep04(): Bool = String.flattenWithSep("-", "ab" :: Nil) == "ab"
+def intercalate03(): Bool = String.intercalate("-", "a" :: Nil) == "a"
 
 @test
-def flattenWithSep05(): Bool = String.flattenWithSep("-", "" :: "" :: Nil) == "-"
+def intercalate04(): Bool = String.intercalate("-", "ab" :: Nil) == "ab"
 
 @test
-def flattenWithSep06(): Bool = String.flattenWithSep("-", "a" :: "" :: Nil) == "a-"
+def intercalate05(): Bool = String.intercalate("-", "" :: "" :: Nil) == "-"
 
 @test
-def flattenWithSep07(): Bool = String.flattenWithSep("-", "" :: "a" :: Nil) == "-a"
+def intercalate06(): Bool = String.intercalate("-", "a" :: "" :: Nil) == "a-"
 
 @test
-def flattenWithSep08(): Bool = String.flattenWithSep("-", "a" :: "b" :: Nil) == "a-b"
+def intercalate07(): Bool = String.intercalate("-", "" :: "a" :: Nil) == "-a"
 
 @test
-def flattenWithSep09(): Bool = String.flattenWithSep("-", "ab" :: "cde" :: Nil) == "ab-cde"
+def intercalate08(): Bool = String.intercalate("-", "a" :: "b" :: Nil) == "a-b"
 
 @test
-def flattenWithSep10(): Bool = String.flattenWithSep("-", "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
+def intercalate09(): Bool = String.intercalate("-", "ab" :: "cde" :: Nil) == "ab-cde"
 
 @test
-def flattenWithSep11(): Bool = String.flattenWithSep("", "a" :: "bc" :: "d" :: Nil) == "abcd"
+def intercalate10(): Bool = String.intercalate("-", "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
 
 @test
-def flattenWithSep12(): Bool = String.flattenWithSep("<>", "a" :: "bc" :: "d" :: Nil) == "a<>bc<>d"
+def intercalate11(): Bool = String.intercalate("", "a" :: "bc" :: "d" :: Nil) == "abcd"
+
+@test
+def intercalate12(): Bool = String.intercalate("<>", "a" :: "bc" :: "d" :: Nil) == "a<>bc<>d"
 
 /////////////////////////////////////////////////////////////////////////////
-// flattenWithSepChar                                                      //
+// intercalateChar                                                         //
 /////////////////////////////////////////////////////////////////////////////
-@test
-def flattenWithSepChar01(): Bool = String.flattenWithSepChar('-', Nil) == ""
 
 @test
-def flattenWithSepChar02(): Bool = String.flattenWithSepChar('-', "" :: Nil) == ""
+def intercalateChar01(): Bool = String.intercalateChar('-', Nil) == ""
 
 @test
-def flattenWithSepChar03(): Bool = String.flattenWithSepChar('-', "a" :: Nil) == "a"
+def intercalateChar02(): Bool = String.intercalateChar('-', "" :: Nil) == ""
 
 @test
-def flattenWithSepChar04(): Bool = String.flattenWithSepChar('-', "ab" :: Nil) == "ab"
+def intercalateChar03(): Bool = String.intercalateChar('-', "a" :: Nil) == "a"
 
 @test
-def flattenWithSepChar05(): Bool = String.flattenWithSepChar('-', "" :: "" :: Nil) == "-"
+def intercalateChar04(): Bool = String.intercalateChar('-', "ab" :: Nil) == "ab"
 
 @test
-def flattenWithSepChar06(): Bool = String.flattenWithSepChar('-', "a" :: "" :: Nil) == "a-"
+def intercalateChar05(): Bool = String.intercalateChar('-', "" :: "" :: Nil) == "-"
 
 @test
-def flattenWithSepChar07(): Bool = String.flattenWithSepChar('-', "" :: "a" :: Nil) == "-a"
+def intercalateChar06(): Bool = String.intercalateChar('-', "a" :: "" :: Nil) == "a-"
 
 @test
-def flattenWithSepChar08(): Bool = String.flattenWithSepChar('-', "a" :: "b" :: Nil) == "a-b"
+def intercalateChar07(): Bool = String.intercalateChar('-', "" :: "a" :: Nil) == "-a"
 
 @test
-def flattenWithSepChar09(): Bool = String.flattenWithSepChar('-', "ab" :: "cde" :: Nil) == "ab-cde"
+def intercalateChar08(): Bool = String.intercalateChar('-', "a" :: "b" :: Nil) == "a-b"
 
 @test
-def flattenWithSepChar10(): Bool = String.flattenWithSepChar('-', "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
+def intercalateChar09(): Bool = String.intercalateChar('-', "ab" :: "cde" :: Nil) == "ab-cde"
 
 @test
-def flattenWithSepChar11(): Bool = String.flattenWithSepChar(' ', "a" :: "bc" :: "d" :: Nil) == "a bc d"
+def intercalateChar10(): Bool = String.intercalateChar('-', "a" :: "bc" :: "d" :: Nil) == "a-bc-d"
 
 @test
-def flattenWithSepChar12(): Bool = String.flattenWithSepChar('/', "a" :: "bc" :: "d" :: Nil) == "a/bc/d"
+def intercalateChar11(): Bool = String.intercalateChar(' ', "a" :: "bc" :: "d" :: Nil) == "a bc d"
+
+@test
+def intercalateChar12(): Bool = String.intercalateChar('/', "a" :: "bc" :: "d" :: Nil) == "a/bc/d"
 
 /////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def map01(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "") == ""
 
@@ -375,6 +381,7 @@ def map07(): Bool = String.map(c -> if (Char.isUpperCase(c)) 't' else 'f', "AB")
 /////////////////////////////////////////////////////////////////////////////
 // mapWithIndex                                                            //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def mapWithIndex01(): Bool =
     let test = (c,i) -> if (i < 1) { if (Char.isUpperCase(c)) 't' else 'f' } else { if (Char.isUpperCase(c)) 'T' else 'F' };
@@ -447,6 +454,7 @@ def map206(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def reverse01(): Bool =
     String.reverse("") == ""
@@ -470,6 +478,7 @@ def reverse05(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 // rotateLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def rotateLeft01(): Bool = String.rotateLeft(0, "") == ""
 
@@ -506,6 +515,7 @@ def rotateLeft11(): Bool = String.rotateLeft(2, "abc") == "cab"
 /////////////////////////////////////////////////////////////////////////////
 // rotateRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
+
 @test
 def rotateRight01(): Bool = String.rotateRight(0, "") == ""
 
@@ -2816,24 +2826,38 @@ def zipWith08(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def splitOn01(): Bool =
-    String.splitOn("", "") == "" :: Nil
+def splitOn01(): Bool = String.splitOn("", "") == "" :: Nil
 
 @test
-def splitOn02(): Bool =
-    String.splitOn("a::b", "") == "a::b" :: Nil
+def splitOn02(): Bool = String.splitOn("a::b", "") == "a::b" :: Nil
 
 @test
-def splitOn03(): Bool =
-    String.splitOn("", "::") == "" :: Nil
+def splitOn03(): Bool = String.splitOn("", "::") == "" :: Nil
 
 @test
-def splitOn04(): Bool =
-    String.splitOn("a", "::") == "a" :: Nil
+def splitOn04(): Bool = String.splitOn("a", "::") == "a" :: Nil
 
 @test
-def splitOn05(): Bool =
-    String.splitOn("a:b", "::") == "a:b" :: Nil
+def splitOn05(): Bool = String.splitOn("a:b", "::") == "a:b" :: Nil
+
+@test
+def splitOn06(): Bool = String.splitOn("a::b", "::") == "a" :: "b" :: Nil
+
+@test
+def splitOn07(): Bool = String.splitOn("::a::b", "::") == "" :: "a" :: "b" :: Nil
+
+@test
+def splitOn08(): Bool = String.splitOn("a::b::", "::") == "a" :: "b" :: "" :: Nil
+
+@test
+def splitOn09(): Bool = String.splitOn("::a::b::", "::") == "" :: "a" :: "b" :: "" :: Nil
+
+@test
+def splitOn10(): Bool = String.splitOn("a:b::c", "::") == "a:b" :: "c" :: Nil
+
+@test
+def splitOn11(): Bool = String.splitOn("a::b:c", "::") == "a" :: "b:c" :: Nil
 
 
 }
+

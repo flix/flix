@@ -137,7 +137,7 @@ namespace String {
     ///
     /// Concatenate a list of strings into a single string.
     ///
-    pub def flatten(xs: List[String]): String & Pure = flattenHelper(xs) as & Pure
+    pub def flatten(xs: List[String]): String = flattenHelper(xs) as & Pure
 
     ///
     /// Helper for `flatten`.
@@ -151,12 +151,12 @@ namespace String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    pub def flattenWithSep(sep: String, xs: List[String]): String & Pure = flattenWithSepHelper(sep, xs) as & Pure
+    pub def intercalate(sep: String, xs: List[String]): String = intercalateHelper(sep, xs) as & Pure
 
     ///
-    /// Helper for `flattenWithSep`.
+    /// Helper for `intercalate`.
     ///
-    def flattenWithSepHelper(sep: String, xs: List[String]): String & Impure = match xs {
+    def intercalateHelper(sep: String, xs: List[String]): String & Impure = match xs {
         case Nil => ""
         case x :: rs => {
             let sb = StringBuilder.new();
@@ -171,12 +171,12 @@ namespace String {
     /// Concatenate a list of strings into a single string, inserting the separator `sep` between
     /// each pair of strings.
     ///
-    pub def flattenWithSepChar(sep: Char, xs: List[String]): String & Pure = flattenWithSepCharHelper(sep, xs) as & Pure
+    pub def intercalateChar(sep: Char, xs: List[String]): String = intercalateCharHelper(sep, xs) as & Pure
 
     ///
-    /// Helper for `flattenWithSep`.
+    /// Helper for `intercalateChar`.
     ///
-    def flattenWithSepCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
+    def intercalateCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
         case Nil => ""
         case x :: rs => {
             let sb = StringBuilder.new();
@@ -410,7 +410,7 @@ namespace String {
     pub def indices(sub: String, s: String): List[Int32] =
         let sublen = length(sub);
         let step = ix ->
-            match indexOf2(sub, ix, s) {
+            match indexOfLeftWithOffset(sub, ix, s) {
                 case None => None
                 case Some(ix2) => Some(ix2, ix2 + sublen)
             };
@@ -1068,7 +1068,7 @@ namespace String {
             if (ix > maxlen)
                 None
             else {
-                match indexOf2(sub, ix, s) {
+                match indexOfLeftWithOffset(sub, ix, s) {
                     case None => {
                         let s1 = sliceRight(s, ix);
                         Some(s1, maxlen + 1)
@@ -1083,18 +1083,30 @@ namespace String {
 
 
     ///
-    /// Helper function for `splitOn` and `indices`.
-    ///
     /// This is `indexOfLeft` with a start offset.
     ///
     /// Returns `None` if `sub` is the empty string.
     ///
-    def indexOf2(sub: String, offset: Int32, s: String): Option[Int32] =
+    pub def indexOfLeftWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
         import java.lang.String.indexOf(String, Int32);
         if (isEmpty(sub))
             None
         else {
             let ix = s.indexOf(sub, offset) as & Pure;
+            if (ix < 0) None else Some(ix)
+        }
+
+    ///
+    /// This is `indexOfRight` with a start offset.
+    ///
+    /// Returns `None` if `sub` is the empty string.
+    ///
+    pub def indexOfRightWithOffset(sub: String, offset: Int32, s: String): Option[Int32] =
+        import java.lang.String.lastIndexOf(String, Int32);
+        if (isEmpty(sub))
+            None
+        else {
+            let ix = s.lastIndexOf(sub, offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
 
