@@ -58,6 +58,15 @@ namespace Test/Def/Generalization {
     def testGen19(): #{A(Int), B(Int), C(Int)} = #{A(21). B(42).}
 
     @test
+    def testGen20(): r -> {x: Int | r} = r -> {+x = 21 | r}
+
+    @test
+    def testGen21(): {x: Int | r} -> r = r -> { -x | r}
+
+    @test
+    def testGen22(): {x: Int | r} -> {x: Int | r}  = r -> { x = 21 | r}
+
+    @test
     def testLeq01(): List[a] = Nil
 
     @test
@@ -119,5 +128,14 @@ namespace Test/Def/Generalization {
 
     @test
     def testLeq21(): Int -> (Int -> Int) = x -> (_ -> x)
+
+    @test
+    def testLeq22(): {} -> {x: Int} = r -> {+x = 21 | r}
+
+    @test
+    def testLeq23(): {x: Int} -> {} = r -> {-x | r}
+
+    @test
+    def testLeq24(): {x: Int} -> {x: Int} = r -> {x = 21 | r}
 
 }
