@@ -84,4 +84,13 @@ namespace Test/Def/Generalization {
     @test
     def testLeq13(): Result[Result[t, e], Int] = Err(21)
 
+    @test
+    def testLeq14(): List[Result[Int, Option[a]]] = Ok(21) :: Nil
+
+    @test
+    def testLeq15(): List[Result[Int, Result[t, e]]] = Ok(21) :: Nil
+
+    @test
+    def testLeq16(): List[Result[Int, Map[k, v]]] = Ok(21) :: Nil
+
 }
