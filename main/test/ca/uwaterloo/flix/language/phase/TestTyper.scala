@@ -23,10 +23,26 @@ import org.scalatest.FunSuite
 
 class TestTyper extends FunSuite with TestUtils {
 
-  test("Generalization01") {
+  test("TestLeq01") {
     val input =
       """
-        |def main(): a = 21
+        |def f(): a = 21
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+  test("TestLeq02") {
+    val input =
+      """
+        |def f(): List[a] = 21 :: Nil
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+  test("TestLeq03") {
+    val input =
+      """
+        |def f(): Result[a, Int] = Ok(21)
       """.stripMargin
     expectError[TypeError](new Flix().addStr(input).compile())
   }
