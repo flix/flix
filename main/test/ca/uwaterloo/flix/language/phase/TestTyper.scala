@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2020 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import org.scalatest.Suites
+import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.errors.TypeError
+import org.scalatest.FunSuite
 
-class PhaseSuite extends Suites(
-  new TestParser,
-  new TestNamer,
-  new TestPatExhaustiveness,
-  new TestRedundancy,
-  new TestResolver,
-  new TestSafety,
-  new TestTyper,
-  new TestStratifier,
-  new TestUnification,
-  new TestWeeder
-)
+class TestTyper extends FunSuite with TestUtils {
+
+  test("Generalization01") {
+    val input =
+      """
+        |def main(): a = 21
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+}
