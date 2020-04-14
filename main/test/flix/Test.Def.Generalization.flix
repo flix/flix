@@ -45,4 +45,43 @@ namespace Test/Def/Generalization {
     @test
     def testGen15(): (a -> a & e) -> (a -> a & e) = x -> x
 
+    @test
+    def testLeq01(): List[a] = Nil
+
+    @test
+    def testLeq02(): List[Bool] = Nil
+
+    @test
+    def testLeq03(): List[String] = Nil
+
+    @test
+    def testLeq04(): List[Option[a]] = Nil
+
+    @test
+    def testLeq05(): List[Result[t, e]] = Nil
+
+    @test
+    def testLeq06(): Result[Int, a] = Ok(21)
+
+    @test
+    def testLeq07(): Result[Int, Bool] = Ok(21)
+
+    @test
+    def testLeq08(): Result[Int, String] = Ok(21)
+
+    @test
+    def testLeq09(): Result[Int, Result[t, e]] = Ok(21)
+
+    @test
+    def testLeq10(): Result[a, Int] = Err(21)
+
+    @test
+    def testLeq11(): Result[Bool, Int] = Err(21)
+
+    @test
+    def testLeq12(): Result[String, Int] = Err(21)
+
+    @test
+    def testLeq13(): Result[Result[t, e], Int] = Err(21)
+
 }
