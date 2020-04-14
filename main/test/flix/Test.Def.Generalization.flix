@@ -49,6 +49,15 @@ namespace Test/Def/Generalization {
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
 
     @test
+    def testGen17(): #{A(Int)} = #{}
+
+    @test
+    def testGen18(): #{A(Int), B(Int)} = #{A(21).}
+
+    @test
+    def testGen19(): #{A(Int), B(Int), C(Int)} = #{A(21). B(42).}
+
+    @test
     def testLeq01(): List[a] = Nil
 
     @test
