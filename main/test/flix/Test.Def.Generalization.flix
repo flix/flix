@@ -46,6 +46,9 @@ namespace Test/Def/Generalization {
     def testGen15(): (a -> a & e) -> (a -> a & e) = x -> x
 
     @test
+    def testGen16(): a -> (b -> a) = x -> (_ -> x)
+
+    @test
     def testLeq01(): List[a] = Nil
 
     @test
@@ -92,5 +95,20 @@ namespace Test/Def/Generalization {
 
     @test
     def testLeq16(): List[Result[Int, Map[k, v]]] = Ok(21) :: Nil
+
+    @test
+    def testLeq17(): a -> (b -> a) = x -> (_ -> x)
+
+    @test
+    def testLeq18(): a -> (a -> a) = x -> (_ -> x)
+
+    @test
+    def testLeq19(): Int -> (b -> Int) = x -> (_ -> x)
+
+    @test
+    def testLeq20(): a -> (Int -> a) = x -> (_ -> x)
+
+    @test
+    def testLeq21(): Int -> (Int -> Int) = x -> (_ -> x)
 
 }
