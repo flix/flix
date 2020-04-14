@@ -54,10 +54,9 @@ object Scheme {
       // TODO: Is this correct?
       val tpe1 = instantiate(sc1)
       val tpe2 = instantiate(sc2)
-      Unification.unifyTypes(tpe2, tpe1) match {
+      Unification.unifyTypes(tpe2, tpe1, matchRight = false) match {
         case Result.Ok(subst) =>
-          // TODO: Is this correct?
-          tpe1 == subst(tpe2)
+         true
         case Result.Err(_) =>
           false
       }
