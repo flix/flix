@@ -36,4 +36,13 @@ namespace Test/Def/Generalization {
     @test
     def testGen12(): #{Edge(Int, Int) | r} -> #{Edge(Int, Int) | r} = x -> x
 
+    @test
+    def testGen13(): (a -> a) -> (a -> a) = x -> x
+
+    @test
+    def testGen14(): (a ~> a) -> (a ~> a) = x -> x
+
+    @test
+    def testGen15(): (a -> a & e) -> (a -> a & e) = x -> x
+
 }
