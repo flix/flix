@@ -840,78 +840,69 @@ def findIndexOfRight07(): Bool = String.findIndexOfRight(Char.isUpperCase, "AB")
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def findIndices01(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "");
-    Array.sameElements(a, []: Array[Int32])
+def findIndices01(): Bool = String.findIndices(Char.isDigit, "") == Nil
 
 @test
-def findIndices02(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "a");
-    Array.sameElements(a, []: Array[Int32])
+def findIndices02(): Bool = String.findIndices(Char.isDigit, "a") == Nil
 
 @test
-def findIndices03(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "1");
-    Array.sameElements(a, [0])
+def findIndices03(): Bool = String.findIndices(Char.isDigit, "1") == 0 :: Nil
 
 @test
-def findIndices04(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "ab");
-    Array.sameElements(a, [] : Array[Int32])
+def findIndices04(): Bool = String.findIndices(Char.isDigit, "ab") == Nil
 
 @test
-def findIndices05(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "1b");
-    Array.sameElements(a, [0])
+def findIndices05(): Bool = String.findIndices(Char.isDigit, "1b") == 0 :: Nil
 
 @test
-def findIndices06(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "a2");
-    Array.sameElements(a, [1])
+def findIndices06(): Bool = String.findIndices(Char.isDigit, "a2") == 1 :: Nil
 
 @test
-def findIndices07(): Bool & Impure =
-    let a = String.findIndices(Char.isDigit, "12");
-    Array.sameElements(a, [0,1])
+def findIndices07(): Bool = String.findIndices(Char.isDigit, "12") == 0 :: 1 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // indices                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def indices01(): Bool & Impure =
-    let a = String.indices('a', "b");
-    Array.sameElements(a, []: Array[Int32])
+def indices01(): Bool = String.indices("", "") == Nil
 
 @test
-def indices02(): Bool & Impure =
-    let a = String.indices('a', "b");
-    Array.sameElements(a, []: Array[Int32])
+def indices02(): Bool = String.indices("", "a::b::c") == Nil
 
 @test
-def indices03(): Bool & Impure =
-    let a = String.indices('a', "a");
-    Array.sameElements(a, [0])
+def indices03(): Bool = String.indices("::", "") == Nil
 
 @test
-def indices04(): Bool & Impure =
-    let a = String.indices('a', "bc");
-    Array.sameElements(a, []: Array[Int32])
+def indices04(): Bool = String.indices("::", "a") == Nil
 
 @test
-def indices05(): Bool & Impure =
-    let a = String.indices('a', "ab");
-    Array.sameElements(a, [0])
+def indices05(): Bool = String.indices("::", "::") == 0 :: Nil
 
 @test
-def indices06(): Bool & Impure =
-    let a = String.indices('b', "ab");
-    Array.sameElements(a, [1])
+def indices06(): Bool = String.indices("::", "ab") == Nil
 
 @test
-def indices07(): Bool & Impure =
-    let a = String.indices('a', "aa");
-    Array.sameElements(a, [0,1])
+def indices07(): Bool = String.indices("::", "::a") == 0 :: Nil
+
+@test
+def indices08(): Bool = String.indices("::", "a::") == 1 :: Nil
+
+@test
+def indices09(): Bool = String.indices("::", "a::b::") == 1 :: 4 :: Nil
+
+@test
+def indices10(): Bool = String.indices("::", "a::b::c") == 1 :: 4 :: Nil
+
+@test
+def indices11(): Bool = String.indices("::", "a::b::c:") == 1 :: 4 :: Nil
+
+@test
+def indices12(): Bool = String.indices("::", ":a::b::c") == 2 :: 5 :: Nil
+
+@test
+def indices13(): Bool = String.indices("::", "::::") == 0 :: 2 :: Nil
+
 
 /////////////////////////////////////////////////////////////////////////////
 // take                                                                    //
@@ -2819,5 +2810,30 @@ def zipWith07(): Bool =
 def zipWith08(): Bool =
     let s = String.zipWith((a, b) -> if (Char.isLetter(a)) a else b, "_bc__fgh", "1234567890");
     s == "1bc45fgh"
+
+/////////////////////////////////////////////////////////////////////////////
+// splitOn                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def splitOn01(): Bool =
+    String.splitOn("", "") == "" :: Nil
+
+@test
+def splitOn02(): Bool =
+    String.splitOn("a::b", "") == "a::b" :: Nil
+
+@test
+def splitOn03(): Bool =
+    String.splitOn("", "::") == "" :: Nil
+
+@test
+def splitOn04(): Bool =
+    String.splitOn("a", "::") == "a" :: Nil
+
+@test
+def splitOn05(): Bool =
+    String.splitOn("a:b", "::") == "a:b" :: Nil
+
 
 }

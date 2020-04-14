@@ -388,13 +388,13 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findIndices(f: a -> Bool, s: String): Array[Int32] & Impure =
-        findIndicesHelper(f, s, length(s), 0) |> List.toArray
+    pub def findIndices(f: a -> Bool, s: String): List[Int32] =
+        findIndicesHelper(f, s, length(s), 0)
 
     ///
     /// Helper function for `findIndices`.
     ///
-    def findIndicesHelper(f: a -> Bool, s: String, len: Int32, i: Int32): List[Int32] & Impure =
+    def findIndicesHelper(f: a -> Bool, s: String, len: Int32, i: Int32): List[Int32] =
         if (i >= len)
             Nil
         else {
@@ -403,10 +403,18 @@ namespace String {
         }
 
     ///
-    /// Return the positions of the all the occurences of `x` in `s`.
+    /// Returns the positions of the all the occurences of `sub` in `s`.
     ///
-    pub def indices(x: Char, s: String): Array[Int32] & Impure =
-        findIndices(y -> x == y, s)
+    /// Returns `Nil` if `sub` is the empty string.
+    ///
+    pub def indices(sub: String, s: String): List[Int32] =
+        let sublen = length(sub);
+        let step = ix ->
+            match indexOf2(sub, ix, s) {
+                case None => None
+                case Some(ix2) => Some(ix2, ix2 + sublen)
+            };
+        List.unfold(step, 0)
 
     ///
     /// Alias for `takeLeft`.
@@ -851,22 +859,34 @@ namespace String {
     ///
     /// Return the index of the first occurence of `sub` in `s` from the left.
     ///
-    /// If `substring` is not present in `s` return None.
+    /// If `sub` is not present in `s` return None.
+    ///
+    /// If `sub` is the empty string return None.
     ///
     pub def indexOfLeft(sub: String, s: String): Option[Int32] =
         import java.lang.String.indexOf(String);
-        let i = s.indexOf(sub) as & Pure;
-        if (i < 0) None else Some(i)
+        if (isEmpty(sub))
+            None
+        else {
+            let i = s.indexOf(sub) as & Pure;
+            if (i < 0) None else Some(i)
+        }
 
     ///
     /// Return the index of the first occurence of `sub` in `s` from the right.
     ///
-    /// If `substring` is not present in `s` return None.
+    /// If `sub` is not present in `s` return None.
+    ///
+    /// If `sub` is the empty string return None.
     ///
     pub def indexOfRight(sub: String, s: String): Option[Int32] =
         import java.lang.String.lastIndexOf(String);
-        let i = s.lastIndexOf(sub) as & Pure;
-        if (i < 0) None else Some(i)
+        if (isEmpty(sub))
+            None
+        else {
+            let i = s.lastIndexOf(sub) as & Pure;
+            if (i < 0) None else Some(i)
+        }
 
     ///
     /// Test if the string `s` contains the substring `sub`.
@@ -1063,15 +1083,20 @@ namespace String {
 
 
     ///
-    /// Helper function for `splitOn`.
+    /// Helper function for `splitOn` and `indices`.
     ///
     /// This is `indexOfLeft` with a start offset.
     ///
+    /// Returns `None` if `sub` is the empty string.
+    ///
     def indexOf2(sub: String, offset: Int32, s: String): Option[Int32] =
         import java.lang.String.indexOf(String, Int32);
-        let ix = s.indexOf(sub, offset) as & Pure;
-        if (ix < 0) None else Some(ix)
-
+        if (isEmpty(sub))
+            None
+        else {
+            let ix = s.indexOf(sub, offset) as & Pure;
+            if (ix < 0) None else Some(ix)
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints                                                                   //
