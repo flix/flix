@@ -258,6 +258,37 @@ namespace Int8 {
         case _: ##java.lang.NumberFormatException => Err("Int8.fromString")
     }
 
+    pub def toInt16(x: Int8): Int16 =
+        import java.lang.Byte:valueOf(Int8);
+        import java.lang.Byte.shortValue();
+        valueOf(x).shortValue() as & Pure
+
+    pub def toInt32(x: Int8): Int32 =
+        import java.lang.Byte:valueOf(Int8);
+        import java.lang.Byte.intValue();
+        valueOf(x).intValue() as & Pure
+
+    pub def toInt64(x: Int8): Int64 =
+        import java.lang.Byte:valueOf(Int8);
+        import java.lang.Byte.longValue();
+        valueOf(x).longValue() as & Pure
+
+    pub def toBigInt(x: Int8): BigInt =
+        import java.lang.Byte:valueOf(Int8) as i8ValueOf;
+        import java.lang.Byte.longValue();
+        import java.math.BigInteger:valueOf(Int64) as asBigInt;
+        i8ValueOf(x).longValue().asBigInt() as & Pure
+
+    pub def toFloat32(x: Int8): Float32 =
+        import java.lang.Byte:valueOf(Int8);
+        import java.lang.Byte.floatValue();
+        valueOf(x).floatValue() as & Pure
+
+    pub def toFloat64(x: Int8): Float64 =
+        import java.lang.Byte:valueOf(Int8);
+        import java.lang.Byte.doubleValue();
+        valueOf(x).doubleValue() as & Pure
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////

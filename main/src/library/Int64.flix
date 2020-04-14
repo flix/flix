@@ -254,6 +254,40 @@ namespace Int64 {
         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
     }
 
+    /// Narrowing!
+    pub def toInt8(x: Int64): Int8 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.byteValue();
+        valueOf(x).byteValue() as & Pure
+
+    /// Narrowing!
+    pub def toInt16(x: Int64): Int16 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.shortValue();
+        valueOf(x).shortValue() as & Pure
+
+    /// Narrowing!
+    pub def toInt32(x: Int64): Int32 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.intValue();
+        valueOf(x).intValue() as & Pure
+
+    pub def toBigInt(x: Int64): BigInt =
+        import java.lang.Long:valueOf(Int64) as i64ValueOf;
+        import java.lang.Long.longValue();
+        import java.math.BigInteger:valueOf(Int64) as asBigInt;
+        i64ValueOf(x).longValue().asBigInt() as & Pure
+
+    pub def toFloat32(x: Int64): Float32 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.floatValue();
+        valueOf(x).floatValue() as & Pure
+
+    pub def toFloat64(x: Int64): Float64 =
+        import java.lang.Long:valueOf(Int64);
+        import java.lang.Long.doubleValue();
+        valueOf(x).doubleValue() as & Pure
+
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
     /////////////////////////////////////////////////////////////////////////////
