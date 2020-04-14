@@ -235,4 +235,113 @@ namespace TestFloat32 {
     @test
     def fromString11(): Bool = Float32.fromString("-Infinity") == Ok(Float32.negativeInfinity())
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt8                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt801(): Bool = Float32.toInt8(0.0f32) == 0i8
+
+    @test
+    def toInt802(): Bool = Float32.toInt8(1.0f32) == 1i8
+
+    @test
+    def toInt803(): Bool = Float32.toInt8(-1.0f32) == -1i8
+
+//    @test
+//    def toInt804(): Bool = Float32.toInt8(3498457932459234592873452983453245ii) == ??
+
+//    @test
+//    def toInt805(): Bool = Float32.toInt8(-3498457932459234592873452983453245ii) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt16                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt1601(): Bool = Float32.toInt16(0.0f32) == 0i16
+
+    @test
+    def toInt1602(): Bool = Float32.toInt16(1.0f32) == 1i16
+
+    @test
+    def toInt1603(): Bool = Float32.toInt16(-1.0f32) == -1i16
+
+//    @test
+//    def toInt1604(): Bool = Float32.toInt16(3498457932459234592873452983453245ii) == ??
+
+//    @test
+//    def toInt1605(): Bool = Float32.toInt16(-3498457932459234592873452983453245ii) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt32                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt3201(): Bool = Float32.toInt32(0.0f32) == 0
+
+    @test
+    def toInt3202(): Bool = Float32.toInt32(1.0f32) == 1
+
+    @test
+    def toInt3203(): Bool = Float32.toInt32(-1.0f32) == -1
+
+//    @test
+//    def toInt3204(): Bool = Float32.toInt32(3498457932459234592873452983453245ii) == ??
+
+//    @test
+//    def toInt3205(): Bool = Float32.toInt32(-3498457932459234592873452983453245ii) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt6401(): Bool = Float32.toInt64(0.0f32) == 0i64
+
+    @test
+    def toInt6402(): Bool = Float32.toInt64(1.0f32) == 1i64
+
+    @test
+    def toInt6403(): Bool = Float32.toInt64(-1.0f32) == -1i64
+
+//    @test
+//    def toInt6404(): Bool = Float32.toInt64(3498457932459234592873452983453245ii) == ??
+
+//    @test
+//    def toInt6405(): Bool = Float32.toInt64(-3498457932459234592873452983453245ii) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBigInt                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat3201(): Bool = Float32.toBigInt(0.0f32) == 0ii
+
+    @test
+    def toFloat3202(): Bool = Float32.toBigInt(1.0f32) == 1ii
+
+    @test
+    def toFloat3203(): Bool = Float32.toBigInt(-1.0f32) == -1ii
+
+//    @test
+//    def toFloat3204(): Bool = Float32.toBigInt(3498457932459234592873452983453245ii) == ??
+
+//    @test
+//    def toFloat3205(): Bool = Float32.toBigInt(-3498457932459234592873452983453245ii) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat64                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat6401(): Bool = Float32.toFloat64(0.0f32) == 0.0f64
+
+    @test
+    def toFloat6402(): Bool = Float32.toFloat64(1.0f32) == 1.0f64
+
+    @test
+    def toFloat6403(): Bool = Float32.toFloat64(-1.0f32) == -1.0f64
+
+//    @test
+//    def toFloat6404(): Bool = Float32.toFloat64(3498457932459234592873452983453245ii) == ??
+
+//    @test
+//    def toFloat6405(): Bool = Float32.toFloat64(-3498457932459234592873452983453245ii) == ??
+
+
 }

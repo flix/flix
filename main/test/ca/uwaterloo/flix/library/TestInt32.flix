@@ -640,4 +640,112 @@ namespace TestInt32 {
     @test
     def fromString08(): Bool = Int32.fromString("-2147483648") == Ok(-2147483648)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt8                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt801(): Bool = Int32.toInt8(0) == 0i8
+
+    @test
+    def toInt802(): Bool = Int32.toInt8(1) == 1i8
+
+    @test
+    def toInt803(): Bool = Int32.toInt8(-1) == -1i8
+
+//    @test
+//    def toInt804(): Bool = Int32.toInt8(2147483647) == ??
+
+//    @test
+//    def toInt805(): Bool = Int32.toInt8(-2147483648) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt16                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt1601(): Bool = Int32.toInt16(0) == 0i16
+
+    @test
+    def toInt1602(): Bool = Int32.toInt16(1) == 1i16
+
+    @test
+    def toInt1603(): Bool = Int32.toInt16(-1) == -1i16
+
+//    @test
+//    def toInt1604(): Bool = Int32.toInt16(2147483647) == ??
+
+//    @test
+//    def toInt1605(): Bool = Int32.toInt16(-2147483648) == ??
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toInt64                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toInt6401(): Bool = Int32.toInt64(0) == 0i64
+
+    @test
+    def toInt6402(): Bool = Int32.toInt64(1) == 1i64
+
+    @test
+    def toInt6403(): Bool = Int32.toInt64(-1) == -1i64
+
+    @test
+    def toInt6404(): Bool = Int32.toInt64(2147483647) == 2147483647i64
+
+    @test
+    def toInt6405(): Bool = Int32.toInt64(-2147483648) == -2147483648i64
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toBigInt                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toBigInt01(): Bool = Int32.toBigInt(0) == 0ii
+
+    @test
+    def toBigInt02(): Bool = Int32.toBigInt(1) == 1ii
+
+    @test
+    def toBigInt03(): Bool = Int32.toBigInt(-1) == -1ii
+
+    @test
+    def toBigInt04(): Bool = Int32.toBigInt(2147483647) == 2147483647ii
+
+    @test
+    def toBigInt05(): Bool = Int32.toBigInt(-2147483648) == -2147483648ii
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat32                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat3201(): Bool = Int32.toFloat32(0) == 0.0f32
+
+    @test
+    def toFloat3202(): Bool = Int32.toFloat32(1) == 1.0f32
+
+    @test
+    def toFloat3203(): Bool = Int32.toFloat32(-1) == -1.0f32
+
+    @test
+    def toFloat3204(): Bool = Int32.toFloat32(2147483647) == 2147483647.0f32
+
+    @test
+    def toFloat3205(): Bool = Int32.toFloat32(-2147483648) == -2147483648.0f32
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toFloat64                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+    @test
+    def toFloat6401(): Bool = Int32.toFloat64(0) == 0.0f64
+
+    @test
+    def toFloat6402(): Bool = Int32.toFloat64(1) == 1.0f64
+
+    @test
+    def toFloat6403(): Bool = Int32.toFloat64(-1) == -1.0f64
+
+    @test
+    def toFloat6404(): Bool = Int32.toFloat64(2147483647) == 2147483647.0f64
+
+    @test
+    def toFloat6405(): Bool = Int32.toFloat64(-2147483648) == -2147483648.0f64
+
 }
