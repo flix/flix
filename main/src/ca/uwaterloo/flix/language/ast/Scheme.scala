@@ -27,17 +27,57 @@ object Scheme {
   sealed trait InstantiateMode
 
   object InstantiateMode {
-    case object EverythingRigid extends InstantiateMode
-    case object EverythingFlexible extends InstantiateMode
 
-    //Instantiated variables are flexible, already present variables should become rigid.
+    /**
+      * Instantiated variables are flexible. Present variables are unchanged.
+      */
+    case object Flexible extends InstantiateMode
+
+    /**
+      * Instantiated and present variables all are rigid.
+      */
+    case object Rigid extends InstantiateMode
+
+    /**
+      * Instantiated variables are flexible. Present variables are made rigid.
+      */
     case object Mixed extends InstantiateMode
+
   }
 
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme)(implicit flix: Flix): Type = refreshTypeVars(sc.quantifiers, sc.base)
+  def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): Type = {
+    // Compute the base type.
+    val baseType = sc.base
+
+    //
+    // Compute the fresh variables taking the instantiation mode into account.
+    //
+    val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) { // TODO: Handle mode.
+      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
+    }
+
+    /**
+      * Replaces every variable occurrence in the given type using the map `freeVars`.
+      */
+    def visitType(t0: Type): Type = t0 match {
+      case Type.Var(x, k) => freshVars.getOrElse(x, t0) // TODO: Handle mode.
+      case Type.Cst(tc) => Type.Cst(tc)
+      case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
+      case Type.RecordEmpty => Type.RecordEmpty
+      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visitType(value), visitType(rest))
+      case Type.SchemaEmpty => Type.SchemaEmpty
+      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visitType(t), visitType(rest))
+      case Type.Zero => Type.Zero
+      case Type.Succ(n, t) => Type.Succ(n, t)
+      case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
+      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
+    }
+
+    visitType(baseType)
+  }
 
   /**
     * Generalizes the given type `tpe0` w.r.t. the given type environment `subst0`.
@@ -63,8 +103,8 @@ object Scheme {
       sc1.base == sc2.base
     } else {
       // TODO: Instantiated variables are flexible, already present variables should become rigid.
-      val tpe1 = instantiate(sc1) // TODO: Want: fresh ones are flexible, old ones are rigid.
-      val tpe2 = instantiate(sc2) // TODO: Everything is rigid (both fresh and old).
+      val tpe1 = instantiate(sc1, InstantiateMode.Mixed) // TODO: Want: fresh ones are flexible, old ones are rigid.
+      val tpe2 = instantiate(sc2, InstantiateMode.Rigid) // TODO: Everything is rigid (both fresh and old).
       // TODO. 3 in Typer, everything must be flexible.
       // TODO: By default fresh type variables are flexible. Also in SVE.
       Unification.unifyTypes(tpe2, tpe1, unifyRight = false) match {
@@ -72,35 +112,6 @@ object Scheme {
         case Result.Err(_) => false
       }
     }
-  }
-
-  /**
-    * Replaces every free occurrence of a type variable in `typeVars`
-    * with a fresh type variable in the given type `tpe`.
-    */
-  private def refreshTypeVars(typeVars: List[Type.Var], tpe: Type)(implicit flix: Flix): Type = {
-    val freshVars = typeVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
-    }
-
-    /**
-      * Replaces every variable occurrence in the given type using the map `freeVars`.
-      */
-    def visitType(t0: Type): Type = t0 match {
-      case Type.Var(x, k) => freshVars.getOrElse(x, t0)
-      case Type.Cst(tc) => Type.Cst(tc)
-      case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
-      case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visitType(value), visitType(rest))
-      case Type.SchemaEmpty => Type.SchemaEmpty
-      case Type.SchemaExtend(sym, t, rest) => Type.SchemaExtend(sym, visitType(t), visitType(rest))
-      case Type.Zero => Type.Zero
-      case Type.Succ(n, t) => Type.Succ(n, t)
-      case Type.Apply(tpe1, tpe2) => Type.Apply(visitType(tpe1), visitType(tpe2))
-      case Type.Lambda(tvar, tpe) => throw InternalCompilerException(s"Unexpected type: '$t0'.")
-    }
-
-    visitType(tpe)
   }
 
 }
