@@ -85,7 +85,7 @@ namespace Array {
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
     ///
-    pub def append(a: Array[a], b: Array[b]): Array[a] & Impure =
+    pub def append(a: Array[a], b: Array[a]): Array[a] & Impure =
         appendHelper(a, b)
 
     ///
@@ -1278,7 +1278,7 @@ namespace Array {
     ///
     /// Returns `true` if arrays `a` and `b` have the same elements, i.e. are structurally equal.
     ///
-    pub def sameElements(a: Array[a], b: Array[b]): Bool & Impure =
+    pub def sameElements(a: Array[a], b: Array[a]): Bool & Impure =
         let alen = length(a);
         let blen = length(b);
         if (alen == blen)
@@ -1289,7 +1289,7 @@ namespace Array {
     ///
     /// Helper function for `sameElements`.
     ///
-    def sameElementsHelper(a: Array[a], b: Array[b], len: Int32, i: Int32): Bool & Impure =
+    def sameElementsHelper(a: Array[a], b: Array[a], len: Int32, i: Int32): Bool & Impure =
         if (i >= len)
             true
         else
