@@ -422,10 +422,16 @@ namespace TestBigInt {
     def toInt803(): Bool = BigInt.toInt8(-1ii) == Some(-1i8)
 
     @test
-    def toInt804(): Bool = BigInt.toInt8(3498457932459234592873452983453245ii) == None
+    def toInt804(): Bool = BigInt.toInt8(127ii) == Some(127i8)
 
     @test
-    def toInt805(): Bool = BigInt.toInt8(-3498457932459234592873452983453245ii) == None
+    def toInt805(): Bool = BigInt.toInt8(128ii) == None
+
+    @test
+    def toInt806(): Bool = BigInt.toInt8(-128ii) == Some(-128i8)
+
+    @test
+    def toInt807(): Bool = BigInt.toInt8(-129ii) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
@@ -440,10 +446,16 @@ namespace TestBigInt {
     def toInt1603(): Bool = BigInt.toInt16(-1ii) == Some(-1i16)
 
     @test
-    def toInt1604(): Bool = BigInt.toInt16(3498457932459234592873452983453245ii) == None
+    def toInt1604(): Bool = BigInt.toInt16(32767ii) == Some(32767i16)
 
     @test
-    def toInt1605(): Bool = BigInt.toInt16(-3498457932459234592873452983453245ii) == None
+    def toInt1605(): Bool = BigInt.toInt16(32768ii) == None
+
+    @test
+    def toInt1606(): Bool = BigInt.toInt16(-32768ii) == Some(-32768i16)
+
+    @test
+    def toInt1607(): Bool = BigInt.toInt16(-32769ii) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt32                                                                 //
@@ -458,10 +470,16 @@ namespace TestBigInt {
     def toInt3203(): Bool = BigInt.toInt32(-1ii) == Some(-1)
 
     @test
-    def toInt3204(): Bool = BigInt.toInt32(3498457932459234592873452983453245ii) == None
+    def toInt3204(): Bool = BigInt.toInt32(2147483647ii) == Some(2147483647)
 
     @test
-    def toInt3205(): Bool = BigInt.toInt32(-3498457932459234592873452983453245ii) == None
+    def toInt3205(): Bool = BigInt.toInt32(2147483648ii) == None
+
+    @test
+    def toInt3206(): Bool = BigInt.toInt32(-2147483648ii) == Some(-2147483648)
+
+    @test
+    def toInt3207(): Bool = BigInt.toInt32(-2147483649ii) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt64                                                                 //
@@ -476,10 +494,16 @@ namespace TestBigInt {
     def toInt6403(): Bool = BigInt.toInt64(-1ii) == Some(-1i64)
 
     @test
-    def toInt6404(): Bool = BigInt.toInt64(3498457932459234592873452983453245ii) == None
+    def toInt6404(): Bool = BigInt.toInt64(9223372036854775807ii) == Some(9223372036854775807i64)
 
     @test
-    def toInt6405(): Bool = BigInt.toInt64(-3498457932459234592873452983453245ii) == None
+    def toInt6405(): Bool = BigInt.toInt64(9223372036854775808ii) == None
+
+    @test
+    def toInt6406(): Bool = BigInt.toInt64(-9223372036854775808ii) == Some(-9223372036854775808i64)
+
+    @test
+    def toInt6407(): Bool = BigInt.toInt64(-9223372036854775809ii) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toFloat32                                                               //
@@ -493,11 +517,23 @@ namespace TestBigInt {
     @test
     def toFloat3203(): Bool = BigInt.toFloat32(-1ii) == Some(-1.0f32)
 
-//    @test
-//    def toFloat3204(): Bool = BigInt.toFloat32(3498457932459234592873452983453245ii) |> x -> !(Option.isNone(x))
+    @test
+    def toFloat3204(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* max = Float32.maxValue() |> Float32.toBigInt;
+            BigInt.toFloat32(max)
+        };
+        step() != None
 
-//    @test
-//    def toFloat3205(): Bool = BigInt.toFloat32(-3498457932459234592873452983453245ii) |> x -> !(Option.isNone(x))
+    @test
+    def toFloat3205(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* max = Float32.maxValue() |> Float32.toBigInt;
+            BigInt.toFloat32(max + 1ii)
+        };
+        step() == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toFloat64                                                               //
