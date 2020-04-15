@@ -91,4 +91,6 @@ namespace Test/Exp/Record/Polymorphism {
         let p4 = p3 |> withAgeAndSex(23, "m");
         p4.age == 23 && p4.sex == "m"
 
+    def |>(x: a, f: a -> b & e): b & e = f(x)
+
 }
