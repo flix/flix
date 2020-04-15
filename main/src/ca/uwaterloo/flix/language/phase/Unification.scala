@@ -277,7 +277,7 @@ object Unification {
       }
 
       // The type variable is rigid.
-      if (x.mode == Rigidity.Rigid) {
+      if (x.rigidity == Rigidity.Rigid) {
         return Result.Err(UnificationError.OccursCheck(x, tpe)) // TODO: Right error message...
       }
 

@@ -62,27 +62,27 @@ object Scheme {
     val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
-        val m = mode match {
+        val rigidity = mode match {
           case InstantiateMode.Flexible => Rigidity.Flexible
           case InstantiateMode.Rigid => Rigidity.Rigid
           case InstantiateMode.Mixed => Rigidity.Flexible
         }
-        macc + (tvar.id -> Type.freshTypeVar(tvar.kind, m))
+        macc + (tvar.id -> Type.freshTypeVar(tvar.kind, rigidity))
     }
 
     /**
-      * Replaces every variable occurrence in the given type using the map `freeVars`.
+      * Replaces every variable occurrence in the given type using `freeVars`. Updated the rigidity.
       */
     def visitType(t0: Type): Type = t0 match {
-      case Type.Var(x, k, m) => freshVars.get(x) match {
+      case Type.Var(x, k, rigidity) => freshVars.get(x) match {
         case None =>
           // Determine the rigidity of the free type variable.
-          val m1 = mode match {
-            case InstantiateMode.Flexible => m
+          val newRigidity = mode match {
+            case InstantiateMode.Flexible => rigidity
             case InstantiateMode.Rigid => Rigidity.Rigid
             case InstantiateMode.Mixed => Rigidity.Rigid
           }
-          Type.Var(x, k, m1)
+          Type.Var(x, k, newRigidity)
         case Some(tvar) => tvar
       }
       case Type.Cst(tc) => Type.Cst(tc)

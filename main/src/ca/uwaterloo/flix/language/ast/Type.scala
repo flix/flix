@@ -190,7 +190,7 @@ object Type {
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind, mode: Rigidity = Rigidity.Flexible) extends Type with Ordered[Type.Var] {
+  case class Var(id: Int, kind: Kind, rigidity: Rigidity = Rigidity.Flexible) extends Type with Ordered[Type.Var] {
     /**
       * The optional textual name of `this` type variable.
       */
