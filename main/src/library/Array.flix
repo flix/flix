@@ -91,7 +91,7 @@ namespace Array {
     ///
     /// Helper function for `append`.
     ///
-    def appendHelper(a: Array[a], b: Array[b]): Array[a] & Impure =
+    def appendHelper(a: Array[a], b: Array[a]): Array[a] & Impure =
         let len1 = length(a);
         let len2 = length(b);
         if (len1 == 0)
