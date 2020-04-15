@@ -49,6 +49,8 @@ object Scheme {
 
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
+    *
+    * The `mode` control the rigidity of quantified and free variables.
     */
   def instantiate(sc: Scheme, mode: InstantiateMode)(implicit flix: Flix): Type = {
     // Compute the base type.
@@ -69,7 +71,7 @@ object Scheme {
     }
 
     /**
-      * Replaces every variable occurrence in the given type using `freeVars`. Updated the rigidity.
+      * Replaces every variable occurrence in the given type using `freeVars`. Updates the rigidity.
       */
     def visitType(t0: Type): Type = t0 match {
       case Type.Var(x, k, rigidity) => freshVars.get(x) match {
