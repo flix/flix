@@ -24,26 +24,24 @@ import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 object Scheme {
 
   /**
-    * A common super-type to control instantiation.
+    * A common super-type that controls how quantified and free variables are instantiated.
     */
   sealed trait InstantiateMode
 
   object InstantiateMode {
 
-    // TODO: DOC
-
     /**
-      * Instantiated variables are flexible. Free variables are unchanged.
+      * Instantiated variables are marked as flexible. Free variables are left unchanged.
       */
     case object Flexible extends InstantiateMode
 
     /**
-      * Instantiated variables are rigid. Free variables are made rigid (regardless of their prior mode).
+      * Instantiated variables are marked as rigid. Free variables are marked as rigid (regardless of their prior rigidity).
       */
     case object Rigid extends InstantiateMode
 
     /**
-      * Instantiated variables are flexible. Free variables are made rigid (regardless of their prior mode).
+      * Instantiated variables are marked as flexible. Free variables are marked as rigid (regardless of their prior rigidity).
       */
     case object Mixed extends InstantiateMode
 
