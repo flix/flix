@@ -61,7 +61,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym("_unit"), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Type.freshTypeVar() // MATT should be effect?
+          val eff = Type.freshEffectVar()
           val loc = SourceLocation.Unknown
           val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
           sym -> defn
@@ -1106,7 +1106,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           case (None, None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
 
           // Case 2: Enum.
-          case (Some(enum), None, None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+          case (Some(enum), None, None, None) => getEnumTypeIfAccessible(enum, ns0, root, ns0.loc)
 
           // Case 3: Relation.
           case (None, Some(rel), None, None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
@@ -1132,10 +1132,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       val decls = root.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+        case Some(enum) => getEnumTypeIfAccessible(enum, ns0, root, ns0.loc)
       }
-    case NamedAst.Type.Enum(sym) =>
-      Type.Cst(TypeConstructor.Enum(sym, Kind.Star)).toSuccess
+    case NamedAst.Type.Enum(sym, arity) =>
+      Type.Cst(TypeConstructor.mkEnumCst(sym, arity)).toSuccess
 
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
@@ -1396,12 +1396,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     *
     * Otherwise fails with a resolution error.
     */
-  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
     getEnumIfAccessible(enum0, ns0, loc) map {
-      case enum =>
-        val kind = Seq.fill(enum.tparams.length + 1)(Kind.Star: Kind).reduce(_ -> _) // MATT not necessary if we add tparams to Type.Enum
-        Type.Cst(TypeConstructor.Enum(enum.sym, kind))
+      case enum => Type.Cst(TypeConstructor.mkEnumCst(enum.sym, enum.tparams.size))
     }
+  }
 
   /**
     * Successfully returns the type of the given `rel0` if it is accessible from the given namespace `ns0`.

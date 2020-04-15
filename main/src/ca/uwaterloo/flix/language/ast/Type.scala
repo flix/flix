@@ -104,11 +104,10 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2) => tpe1.size + tpe2.size + 1
   }
 
-//  /**
-//    * Returns a human readable string representation of `this` type.
-//    */
-//  override def toString: String = Type.fmtType(this, renameVars = false)
-  // MATT
+  /**
+    * Returns a human readable string representation of `this` type.
+    */
+  override def toString: String = Type.fmtType(this, renameVars = false)
 
 }
 
@@ -257,7 +256,7 @@ object Type {
     * A type constructor that represents a schema extension type.
     */
   case class SchemaExtend(sym: Symbol.PredSym, tpe: Type, rest: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Schema
+    def kind: Kind = Kind.Star ->: Kind.Schema
   }
 
   /**
@@ -278,7 +277,7 @@ object Type {
     * A type expression that represents a type abstraction [x] => tpe.
     */
   case class Lambda(tvar: Type.Var, tpe: Type) extends Type {
-    def kind: Kind = Kind.Star -> Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Star
   }
 
   /**
@@ -293,12 +292,12 @@ object Type {
       */
     def kind: Kind = {
       tpe1.kind match {
-        case Kind.Arrow(kparams, k) => kparams match { // MATT can this kind be simplified?
+        case Kind.Arrow(kparams, k) => kparams match {
           case _ :: Nil => k
           case _ :: tail => Kind.Arrow(tail, k)
-          case _ => throw InternalCompilerException("Illegal kind.") // MATT include kind info
+          case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
         }
-        case _ => throw InternalCompilerException("Illegal kind.")
+        case _ => throw InternalCompilerException(s"Illegal kind: '${tpe1.kind}' of type '$tpe1''")
       }
     }
   }
@@ -321,10 +320,13 @@ object Type {
     */
   def freshEffectVar()(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), Kind.Effect)
 
-  // MATT docs
+  /**
+    * Constructs a RecordExtend type.
+    */
   def mkRecordExtend(label: String, tpe: Type, rest: Type): Type = {
     mkApply(Type.Cst(TypeConstructor.RecordExtend(label)), List(tpe, rest))
   }
+
   /**
     * Constructs an arrow with the given effect type A ->eff B.
     */

@@ -127,9 +127,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val tenv = tparams.map(kv => kv.name.name -> kv.tpe).toMap
           val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
           val enumType = if (quantifiers.isEmpty)
-            NamedAst.Type.Enum(sym)
-          else { // MATT change to Enum(sym, params)?
-            val base = NamedAst.Type.Enum(sym)
+            NamedAst.Type.Enum(sym, 0)
+          else {
+            val base = NamedAst.Type.Enum(sym, quantifiers.size)
             quantifiers.foldLeft(base: NamedAst.Type) {
               case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
             }
@@ -1278,7 +1278,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     typeVars.toList.sorted.map {
       case name =>
         val ident = Name.Ident(SourcePosition.Unknown, name, SourcePosition.Unknown)
-        val tvar = Type.freshTypeVar()
+        val tvar = Type.freshTypeVar() // MATT these contain effect types. Need to handle these separately
         tvar.setText(name)
         NamedAst.TypeParam(ident, tvar, loc)
     }

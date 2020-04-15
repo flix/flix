@@ -70,9 +70,11 @@ object Unification {
       */
     def apply(tpe0: Type): Type = {
 
-      // MATT generify, fix param names, docs
-      def canSubstituteKind(varKind: Kind, realKind: Kind): Boolean = (varKind, realKind) match {
-        case (vkind, rkind) if vkind == rkind => true
+      /**
+        * Returns true iff a type of kind `trueKind` can be substituted in place of a type of `varKind`.
+        */
+      def canSubstituteKind(varKind: Kind, trueKind: Kind): Boolean = (varKind, trueKind) match {
+        case (vkind, tkind) if vkind == tkind => true
         case (Kind.Star, Kind.Record) => true
         case _ => false
       }
@@ -82,12 +84,11 @@ object Unification {
           case x: Type.Var =>
             m.get(x) match {
               case None => x
-              case Some(y) if canSubstituteKind(x.kind, t.kind) => y
-              case Some(y) if x.kind != t.kind => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${t.kind}'.")
+              case Some(y) if canSubstituteKind(x.kind, y.kind) => y
+              case Some(y) => throw InternalCompilerException(s"Expected kind `${x.kind}' but got `${y.kind}'.")
             }
           case Type.Cst(tc) => Type.Cst(tc)
           case Type.Arrow(l, eff) => Type.Arrow(l, visit(eff))
-          case Type.RecordEmpty => Type.RecordEmpty
           case Type.SchemaEmpty => Type.SchemaEmpty
           case Type.SchemaExtend(sym, tpe, rest) => Type.SchemaExtend(sym, visit(tpe), visit(rest))
           case Type.Zero => Type.Zero
@@ -286,9 +287,9 @@ object Unification {
       }
 
       // TODO: Kinds disabled for now. Requires changed to the previous phase to associated type variables with their kinds.
-      if (x.kind != tpe.kind) {
-        throw InternalCompilerException("MATT YOU MESSED UP!") // MATT
-      }
+//      if (x.kind != tpe.kind) {
+//        throw InternalCompilerException(s"Unable to unify kinds: '${x.kind}', '${tpe.kind}''") // MATT
+//      }
 
       // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
       if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
@@ -591,7 +592,7 @@ object Unification {
     */
   def unifyTypAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[Type] = {
     if (ts.isEmpty)
-      liftM(Type.freshTypeVar()) // MATT right?
+      liftM(Type.freshTypeVar()) // MATT probably need another param
     else
       unifyTypM(ts, loc)
   }
