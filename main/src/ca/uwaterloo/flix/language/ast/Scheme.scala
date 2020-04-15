@@ -52,7 +52,7 @@ object Scheme {
       sc1.base == sc2.base
     } else {
       val tpe1 = instantiate(sc1)
-      val tpe2 = instantiate(sc2)
+      val tpe2 = instantiate(sc2) // TODO: instantiate with existential variables?
       Unification.unifyTypes(tpe2, tpe1, unifyRight = false) match {
         case Result.Ok(_) => true
         case Result.Err(_) => false
