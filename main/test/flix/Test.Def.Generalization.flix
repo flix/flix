@@ -49,22 +49,22 @@ namespace Test/Def/Generalization {
     def testGen16(): a -> (b -> a) = x -> (_ -> x)
 
     @test
-    def testGen17(): #{A(Int)} = #{}
+    def testGen17(): r -> {x: Int | r} = r -> {+x = 21 | r}
 
     @test
-    def testGen18(): #{A(Int), B(Int)} = #{A(21).}
+    def testGen18(): {x: Int | r} -> r = r -> { -x | r}
 
     @test
-    def testGen19(): #{A(Int), B(Int), C(Int)} = #{A(21). B(42).}
+    def testGen19(): {x: Int | r} -> {x: Int | r}  = r -> { x = 21 | r}
 
     @test
-    def testGen20(): r -> {x: Int | r} = r -> {+x = 21 | r}
+    def testGen20(): #{A(Int)} = #{}
 
     @test
-    def testGen21(): {x: Int | r} -> r = r -> { -x | r}
+    def testGen21(): #{A(Int), B(Int)} = #{A(21).}
 
     @test
-    def testGen22(): {x: Int | r} -> {x: Int | r}  = r -> { x = 21 | r}
+    def testGen22(): #{A(Int), B(Int), C(Int)} = #{A(21). B(42).}
 
     @test
     def testLeq01(): List[a] = Nil
