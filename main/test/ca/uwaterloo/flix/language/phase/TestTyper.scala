@@ -74,7 +74,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq07") {
     val input =
       """
-        |def f(): {x: Int | r} = {x = 21}
+        | def f(): {x: Int | r} = {}
       """.stripMargin
     expectError[TypeError](new Flix().addStr(input).compile())
   }
@@ -82,7 +82,7 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq08") {
     val input =
       """
-        |def f(): {x: Int, y: Int | r} = {y = 42, x = 21}
+        |def f(): {x: Int | r} = {x = 21}
       """.stripMargin
     expectError[TypeError](new Flix().addStr(input).compile())
   }
@@ -90,9 +90,26 @@ class TestTyper extends FunSuite with TestUtils {
   test("TestLeq09") {
     val input =
       """
-        |def f(): a -> {x: Int | r} = r -> {x = 21}
+        |def f(): {x: Int, y: Int | r} = {y = 42, x = 21}
       """.stripMargin
     expectError[TypeError](new Flix().addStr(input).compile())
   }
+
+  test("TestLeq10") {
+    val input =
+      """
+        |def f(): #{} = #{A(21).}
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+  test("TestLeq11") {
+    val input =
+      """
+        |
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
 
 }
