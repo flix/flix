@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -214,6 +214,14 @@ object Unification {
     case class MismatchedArity(ts1: List[Type], ts2: List[Type]) extends UnificationError
 
     /**
+      * An unification error due to a rigid type variable `tvar` in `tpe`.
+      *
+      * @param tvar the type variable.
+      * @param tpe  the type.
+      */
+    case class RigidVar(tvar: Type.Var, tpe: Type) extends UnificationError
+
+    /**
       * An unification error due to an occurrence of `tvar` in `tpe`.
       *
       * @param tvar the type variable.
@@ -261,7 +269,7 @@ object Unification {
     * If `unifyRight` is true then unification is bi-direction.
     * If `unifyRight` is false then only type variables on the left are unified.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type, unifyRight: Boolean = true)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -274,6 +282,11 @@ object Unification {
       // The type variable and type are in fact the same.
       if (x == tpe) {
         return Result.Ok(Substitution.empty)
+      }
+
+      // The type variable is rigid (i.e. must be treated as a constant and cannot be unified).
+      if (x.rigidity == Rigidity.Rigid) {
+        return Result.Err(UnificationError.RigidVar(x, tpe))
       }
 
       // The type variable occurs inside the type.
@@ -296,22 +309,24 @@ object Unification {
     /**
       * Unifies the two given types `tpe1` and `tpe2`.
       */
+    // NB: The order of cases has been determined by code coverage analysis.
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+      case (x: Type.Var, y: Type.Var) if x.id == y.id => Result.Ok(Substitution.empty)
+
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
-      case (_, x: Type.Var) if unifyRight => unifyVar(x, tpe1)
+      case (_, x: Type.Var) => unifyVar(x, tpe1)
 
-      case (Type.Cst(TypeConstructor.Native(clazz1)), Type.Cst(TypeConstructor.Native(clazz2))) =>
-        if (clazz1 == clazz2)
-          Result.Ok(Substitution.empty)
-        else
-          Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+      case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 
-      case (Type.Cst(c1), Type.Cst(c2)) =>
-        if (c1 == c2)
-          Result.Ok(Substitution.empty)
-        else
-          Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+        unifyTypes(t11, t21) match {
+          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
+            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
+            case Result.Err(e) => Result.Err(e)
+          }
+          case Result.Err(e) => Result.Err(e)
+        }
 
       case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => unifyEffects(eff1, eff2)
 
@@ -340,20 +355,17 @@ object Unification {
         }
 
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
+
       case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
+
       case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
+
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
+
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
+
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
 
-      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-        unifyTypes(t11, t21) match {
-          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
-            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-            case Result.Err(e) => Result.Err(e)
-          }
-          case Result.Err(e) => Result.Err(e)
-        }
       case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
     }
 
@@ -452,55 +464,63 @@ object Unification {
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
   def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-
-    /**
-      * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
-      */
-    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
-
-    /**
-      * Performs success variable elimination on the given boolean expression `eff`.
-      */
-    def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
-      case Nil => (Substitution.empty, eff)
-      // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
-      case x :: xs =>
-        val t0 = Substitution.singleton(x, False)(eff)
-        val t1 = Substitution.singleton(x, True)(eff)
-        val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
-        (st ++ se, cc)
-    }
-
     // Determine if effect checking is enabled.
     if (flix.options.xnoeffects)
       return Ok(Substitution.empty)
 
     // The boolean expression we want to show is 0.
-    val query = eq(eff1, eff2)
+    val query = mkEq(eff1, eff2)
 
     // The free type (effect) variables in the query.
     val freeVars = query.typeVars.toList
 
     // Eliminate all variables.
-    val (subst, result) = successiveVariableElimination(query, freeVars)
+    try {
+      val subst = successiveVariableElimination(query, freeVars)
 
-    // TODO: Debugging
-    //    if (!subst.isEmpty) {
-    //      val s = subst.toString
-    //      val len = s.length
-    //      if (len > 50) {
-    //        println(s.substring(0, Math.min(len, 300)))
-    //        println()
-    //      }
-    //    }
+      // TODO: Debugging
+      //    if (!subst.isEmpty) {
+      //      val s = subst.toString
+      //      val len = s.length
+      //      if (len > 50) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //        println()
+      //      }
+      //    }
 
-    // Determine if unification was successful.
-    if (result != Type.Pure)
       Ok(subst)
-    else
-      Err(UnificationError.MismatchedEffects(eff1, eff2))
+    } catch {
+      case BooleanUnificationException => Err(UnificationError.MismatchedEffects(eff1, eff2))
+    }
   }
+
+  /**
+    * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+    */
+  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+
+  /**
+    * Performs success variable elimination on the given boolean expression `eff`.
+    */
+  private def successiveVariableElimination(eff: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+    case Nil =>
+      if (eff == Type.Impure)
+        Substitution.empty
+      else
+        throw BooleanUnificationException
+
+    case x :: xs =>
+      val t0 = Substitution.singleton(x, False)(eff)
+      val t1 = Substitution.singleton(x, True)(eff)
+      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
+      st ++ se
+  }
+
+  /**
+    * An exception thrown to indicate that boolean unification failed.
+    */
+  private case object BooleanUnificationException extends RuntimeException
 
   /**
     * Returns `true` if `tpe1` is an instance of `tpe2`.
@@ -547,6 +567,9 @@ object Unification {
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
+
+        case Result.Err(UnificationError.RigidVar(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
@@ -674,7 +697,7 @@ object Unification {
   /**
     * Returns the negation of the effect `eff0`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
+  // NB: The order of cases has been determined by code coverage analysis.
   private def mkNot(eff0: Type): Type = eff0 match {
     case Type.Pure =>
       Type.Impure
@@ -699,7 +722,7 @@ object Unification {
   /**
     * Returns the conjunction of the two effects `eff1` and `eff2`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
+  // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
@@ -794,7 +817,7 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
+  // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T

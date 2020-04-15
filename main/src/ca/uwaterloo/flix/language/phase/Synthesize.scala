@@ -1288,7 +1288,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns `true` if `tpe` is a type variable.
       */
     def isVar(tpe: Type): Boolean = tpe.typeConstructor match {
-      case Type.Var(_, _) => true
+      case Type.Var(_, _, _) => true
       case _ => false
     }
 

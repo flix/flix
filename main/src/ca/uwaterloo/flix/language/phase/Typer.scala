@@ -21,6 +21,7 @@ import java.io.PrintWriter
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
+import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -221,7 +222,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // TODO: Use resultEff
     val result = for {
       (inferredTyp, inferredEff) <- inferExp(defn0.exp, program)
-      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
+      unifiedTyp <- unifyTypM(Scheme.instantiate(declaredScheme, InstantiateMode.Flexible), Type.mkArrow(argumentTypes, expectedEff, inferredTyp), defn0.loc)
       unifiedEff <- unifyEffM(inferredEff, expectedEff, defn0.loc)
     } yield unifiedTyp
 
@@ -231,8 +232,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
           case Ok((subst, resultType)) =>
-            val inferredScheme = Scheme.generalize(resultType, subst)
-            val leq = Scheme.lessThanEqual(declaredScheme, inferredScheme)
+            val inferredScheme = Scheme.generalize(resultType)
+            val leq = Scheme.lessThanEqual(inferredScheme, declaredScheme)
             if(!leq) {
               return Err(TypeError.GeneralizationError(declaredScheme,inferredScheme, defn0.loc))
             }
@@ -269,7 +270,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Expression.Def(sym, tvar, loc) =>
         val defn = program.defs(sym)
         for {
-          resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc), loc)
+          resultTyp <- unifyTypM(tvar, Scheme.instantiate(defn.sc, InstantiateMode.Flexible), loc)
         } yield (resultTyp, Type.Pure)
 
       case ResolvedAst.Expression.Hole(sym, tvar, evar, loc) =>
