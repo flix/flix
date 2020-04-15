@@ -177,21 +177,19 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.delete(k, deref mm)
 
-// TODO
-//    ///
-//    /// Applies the function `f` to every value in the mutable map `m`.
-//    ///
-//    pub def transform!(f: v1 -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
-//        let MutMap(mm) = m;
-//        mm := Map.map(f, deref mm)
+    ///
+    /// Applies the function `f` to every value in the mutable map `m`.
+    ///
+    pub def transform!(f: v -> v & e, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.map(f, deref mm)
 
-// TODO
-//    ///
-//    /// Applies the function `f` to every value in the mutable map `m`.
-//    ///
-//    pub def transformWithKey!(f: (k, v1) -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
-//        let MutMap(mm) = m;
-//        mm := Map.mapWithKey(f, deref mm)
+    ///
+    /// Applies the function `f` to every value in the mutable map `m`.
+    ///
+    pub def transformWithKey!(f: (k, v) -> v & e, m: mut MutMap[k, v]): Unit & Impure =
+        let MutMap(mm) = m;
+        mm := Map.mapWithKey(f, deref mm)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
