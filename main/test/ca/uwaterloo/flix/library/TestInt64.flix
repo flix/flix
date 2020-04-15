@@ -692,10 +692,16 @@ namespace TestInt64 {
     def toInt803(): Bool = Int64.toInt8(-1i64) == Some(-1i8)
 
     @test
-    def toInt804(): Bool = Int64.toInt8(9223372036854775807i64) == None
+    def toInt804(): Bool = Int64.toInt8(127i64) == Some(127i8)
 
     @test
-    def toInt805(): Bool = Int64.toInt8(-9223372036854775808i64) == None
+    def toInt805(): Bool = Int64.toInt8(128i64) == None
+
+    @test
+    def toInt806(): Bool = Int64.toInt8(-128i64) == Some(-128i8)
+
+    @test
+    def toInt807(): Bool = Int64.toInt8(-129i64) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
@@ -710,10 +716,16 @@ namespace TestInt64 {
     def toInt1603(): Bool = Int64.toInt16(-1i64) == Some(-1i16)
 
     @test
-    def toInt1604(): Bool = Int64.toInt16(9223372036854775807i64) == None
+    def toInt1604(): Bool = Int64.toInt16(32767i64) == Some(32767i16)
 
     @test
-    def toInt1605(): Bool = Int64.toInt16(-9223372036854775808i64) == None
+    def toInt1605(): Bool = Int64.toInt16(32768i64) == None
+
+    @test
+    def toInt1606(): Bool = Int64.toInt16(-32768i64) == Some(-32768i16)
+
+    @test
+    def toInt1607(): Bool = Int64.toInt16(-32769i64) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt32                                                                 //
@@ -728,10 +740,16 @@ namespace TestInt64 {
     def toInt3203(): Bool = Int64.toInt32(-1i64) == Some(-1)
 
     @test
-    def toInt3204(): Bool = Int64.toInt32(9223372036854775807i64) == None
+    def toInt3204(): Bool = Int64.toInt32(2147483647i64) == Some(2147483647)
 
     @test
-    def toInt3205(): Bool = Int64.toInt32(-9223372036854775808i64) == None
+    def toInt3205(): Bool = Int64.toInt32(2147483648i64) == None
+
+    @test
+    def toInt3206(): Bool = Int64.toInt32(-2147483648i64) == Some(-2147483648)
+
+    @test
+    def toInt3207(): Bool = Int64.toInt32(-2147483649i64) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toBigInt                                                                //

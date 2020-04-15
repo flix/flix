@@ -718,13 +718,17 @@ namespace TestInt16 {
     @test
     def toInt803(): Bool = Int16.toInt8(-1i16) == Some(-1i8)
 
-    /// TODO - check boundaries
+    @test
+    def toInt804(): Bool = Int16.toInt8(127i16) == Some(127i8)
 
     @test
-    def toInt804(): Bool = Int16.toInt8(32767i16) == None
+    def toInt805(): Bool = Int16.toInt8(128i16) == None
 
     @test
-    def toInt805(): Bool = Int16.toInt8(-32768i16) == None
+    def toInt806(): Bool = Int16.toInt8(-128i16) == Some(-128i8)
+
+    @test
+    def toInt807(): Bool = Int16.toInt8(-129i16) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt32                                                                 //

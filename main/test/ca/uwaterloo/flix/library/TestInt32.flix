@@ -652,13 +652,17 @@ namespace TestInt32 {
     @test
     def toInt803(): Bool = Int32.toInt8(-1) == Some(-1i8)
 
-    /// TODO - check boundaries
+    @test
+    def toInt804(): Bool = Int32.toInt8(127) == Some(127i8)
 
     @test
-    def toInt804(): Bool = Int32.toInt8(2147483647) == None
+    def toInt805(): Bool = Int32.toInt8(128) == None
 
     @test
-    def toInt805(): Bool = Int32.toInt8(-2147483648) == None
+    def toInt806(): Bool = Int32.toInt8(-128) == Some(-128i8)
+
+    @test
+    def toInt807(): Bool = Int32.toInt8(-129) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
@@ -672,13 +676,17 @@ namespace TestInt32 {
     @test
     def toInt1603(): Bool = Int32.toInt16(-1) == Some(-1i16)
 
-    /// TODO - check boundaries
+    @test
+    def toInt1604(): Bool = Int32.toInt16(32767) == Some(32767i16)
 
     @test
-    def toInt1604(): Bool = Int32.toInt16(2147483647) == None
+    def toInt1605(): Bool = Int32.toInt16(32768) == None
 
     @test
-    def toInt1605(): Bool = Int32.toInt16(-2147483648) == None
+    def toInt1606(): Bool = Int32.toInt16(-32768) == Some(-32768i16)
+
+    @test
+    def toInt1607(): Bool = Int32.toInt16(-32769) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt64                                                                 //
