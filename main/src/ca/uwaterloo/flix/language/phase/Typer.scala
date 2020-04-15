@@ -232,7 +232,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val initialSubst = getSubstFromParams(defn0.fparams)
         run(initialSubst) match {
           case Ok((subst, resultType)) =>
-            val inferredScheme = Scheme.generalize(resultType, subst)
+            val inferredScheme = Scheme.generalize(resultType)
             val leq = Scheme.lessThanEqual(inferredScheme, declaredScheme)
             if(!leq) {
               return Err(TypeError.GeneralizationError(declaredScheme,inferredScheme, defn0.loc))

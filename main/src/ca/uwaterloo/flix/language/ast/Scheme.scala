@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Type.VarMode
 import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
@@ -64,9 +63,9 @@ object Scheme {
       case (macc, tvar) =>
         // Determine the rigidity of the fresh type variable.
         val m = mode match {
-          case InstantiateMode.Flexible => VarMode.Flexible
-          case InstantiateMode.Rigid => VarMode.Rigid
-          case InstantiateMode.Mixed => VarMode.Flexible
+          case InstantiateMode.Flexible => Rigidity.Flexible
+          case InstantiateMode.Rigid => Rigidity.Rigid
+          case InstantiateMode.Mixed => Rigidity.Flexible
         }
         macc + (tvar.id -> Type.freshTypeVar(tvar.kind, m))
     }
@@ -80,8 +79,8 @@ object Scheme {
           // Determine the rigidity of the free type variable.
           val m1 = mode match {
             case InstantiateMode.Flexible => m
-            case InstantiateMode.Rigid => VarMode.Rigid
-            case InstantiateMode.Mixed => VarMode.Rigid
+            case InstantiateMode.Rigid => Rigidity.Rigid
+            case InstantiateMode.Mixed => Rigidity.Rigid
           }
           Type.Var(x, k, m1)
         case Some(tvar) => tvar
@@ -102,18 +101,10 @@ object Scheme {
   }
 
   /**
-    * Generalizes the given type `tpe0` w.r.t. the given type environment `subst0`.
+    * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tpe0: Type, subst0: Unification.Substitution): Scheme = {
-    // Compute all the free type variables in `tpe0`.
-    val freeVars = tpe0.typeVars
-
-    // Compute all the bound type variables in the type environment `subst0`.
-    val boundVars = subst0.m // TODO: compute the free variables in the context.
-
-    // Compute the variables that may be quantified.
-    val quantifiers = freeVars -- boundVars.keySet
-
+  def generalize(tpe0: Type): Scheme = {
+    val quantifiers = tpe0.typeVars
     Scheme(quantifiers.toList, tpe0)
   }
 

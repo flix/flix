@@ -187,21 +187,10 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
-
-  // TODO: DOC
-  sealed trait VarMode
-
-  object VarMode {
-    // TODO: DOC
-    case object Rigid extends VarMode
-    // TODO: DOC
-    case object Flexible extends VarMode
-  }
-
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind, mode: VarMode = VarMode.Flexible) extends Type with Ordered[Type.Var] {
+  case class Var(id: Int, kind: Kind, mode: Rigidity = Rigidity.Flexible) extends Type with Ordered[Type.Var] {
     /**
       * The optional textual name of `this` type variable.
       */
@@ -323,7 +312,7 @@ object Type {
   /**
     * Returns a fresh type variable.
     */
-  def freshTypeVar(k: Kind = Kind.Star, m: VarMode = VarMode.Flexible)(implicit flix: Flix): Type.Var =
+  def freshTypeVar(k: Kind = Kind.Star, m: Rigidity = Rigidity.Flexible)(implicit flix: Flix): Type.Var =
     Type.Var(flix.genSym.freshId(), k, m)
 
   /**

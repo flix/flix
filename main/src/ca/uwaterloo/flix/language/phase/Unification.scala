@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Rigidity, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -277,7 +277,7 @@ object Unification {
       }
 
       // The type variable is rigid.
-      if (x.mode == Type.VarMode.Rigid) {
+      if (x.mode == Rigidity.Rigid) {
         return Result.Err(UnificationError.OccursCheck(x, tpe)) // TODO: Right error message...
       }
 
