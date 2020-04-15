@@ -451,55 +451,63 @@ object Unification {
     * Returns the most general unifier of the two given effects `eff1` and `eff2`.
     */
   def unifyEffects(eff1: Type, eff2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-
-    /**
-      * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
-      */
-    def eq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
-
-    /**
-      * Performs success variable elimination on the given boolean expression `eff`.
-      */
-    def successiveVariableElimination(eff: Type, fvs: List[Type.Var]): (Substitution, Type) = fvs match {
-      case Nil => (Substitution.empty, eff)
-      // TODO: Check that eff is false is here. Then return Some(subst) otherwise None.
-      case x :: xs =>
-        val t0 = Substitution.singleton(x, False)(eff)
-        val t1 = Substitution.singleton(x, True)(eff)
-        val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
-        (st ++ se, cc)
-    }
-
     // Determine if effect checking is enabled.
     if (flix.options.xnoeffects)
       return Ok(Substitution.empty)
 
     // The boolean expression we want to show is 0.
-    val query = eq(eff1, eff2)
+    val query = mkEq(eff1, eff2)
 
     // The free type (effect) variables in the query.
     val freeVars = query.typeVars.toList
 
     // Eliminate all variables.
-    val (subst, result) = successiveVariableElimination(query, freeVars)
+    try {
+      val subst = successiveVariableElimination(query, freeVars)
 
-    // TODO: Debugging
-    //    if (!subst.isEmpty) {
-    //      val s = subst.toString
-    //      val len = s.length
-    //      if (len > 50) {
-    //        println(s.substring(0, Math.min(len, 300)))
-    //        println()
-    //      }
-    //    }
+      // TODO: Debugging
+      //    if (!subst.isEmpty) {
+      //      val s = subst.toString
+      //      val len = s.length
+      //      if (len > 50) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //        println()
+      //      }
+      //    }
 
-    // Determine if unification was successful.
-    if (result != Type.Pure)
       Ok(subst)
-    else
-      Err(UnificationError.MismatchedEffects(eff1, eff2))
+    } catch {
+      case BooleanUnificationException => Err(UnificationError.MismatchedEffects(eff1, eff2))
+    }
   }
+
+  /**
+    * To unify two effects p and q it suffices to unify t = (p ∧ ¬q) ∨ (¬p ∧ q) and check t = 0.
+    */
+  private def mkEq(p: Type, q: Type): Type = mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
+
+  /**
+    * Performs success variable elimination on the given boolean expression `eff`.
+    */
+  private def successiveVariableElimination(eff: Type, fvs: List[Type.Var])(implicit flix: Flix): Substitution = fvs match {
+    case Nil =>
+      if (eff == Type.Impure)
+        Substitution.empty
+      else
+        throw BooleanUnificationException
+
+    case x :: xs =>
+      val t0 = Substitution.singleton(x, False)(eff)
+      val t1 = Substitution.singleton(x, True)(eff)
+      val se = successiveVariableElimination(mkAnd(t0, t1), xs)
+      val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
+      st ++ se
+  }
+
+  /**
+    * An exception thrown to indicate that boolean unification failed.
+    */
+  private case object BooleanUnificationException extends RuntimeException
 
   /**
     * Returns `true` if `tpe1` is an instance of `tpe2`.
