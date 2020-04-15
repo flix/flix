@@ -76,6 +76,9 @@ namespace Test/Def/Generalization {
     def testGen25(): #{A(Int), B(Int), C(Int) | r} = #{A(21). B(42).}
 
     @test
+    def testGen26(): #{A(Int) | r1} -> #{B(Int) | r2} -> #{A(Int), B(Int) | r} = x -> y -> x <+> y
+
+    @test
     def testLeq01(): List[a] = Nil
 
     @test
