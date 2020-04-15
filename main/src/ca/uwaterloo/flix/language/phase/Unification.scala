@@ -214,6 +214,14 @@ object Unification {
     case class MismatchedArity(ts1: List[Type], ts2: List[Type]) extends UnificationError
 
     /**
+      * An unification error due to a rigid type variable `tvar` in `tpe`.
+      *
+      * @param tvar the type variable.
+      * @param tpe  the type.
+      */
+    case class RigidVar(tvar: Type.Var, tpe: Type) extends UnificationError
+
+    /**
       * An unification error due to an occurrence of `tvar` in `tpe`.
       *
       * @param tvar the type variable.
@@ -276,9 +284,9 @@ object Unification {
         return Result.Ok(Substitution.empty)
       }
 
-      // The type variable is rigid.
+      // The type variable is rigid (i.e. must be treated as a constant and cannot be unified).
       if (x.rigidity == Rigidity.Rigid) {
-        return Result.Err(UnificationError.OccursCheck(x, tpe)) // TODO: Right error message...
+        return Result.Err(UnificationError.RigidVar(x, tpe))
       }
 
       // The type variable occurs inside the type.
@@ -559,6 +567,9 @@ object Unification {
 
         case Result.Err(UnificationError.MismatchedArity(baseType1, baseType2)) =>
           Err(TypeError.MismatchedArity(tpe1, tpe2, loc))
+
+        case Result.Err(UnificationError.RigidVar(baseType1, baseType2)) =>
+          Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
