@@ -148,6 +148,9 @@ namespace Float32 {
     ///
     /// If the numeric value of `x` is outside the range of Int32, or it is NaN or infinity, return `None`.
     ///
+    /// Note: while the range of an Int32 is precisely defined using Int32 values, converting this range to
+    /// Float32 values is imprecise.
+    ///
     pub def toInt32(x: Float32): Option[Int32] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.intValue();
@@ -162,6 +165,9 @@ namespace Float32 {
     /// If the numeric value of `x` is within the range of Int64 return `Some(x as Int64)`, rounding `x` towards 0`.
     ///
     /// If the numeric value of `x` is outside the range of Int64, or it is NaN or infinity, return `None`.
+    ///
+    /// Note: while the range of an Int64 is precisely defined using Int64 values, converting this range to
+    /// Float32 values is imprecise.
     ///
     pub def toInt64(x: Float32): Option[Int64] =
         import java.lang.Float:valueOf(Float32);

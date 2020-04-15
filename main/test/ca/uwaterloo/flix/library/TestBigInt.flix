@@ -535,6 +535,24 @@ namespace TestBigInt {
         };
         step() == None
 
+    @test
+    def toFloat3206(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* min = Float32.minValue() |> Float32.toBigInt;
+            BigInt.toFloat32(min)
+        };
+        step() != None
+
+    @test
+    def toFloat3207(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* min = Float32.minValue() |> Float32.toBigInt;
+            BigInt.toFloat32(min - 1ii)
+        };
+        step() == None
+
     /////////////////////////////////////////////////////////////////////////////
     // toFloat64                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -547,10 +565,40 @@ namespace TestBigInt {
     @test
     def toFloat6403(): Bool = BigInt.toFloat64(-1ii) == Some(-1.0f64)
 
-//    @test
-//    def toFloat6404(): Bool = BigInt.toFloat64(3498457932459234592873452983453245ii) |> x -> !(Option.isNone(x))
+    @test
+    def toFloat6404(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* max = Float64.maxValue() |> Float64.toBigInt;
+            BigInt.toFloat64(max)
+        };
+        step() != None
 
-//    @test
-//    def toFloat6405(): Bool = BigInt.toFloat64(-3498457932459234592873452983453245ii) |> x -> !(Option.isNone(x))
+    @test
+    def toFloat6405(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* max = Float64.maxValue() |> Float64.toBigInt;
+            BigInt.toFloat64(max + 1ii)
+        };
+        step() == None
+
+    @test
+    def toFloat6406(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* min = Float64.minValue() |> Float64.toBigInt;
+            BigInt.toFloat64(min)
+        };
+        step() != None
+
+    @test
+    def toFloat6407(): Bool =
+        use Option.flatMap;
+        let step = () -> {
+            let* min = Float64.minValue() |> Float64.toBigInt;
+            BigInt.toFloat64(min - 1ii)
+        };
+        step() == None
 
 }
