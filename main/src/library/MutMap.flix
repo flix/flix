@@ -177,19 +177,21 @@ namespace MutMap {
         let MutMap(mm) = m;
         mm := Map.delete(k, deref mm)
 
-    ///
-    /// Applies the function `f` to every value in the mutable map `m`.
-    ///
-    pub def transform!(f: v1 -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.map(f, deref mm)
+// TODO
+//    ///
+//    /// Applies the function `f` to every value in the mutable map `m`.
+//    ///
+//    pub def transform!(f: v1 -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
+//        let MutMap(mm) = m;
+//        mm := Map.map(f, deref mm)
 
-    ///
-    /// Applies the function `f` to every value in the mutable map `m`.
-    ///
-    pub def transformWithKey!(f: (k, v1) -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
-        let MutMap(mm) = m;
-        mm := Map.mapWithKey(f, deref mm)
+// TODO
+//    ///
+//    /// Applies the function `f` to every value in the mutable map `m`.
+//    ///
+//    pub def transformWithKey!(f: (k, v1) -> v2 & e, m: mut MutMap[k, v1]): Unit & Impure =
+//        let MutMap(mm) = m;
+//        mm := Map.mapWithKey(f, deref mm)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
@@ -239,11 +241,12 @@ namespace MutMap {
     pub def fold(f: (b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
         foldLeft(f, i, m)
 
-    ///
-    /// Alias for `foldLeftWithKey`.
-    ///
-    pub def foldWithKey(f: (k, b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure  =
-        foldLeftWithKey(f, i, m)
+// TODO
+//    ///
+//    /// Alias for `foldLeftWithKey`.
+//    ///
+//    pub def foldWithKey(f: (k, b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure  =
+//        foldLeftWithKey(f, i, m)
 
     ///
     /// Applies `f` to a start value `i` and all values in the mutable map `m` going from left to right.
@@ -254,14 +257,15 @@ namespace MutMap {
         let MutMap(mm) = m;
         Map.foldLeft(f, i, deref mm)
 
-    ///
-    /// Applies `f` to a start value `i` and all key-value pairs in the mutable map `m` going from left to right.
-    ///
-    /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
-    ///
-    pub def foldLeftWithKey(f: (k, b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
-        let MutMap(mm) = m;
-        Map.foldLeftWithKey(f, i, deref mm)
+// TODO
+//    ///
+//    /// Applies `f` to a start value `i` and all key-value pairs in the mutable map `m` going from left to right.
+//    ///
+//    /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
+//    ///
+//    pub def foldLeftWithKey(f: (k, b, v) -> b & e, i: b, m: MutMap[k, v]): b & Impure =
+//        let MutMap(mm) = m;
+//        Map.foldLeftWithKey(f, i, deref mm)
 
     ///
     /// Applies `f` to a start value `i` and all values in the mutable map `m` going from right to left.

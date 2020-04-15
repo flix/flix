@@ -121,14 +121,27 @@ object Scheme {
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
-    // TODO: Instantiated variables are flexible, already present variables should become rigid.
-    val tpe1 = instantiate(sc1, InstantiateMode.Mixed) // TODO: Want: fresh ones are flexible, old ones are rigid.
-    val tpe2 = instantiate(sc2, InstantiateMode.Rigid) // TODO: Everything is rigid (both fresh and old).
+    ///
+    /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
+    ///
+    if (sc1 == sc2) {
+      return true
+    }
+
+    //
+    // General Case: Compute if `sc1` <= `sc2`.
+    //
+
+    // Instantiate every variable in `sc1` as flexible and make every free variable rigid.
+    val tpe1 = instantiate(sc1, InstantiateMode.Mixed)
+
+    // Instantiate every variable in `sc2` as rigid and make every free variable rigid.
+    val tpe2 = instantiate(sc2, InstantiateMode.Rigid)
+
+    // Attempt to unify the two instantiated types.
     Unification.unifyTypes(tpe1, tpe2) match {
       case Result.Ok(_) => true
-      case Result.Err(_) =>
-        println(s"failed $tpe1 : $tpe2")
-        false
+      case Result.Err(_) => false
     }
   }
 
