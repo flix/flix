@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -296,6 +296,7 @@ object Unification {
     /**
       * Unifies the two given types `tpe1` and `tpe2`.
       */
+    // NB: The order of cases has been determined by code coverage analysis.
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
       case (x: Type.Var, y: Type.Var) if x.id == y.id => Result.Ok(Substitution.empty)
 
@@ -303,17 +304,16 @@ object Unification {
 
       case (_, x: Type.Var) if unifyRight => unifyVar(x, tpe1)
 
-      case (Type.Cst(TypeConstructor.Native(clazz1)), Type.Cst(TypeConstructor.Native(clazz2))) =>
-        if (clazz1 == clazz2)
-          Result.Ok(Substitution.empty)
-        else
-          Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+      case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 
-      case (Type.Cst(c1), Type.Cst(c2)) =>
-        if (c1 == c2)
-          Result.Ok(Substitution.empty)
-        else
-          Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+        unifyTypes(t11, t21) match {
+          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
+            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
+            case Result.Err(e) => Result.Err(e)
+          }
+          case Result.Err(e) => Result.Err(e)
+        }
 
       case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => unifyEffects(eff1, eff2)
 
@@ -342,20 +342,17 @@ object Unification {
         }
 
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
+
       case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
+
       case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
+
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
+
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
+
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
 
-      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-        unifyTypes(t11, t21) match {
-          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
-            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-            case Result.Err(e) => Result.Err(e)
-          }
-          case Result.Err(e) => Result.Err(e)
-        }
       case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
     }
 
@@ -676,7 +673,7 @@ object Unification {
   /**
     * Returns the negation of the effect `eff0`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
+  // NB: The order of cases has been determined by code coverage analysis.
   private def mkNot(eff0: Type): Type = eff0 match {
     case Type.Pure =>
       Type.Impure
@@ -701,7 +698,7 @@ object Unification {
   /**
     * Returns the conjunction of the two effects `eff1` and `eff2`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
+  // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
   private def mkAnd(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∧ x => x
@@ -796,7 +793,7 @@ object Unification {
   /**
     * Returns the disjunction of the two effects `eff1` and `eff2`.
     */
-  // NB: The order of clauses has been determined by code coverage analysis.
+  // NB: The order of cases has been determined by code coverage analysis.
   @tailrec
   private def mkOr(eff1: Type, eff2: Type): Type = (eff1, eff2) match {
     // T ∨ x => T
