@@ -160,29 +160,6 @@ namespace StringBuilder {
        Array.foreachWithIndex(append1!, a)
 
     ///
-    /// Append the strings produced by the iterator `next` separating each pair of strings
-    /// with `sep` to the StringBuilder `sb`.
-    ///
-    pub def intercalateWithIter!(sb: StringBuilder, sep: String, next: () ~> Option[String]): Unit & Impure =
-        intercalateWithIterHelper!(sb, sep, 0, next)
-
-    ///
-    /// Helper function for `intercalateWithIter!`.
-    ///
-    def intercalateWithIterHelper!(sb: StringBuilder, sep: String, ix: Int32, next: () ~> Option[a]): Unit & Impure = match next() {
-        case None => ()
-        case Some(a) => {
-            if (ix == 0)
-                appendString!(sb, a)
-            else {
-                appendString!(sb, sep);
-                appendString!(sb, a)
-            };
-            intercalateWithIterHelper!(sb, sep, ix + 1, next)
-        }
-    }
-
-    ///
     /// Return the length of the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder): Int32 =

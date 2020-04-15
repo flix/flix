@@ -159,16 +159,8 @@ namespace String {
     ///
     def intercalateHelper(sep: String, xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
-        let xsr = ref xs;
-        let step = () ->
-            match (deref xsr) {
-                case Nil => None
-                case x :: rs => {
-                    xsr := rs;
-                    Some(x)
-                }
-            };
-        StringBuilder.intercalateWithIter!(sb, sep, step);
+        let arr = List.toArray(xs);
+        StringBuilder.intercalate!(sb, sep, arr);
         StringBuilder.toString(sb)
 
     ///
