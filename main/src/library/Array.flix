@@ -1240,7 +1240,7 @@ namespace Array {
     ///
     /// Helper function for `init`.
     ///
-    def initHelper(a: Array[a], f: i -> a & e, len: Int32, i: Int32): Unit & Impure =
+    def initHelper(a: Array[a], f: Int32 -> a & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1265,7 +1265,7 @@ namespace Array {
     ///
     /// Helper function for `init2`.
     ///
-    def init2Helper(a: Array[a], b: Array[b], f: i -> (a,b) & e, len: Int32, i: Int32): Unit & Impure =
+    def init2Helper(a: Array[a], b: Array[b], f: Int32 -> (a,b) & e, len: Int32, i: Int32): Unit & Impure =
         if (i >= len)
             ()
         else {
@@ -1435,7 +1435,7 @@ namespace Array {
     ///
     /// Precondition: `i` and `j` are within bounds.
     ///
-    def swap!(a: mut Array[Int32], i: Int32, j: Int32): Unit & Impure =
+    def swap!(a: mut Array[a], i: Int32, j: Int32): Unit & Impure =
         let x = a[i];
         let y = a[j];
         a[i] = y;
@@ -1458,7 +1458,7 @@ namespace Array {
         i
 
     ///
-    /// A forloop with an accumulator (helper for sorting).
+    /// A for loop with an accumulator (helper for sorting).
     /// This function is not array specific so is not necessarily Impure.
     ///
     /// precondition: lo <= hi
