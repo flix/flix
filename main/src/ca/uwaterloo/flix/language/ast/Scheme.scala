@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Type.VarMode
 import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
@@ -30,13 +31,15 @@ object Scheme {
 
   object InstantiateMode {
 
+    // TODO: DOC
+
     /**
-      * Instantiated variables are flexible. Present variables are unchanged.
+      * Instantiated variables are flexible. Free variables are unchanged.
       */
     case object Flexible extends InstantiateMode
 
     /**
-      * Instantiated and present variables all are rigid.
+      * Instantiated and free variables all are rigid.
       */
     case object Rigid extends InstantiateMode
 
@@ -57,16 +60,32 @@ object Scheme {
     //
     // Compute the fresh variables taking the instantiation mode into account.
     //
-    val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) { // TODO: Handle mode.
+    val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
-        macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
+        // TODO: DOC
+        val m = mode match {
+          case InstantiateMode.Flexible => VarMode.Flexible
+          case InstantiateMode.Rigid => VarMode.Rigid
+          case InstantiateMode.Mixed => VarMode.Flexible
+        }
+        macc + (tvar.id -> Type.freshTypeVar(tvar.kind, m))
     }
 
     /**
       * Replaces every variable occurrence in the given type using the map `freeVars`.
       */
     def visitType(t0: Type): Type = t0 match {
-      case Type.Var(x, k, _) => freshVars.getOrElse(x, t0) // TODO: Handle mode.
+      case Type.Var(x, k, m) => freshVars.get(x) match {
+        case None =>
+          // TODO: DOC
+          val m1 = mode match {
+            case InstantiateMode.Flexible => m
+            case InstantiateMode.Mixed => VarMode.Rigid
+            case InstantiateMode.Rigid => VarMode.Rigid
+          }
+          Type.Var(x, k, m1)
+        case Some(tvar) => tvar
+      }
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
       case Type.RecordEmpty => Type.RecordEmpty
@@ -110,7 +129,7 @@ object Scheme {
       val tpe2 = instantiate(sc2, InstantiateMode.Rigid) // TODO: Everything is rigid (both fresh and old).
       // TODO. 3 in Typer, everything must be flexible.
       // TODO: By default fresh type variables are flexible. Also in SVE.
-      Unification.unifyTypes(tpe2, tpe1) match {
+      Unification.unifyTypes(tpe1, tpe2) match {
         case Result.Ok(_) => true
         case Result.Err(_) => false
       }
