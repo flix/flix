@@ -683,55 +683,55 @@ namespace TestInt64 {
     // toInt8                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = Int64.toInt8(0i64) == 0i8
+    def toInt801(): Bool = Int64.toInt8(0i64) == Some(0i8)
 
     @test
-    def toInt802(): Bool = Int64.toInt8(1i64) == 1i8
+    def toInt802(): Bool = Int64.toInt8(1i64) == Some(1i8)
 
     @test
-    def toInt803(): Bool = Int64.toInt8(-1i64) == -1i8
+    def toInt803(): Bool = Int64.toInt8(-1i64) == Some(-1i8)
 
-//    @test
-//    def toInt804(): Bool = Int64.toInt8(9223372036854775807i64) == ??
+    @test
+    def toInt804(): Bool = Int64.toInt8(9223372036854775807i64) == None
 
-//    @test
-//    def toInt805(): Bool = Int64.toInt8(-9223372036854775808i64) == ??
+    @test
+    def toInt805(): Bool = Int64.toInt8(-9223372036854775808i64) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt1601(): Bool = Int64.toInt16(0i64) == 0i16
+    def toInt1601(): Bool = Int64.toInt16(0i64) == Some(0i16)
 
     @test
-    def toInt1602(): Bool = Int64.toInt16(1i64) == 1i16
+    def toInt1602(): Bool = Int64.toInt16(1i64) == Some(1i16)
 
     @test
-    def toInt1603(): Bool = Int64.toInt16(-1i64) == -1i16
+    def toInt1603(): Bool = Int64.toInt16(-1i64) == Some(-1i16)
 
-//    @test
-//    def toInt1604(): Bool = Int64.toInt16(9223372036854775807i64) == ??
+    @test
+    def toInt1604(): Bool = Int64.toInt16(9223372036854775807i64) == None
 
-//    @test
-//    def toInt1605(): Bool = Int64.toInt16(-9223372036854775808i64) == ??
+    @test
+    def toInt1605(): Bool = Int64.toInt16(-9223372036854775808i64) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt3201(): Bool = Int64.toInt32(0i64) == 0
+    def toInt3201(): Bool = Int64.toInt32(0i64) == Some(0)
 
     @test
-    def toInt3202(): Bool = Int64.toInt32(1i64) == 1
+    def toInt3202(): Bool = Int64.toInt32(1i64) == Some(1)
 
     @test
-    def toInt3203(): Bool = Int64.toInt32(-1i64) == -1
+    def toInt3203(): Bool = Int64.toInt32(-1i64) == Some(-1)
 
-//    @test
-//    def toInt3204(): Bool = Int64.toInt32(9223372036854775807i64) == ??
+    @test
+    def toInt3204(): Bool = Int64.toInt32(9223372036854775807i64) == None
 
-//    @test
-//    def toInt3205(): Bool = Int64.toInt32(-9223372036854775808i64) == ??
+    @test
+    def toInt3205(): Bool = Int64.toInt32(-9223372036854775808i64) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toBigInt                                                                //

@@ -255,22 +255,31 @@ namespace Int64 {
     }
 
     /// Narrowing!
-    pub def toInt8(x: Int64): Int8 =
+    pub def toInt8(x: Int64): Option[Int8] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.byteValue();
-        valueOf(x).byteValue() as & Pure
+        if (x < Int8.toInt64(Int8.minValue()) || x > Int8.toInt64(Int8.maxValue()))
+            None
+        else
+            Some(valueOf(x).byteValue()) as & Pure
 
     /// Narrowing!
-    pub def toInt16(x: Int64): Int16 =
+    pub def toInt16(x: Int64): Option[Int16] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.shortValue();
-        valueOf(x).shortValue() as & Pure
+        if (x < Int16.toInt64(Int16.minValue()) || x > Int16.toInt64(Int16.maxValue()))
+            None
+        else
+            Some(valueOf(x).shortValue()) as & Pure
 
     /// Narrowing!
-    pub def toInt32(x: Int64): Int32 =
+    pub def toInt32(x: Int64): Option[Int32] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.intValue();
-        valueOf(x).intValue() as & Pure
+        if (x < Int32.toInt64(Int32.minValue()) || x > Int32.toInt64(Int32.maxValue()))
+            None
+        else
+            Some(valueOf(x).intValue()) as & Pure
 
     pub def toBigInt(x: Int64): BigInt =
         import java.lang.Long:valueOf(Int64) as i64ValueOf;

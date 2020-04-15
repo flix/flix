@@ -98,34 +98,62 @@ namespace BigInt {
     }
 
     /// Narrowing!
-    pub def toInt8(x: BigInt): Int8 =
-        import java.lang.Number.byteValue();
-        byteValue(x as ##java.lang.Number) as & Pure
+    pub def toInt8(x: BigInt): Option[Int8] =
+        import java.math.BigInteger.byteValueExact();
+        try {
+            Some(byteValueExact(x)) as & Pure
+        } catch {
+            case _ : ##java.lang.ArithmeticException => None
+        }
 
     /// Narrowing!
-    pub def toInt16(x: BigInt): Int16 =
-        import java.lang.Number.shortValue();
-        shortValue(x as ##java.lang.Number) as & Pure
+    pub def toInt16(x: BigInt): Option[Int16] =
+        import java.math.BigInteger.shortValueExact();
+        try {
+            Some(shortValueExact(x)) as & Pure
+        } catch {
+            case _ : ##java.lang.ArithmeticException => None
+        }
 
     /// Narrowing!
-    pub def toInt32(x: BigInt): Int32 =
-        import java.lang.Number.intValue();
-        intValue(x as ##java.lang.Number) as & Pure
+    pub def toInt32(x: BigInt): Option[Int32] =
+        import java.math.BigInteger.intValueExact();
+        try {
+            Some(intValueExact(x)) as & Pure
+        } catch {
+            case _ : ##java.lang.ArithmeticException => None
+        }
 
     /// Narrowing!
-    pub def toInt64(x: BigInt): Int64 =
-        import java.lang.Number.longValue();
-        longValue(x as ##java.lang.Number) as & Pure
+    pub def toInt64(x: BigInt): Option[Int64] =
+        import java.math.BigInteger.longValueExact();
+        try {
+            Some(longValueExact(x)) as & Pure
+        } catch {
+            case _ : ##java.lang.ArithmeticException => None
+        }
 
     /// Narrowing!
-    pub def toFloat32(x: BigInt): Float32 =
-        import java.lang.Number.floatValue();
-        floatValue(x as ##java.lang.Number) as & Pure
+    pub def toFloat32(x: BigInt): Option[Float32] =
+        import new java.math.BigDecimal(BigInt) as newBigDecimal;
+        import java.math.BigDecimal.floatValue();
+        let xd = newBigDecimal(x) as & Pure;
+        let d = xd.floatValue() as & Pure;
+        if (Float32.isInfinite(d))
+            None
+        else
+            Some(d)
 
     /// Narrowing!
-    pub def toFloat64(x: BigInt): Float64 =
-        import java.lang.Number.doubleValue();
-        doubleValue(x as ##java.lang.Number) as & Pure
+    pub def toFloat64(x: BigInt): Option[Float64] =
+        import new java.math.BigDecimal(BigInt) as newBigDecimal;
+        import java.math.BigDecimal.doubleValue();
+        let xd = newBigDecimal(x) as & Pure;
+        let d = xd.doubleValue() as & Pure;
+        if (Float64.isInfinite(d))
+            None
+        else
+            Some(d)
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints: Simplifications                                                  //
