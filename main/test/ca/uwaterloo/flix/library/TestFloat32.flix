@@ -239,13 +239,13 @@ namespace TestFloat32 {
     // toInt8                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt801(): Bool = Float32.toInt8(0.0f32) == 0i8
+    def toInt801(): Bool = Float32.toInt8(0.0f32) == Some(0i8)
 
     @test
-    def toInt802(): Bool = Float32.toInt8(1.0f32) == 1i8
+    def toInt802(): Bool = Float32.toInt8(1.0f32) == Some(1i8)
 
     @test
-    def toInt803(): Bool = Float32.toInt8(-1.0f32) == -1i8
+    def toInt803(): Bool = Float32.toInt8(-1.0f32) == Some(-1i8)
 
 //    @test
 //    def toInt804(): Bool = Float32.toInt8(3498457932459234592873452983453245ii) == ??
@@ -257,13 +257,13 @@ namespace TestFloat32 {
     // toInt16                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt1601(): Bool = Float32.toInt16(0.0f32) == 0i16
+    def toInt1601(): Bool = Float32.toInt16(0.0f32) == Some(0i16)
 
     @test
-    def toInt1602(): Bool = Float32.toInt16(1.0f32) == 1i16
+    def toInt1602(): Bool = Float32.toInt16(1.0f32) == Some(1i16)
 
     @test
-    def toInt1603(): Bool = Float32.toInt16(-1.0f32) == -1i16
+    def toInt1603(): Bool = Float32.toInt16(-1.0f32) == Some(-1i16)
 
 //    @test
 //    def toInt1604(): Bool = Float32.toInt16(3498457932459234592873452983453245ii) == ??
@@ -275,13 +275,13 @@ namespace TestFloat32 {
     // toInt32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt3201(): Bool = Float32.toInt32(0.0f32) == 0
+    def toInt3201(): Bool = Float32.toInt32(0.0f32) == Some(0)
 
     @test
-    def toInt3202(): Bool = Float32.toInt32(1.0f32) == 1
+    def toInt3202(): Bool = Float32.toInt32(1.0f32) == Some(1)
 
     @test
-    def toInt3203(): Bool = Float32.toInt32(-1.0f32) == -1
+    def toInt3203(): Bool = Float32.toInt32(-1.0f32) == Some(-1)
 
 //    @test
 //    def toInt3204(): Bool = Float32.toInt32(3498457932459234592873452983453245ii) == ??
@@ -293,13 +293,13 @@ namespace TestFloat32 {
     // toInt64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toInt6401(): Bool = Float32.toInt64(0.0f32) == 0i64
+    def toInt6401(): Bool = Float32.toInt64(0.0f32) == Some(0i64)
 
     @test
-    def toInt6402(): Bool = Float32.toInt64(1.0f32) == 1i64
+    def toInt6402(): Bool = Float32.toInt64(1.0f32) == Some(1i64)
 
     @test
-    def toInt6403(): Bool = Float32.toInt64(-1.0f32) == -1i64
+    def toInt6403(): Bool = Float32.toInt64(-1.0f32) == Some(-1i64)
 
 //    @test
 //    def toInt6404(): Bool = Float32.toInt64(3498457932459234592873452983453245ii) == ??
@@ -311,19 +311,19 @@ namespace TestFloat32 {
     // toBigInt                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def toFloat3201(): Bool = Float32.toBigInt(0.0f32) == 0ii
+    def toBigInt01(): Bool = Float32.toBigInt(0.0f32) == Some(0ii)
 
     @test
-    def toFloat3202(): Bool = Float32.toBigInt(1.0f32) == 1ii
+    def toBigInt02(): Bool = Float32.toBigInt(1.0f32) == Some(1ii)
 
     @test
-    def toFloat3203(): Bool = Float32.toBigInt(-1.0f32) == -1ii
+    def toBigInt03(): Bool = Float32.toBigInt(-1.0f32) == Some(-1ii)
 
 //    @test
-//    def toFloat3204(): Bool = Float32.toBigInt(3498457932459234592873452983453245ii) == ??
+//    def toBigInt04(): Bool = Float32.toBigInt(3498457932459234592873452983453245ii) == ??
 
 //    @test
-//    def toFloat3205(): Bool = Float32.toBigInt(-3498457932459234592873452983453245ii) == ??
+//    def toBigInt05(): Bool = Float32.toBigInt(-3498457932459234592873452983453245ii) == ??
 
     /////////////////////////////////////////////////////////////////////////////
     // toFloat64                                                               //

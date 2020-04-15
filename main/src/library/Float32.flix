@@ -151,6 +151,7 @@ namespace Float32 {
     pub def toBigInt(x: Float32): Option[BigInt] =
         Float64.toBigInt(toFloat64(x))
 
+    // Widening
     pub def toFloat64(x: Float32): Float64 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.doubleValue();
