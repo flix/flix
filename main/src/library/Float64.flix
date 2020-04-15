@@ -123,40 +123,61 @@ namespace Float64 {
         case _: ##java.lang.NumberFormatException => Err("Float64.fromString")
     }
 
-    /// Narrowing!
-    pub def toInt8(x: Float64): Int8 =
+
+    /// Narrowing! plus NaN, infinity
+    pub def toInt8(x: Float64): Option[Int8] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.byteValue();
-        valueOf(x).byteValue() as & Pure
+        if (x < Int8.toFloat64(Int8.minValue()) || x > Int8.toFloat64(Int8.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).byteValue()) as & Pure
 
     /// Narrowing!
-    pub def toInt16(x: Float64): Int16 =
+    pub def toInt16(x: Float64): Option[Int16] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.shortValue();
-        valueOf(x).shortValue() as & Pure
+        if (x < Int16.toFloat64(Int16.minValue()) || x > Int16.toFloat64(Int16.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).shortValue()) as & Pure
 
     /// Narrowing!
-    pub def toInt32(x: Float64): Int32 =
+    pub def toInt32(x: Float64): Option[Int32] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.intValue();
-        valueOf(x).intValue() as & Pure
+        if (x < Int32.toFloat64(Int32.minValue()) || x > Int32.toFloat64(Int32.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).intValue()) as & Pure
 
     /// Narrowing!
-    pub def toInt64(x: Float64): Int64 =
+    pub def toInt64(x: Float64): Option[Int64] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.longValue();
-        valueOf(x).longValue() as & Pure
+        if (x < Int64.toFloat64(Int64.minValue()) || x > Int64.toFloat64(Int64.maxValue()) || isNan(x) || isInfinite(x))
+            None
+        else
+            Some(valueOf(x).longValue()) as & Pure
+
+    /// Narrowing! ??? Nan, infinity...
+    pub def toBigInt(x: Float64): Option[BigInt] =
+        import java.math.BigDecimal:valueOf(Float64);
+        import java.math.BigDecimal.toBigInteger();
+        try {
+            Some(x.valueOf().toBigInteger()) as & Pure
+        } catch {
+            // Catch NaN, isInfinite.
+            case _: ##java.lang.NumberFormatException => None
+        }
 
     /// Narrowing!
-    pub def toBigInt(x: Float64): BigInt =
-        import java.lang.Double:valueOf(Float64) as f64ValueOf;
-        import java.lang.Double.longValue();
-        import java.math.BigInteger:valueOf(Int64) as asBigInt;
-        f64ValueOf(x).longValue().asBigInt() as & Pure
-
-    /// Narrowing!
-    pub def toFloat32(x: Float64): Float32 =
+    pub def toFloat32(x: Float64): Option[Float32] =
         import java.lang.Double:valueOf(Float64);
         import java.lang.Double.floatValue();
-        valueOf(x).floatValue() as & Pure
+        if (x < Float32.toFloat64(Float32.minValue()) || x > Float32.toFloat64(Float32.maxValue()))
+            None
+        else
+            Some(valueOf(x).floatValue()) as & Pure
+
 }
