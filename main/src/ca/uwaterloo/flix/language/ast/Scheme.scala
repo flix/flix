@@ -51,14 +51,11 @@ object Scheme {
     if (sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty) {
       sc1.base == sc2.base
     } else {
-      // TODO: Is this correct?
       val tpe1 = instantiate(sc1)
       val tpe2 = instantiate(sc2)
-      Unification.unifyTypes(tpe2, tpe1, matchRight = false) match {
-        case Result.Ok(subst) =>
-         true
-        case Result.Err(_) =>
-          false
+      Unification.unifyTypes(tpe2, tpe1, unifyRight = false) match {
+        case Result.Ok(_) => true
+        case Result.Err(_) => false
       }
     }
   }

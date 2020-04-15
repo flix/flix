@@ -234,7 +234,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             val inferredScheme = Scheme.generalize(resultType, subst)
             val leq = Scheme.lessThanEqual(declaredScheme, inferredScheme)
             if(!leq) {
-              println(s"${defn0.sym}: mismatch. Declared: $declaredScheme, Inferred: $inferredScheme")
+              return Err(TypeError.GeneralizationError(declaredScheme,inferredScheme, defn0.loc))
             }
 
             val exp = reassembleExp(defn0.exp, program, subst)
