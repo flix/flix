@@ -7,3 +7,5 @@
 target
 .ensime*
 /*.flix
+/build
+/.gradle
