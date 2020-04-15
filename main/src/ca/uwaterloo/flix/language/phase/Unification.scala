@@ -297,6 +297,8 @@ object Unification {
       * Unifies the two given types `tpe1` and `tpe2`.
       */
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+      case (x: Type.Var, y: Type.Var) if x.id == y.id => Result.Ok(Substitution.empty)
+
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
       case (_, x: Type.Var) if unifyRight => unifyVar(x, tpe1)
