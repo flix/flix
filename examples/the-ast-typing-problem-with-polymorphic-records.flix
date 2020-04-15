@@ -22,7 +22,7 @@ enum Type {
 def typeOf[r](e: Exp[{tpe: Type | r}]): Type = match e with {
     case True   => TBool
     case False  => TBool
-    case Cst(i) => TInt
+    case Cst(_) => TInt
     case Add(i) => i.tpe
     case Ite(i) => i.tpe
 }
@@ -59,12 +59,12 @@ def typeCheck2[r](e: Exp[r]): Exp[{tpe: Type | r}] = match e with {
     case False  => False
     case Cst(i) => Cst({ +tpe = TInt | { value = i.value | i}})
     case Add(i) =>
-        let e1 = typeCheck(i.exp1);
-        let e2 = typeCheck(i.exp2);
+        let e1 = typeCheck2(i.exp1);
+        let e2 = typeCheck2(i.exp2);
             Add({ +tpe = TInt | {exp1 = e1, exp2 = e2 | i} })
     case Ite(i) =>
-      let e1 = typeCheck(i.exp1);
-      let e2 = typeCheck(i.exp2);
-      let e3 = typeCheck(i.exp2);
+      let e1 = typeCheck2(i.exp1);
+      let e2 = typeCheck2(i.exp2);
+      let e3 = typeCheck2(i.exp3);
         Ite({ +tpe = TInt | {exp1 = e1, exp2 = e2, exp3 = e3 | i} })
 }
