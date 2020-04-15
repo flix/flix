@@ -47,4 +47,29 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[TypeError](new Flix().addStr(input).compile())
   }
 
+  test("TestLeq04") {
+    val input =
+      """
+        |def f(): Result[Int, a] = Err(21)
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+  test("TestLeq05") {
+    val input =
+      """
+        |def f(): a -> a = x -> 21
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+  test("TestLeq06") {
+    val input =
+      """
+        |def f(): a -> a = (x: Int32) -> x
+      """.stripMargin
+    expectError[TypeError](new Flix().addStr(input).compile())
+  }
+
+
 }
