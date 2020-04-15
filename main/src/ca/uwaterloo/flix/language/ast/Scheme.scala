@@ -36,10 +36,10 @@ object Scheme {
     val freeVars = tpe0.typeVars
 
     // Compute all the bound type variables in the type environment `subst0`.
-    val boundVars = subst0.m
+    val boundVars = subst0.m // TODO: compute the free variables in the context.
 
     // Compute the variables that may be quantified.
-    val quantifiers = freeVars -- boundVars.keySet // TODO: Is this correct?
+    val quantifiers = freeVars -- boundVars.keySet
 
     Scheme(quantifiers.toList, tpe0)
   }
@@ -48,11 +48,14 @@ object Scheme {
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme)(implicit flix: Flix): Boolean = {
-    if (sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty) {
+    if (sc1.quantifiers.isEmpty && sc2.quantifiers.isEmpty) { // TODO: too optimistic... boolean equival.
       sc1.base == sc2.base
     } else {
-      val tpe1 = instantiate(sc1)
-      val tpe2 = instantiate(sc2) // TODO: instantiate with existential variables?
+      // TODO: Instantiated variables are flexible, already present variables should become rigid.
+      val tpe1 = instantiate(sc1) // TODO: Want: fresh ones are flexible, old ones are rigid.
+      val tpe2 = instantiate(sc2) // TODO: Everything is rigid (both fresh and old).
+      // TODO. 3 in Typer, everything must be flexible.
+      // TODO: By default fresh type variables are flexible. Also in SVE.
       Unification.unifyTypes(tpe2, tpe1, unifyRight = false) match {
         case Result.Ok(_) => true
         case Result.Err(_) => false
