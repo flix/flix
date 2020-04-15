@@ -39,12 +39,12 @@ object Scheme {
     case object Flexible extends InstantiateMode
 
     /**
-      * Instantiated and free variables all are rigid.
+      * Instantiated variables are rigid. Free variables are made rigid (regardless of their prior mode).
       */
     case object Rigid extends InstantiateMode
 
     /**
-      * Instantiated variables are flexible. Present variables are made rigid.
+      * Instantiated variables are flexible. Free variables are made rigid (regardless of their prior mode).
       */
     case object Mixed extends InstantiateMode
 
@@ -62,7 +62,7 @@ object Scheme {
     //
     val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) =>
-        // TODO: DOC
+        // Determine the rigidity of the fresh type variable.
         val m = mode match {
           case InstantiateMode.Flexible => VarMode.Flexible
           case InstantiateMode.Rigid => VarMode.Rigid
@@ -77,11 +77,11 @@ object Scheme {
     def visitType(t0: Type): Type = t0 match {
       case Type.Var(x, k, m) => freshVars.get(x) match {
         case None =>
-          // TODO: DOC
+          // Determine the rigidity of the free type variable.
           val m1 = mode match {
             case InstantiateMode.Flexible => m
-            case InstantiateMode.Mixed => VarMode.Rigid
             case InstantiateMode.Rigid => VarMode.Rigid
+            case InstantiateMode.Mixed => VarMode.Rigid
           }
           Type.Var(x, k, m1)
         case Some(tvar) => tvar
@@ -127,8 +127,6 @@ object Scheme {
       // TODO: Instantiated variables are flexible, already present variables should become rigid.
       val tpe1 = instantiate(sc1, InstantiateMode.Mixed) // TODO: Want: fresh ones are flexible, old ones are rigid.
       val tpe2 = instantiate(sc2, InstantiateMode.Rigid) // TODO: Everything is rigid (both fresh and old).
-      // TODO. 3 in Typer, everything must be flexible.
-      // TODO: By default fresh type variables are flexible. Also in SVE.
       Unification.unifyTypes(tpe1, tpe2) match {
         case Result.Ok(_) => true
         case Result.Err(_) => false
