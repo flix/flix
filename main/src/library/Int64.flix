@@ -254,7 +254,13 @@ namespace Int64 {
         case _: ##java.lang.NumberFormatException => Err("Int64.fromString")
     }
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int8]`.
+    ///
+    /// If the numeric value of `x` can be represented exactly return `Some(x as Int8)`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int8 return `None`.
+    ///
     pub def toInt8(x: Int64): Option[Int8] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.byteValue();
@@ -263,7 +269,13 @@ namespace Int64 {
         else
             Some(valueOf(x).byteValue()) as & Pure
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int16]`.
+    ///
+    /// If the numeric value of `x` can be represented exactly return `Some(x as Int16)`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int16 return `None`.
+    ///
     pub def toInt16(x: Int64): Option[Int16] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.shortValue();
@@ -272,7 +284,13 @@ namespace Int64 {
         else
             Some(valueOf(x).shortValue()) as & Pure
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int32]`.
+    ///
+    /// If the numeric value of `x` can be represented exactly return `Some(x as Int32)`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int32 return `None`.
+    ///
     pub def toInt32(x: Int64): Option[Int32] =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.intValue();
@@ -280,18 +298,32 @@ namespace Int64 {
             None
         else
             Some(valueOf(x).intValue()) as & Pure
-
+    ///
+    /// Convert `x` to a BigInt.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
     pub def toBigInt(x: Int64): BigInt =
         import java.lang.Long:valueOf(Int64) as i64ValueOf;
         import java.lang.Long.longValue();
         import java.math.BigInteger:valueOf(Int64) as asBigInt;
         i64ValueOf(x).longValue().asBigInt() as & Pure
 
+    ///
+    /// Convert `x` to a Float32.
+    ///
+    /// Warning: The numeric value of `x` may lose precision.
+    ///
     pub def toFloat32(x: Int64): Float32 =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.floatValue();
         valueOf(x).floatValue() as & Pure
 
+    ///
+    /// Convert `x` to a Float32.
+    ///
+    /// Warning: The numeric value of `x` may lose precision.
+    ///
     pub def toFloat64(x: Int64): Float64 =
         import java.lang.Long:valueOf(Int64);
         import java.lang.Long.doubleValue();

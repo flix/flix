@@ -111,7 +111,13 @@ namespace Float32 {
          case _: ##java.lang.NumberFormatException => Err("Float32.fromString")
      }
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int8]`.
+    ///
+    /// If the numeric value of `x` is within the range of Int8 return `Some(x as Int8)`, rounding `x` towards 0`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int8, or it is NaN or infinity, return `None`.
+    ///
     pub def toInt8(x: Float32): Option[Int8] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.byteValue();
@@ -120,7 +126,13 @@ namespace Float32 {
         else
             Some(valueOf(x).byteValue()) as & Pure
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int16]`.
+    ///
+    /// If the numeric value of `x` is within the range of Int16 return `Some(x as Int16)`, rounding `x` towards 0`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int16, or it is NaN or infinity, return `None`.
+    ///
     pub def toInt16(x: Float32): Option[Int16] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.shortValue();
@@ -129,7 +141,13 @@ namespace Float32 {
         else
             Some(valueOf(x).shortValue()) as & Pure
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int32]`.
+    ///
+    /// If the numeric value of `x` is within the range of Int32 return `Some(x as Int32)`, rounding `x` towards 0`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int32, or it is NaN or infinity, return `None`.
+    ///
     pub def toInt32(x: Float32): Option[Int32] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.intValue();
@@ -138,7 +156,13 @@ namespace Float32 {
         else
             Some(valueOf(x).intValue()) as & Pure
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int64]`.
+    ///
+    /// If the numeric value of `x` is within the range of Int64 return `Some(x as Int64)`, rounding `x` towards 0`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int64, or it is NaN or infinity, return `None`.
+    ///
     pub def toInt64(x: Float32): Option[Int64] =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.longValue();
@@ -147,11 +171,21 @@ namespace Float32 {
         else
             Some(valueOf(x).longValue()) as & Pure
 
-    /// Narrowing! ??? (NaN, inifinte, ...)
+    ///
+    /// Convert `x` to an `Option[BigInt]`.
+    ///
+    /// If the numeric value of `x` is representable as a BigInt return `Some(x as BigInt)`.
+    ///
+    /// If the value of `x` is NaN or infinity return `None`.
+    ///
     pub def toBigInt(x: Float32): Option[BigInt] =
         Float64.toBigInt(toFloat64(x))
 
-    // Widening
+    ///
+    /// Convert `x` to an Float64.
+    ///
+    /// Warning: the conversion may lose information about both the precision and magnitude of `x`.
+    ///
     pub def toFloat64(x: Float32): Float64 =
         import java.lang.Float:valueOf(Float32);
         import java.lang.Float.doubleValue();

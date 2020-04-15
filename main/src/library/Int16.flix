@@ -258,7 +258,13 @@ namespace Int16 {
         case _: ##java.lang.NumberFormatException => Err("Int16.fromString")
     }
 
-    /// Narrowing!
+    ///
+    /// Convert `x` to an `Option[Int8]`.
+    ///
+    /// If the numeric value of `x` can be represented exactly return `Some(x as Int8)`.
+    ///
+    /// If the numeric value of `x` is outside the range of Int8 return `None`.
+    ///
     pub def toInt8(x: Int16): Option[Int8] =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.byteValue();
@@ -267,27 +273,52 @@ namespace Int16 {
         else
             Some(valueOf(x).byteValue()) as & Pure
 
+    ///
+    /// Convert `x` to a Int32.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
     pub def toInt32(x: Int16): Int32 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.intValue();
         valueOf(x).intValue() as & Pure
 
+    ///
+    /// Convert `x` to a Int64.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
     pub def toInt64(x: Int16): Int64 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.longValue();
         valueOf(x).longValue() as & Pure
 
+    ///
+    /// Convert `x` to a BigInt.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
     pub def toBigInt(x: Int16): BigInt =
         import java.lang.Short:valueOf(Int16) as i16ValueOf;
         import java.lang.Short.longValue();
         import java.math.BigInteger:valueOf(Int64) as asBigInt;
         i16ValueOf(x).longValue().asBigInt() as & Pure
 
+    ///
+    /// Convert `x` to a Float32.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
     pub def toFloat32(x: Int16): Float32 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.floatValue();
         valueOf(x).floatValue() as & Pure
 
+    ///
+    /// Convert `x` to a Float64.
+    ///
+    /// The numeric value of `x` is preserved exactly.
+    ///
     pub def toFloat64(x: Int16): Float64 =
         import java.lang.Short:valueOf(Int16);
         import java.lang.Short.doubleValue();
