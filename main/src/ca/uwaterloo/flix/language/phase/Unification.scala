@@ -261,7 +261,7 @@ object Unification {
     * If `unifyRight` is true then unification is bi-direction.
     * If `unifyRight` is false then only type variables on the left are unified.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type, unifyRight: Boolean = true)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -274,6 +274,11 @@ object Unification {
       // The type variable and type are in fact the same.
       if (x == tpe) {
         return Result.Ok(Substitution.empty)
+      }
+
+      // The type variable is rigid.
+      if (x.mode == Type.VarMode.Rigid) {
+        return Result.Err(UnificationError.OccursCheck(x, tpe)) // TODO: Right error message...
       }
 
       // The type variable occurs inside the type.
@@ -302,7 +307,7 @@ object Unification {
 
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
-      case (_, x: Type.Var) if unifyRight => unifyVar(x, tpe1)
+      case (_, x: Type.Var) => unifyVar(x, tpe1)
 
       case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
 

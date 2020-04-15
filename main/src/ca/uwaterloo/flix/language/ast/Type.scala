@@ -93,7 +93,7 @@ sealed trait Type {
     * Returns the size of `this` type.
     */
   def size: Int = this match {
-    case Type.Var(_, _) => 1
+    case Type.Var(_, _, _) => 1
     case Type.Cst(tc) => 1
     case Type.Arrow(_, eff) => eff.size + 1
     case Type.RecordEmpty => 1
@@ -188,10 +188,20 @@ object Type {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
 
+  // TODO: DOC
+  sealed trait VarMode
+
+  object VarMode {
+    // TODO: DOC
+    case object Rigid extends VarMode
+    // TODO: DOC
+    case object Flexible extends VarMode
+  }
+
   /**
     * A type variable expression.
     */
-  case class Var(id: Int, kind: Kind) extends Type with Ordered[Type.Var] {
+  case class Var(id: Int, kind: Kind, mode: VarMode = VarMode.Flexible) extends Type with Ordered[Type.Var] {
     /**
       * The optional textual name of `this` type variable.
       */
@@ -313,7 +323,8 @@ object Type {
   /**
     * Returns a fresh type variable.
     */
-  def freshTypeVar(k: Kind = Kind.Star)(implicit flix: Flix): Type.Var = Type.Var(flix.genSym.freshId(), k)
+  def freshTypeVar(k: Kind = Kind.Star, m: VarMode = VarMode.Flexible)(implicit flix: Flix): Type.Var =
+    Type.Var(flix.genSym.freshId(), k, m)
 
   /**
     * Returns a fresh type variable of effect kind.
@@ -386,7 +397,7 @@ object Type {
       val args = tpe.typeArguments
 
       base match {
-        case Type.Var(id, kind) =>
+        case Type.Var(id, kind, _) =>
           // Lookup the human-friendly name in `m`.
           m.get(id) match {
             case None =>

@@ -23,7 +23,9 @@ import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
 
-  // TODO: DOC
+  /**
+    * A common super-type to control instantiation.
+    */
   sealed trait InstantiateMode
 
   object InstantiateMode {
@@ -56,14 +58,15 @@ object Scheme {
     // Compute the fresh variables taking the instantiation mode into account.
     //
     val freshVars = baseType.typeVars.foldLeft(Map.empty[Int, Type.Var]) { // TODO: Handle mode.
-      case (macc, tvar) => macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
+      case (macc, tvar) =>
+        macc + (tvar.id -> Type.freshTypeVar(tvar.kind))
     }
 
     /**
       * Replaces every variable occurrence in the given type using the map `freeVars`.
       */
     def visitType(t0: Type): Type = t0 match {
-      case Type.Var(x, k) => freshVars.getOrElse(x, t0) // TODO: Handle mode.
+      case Type.Var(x, k, _) => freshVars.getOrElse(x, t0) // TODO: Handle mode.
       case Type.Cst(tc) => Type.Cst(tc)
       case Type.Arrow(l, eff) => Type.Arrow(l, visitType(eff))
       case Type.RecordEmpty => Type.RecordEmpty
@@ -107,7 +110,7 @@ object Scheme {
       val tpe2 = instantiate(sc2, InstantiateMode.Rigid) // TODO: Everything is rigid (both fresh and old).
       // TODO. 3 in Typer, everything must be flexible.
       // TODO: By default fresh type variables are flexible. Also in SVE.
-      Unification.unifyTypes(tpe2, tpe1, unifyRight = false) match {
+      Unification.unifyTypes(tpe2, tpe1) match {
         case Result.Ok(_) => true
         case Result.Err(_) => false
       }

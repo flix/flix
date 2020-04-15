@@ -876,7 +876,7 @@ object Stratifier extends Phase[Root, Root] {
     * Returns the set of predicate symbols that appears in the given row type `tpe`.
     */
   private def predicateSymbolsOf(tpe: Type): Set[String] = tpe match {
-    case Type.Var(_, _) => Set.empty
+    case Type.Var(_, _, _) => Set.empty
     case Type.SchemaEmpty => Set.empty
     case Type.SchemaExtend(sym, _, rest) => predicateSymbolsOf(rest) + sym
     case _ => throw InternalCompilerException(s"Unexpected non-schema type: '$tpe'.")

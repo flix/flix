@@ -23,7 +23,7 @@ object FormatType {
     * Returns the types of the predicate symbols in a schema type.
     */
   private def getSchemaTypes(tpe: Type): List[Type] = tpe match {
-    case Type.Var(_, _) => Nil
+    case Type.Var(_, _, _) => Nil
     case Type.SchemaEmpty => Nil
     case Type.SchemaExtend(sym, tpe, rest) => tpe :: getSchemaTypes(rest)
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
