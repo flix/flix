@@ -23,6 +23,17 @@ import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
 
+  // TODO: DOC
+  sealed trait InstantiateMode
+
+  object InstantiateMode {
+    case object EverythingRigid extends InstantiateMode
+    case object EverythingFlexible extends InstantiateMode
+
+    //Instantiated variables are flexible, already present variables should become rigid.
+    case object Mixed extends InstantiateMode
+  }
+
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
