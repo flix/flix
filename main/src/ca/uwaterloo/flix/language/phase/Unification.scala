@@ -257,8 +257,11 @@ object Unification {
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
+    *
+    * If `unifyRight` is true then unification is bi-direction.
+    * If `unifyRight` is false then only type variables on the left are unified.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyTypes(tpe1: Type, tpe2: Type, unifyRight: Boolean = true)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -296,7 +299,7 @@ object Unification {
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
-      case (_, x: Type.Var) => unifyVar(x, tpe1)
+      case (_, x: Type.Var) if unifyRight => unifyVar(x, tpe1)
 
       case (Type.Cst(TypeConstructor.Native(clazz1)), Type.Cst(TypeConstructor.Native(clazz2))) =>
         if (clazz1 == clazz2)
@@ -465,7 +468,7 @@ object Unification {
         val t0 = Substitution.singleton(x, False)(eff)
         val t1 = Substitution.singleton(x, True)(eff)
         val (se, cc) = successiveVariableElimination(mkAnd(t0, t1), xs)
-        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(x, mkNot(se(t1)))))
+        val st = Substitution.singleton(x, mkOr(se(t0), mkAnd(Type.freshTypeVar(), mkNot(se(t1)))))
         (st ++ se, cc)
     }
 
