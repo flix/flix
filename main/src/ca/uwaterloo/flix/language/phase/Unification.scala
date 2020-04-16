@@ -272,55 +272,31 @@ object Unification {
     */
   def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
 
-    // NB: Uses a closure to capture the source location `loc`.
-
     /**
-      * Unifies the given variable `x` with the given type `tpe`.
-      *
-      * Performs the so-called occurs-check to ensure that the substitution is kind-preserving.
+      * Unifies the given variable `x` with the given non-variable type `tpe`.
       */
     def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
-      // TODO: Fix it.
+      // NB: The `tpe` type must be a non-var.
 
-      // Check if `tpe` is a type variable.
-      if (tpe.isInstanceOf[Type.Var]) {
-        val y = tpe.asInstanceOf[Type.Var]
-        // Check if the two type variables are the same.
-        if (x.id == y.id) {
-          // The type variables are exactly the same.
-          return Result.Ok(Substitution.empty)
-        }
-        // If x is non-rigid it can be unified.
-        if (x.rigidity == Rigidity.Flexible) {
-          return Result.Ok(Substitution.singleton(x, y))
-        }
-        // If y is non-rigid it can be unified.
-        if (y.rigidity == Rigidity.Flexible) {
-          return Result.Ok(Substitution.singleton(y, x))
-        }
-        // If x and y are rigid report an error.
-        if (x.rigidity == Rigidity.Rigid && y.rigidity == Rigidity.Rigid) {
-          return Result.Err(UnificationError.RigidVar(x, tpe))
-        }
-      }
-
-      // If x is rigid report an error.
+      // Check if `x` is rigid.
       if (x.rigidity == Rigidity.Rigid) {
         return Result.Err(UnificationError.RigidVar(x, tpe))
       }
 
-      // The type variable occurs inside the type.
+      // Check if `x` occurs within `tpe`.
       if (tpe.typeVars contains x) {
         return Result.Err(UnificationError.OccursCheck(x, tpe))
       }
 
-      // TODO: Kinds disabled for now. Requires changed to the previous phase to associated type variables with their kinds.
+      // Check if the kind of `x` matches the kind of `tpe`.
+
       //if (x.kind != tpe.kind) {
       //  return Result.Err(TypeError.KindError())
       //}
 
       // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
       if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
+        // TODO: Get rid of this insanity.
         tpe.asInstanceOf[Type.Var].setText(x.getText.get)
       }
       Result.Ok(Substitution.singleton(x, tpe))
@@ -331,7 +307,18 @@ object Unification {
       */
     // NB: The order of cases has been determined by code coverage analysis.
     def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
-      case (x: Type.Var, y: Type.Var) if x.id == y.id => Result.Ok(Substitution.empty)
+      case (x: Type.Var, y: Type.Var) =>
+        // Case 1: Check if the type variables are syntactically the same.
+        if (x.id == y.id && x.kind == y.kind)
+          return Result.Ok(Substitution.empty)
+        // Case 2: The left type variable is flexible.
+        if (x.rigidity == Rigidity.Flexible)
+          return Result.Ok(Substitution.singleton(x, y))
+        // Case 3: The right type variable is flexible.
+        if (y.rigidity == Rigidity.Flexible)
+          return Result.Ok(Substitution.singleton(y, x))
+        // Case 4: Both type variables are rigid.
+        Result.Err(UnificationError.RigidVar(x, y))
 
       case (x: Type.Var, _) => unifyVar(x, tpe2)
 
