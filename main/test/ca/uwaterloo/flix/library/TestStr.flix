@@ -1332,6 +1332,34 @@ def dropWhileRight07(): Bool = String.dropWhileRight(Char.isUpperCase, "AB") == 
 def dropWhileRight08(): Bool = String.dropWhileRight(Char.isUpperCase, "ABcDefgHIjK") == "ABcDefgHIj"
 
 /////////////////////////////////////////////////////////////////////////////
+// dropWhileAround                                                         //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def dropWhileAround01(): Bool = String.dropWhileRight(Char.isUpperCase, "") == ""
+
+@test
+def dropWhileAround02(): Bool = String.dropWhileAround(Char.isUpperCase, "a") == "a"
+
+@test
+def dropWhileAround03(): Bool = String.dropWhileAround(Char.isUpperCase, "A") == ""
+
+@test
+def dropWhileAround04(): Bool = String.dropWhileAround(Char.isUpperCase, "ab") == "ab"
+
+@test
+def dropWhileAround05(): Bool = String.dropWhileAround(Char.isUpperCase, "aB") == "a"
+
+@test
+def dropWhileAround06(): Bool = String.dropWhileAround(Char.isUpperCase, "Ab") == "b"
+
+@test
+def dropWhileAround07(): Bool = String.dropWhileAround(Char.isUpperCase, "AB") == ""
+
+@test
+def dropWhileAround08(): Bool = String.dropWhileAround(Char.isUpperCase, "ABcDefgHIjK") == "cDefgHIj"
+
+/////////////////////////////////////////////////////////////////////////////
 // splitAt                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2858,6 +2886,51 @@ def splitOn10(): Bool = String.splitOn("a:b::c", "::") == "a:b" :: "c" :: Nil
 @test
 def splitOn11(): Bool = String.splitOn("a::b:c", "::") == "a" :: "b:c" :: Nil
 
+/////////////////////////////////////////////////////////////////////////////
+// toChunks                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def toChunks01(): Bool = String.toChunks(0, "") == Nil
+
+@test
+def toChunks02(): Bool = String.toChunks(0, "aaa") == Nil
+
+@test
+def toChunks03(): Bool = String.toChunks(3, "") == Nil
+
+@test
+def toChunks04(): Bool = String.toChunks(3, "a") == "a" :: Nil
+
+@test
+def toChunks05(): Bool = String.toChunks(3, "aa") == "aa" :: Nil
+
+@test
+def toChunks06(): Bool = String.toChunks(3, "aaa") == "aaa" :: Nil
+
+@test
+def toChunks07(): Bool = String.toChunks(3, "aaab") == "aaa" :: "b" :: Nil
+
+@test
+def toChunks08(): Bool = String.toChunks(3, "aaabb") == "aaa" :: "bb" :: Nil
+
+@test
+def toChunks09(): Bool = String.toChunks(3, "aaabbb") == "aaa" :: "bbb" :: Nil
+
+@test
+def toChunks10(): Bool = String.toChunks(3, "aaabbbc") == "aaa" :: "bbb" :: "c" :: Nil
+
+@test
+def toChunks11(): Bool = String.toChunks(1, "aaabbbc") == "a" :: "a" :: "a" :: "b" :: "b" :: "b" :: "c" :: Nil
+
+@test
+def toChunks12(): Bool = String.toChunks(2, "aaabbbc") == "aa" :: "ab" :: "bb" :: "c" :: Nil
+
+@test
+def toChunks13(): Bool = String.toChunks(4, "aaabbbc") == "aaab" :: "bbc" :: Nil
+
+@test
+def toChunks14(): Bool = String.toChunks(10, "aaabbbc") == "aaabbbc" :: Nil
 
 }
 

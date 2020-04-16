@@ -384,13 +384,13 @@ namespace String {
     ///
     /// The function `f` must be pure.
     ///
-    pub def findIndices(f: a -> Bool, s: String): List[Int32] =
+    pub def findIndices(f: Char -> Bool, s: String): List[Int32] =
         findIndicesHelper(f, s, length(s), 0)
 
     ///
     /// Helper function for `findIndices`.
     ///
-    def findIndicesHelper(f: a -> Bool, s: String, len: Int32, i: Int32): List[Int32] =
+    def findIndicesHelper(f: Char -> Bool, s: String, len: Int32, i: Int32): List[Int32] =
         if (i >= len)
             Nil
         else {
@@ -502,7 +502,7 @@ namespace String {
     pub def dropWhileLeft(f: Char -> Bool, s: String): String =
         match findIndexOfLeft(x -> !(f(x)), s) {
             case None => ""
-            case Some(i) => drop(i, s)
+            case Some(i) => sliceRight(s, i)
         }
 
     ///
@@ -512,7 +512,19 @@ namespace String {
     pub def dropWhileRight(f: Char -> Bool, s: String): String =
         match findIndexOfRight(x -> !(f(x)), s) {
             case None => ""
-            case Some(i) => slice(s, 0, i+1)
+            case Some(i) => sliceLeft(s, i + 1)     // must include i
+        }
+
+    ///
+    /// Returns the middle of string `s` after dropping all the characters
+    /// from both ends that satisfy the predicate `f`.
+    ///
+    pub def dropWhileAround(f: Char -> Bool, s: String): String =
+        match (findIndexOfLeft(x -> !(f(x)), s), findIndexOfRight(x -> !(f(x)), s)) {
+            case (None, None) => ""
+            case (Some(l), None) => sliceRight(s, l)
+            case (None, Some(r)) => sliceLeft(s, r)
+            case (Some(l), Some(r)) => slice(s, l, r + 1)
         }
 
     ///
@@ -609,14 +621,18 @@ namespace String {
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     pub def unfold(f: b -> Option[(Char, b)], x: b) : String =
-        unfoldHelper(f, x) |> List.toString
+        let sb = StringBuilder.new() as & Pure;
+        unfoldHelper(f, sb, x) as & Pure
 
     ///
     /// Helper function for `unfold`.
     ///
-    def unfoldHelper(f: b -> Option[(Char, b)], x: b) : List[Char] = match f(x) {
-        case None => Nil
-        case Some(c, st1) => c :: unfoldHelper(f, st1)
+    def unfoldHelper(f: b -> Option[(Char, b)], sb: StringBuilder, x: b) : String & Impure = match f(x) {
+        case None => StringBuilder.toString(sb)
+        case Some(c, st1) => {
+            StringBuilder.appendChar!(sb, c);
+            unfoldHelper(f, sb, st1)
+        }
     }
 
     ///
@@ -1105,6 +1121,32 @@ namespace String {
             let ix = s.lastIndexOf(sub, offset) as & Pure;
             if (ix < 0) None else Some(ix)
         }
+
+    ///
+    /// Split the string `s` into chunks of length `k`, the last chunk may be smaller than `k`.
+    ///
+    /// `k` should be greater than 0.
+    ///
+    pub def toChunks(k: Int32, s: String): List[String] =
+        if (k <= 0)
+            Nil
+        else
+            toChunksHelper(k, s)
+
+    ///
+    /// Helper function for `toChunks`.
+    ///
+    /// Precondition: size > 0
+    ///
+    def toChunksHelper(size: Int32, s: String): List[String] =
+        let len = length(s);
+        let step = pos -> match pos {
+            case i if i >= len          => None
+            case i if i + size >= len   => Some(sliceRight(s, i), len)
+            case i                      => Some(slice(s, i, i + size), i + size)
+        };
+        List.unfold(step, 0)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints                                                                   //
