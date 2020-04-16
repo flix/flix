@@ -23,7 +23,8 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.FinalAst.Term.Head
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Kind, MonoType, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.{Finalize, Unification}
+import ca.uwaterloo.flix.language.phase.Finalize
+import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {

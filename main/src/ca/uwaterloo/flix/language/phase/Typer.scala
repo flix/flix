@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Stratification}
 import ca.uwaterloo.flix.language.ast.Scheme.InstantiateMode
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification.{InferMonad, Substitution}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._

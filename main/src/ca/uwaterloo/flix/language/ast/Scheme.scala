@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.Unification
+import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
