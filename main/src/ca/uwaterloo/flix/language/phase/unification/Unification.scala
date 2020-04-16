@@ -153,76 +153,77 @@ object Unification {
       visit(ts1, ts2)
     }
 
-    /**
-      * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
-      */
-    def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
-      case Type.RecordExtend(label2, fieldType2, restRow2) =>
-        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
-        if (label1 == label2) {
-          // Case 1.1: The labels match, their types must match.
-          for {
-            subst <- unifyTypes(fieldType1, fieldType2)
-          } yield (subst, restRow2)
-        } else {
-          // Case 1.2: The labels do not match, attempt to match with a label further down.
-          rewriteRow(restRow2, label1, fieldType1, originalType) map {
-            case (subst, rewrittenRow) => (subst, Type.RecordExtend(label2, fieldType2, rewrittenRow))
-          }
-        }
-      case tvar: Type.Var =>
-        // Case 2: The row is a type variable.
-        // Introduce a fresh type variable to represent one more level of the row.
-        val restRow2 = Type.freshTypeVar()
-        val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
-        val subst = Substitution.singleton(tvar, type2)
-        Ok((subst, restRow2))
-
-      case Type.RecordEmpty =>
-        // Case 3: The `label` does not exist in the record.
-        Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
-
-      case _ =>
-        // Case 4: The type is not a row.
-        Err(UnificationError.NonRecordType(row2))
-    }
-
-    /**
-      * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
-      */
-    // TODO: This is a copy of the above function. It would be nice if it could be the same function, but the shape of labels is different.
-    def rewriteSchemaRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
-      case Type.SchemaExtend(label2, fieldType2, restRow2) =>
-        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
-        if (label1 == label2) {
-          // Case 1.1: The labels match, their types must match.
-          for {
-            subst <- unifyTypes(fieldType1, fieldType2)
-          } yield (subst, restRow2)
-        } else {
-          // Case 1.2: The labels do not match, attempt to match with a label further down.
-          rewriteSchemaRow(restRow2, label1, fieldType1, originalType) map {
-            case (subst, rewrittenRow) => (subst, Type.SchemaExtend(label2, fieldType2, rewrittenRow))
-          }
-        }
-      case tvar: Type.Var =>
-        // Case 2: The row is a type variable.
-        // Introduce a fresh type variable to represent one more level of the row.
-        val restRow2 = Type.freshTypeVar()
-        val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
-        val subst = Substitution.singleton(tvar, type2)
-        Ok((subst, restRow2))
-
-      case Type.SchemaEmpty =>
-        // Case 3: The `label` does not exist in the record.
-        Err(UnificationError.UndefinedPredicate(label1, fieldType1, originalType))
-
-      case _ =>
-        // Case 4: The type is not a row.
-        Err(UnificationError.NonSchemaType(row2))
-    }
 
     unifyTypes(tpe1, tpe2)
+  }
+
+  /**
+    * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
+    */
+  private def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = row2 match {
+    case Type.RecordExtend(label2, fieldType2, restRow2) =>
+      // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
+      if (label1 == label2) {
+        // Case 1.1: The labels match, their types must match.
+        for {
+          subst <- unifyTypes(fieldType1, fieldType2)
+        } yield (subst, restRow2)
+      } else {
+        // Case 1.2: The labels do not match, attempt to match with a label further down.
+        rewriteRow(restRow2, label1, fieldType1, originalType) map {
+          case (subst, rewrittenRow) => (subst, Type.RecordExtend(label2, fieldType2, rewrittenRow))
+        }
+      }
+    case tvar: Type.Var =>
+      // Case 2: The row is a type variable.
+      // Introduce a fresh type variable to represent one more level of the row.
+      val restRow2 = Type.freshTypeVar()
+      val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
+      val subst = Substitution.singleton(tvar, type2)
+      Ok((subst, restRow2))
+
+    case Type.RecordEmpty =>
+      // Case 3: The `label` does not exist in the record.
+      Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
+
+    case _ =>
+      // Case 4: The type is not a row.
+      Err(UnificationError.NonRecordType(row2))
+  }
+
+  /**
+    * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
+    */
+  // TODO: This is a copy of the above function. It would be nice if it could be the same function, but the shape of labels is different.
+  private def rewriteSchemaRow(row2: Type, label1: String, fieldType1: Type, originalType: Type)(implicit flix: Flix): Result[(Substitution, Type), UnificationError] = row2 match {
+    case Type.SchemaExtend(label2, fieldType2, restRow2) =>
+      // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
+      if (label1 == label2) {
+        // Case 1.1: The labels match, their types must match.
+        for {
+          subst <- unifyTypes(fieldType1, fieldType2)
+        } yield (subst, restRow2)
+      } else {
+        // Case 1.2: The labels do not match, attempt to match with a label further down.
+        rewriteSchemaRow(restRow2, label1, fieldType1, originalType) map {
+          case (subst, rewrittenRow) => (subst, Type.SchemaExtend(label2, fieldType2, rewrittenRow))
+        }
+      }
+    case tvar: Type.Var =>
+      // Case 2: The row is a type variable.
+      // Introduce a fresh type variable to represent one more level of the row.
+      val restRow2 = Type.freshTypeVar()
+      val type2 = Type.SchemaExtend(label1, fieldType1, restRow2)
+      val subst = Substitution.singleton(tvar, type2)
+      Ok((subst, restRow2))
+
+    case Type.SchemaEmpty =>
+      // Case 3: The `label` does not exist in the record.
+      Err(UnificationError.UndefinedPredicate(label1, fieldType1, originalType))
+
+    case _ =>
+      // Case 4: The type is not a row.
+      Err(UnificationError.NonSchemaType(row2))
   }
 
   /**
@@ -316,14 +317,6 @@ object Unification {
     else
       unifyTypM(ts, loc)
   }
-
-  /**
-    * Pairwise unifies the two given lists of types `xs` and `ys`.
-    */
-  def unifyTypM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit flix: Flix): InferMonad[List[Type]] =
-    InferMonad.seqM((xs zip ys).map {
-      case (x, y) => unifyTypM(x, y, loc)
-    })
 
   /**
     * Unifies the two given effects `eff1` and `eff2`.
