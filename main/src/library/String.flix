@@ -65,16 +65,16 @@ namespace String {
         import java.lang.String.split(String);
         s.split(r)
 
-    //
-    // Returns the lower case version of the string `s`.
-    //
+    ///
+    /// Returns the lower case version of the string `s`.
+    ///
     pub def toLowerCase(s: String): String =
         import java.lang.String.toLowerCase();
         s.toLowerCase() as & Pure
 
-    //
-    // Returns the upper case version of the string `s`.
-    //
+    ///
+    /// Returns the upper case version of the string `s`.
+    ///
     pub def toUpperCase(s: String): String =
         import java.lang.String.toUpperCase();
         s.toUpperCase() as & Pure
@@ -141,7 +141,7 @@ namespace String {
     pub def flatten(xs: List[String]): String = flattenHelper(xs) as & Pure
 
     ///
-    /// Helper for `flatten`.
+    /// Helper function for `flatten`.
     ///
     def flattenHelper(xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
@@ -156,7 +156,7 @@ namespace String {
         intercalateHelper(sep, xs) as & Pure
 
     ///
-    /// Helper for `intercalate`.
+    /// Helper function for `intercalate`.
     ///
     def intercalateHelper(sep: String, xs: List[String]): String & Impure =
         let sb = StringBuilder.new();
@@ -171,7 +171,7 @@ namespace String {
     pub def intercalateChar(sep: Char, xs: List[String]): String = intercalateCharHelper(sep, xs) as & Pure
 
     ///
-    /// Helper for `intercalateChar`.
+    /// Helper function for `intercalateChar`.
     ///
     def intercalateCharHelper(sep: Char, xs: List[String]): String & Impure = match xs {
         case Nil => ""
@@ -922,10 +922,10 @@ namespace String {
     ///
     pub def unwords(a: Array[String]): String = unwordsImpure(a) as & Pure
 
-   ///
-   /// Helper function for `unlines`.
-   ///
-   def unwordsImpure(a: Array[String]): String & Impure =
+    ///
+    /// Helper function for `unlines`.
+    ///
+    def unwordsImpure(a: Array[String]): String & Impure =
         let sb = StringBuilder.new();
         StringBuilder.intercalate!(sb, " ", a);
         StringBuilder.toString(sb)
@@ -1078,9 +1078,9 @@ namespace String {
     pub def levenshteinDistance(s: String, t: String) : Int32 = levenshteinDistanceHelper(s, t) as & Pure
 
     ///
-    /// Helper for `levenshteinDistance`.
+    /// Helper function for `levenshteinDistance`.
     ///
-    /// This is the Wikipedia two-matrix rows algorithm
+    /// This is the Wikipedia two-matrix rows algorithm:
     /// https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_two_matrix_rows
     ///
     def levenshteinDistanceHelper(s: String, t: String) : Int32 & Impure =
@@ -1103,7 +1103,7 @@ namespace String {
         v0[n]
 
     ///
-    /// Helper for `levenshteinDistance`.
+    /// Helper function for `levenshteinDistance`.
     ///
     /// This implements a forloop, the end point `e` is inclusive.
     ///
@@ -1111,7 +1111,7 @@ namespace String {
         if (b <= e) { f(b); forIndex(b+1, e, f) } else ()
 
     ///
-    /// Helper for `levenshteinDistance`.
+    /// Helper function for `levenshteinDistance`.
     ///
     def arraySwap(a: Array[Int32], b : Array[Int32]): Unit & Impure =
         forIndex(0, Array.length(a) - 1, {i ->  a[i] = b[i]})
@@ -1157,7 +1157,7 @@ namespace String {
         init(i -> f(charAt(i, a), charAt(i, b)), len)
 
     ///
-    /// Splits the string `s` on matches of `sub`.
+    /// Split the string `s` on matches of `sub`.
     ///
     pub def splitOn(s: String, sub: String): List[String] =
         let maxlen = length(s);
