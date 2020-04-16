@@ -967,15 +967,27 @@ namespace String {
         }
 
     ///
-    /// Test if the string `s` contains the substring `sub`.
+    /// Returns `true` if and only if `sub` is a prefix of `s`.
     ///
-    pub def isSubstringOf(sub: String, s: String): Bool =
+    pub def isPrefixOf(sub: String, s: String): Bool =
+        startsWith(s, sub)
+
+    ///
+    /// Returns `true` if and only if `sub` is an infix of `s`.
+    ///
+    pub def isInfixOf(sub: String, s: String): Bool =
         if (isEmpty(sub))
             true
         else {
             let a = indexOfLeft(sub, s);
             !Option.isEmpty(a)
         }
+
+    ///
+    /// Returns `true` if and only if `sub` is a suffix of `s`.
+    ///
+    pub def isSuffixOf(sub: String, s: String): Bool =
+        endsWith(s, sub)
 
     ///
     /// Return the common prefix of strings `s` and `s2`.
@@ -1233,6 +1245,43 @@ namespace String {
             case None => (s, "")
             case Some(i) => (sliceLeft(s, i + sublen), sliceRight(s, i + sublen))
         }
+
+    ///
+    /// Count the occurences of `sub` in string `s`.
+    ///
+    pub def count(sub: String, s: String): Int32 =
+        let sublen = length(sub);
+        if (sublen <= 0)
+            0
+        else
+            countHelper(sub, sublen, s, 0, 0)
+
+    ///
+    /// Helper function for `count``.
+    ///
+    def countHelper(sub: String, sublen: Int32, s: String, offset: Int32, count: Int32): Int32 =
+        match indexOfLeftWithOffset(sub, offset, s) {
+            case None => count
+            case Some(i) => countHelper(sub, sublen, s, i + sublen, count + 1)
+        }
+
+    ///
+    /// Returns `Some(suffix)` of string `s` if its prefix matches `sub`.
+    ///
+    pub def stripPrefix(sub: String, s: String): Option[String] =
+        if (!isPrefixOf(sub, s))
+            None
+        else
+            Some(dropLeft(length(sub), s))
+
+    ///
+    /// Returns `Some(prefix)` of string `s` if its suffix matches `sub`.
+    ///
+    pub def stripSuffix(sub: String, s: String): Option[String] =
+        if (!isSuffixOf(sub, s))
+            None
+        else
+            Some(dropRight(length(sub), s))
 
     /////////////////////////////////////////////////////////////////////////////
     // Lints                                                                   //

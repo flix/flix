@@ -2651,35 +2651,100 @@ def indexOfRight08(): Bool = String.indexOfRight("ab", "ab") == Some(0)
 def indexOfRight09(): Bool = String.indexOfRight("bc", "abc") == Some(1)
 
 /////////////////////////////////////////////////////////////////////////////
-// isSubstringOf                                                           //
+// isPrefixOf                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def isSubstringOf01(): Bool = String.isSubstringOf("", "") == true
+def isPrefixOf01(): Bool = String.isPrefixOf("", "") == true
 
 @test
-def isSubstringOf02(): Bool = String.isSubstringOf("", "a") == true
+def isPrefixOf02(): rBool = String.isPrefixOf("", "a") == true
 
 @test
-def isSubstringOf03(): Bool = String.isSubstringOf("", "abc") == true
+def isPrefixOf03(): Bool = String.isPrefixOf("", "abc") == true
 
 @test
-def isSubstringOf04(): Bool = String.isSubstringOf("a", "") == false
+def isPrefixOf04(): Bool = String.isPrefixOf("a", "") == false
 
 @test
-def isSubstringOf05(): Bool = String.isSubstringOf("a", "a") == true
+def isPrefixOf05(): Bool = String.isPrefixOf("a", "a") == true
 
 @test
-def isSubstringOf06(): Bool = String.isSubstringOf("a", "b") == false
+def isPrefixOf06(): Bool = String.isPrefixOf("a", "b") == false
 
 @test
-def isSubstringOf07(): Bool = String.isSubstringOf("a", "aa") == true
+def isPrefixOf07(): Bool = String.isPrefixOf("a", "aa") == true
 
 @test
-def isSubstringOf08(): Bool = String.isSubstringOf("ab", "ab") == true
+def isPrefixOf08(): Bool = String.isPrefixOf("ab", "ab") == true
 
 @test
-def isSubstringOf09(): Bool = String.isSubstringOf("bc", "abc") == true
+def isPrefixOf09(): Bool = String.isPrefixOf("bc", "abc") == false
+
+/////////////////////////////////////////////////////////////////////////////
+// isInfixOf                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isInfixOf01(): Bool = String.isInfixOf("", "") == true
+
+@test
+def isInfixOf02(): rBool = String.isInfixOf("", "a") == true
+
+@test
+def isInfixOf03(): Bool = String.isInfixOf("", "abc") == true
+
+@test
+def isInfixOf04(): Bool = String.isInfixOf("a", "") == false
+
+@test
+def isInfixOf05(): Bool = String.isInfixOf("a", "a") == true
+
+@test
+def isInfixOf06(): Bool = String.isInfixOf("a", "b") == false
+
+@test
+def isInfixOf07(): Bool = String.isInfixOf("a", "aa") == true
+
+@test
+def isInfixOf08(): Bool = String.isInfixOf("ab", "ab") == true
+
+@test
+def isInfixOf09(): Bool = String.isInfixOf("bc", "abc") == true
+
+/////////////////////////////////////////////////////////////////////////////
+// isSuffixOf                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def isSuffixOf01(): Bool = String.isSuffixOf("", "") == true
+
+@test
+def isSuffixOf02(): rBool = String.isSuffixOf("", "a") == true
+
+@test
+def isSuffixOf03(): Bool = String.isSuffixOf("", "abc") == true
+
+@test
+def isSuffixOf04(): Bool = String.isSuffixOf("a", "") == false
+
+@test
+def isSuffixOf05(): Bool = String.isSuffixOf("a", "a") == true
+
+@test
+def isSuffixOf06(): Bool = String.isSuffixOf("a", "b") == false
+
+@test
+def isSuffixOf07(): Bool = String.isSuffixOf("a", "aa") == true
+
+@test
+def isSuffixOf08(): Bool = String.isSuffixOf("ab", "ab") == true
+
+@test
+def isSuffixOf09(): Bool = String.isSuffixOf("bc", "abc") == true
+
+@test
+def isSuffixOf10(): Bool = String.isSuffixOf("ab", "abc") == false
 
 /////////////////////////////////////////////////////////////////////////////
 // commonPrefix                                                            //
@@ -3200,5 +3265,96 @@ def breakOnRight07(): Bool = String.breakOnRight("::", "aaa::bbb") == ("aaa::", 
 
 @test
 def breakOnRight08(): Bool = String.breakOnRight("::", "aaa::bbb::ccc") == ("aaa::bbb::", "ccc")
+
+/////////////////////////////////////////////////////////////////////////////
+// count                                                                   //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def count01(): Bool = String.count("", "") == 0
+
+@test
+def count02(): Bool = String.count("", "abc abc") == 0
+
+@test
+def count03(): Bool = String.count("abc", "") == 0
+
+@test
+def count04(): Bool = String.count("abc", "abc") == 1
+
+@test
+def count05(): Bool = String.count("abc", "aabc") == 1
+
+@test
+def count06(): Bool = String.count("abc", "abcc") == 1
+
+@test
+def count07(): Bool = String.count("abc", "abc def ") == 1
+
+@test
+def count08(): Bool = String.count("abc", " abc def") == 1
+
+@test
+def count09(): Bool = String.count("abc", " abc abc") == 2
+
+@test
+def count10(): Bool = String.count("abc", " abc ABC abc") == 2
+
+@test
+def count11(): Bool = String.count("abc", "ABC abc def abc") == 2
+
+@test
+def count12(): Bool = String.count("abc", "aBC::abc::AbC::abc::Abc") == 2
+
+/////////////////////////////////////////////////////////////////////////////
+// stripPrefix                                                             //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripPrefix01(): Bool = String.stripPrefix("", "") == Some("")
+
+@test
+def stripPrefix02(): Bool = String.stripPrefix("", "abc") == Some("abc")
+
+@test
+def stripPrefix03(): Bool = String.stripPrefix("abc", "") == None
+
+@test
+def stripPrefix04(): Bool = String.stripPrefix("abc", "abc") == Some("")
+
+@test
+def stripPrefix05(): Bool = String.stripPrefix("abc", "abcdef") == Some("def")
+
+@test
+def stripPrefix06(): Bool = String.stripPrefix("def", "abcdef") == None
+
+@test
+def stripPrefix07(): Bool = String.stripPrefix("abc", "ABCDEF") == None
+
+/////////////////////////////////////////////////////////////////////////////
+// stripSuffix                                                            //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def stripSuffix01(): Bool = String.stripSuffix("", "") == Some("")
+
+@test
+def stripSuffix02(): Bool = String.stripSuffix("", "abc") == Some("abc")
+
+@test
+def stripSuffix03(): Bool = String.stripSuffix("abc", "") == None
+
+@test
+def stripSuffix04(): Bool = String.stripSuffix("abc", "abc") == Some("")
+
+@test
+def stripSuffix05(): Bool = String.stripSuffix("abc", "abcdef") == None
+
+@test
+def stripSuffix06(): Bool = String.stripSuffix("def", "abcdef") == Some("abc")
+
+@test
+def stripSuffix07(): Bool = String.stripPrefix("abc", "ABCDEF") == None
+
 }
 
