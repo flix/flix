@@ -24,117 +24,109 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 object Unification {
 
   /**
-    * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
+    * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
-  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  private def unifyVar(x: Type.Var, tpe: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+    // NB: The `tpe` type must be a non-var.
+    if (tpe.isInstanceOf[Type.Var])
+      throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
 
-    /**
-      * Unifies the given variable `x` with the given non-variable type `tpe`.
-      */
-    def unifyVar(x: Type.Var, tpe: Type): Result[Substitution, UnificationError] = {
-      // NB: The `tpe` type must be a non-var.
-      if (tpe.isInstanceOf[Type.Var])
-        throw InternalCompilerException(s"Unexpected variable type: '$tpe'.")
-
-      // Check if `x` is rigid.
-      if (x.rigidity == Rigidity.Rigid) {
-        return Result.Err(UnificationError.RigidVar(x, tpe))
-      }
-
-      // Check if `x` occurs within `tpe`.
-      if (tpe.typeVars contains x) {
-        return Result.Err(UnificationError.OccursCheck(x, tpe))
-      }
-
-      // Check if the kind of `x` matches the kind of `tpe`.
-
-      //if (x.kind != tpe.kind) {
-      //  return Result.Err(TypeError.KindError())
-      //}
-
-      // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
-      if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
-        // TODO: Get rid of this insanity.
-        tpe.asInstanceOf[Type.Var].setText(x.getText.get)
-      }
-      Result.Ok(Substitution.singleton(x, tpe))
+    // Check if `x` is rigid.
+    if (x.rigidity == Rigidity.Rigid) {
+      return Result.Err(UnificationError.RigidVar(x, tpe))
     }
 
-    /**
-      * Unifies the two given types `tpe1` and `tpe2`.
-      */
-    // NB: The order of cases has been determined by code coverage analysis.
-    def unifyTypes(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
-      case (x: Type.Var, y: Type.Var) =>
-        // Case 1: Check if the type variables are syntactically the same.
-        if (x.id == y.id && x.kind == y.kind)
-          return Result.Ok(Substitution.empty)
-        // Case 2: The left type variable is flexible.
-        if (x.rigidity == Rigidity.Flexible)
-          return Result.Ok(Substitution.singleton(x, y))
-        // Case 3: The right type variable is flexible.
-        if (y.rigidity == Rigidity.Flexible)
-          return Result.Ok(Substitution.singleton(y, x))
-        // Case 4: Both type variables are rigid.
-        Result.Err(UnificationError.RigidVar(x, y))
+    // Check if `x` occurs within `tpe`.
+    if (tpe.typeVars contains x) {
+      return Result.Err(UnificationError.OccursCheck(x, tpe))
+    }
 
-      case (x: Type.Var, _) => unifyVar(x, tpe2)
+    // Check if the kind of `x` matches the kind of `tpe`.
 
-      case (_, x: Type.Var) => unifyVar(x, tpe1)
+    //if (x.kind != tpe.kind) {
+    //  return Result.Err(TypeError.KindError())
+    //}
 
-      case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
+    // We can substitute `x` for `tpe`. Update the textual name of `tpe`.
+    if (x.getText.nonEmpty && tpe.isInstanceOf[Type.Var]) {
+      // TODO: Get rid of this insanity.
+      tpe.asInstanceOf[Type.Var].setText(x.getText.get)
+    }
+    Result.Ok(Substitution.singleton(x, tpe))
+  }
 
-      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
-        unifyTypes(t11, t21) match {
-          case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
-            case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
-            case Result.Err(e) => Result.Err(e)
-          }
+  /**
+    * Unifies the two given types `tpe1` and `tpe2`.
+    */
+  // NB: The order of cases has been determined by code coverage analysis.
+  def unifyTypes(tpe1: Type, tpe2: Type)(implicit flix: Flix): Result[Substitution, UnificationError] = (tpe1, tpe2) match {
+    case (x: Type.Var, y: Type.Var) =>
+      // Case 1: Check if the type variables are syntactically the same.
+      if (x.id == y.id && x.kind == y.kind)
+        return Result.Ok(Substitution.empty)
+      // Case 2: The left type variable is flexible.
+      if (x.rigidity == Rigidity.Flexible)
+        return Result.Ok(Substitution.singleton(x, y))
+      // Case 3: The right type variable is flexible.
+      if (y.rigidity == Rigidity.Flexible)
+        return Result.Ok(Substitution.singleton(y, x))
+      // Case 4: Both type variables are rigid.
+      Result.Err(UnificationError.RigidVar(x, y))
+
+    case (x: Type.Var, _) => unifyVar(x, tpe2)
+
+    case (_, x: Type.Var) => unifyVar(x, tpe1)
+
+    case (Type.Cst(c1), Type.Cst(c2)) if c1 == c2 => Result.Ok(Substitution.empty)
+
+    case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+      unifyTypes(t11, t21) match {
+        case Result.Ok(subst1) => unifyTypes(subst1(t12), subst1(t22)) match {
+          case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
           case Result.Err(e) => Result.Err(e)
         }
+        case Result.Err(e) => Result.Err(e)
+      }
 
-      case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unifyEffects(eff1, eff2)
+    case (Type.Arrow(l1, eff1), Type.Arrow(l2, eff2)) if l1 == l2 => BoolUnification.unifyEffects(eff1, eff2)
 
-      case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
+    case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.SchemaEmpty, Type.SchemaEmpty) => Result.Ok(Substitution.empty)
+    case (Type.SchemaEmpty, Type.SchemaEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
-        // Attempt to write the row to match.
-        rewriteRow(row2, label1, fieldType1, row2) flatMap {
-          case (subst1, restRow2) =>
-            // TODO: Missing the safety/occurs check.
-            unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
-              case subst2 => Result.Ok(subst2 @@ subst1)
-            }
-        }
+    case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
+      // Attempt to write the row to match.
+      rewriteRow(row2, label1, fieldType1, row2) flatMap {
+        case (subst1, restRow2) =>
+          // TODO: Missing the safety/occurs check.
+          unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
+            case subst2 => Result.Ok(subst2 @@ subst1)
+          }
+      }
 
-      case (Type.SchemaExtend(sym, tpe, restRow1), row2) =>
-        // Attempt to write the row to match.
-        rewriteSchemaRow(row2, sym, tpe, row2) flatMap {
-          case (subst1, restRow2) =>
-            // TODO: Missing the safety/occurs check.
-            unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
-              case subst2 => Result.Ok(subst2 @@ subst1)
-            }
-        }
+    case (Type.SchemaExtend(sym, tpe, restRow1), row2) =>
+      // Attempt to write the row to match.
+      rewriteSchemaRow(row2, sym, tpe, row2) flatMap {
+        case (subst1, restRow2) =>
+          // TODO: Missing the safety/occurs check.
+          unifyTypes(subst1(restRow1), subst1(restRow2)) flatMap {
+            case subst2 => Result.Ok(subst2 @@ subst1)
+          }
+      }
 
-      case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
+    case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
 
-      case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
+    case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
 
-      case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
+    case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
 
-      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
+    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
 
-      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
+    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
 
-      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
+    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
 
-      case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
-    }
-
-    unifyTypes(tpe1, tpe2)
+    case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
 
   /**
