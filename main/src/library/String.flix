@@ -260,14 +260,14 @@ namespace String {
         init(f, len)
 
     ///
-    /// Returns `true` if the entire string `s` is matched by the pattern `regex`.
+    /// Returns `true` if the entire string `s` is matched by the regular expression `pattern`.
     ///
     /// Note - use `isSubmatch` to search for a substring.
     ///
-    pub def isMatch(regex: String, s: String): Bool =
+    pub def isMatch(pattern: String, s: String): Bool =
         try {
             import java.lang.String.matches(String);
-            s.matches(regex) as & Pure
+            s.matches(pattern) as & Pure
         } catch {
             case _: ##java.util.regex.PatternSyntaxException => false
         }
